@@ -24,6 +24,7 @@ package org.apache.bookkeeper.test;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -203,6 +204,7 @@ public abstract class BookKeeperClusterTestCase {
         ServerConfiguration conf = new ServerConfiguration(baseConf);
         conf.setBookiePort(port);
         conf.setZkServers(zkServers);
+        conf.setAllowLoopback(true);
         conf.setJournalDirName(journalDir.getPath());
         String[] ledgerDirNames = new String[ledgerDirs.length];
         for (int i=0; i<ledgerDirs.length; i++) {
@@ -266,6 +268,23 @@ public abstract class BookKeeperClusterTestCase {
             return bsConfs.remove(toRemoveIndex);
         }
         return null;
+    }
+
+    /**
+     * Set the bookie identified by its socket address to readonly
+     *
+     * @param addr
+     *          Socket Address
+     * @return the configuration of killed bookie
+     * @throws InterruptedException
+     */
+    public void setBookieToReadOnly(BookieSocketAddress addr) throws InterruptedException, UnknownHostException {
+        for (BookieServer server : bs) {
+            if (server.getLocalAddress().equals(addr)) {
+                server.getBookie().doTransitionToReadOnlyMode();
+                break;
+            }
+        }
     }
 
     /**
@@ -338,13 +357,25 @@ public abstract class BookKeeperClusterTestCase {
      * @throws IOException
      */
     public void sleepBookie(BookieSocketAddress addr, final CountDownLatch l)
-            throws Exception {
+            throws InterruptedException, IOException {
+        final CountDownLatch suspendLatch = new CountDownLatch(1);
+        sleepBookie(addr, l, suspendLatch);
+        suspendLatch.await();
+    }
+
+    public void sleepBookie(BookieSocketAddress addr, final CountDownLatch l, final CountDownLatch suspendLatch)
+            throws InterruptedException, IOException {
         for (final BookieServer bookie : bs) {
             if (bookie.getLocalAddress().equals(addr)) {
-                bookie.suspendProcessing();
+                LOG.info("Sleep bookie {}.", addr);
                 Thread sleeper = new Thread() {
+                    @Override
                     public void run() {
                         try {
+                            bookie.suspendProcessing();
+                            if (null != suspendLatch) {
+                                suspendLatch.countDown();
+                            }
                             l.await();
                             bookie.resumeProcessing();
                         } catch (Exception e) {

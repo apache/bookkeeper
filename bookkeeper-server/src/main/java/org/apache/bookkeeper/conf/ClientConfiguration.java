@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.conf;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static org.apache.bookkeeper.util.BookKeeperConstants.FEATURE_DISABLE_ENSEMBLE_CHANGE;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -67,6 +68,8 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String SPECULATIVE_READ_TIMEOUT_BACKOFF_MULTIPLIER = "speculativeReadTimeoutBackoffMultiplier";
     protected final static String ENABLE_PARALLEL_RECOVERY_READ = "enableParallelRecoveryRead";
     protected final static String RECOVERY_READ_BATCH_SIZE = "recoveryReadBatchSize";
+    // Add Parameters
+    protected final static String DELAY_ENSEMBLE_CHANGE = "delayEnsembleChange";
     // Timeout Setting
     protected final static String ADD_ENTRY_TIMEOUT_SEC = "addEntryTimeoutSec";
     protected final static String ADD_ENTRY_QUORUM_TIMEOUT_SEC = "addEntryQuorumTimeoutSec";
@@ -100,6 +103,9 @@ public class ClientConfiguration extends AbstractConfiguration {
     // Stats
     protected final static String ENABLE_TASK_EXECUTION_STATS = "enableTaskExecutionStats";
     protected final static String TASK_EXECUTION_WARN_TIME_MICROS = "taskExecutionWarnTimeMicros";
+    
+    // Names of dynamic features
+    protected final static String DISABLE_ENSEMBLE_CHANGE_FEATURE_NAME = "disableEnsembleChangeFeatureName";
 
     // Role of the client
     protected final static String CLIENT_ROLE = "clientRole";
@@ -1207,4 +1213,50 @@ public class ClientConfiguration extends AbstractConfiguration {
         return getString(CLIENT_ROLE, CLIENT_ROLE_STANDARD);
     }
 
+    /**
+     * Whether to delay ensemble change or not?
+     *
+     * @return true if to delay ensemble change, otherwise false.
+     */
+    public boolean getDelayEnsembleChange() {
+        return getBoolean(DELAY_ENSEMBLE_CHANGE, false);
+    }
+
+    /**
+     * Enable/Disable delaying ensemble change.
+     * <p>
+     * If set to true, ensemble change only happens when it can't meet
+     * ack quorum requirement. If set to false, ensemble change happens
+     * immediately when it received a failed write.
+     * </p>
+     *
+     * @param enabled
+     *          flag to enable/disable delaying ensemble change.
+     * @return client configuration.
+     */
+    public ClientConfiguration setDelayEnsembleChange(boolean enabled) {
+        setProperty(DELAY_ENSEMBLE_CHANGE, enabled);
+        return this;
+    }
+
+    /**
+     * Get the name of the dynamic feature that disables ensemble change
+     *
+     * @return name of the dynamic feature that disables ensemble change
+     */
+    public String getDisableEnsembleChangeFeatureName() {
+        return getString(DISABLE_ENSEMBLE_CHANGE_FEATURE_NAME, FEATURE_DISABLE_ENSEMBLE_CHANGE);
+    }
+
+    /**
+     * Set the name of the dynamic feature that disables ensemble change
+     *
+     * @param disableEnsembleChangeFeatureName
+     *          name of the dynamic feature that disables ensemble change
+     * @return client configuration.
+     */
+    public ClientConfiguration setDisableEnsembleChangeFeatureName(String disableEnsembleChangeFeatureName) {
+        setProperty(DISABLE_ENSEMBLE_CHANGE_FEATURE_NAME, disableEnsembleChangeFeatureName);
+        return this;
+    }
 }
