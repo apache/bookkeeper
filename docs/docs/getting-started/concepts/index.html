@@ -15,6 +15,13 @@
 
 <script src="/bookkeeper/js/tippy.min.js"></script>
 
+<script type="text/javascript">
+  var shiftWindow = function() { scrollBy(0, -30); };
+  window.addEventListener("hashchange", shiftWindow);
+  window.addEventListener("pageshow", shiftWindow);
+  function load() { if (window.location.hash) shiftWindow(); }
+</script>
+
   </head>
   <body class="body">
     <main class="main">
@@ -137,10 +144,10 @@
     <li><a href="/bookkeeper/docs/api/overview">Overview</a></li>
     
     
-    <li><a href="/bookkeeper/docs/api/ledger">Ledger API</a></li>
+    <li><a href="/bookkeeper/docs/api/ledger-api">Ledger API</a></li>
     
     
-    <li><a href="/bookkeeper/docs/api/distributedlog">DistributedLog API</a></li>
+    <li><a href="/bookkeeper/docs/api/distributedlog-api">DistributedLog API</a></li>
     
   </ul>
   
@@ -166,7 +173,10 @@
     <li><a href="/bookkeeper/docs/reference/config">Configuration</a></li>
     
     
-    <li><a href="/bookkeeper/docs/reference/cli">Command-line reference</a></li>
+    <li><a href="/bookkeeper/docs/reference/cli">Command-line tools</a></li>
+    
+    
+    <li><a href="/bookkeeper/docs/reference/metrics">Metrics</a></li>
     
   </ul>
   
@@ -352,7 +362,7 @@ Once all valid entries have been copied, the old entry log file is deleted.</p>
 
 <h2 id="zookeeper-metadata">ZooKeeper metadata</h2>
 
-<p>BookKeeper requires a ZooKeeper installation for storing <a href="#ledger">ledger</a> metadata. Whenever you construct a <a href="/api/org/apache/bookkeeper/client/BookKeeper"><code class="highlighter-rouge">BookKeeper</code></a> client object, you need to pass a list of ZooKeeper servers as a parameter to the constructor, like this:</p>
+<p>BookKeeper requires a ZooKeeper installation for storing <a href="#ledger">ledger</a> metadata. Whenever you construct a <a href="/javadoc/org/apache/bookkeeper/client/BookKeeper"><code class="highlighter-rouge">BookKeeper</code></a> client object, you need to pass a list of ZooKeeper servers as a parameter to the constructor, like this:</p>
 
 <div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">String</span> <span class="n">zkConnectionString</span> <span class="o">=</span> <span class="s">"127.0.0.1:2181"</span><span class="o">;</span>
 <span class="n">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BookKeeper</span><span class="o">(</span><span class="n">zkConnectionString</span><span class="o">);</span>
@@ -365,7 +375,7 @@ Once all valid entries have been copied, the old entry log file is deleted.</p>
 
 <h2 id="ledger-manager">Ledger manager</h2>
 
-<p>A <em>ledger manager</em> handles ledgers’ metadata (which is stored in ZooKeeper). BookKeeper offers two types of ledger managers: the <a href="#flat-ledger-manager">flat ledger manager</a> and the <a href="#hierarchical-ledger-manager">hierarchical ledger manager</a>. Both ledger managers extend the <a href="/api/org/apache/bookkeeper/meta/AbstractZkLedgerManager"><code class="highlighter-rouge">AbstractZkLedgerManager</code></a> abstract class.</p>
+<p>A <em>ledger manager</em> handles ledgers’ metadata (which is stored in ZooKeeper). BookKeeper offers two types of ledger managers: the <a href="#flat-ledger-manager">flat ledger manager</a> and the <a href="#hierarchical-ledger-manager">hierarchical ledger manager</a>. Both ledger managers extend the <a href="/javadoc/org/apache/bookkeeper/meta/AbstractZkLedgerManager"><code class="highlighter-rouge">AbstractZkLedgerManager</code></a> abstract class.</p>
 
 <blockquote>
   <h4 id="use-the-flat-ledger-manager-in-most-cases">Use the flat ledger manager in most cases</h4>
@@ -374,7 +384,7 @@ Once all valid entries have been copied, the old entry log file is deleted.</p>
 
 <h3 id="flat-ledger-manager">Flat ledger manager</h3>
 
-<p>The <em>flat ledger manager</em>, implemented in the <a href="/api/org/apache/bookkeeper/meta/FlatLedgerManager.html"><code class="highlighter-rouge">FlatLedgerManager</code></a> class, stores all ledgers’ metadata in child nodes of a single ZooKeeper path. The flat ledger manager creates <a href="https://zookeeper.apache.org/doc/trunk/zookeeperProgrammers.html#Sequence+Nodes+--+Unique+Naming">sequential nodes</a> to ensure the uniqueness of the ledger ID and prefixes all nodes with <code class="highlighter-rouge">L</code>. Bookie servers manage their own active ledgers in a hash map so that it’s easy to find which ledgers have been deleted from ZooKeeper and then garbage collect them.</p>
+<p>The <em>flat ledger manager</em>, implemented in the <a href="/javadoc/org/apache/bookkeeper/meta/FlatLedgerManager.html"><code class="highlighter-rouge">FlatLedgerManager</code></a> class, stores all ledgers’ metadata in child nodes of a single ZooKeeper path. The flat ledger manager creates <a href="https://zookeeper.apache.org/doc/trunk/zookeeperProgrammers.html#Sequence+Nodes+--+Unique+Naming">sequential nodes</a> to ensure the uniqueness of the ledger ID and prefixes all nodes with <code class="highlighter-rouge">L</code>. Bookie servers manage their own active ledgers in a hash map so that it’s easy to find which ledgers have been deleted from ZooKeeper and then garbage collect them.</p>
 
 <p>The flat ledger manager’s garbage collection follow proceeds as follows:</p>
 
@@ -387,7 +397,7 @@ Once all valid entries have been copied, the old entry log file is deleted.</p>
 
 <h3 id="hierarchical-ledger-manager">Hierarchical ledger manager</h3>
 
-<p>The <em>hierarchical ledger manager</em>, implemented in the <a href="/api/org/apache/bookkeeper/meta/HierarchicalLedgerManager"><code class="highlighter-rouge">HierarchicalLedgerManager</code></a> class, first obtains a global unique ID from ZooKeeper using an <a href="https://zookeeper.apache.org/doc/current/api/org/apache/zookeeper/CreateMode.html#EPHEMERAL_SEQUENTIAL"><code class="highlighter-rouge">EPHEMERAL_SEQUENTIAL</code></a> znode. Size ZooKeeper’s sequence counter has a format of <code class="highlighter-rouge">%10d</code> (10 digits with 0 padding, for example <code class="highlighter-rouge">&lt;path&gt;0000000001</code>), the hierarchical ledger manager splits the generated ID into 3 parts:</p>
+<p>The <em>hierarchical ledger manager</em>, implemented in the <a href="/javadoc/org/apache/bookkeeper/meta/HierarchicalLedgerManager"><code class="highlighter-rouge">HierarchicalLedgerManager</code></a> class, first obtains a global unique ID from ZooKeeper using an <a href="https://zookeeper.apache.org/doc/current/api/org/apache/zookeeper/CreateMode.html#EPHEMERAL_SEQUENTIAL"><code class="highlighter-rouge">EPHEMERAL_SEQUENTIAL</code></a> znode. Size ZooKeeper’s sequence counter has a format of <code class="highlighter-rouge">%10d</code> (10 digits with 0 padding, for example <code class="highlighter-rouge">&lt;path&gt;0000000001</code>), the hierarchical ledger manager splits the generated ID into 3 parts:</p>
 
 <div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="o">{</span>level1 <span class="o">(</span>2 digits<span class="o">)}{</span>level2 <span class="o">(</span>4 digits<span class="o">)}{</span>level3 <span class="o">(</span>4 digits<span class="o">)}</span>
 </code></pre>

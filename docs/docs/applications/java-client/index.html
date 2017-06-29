@@ -15,6 +15,13 @@
 
 <script src="/bookkeeper/js/tippy.min.js"></script>
 
+<script type="text/javascript">
+  var shiftWindow = function() { scrollBy(0, -30); };
+  window.addEventListener("hashchange", shiftWindow);
+  window.addEventListener("pageshow", shiftWindow);
+  function load() { if (window.location.hash) shiftWindow(); }
+</script>
+
   </head>
   <body class="body">
     <main class="main">
@@ -137,10 +144,10 @@
     <li><a href="/bookkeeper/docs/api/overview">Overview</a></li>
     
     
-    <li><a href="/bookkeeper/docs/api/ledger">Ledger API</a></li>
+    <li><a href="/bookkeeper/docs/api/ledger-api">Ledger API</a></li>
     
     
-    <li><a href="/bookkeeper/docs/api/distributedlog">DistributedLog API</a></li>
+    <li><a href="/bookkeeper/docs/api/distributedlog-api">DistributedLog API</a></li>
     
   </ul>
   
@@ -166,7 +173,10 @@
     <li><a href="/bookkeeper/docs/reference/config">Configuration</a></li>
     
     
-    <li><a href="/bookkeeper/docs/reference/cli">Command-line reference</a></li>
+    <li><a href="/bookkeeper/docs/reference/cli">Command-line tools</a></li>
+    
+    
+    <li><a href="/bookkeeper/docs/reference/metrics">Metrics</a></li>
     
   </ul>
   
@@ -238,7 +248,7 @@
 
 <h2 id="creating-a-new-client">Creating a new client</h2>
 
-<p>The easiest way to create a new <a href="/api/org/apache/bookkeeper/client/BookKeeper"><code class="highlighter-rouge">BookKeeper</code></a> client is to pass in a ZooKeeper connection string as the sole constructor:</p>
+<p>The easiest way to create a new <a href="/javadoc/org/apache/bookkeeper/client/BookKeeper"><code class="highlighter-rouge">BookKeeper</code></a> client is to pass in a ZooKeeper connection string as the sole constructor:</p>
 
 <div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="k">try</span> <span class="o">{</span>
     <span class="n">String</span> <span class="n">zkConnectionString</span> <span class="o">=</span> <span class="s">"127.0.0.1:2181"</span><span class="o">;</span>
@@ -253,7 +263,7 @@
 
 <ul>
   <li>
-    <p>By passing in a <a href="/api/org/apache/bookkeeper/conf/ClientConfiguration"><code class="highlighter-rouge">ClientConfiguration</code></a> object. Here’s an example:</p>
+    <p>By passing in a <a href="/javadoc/org/apache/bookkeeper/conf/ClientConfiguration"><code class="highlighter-rouge">ClientConfiguration</code></a> object. Here’s an example:</p>
 
     <div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">ClientConfiguration</span> <span class="n">config</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ClientConfiguration</span><span class="o">();</span>
 <span class="n">config</span><span class="o">.</span><span class="na">setZkServers</span><span class="o">(</span><span class="n">zkConnectionString</span><span class="o">);</span>
@@ -283,7 +293,7 @@
 
 <h2 id="creating-ledgers">Creating ledgers</h2>
 
-<p>The easiest way to create a <span class="pop" id="ledger-popover">ledger</span> using the Java client is via the <code class="highlighter-rouge">createLedger</code> method, which creates a new ledger synchronously and returns a <a href="/api/org/apache/bookkeeper/client/LedgerHandle"><code class="highlighter-rouge">LedgerHandle</code></a>. You must specify at least a <a href="/api/org/apache/bookkeeper/client/BookKeeper.DigestType"><code class="highlighter-rouge">DigestType</code></a> and a password.</p>
+<p>The easiest way to create a <span class="pop" id="ledger-popover">ledger</span> using the Java client is via the <code class="highlighter-rouge">createLedger</code> method, which creates a new ledger synchronously and returns a <a href="/javadoc/org/apache/bookkeeper/client/LedgerHandle"><code class="highlighter-rouge">LedgerHandle</code></a>. You must specify at least a <a href="/javadoc/org/apache/bookkeeper/client/BookKeeper.DigestType"><code class="highlighter-rouge">DigestType</code></a> and a password.</p>
 
 <p>Here’s an example:</p>
 

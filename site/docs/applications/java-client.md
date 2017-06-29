@@ -44,7 +44,7 @@ dependencies {
 
 ## Creating a new client
 
-The easiest way to create a new [`BookKeeper`](/api/org/apache/bookkeeper/client/BookKeeper) client is to pass in a ZooKeeper connection string as the sole constructor:
+The easiest way to create a new [`BookKeeper`](/javadoc/org/apache/bookkeeper/client/BookKeeper) client is to pass in a ZooKeeper connection string as the sole constructor:
 
 ```java
 try {
@@ -57,7 +57,7 @@ try {
 
 There are, however, other ways that you can create a client object:
 
-* By passing in a [`ClientConfiguration`](/api/org/apache/bookkeeper/conf/ClientConfiguration) object. Here's an example:
+* By passing in a [`ClientConfiguration`](/javadoc/org/apache/bookkeeper/conf/ClientConfiguration) object. Here's an example:
 
   ```java
   ClientConfiguration config = new ClientConfiguration();
@@ -83,7 +83,7 @@ There are, however, other ways that you can create a client object:
 
 ## Creating ledgers
 
-The easiest way to create a {% pop ledger %} using the Java client is via the `createLedger` method, which creates a new ledger synchronously and returns a [`LedgerHandle`](/api/org/apache/bookkeeper/client/LedgerHandle). You must specify at least a [`DigestType`](/api/org/apache/bookkeeper/client/BookKeeper.DigestType) and a password.
+The easiest way to create a {% pop ledger %} using the Java client is via the `createLedger` method, which creates a new ledger synchronously and returns a [`LedgerHandle`](/javadoc/org/apache/bookkeeper/client/LedgerHandle). You must specify at least a [`DigestType`](/javadoc/org/apache/bookkeeper/client/BookKeeper.DigestType) and a password.
 
 Here's an example:
 

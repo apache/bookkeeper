@@ -38,9 +38,9 @@ groups:
   - name: Overview
     endpoint: overview
   - name: Ledger API
-    endpoint: ledger
+    endpoint: ledger-api
   - name: DistributedLog API
-    endpoint: distributedlog
+    endpoint: distributedlog-api
 - name: Development
   dir: development
   docs:
@@ -53,5 +53,7 @@ groups:
   docs:
   - name: Configuration
     endpoint: config
-  - name: Command-line reference
+  - name: Command-line tools
     endpoint: cli
+  - name: Metrics
+    endpoint: metrics

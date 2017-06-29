@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Apache BookKeeper - The DistributedLog API</title>
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet" href="/bookkeeper/css/normalize.css">
+<link rel="stylesheet" href="/bookkeeper/css/tippy.css">
+<link rel="stylesheet" href="/bookkeeper/css/style.css">
+
+<link rel="shortcut icon" href="/bookkeeper/img/favicon.ico">
+
+<script src="/bookkeeper/js/tippy.min.js"></script>
+
+<script type="text/javascript">
+  var shiftWindow = function() { scrollBy(0, -30); };
+  window.addEventListener("hashchange", shiftWindow);
+  window.addEventListener("pageshow", shiftWindow);
+  function load() { if (window.location.hash) shiftWindow(); }
+</script>
+
+  </head>
+  <body class="body">
+    <main class="main">
+      <nav class="nav has-shadow bk-navbar">
+  <div class="container">
+    <div class="nav-left bk-brand">
+      <a class="nav-item" href="/">
+        <img src="/bookkeeper/img/bk-logo.png" alt="Apache BookKeeper">
+        <h3>Apache BookKeeper</h3>
+      </a>
+    </div>
+
+    <div class="nav-center">
+      <a class="nav-item" href="https://github.com/apache/bookkeeper">
+        <span class="icon is-medium">
+          <i class="fa fa-github"></i>
+        </span>
+      </a>
+      <a class="nav-item" href="https://stackoverflow.com/search?q=apache+bookkeeper">
+        <span class="icon is-medium">
+          <i class="fa fa-stack-overflow"></i>
+        </span>
+      </a>
+    </div>
+
+    <div class="nav-right nav-menu">
+      <a class="nav-item is-tab" href="/bookkeeper/docs">
+        Docs
+      </a>
+
+      <a class="nav-item is-tab" href="/bookkeeper/api">
+        Javadoc
+      </a>
+
+      <div class="nav-item">
+        <div class="field is-grouped">
+          <p class="control">
+            <a class="button is-primary" href="/bookkeeper/docs/getting-started/installation">
+              <span class="icon">
+                <i class="fa fa-download"></i>
+              </span>
+              <span>Get started</span>
+            </a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+
+      <div class="container bk-docs-container">
+  <div class="columns">
+    <div class="column is-2">
+      <aside class="menu">
+  
+  <p class="menu-label">
+    Getting started
+  </p>
+  <ul class="menu-list">
+    
+    
+    <li><a href="/bookkeeper/docs/getting-started/installation">Installation</a></li>
+    
+    
+    <li><a href="/bookkeeper/docs/getting-started/run-locally">Run bookies locally</a></li>
+    
+    
+    <li><a href="/bookkeeper/docs/getting-started/concepts">Concepts and architecture</a></li>
+    
+  </ul>
+  
+  <p class="menu-label">
+    Deployment
+  </p>
+  <ul class="menu-list">
+    
+    
+    <li><a href="/bookkeeper/docs/deployment/manual">Manual deployment</a></li>
+    
+    
+    <li><a href="/bookkeeper/docs/deployment/dcos">BookKeeper on DC/OS</a></li>
+    
+    
+    <li><a href="/bookkeeper/docs/deployment/kubernetes">BookKeeper on Kubernetes</a></li>
+    
+  </ul>
+  
+  <p class="menu-label">
+    Administration
+  </p>
+  <ul class="menu-list">
+    
+    
+    <li><a href="/bookkeeper/docs/admin/bookies">BookKeeper administration</a></li>
+    
+    
+    <li><a href="/bookkeeper/docs/admin/autorecovery">Setting up AutoRecovery</a></li>
+    
+    
+    <li><a href="/bookkeeper/docs/admin/metrics">Metric collection</a></li>
+    
+    
+    <li><a href="/bookkeeper/docs/admin/geo-replication">Geo-replication</a></li>
+    
+    
+    <li><a href="/bookkeeper/docs/admin/placement">Customized placement policies</a></li>
+    
+    
+    <li><a href="/bookkeeper/docs/admin/perf">Performance tuning</a></li>
+    
+  </ul>
+  
+  <p class="menu-label">
+    API
+  </p>
+  <ul class="menu-list">
+    
+    
+    <li><a href="/bookkeeper/docs/api/overview">Overview</a></li>
+    
+    
+    <li><a href="/bookkeeper/docs/api/ledger-api">Ledger API</a></li>
+    
+    
+    <li><a href="/bookkeeper/docs/api/distributedlog-api">DistributedLog API</a></li>
+    
+  </ul>
+  
+  <p class="menu-label">
+    Development
+  </p>
+  <ul class="menu-list">
+    
+    
+    <li><a href="/bookkeeper/docs/development/protocol">BookKeeper protocol</a></li>
+    
+    
+    <li><a href="/bookkeeper/docs/development/codebase">Codebase</a></li>
+    
+  </ul>
+  
+  <p class="menu-label">
+    Reference
+  </p>
+  <ul class="menu-list">
+    
+    
+    <li><a href="/bookkeeper/docs/reference/config">Configuration</a></li>
+    
+    
+    <li><a href="/bookkeeper/docs/reference/cli">Command-line tools</a></li>
+    
+    
+    <li><a href="/bookkeeper/docs/reference/metrics">Metrics</a></li>
+    
+  </ul>
+  
+</aside>
+
+    </div>
+
+    <div class="column is-8 bk-docs-block">
+      <div class="content is-medium">
+        <header class="docs-title">
+          <h1 class="title">The DistributedLog API</h1>
+          
+          
+        </header>
+
+        <hr />
+
+        <section class="bk-docs-content">
+          
+
+        </section>
+
+        
+      </div>
+    </div>
+
+    <div class="column is-2">
+      
+      <div class="toc">
+  <h2 class="title">The DistributedLog API</h2>
+  <ul class="section-nav">
+</ul>
+</div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+<div id="entry-popover-html" class="popover-template">
+  <p>An entry is a sequence of bytes written to a BookKeeper ledger.</p>
+
+</div>
+
+<div id="ledger-popover-html" class="popover-template">
+  <p>A ledger is a sequence of entries written to BookKeeper. Entries are written sequentially to ledgers and at most once, giving ledgers append-only semantics.</p>
+
+</div>
+
+<div id="bookie-popover-html" class="popover-template">
+  <p>A bookie is an individial BookKeeper storage server. Bookies store the content of ledgers and act as an ensemble.</p>
+
+</div>
+
+<div id="striping-popover-html" class="popover-template">
+  <p>Striping is the process of distributing BookKeeper ledgers to sub-groups of bookies rather than to all bookies in a BookKeeper ensemble. Striping is essential to ensuring fast performance.</p>
+
+</div>
+
+<div id="journal-popover-html" class="popover-template">
+  <p>A journal file stores BookKeeper transaction logs.</p>
+
+</div>
+
+
+<script type="text/javascript">
+
+tippy('#entry-popover', {
+  html: '#entry-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#ledger-popover', {
+  html: '#ledger-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#bookie-popover', {
+  html: '#bookie-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#striping-popover', {
+  html: '#striping-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#journal-popover', {
+  html: '#journal-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+</script>
+
+
+    </main>
+
+    <footer class="footer">
+  <div class="container">
+    <div class="content has-text-centered">
+      <p>
+        <strong>Apache BookKeeper</strong> is an Apache project.
+      </p>
+      <p>
+        <a class="icon" href="https://github.com/apache/bookkeeper">
+          <i class="fa fa-github"></i>
+        </a>
+        <a class="icon" href="https://stackoverflow.com/search?q=apache+bookkeeper">
+          <i class="fa fa-stack-overflow"></i>
+        </a>
+      </p>
+    </div>
+  </div>
+</footer>
+
+  </body>
+
+  <script src="/bookkeeper/js/app.js"></script>
+
+</html>

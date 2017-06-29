@@ -15,6 +15,13 @@
 
 <script src="/bookkeeper/js/tippy.min.js"></script>
 
+<script type="text/javascript">
+  var shiftWindow = function() { scrollBy(0, -30); };
+  window.addEventListener("hashchange", shiftWindow);
+  window.addEventListener("pageshow", shiftWindow);
+  function load() { if (window.location.hash) shiftWindow(); }
+</script>
+
   </head>
   <body class="body">
     <main class="main">
@@ -137,10 +144,10 @@
     <li><a href="/bookkeeper/docs/api/overview">Overview</a></li>
     
     
-    <li><a href="/bookkeeper/docs/api/ledger">Ledger API</a></li>
+    <li><a href="/bookkeeper/docs/api/ledger-api">Ledger API</a></li>
     
     
-    <li><a href="/bookkeeper/docs/api/distributedlog">DistributedLog API</a></li>
+    <li><a href="/bookkeeper/docs/api/distributedlog-api">DistributedLog API</a></li>
     
   </ul>
   
@@ -166,7 +173,10 @@
     <li><a href="/bookkeeper/docs/reference/config">Configuration</a></li>
     
     
-    <li><a href="/bookkeeper/docs/reference/cli">Command-line reference</a></li>
+    <li><a href="/bookkeeper/docs/reference/cli">Command-line tools</a></li>
+    
+    
+    <li><a href="/bookkeeper/docs/reference/metrics">Metrics</a></li>
     
   </ul>
   

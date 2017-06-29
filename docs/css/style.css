@@ -6734,7 +6734,7 @@ span.pop {
 
 .toc {
   position: fixed;
-  max-width: 12rem; }
+  max-width: 20rem; }
   .toc .section-nav .toc-entry.toc-h2 {
     font-size: 1.2rem; }
   .toc .section-nav .toc-entry.toc-h3 {
