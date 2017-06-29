@@ -430,7 +430,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
             LOG.info("Ledger ID: " + lh.getId());
             for (int i = 0; i < numEntriesToWrite; i++) {
                 int randomInt = rng.nextInt(maxInt);
-                byte[] entry = new String(Integer.toString(randomInt)).getBytes(charset);
+                byte[] entry = Integer.toString(randomInt).getBytes(charset);
                 entries.add(entry);
                 lh.asyncAddEntry(entry, this, sync);
             }
