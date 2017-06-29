@@ -2324,7 +2324,7 @@
   overflow: visible;
   clip: auto; }
 
-.highlighter-rouge.language-shell .highlight .nb, .highlighter-rouge.language-shell .highlight .o, .highlighter-rouge.language-bash .highlight .nb, .highlighter-rouge.language-bash .highlight .o {
+.highlighter-rouge.language-shell .highlight .nb, .highlighter-rouge.language-shell .highlight .o, .highlighter-rouge.language-shell .highlight .k, .highlighter-rouge.language-bash .highlight .nb, .highlighter-rouge.language-bash .highlight .o, .highlighter-rouge.language-bash .highlight .k {
   color: #bcc5c5; }
 .highlighter-rouge pre.highlight {
   padding: 0;
@@ -6698,6 +6698,9 @@ label.panel-block {
   background-color: whitesmoke;
   padding: 3rem 1.5rem 6rem; }
 
+img.logo {
+  height: 3rem; }
+
 .highlighter-rouge + blockquote, .highlighter-rouge + h5, .highlighter-rouge + p {
   margin-top: 1.5rem; }
 
@@ -6754,6 +6757,8 @@ body {
 .bk-docs-container {
   margin-top: 3rem;
   margin-bottom: 6rem; }
+  .bk-docs-container hr {
+    height: 2px; }
   .bk-docs-container .bk-docs-block {
     padding: 0 4rem; }
     .bk-docs-container .bk-docs-block .docs-title .title + .subtitle {

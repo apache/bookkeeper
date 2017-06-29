@@ -84,13 +84,25 @@
   <ul class="menu-list">
     
     
-    <li><a href="/bookkeeper/docs/getting-started/installation">Installation</a></li>
+    <li>
+      <a href="/bookkeeper/docs/getting-started/installation">
+      Installation
+      </a>
+    </li>
     
     
-    <li><a href="/bookkeeper/docs/getting-started/run-locally">Run bookies locally</a></li>
+    <li>
+      <a href="/bookkeeper/docs/getting-started/run-locally">
+      Run bookies locally
+      </a>
+    </li>
     
     
-    <li><a href="/bookkeeper/docs/getting-started/concepts">Concepts and architecture</a></li>
+    <li>
+      <a href="/bookkeeper/docs/getting-started/concepts">
+      Concepts and architecture
+      </a>
+    </li>
     
   </ul>
   
@@ -100,13 +112,25 @@
   <ul class="menu-list">
     
     
-    <li><a href="/bookkeeper/docs/deployment/manual">Manual deployment</a></li>
+    <li>
+      <a href="/bookkeeper/docs/deployment/manual">
+      Manual deployment
+      </a>
+    </li>
     
     
-    <li><a href="/bookkeeper/docs/deployment/dcos">BookKeeper on DC/OS</a></li>
+    <li>
+      <a href="/bookkeeper/docs/deployment/dcos">
+      BookKeeper on DC/OS
+      </a>
+    </li>
     
     
-    <li><a href="/bookkeeper/docs/deployment/kubernetes">BookKeeper on Kubernetes</a></li>
+    <li>
+      <a href="/bookkeeper/docs/deployment/kubernetes">
+      BookKeeper on Kubernetes
+      </a>
+    </li>
     
   </ul>
   
@@ -116,22 +140,46 @@
   <ul class="menu-list">
     
     
-    <li><a href="/bookkeeper/docs/admin/bookies">BookKeeper administration</a></li>
+    <li>
+      <a href="/bookkeeper/docs/admin/bookies">
+      BookKeeper administration
+      </a>
+    </li>
     
     
-    <li><a href="/bookkeeper/docs/admin/autorecovery">Setting up AutoRecovery</a></li>
+    <li>
+      <a href="/bookkeeper/docs/admin/autorecovery">
+      Setting up AutoRecovery
+      </a>
+    </li>
     
     
-    <li><a href="/bookkeeper/docs/admin/metrics">Metric collection</a></li>
+    <li>
+      <a href="/bookkeeper/docs/admin/metrics">
+      Metric collection
+      </a>
+    </li>
     
     
-    <li><a href="/bookkeeper/docs/admin/geo-replication">Geo-replication</a></li>
+    <li>
+      <a href="/bookkeeper/docs/admin/geo-replication">
+      Geo-replication
+      </a>
+    </li>
     
     
-    <li><a href="/bookkeeper/docs/admin/placement">Customized placement policies</a></li>
+    <li>
+      <a href="/bookkeeper/docs/admin/placement">
+      Customized placement policies
+      </a>
+    </li>
     
     
-    <li><a href="/bookkeeper/docs/admin/perf">Performance tuning</a></li>
+    <li>
+      <a href="/bookkeeper/docs/admin/perf">
+      Performance tuning
+      </a>
+    </li>
     
   </ul>
   
@@ -141,13 +189,25 @@
   <ul class="menu-list">
     
     
-    <li><a href="/bookkeeper/docs/api/overview">Overview</a></li>
+    <li>
+      <a href="/bookkeeper/docs/api/overview">
+      Overview
+      </a>
+    </li>
     
     
-    <li><a href="/bookkeeper/docs/api/ledger-api">Ledger API</a></li>
+    <li>
+      <a href="/bookkeeper/docs/api/ledger-api">
+      Ledger API
+      </a>
+    </li>
     
     
-    <li><a href="/bookkeeper/docs/api/distributedlog-api">DistributedLog API</a></li>
+    <li>
+      <a href="/bookkeeper/docs/api/distributedlog-api">
+      DistributedLog API
+      </a>
+    </li>
     
   </ul>
   
@@ -157,10 +217,18 @@
   <ul class="menu-list">
     
     
-    <li><a href="/bookkeeper/docs/development/protocol">BookKeeper protocol</a></li>
+    <li>
+      <a href="/bookkeeper/docs/development/protocol">
+      BookKeeper protocol
+      </a>
+    </li>
     
     
-    <li><a href="/bookkeeper/docs/development/codebase">Codebase</a></li>
+    <li>
+      <a href="/bookkeeper/docs/development/codebase">
+      Codebase
+      </a>
+    </li>
     
   </ul>
   
@@ -170,13 +238,25 @@
   <ul class="menu-list">
     
     
-    <li><a href="/bookkeeper/docs/reference/config">Configuration</a></li>
+    <li>
+      <a href="/bookkeeper/docs/reference/config">
+      Configuration
+      </a>
+    </li>
     
     
-    <li><a href="/bookkeeper/docs/reference/cli">Command-line tools</a></li>
+    <li>
+      <a href="/bookkeeper/docs/reference/cli">
+      Command-line tools
+      </a>
+    </li>
     
     
-    <li><a href="/bookkeeper/docs/reference/metrics">Metrics</a></li>
+    <li>
+      <a href="/bookkeeper/docs/reference/metrics">
+      Metrics
+      </a>
+    </li>
     
   </ul>
   
@@ -185,17 +265,125 @@
     </div>
 
     <div class="column is-8 bk-docs-block">
+      <header class="docs-title">
+        <nav class="level">
+          <div class="level-left">
+            <div class="level-item">
+              <h1 class="title">Deploying BookKeeper on DC/OS</h1>
+            </div>
+          </div>
+          
+          <div class="level-right">
+            <div class="level-item">
+              <img class="logo" src="/img/dcos-logo.png">
+            </div>
+          </div>
+          
+        </nav>
+
+        <h2 class="subtitle">Get up and running easily on an Apache Mesos cluster</h2>
+      </header>
+
+      <hr />
+
       <div class="content is-medium">
-        <header class="docs-title">
-          <h1 class="title">Deploying BookKeeper on DC/OS</h1>
-          
-          
-        </header>
-
-        <hr />
-
         <section class="bk-docs-content">
-          
+          <p><a href="https://dcos.io/">DC/OS</a> (the <strong>D</strong>ata<strong>C</strong>enter <strong>O</strong>perating <strong>S</strong>ystem) is a distributed operating system used for deploying and managing applications and systems on <a href="http://mesos.apache.org/">Apache Mesos</a>. DC/OS is an open-source tool created and maintained by <a href="https://mesosphere.com/">Mesosphere</a>.</p>
+
+<p>BookKeeper is available as a <a href="http://universe.dcos.io/#/package/bookkeeper/version/latest">DC/OS package</a> from the <a href="http://universe.dcos.io/#/packages">Mesosphere DC/OS Universe</a>.</p>
+
+<h2 id="prerequisites">Prerequisites</h2>
+
+<p>In order to run BookKeeper on DC/OS, you will need:</p>
+
+<ul>
+  <li>DC/OS version <a href="https://dcos.io/docs/1.8/">1.8</a> or higher</li>
+  <li>A DC/OS cluster with at least three nodes</li>
+  <li>The <a href="https://dcos.io/docs/1.8/usage/cli/install/">DC/OS CLI tool</a> installed</li>
+</ul>
+
+<p>Each node in the cluster must have at least:</p>
+
+<ul>
+  <li>1 CPU</li>
+  <li>1 GB of memory</li>
+  <li>10 GB of total persistent disk storage</li>
+</ul>
+
+<h2 id="installing-bookkeeper">Installing BookKeeper</h2>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>dcos package install bookkeeper --yes
+</code></pre>
+</div>
+
+<p>This command will:</p>
+
+<ul>
+  <li>Install the <code class="highlighter-rouge">bookkeeper</code> subcommand for the <code class="highlighter-rouge">dcos</code> CLI tool</li>
+  <li>Start a single <span class="pop" id="bookie-popover">bookie</span> on the Mesos cluster with the <a href="../../reference/config">default configuration</a></li>
+</ul>
+
+<p>The bookie that is automatically started up uses the host mode of the network and by default exports the service at <code class="highlighter-rouge">agent_ip:3181</code>.</p>
+
+<h3 id="services">Services</h3>
+
+<p>To watch BookKeeper start up, click on the <strong>Services</strong> tab in the DC/OS <a href="https://docs.mesosphere.com/latest/gui/">user interface</a>.</p>
+
+<p><img src="/img/dcos/services.png" alt="DC/OS services" /></p>
+
+<h3 id="tasks">Tasks</h3>
+
+<p>To see which tasks have started, click on the BookKeeper service.</p>
+
+<p><img src="/img/dcos/tasks.png" alt="DC/OS tasks" /></p>
+
+<h3 id="scale">Scale</h3>
+
+<p>Once the first <span class="pop" id="bookie-popover">bookie</span> has started up, you can click on the <strong>Scale</strong> tab to scale up your BookKeeper ensemble by adding more bookies (or removing bookies to scale the ensemble down).</p>
+
+<p><img src="/img/dcos/scale.png" alt="DC/OS scale" /></p>
+
+<h3 id="zookeeper-exhibitor">ZooKeeper Exhibitor</h3>
+
+<p>ZooKeeper contains the information for all bookies in the ensemble. When deployed on DC/OS, BookKeeper uses a ZooKeeper instance provided by DC/OS. You can access a visual UI for ZooKeeper using <a href="https://github.com/soabase/exhibitor/wiki">Exhibitor</a>, which is available at <a href="http://master.dcos/exhibitor">http://master.dcos/exhibitor</a>.</p>
+
+<p><img src="/img/dcos/exhibitor.png" alt="ZooKeeper Exhibitor" /></p>
+
+<p>You should see a listing of IP/host information for all bookies under <code class="highlighter-rouge">messaging/bookkeeper/ledgers/available</code>.</p>
+
+<h2 id="client-connections">Client connections</h2>
+
+<p>To connect to bookies running on DC/OS using clients, you need to specify the ZooKeeper connection string for DC/OS’s ZooKeeper cluster:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>master.mesos:2181
+</code></pre>
+</div>
+
+<p>This is the <em>only</em> ZooKeeper host/port you need to include in your connection string.</p>
+
+<h2 id="configuring-bookkeeper">Configuring BookKeeper</h2>
+
+<p>You can configure BookKeeper for DC/OS using a JSON file.</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>dcos package install bookkeeper <span class="se">\</span>
+  --config<span class="o">=</span>my-bk-dcos-config.json
+</code></pre>
+</div>
+
+<p>You can then fetch the current configuration for BookKeeper at any time using the <code class="highlighter-rouge">package describe</code> command:</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>dcos package describe bookkeeper <span class="se">\</span>
+  --config
+</code></pre>
+</div>
+
+<h2 id="uninstalling-bookkeeper">Uninstalling BookKeeper</h2>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>dcos package uninstall bookkeeper
+Uninstalled package <span class="o">[</span>bookkeeper] version <span class="o">[</span>4.5.0]
+Thank you <span class="k">for </span>using bookkeeper.
+</code></pre>
+</div>
 
         </section>
 
@@ -208,6 +396,15 @@
       <div class="toc">
   <h2 class="title">Deploying BookKeeper on DC/OS</h2>
   <ul class="section-nav">
+<li class="toc-entry toc-h2"><a href="#prerequisites">Prerequisites</a></li>
+<li class="toc-entry toc-h2"><a href="#installing-bookkeeper">Installing BookKeeper</a></li>
+<li class="toc-entry toc-h3"><a href="#services">Services</a></li>
+<li class="toc-entry toc-h3"><a href="#tasks">Tasks</a></li>
+<li class="toc-entry toc-h3"><a href="#scale">Scale</a></li>
+<li class="toc-entry toc-h3"><a href="#zookeeper-exhibitor">ZooKeeper Exhibitor</a></li>
+<li class="toc-entry toc-h2"><a href="#client-connections">Client connections</a></li>
+<li class="toc-entry toc-h2"><a href="#configuring-bookkeeper">Configuring BookKeeper</a></li>
+<li class="toc-entry toc-h2"><a href="#uninstalling-bookkeeper">Uninstalling BookKeeper</a></li>
 </ul>
 </div>
 
@@ -229,7 +426,9 @@
 </div>
 
 <div id="bookie-popover-html" class="popover-template">
-  <p>A bookie is an individial BookKeeper storage server. Bookies store the content of ledgers and act as an ensemble.</p>
+  <p>A bookie is an individial BookKeeper storage server.</p>
+
+<p>Bookies store the content of ledgers and act as a distributed ensemble.</p>
 
 </div>
 
