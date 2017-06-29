@@ -164,9 +164,7 @@ public class BookieInfoReader {
                     bookieInfoMap.remove(b);
                     this.bookies.remove(b);
                 }
-                for (BookieSocketAddress b : joinedBookies) {
-                    this.bookies.add(b);
-                }
+                this.bookies.addAll(joinedBookies);
             } else {
                 joinedBookies = this.bookies = newBookiesList;
             }
