@@ -50,8 +50,8 @@ public abstract class BookieException extends Exception {
             return new InvalidCookieException();
         case Code.UpgradeException:
             return new UpgradeException();
-        case Code.DirsPartitionDuplicationException:
-            return new DirsPartitionDuplicationException();
+        case Code.DiskPartitionDuplicationException:
+            return new DiskPartitionDuplicationException();
         default:
             return new BookieIllegalOpException();
         }
@@ -66,7 +66,7 @@ public abstract class BookieException extends Exception {
 
         int InvalidCookieException = -102;
         int UpgradeException = -103;
-        int DirsPartitionDuplicationException = -104;
+        int DiskPartitionDuplicationException = -104;
     }
 
     public void setCode(int code) {
@@ -95,8 +95,8 @@ public abstract class BookieException extends Exception {
         case Code.UpgradeException:
             err = "Error performing an upgrade operation ";
             break;
-        case Code.DirsPartitionDuplicationException:
-            err = "Dirs Partition Duplication is not allowed";
+        case Code.DiskPartitionDuplicationException:
+            err = "Disk Partition Duplication is not allowed";
             break;
         default:
             err = "Invalid operation";
@@ -161,17 +161,17 @@ public abstract class BookieException extends Exception {
         }
     }
     
-    public static class DirsPartitionDuplicationException extends BookieException {
-        public DirsPartitionDuplicationException() {
-            super(Code.DirsPartitionDuplicationException);
+    public static class DiskPartitionDuplicationException extends BookieException {
+        public DiskPartitionDuplicationException() {
+            super(Code.DiskPartitionDuplicationException);
         }
 
-        public DirsPartitionDuplicationException(Throwable cause) {
-            super(Code.DirsPartitionDuplicationException, cause);
+        public DiskPartitionDuplicationException(Throwable cause) {
+            super(Code.DiskPartitionDuplicationException, cause);
         }
 
-        public DirsPartitionDuplicationException(String reason) {
-            super(Code.DirsPartitionDuplicationException, reason);
+        public DiskPartitionDuplicationException(String reason) {
+            super(Code.DiskPartitionDuplicationException, reason);
         }
     }
 }

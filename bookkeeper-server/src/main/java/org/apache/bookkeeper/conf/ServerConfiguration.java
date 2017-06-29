@@ -151,7 +151,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     
     protected final static String MIN_USABLESIZE_FOR_INDEXFILE_CREATION = "minUsableSizeForIndexFileCreation";
 
-    protected final static String ALLOW_MULTIPLEDIRS_UNDER_SAME_PARTITION = "allowMultipleDirsUnderSamePartition";
+    protected final static String ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION = "allowMultipleDirsUnderSameDiskPartition";
 
     /**
      * Construct a default configuration object
@@ -2033,25 +2033,25 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * returns whether it is allowed to have multiple ledger/index Directories in the same 
-     * filesystem partition
+     * returns whether it is allowed to have multiple ledger/index/journal
+     * Directories in the same filesystem diskpartition
      *
-     * @return  
+     * @return
      */
-    public boolean isAllowMultipleDirsUnderSamePartition() {
-        return this.getBoolean(ALLOW_MULTIPLEDIRS_UNDER_SAME_PARTITION, true);
+    public boolean isAllowMultipleDirsUnderSameDiskPartition() {
+        return this.getBoolean(ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION, true);
     }
 
     /**
-     * Configure the Bookie to allow/disallow multiple ledger/index directories in the same 
-     * filesystem partition
+     * Configure the Bookie to allow/disallow multiple ledger/index/journal
+     * directories in the same filesystem diskpartition
      *
      * @param allow
-     *          
+     * 
      * @return server configuration object.
      */
-    public ServerConfiguration setAllowMultipleDirsUnderSamePartition(boolean allow) {
-        this.setProperty(ALLOW_MULTIPLEDIRS_UNDER_SAME_PARTITION, allow);
+    public ServerConfiguration setAllowMultipleDirsUnderSameDiskPartition(boolean allow) {
+        this.setProperty(ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION, allow);
         return this;
     }
 }

@@ -61,7 +61,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-import org.apache.bookkeeper.bookie.BookieException.DirsPartitionDuplicationException;
+import org.apache.bookkeeper.bookie.BookieException.DiskPartitionDuplicationException;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
@@ -380,9 +380,10 @@ public class Bookie extends BookieCriticalThread {
             }
             
             List<File> ledgerDirs = ledgerDirsManager.getAllLedgerDirs();
-            checkIfDirsOnSamePartition(ledgerDirs);
+            checkIfDirsOnSameDiskPartition(ledgerDirs);
             List<File> indexDirs = indexDirsManager.getAllLedgerDirs();
-            checkIfDirsOnSamePartition(indexDirs);
+            checkIfDirsOnSameDiskPartition(indexDirs);
+            checkIfDirsOnSameDiskPartition(journalDirectories);
         } catch (KeeperException ke) {
             LOG.error("Couldn't access cookie in zookeeper", ke);
             throw new BookieException.InvalidCookieException(ke);
@@ -399,17 +400,17 @@ public class Bookie extends BookieCriticalThread {
     }
 
     /**
-     * Checks if multiple directories are in same partition/filesystem/device.
-     * If ALLOW_DIRS_PARTITION_DUPLICATION config parameter is not enabled, and
-     * if it is found that there are multiple directories in the same Partition then
-     * it will throw DirsPartitionDuplicationException.
+     * Checks if multiple directories are in same diskpartition/filesystem/device.
+     * If ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION config parameter is not enabled, and
+     * if it is found that there are multiple directories in the same DiskPartition then
+     * it will throw DiskPartitionDuplicationException.
      * 
      * @param dirs dirs to validate
      * 
      * @throws IOException
      */
-    private void checkIfDirsOnSamePartition(List<File> dirs) throws DirsPartitionDuplicationException {
-        boolean allowPartitionDuplication = conf.isAllowMultipleDirsUnderSamePartition();
+    private void checkIfDirsOnSameDiskPartition(List<File> dirs) throws DiskPartitionDuplicationException {
+        boolean allowDiskPartitionDuplication = conf.isAllowMultipleDirsUnderSameDiskPartition();
         final MutableBoolean isDuplicationFoundAndNotAllowed = new MutableBoolean(false);
         Map<FileStore, List<File>> fileStoreDirsMap = new HashMap<FileStore, List<File>>();
         for (File dir : dirs) {
@@ -418,7 +419,7 @@ public class Bookie extends BookieCriticalThread {
                 fileStore = Files.getFileStore(dir.toPath());
             } catch (IOException e) {
                 LOG.error("Got IOException while trying to FileStore of {}", dir);
-                throw new BookieException.DirsPartitionDuplicationException(e);
+                throw new BookieException.DiskPartitionDuplicationException(e);
             }
             if (fileStoreDirsMap.containsKey(fileStore)) {
                 fileStoreDirsMap.get(fileStore).add(dir);
@@ -431,16 +432,16 @@ public class Bookie extends BookieCriticalThread {
 
         fileStoreDirsMap.forEach((fileStore, dirsList) -> {
             if (dirsList.size() > 1) {
-                if (allowPartitionDuplication) {
-                    LOG.warn("Dirs: {} are in same Partition/FileSystem: {}", dirsList, fileStore);
+                if (allowDiskPartitionDuplication) {
+                    LOG.warn("Dirs: {} are in same DiskPartition/FileSystem: {}", dirsList, fileStore);
                 } else {
-                    LOG.error("Dirs: {} are in same Partition/FileSystem: {}", dirsList, fileStore);
+                    LOG.error("Dirs: {} are in same DiskPartition/FileSystem: {}", dirsList, fileStore);
                     isDuplicationFoundAndNotAllowed.setValue(true);
                 }
             }
         });
         if (isDuplicationFoundAndNotAllowed.getValue()) {
-            throw new BookieException.DirsPartitionDuplicationException();
+            throw new BookieException.DiskPartitionDuplicationException();
         }
     }
     

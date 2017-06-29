@@ -28,7 +28,7 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.InetAddress;
 
-import org.apache.bookkeeper.bookie.BookieException.DirsPartitionDuplicationException;
+import org.apache.bookkeeper.bookie.BookieException.DiskPartitionDuplicationException;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -527,27 +527,72 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             // expected
         }
     }
-    
+
     /**
-     * if ALLOW_DIRS_PARTITION_DUPLICATION is disabled then Bookie initialization
-     * will fail if there are multiple ledger/index dirs are in same partition/filesystem.
+     * if ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION is disabled then Bookie initialization
+     * will fail if there are multiple ledger/index/journal dirs are in same partition/filesystem.
      */
     @Test(timeout = 2000000)
-    public void testAllowDirsPartitionDuplicationDisabled() throws Exception {
+    public void testAllowDiskPartitionDuplicationDisabled() throws Exception {
         File tmpDir1 = createTempDir("bookie", "test");
         File tmpDir2 = createTempDir("bookie", "test");
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
-        int port = 12555;
+        int port = PortManager.nextFreePort();
+        // multiple ledgerdirs in same diskpartition
         conf.setZkServers(zkUtil.getZooKeeperConnectString()).setZkTimeout(5000).setBookiePort(port)
-                .setJournalDirName(tmpDir1.getPath())
-                .setLedgerDirNames(new String[] { tmpDir1.getPath(), tmpDir2.getPath() });
-        conf.setAllowMultipleDirsUnderSamePartition(false);
+        .setJournalDirName(tmpDir1.getPath())
+        .setLedgerDirNames(new String[] { tmpDir1.getPath(), tmpDir2.getPath() })
+        .setIndexDirName(new String[] { tmpDir1.getPath()});;
+        conf.setAllowMultipleDirsUnderSameDiskPartition(false);
         BookieServer bs1 = null;
         try {
             bs1 = new BookieServer(conf);
-            Assert.fail("Bookkeeper should not have started since AllowDirsPartitionDuplication is not enabled");
-        } catch (DirsPartitionDuplicationException dpde) {
+            Assert.fail("Bookkeeper should not have started since AllowMultipleDirsUnderSameDiskPartition is not enabled");
+        } catch (DiskPartitionDuplicationException dpde) {
+            // Expected
+        } finally {
+            if (bs1 != null) {
+                bs1.shutdown();
+            }
+        }
+
+        tmpDir1 = createTempDir("bookie", "test");
+        tmpDir2 = createTempDir("bookie", "test");
+        port = PortManager.nextFreePort();
+        // multiple indexdirs in same diskpartition
+        conf.setZkServers(zkUtil.getZooKeeperConnectString()).setZkTimeout(5000).setBookiePort(port)
+        .setJournalDirName(tmpDir1.getPath())
+        .setLedgerDirNames(new String[] { tmpDir1.getPath() })
+        .setIndexDirName(new String[] { tmpDir1.getPath(), tmpDir2.getPath() });
+        conf.setAllowMultipleDirsUnderSameDiskPartition(false);
+        bs1 = null;
+        try {
+            bs1 = new BookieServer(conf);
+            Assert.fail("Bookkeeper should not have started since AllowMultipleDirsUnderSameDiskPartition is not enabled");
+        } catch (DiskPartitionDuplicationException dpde) {
+            // Expected
+        } finally {
+            if (bs1 != null) {
+                bs1.shutdown();
+            }
+        }
+
+        tmpDir1 = createTempDir("bookie", "test");
+        tmpDir2 = createTempDir("bookie", "test");
+        port = PortManager.nextFreePort();
+        // multiple journaldirs in same diskpartition
+        conf.setZkServers(zkUtil.getZooKeeperConnectString()).setZkTimeout(5000).setBookiePort(port)
+        .setJournalDirsName(new String[] { tmpDir1.getPath(), tmpDir2.getPath() })
+        .setLedgerDirNames(new String[] { tmpDir1.getPath() })
+        .setIndexDirName(new String[] { tmpDir1.getPath()});
+        conf.setAllowMultipleDirsUnderSameDiskPartition(false);
+        bs1 = null;
+        try {
+            bs1 = new BookieServer(conf);
+            Assert.fail(
+                    "Bookkeeper should not have started since AllowMultipleDirsUnderSameDiskPartition is not enabled");
+        } catch (DiskPartitionDuplicationException dpde) {
             // Expected
         } finally {
             if (bs1 != null) {
@@ -555,27 +600,32 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             }
         }
     }
-    
+
     /**
-     * if ALLOW_DIRS_PARTITION_DUPLICATION is enabled then Bookie initialization
-     * should succeed even if there are multiple ledger/index dirs in the same partition/filesystem.
+     * if ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION is enabled then Bookie initialization
+     * should succeed even if there are multiple ledger/index/journal dirs in the same diskpartition/filesystem.
      */
     @Test(timeout = 2000000)
-    public void testAllowDirsPartitionDuplicationAllowed() throws Exception {
+    public void testAllowDiskPartitionDuplicationAllowed() throws Exception {
         File tmpDir1 = createTempDir("bookie", "test");
         File tmpDir2 = createTempDir("bookie", "test");
+        File tmpDir3 = createTempDir("bookie", "test");
+        File tmpDir4 = createTempDir("bookie", "test");
+        File tmpDir5 = createTempDir("bookie", "test");
+        File tmpDir6 = createTempDir("bookie", "test");
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         int port = 12555;
         conf.setZkServers(zkUtil.getZooKeeperConnectString()).setZkTimeout(5000).setBookiePort(port)
-                .setJournalDirName(tmpDir1.getPath())
-                .setLedgerDirNames(new String[] { tmpDir1.getPath(), tmpDir2.getPath() });
-        conf.setAllowMultipleDirsUnderSamePartition(true);
+                .setJournalDirsName(new String[] { tmpDir1.getPath(), tmpDir2.getPath() })
+                .setLedgerDirNames(new String[] { tmpDir3.getPath(), tmpDir4.getPath() })
+                .setIndexDirName(new String[] { tmpDir5.getPath(), tmpDir6.getPath() });
+        conf.setAllowMultipleDirsUnderSameDiskPartition(true);
         BookieServer bs1 = null;
         try {
             bs1 = new BookieServer(conf);          
-        } catch (DirsPartitionDuplicationException dpde) {
-            Assert.fail("Bookkeeper should have started since AllowDirsPartitionDuplication is enabled");
+        } catch (DiskPartitionDuplicationException dpde) {
+            Assert.fail("Bookkeeper should have started since AllowMultipleDirsUnderSameDiskPartition is enabled");
         } finally {
             if (bs1 != null) {
                 bs1.shutdown();
