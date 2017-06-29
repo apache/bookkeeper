@@ -241,7 +241,7 @@ public class ZkUtils {
         });
 
         synchronized (ctx) {
-            while (ctx.done == false) {
+            while (!ctx.done) {
                 ctx.wait();
             }
         }

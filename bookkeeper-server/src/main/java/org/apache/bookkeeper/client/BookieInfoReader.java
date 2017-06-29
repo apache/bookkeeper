@@ -123,7 +123,7 @@ public class BookieInfoReader {
      */
     @SuppressWarnings("unchecked")
     void getReadWriteBookieInfo(Collection<BookieSocketAddress> newBookiesList) {
-        if (instanceRunning.get() == false) {
+        if (!instanceRunning.get()) {
             instanceRunning.compareAndSet(false, true);
         } else {
             isQueued.set(true);
