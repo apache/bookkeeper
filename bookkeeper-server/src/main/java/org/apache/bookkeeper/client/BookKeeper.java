@@ -21,6 +21,9 @@
 package org.apache.bookkeeper.client;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -29,6 +32,7 @@ import io.netty.util.HashedWheelTimer;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -36,15 +40,13 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import com.google.common.base.Optional;
-import com.google.common.base.Preconditions;
-
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.IsClosedCallback;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.feature.SettableFeatureProvider;
 import org.apache.bookkeeper.meta.CleanupLedgerManager;
@@ -70,9 +72,6 @@ import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
-import java.util.concurrent.CompletableFuture;
 
 /**
  * BookKeeper client. We assume there is one single writer to a ledger at any
@@ -86,7 +85,6 @@ import java.util.concurrent.CompletableFuture;
  *
  *
  */
-
 public class BookKeeper implements AutoCloseable {
 
     static final Logger LOG = LoggerFactory.getLogger(BookKeeper.class);
@@ -122,7 +120,10 @@ public class BookKeeper implements AutoCloseable {
     final HashedWheelTimer requestTimer;
     final boolean ownTimer;
     final FeatureProvider featureProvider;
-    ScheduledExecutorService bookieInfoScheduler;
+    final ScheduledExecutorService bookieInfoScheduler;
+
+    // Features
+    final Feature disableEnsembleChangeFeature;
 
     // Ledger manager responsible for how to store ledger meta data
     final LedgerManagerFactory ledgerManagerFactory;
@@ -135,6 +136,9 @@ public class BookKeeper implements AutoCloseable {
 
     final ClientConfiguration conf;
     final int explicitLacInterval;
+    final boolean delayEnsembleChange;
+
+    final Optional<SpeculativeRequestExecutionPolicy> readSpeculativeRequestPolicy;
 
     // Close State
     boolean closed = false;
@@ -296,6 +300,7 @@ public class BookKeeper implements AutoCloseable {
                        FeatureProvider featureProvider)
             throws IOException, InterruptedException, KeeperException {
         this.conf = conf;
+        this.delayEnsembleChange = conf.getDelayEnsembleChange();
 
         // initialize zookeeper client
         if (zkc == null) {
@@ -341,6 +346,9 @@ public class BookKeeper implements AutoCloseable {
         } else {
             this.featureProvider = featureProvider;
         }
+        
+        // get features
+        this.disableEnsembleChangeFeature = this.featureProvider.getFeature(conf.getDisableEnsembleChangeFeatureName());
 
         // initialize scheduler
         ThreadFactoryBuilder tfb = new ThreadFactoryBuilder().setNameFormat(
@@ -355,6 +363,16 @@ public class BookKeeper implements AutoCloseable {
         // initialize the ensemble placement
         this.placementPolicy = initializeEnsemblePlacementPolicy(conf,
                 dnsResolver, this.requestTimer, this.featureProvider, this.statsLogger);
+
+        if (conf.getFirstSpeculativeReadTimeout() > 0) {
+            this.readSpeculativeRequestPolicy =
+                    Optional.of(new DefaultSpeculativeRequestExecutionPolicy(
+                        conf.getFirstSpeculativeReadTimeout(),
+                        conf.getMaxSpeculativeReadTimeout(),
+                        conf.getSpeculativeReadTimeoutBackoffMultiplier()));
+        } else {
+            this.readSpeculativeRequestPolicy = Optional.<SpeculativeRequestExecutionPolicy>absent();
+        }
 
         // initialize main worker pool
         this.mainWorkerPool = OrderedSafeExecutor.newBuilder()
@@ -378,6 +396,7 @@ public class BookKeeper implements AutoCloseable {
             this.bookieInfoReader.start();
         } else {
             LOG.info("Weighted ledger placement is not enabled");
+            this.bookieInfoScheduler = null;
             this.bookieInfoReader = new BookieInfoReader(this, conf, null);
             this.bookieWatcher.readBookiesBlocking();
         }
@@ -479,6 +498,10 @@ public class BookKeeper implements AutoCloseable {
 
     StatsLogger getStatsLogger() {
         return statsLogger;
+    }
+
+    public Optional<SpeculativeRequestExecutionPolicy> getReadSpeculativeRequestPolicy() {
+        return readSpeculativeRequestPolicy;
     }
 
     /**
