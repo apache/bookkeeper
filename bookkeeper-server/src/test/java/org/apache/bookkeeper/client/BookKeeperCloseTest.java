@@ -40,10 +40,8 @@ import org.slf4j.LoggerFactory;
 import com.google.common.util.concurrent.SettableFuture;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Enumeration;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;

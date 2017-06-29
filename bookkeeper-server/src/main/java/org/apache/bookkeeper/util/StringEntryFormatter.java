@@ -23,8 +23,6 @@ package org.apache.bookkeeper.util;
 
 import java.io.IOException;
 
-import org.apache.commons.configuration.Configuration;
-
 import com.google.protobuf.ByteString;
 
 public class StringEntryFormatter extends EntryFormatter {
