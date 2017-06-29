@@ -546,9 +546,9 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         assertFalse("Log shouldnt exist", log0.exists());
         InterleavedLedgerStorage storage = new InterleavedLedgerStorage();
         storage.initialize(conf, manager, dirs, dirs, checkpointSource, NullStatsLogger.INSTANCE);
-        ledgers.add(1l);
-        ledgers.add(2l);
-        ledgers.add(3l);
+        ledgers.add(1L);
+        ledgers.add(2L);
+        ledgers.add(3L);
         storage.setMasterKey(1, KEY);
         storage.setMasterKey(2, KEY);
         storage.setMasterKey(3, KEY);
@@ -560,8 +560,8 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         storage.shutdown();
 
         assertTrue("Log should exist", log0.exists());
-        ledgers.remove(2l);
-        ledgers.remove(3l);
+        ledgers.remove(2L);
+        ledgers.remove(3L);
 
         storage = new InterleavedLedgerStorage();
         storage.initialize(conf, manager, dirs, dirs, checkpointSource, NullStatsLogger.INSTANCE);
@@ -575,7 +575,7 @@ public class CompactionTest extends BookKeeperClusterTestCase {
         }
         assertFalse("Log shouldnt exist", log0.exists());
 
-        ledgers.add(4l);
+        ledgers.add(4L);
         storage.setMasterKey(4, KEY);
         storage.addEntry(genEntry(4, 1, ENTRY_SIZE)); // force ledger 1 page to flush
 

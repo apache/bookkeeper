@@ -89,8 +89,8 @@ public class LongZkLedgerIdGenerator implements LedgerIdGenerator {
             @Override
             public void operationComplete(int rc, Long result) {
                 if(rc == BKException.Code.OK) {
-                    assert((highBits & 0xFFFFFFFF00000000l) == 0);
-                    assert((result & 0xFFFFFFFF00000000l) == 0);
+                    assert((highBits & 0xFFFFFFFF00000000L) == 0);
+                    assert((result & 0xFFFFFFFF00000000L) == 0);
                     cb.operationComplete(rc, (highBits << 32) | result);
                 }
                 else if(rc == BKException.Code.LedgerIdOverflowException) {

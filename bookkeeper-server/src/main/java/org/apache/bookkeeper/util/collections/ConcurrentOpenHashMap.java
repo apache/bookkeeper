@@ -473,7 +473,7 @@ public class ConcurrentOpenHashMap<K, V> {
         }
     }
 
-    private static final long HashMixer = 0xc6a4a7935bd1e995l;
+    private static final long HashMixer = 0xc6a4a7935bd1e995L;
     private static final int R = 47;
 
     final static <K> long hash(K key) {
