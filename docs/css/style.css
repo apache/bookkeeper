@@ -2324,7 +2324,7 @@
   overflow: visible;
   clip: auto; }
 
-.highlighter-rouge.language-shell .highlight .nb, .highlighter-rouge.language-bash .highlight .nb {
+.highlighter-rouge.language-shell .highlight .nb, .highlighter-rouge.language-shell .highlight .o, .highlighter-rouge.language-bash .highlight .nb, .highlighter-rouge.language-bash .highlight .o {
   color: #bcc5c5; }
 .highlighter-rouge pre.highlight {
   padding: 0;

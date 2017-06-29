@@ -29,7 +29,7 @@ env_vars:
   description: The configuration file for the bookie.
   default: bookkeeper-server/conf/bk_server.conf
 - name: BOOKIE_EXTRA_CLASSPATH
-  description: Extra paths to add to BookKeeper's classpath.
+  description: Extra paths to add to BookKeeper's [classpath](https://en.wikipedia.org/wiki/Classpath_(Java)).
 - name: ENTRY_FORMATTER_CLASS
   description: The entry formatter class used to format entries.
 - name: BOOKIE_PID_DIR

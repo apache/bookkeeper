@@ -8,18 +8,46 @@ groups:
     endpoint: run-locally
   - name: Concepts and architecture
     endpoint: concepts
-- name: Applications
-  dir: applications
+- name: Deployment
+  dir: deployment
   docs:
-  - name: Java client
-    endpoint: java-client
-  - name: Example application
-    endpoint: example-application
+  - name: Manual deployment
+    endpoint: manual
+  - name: BookKeeper on DC/OS
+    endpoint: dcos
+  - name: BookKeeper on Kubernetes
+    endpoint: kubernetes
 - name: Administration
   dir: admin
   docs:
   - name: BookKeeper administration
     endpoint: bookies
+  - name: Setting up AutoRecovery
+    endpoint: autorecovery
+  - name: Metric collection
+    endpoint: metrics
+  - name: Geo-replication
+    endpoint: geo-replication
+  - name: Customized placement policies
+    endpoint: placement
+  - name: Performance tuning
+    endpoint: perf
+- name: API
+  dir: api
+  docs:
+  - name: Overview
+    endpoint: overview
+  - name: Ledger API
+    endpoint: ledger
+  - name: DistributedLog API
+    endpoint: distributedlog
+- name: Development
+  dir: development
+  docs:
+  - name: BookKeeper protocol
+    endpoint: protocol
+  - name: Codebase
+    endpoint: codebase
 - name: Reference
   dir: reference
   docs:
