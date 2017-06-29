@@ -3,7 +3,10 @@
 - term: ledger
   d: A ledger is a sequence of entries written to BookKeeper. Entries are written sequentially to ledgers and at most once, giving ledgers append-only semantics.
 - term: bookie
-  d: A bookie is an individial BookKeeper storage server. Bookies store the content of ledgers and act as an ensemble.
+  d: |
+    A bookie is an individial BookKeeper storage server.
+
+    Bookies store the content of ledgers and act as a distributed ensemble.
 - term: striping
   d: Striping is the process of distributing BookKeeper ledgers to sub-groups of bookies rather than to all bookies in a BookKeeper ensemble. Striping is essential to ensuring fast performance.
 - term: journal

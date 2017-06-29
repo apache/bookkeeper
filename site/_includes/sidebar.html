@@ -6,7 +6,11 @@
   <ul class="menu-list">
     {% for doc in docs %}
     {% capture doc_url %}{{ site.baseurl }}docs/{{ group.dir }}/{{ doc.endpoint }}/{% endcapture %}
-    <li><a{% if doc_url == page.url %} class="is-active"{% endif %} href="{{ site.baseurl }}docs/{{ group.dir }}/{{ doc.endpoint }}">{{ doc.name }}</a></li>
+    <li>
+      <a{% if doc_url == page.url %} class="is-active"{% endif %} href="{{ site.baseurl }}docs/{{ group.dir }}/{{ doc.endpoint }}">
+      {{ doc.name }}
+      </a>
+    </li>
     {% endfor %}
   </ul>
   {% endfor %}

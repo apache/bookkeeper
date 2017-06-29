@@ -9,17 +9,28 @@ layout: default
     </div>
 
     <div class="column is-8 bk-docs-block">
-      <div class="content is-medium">
-        <header class="docs-title">
-          <h1 class="title">{{ page.title }}</h1>
-          {% if page.subtitle %}<h2 class="subtitle">{{ page.subtitle }}</h2>{% endif %}
-          {% if page.javadoc_button %}
-          {% include javadoc-button.html %}
+      <header class="docs-title">
+        <nav class="level">
+          <div class="level-left">
+            <div class="level-item">
+              <h1 class="title">{{ page.title }}</h1>
+            </div>
+          </div>
+          {% if page.logo %}
+          <div class="level-right">
+            <div class="level-item">
+              <img class="logo" src="{{ page.logo }}">
+            </div>
+          </div>
           {% endif %}
-        </header>
+        </nav>
 
-        <hr />
+        {% if page.subtitle %}<h2 class="subtitle">{{ page.subtitle }}</h2>{% endif %}
+      </header>
 
+      <hr />
+
+      <div class="content is-medium">
         <section class="bk-docs-content">
           {{ content }}
         </section>
