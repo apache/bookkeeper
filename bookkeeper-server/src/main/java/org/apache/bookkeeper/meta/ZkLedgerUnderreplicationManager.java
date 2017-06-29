@@ -93,7 +93,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
 
         String getLockZNode() { return lockZNode; }
         int getLedgerZNodeVersion() { return ledgerZNodeVersion; }
-    };
+    }
     private final Map<Long, Lock> heldLocks = new ConcurrentHashMap<Long, Lock>();
     private final Pattern idExtractionPattern;
 

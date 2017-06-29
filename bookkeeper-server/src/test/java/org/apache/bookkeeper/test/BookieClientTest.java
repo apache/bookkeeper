@@ -269,7 +269,7 @@ public class BookieClientTest {
                 this.freeDiskSpace = 0L;
                 this.totalDiskCapacity = 0L;
             }
-        };
+        }
         CallbackObj obj = new CallbackObj(flags);
         bc.getBookieInfo(addr, flags, new GetBookieInfoCallback() {
             @Override

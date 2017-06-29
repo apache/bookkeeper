@@ -520,7 +520,6 @@ public class BookKeeperAdmin implements AutoCloseable {
                 getAvailableBookies(bookieSrc, bookieDest, cb, context);
             }
 
-            ;
         }, null);
     }
 

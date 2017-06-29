@@ -18,7 +18,7 @@
 package org.apache.bookkeeper.metastore;
 
 public class MSWatchedEvent {
-    public enum EventType {CHANGED, REMOVED};
+    public enum EventType {CHANGED, REMOVED}
     
     String key;
     EventType type;

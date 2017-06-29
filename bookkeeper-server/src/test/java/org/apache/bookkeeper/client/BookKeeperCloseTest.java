@@ -470,7 +470,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
     @Test(timeout = 60000)
     public void testBookKeeperAdmin() throws Exception {
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
-        try (BookKeeperAdmin bkadmin = new BookKeeperAdmin(bk);) {
+        try (BookKeeperAdmin bkadmin = new BookKeeperAdmin(bk)) {
 
             LOG.info("Create ledger and add entries to it");
             LedgerHandle lh1 = createLedgerWithEntries(bk, 100);

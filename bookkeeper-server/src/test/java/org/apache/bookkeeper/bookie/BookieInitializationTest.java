@@ -105,7 +105,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                 bookie.zk = zkc;
                 zkc.close();
                 return bookie;
-            };
+            }
         };
 
         bkServer.start();

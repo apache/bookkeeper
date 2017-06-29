@@ -167,7 +167,7 @@ public abstract class BookKeeperClusterTestCase {
      */
     protected void stopBKCluster() throws Exception {
         if (bkc != null) {
-            bkc.close();;
+            bkc.close();
         }
 
         for (BookieServer server : bs) {

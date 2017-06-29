@@ -70,7 +70,7 @@ public class LongZkLedgerIdGenerator implements LedgerIdGenerator {
         UNKNOWN,
         PRESENT,
         NOT_PRESENT
-    };
+    }
 
     public LongZkLedgerIdGenerator(ZooKeeper zk, String ledgersPath, String idGenZnodeName, ZkLedgerIdGenerator shortIdGen, List<ACL> zkAcls) {
         this.zk = zk;

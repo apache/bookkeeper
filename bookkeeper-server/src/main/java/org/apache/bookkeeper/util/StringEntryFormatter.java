@@ -44,4 +44,4 @@ public class StringEntryFormatter extends EntryFormatter {
         }
     }
 
-};
+}

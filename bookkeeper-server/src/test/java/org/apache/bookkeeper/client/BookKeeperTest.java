@@ -297,10 +297,10 @@ public class BookKeeperTest extends BaseTestCase {
         ClientConfiguration conf = new ClientConfiguration()
                 .setZkServers(zkUtil.getZooKeeperConnectString());
         BookKeeper _bkc;
-        try (BookKeeper bkc = new BookKeeper(conf);) {
+        try (BookKeeper bkc = new BookKeeper(conf)) {
             _bkc = bkc;
             long ledgerId;
-            try (LedgerHandle lh = bkc.createLedger(digestType, "testPasswd".getBytes());) {
+            try (LedgerHandle lh = bkc.createLedger(digestType, "testPasswd".getBytes())) {
                 ledgerId = lh.getId();
                 for (int i = 0; i < 100; i++) {
                     lh.addEntry("foobar".getBytes());
@@ -441,7 +441,7 @@ public class BookKeeperTest extends BaseTestCase {
         ClientConfiguration clientConfiguration = new ClientConfiguration()
             .setZkServers(zkUtil.getZooKeeperConnectString());
 
-        try (BookKeeper bkWriter = new BookKeeper(clientConfiguration);) {
+        try (BookKeeper bkWriter = new BookKeeper(clientConfiguration)) {
             LedgerHandle writeLh = bkWriter.createLedger(digestType, "testPasswd".getBytes());
             long ledgerId = writeLh.getId();
             int numOfEntries = 5;
@@ -450,7 +450,7 @@ public class BookKeeperTest extends BaseTestCase {
             }
 
             try (BookKeeper bkReader = new BookKeeper(clientConfiguration);
-                LedgerHandle rlh = bkReader.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes());) {
+                LedgerHandle rlh = bkReader.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes())) {
                 Assert.assertTrue(
                     "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
                     (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
@@ -471,7 +471,7 @@ public class BookKeeperTest extends BaseTestCase {
             }
 
             try (BookKeeper bkReader = new BookKeeper(clientConfiguration);
-                LedgerHandle rlh = bkReader.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes());) {
+                LedgerHandle rlh = bkReader.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes())) {
                 Assert.assertTrue(
                     "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
                     (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
@@ -538,7 +538,7 @@ public class BookKeeperTest extends BaseTestCase {
             restartBookies();
 
             try (BookKeeper bkReader = new BookKeeper(clientConfiguration);
-                LedgerHandle rlh = bkReader.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes());) {
+                LedgerHandle rlh = bkReader.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes())) {
                 Assert.assertTrue(
                     "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
                     (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
@@ -559,7 +559,7 @@ public class BookKeeperTest extends BaseTestCase {
             }
 
             try (BookKeeper bkReader = new BookKeeper(clientConfiguration);
-                LedgerHandle rlh = bkReader.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes());) {
+                LedgerHandle rlh = bkReader.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes())) {
                 Assert.assertTrue(
                     "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
                     (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
@@ -623,7 +623,7 @@ public class BookKeeperTest extends BaseTestCase {
 
             // open ledger with fencing, this will repair the ledger and make the last entry readable
             try (BookKeeper bkReader = new BookKeeper(clientConfiguration);
-                LedgerHandle rlh = bkReader.openLedger(ledgerId, digestType, "testPasswd".getBytes());) {
+                LedgerHandle rlh = bkReader.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
                 Assert.assertTrue(
                     "Expected LAC of rlh: " + (numOfEntries - 1) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
                     (rlh.getLastAddConfirmed() == (numOfEntries - 1)));

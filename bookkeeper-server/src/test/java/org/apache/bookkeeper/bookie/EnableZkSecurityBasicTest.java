@@ -86,8 +86,8 @@ public class EnableZkSecurityBasicTest extends BookKeeperClusterTestCase {
 
         conf.setZkEnableSecurity(true);
 
-        try (BookKeeper bkc = new BookKeeper(conf);) {
-            try (LedgerHandle lh = bkc.createLedger(1, 1, 1, BookKeeper.DigestType.CRC32, "testPasswd".getBytes());) {
+        try (BookKeeper bkc = new BookKeeper(conf)) {
+            try (LedgerHandle lh = bkc.createLedger(1, 1, 1, BookKeeper.DigestType.CRC32, "testPasswd".getBytes())) {
                 lh.addEntry("foo".getBytes(StandardCharsets.UTF_8));
             }
         }
