@@ -1,4 +1,11 @@
 .highlighter-rouge
+  // Language-specific overrides
+  &.language-shell, &.language-bash
+    .highlight
+      .nb
+        // This prevents keywords like cd and help from being highlighted
+        color: $sx-light-gray
+
   pre.highlight
     padding: $sx-padding
     color: $sx-light-gray

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Apache BookKeeper - Documentation</title>
+    <title>Apache BookKeeper - Apache BookKeeper Documentation</title>
 
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -130,7 +130,7 @@
     <div class="column is-8 bk-docs-block">
       <div class="content is-medium">
         <header class="docs-title">
-          <h1 class="title">Documentation</h1>
+          <h1 class="title">Apache BookKeeper Documentation</h1>
           
           
         </header>
@@ -138,7 +138,11 @@
         <hr />
 
         <section class="bk-docs-content">
-          
+          <blockquote>
+  <p>The current version of Apache BookKeeper is <strong>4.5.0</strong>.</p>
+</blockquote>
+
+<p>Welcome to the BookKeeper documentation! These docs can be navigated using the sidebar on the left-hand side of the page.</p>
 
         </section>
 
@@ -147,13 +151,7 @@
     </div>
 
     <div class="column is-2">
-      <div class="toc">
-  <h2 class="title">Documentation</h2>
-  <hr>
-  <ul class="section-nav">
-</ul>
-</div>
-
+      
     </div>
   </div>
 </div>
@@ -161,31 +159,26 @@
 
 
 <div id="entry-popover-html" class="popover-template">
-  <h1>What is an entry?</h1>
   <p>An entry is a sequence of bytes written to a BookKeeper ledger.</p>
 
 </div>
 
 <div id="ledger-popover-html" class="popover-template">
-  <h1>What is a ledger?</h1>
   <p>A ledger is a sequence of entries written to BookKeeper. Entries are written sequentially to ledgers and at most once, giving ledgers append-only semantics.</p>
 
 </div>
 
 <div id="bookie-popover-html" class="popover-template">
-  <h1>What is a bookie?</h1>
   <p>A bookie is an individial BookKeeper storage server. Bookies store the content of ledgers and act as an ensemble.</p>
 
 </div>
 
 <div id="striping-popover-html" class="popover-template">
-  <h1>What is striping?</h1>
   <p>Striping is the process of distributing BookKeeper ledgers to sub-groups of bookies rather than to all bookies in a BookKeeper ensemble. Striping is essential to ensuring fast performance.</p>
 
 </div>
 
 <div id="journal-popover-html" class="popover-template">
-  <h1>What is a journal?</h1>
   <p>A journal file stores BookKeeper transaction logs.</p>
 
 </div>

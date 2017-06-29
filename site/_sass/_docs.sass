@@ -1,0 +1,22 @@
+.bk-docs-container
+  margin-top: $docs-container-vertical-margin
+  margin-bottom: $docs-container-vertical-margin * 2
+
+  aside.menu
+    position: fixed
+
+  .bk-docs-block
+    padding: 0 $docs-side-padding
+
+    .docs-title
+      .title + .subtitle
+        padding-top: .75rem
+        font-size: $base-font-size * 1.2
+
+  .bk-docs-content
+    ul, li
+      margin-left: .75rem
+      list-style-type: square
+
+    & + .pagination
+      margin-top: 2rem

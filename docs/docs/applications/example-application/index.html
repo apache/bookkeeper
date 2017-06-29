@@ -148,7 +148,11 @@
         <hr />
 
         <section class="bk-docs-content">
-          <p>This tutorial walks you through building an example application that uses BookKeeper as the replicated log.</p>
+          <p>This tutorial walks you through building an example application that uses BookKeeper as the replicated log. The application uses the <a href="../java-client">BookKeeper Java client</a> to interact with BookKeeper.</p>
+
+<blockquote>
+  <p>The code for this tutorial can be found in <a href="https://github.com/ivankelly/bookkeeper-tutorial/">this GitHub repo</a>. The final code for the <code class="highlighter-rouge">Dice</code> class can be found <a href="https://github.com/ivankelly/bookkeeper-tutorial/blob/master/src/main/java/org/apache/bookkeeper/Dice.java">here</a>.</p>
+</blockquote>
 
 <h2 id="setup">Setup</h2>
 
@@ -160,31 +164,21 @@
 </code></pre>
 </div>
 
-<h2 id="the-base-application">The base application</h2>
+<p>You can specify a different number of bookies if you’d like.</p>
 
-<p>The application in this tutorial is a dice application. The <code class="highlighter-rouge">Dice</code> class below generates a random number between 1 and 6 every second, prints the value of the dice roll, and runs indefinitely.</p>
+<h2 id="goal">Goal</h2>
 
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Dice</span> <span class="o">{</span>
-    <span class="n">Random</span> <span class="n">r</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Random</span><span class="o">();</span>
+<p>The goal of the dice application is to have</p>
 
-    <span class="kt">void</span> <span class="nf">playDice</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
-        <span class="k">while</span> <span class="o">(</span><span class="kc">true</span><span class="o">)</span> <span class="o">{</span>
-            <span class="n">Thread</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">1000</span><span class="o">);</span>
-            <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Value = "</span> <span class="o">+</span> <span class="o">(</span><span class="n">r</span><span class="o">.</span><span class="na">nextInt</span><span class="o">(</span><span class="mi">6</span><span class="o">)</span> <span class="o">+</span> <span class="mi">1</span><span class="o">));</span>
-        <span class="o">}</span>
-    <span class="o">}</span>
+<ul>
+  <li>multiple instances of this application,</li>
+  <li>possibly running on different machines,</li>
+  <li>all of which display the exact same sequence of numbers.</li>
+</ul>
 
-    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
-        <span class="n">Dice</span> <span class="n">d</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Dice</span><span class="o">();</span>
-        <span class="n">d</span><span class="o">.</span><span class="na">playDice</span><span class="o">();</span>
-    <span class="o">}</span>
-<span class="o">}</span>
-</code></pre>
-</div>
+<p>In other words, the log needs to be both durable and consistent, regardless of how many <span class="pop" id="bookie-popover">bookies</span> are participating in the BookKeeper ensemble. If one of the bookies crashes or becomes unable to communicate with the other bookies in any way, it should <em>still</em> display the same sequence of numbers as the others. This tutorial will show you how to achieve this.</p>
 
-<p>Our goal is to have multiple instances of this application, possibly running on different machine, which each display the exact same sequence of numbers. If one the the instances crashes or becomes unable to communicate with the others in any way, it should still not diverge from the sequence of numbers. This tutorial will show you how to achieve this.</p>
-
-<p>To start, download the base application, compile and run it.</p>
+<p>To begin, download the base application, compile and run it.</p>
 
 <div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>git clone https://github.com/ivankelly/bookkeeper-tutorial.git
 <span class="gp">$ </span>mvn package
@@ -205,6 +199,36 @@
 Value = 4
 Value = 5
 Value = 3
+</code></pre>
+</div>
+
+<h2 id="the-base-application">The base application</h2>
+
+<p>The application in this tutorial is a dice application. The <code class="highlighter-rouge">Dice</code> class below has a <code class="highlighter-rouge">playDice</code> function that generates a random number between 1 and 6 every second, prints the value of the dice roll, and runs indefinitely.</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Dice</span> <span class="o">{</span>
+    <span class="n">Random</span> <span class="n">r</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Random</span><span class="o">();</span>
+
+    <span class="kt">void</span> <span class="nf">playDice</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+        <span class="k">while</span> <span class="o">(</span><span class="kc">true</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">Thread</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">1000</span><span class="o">);</span>
+            <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Value = "</span> <span class="o">+</span> <span class="o">(</span><span class="n">r</span><span class="o">.</span><span class="na">nextInt</span><span class="o">(</span><span class="mi">6</span><span class="o">)</span> <span class="o">+</span> <span class="mi">1</span><span class="o">));</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre>
+</div>
+
+<p>When you run the <code class="highlighter-rouge">main</code> function of this class, a new <code class="highlighter-rouge">Dice</code> object will be instantiated and then run indefinitely:</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Dice</span> <span class="o">{</span>
+    <span class="c1">// other methods</span>
+
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+        <span class="n">Dice</span> <span class="n">d</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Dice</span><span class="o">();</span>
+        <span class="n">d</span><span class="o">.</span><span class="na">playDice</span><span class="o">();</span>
+    <span class="o">}</span>
+<span class="o">}</span>
 </code></pre>
 </div>
 
@@ -345,11 +369,12 @@ Value <span class="o">=</span> 3, isLeader <span class="o">=</span> <span class=
     </div>
 
     <div class="column is-2">
+      
       <div class="toc">
   <h2 class="title">Example application</h2>
-  <hr>
   <ul class="section-nav">
 <li class="toc-entry toc-h2"><a href="#setup">Setup</a></li>
+<li class="toc-entry toc-h2"><a href="#goal">Goal</a></li>
 <li class="toc-entry toc-h2"><a href="#the-base-application">The base application</a></li>
 <li class="toc-entry toc-h2"><a href="#leaders-and-followers-and-a-bit-of-background">Leaders and followers (and a bit of background)</a></li>
 <li class="toc-entry toc-h2"><a href="#why-not-just-use-zookeeper">Why not just use ZooKeeper?</a></li>
@@ -357,6 +382,7 @@ Value <span class="o">=</span> 3, isLeader <span class="o">=</span> <span class=
 </ul>
 </div>
 
+      
     </div>
   </div>
 </div>
@@ -364,31 +390,26 @@ Value <span class="o">=</span> 3, isLeader <span class="o">=</span> <span class=
 
 
 <div id="entry-popover-html" class="popover-template">
-  <h1>What is an entry?</h1>
   <p>An entry is a sequence of bytes written to a BookKeeper ledger.</p>
 
 </div>
 
 <div id="ledger-popover-html" class="popover-template">
-  <h1>What is a ledger?</h1>
   <p>A ledger is a sequence of entries written to BookKeeper. Entries are written sequentially to ledgers and at most once, giving ledgers append-only semantics.</p>
 
 </div>
 
 <div id="bookie-popover-html" class="popover-template">
-  <h1>What is a bookie?</h1>
   <p>A bookie is an individial BookKeeper storage server. Bookies store the content of ledgers and act as an ensemble.</p>
 
 </div>
 
 <div id="striping-popover-html" class="popover-template">
-  <h1>What is striping?</h1>
   <p>Striping is the process of distributing BookKeeper ledgers to sub-groups of bookies rather than to all bookies in a BookKeeper ensemble. Striping is essential to ensuring fast performance.</p>
 
 </div>
 
 <div id="journal-popover-html" class="popover-template">
-  <h1>What is a journal?</h1>
   <p>A journal file stores BookKeeper transaction logs.</p>
 
 </div>

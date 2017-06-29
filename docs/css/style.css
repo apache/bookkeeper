@@ -2324,6 +2324,8 @@
   overflow: visible;
   clip: auto; }
 
+.highlighter-rouge.language-shell .highlight .nb, .highlighter-rouge.language-bash .highlight .nb {
+  color: #bcc5c5; }
 .highlighter-rouge pre.highlight {
   padding: 0;
   color: #bcc5c5;
@@ -6731,7 +6733,8 @@ span.pop {
   display: none; }
 
 .toc {
-  position: fixed; }
+  position: fixed;
+  max-width: 12rem; }
   .toc .section-nav .toc-entry.toc-h2 {
     font-size: 1.2rem; }
   .toc .section-nav .toc-entry.toc-h3 {

@@ -3,7 +3,9 @@ title: The BookKeeper Java client
 javadoc_button: true
 ---
 
-To get started with the Java client for BookKeeper
+To get started with the Java client for BookKeeper, install the `bookkeeper-server` library as a dependency in your Java application.
+
+> For a more in-depth tutorial that involves a real use case for BookKeeper, see the [Example application](../example-application) guide.
 
 ## Installation
 
@@ -11,7 +13,7 @@ The BookKeeper Java client library is available via [Maven Central](http://searc
 
 ### Maven
 
-If you're using [Maven](https://maven.apache.org/) add this to your [`pom.xml`](https://maven.apache.org/guides/introduction/introduction-to-the-pom.html) build configuration file:
+If you're using [Maven](https://maven.apache.org/), add this to your [`pom.xml`](https://maven.apache.org/guides/introduction/introduction-to-the-pom.html) build configuration file:
 
 ```xml
 <!-- in your <properties> block -->
@@ -31,7 +33,7 @@ If you're using [Gradle](https://gradle.org/), add this to your [`build.gradle`]
 
 ```groovy
 dependencies {
-    compile group: 'org.apache.bookkeeper', name: 'bookkeeper', version: '{{ site.bk_version }}'
+    compile group: 'org.apache.bookkeeper', name: 'bookkeeper-server', version: '{{ site.bk_version }}'
 }
 
 // Alternatively:
@@ -78,8 +80,6 @@ There are, however, other ways that you can create a client object:
   ```java
   BookKeeper bkClient = BookKeeper.forConfig(conf).build();
   ```
-
-  > You can also pass in a Curator client object. TODO.
 
 ## Creating ledgers
 

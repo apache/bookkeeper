@@ -39,7 +39,9 @@ layout: default
     </div>
 
     <div class="column is-2">
+      {% unless page.toc_disable %}
       {% include table-of-contents.html %}
+      {% endunless %}
     </div>
   </div>
 </div>

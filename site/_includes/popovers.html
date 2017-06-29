@@ -1,7 +1,6 @@
 {% assign popovers = site.data.popovers %}
 {% for popover in popovers %}
 <div id="{{ popover.term | slug }}-popover-html" class="popover-template">
-  <h1>{{ popover.q }}</h1>
   {{ popover.d | markdownify }}
 </div>
 {% endfor %}

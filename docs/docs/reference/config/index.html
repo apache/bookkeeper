@@ -772,9 +772,9 @@ interface (the interface it uses to establish its identity). By default, loopbac
     </div>
 
     <div class="column is-2">
+      
       <div class="toc">
   <h2 class="title">BookKeeper configuration</h2>
-  <hr>
   <ul class="section-nav">
 <li class="toc-entry toc-h2"><a href="#server-parameters">Server parameters</a></li>
 <li class="toc-entry toc-h2"><a href="#garbage-collection-settings">Garbage collection settings</a></li>
@@ -793,6 +793,7 @@ interface (the interface it uses to establish its identity). By default, loopbac
 </ul>
 </div>
 
+      
     </div>
   </div>
 </div>
@@ -800,31 +801,26 @@ interface (the interface it uses to establish its identity). By default, loopbac
 
 
 <div id="entry-popover-html" class="popover-template">
-  <h1>What is an entry?</h1>
   <p>An entry is a sequence of bytes written to a BookKeeper ledger.</p>
 
 </div>
 
 <div id="ledger-popover-html" class="popover-template">
-  <h1>What is a ledger?</h1>
   <p>A ledger is a sequence of entries written to BookKeeper. Entries are written sequentially to ledgers and at most once, giving ledgers append-only semantics.</p>
 
 </div>
 
 <div id="bookie-popover-html" class="popover-template">
-  <h1>What is a bookie?</h1>
   <p>A bookie is an individial BookKeeper storage server. Bookies store the content of ledgers and act as an ensemble.</p>
 
 </div>
 
 <div id="striping-popover-html" class="popover-template">
-  <h1>What is striping?</h1>
   <p>Striping is the process of distributing BookKeeper ledgers to sub-groups of bookies rather than to all bookies in a BookKeeper ensemble. Striping is essential to ensuring fast performance.</p>
 
 </div>
 
 <div id="journal-popover-html" class="popover-template">
-  <h1>What is a journal?</h1>
   <p>A journal file stores BookKeeper transaction logs.</p>
 
 </div>

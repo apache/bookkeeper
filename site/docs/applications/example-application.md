@@ -3,7 +3,9 @@ title: Example application
 javadoc_button: true
 ---
 
-This tutorial walks you through building an example application that uses BookKeeper as the replicated log.
+This tutorial walks you through building an example application that uses BookKeeper as the replicated log. The application uses the [BookKeeper Java client](../java-client) to interact with BookKeeper.
+
+> The code for this tutorial can be found in [this GitHub repo](https://github.com/ivankelly/bookkeeper-tutorial/). The final code for the `Dice` class can be found [here](https://github.com/ivankelly/bookkeeper-tutorial/blob/master/src/main/java/org/apache/bookkeeper/Dice.java).
 
 ## Setup
 
@@ -15,31 +17,19 @@ To start up a cluster consisting of six bookies locally:
 $ bookkeeper-server/bin/bookkeeper localbookie 6
 ```
 
-## The base application
+You can specify a different number of bookies if you'd like.
 
-The application in this tutorial is a dice application. The `Dice` class below generates a random number between 1 and 6 every second, prints the value of the dice roll, and runs indefinitely.
+## Goal
 
-```java
-public class Dice {
-    Random r = new Random();
+The goal of the dice application is to have
 
-    void playDice() throws InterruptedException {
-        while (true) {
-            Thread.sleep(1000);
-            System.out.println("Value = " + (r.nextInt(6) + 1));
-        }
-    }
+* multiple instances of this application,
+* possibly running on different machines,
+* all of which display the exact same sequence of numbers.
 
-    public static void main(String[] args) throws InterruptedException {
-        Dice d = new Dice();
-        d.playDice();
-    }
-}
-```
+In other words, the log needs to be both durable and consistent, regardless of how many {% pop bookies %} are participating in the BookKeeper ensemble. If one of the bookies crashes or becomes unable to communicate with the other bookies in any way, it should *still* display the same sequence of numbers as the others. This tutorial will show you how to achieve this.
 
-Our goal is to have multiple instances of this application, possibly running on different machine, which each display the exact same sequence of numbers. If one the the instances crashes or becomes unable to communicate with the others in any way, it should still not diverge from the sequence of numbers. This tutorial will show you how to achieve this.
-
-To start, download the base application, compile and run it.
+To begin, download the base application, compile and run it.
 
 ```shell
 $ git clone https://github.com/ivankelly/bookkeeper-tutorial.git
@@ -61,6 +51,36 @@ That should yield output that looks something like this:
 Value = 4
 Value = 5
 Value = 3
+```
+
+## The base application
+
+The application in this tutorial is a dice application. The `Dice` class below has a `playDice` function that generates a random number between 1 and 6 every second, prints the value of the dice roll, and runs indefinitely.
+
+```java
+public class Dice {
+    Random r = new Random();
+
+    void playDice() throws InterruptedException {
+        while (true) {
+            Thread.sleep(1000);
+            System.out.println("Value = " + (r.nextInt(6) + 1));
+        }
+    }
+}
+```
+
+When you run the `main` function of this class, a new `Dice` object will be instantiated and then run indefinitely:
+
+```java
+public class Dice {
+    // other methods
+
+    public static void main(String[] args) throws InterruptedException {
+        Dice d = new Dice();
+        d.playDice();
+    }
+}
 ```
 
 ## Leaders and followers (and a bit of background)

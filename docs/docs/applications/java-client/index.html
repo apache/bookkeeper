@@ -148,7 +148,11 @@
         <hr />
 
         <section class="bk-docs-content">
-          <p>To get started with the Java client for BookKeeper</p>
+          <p>To get started with the Java client for BookKeeper, install the <code class="highlighter-rouge">bookkeeper-server</code> library as a dependency in your Java application.</p>
+
+<blockquote>
+  <p>For a more in-depth tutorial that involves a real use case for BookKeeper, see the <a href="../example-application">Example application</a> guide.</p>
+</blockquote>
 
 <h2 id="installation">Installation</h2>
 
@@ -156,7 +160,7 @@
 
 <h3 id="maven">Maven</h3>
 
-<p>If you’re using <a href="https://maven.apache.org/">Maven</a> add this to your <a href="https://maven.apache.org/guides/introduction/introduction-to-the-pom.html"><code class="highlighter-rouge">pom.xml</code></a> build configuration file:</p>
+<p>If you’re using <a href="https://maven.apache.org/">Maven</a>, add this to your <a href="https://maven.apache.org/guides/introduction/introduction-to-the-pom.html"><code class="highlighter-rouge">pom.xml</code></a> build configuration file:</p>
 
 <div class="language-xml highlighter-rouge"><pre class="highlight"><code><span class="c">&lt;!-- in your &lt;properties&gt; block --&gt;</span>
 <span class="nt">&lt;bookkeeper.version&gt;</span>4.5.0<span class="nt">&lt;/bookkeeper.version&gt;</span>
@@ -175,7 +179,7 @@
 <p>If you’re using <a href="https://gradle.org/">Gradle</a>, add this to your <a href="https://spring.io/guides/gs/gradle/"><code class="highlighter-rouge">build.gradle</code></a> build configuration file:</p>
 
 <div class="language-groovy highlighter-rouge"><pre class="highlight"><code><span class="n">dependencies</span> <span class="o">{</span>
-    <span class="n">compile</span> <span class="nl">group:</span> <span class="s1">'org.apache.bookkeeper'</span><span class="o">,</span> <span class="nl">name:</span> <span class="s1">'bookkeeper'</span><span class="o">,</span> <span class="nl">version:</span> <span class="s1">'4.5.0'</span>
+    <span class="n">compile</span> <span class="nl">group:</span> <span class="s1">'org.apache.bookkeeper'</span><span class="o">,</span> <span class="nl">name:</span> <span class="s1">'bookkeeper-server'</span><span class="o">,</span> <span class="nl">version:</span> <span class="s1">'4.5.0'</span>
 <span class="o">}</span>
 
 <span class="c1">// Alternatively:</span>
@@ -227,10 +231,6 @@
     <div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="n">BookKeeper</span><span class="o">.</span><span class="na">forConfig</span><span class="o">(</span><span class="n">conf</span><span class="o">).</span><span class="na">build</span><span class="o">();</span>
 </code></pre>
     </div>
-
-    <blockquote>
-      <p>You can also pass in a Curator client object. TODO.</p>
-    </blockquote>
   </li>
 </ul>
 
@@ -327,9 +327,9 @@
     </div>
 
     <div class="column is-2">
+      
       <div class="toc">
   <h2 class="title">The BookKeeper Java client</h2>
-  <hr>
   <ul class="section-nav">
 <li class="toc-entry toc-h2"><a href="#installation">Installation</a></li>
 <li class="toc-entry toc-h3"><a href="#maven">Maven</a></li>
@@ -345,6 +345,7 @@
 </ul>
 </div>
 
+      
     </div>
   </div>
 </div>
@@ -352,31 +353,26 @@
 
 
 <div id="entry-popover-html" class="popover-template">
-  <h1>What is an entry?</h1>
   <p>An entry is a sequence of bytes written to a BookKeeper ledger.</p>
 
 </div>
 
 <div id="ledger-popover-html" class="popover-template">
-  <h1>What is a ledger?</h1>
   <p>A ledger is a sequence of entries written to BookKeeper. Entries are written sequentially to ledgers and at most once, giving ledgers append-only semantics.</p>
 
 </div>
 
 <div id="bookie-popover-html" class="popover-template">
-  <h1>What is a bookie?</h1>
   <p>A bookie is an individial BookKeeper storage server. Bookies store the content of ledgers and act as an ensemble.</p>
 
 </div>
 
 <div id="striping-popover-html" class="popover-template">
-  <h1>What is striping?</h1>
   <p>Striping is the process of distributing BookKeeper ledgers to sub-groups of bookies rather than to all bookies in a BookKeeper ensemble. Striping is essential to ensuring fast performance.</p>
 
 </div>
 
 <div id="journal-popover-html" class="popover-template">
-  <h1>What is a journal?</h1>
   <p>A journal file stores BookKeeper transaction logs.</p>
 
 </div>
