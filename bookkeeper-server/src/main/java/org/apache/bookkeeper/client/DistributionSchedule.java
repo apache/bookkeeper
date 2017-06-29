@@ -17,7 +17,11 @@
  */
 package org.apache.bookkeeper.client;
 
+import org.apache.bookkeeper.net.BookieSocketAddress;
+
 import java.util.List;
+import java.util.Map;
+
 /**
  * This interface determins how entries are distributed among bookies.
  *
@@ -45,13 +49,32 @@ interface DistributionSchedule {
          * Add a bookie response and check if quorum has been met
          * @return true if quorum has been met, false otherwise
          */
-        public boolean addBookieAndCheck(int bookieIndexHeardFrom);
+        public boolean completeBookieAndCheck(int bookieIndexHeardFrom);
+
+        /**
+         * Received failure response from a bookie and check if ack quorum
+         * will be broken.
+         *
+         * @param bookieIndexHeardFrom
+         *          bookie index that failed.
+         * @param address
+         *          bookie address
+         * @return true if ack quorum is broken, false otherwise.
+         */
+        public boolean failBookieAndCheck(int bookieIndexHeardFrom, BookieSocketAddress address);
+
+        /**
+         * Return the list of bookies that already failed.
+         *
+         * @return the list of bookies that already failed.
+         */
+        public Map<Integer, BookieSocketAddress> getFailedBookies();
 
         /**
          * Invalidate a previous bookie response.
          * Used for reissuing write requests.
          */
-        public void removeBookie(int bookie);
+        public boolean removeBookieAndCheck(int bookie);
     }
 
     /**
@@ -66,19 +89,25 @@ interface DistributionSchedule {
      */
     public interface QuorumCoverageSet {
         /**
-         * Add a bookie to the set, and check if all quorum in the set
-         * have had the action performed for it.
+         * Add a bookie to the result set
+         *
          * @param bookieIndexHeardFrom Bookie we've just heard from
+         */
+        void addBookie(int bookieIndexHeardFrom, int rc);
+
+        /**
+         * check if all quorum in the set have had the action performed for it.
+         *
          * @return whether all quorums have been covered
          */
-        public boolean addBookieAndCheckCovered(int bookieIndexHeardFrom);
+        boolean checkCovered();
     }
 
     public QuorumCoverageSet getCoverageSet();
-    
+
     /**
      * Whether entry presents on given bookie index
-     * 
+     *
      * @param entryId
      *            - entryId to check the presence on given bookie index
      * @param bookieIndex
