@@ -370,17 +370,13 @@ public class Auditor implements BookiesListener {
             shutDownTask = false;
         } catch (BKException bke) {
             LOG.error("Exception getting bookie list", bke);
-            shutDownTask &= true;
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
             LOG.error("Interrupted while watching available bookies ", ie);
-            shutDownTask &= true;
         } catch (BKAuditException bke) {
             LOG.error("Exception while watching available bookies", bke);
-            shutDownTask &= true;
         } catch (KeeperException ke) {
             LOG.error("Exception reading bookie list", ke);
-            shutDownTask &= true;
         }
         if (shutDownTask) {
             submitShutdownTask();

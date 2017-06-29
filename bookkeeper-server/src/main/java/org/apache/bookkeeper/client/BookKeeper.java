@@ -21,6 +21,9 @@
 package org.apache.bookkeeper.client;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -29,15 +32,13 @@ import io.netty.util.HashedWheelTimer;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import com.google.common.base.Optional;
-import com.google.common.base.Preconditions;
 
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
@@ -71,9 +72,6 @@ import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
-import java.util.concurrent.CompletableFuture;
 
 /**
  * BookKeeper client. We assume there is one single writer to a ledger at any
@@ -87,7 +85,6 @@ import java.util.concurrent.CompletableFuture;
  *
  *
  */
-
 public class BookKeeper implements AutoCloseable {
 
     static final Logger LOG = LoggerFactory.getLogger(BookKeeper.class);
@@ -140,6 +137,8 @@ public class BookKeeper implements AutoCloseable {
     final ClientConfiguration conf;
     final int explicitLacInterval;
     final boolean delayEnsembleChange;
+
+    final Optional<SpeculativeRequestExecutionPolicy> readSpeculativeRequestPolicy;
 
     // Close State
     boolean closed = false;
@@ -365,6 +364,16 @@ public class BookKeeper implements AutoCloseable {
         this.placementPolicy = initializeEnsemblePlacementPolicy(conf,
                 dnsResolver, this.requestTimer, this.featureProvider, this.statsLogger);
 
+        if (conf.getFirstSpeculativeReadTimeout() > 0) {
+            this.readSpeculativeRequestPolicy =
+                    Optional.of(new DefaultSpeculativeRequestExecutionPolicy(
+                        conf.getFirstSpeculativeReadTimeout(),
+                        conf.getMaxSpeculativeReadTimeout(),
+                        conf.getSpeculativeReadTimeoutBackoffMultiplier()));
+        } else {
+            this.readSpeculativeRequestPolicy = Optional.<SpeculativeRequestExecutionPolicy>absent();
+        }
+
         // initialize main worker pool
         this.mainWorkerPool = OrderedSafeExecutor.newBuilder()
                 .name("BookKeeperClientWorker")
@@ -489,6 +498,10 @@ public class BookKeeper implements AutoCloseable {
 
     StatsLogger getStatsLogger() {
         return statsLogger;
+    }
+
+    public Optional<SpeculativeRequestExecutionPolicy> getReadSpeculativeRequestPolicy() {
+        return readSpeculativeRequestPolicy;
     }
 
     /**
