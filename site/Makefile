@@ -24,3 +24,5 @@ serve: build
 	${JEKYLL} serve \
 		--incremental \
 		--config _config.local.yml
+
+publish: javadoc build

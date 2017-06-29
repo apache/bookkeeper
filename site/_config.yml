@@ -26,3 +26,4 @@ exclude:
 - local-generated
 - scripts
 - overview
+- README.md
