@@ -275,7 +275,7 @@
           
           <div class="level-right">
             <div class="level-item">
-              <img class="logo" src="/img/dcos-logo.png">
+              <img class="logo" src="/bookkeeper//img/dcos-logo.png">
             </div>
           </div>
           
@@ -329,25 +329,25 @@
 
 <p>To watch BookKeeper start up, click on the <strong>Services</strong> tab in the DC/OS <a href="https://docs.mesosphere.com/latest/gui/">user interface</a>.</p>
 
-<p><img src="/img/dcos/services.png" alt="DC/OS services" /></p>
+<p><img src="/bookkeeper/img/dcos/services.png" alt="DC/OS services" /></p>
 
 <h3 id="tasks">Tasks</h3>
 
 <p>To see which tasks have started, click on the BookKeeper service.</p>
 
-<p><img src="/img/dcos/tasks.png" alt="DC/OS tasks" /></p>
+<p><img src="/bookkeeper/img/dcos/tasks.png" alt="DC/OS tasks" /></p>
 
 <h3 id="scale">Scale</h3>
 
 <p>Once the first <span class="pop" id="bookie-popover">bookie</span> has started up, you can click on the <strong>Scale</strong> tab to scale up your BookKeeper ensemble by adding more bookies (or removing bookies to scale the ensemble down).</p>
 
-<p><img src="/img/dcos/scale.png" alt="DC/OS scale" /></p>
+<p><img src="/bookkeeper/img/dcos/scale.png" alt="DC/OS scale" /></p>
 
 <h3 id="zookeeper-exhibitor">ZooKeeper Exhibitor</h3>
 
 <p>ZooKeeper contains the information for all bookies in the ensemble. When deployed on DC/OS, BookKeeper uses a ZooKeeper instance provided by DC/OS. You can access a visual UI for ZooKeeper using <a href="https://github.com/soabase/exhibitor/wiki">Exhibitor</a>, which is available at <a href="http://master.dcos/exhibitor">http://master.dcos/exhibitor</a>.</p>
 
-<p><img src="/img/dcos/exhibitor.png" alt="ZooKeeper Exhibitor" /></p>
+<p><img src="/bookkeeper/img/dcos/exhibitor.png" alt="ZooKeeper Exhibitor" /></p>
 
 <p>You should see a listing of IP/host information for all bookies under <code class="highlighter-rouge">messaging/bookkeeper/ledgers/available</code>.</p>
 

@@ -39,25 +39,25 @@ The bookie that is automatically started up uses the host mode of the network an
 
 To watch BookKeeper start up, click on the **Services** tab in the DC/OS [user interface](https://docs.mesosphere.com/latest/gui/).
 
-![DC/OS services](/img/dcos/services.png)
+![DC/OS services]({{ site.baseurl }}img/dcos/services.png)
 
 ### Tasks
 
 To see which tasks have started, click on the BookKeeper service.
 
-![DC/OS tasks](/img/dcos/tasks.png)
+![DC/OS tasks]({{ site.baseurl }}img/dcos/tasks.png)
 
 ### Scale
 
 Once the first {% pop bookie %} has started up, you can click on the **Scale** tab to scale up your BookKeeper ensemble by adding more bookies (or removing bookies to scale the ensemble down).
 
-![DC/OS scale](/img/dcos/scale.png)
+![DC/OS scale]({{ site.baseurl }}img/dcos/scale.png)
 
 ### ZooKeeper Exhibitor
 
 ZooKeeper contains the information for all bookies in the ensemble. When deployed on DC/OS, BookKeeper uses a ZooKeeper instance provided by DC/OS. You can access a visual UI for ZooKeeper using [Exhibitor](https://github.com/soabase/exhibitor/wiki), which is available at [http://master.dcos/exhibitor](http://master.dcos/exhibitor).
 
-![ZooKeeper Exhibitor](/img/dcos/exhibitor.png)
+![ZooKeeper Exhibitor]({{ site.baseurl }}img/dcos/exhibitor.png)
 
 You should see a listing of IP/host information for all bookies under `messaging/bookkeeper/ledgers/available`.
 
