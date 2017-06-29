@@ -1,7 +1,7 @@
 ---
 title: Deploying BookKeeper on DC/OS
 subtitle: Get up and running easily on an Apache Mesos cluster
-logo: /img/dcos-logo.png
+logo: img/dcos-logo.png
 ---
 
 [DC/OS](https://dcos.io/) (the <strong>D</strong>ata<strong>C</strong>enter <strong>O</strong>perating <strong>S</strong>ystem) is a distributed operating system used for deploying and managing applications and systems on [Apache Mesos](http://mesos.apache.org/). DC/OS is an open-source tool created and maintained by [Mesosphere](https://mesosphere.com/).

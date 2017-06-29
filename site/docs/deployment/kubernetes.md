@@ -1,4 +1,4 @@
 ---
 title: Deploying BookKeeper on Kubernetes
-logo: /img/kubernetes-logo.png
+logo: img/kubernetes-logo.png
 ---
