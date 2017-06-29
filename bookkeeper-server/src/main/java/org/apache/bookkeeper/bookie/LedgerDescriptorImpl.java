@@ -91,8 +91,10 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
             // fenced for first time, we should add the key to journal ensure we can rebuild.
             return logFenceEntryInJournal(journal);
         } else {
-            // If we reach here, it means this ledger has been fenced before.
-            // However, fencing might still be in progress.
+            // If we reach here, it means the fence state in FileInfo has been set (may not be persisted yet).
+            // However, writing the fence log entry to the journal might still be in progress. This can happen
+            // when a bookie receives two fence requests almost at the same time. The subsequent logic is used
+            // to check the fencing progress.
             if(logFenceResult == null || fenceEntryPersisted.get()){
                 // Either ledger's fenced state is recovered from Journal
                 // Or Log fence entry in Journal succeed

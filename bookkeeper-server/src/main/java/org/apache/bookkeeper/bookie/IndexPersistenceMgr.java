@@ -191,6 +191,9 @@ public class IndexPersistenceMgr {
      *          Ledger id.
      * @param excludedDir
      *          The ledger directory to exclude.
+     * @param fallback
+     *          If fallback is false, the function will throw exception when there are no writable dirs;
+     *          If it is true and there's no writable dirs, it will ignore the error and pick any dir.
      * @return new index file object.
      * @throws NoWritableLedgerDirException if there is no writable dir available.
      */
