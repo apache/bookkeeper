@@ -10,6 +10,9 @@ $fa-font-path: "../fonts"
 @import typography
 @import vendor/bulma/bulma
 
+footer.footer
+  z-index: 999
+
 img.logo
   height: 3rem
 
@@ -91,6 +94,9 @@ body
     padding: 0 $docs-side-padding
 
     .docs-title
+      h1.title
+        font-size: 2.4rem
+
       .title + .subtitle
         padding-top: .75rem
         font-size: $base-font-size * 1.2
@@ -105,10 +111,14 @@ body
 
 aside.menu
   position: fixed
+  overflow-y: scroll
 
 nav.bk-navbar
   //+sticky-navbar
   height: $navbar-height
+  position: sticky
+  top: 0
+  left: 0
 
   .container
     width: 90%
