@@ -71,6 +71,12 @@ master.mesos:2181
 
 This is the *only* ZooKeeper host/port you need to include in your connection string.
 
+Here's an example using the [Java client](../../api/ledger-api#the-java-ledger-api-client):
+
+```java
+BookKeeper bkClient = new BookKeeper("master.mesos:2181");
+```
+
 ## Configuring BookKeeper
 
 You can configure BookKeeper for DC/OS using a JSON file.
@@ -80,6 +86,8 @@ $ dcos package install bookkeeper \
   --config=my-bk-dcos-config.json
 ```
 
+> For a full listing of parameters that you can set for BookKeeper, see the [Configuration](../../reference/config) reference doc.
+
 You can then fetch the current configuration for BookKeeper at any time using the `package describe` command:
 
 ```shell
@@ -88,6 +96,8 @@ $ dcos package describe bookkeeper \
 ```
 
 ## Uninstalling BookKeeper
+
+You can shut down and uninstall the `bookkeeper` from DC/OS at any time using the `package uninstall` command:
 
 ```shell
 $ dcos package uninstall bookkeeper

@@ -138,10 +138,6 @@ $ bookkeeper-server/bin/bookkeeper shell bookieformat
 
 > The `-force` and `-nonInteractive` flags are also available for the `bookieformat` command.
 
-## Autorecovery
+## AutoRecovery
 
-TODO
-
-### Disabling autorecovery during maintenance
-
-TODO
+For a guide to AutoRecovery in BookKeeper, see [this doc](../autorecovery).

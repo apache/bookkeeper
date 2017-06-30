@@ -361,6 +361,12 @@
 
 <p>This is the <em>only</em> ZooKeeper host/port you need to include in your connection string.</p>
 
+<p>Here’s an example using the <a href="../../api/ledger-api#the-java-ledger-api-client">Java client</a>:</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BookKeeper</span><span class="o">(</span><span class="s">"master.mesos:2181"</span><span class="o">);</span>
+</code></pre>
+</div>
+
 <h2 id="configuring-bookkeeper">Configuring BookKeeper</h2>
 
 <p>You can configure BookKeeper for DC/OS using a JSON file.</p>
@@ -370,6 +376,10 @@
 </code></pre>
 </div>
 
+<blockquote>
+  <p>For a full listing of parameters that you can set for BookKeeper, see the <a href="../../reference/config">Configuration</a> reference doc.</p>
+</blockquote>
+
 <p>You can then fetch the current configuration for BookKeeper at any time using the <code class="highlighter-rouge">package describe</code> command:</p>
 
 <div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>dcos package describe bookkeeper <span class="se">\</span>
@@ -378,6 +388,8 @@
 </div>
 
 <h2 id="uninstalling-bookkeeper">Uninstalling BookKeeper</h2>
+
+<p>You can shut down and uninstall the <code class="highlighter-rouge">bookkeeper</code> from DC/OS at any time using the <code class="highlighter-rouge">package uninstall</code> command:</p>
 
 <div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>dcos package uninstall bookkeeper
 Uninstalled package <span class="o">[</span>bookkeeper] version <span class="o">[</span>4.5.0]
