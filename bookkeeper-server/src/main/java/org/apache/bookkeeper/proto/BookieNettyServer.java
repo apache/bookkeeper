@@ -85,6 +85,7 @@ class BookieNettyServer {
     final EventLoopGroup jvmEventLoopGroup;
     final RequestProcessor requestProcessor;
     final AtomicBoolean isRunning = new AtomicBoolean(false);
+    final AtomicBoolean isClosed = new AtomicBoolean(false);
     final Object suspensionLock = new Object();
     volatile boolean suspended = false;
     ChannelGroup allChannels;
@@ -279,6 +280,12 @@ class BookieNettyServer {
     void shutdown() {
         LOG.info("Shutting down BookieNettyServer");
         isRunning.set(false);
+
+        if (!isClosed.compareAndSet(false, true)) {
+            // the netty server is already closed.
+            return;
+        }
+
         allChannels.close().awaitUninterruptibly();
 
         if (eventLoopGroup != null) {
