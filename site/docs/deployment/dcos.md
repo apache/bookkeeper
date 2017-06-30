@@ -49,35 +49,35 @@ To see which tasks have started, click on the `bookkeeper` service and you'll se
 
 ![DC/OS tasks]({{ site.baseurl }}img/dcos/tasks.png)
 
-### Scale
+## Scaling BookKeeper
 
 Once the first {% pop bookie %} has started up, you can click on the **Scale** tab to scale up your BookKeeper ensemble by adding more bookies (or scale down the ensemble by removing bookies).
 
 ![DC/OS scale]({{ site.baseurl }}img/dcos/scale.png)
 
-### ZooKeeper Exhibitor
+## ZooKeeper Exhibitor
 
 ZooKeeper contains the information for all bookies in the ensemble. When deployed on DC/OS, BookKeeper uses a ZooKeeper instance provided by DC/OS. You can access a visual UI for ZooKeeper using [Exhibitor](https://github.com/soabase/exhibitor/wiki), which is available at [http://master.dcos/exhibitor](http://master.dcos/exhibitor).
 
 ![ZooKeeper Exhibitor]({{ site.baseurl }}img/dcos/exhibitor.png)
 
-You should see a listing of IP/host information for all bookies under `messaging/bookkeeper/ledgers/available`.
+You should see a listing of IP/host information for all bookies under the `messaging/bookkeeper/ledgers/available` node.
 
 ## Client connections
 
-To connect to bookies running on DC/OS using clients, you need to specify the ZooKeeper connection string for DC/OS's ZooKeeper cluster:
+To connect to bookies running on DC/OS using clients running within your Mesos cluster, you need to specify the ZooKeeper connection string for DC/OS's ZooKeeper cluster:
 
 ```
 master.mesos:2181
 ```
 
-This is the *only* ZooKeeper host/port you need to include in your connection string.
-
-Here's an example using the [Java client](../../api/ledger-api#the-java-ledger-api-client):
+This is the *only* ZooKeeper host/port you need to include in your connection string. Here's an example using the [Java client](../../api/ledger-api#the-java-ledger-api-client):
 
 ```java
 BookKeeper bkClient = new BookKeeper("master.mesos:2181");
 ```
+
+If you're connecting using a client running outside your Mesos cluster, you need to supply the public-facing connection string for your DC/OS ZooKeeper cluster.
 
 ## Configuring BookKeeper
 
