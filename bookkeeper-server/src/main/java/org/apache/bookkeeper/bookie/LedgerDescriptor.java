@@ -24,6 +24,8 @@ package org.apache.bookkeeper.bookie;
 import io.netty.buffer.ByteBuf;
 
 import java.io.IOException;
+import java.util.Observable;
+import java.util.Observer;
 
 /**
  * Implements a ledger inside a bookie. In particular, it implements operations
@@ -58,6 +60,7 @@ public abstract class LedgerDescriptor {
     abstract ByteBuf readEntry(long entryId) throws IOException;
 
     abstract long getLastAddConfirmed() throws IOException;
+    abstract Observable waitForLastAddConfirmedUpdate(long previoisLAC, Observer observer) throws IOException;
 
     abstract void setExplicitLac(ByteBuf entry) throws IOException;
 
