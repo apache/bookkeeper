@@ -318,6 +318,7 @@ public class LedgerFragmentReplicator {
                                         null);
                             }
                         }, null, BookieProtocol.FLAG_RECOVERY_ADD);
+                toSend.release();
             }
         }, null);
     }
