@@ -22,6 +22,9 @@ package org.apache.bookkeeper.client;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.RateLimiter;
 import io.netty.buffer.ByteBuf;
@@ -39,6 +42,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
@@ -78,6 +82,7 @@ public class LedgerHandle implements AutoCloseable {
     final DigestManager macManager;
     final DistributionSchedule distributionSchedule;
     final RateLimiter throttler;
+    final LoadingCache<BookieSocketAddress, Long> bookieFailureHistory;
     final boolean enableParallelRecoveryRead;
     final int recoveryReadBatchSize;
 
@@ -138,6 +143,13 @@ public class LedgerHandle implements AutoCloseable {
         this.ledgerKey = password.length > 0 ? MacDigestManager.genDigest("ledger", password) : emptyLedgerKey;
         distributionSchedule = new RoundRobinDistributionSchedule(
                 metadata.getWriteQuorumSize(), metadata.getAckQuorumSize(), metadata.getEnsembleSize());
+        this.bookieFailureHistory = CacheBuilder.newBuilder()
+            .expireAfterWrite(bk.getConf().getBookieFailureHistoryExpirationMSec(), TimeUnit.MILLISECONDS)
+            .build(new CacheLoader<BookieSocketAddress, Long>() {
+            public Long load(BookieSocketAddress key) {
+                return -1L;
+            }
+        });
 
         ensembleChangeCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.ENSEMBLE_CHANGES);
         lacUpdateHitsCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.LAC_UPDATE_HITS);
@@ -1619,6 +1631,13 @@ public class LedgerHandle implements AutoCloseable {
     void rereadMetadata(final GenericCallback<LedgerMetadata> cb) {
         bk.getLedgerManager().readLedgerMetadata(ledgerId, cb);
     }
+
+    void registerOperationFailureOnBookie(BookieSocketAddress bookie, long entryId) {
+        if (bk.getConf().getEnableBookieFailureTracking()) {
+            bookieFailureHistory.put(bookie, entryId);
+        }
+    }
+
 
     void recover(GenericCallback<Void> finalCb) {
         recover(finalCb, null, false);

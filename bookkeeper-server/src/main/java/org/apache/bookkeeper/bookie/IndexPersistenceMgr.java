@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import com.google.common.annotations.VisibleForTesting;
+import io.netty.buffer.ByteBuf;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -28,9 +30,10 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -40,10 +43,6 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.SnapshotMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.annotations.VisibleForTesting;
-
-import io.netty.buffer.ByteBuf;
 
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LEDGER_CACHE_NUM_EVICTED_LEDGERS;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.NUM_OPEN_LEDGERS;
@@ -638,7 +637,14 @@ public class IndexPersistenceMgr {
                 if (position < 0) {
                     position = 0;
                 }
-                fi.read(bb, position);
+                // we read the last page from file size minus page size, so it should not encounter short read
+                // exception. if it does, it is an unexpected situation, then throw the exception and fail it immediately.
+                try {
+                    fi.read(bb, position, false);
+                } catch (ShortReadException sre) {
+                    // throw a more meaningful exception with ledger id
+                    throw new ShortReadException("Short read on ledger " + ledgerId + " : ", sre);
+                }
                 bb.flip();
                 long startingEntryId = position / LedgerEntryPage.getIndexEntrySize();
                 for (int i = entriesPerPage - 1; i >= 0; i--) {

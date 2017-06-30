@@ -214,6 +214,19 @@ public abstract class BookKeeperClusterTestCase {
         return conf;
     }
 
+    protected void stopAllBookies() throws Exception {
+        for (BookieServer server : bs) {
+            server.shutdown();
+        }
+        bs.clear();
+    }
+
+    protected void startAllBookies() throws Exception {
+        for (ServerConfiguration conf : bsConfs) {
+            bs.add(startBookie(conf));
+        }
+    }
+
     /**
      * Get bookie address for bookie at index
      */

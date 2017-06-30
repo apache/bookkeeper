@@ -22,10 +22,10 @@
 package org.apache.bookkeeper.bookie;
 
 import io.netty.buffer.ByteBuf;
-
 import java.io.IOException;
 import java.util.Arrays;
-
+import java.util.Observable;
+import java.util.Observer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

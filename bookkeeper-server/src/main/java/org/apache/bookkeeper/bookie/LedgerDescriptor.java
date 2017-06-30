@@ -24,6 +24,8 @@ package org.apache.bookkeeper.bookie;
 import io.netty.buffer.ByteBuf;
 
 import java.io.IOException;
+import java.util.Observable;
+import java.util.Observer;
 
 /**
  * Implements a ledger inside a bookie. In particular, it implements operations

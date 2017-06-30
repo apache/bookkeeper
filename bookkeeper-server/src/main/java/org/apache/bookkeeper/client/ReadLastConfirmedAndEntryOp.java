@@ -1,5 +1,26 @@
+/**
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
 package org.apache.bookkeeper.client;
 
+import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
@@ -15,12 +36,8 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.util.MathUtils;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBufferInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.bookkeeper.client.BookKeeperClientStats.RESPONSE_CODE;
 
 public class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEntryCallback, SpeculativeRequestExectuor {
     static final Logger LOG = LoggerFactory.getLogger(ReadLastConfirmedAndEntryOp.class);
@@ -86,25 +103,25 @@ public class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.
          * @return return true if we managed to complete the entry;
          *         otherwise return false if the read entry is not complete or it is already completed before
          */
-        boolean complete(int bookieIndex, BookieSocketAddress host, final ChannelBuffer buffer, long entryId) {
-            ChannelBufferInputStream is;
+        boolean complete(int bookieIndex, BookieSocketAddress host, final ByteBuf buffer, long entryId) {
+            ByteBuf content;
             try {
-                is = lh.macManager.verifyDigestAndReturnData(entryId, buffer);
+                content = lh.macManager.verifyDigestAndReturnData(entryId, buffer);
             } catch (BKException.BKDigestMatchException e) {
                 logErrorAndReattemptRead(bookieIndex, host, "Mac mismatch", BKException.Code.DigestMatchException);
+                buffer.release();
                 return false;
             }
 
             if (!complete.getAndSet(true)) {
                 rc = BKException.Code.OK;
-                entryDataStream = is;
                 this.entryId = entryId;
-
                 /*
                  * The length is a long and it is the last field of the metadata of an entry.
                  * Consequently, we have to subtract 8 from METADATA_LENGTH to get the length.
                  */
                 length = buffer.getLong(DigestManager.METADATA_LENGTH - 8);
+                data = content;
                 return true;
             } else {
                 return false;
@@ -376,27 +393,7 @@ public class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.
             }
         }
 
-        @Override
-        boolean complete(int bookieIndex, BookieSocketAddress host, ChannelBuffer buffer, long entryId) {
-            boolean completed = super.complete(bookieIndex, host, buffer, entryId);
-            if (completed) {
-                lh.getStatsLogger().getOpStatsLogger(BookKeeperClientStats.SPECULATIVES_PER_READ_LAC)
-                        .registerSuccessfulEvent(getNextReplicaIndexToReadFrom());
-            }
-            return completed;
-        }
-
-        @Override
-        boolean fail(int rc) {
-            boolean completed = super.fail(rc);
-            if (completed) {
-                lh.getStatsLogger().getOpStatsLogger(BookKeeperClientStats.SPECULATIVES_PER_READ_LAC)
-                        .registerFailedEvent(getNextReplicaIndexToReadFrom());
-            }
-            return completed;
-        }
     }
-
 
     ReadLastConfirmedAndEntryOp(LedgerHandle lh,
                                 LastConfirmedAndEntryCallback cb,
@@ -517,28 +514,19 @@ public class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.
     }
 
     private void submitCallback(int rc, long lastAddConfirmed, LedgerEntry entry) {
-        lh.getStatsLogger().scope(BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY)
-            .scope(RESPONSE_CODE).getCounter(String.valueOf(rc)).inc();
         long latencyMicros = MathUtils.elapsedMicroSec(requestTimeNano);
         if (BKException.Code.OK != rc) {
-            lh.getStatsLogger().getOpStatsLogger(BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY)
-                .registerFailedEvent(latencyMicros);
+            lh.bk.getReadLacAndEntryOpLogger()
+                .registerFailedEvent(latencyMicros, TimeUnit.MICROSECONDS);
         } else {
-            lh.getStatsLogger().getOpStatsLogger(BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY)
-                .registerSuccessfulEvent(latencyMicros);
-            String op;
-            if (this.prevEntryId < lastAddConfirmed) {
-                op = BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY_HIT;
-            } else {
-                op = BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY_MISS;
-            }
-            lh.getStatsLogger().getOpStatsLogger(op).registerSuccessfulEvent(latencyMicros);
+            lh.bk.getReadLacAndEntryOpLogger()
+                .registerSuccessfulEvent(latencyMicros, TimeUnit.MICROSECONDS);
         }
         cb.readLastConfirmedAndEntryComplete(rc, lastAddConfirmed, entry);
     }
 
     @Override
-    public void readEntryComplete(int rc, long ledgerId, long entryId, ChannelBuffer buffer, Object ctx) {
+    public void readEntryComplete(int rc, long ledgerId, long entryId, ByteBuf buffer, Object ctx) {
         if (LOG.isTraceEnabled()) {
             LOG.trace("{} received response for (lid={}, eid={}) : {}",
                 new Object[] { getClass().getName(), ledgerId, entryId, rc });
@@ -565,9 +553,8 @@ public class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.
                     if (rCtx.getLacUpdateTimestamp().isPresent()) {
                         long elapsedMicros = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis() - rCtx.getLacUpdateTimestamp().get());
                         elapsedMicros = Math.max(elapsedMicros, 0);
-                        lh.getStatsLogger().getOpStatsLogger(
-                            BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY_RESPONSE)
-                            .registerSuccessfulEvent(elapsedMicros);
+                        lh.bk.getReadLacAndEntryRespLogger()
+                            .registerSuccessfulEvent(elapsedMicros, TimeUnit.MICROSECONDS);
                     }
 
                     submitCallback(BKException.Code.OK, lastAddConfirmed, request);

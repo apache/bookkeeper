@@ -21,10 +21,11 @@
 
 package org.apache.bookkeeper.bookie;
 
+import io.netty.buffer.ByteBuf;
 import java.io.Closeable;
 import java.io.IOException;
-
-import io.netty.buffer.ByteBuf;
+import java.util.Observable;
+import java.util.Observer;
 
 /**
  * This class maps a ledger entry number into a location (entrylogid, offset) in

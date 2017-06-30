@@ -115,6 +115,11 @@ public class ServerConfiguration extends AbstractConfiguration {
     // Worker Thread parameters.
     protected final static String NUM_ADD_WORKER_THREADS = "numAddWorkerThreads";
     protected final static String NUM_READ_WORKER_THREADS = "numReadWorkerThreads";
+    protected final static String NUM_LONG_POLL_WORKER_THREADS = "numLongPollWorkerThreads";
+
+    // Long poll parameters
+    protected final static String REQUEST_TIMER_TICK_DURATION_MILLISEC = "requestTimerTickDurationMs";
+    protected final static String REQUEST_TIMER_NO_OF_TICKS = "requestTimerNumTicks";
 
     protected final static String READ_BUFFER_SIZE = "readBufferSizeBytes";
     protected final static String WRITE_BUFFER_SIZE = "writeBufferSizeBytes";
@@ -1131,6 +1136,26 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Set the number of threads that should handle long poll requests
+     *
+     * @param numThreads
+     *          number of threads to handle long poll requests.
+     * @return server configuration
+     */
+    public ServerConfiguration setNumLongPollWorkerThreads(int numThreads) {
+        setProperty(NUM_LONG_POLL_WORKER_THREADS, numThreads);
+        return this;
+    }
+
+    /**
+     * Get the number of threads that should handle long poll requests.
+     * @return
+     */
+    public int getNumLongPollWorkerThreads() {
+        return getInt(NUM_LONG_POLL_WORKER_THREADS, 10);
+    }
+
+    /**
      * Set the number of threads that would handle read requests.
      *
      * @param numThreads
@@ -1147,6 +1172,46 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public int getNumReadWorkerThreads() {
         return getInt(NUM_READ_WORKER_THREADS, 8);
+    }
+    
+    /**
+     * Set the tick duration in milliseconds
+     *
+     * @param tickDuration
+     *          tick duration in milliseconds.
+     * @return server configuration
+     */
+    public ServerConfiguration setRequestTimerTickDurationMs(int tickDuration) {
+        setProperty(REQUEST_TIMER_TICK_DURATION_MILLISEC, tickDuration);
+        return this;
+    }
+
+    /**
+     * Get the tick duration in milliseconds.
+     * @return
+     */
+    public int getRequestTimerTickDurationMs() {
+        return getInt(REQUEST_TIMER_TICK_DURATION_MILLISEC, 10);
+    }
+
+    /**
+     * Set the number of ticks per wheel for the request timer.
+     *
+     * @param tickCount
+     *          number of ticks per wheel for the request timer.
+     * @return server configuration
+     */
+    public ServerConfiguration setRequestTimerNumTicks(int tickCount) {
+        setProperty(REQUEST_TIMER_NO_OF_TICKS, tickCount);
+        return this;
+    }
+
+    /**
+     * Get the number of ticks per wheel for the request timer.
+     * @return
+     */
+    public int getRequestTimerNumTicks() {
+        return getInt(REQUEST_TIMER_NO_OF_TICKS, 1024);
     }
 
     /**

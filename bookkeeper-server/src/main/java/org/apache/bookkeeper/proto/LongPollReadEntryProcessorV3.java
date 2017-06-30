@@ -19,19 +19,10 @@ package org.apache.bookkeeper.proto;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Stopwatch;
-import org.apache.bookkeeper.bookie.Bookie;
-import org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadResponse;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
-import org.apache.bookkeeper.stats.StatsLogger;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.util.HashedWheelTimer;
-import org.jboss.netty.util.Timeout;
-import org.jboss.netty.util.TimerTask;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import io.netty.channel.Channel;
+import io.netty.util.HashedWheelTimer;
+import io.netty.util.Timeout;
+import io.netty.util.TimerTask;
 import java.io.IOException;
 import java.util.Observable;
 import java.util.Observer;
@@ -39,8 +30,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.*;
+import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification;
+import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
+import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadResponse;
+import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Processor handling long poll read entry request.
@@ -61,15 +57,15 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Obser
 
     LongPollReadEntryProcessorV3(Request request,
                                  Channel channel,
-                                 Bookie bookie,
+                                 BookieRequestProcessor requestProcessor,
                                  ExecutorService fenceThreadPool,
                                  ExecutorService longPollThreadPool,
-                                 HashedWheelTimer requestTimer,
-                                 StatsLogger statsLogger) {
-        super(request, channel, bookie, fenceThreadPool, statsLogger);
+                                 HashedWheelTimer requestTimer) {
+        super(request, channel, requestProcessor, fenceThreadPool);
         this.previousLAC = readRequest.getPreviousLAC();
         this.longPollThreadPool = longPollThreadPool;
         this.requestTimer = requestTimer;
+
     }
 
     @Override
@@ -93,7 +89,7 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Obser
                         ledgerId, entryId);
                 return buildResponse(readResponseBuilder, StatusCode.EBADREQ, startTimeSw);
             } else {
-                long knownLAC = bookie.readLastAddConfirmed(ledgerId);
+                long knownLAC = requestProcessor.bookie.readLastAddConfirmed(ledgerId);
                 readResponseBuilder.setMaxLAC(knownLAC);
                 if (knownLAC > previousLAC) {
                     entryId = previousLAC + 1;
@@ -107,7 +103,7 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Obser
                     try {
                         return super.readEntry(readResponseBuilder, entryId, true, startTimeSw);
                     } catch (Bookie.NoEntryException e) {
-                        statsLogger.getCounter(READ_LAST_ENTRY_NOENTRY_ERROR).inc();
+                        requestProcessor.readLastEntryNoEntryErrorCounter.inc();
                         logger.info("No entry found while piggyback reading entry {} from ledger {} : previous lac = {}",
                                 new Object[] { entryId, ledgerId, previousLAC });
                         // piggy back is best effort and this request can fail genuinely because of striping
@@ -147,7 +143,7 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Obser
 
             final Observable observable;
             try {
-                observable = bookie.waitForLastAddConfirmedUpdate(ledgerId, previousLAC, this);
+                observable = requestProcessor.bookie.waitForLastAddConfirmedUpdate(ledgerId, previousLAC, this);
             } catch (Bookie.NoLedgerException e) {
                 logger.info("No ledger found while longpoll reading ledger {}, previous lac = {}.",
                         ledgerId, previousLAC);
@@ -158,7 +154,7 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Obser
                 return buildErrorResponse(StatusCode.EIO, startTimeSw);
             }
 
-            registerSuccessfulEvent(statsLogger.getOpStatsLogger(READ_ENTRY_LONG_POLL_PRE_WAIT), startTimeSw);
+            registerSuccessfulEvent(requestProcessor.longPollPreWaitStats, startTimeSw);
             lastPhaseStartTime.reset().start();
 
             if (null != observable) {
@@ -223,7 +219,7 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Obser
                 expirationTimerTask.cancel();
             }
 
-            registerEvent(timeout, statsLogger.getOpStatsLogger(READ_ENTRY_LONG_POLL_WAIT), lastPhaseStartTime);
+            registerEvent(timeout, requestProcessor.longPollWaitStats, lastPhaseStartTime);
             lastPhaseStartTime.reset().start();
         }
     }
