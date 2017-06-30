@@ -87,7 +87,7 @@ You can supply a non-default configuration when installing the package using a J
 
 ```shell
 $ dcos package install bookkeeper \
-  --config=/path/to/config.json
+  --options=/path/to/config.json
 ```
 
 You can then fetch the current configuration for BookKeeper at any time using the `package describe` command:
@@ -128,7 +128,7 @@ If that configuration were stored in a file called `bk-config.json`, you could a
 
 ```shell
 $ dcos package install bookkeeper \
-  --config=./bk-config.json
+  --options=./bk-config.json
 ```
 
 ## Uninstalling BookKeeper
