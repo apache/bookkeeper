@@ -6698,6 +6698,9 @@ label.panel-block {
   background-color: whitesmoke;
   padding: 3rem 1.5rem 6rem; }
 
+footer.footer {
+  z-index: 999; }
+
 img.logo {
   height: 3rem; }
 
@@ -6762,6 +6765,8 @@ body {
     height: 2px; }
   .bk-docs-container .bk-docs-block {
     padding: 0 6rem; }
+    .bk-docs-container .bk-docs-block .docs-title h1.title {
+      font-size: 2.4rem; }
     .bk-docs-container .bk-docs-block .docs-title .title + .subtitle {
       padding-top: 0.75rem;
       font-size: 1.2rem; }
@@ -6771,10 +6776,30 @@ body {
   .bk-docs-container .bk-docs-content + .pagination {
     margin-top: 2rem; }
 
-aside.menu {
-  position: fixed; }
+aside.sidebar {
+  position: fixed;
+  overflow-y: scroll;
+  top: 8rem;
+  bottom: 0;
+  padding: 0 0 5rem 0; }
+  aside.sidebar p + ul.sidebar-items {
+    margin-top: 0.8rem; }
+  aside.sidebar ul.sidebar-items {
+    margin-bottom: 1rem; }
+    aside.sidebar ul.sidebar-items li {
+      padding: 0.25rem 0 0.25rem 1rem;
+      font-size: 1rem; }
+      aside.sidebar ul.sidebar-items li.active {
+        background-color: #c88e56;
+        border-radius: 3px; }
+        aside.sidebar ul.sidebar-items li.active a {
+          color: white; }
 
 nav.bk-navbar {
+  position: sticky;
+  left: 0;
+  right: 0;
+  top: 0;
   height: 5rem; }
   nav.bk-navbar .container {
     width: 90%; }

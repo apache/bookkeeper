@@ -109,16 +109,34 @@ body
     & + .pagination
       margin-top: 2rem
 
-aside.menu
+aside.sidebar
   position: fixed
   overflow-y: scroll
+  top: $navbar-height + 3rem
+  bottom: 0
+  padding: 0 0 5rem 0
+
+  p + ul.sidebar-items
+    margin-top: .8rem
+
+  ul.sidebar-items
+    margin-bottom: 1rem
+
+    li
+      padding: .25rem 0 .25rem 1rem
+      font-size: 1rem
+
+      &.active
+        background-color: $tan
+        border-radius: 3px
+
+        a
+          color: white
 
 nav.bk-navbar
-  //+sticky-navbar
+  +sticky-navbar
   height: $navbar-height
-  position: sticky
-  top: 0
-  left: 0
+
 
   .container
     width: 90%

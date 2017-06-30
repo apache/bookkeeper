@@ -16,9 +16,9 @@
 <script src="/bookkeeper/js/tippy.min.js"></script>
 
 <script type="text/javascript">
-  var shiftWindow = function() { scrollBy(0, -30); };
+  var shiftWindow = function() { scrollBy(0, -100); };
   window.addEventListener("hashchange", shiftWindow);
-  window.addEventListener("pageshow", shiftWindow);
+  //window.addEventListener("pageshow", shiftWindow);
   function load() { if (window.location.hash) shiftWindow(); }
 </script>
 
@@ -76,7 +76,194 @@
       <div class="container bk-docs-container">
   <div class="columns">
     <div class="column is-2">
-      <aside class="menu">
+      <aside class="sidebar">
+  
+  <p>
+    Getting started
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/getting-started/installation">
+      Installation
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/getting-started/run-locally">
+      Run bookies locally
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/getting-started/concepts">
+      Concepts and architecture
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Deployment
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/deployment/manual">
+      Manual deployment
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/deployment/dcos">
+      BookKeeper on DC/OS
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/deployment/kubernetes">
+      BookKeeper on Kubernetes
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Administration
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/admin/bookies">
+      BookKeeper administration
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/admin/autorecovery">
+      Setting up AutoRecovery
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/admin/metrics">
+      Metric collection
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/admin/geo-replication">
+      Geo-replication
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/admin/placement">
+      Customized placement policies
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/admin/perf">
+      Performance tuning
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    API
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/api/overview">
+      Overview
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/api/ledger-api">
+      Ledger API
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/api/distributedlog-api">
+      DistributedLog API
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Development
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/development/protocol">
+      BookKeeper protocol
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/development/codebase">
+      Codebase
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Reference
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/reference/config">
+      Configuration
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/reference/cli">
+      Command-line tools
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/reference/metrics">
+      Metrics
+      </a>
+    </li>
+    
+  </ul>
+  
+</aside>
+
+<!--
+<aside class="menu">
   
   <p class="menu-label">
     Getting started
@@ -261,6 +448,7 @@
   </ul>
   
 </aside>
+-->
 
     </div>
 
@@ -457,7 +645,7 @@ Once all valid entries have been copied, the old entry log file is deleted.</p>
 </div>
 
 <blockquote>
-  <p>For more info on using the BookKeeper Java client, see <a href="../../applications/java-client">this guide</a>.</p>
+  <p>For more info on using the BookKeeper Java client, see <a href="../../api/ledger-api#the-java-ledger-api-client">this guide</a>.</p>
 </blockquote>
 
 <h2 id="ledger-manager">Ledger manager</h2>
@@ -484,7 +672,7 @@ Once all valid entries have been copied, the old entry log file is deleted.</p>
 
 <h3 id="hierarchical-ledger-manager">Hierarchical ledger manager</h3>
 
-<p>The <em>hierarchical ledger manager</em>, implemented in the <a href="/javadoc/org/apache/bookkeeper/meta/HierarchicalLedgerManager"><code class="highlighter-rouge">HierarchicalLedgerManager</code></a> class, first obtains a global unique ID from ZooKeeper using an <a href="https://zookeeper.apache.org/doc/current/api/org/apache/zookeeper/CreateMode.html#EPHEMERAL_SEQUENTIAL"><code class="highlighter-rouge">EPHEMERAL_SEQUENTIAL</code></a> znode. Size ZooKeeper’s sequence counter has a format of <code class="highlighter-rouge">%10d</code> (10 digits with 0 padding, for example <code class="highlighter-rouge">&lt;path&gt;0000000001</code>), the hierarchical ledger manager splits the generated ID into 3 parts:</p>
+<p>The <em>hierarchical ledger manager</em>, implemented in the <a href="/javadoc/org/apache/bookkeeper/meta/HierarchicalLedgerManager"><code class="highlighter-rouge">HierarchicalLedgerManager</code></a> class, first obtains a global unique ID from ZooKeeper using an <a href="https://zookeeper.apache.org/doc/current/api/org/apache/zookeeper/CreateMode.html#EPHEMERAL_SEQUENTIAL"><code class="highlighter-rouge">EPHEMERAL_SEQUENTIAL</code></a> znode. Since ZooKeeper’s sequence counter has a format of <code class="highlighter-rouge">%10d</code> (10 digits with 0 padding, for example <code class="highlighter-rouge">&lt;path&gt;0000000001</code>), the hierarchical ledger manager splits the generated ID into 3 parts:</p>
 
 <div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="o">{</span>level1 <span class="o">(</span>2 digits<span class="o">)}{</span>level2 <span class="o">(</span>4 digits<span class="o">)}{</span>level3 <span class="o">(</span>4 digits<span class="o">)}</span>
 </code></pre>
@@ -496,7 +684,7 @@ Once all valid entries have been copied, the old entry log file is deleted.</p>
 </code></pre>
 </div>
 
-<p>For example, ledger 0000000001 is split into three parts, 00, 0000, and 00001 and stored in znode <code class="highlighter-rouge">/{ledgers_root_path}/00/0000/L0001</code>. Each znode could have as many 10,000 ledgers, which avoids the problem of the child list being larger than the maximum ZooKeeper packet size (which is the <a href="https://issues.apache.org/jira/browse/BOOKKEEPER-39">limitation</a> that initially prompted the creation of the hierarchical ledger manager).</p>
+<p>For example, ledger 0000000001 is split into three parts, 00, 0000, and 00001, and stored in znode <code class="highlighter-rouge">/{ledgers_root_path}/00/0000/L0001</code>. Each znode could have as many 10,000 ledgers, which avoids the problem of the child list being larger than the maximum ZooKeeper packet size (which is the <a href="https://issues.apache.org/jira/browse/BOOKKEEPER-39">limitation</a> that initially prompted the creation of the hierarchical ledger manager).</p>
 
         </section>
 

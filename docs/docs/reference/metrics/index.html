@@ -16,9 +16,9 @@
 <script src="/bookkeeper/js/tippy.min.js"></script>
 
 <script type="text/javascript">
-  var shiftWindow = function() { scrollBy(0, -30); };
+  var shiftWindow = function() { scrollBy(0, -100); };
   window.addEventListener("hashchange", shiftWindow);
-  window.addEventListener("pageshow", shiftWindow);
+  //window.addEventListener("pageshow", shiftWindow);
   function load() { if (window.location.hash) shiftWindow(); }
 </script>
 
@@ -76,7 +76,194 @@
       <div class="container bk-docs-container">
   <div class="columns">
     <div class="column is-2">
-      <aside class="menu">
+      <aside class="sidebar">
+  
+  <p>
+    Getting started
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/getting-started/installation">
+      Installation
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/getting-started/run-locally">
+      Run bookies locally
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/getting-started/concepts">
+      Concepts and architecture
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Deployment
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/deployment/manual">
+      Manual deployment
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/deployment/dcos">
+      BookKeeper on DC/OS
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/deployment/kubernetes">
+      BookKeeper on Kubernetes
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Administration
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/admin/bookies">
+      BookKeeper administration
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/admin/autorecovery">
+      Setting up AutoRecovery
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/admin/metrics">
+      Metric collection
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/admin/geo-replication">
+      Geo-replication
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/admin/placement">
+      Customized placement policies
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/admin/perf">
+      Performance tuning
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    API
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/api/overview">
+      Overview
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/api/ledger-api">
+      Ledger API
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/api/distributedlog-api">
+      DistributedLog API
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Development
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/development/protocol">
+      BookKeeper protocol
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/development/codebase">
+      Codebase
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Reference
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/reference/config">
+      Configuration
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/reference/cli">
+      Command-line tools
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/bookkeeper/docs/reference/metrics">
+      Metrics
+      </a>
+    </li>
+    
+  </ul>
+  
+</aside>
+
+<!--
+<aside class="menu">
   
   <p class="menu-label">
     Getting started
@@ -261,6 +448,7 @@
   </ul>
   
 </aside>
+-->
 
     </div>
 

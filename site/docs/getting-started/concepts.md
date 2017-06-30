@@ -138,7 +138,7 @@ String zkConnectionString = "127.0.0.1:2181";
 BookKeeper bkClient = new BookKeeper(zkConnectionString);
 ```
 
-> For more info on using the BookKeeper Java client, see [this guide](../../applications/java-client).
+> For more info on using the BookKeeper Java client, see [this guide](../../api/ledger-api#the-java-ledger-api-client).
 
 ## Ledger manager
 
@@ -160,7 +160,7 @@ The flat ledger manager's garbage collection follow proceeds as follows:
 
 ### Hierarchical ledger manager
 
-The *hierarchical ledger manager*, implemented in the [`HierarchicalLedgerManager`](/javadoc/org/apache/bookkeeper/meta/HierarchicalLedgerManager) class, first obtains a global unique ID from ZooKeeper using an [`EPHEMERAL_SEQUENTIAL`](https://zookeeper.apache.org/doc/current/api/org/apache/zookeeper/CreateMode.html#EPHEMERAL_SEQUENTIAL) znode. Size ZooKeeper's sequence counter has a format of `%10d` (10 digits with 0 padding, for example `<path>0000000001`), the hierarchical ledger manager splits the generated ID into 3 parts:
+The *hierarchical ledger manager*, implemented in the [`HierarchicalLedgerManager`](/javadoc/org/apache/bookkeeper/meta/HierarchicalLedgerManager) class, first obtains a global unique ID from ZooKeeper using an [`EPHEMERAL_SEQUENTIAL`](https://zookeeper.apache.org/doc/current/api/org/apache/zookeeper/CreateMode.html#EPHEMERAL_SEQUENTIAL) znode. Since ZooKeeper's sequence counter has a format of `%10d` (10 digits with 0 padding, for example `<path>0000000001`), the hierarchical ledger manager splits the generated ID into 3 parts:
 
 ```shell
 {level1 (2 digits)}{level2 (4 digits)}{level3 (4 digits)}
@@ -172,4 +172,4 @@ These three parts are used to form the actual ledger node path to store ledger m
 {ledgers_root_path}/{level1}/{level2}/L{level3}
 ```
 
-For example, ledger 0000000001 is split into three parts, 00, 0000, and 00001 and stored in znode `/{ledgers_root_path}/00/0000/L0001`. Each znode could have as many 10,000 ledgers, which avoids the problem of the child list being larger than the maximum ZooKeeper packet size (which is the [limitation](https://issues.apache.org/jira/browse/BOOKKEEPER-39) that initially prompted the creation of the hierarchical ledger manager).
+For example, ledger 0000000001 is split into three parts, 00, 0000, and 00001, and stored in znode `/{ledgers_root_path}/00/0000/L0001`. Each znode could have as many 10,000 ledgers, which avoids the problem of the child list being larger than the maximum ZooKeeper packet size (which is the [limitation](https://issues.apache.org/jira/browse/BOOKKEEPER-39) that initially prompted the creation of the hierarchical ledger manager).
