@@ -6755,12 +6755,13 @@ body {
   font-size: 1.25em; }
 
 .bk-docs-container {
+  width: 95%;
   margin-top: 3rem;
   margin-bottom: 6rem; }
   .bk-docs-container hr {
     height: 2px; }
   .bk-docs-container .bk-docs-block {
-    padding: 0 4rem; }
+    padding: 0 6rem; }
     .bk-docs-container .bk-docs-block .docs-title .title + .subtitle {
       padding-top: 0.75rem;
       font-size: 1.2rem; }

@@ -378,7 +378,7 @@
 <p>You can supply a non-default configuration when installing the package using a JSON file. Here’s an example command:</p>
 
 <div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>dcos package install bookkeeper <span class="se">\</span>
-  --config<span class="o">=</span>/path/to/config.json
+  --options<span class="o">=</span>/path/to/config.json
 </code></pre>
 </div>
 
@@ -466,7 +466,7 @@
 <p>If that configuration were stored in a file called <code class="highlighter-rouge">bk-config.json</code>, you could apply that configuration upon installating the BookKeeper package using this command:</p>
 
 <div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>dcos package install bookkeeper <span class="se">\</span>
-  --config<span class="o">=</span>./bk-config.json
+  --options<span class="o">=</span>./bk-config.json
 </code></pre>
 </div>
 
