@@ -35,21 +35,23 @@ This command will:
 
 The bookie that is automatically started up uses the host mode of the network and by default exports the service at `agent_ip:3181`.
 
+> If you run `dcos package install bookkeeper` without setting the `--yes` flag, the install will run in interactive mode. For more information on the `package install` command, see the [DC/OS docs](https://docs.mesosphere.com/latest/cli/command-reference/dcos-package/dcos-package-install/).
+
 ### Services
 
-To watch BookKeeper start up, click on the **Services** tab in the DC/OS [user interface](https://docs.mesosphere.com/latest/gui/).
+To watch BookKeeper start up, click on the **Services** tab in the DC/OS [user interface](https://docs.mesosphere.com/latest/gui/) and you should see the `bookkeeper` package listed:
 
 ![DC/OS services]({{ site.baseurl }}img/dcos/services.png)
 
 ### Tasks
 
-To see which tasks have started, click on the BookKeeper service.
+To see which tasks have started, click on the `bookkeeper` service and you'll see an interface that looks like this;
 
 ![DC/OS tasks]({{ site.baseurl }}img/dcos/tasks.png)
 
 ### Scale
 
-Once the first {% pop bookie %} has started up, you can click on the **Scale** tab to scale up your BookKeeper ensemble by adding more bookies (or removing bookies to scale the ensemble down).
+Once the first {% pop bookie %} has started up, you can click on the **Scale** tab to scale up your BookKeeper ensemble by adding more bookies (or scale down the ensemble by removing bookies).
 
 ![DC/OS scale]({{ site.baseurl }}img/dcos/scale.png)
 

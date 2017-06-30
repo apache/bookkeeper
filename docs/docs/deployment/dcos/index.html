@@ -28,7 +28,7 @@
       <nav class="nav has-shadow bk-navbar">
   <div class="container">
     <div class="nav-left bk-brand">
-      <a class="nav-item" href="/">
+      <a class="nav-item" href="/bookkeeper/">
         <img src="/bookkeeper/img/bk-logo.png" alt="Apache BookKeeper">
         <h3>Apache BookKeeper</h3>
       </a>
@@ -325,21 +325,25 @@
 
 <p>The bookie that is automatically started up uses the host mode of the network and by default exports the service at <code class="highlighter-rouge">agent_ip:3181</code>.</p>
 
+<blockquote>
+  <p>If you run <code class="highlighter-rouge">dcos package install bookkeeper</code> without setting the <code class="highlighter-rouge">--yes</code> flag, the install will run in interactive mode. For more information on the <code class="highlighter-rouge">package install</code> command, see the <a href="https://docs.mesosphere.com/latest/cli/command-reference/dcos-package/dcos-package-install/">DC/OS docs</a>.</p>
+</blockquote>
+
 <h3 id="services">Services</h3>
 
-<p>To watch BookKeeper start up, click on the <strong>Services</strong> tab in the DC/OS <a href="https://docs.mesosphere.com/latest/gui/">user interface</a>.</p>
+<p>To watch BookKeeper start up, click on the <strong>Services</strong> tab in the DC/OS <a href="https://docs.mesosphere.com/latest/gui/">user interface</a> and you should see the <code class="highlighter-rouge">bookkeeper</code> package listed:</p>
 
 <p><img src="/bookkeeper/img/dcos/services.png" alt="DC/OS services" /></p>
 
 <h3 id="tasks">Tasks</h3>
 
-<p>To see which tasks have started, click on the BookKeeper service.</p>
+<p>To see which tasks have started, click on the <code class="highlighter-rouge">bookkeeper</code> service and you’ll see an interface that looks like this;</p>
 
 <p><img src="/bookkeeper/img/dcos/tasks.png" alt="DC/OS tasks" /></p>
 
 <h3 id="scale">Scale</h3>
 
-<p>Once the first <span class="pop" id="bookie-popover">bookie</span> has started up, you can click on the <strong>Scale</strong> tab to scale up your BookKeeper ensemble by adding more bookies (or removing bookies to scale the ensemble down).</p>
+<p>Once the first <span class="pop" id="bookie-popover">bookie</span> has started up, you can click on the <strong>Scale</strong> tab to scale up your BookKeeper ensemble by adding more bookies (or scale down the ensemble by removing bookies).</p>
 
 <p><img src="/bookkeeper/img/dcos/scale.png" alt="DC/OS scale" /></p>
 
