@@ -32,14 +32,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.Arrays;
-import java.util.Collection;
 
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
 import org.apache.bookkeeper.bookie.GarbageCollectorThread.CompactionScannerFactory;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
-import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
@@ -61,9 +58,6 @@ import org.apache.zookeeper.AsyncCallback;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,29 +65,22 @@ import static org.junit.Assert.*;
 /**
  * This class tests the entry log compaction functionality.
  */
-@RunWith(Parameterized.class)
-public class CompactionTest extends BookKeeperClusterTestCase {
-    @Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {{true}, {false}});
-    }
-
-    private boolean isThrottleByBytes;
+public abstract class CompactionTest extends BookKeeperClusterTestCase {
 
     private final static Logger LOG = LoggerFactory.getLogger(CompactionTest.class);
-    DigestType digestType;
 
     static int ENTRY_SIZE = 1024;
     static int NUM_BOOKIES = 1;
 
-    int numEntries;
-    int gcWaitTime;
-    double minorCompactionThreshold;
-    double majorCompactionThreshold;
-    long minorCompactionInterval;
-    long majorCompactionInterval;
-
-    String msg;
+    private final boolean isThrottleByBytes;
+    private final DigestType digestType;
+    private final int numEntries;
+    private final int gcWaitTime;
+    private final double minorCompactionThreshold;
+    private final double majorCompactionThreshold;
+    private final long minorCompactionInterval;
+    private final long majorCompactionInterval;
+    private final String msg;
 
     public CompactionTest(boolean isByBytes) {
         super(NUM_BOOKIES);
