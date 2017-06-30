@@ -16,7 +16,7 @@ In order to run BookKeeper on DC/OS, you will need:
 * A DC/OS cluster with at least three nodes
 * The [DC/OS CLI tool](https://dcos.io/docs/1.8/usage/cli/install/) installed
 
-Each node in the cluster must have at least:
+Each node in your DC/OS-managed Mesos cluster must have at least:
 
 * 1 CPU
 * 1 GB of memory
@@ -81,20 +81,54 @@ If you're connecting using a client running outside your Mesos cluster, you need
 
 ## Configuring BookKeeper
 
-You can configure BookKeeper for DC/OS using a JSON file.
+By default, the `bookkeeper` package will start up a BookKeeper ensemble consisting of one {% pop bookie %} with one CPU, 1 GB of memory, and a 70 MB persistent volume.
+
+You can supply a non-default configuration when installing the package using a JSON file. Here's an example command:
 
 ```shell
 $ dcos package install bookkeeper \
-  --config=my-bk-dcos-config.json
+  --config=/path/to/config.json
 ```
-
-> For a full listing of parameters that you can set for BookKeeper, see the [Configuration](../../reference/config) reference doc.
 
 You can then fetch the current configuration for BookKeeper at any time using the `package describe` command:
 
 ```shell
 $ dcos package describe bookkeeper \
   --config
+```
+
+### Available parameters
+
+> Not all [configurable parameters](../../reference/config) for BookKeeper are available for BookKeeper on DC/OS. Only the parameters show in the table below are available.
+
+Param | Type | Description | Default
+:-----|:-----|:------------|:-------
+`name` | String | The name of the DC/OS service. | `bookkeeper`
+`cpus` | Integer | The number of CPU shares to allocate to each {% pop bookie %}. The minimum is 1. | `1` |
+`instances` | Integer | The number of {% pop bookies %} top run. The minimum is 1. | `1`
+`mem` | Number | The memory, in MB, to allocate to each BookKeeper task | `1024.0` (1 GB)
+`volume_size` | Number | The persistent volume size, in MB | `70`
+`zk_client` | String | The connection string for the ZooKeeper client instance | `master.mesos:2181`
+`service_port` | Integer | The BookKeeper export service port, using `PORT0` in Marathon | `3181`
+
+### Example JSON configuration
+
+Here's an example JSON configuration object for BookKeeper on DC/OS:
+
+```json
+{
+  "instances": 5,
+  "cpus": 3,
+  "mem": 2048.0,
+  "volume_size": 250
+}
+```
+
+If that configuration were stored in a file called `bk-config.json`, you could apply that configuration upon installating the BookKeeper package using this command:
+
+```shell
+$ dcos package install bookkeeper \
+  --config=./bk-config.json
 ```
 
 ## Uninstalling BookKeeper

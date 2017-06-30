@@ -302,7 +302,7 @@
   <li>The <a href="https://dcos.io/docs/1.8/usage/cli/install/">DC/OS CLI tool</a> installed</li>
 </ul>
 
-<p>Each node in the cluster must have at least:</p>
+<p>Each node in your DC/OS-managed Mesos cluster must have at least:</p>
 
 <ul>
   <li>1 CPU</li>
@@ -341,53 +341,132 @@
 
 <p><img src="/bookkeeper/img/dcos/tasks.png" alt="DC/OS tasks" /></p>
 
-<h3 id="scale">Scale</h3>
+<h2 id="scaling-bookkeeper">Scaling BookKeeper</h2>
 
 <p>Once the first <span class="pop" id="bookie-popover">bookie</span> has started up, you can click on the <strong>Scale</strong> tab to scale up your BookKeeper ensemble by adding more bookies (or scale down the ensemble by removing bookies).</p>
 
 <p><img src="/bookkeeper/img/dcos/scale.png" alt="DC/OS scale" /></p>
 
-<h3 id="zookeeper-exhibitor">ZooKeeper Exhibitor</h3>
+<h2 id="zookeeper-exhibitor">ZooKeeper Exhibitor</h2>
 
 <p>ZooKeeper contains the information for all bookies in the ensemble. When deployed on DC/OS, BookKeeper uses a ZooKeeper instance provided by DC/OS. You can access a visual UI for ZooKeeper using <a href="https://github.com/soabase/exhibitor/wiki">Exhibitor</a>, which is available at <a href="http://master.dcos/exhibitor">http://master.dcos/exhibitor</a>.</p>
 
 <p><img src="/bookkeeper/img/dcos/exhibitor.png" alt="ZooKeeper Exhibitor" /></p>
 
-<p>You should see a listing of IP/host information for all bookies under <code class="highlighter-rouge">messaging/bookkeeper/ledgers/available</code>.</p>
+<p>You should see a listing of IP/host information for all bookies under the <code class="highlighter-rouge">messaging/bookkeeper/ledgers/available</code> node.</p>
 
 <h2 id="client-connections">Client connections</h2>
 
-<p>To connect to bookies running on DC/OS using clients, you need to specify the ZooKeeper connection string for DC/OS’s ZooKeeper cluster:</p>
+<p>To connect to bookies running on DC/OS using clients running within your Mesos cluster, you need to specify the ZooKeeper connection string for DC/OS’s ZooKeeper cluster:</p>
 
 <div class="highlighter-rouge"><pre class="highlight"><code>master.mesos:2181
 </code></pre>
 </div>
 
-<p>This is the <em>only</em> ZooKeeper host/port you need to include in your connection string.</p>
-
-<p>Here’s an example using the <a href="../../api/ledger-api#the-java-ledger-api-client">Java client</a>:</p>
+<p>This is the <em>only</em> ZooKeeper host/port you need to include in your connection string. Here’s an example using the <a href="../../api/ledger-api#the-java-ledger-api-client">Java client</a>:</p>
 
 <div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BookKeeper</span><span class="o">(</span><span class="s">"master.mesos:2181"</span><span class="o">);</span>
 </code></pre>
 </div>
 
+<p>If you’re connecting using a client running outside your Mesos cluster, you need to supply the public-facing connection string for your DC/OS ZooKeeper cluster.</p>
+
 <h2 id="configuring-bookkeeper">Configuring BookKeeper</h2>
 
-<p>You can configure BookKeeper for DC/OS using a JSON file.</p>
+<p>By default, the <code class="highlighter-rouge">bookkeeper</code> package will start up a BookKeeper ensemble consisting of one <span class="pop" id="bookie-popover">bookie</span> with one CPU, 1 GB of memory, and a 70 MB persistent volume.</p>
+
+<p>You can supply a non-default configuration when installing the package using a JSON file. Here’s an example command:</p>
 
 <div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>dcos package install bookkeeper <span class="se">\</span>
-  --config<span class="o">=</span>my-bk-dcos-config.json
+  --config<span class="o">=</span>/path/to/config.json
 </code></pre>
 </div>
-
-<blockquote>
-  <p>For a full listing of parameters that you can set for BookKeeper, see the <a href="../../reference/config">Configuration</a> reference doc.</p>
-</blockquote>
 
 <p>You can then fetch the current configuration for BookKeeper at any time using the <code class="highlighter-rouge">package describe</code> command:</p>
 
 <div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>dcos package describe bookkeeper <span class="se">\</span>
   --config
+</code></pre>
+</div>
+
+<h3 id="available-parameters">Available parameters</h3>
+
+<blockquote>
+  <p>Not all <a href="../../reference/config">configurable parameters</a> for BookKeeper are available for BookKeeper on DC/OS. Only the parameters show in the table below are available.</p>
+</blockquote>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Param</th>
+      <th style="text-align: left">Type</th>
+      <th style="text-align: left">Description</th>
+      <th style="text-align: left">Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left"><code class="highlighter-rouge">name</code></td>
+      <td style="text-align: left">String</td>
+      <td style="text-align: left">The name of the DC/OS service.</td>
+      <td style="text-align: left"><code class="highlighter-rouge">bookkeeper</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code class="highlighter-rouge">cpus</code></td>
+      <td style="text-align: left">Integer</td>
+      <td style="text-align: left">The number of CPU shares to allocate to each <span class="pop" id="bookie-popover">bookie</span>. The minimum is 1.</td>
+      <td style="text-align: left"><code class="highlighter-rouge">1</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code class="highlighter-rouge">instances</code></td>
+      <td style="text-align: left">Integer</td>
+      <td style="text-align: left">The number of <span class="pop" id="bookie-popover">bookies</span> top run. The minimum is 1.</td>
+      <td style="text-align: left"><code class="highlighter-rouge">1</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code class="highlighter-rouge">mem</code></td>
+      <td style="text-align: left">Number</td>
+      <td style="text-align: left">The memory, in MB, to allocate to each BookKeeper task</td>
+      <td style="text-align: left"><code class="highlighter-rouge">1024.0</code> (1 GB)</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code class="highlighter-rouge">volume_size</code></td>
+      <td style="text-align: left">Number</td>
+      <td style="text-align: left">The persistent volume size, in MB</td>
+      <td style="text-align: left"><code class="highlighter-rouge">70</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code class="highlighter-rouge">zk_client</code></td>
+      <td style="text-align: left">String</td>
+      <td style="text-align: left">The connection string for the ZooKeeper client instance</td>
+      <td style="text-align: left"><code class="highlighter-rouge">master.mesos:2181</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code class="highlighter-rouge">service_port</code></td>
+      <td style="text-align: left">Integer</td>
+      <td style="text-align: left">The BookKeeper export service port, using <code class="highlighter-rouge">PORT0</code> in Marathon</td>
+      <td style="text-align: left"><code class="highlighter-rouge">3181</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="example-json-configuration">Example JSON configuration</h3>
+
+<p>Here’s an example JSON configuration object for BookKeeper on DC/OS:</p>
+
+<div class="language-json highlighter-rouge"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nt">"instances"</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"cpus"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"mem"</span><span class="p">:</span><span class="w"> </span><span class="mf">2048.0</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"volume_size"</span><span class="p">:</span><span class="w"> </span><span class="mi">250</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre>
+</div>
+
+<p>If that configuration were stored in a file called <code class="highlighter-rouge">bk-config.json</code>, you could apply that configuration upon installating the BookKeeper package using this command:</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>dcos package install bookkeeper <span class="se">\</span>
+  --config<span class="o">=</span>./bk-config.json
 </code></pre>
 </div>
 
@@ -416,10 +495,12 @@ Thank you <span class="k">for </span>using bookkeeper.
 <li class="toc-entry toc-h2"><a href="#installing-bookkeeper">Installing BookKeeper</a></li>
 <li class="toc-entry toc-h3"><a href="#services">Services</a></li>
 <li class="toc-entry toc-h3"><a href="#tasks">Tasks</a></li>
-<li class="toc-entry toc-h3"><a href="#scale">Scale</a></li>
-<li class="toc-entry toc-h3"><a href="#zookeeper-exhibitor">ZooKeeper Exhibitor</a></li>
+<li class="toc-entry toc-h2"><a href="#scaling-bookkeeper">Scaling BookKeeper</a></li>
+<li class="toc-entry toc-h2"><a href="#zookeeper-exhibitor">ZooKeeper Exhibitor</a></li>
 <li class="toc-entry toc-h2"><a href="#client-connections">Client connections</a></li>
 <li class="toc-entry toc-h2"><a href="#configuring-bookkeeper">Configuring BookKeeper</a></li>
+<li class="toc-entry toc-h3"><a href="#available-parameters">Available parameters</a></li>
+<li class="toc-entry toc-h3"><a href="#example-json-configuration">Example JSON configuration</a></li>
 <li class="toc-entry toc-h2"><a href="#uninstalling-bookkeeper">Uninstalling BookKeeper</a></li>
 </ul>
 </div>
