@@ -39,7 +39,7 @@ public class LedgerEntryPage {
     volatile private EntryKey entryKey = new EntryKey(-1, BookieProtocol.INVALID_ENTRY_ID);
     private final ByteBuffer page;
     volatile private boolean clean = true;
-    private final AtomicInteger useCount = new AtomicInteger();
+    private final AtomicInteger useCount = new AtomicInteger(0);
     private final AtomicInteger version = new AtomicInteger(0);
     volatile private int last = -1; // Last update position
     private final LEPStateChangeCallback callback;
@@ -62,6 +62,21 @@ public class LedgerEntryPage {
         }
     }
 
+    // Except for not allocating a new direct byte buffer; this should do everything that
+    // the constructor does
+    public void resetPage() {
+        page.clear();
+        ZeroBuffer.put(page);
+        last = -1;
+        entryKey = new EntryKey(-1, BookieProtocol.INVALID_ENTRY_ID);
+        clean = true;
+        useCount.set(0);
+        if (null != this.callback) {
+            callback.onResetInUse(this);
+        }
+    }
+
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -80,12 +95,20 @@ public class LedgerEntryPage {
         }
     }
 
+    public void releasePageNoCallback() {
+        releasePageInternal(false);
+    }
+
     public void releasePage() {
+        releasePageInternal(true);
+    }
+
+    private void releasePageInternal(boolean shouldCallback) {
         int newUseCount = useCount.decrementAndGet();
         if (newUseCount < 0) {
             throw new IllegalStateException("Use count has gone below 0");
         }
-        if ((null != callback) && (newUseCount == 0)) {
+        if (shouldCallback && (null != callback) && (newUseCount == 0)) {
             callback.onResetInUse(this);
         }
     }
