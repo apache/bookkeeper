@@ -470,7 +470,45 @@
 
       <div class="content is-medium">
         <section class="bk-docs-content">
-          
+          <h2 id="stats-providers">Stats providers</h2>
+
+<p>BookKeeper has stats provider implementations for four five sinks:</p>
+
+<ul>
+  <li><a href="https://mvnrepository.com/artifact/org.apache.bookkeeper.stats/codahale-metrics-provider">Codahale Metrics</a></li>
+  <li><a href="https://prometheus.io/">Prometheus</a></li>
+  <li><a href="https://twitter.github.io/finagle/guide/Metrics.html">Finagle</a></li>
+  <li><a href="https://github.com/twitter/ostrich">Ostrich</a></li>
+  <li><a href="https://mvnrepository.com/artifact/org.apache.bookkeeper.stats/twitter-science-provider">Twitter Science Provider</a></li>
+</ul>
+
+<h2 id="enabling-stats-providers-in-bookies">Enabling stats providers in bookies</h2>
+
+<p>There are two stats-related <a href="../../reference/config#statistics">configuration parameters</a> available for bookies:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Parameter</th>
+      <th style="text-align: left">Description</th>
+      <th style="text-align: left">Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left"><code class="highlighter-rouge">enableStatistics</code></td>
+      <td style="text-align: left">Whether statistics are enabled for the bookie</td>
+      <td style="text-align: left"><code class="highlighter-rouge">true</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code class="highlighter-rouge">statsProviderClass</code></td>
+      <td style="text-align: left">The stats provider class used by the bookie</td>
+      <td style="text-align: left"><code class="highlighter-rouge">org.apache.bookkeeper.stats.CodahaleMetricsProvider</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<p>As you can see, the <a href="https://github.com/apache/bookkeeper/tree/master/bookkeeper-stats-providers/codahale-metrics-provider">Codahale Metrics</a></p>
 
         </section>
 
@@ -483,6 +521,8 @@
       <div class="toc">
   <h2 class="title">Metric collection</h2>
   <ul class="section-nav">
+<li class="toc-entry toc-h2"><a href="#stats-providers">Stats providers</a></li>
+<li class="toc-entry toc-h2"><a href="#enabling-stats-providers-in-bookies">Enabling stats providers in bookies</a></li>
 </ul>
 </div>
 

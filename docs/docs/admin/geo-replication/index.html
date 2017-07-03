@@ -463,14 +463,32 @@
           
         </nav>
 
-        
+        <h2 class="subtitle">Replicate data across BookKeeper clusters</h2>
       </header>
 
       <hr />
 
       <div class="content is-medium">
         <section class="bk-docs-content">
-          
+          <p><em>Geo-replication</em> is the replication of data across BookKeeper clusters. In order to enable geo-replication for a group of BookKeeper clusters,</p>
+
+<h2 id="global-zookeeper">Global ZooKeeper</h2>
+
+<p>Setting up a global ZooKeeper quorum is a lot like setting up a cluster-specific quorum. The crucial difference is that</p>
+
+<h3 id="geo-replication-across-three-clusters">Geo-replication across three clusters</h3>
+
+<p>Let’s say that you want to set up geo-replication across clusters in regions A, B, and C. First, the BookKeeper clusters in each region must have their own local (cluster-specific) ZooKeeper quorum.</p>
+
+<blockquote>
+  <p>BookKeeper clusters use global ZooKeeper only for metadata storage. Traffic from bookies to ZooKeeper should thus be fairly light in general.</p>
+</blockquote>
+
+<p>The crucial difference between using cluster-specific ZooKeeper and global ZooKeeper is that <span class="pop" id="bookie-popover">bookies</span> is that you need to point all bookies to use the global ZooKeeper setup.</p>
+
+<h2 id="region-aware-placement-polocy">Region-aware placement polocy</h2>
+
+<h2 id="autorecovery">Autorecovery</h2>
 
         </section>
 
@@ -483,6 +501,10 @@
       <div class="toc">
   <h2 class="title">Geo-replication</h2>
   <ul class="section-nav">
+<li class="toc-entry toc-h2"><a href="#global-zookeeper">Global ZooKeeper</a></li>
+<li class="toc-entry toc-h3"><a href="#geo-replication-across-three-clusters">Geo-replication across three clusters</a></li>
+<li class="toc-entry toc-h2"><a href="#region-aware-placement-polocy">Region-aware placement polocy</a></li>
+<li class="toc-entry toc-h2"><a href="#autorecovery">Autorecovery</a></li>
 </ul>
 </div>
 

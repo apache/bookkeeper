@@ -189,8 +189,8 @@ groups:
 - name: Statistics
   params:
   - param: enableStatistics
-    description: Whether statistics are enable for the bookie.
-    default: TODO
+    description: Whether statistics are enabled for the bookie.
+    default: true
   - param: statsProviderClass
     description: Stats provider class.
     default: org.apache.bookkeeper.stats.CodahaleMetricsProvider
