@@ -6704,7 +6704,10 @@ footer.footer {
 img.logo {
   height: 3rem; }
 
-.highlighter-rouge + blockquote, .highlighter-rouge + h5, .highlighter-rouge + p {
+blockquote code {
+  background-color: white; }
+
+.highlighter-rouge + blockquote, .highlighter-rouge + h1, .highlighter-rouge + h2, .highlighter-rouge + h3, .highlighter-rouge + h4, .highlighter-rouge + h5, .highlighter-rouge + p {
   margin-top: 1.5rem; }
 
 em {

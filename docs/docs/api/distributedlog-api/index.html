@@ -35,19 +35,6 @@
       </a>
     </div>
 
-    <div class="nav-center">
-      <a class="nav-item" href="https://github.com/apache/bookkeeper">
-        <span class="icon is-medium">
-          <i class="fa fa-github"></i>
-        </span>
-      </a>
-      <a class="nav-item" href="https://stackoverflow.com/search?q=apache+bookkeeper">
-        <span class="icon is-medium">
-          <i class="fa fa-stack-overflow"></i>
-        </span>
-      </a>
-    </div>
-
     <div class="nav-right nav-menu">
       <a class="nav-item is-tab" href="/bookkeeper/docs">
         Docs
@@ -57,7 +44,18 @@
         Javadoc
       </a>
 
-      <div class="nav-item">
+      <a class="nav-item is-tab" href="https://github.com/apache/bookkeeper">
+        <span class="icon is-medium">
+          <i class="fa fa-github"></i>
+        </span>
+      </a>
+      <a class="nav-item" href="https://stackoverflow.com/search?q=apache+bookkeeper">
+        <span class="icon is-medium">
+          <i class="fa fa-stack-overflow"></i>
+        </span>
+      </a>
+
+      <div class="nav-item is-tab">
         <div class="field is-grouped">
           <p class="control">
             <a class="button is-primary" href="/bookkeeper/docs/getting-started/installation">
@@ -612,6 +610,8 @@
 </code></pre>
 </div>
 
+<h3 id="log-api">Log API</h3>
+
 <h4 id="creating-logs">Creating logs</h4>
 
 <p>You can create a log by calling the <code class="highlighter-rouge">createLog</code> method on a <a href=""><code class="highlighter-rouge">DistributedLogNamespace</code></a> object, passing in a name for the log. This creates the log under the namespace but does <em>not</em> return a handle for operating the log.</p>
@@ -645,12 +645,95 @@
 
 <p>Sometimes, applications may open a log with a different configuration from the enclosing namespace. This can be done using the same <code class="highlighter-rouge">openLog</code> method:</p>
 
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">DistributedLogConfiguration</span> <span class="n">namespaceConf</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DistributedLogConfiguration</span><span class="o">();</span>
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="c1">// Namespace configuration</span>
+<span class="n">DistributedLogConfiguration</span> <span class="n">namespaceConf</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DistributedLogConfiguration</span><span class="o">();</span>
 <span class="n">conf</span><span class="o">.</span><span class="na">setRetentionPeriodHours</span><span class="o">(</span><span class="mi">24</span><span class="o">);</span>
 <span class="n">URI</span> <span class="n">uri</span> <span class="o">=</span> <span class="n">URI</span><span class="o">.</span><span class="na">create</span><span class="o">(</span><span class="s">"distributedlog-bk://zookeeper-domain/path/to/stream"</span><span class="o">);</span>
-
+<span class="n">DistributedLogNamespace</span> <span class="n">namespace</span> <span class="o">=</span> <span class="n">DistributedLogNamespace</span><span class="o">.</span><span class="na">newBuilder</span><span class="o">()</span>
+        <span class="o">.</span><span class="na">conf</span><span class="o">(</span><span class="n">namespaceConf</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">uri</span><span class="o">(</span><span class="n">uri</span><span class="o">)</span>
+        <span class="c1">// Other builder attributes</span>
+        <span class="o">.</span><span class="na">build</span><span class="o">();</span>
+<span class="c1">// Log-specific configuration</span>
+<span class="n">DistributedLogConfiguration</span> <span class="n">logConf</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DistributedLogConfiguration</span><span class="o">();</span>
+<span class="n">logConf</span><span class="o">.</span><span class="na">setRetentionPeriodHours</span><span class="o">(</span><span class="mi">12</span><span class="o">);</span>
+<span class="n">DistributedLogManager</span> <span class="n">logManager</span> <span class="o">=</span> <span class="n">namespace</span><span class="o">.</span><span class="na">openLog</span><span class="o">(</span>
+        <span class="s">"test-log"</span><span class="o">,</span>
+        <span class="n">Optional</span><span class="o">.</span><span class="na">of</span><span class="o">(</span><span class="n">logConf</span><span class="o">),</span>
+        <span class="n">Optional</span><span class="o">.</span><span class="na">absent</span><span class="o">()</span>
+<span class="o">);</span>
 </code></pre>
 </div>
+
+<h4 id="deleting-logs">Deleting logs</h4>
+
+<p>The <a href=""><code class="highlighter-rouge">DistributedLogNamespace</code></a> class provides <code class="highlighter-rouge">deleteLog</code> function that can be used to delete logs. When you delete a lot, the client library will attempt to acquire a lock on the log before deletion. If the log is being written to by an active writer, deletion will fail (as the other writer currently holds the lock).</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="k">try</span> <span class="o">{</span>
+    <span class="n">namespace</span><span class="o">.</span><span class="na">deleteLog</span><span class="o">(</span><span class="s">"test-log"</span><span class="o">);</span>
+<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">IOException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+    <span class="c1">// Handle exception</span>
+<span class="o">}</span>
+</code></pre>
+</div>
+
+<h4 id="checking-for-the-existence-of-a-log">Checking for the existence of a log</h4>
+
+<p>Applications can check whether a log exists by calling the <code class="highlighter-rouge">logExists</code> function.</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="k">if</span> <span class="o">(</span><span class="n">namespace</span><span class="o">.</span><span class="na">logExists</span><span class="o">(</span><span class="s">"test-log"</span><span class="o">))</span> <span class="o">{</span>
+  <span class="c1">// Perform some action when the log exists</span>
+<span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+  <span class="c1">// Perform some action when the log doesn't exist</span>
+<span class="o">}</span>
+</code></pre>
+</div>
+
+<h4 id="listing-logs">Listing logs</h4>
+
+<p>Applications can retrieve a list of all logs under a namespace using the <code class="highlighter-rouge">getLogs</code> function.</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">Iterator</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">logs</span> <span class="o">=</span> <span class="n">namespace</span><span class="o">.</span><span class="na">getLogs</span><span class="o">();</span>
+<span class="k">while</span> <span class="o">(</span><span class="n">logs</span><span class="o">.</span><span class="na">hasNext</span><span class="o">())</span> <span class="o">{</span>
+  <span class="n">String</span> <span class="n">logName</span> <span class="o">=</span> <span class="n">logs</span><span class="o">.</span><span class="na">next</span><span class="o">();</span>
+  <span class="c1">// Do something with the log name, such as print</span>
+<span class="o">}</span>
+</code></pre>
+</div>
+
+<h3 id="writer-api">Writer API</h3>
+
+<p>You can write to DistributedLog logs either <a href="#writing-to-logs-synchronously">synchronously</a> using the <a href=""><code class="highlighter-rouge">LogWriter</code></a> class or <a href="#writing-to-logs-asynchronously">asynchronously</a> using the <a href=""><code class="highlighter-rouge">AsyncLogWriter</code></a> class.</p>
+
+<h4 id="writing-to-logs-synchronously">Writing to logs synchronously</h4>
+
+<p>To write records to a log synchronously, you need to instantiate a <a href=""><code class="highlighter-rouge">LogWriter</code></a> object using a <a href=""><code class="highlighter-rouge">DistributedLogManager</code></a>. Here’s an example:</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">DistributedLogNamespace</span> <span class="n">namespace</span> <span class="o">=</span> <span class="cm">/* Some namespace object */</span><span class="o">;</span>
+<span class="n">DistributedLogManager</span> <span class="n">logManager</span> <span class="o">=</span> <span class="n">namespace</span><span class="o">.</span><span class="na">openLog</span><span class="o">(</span><span class="s">"test-log"</span><span class="o">);</span>
+<span class="n">LogWriter</span> <span class="n">writer</span> <span class="o">=</span> <span class="n">logManager</span><span class="o">.</span><span class="na">startLogSegmentNonPartitioned</span><span class="o">();</span>
+</code></pre>
+</div>
+
+<blockquote>
+  <p>The DistributedLog library enforces single-writer semantics by deploying a ZooKeeper locking mechanism. If there is only one active writer, subsequent calls to <code class="highlighter-rouge">startLogSegmentNonPartitioned</code> will fail with an <a href=""><code class="highlighter-rouge">OwnershipAcquireFailedException</code></a>.</p>
+</blockquote>
+
+<p>Log records represent the data written to a log stream. Each log record is associated with an application-defined <a href="#log-records">TransactionID</a>. This ID must be non decreasing or else writing a record will be rejected with <a href=""><code class="highlighter-rouge">TransactionIdOutOfOrderException</code></a>. The application is allowed to bypass the TransactionID sanity checking by setting <code class="highlighter-rouge">maxIdSanityCheck</code> to <code class="highlighter-rouge">false</code> in the configuration. System time and atomic numbers are good candidates for TransactionID.</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kt">long</span> <span class="n">txid</span> <span class="o">=</span> <span class="mi">1L</span><span class="o">;</span>
+<span class="kt">byte</span><span class="o">[]</span> <span class="n">data</span> <span class="o">=</span> <span class="s">"some byte array"</span><span class="o">.</span><span class="na">getBytes</span><span class="o">();</span>
+<span class="n">LogRecord</span> <span class="n">record</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LogRecord</span><span class="o">(</span><span class="n">txid</span><span class="o">,</span> <span class="n">data</span><span class="o">);</span>
+</code></pre>
+</div>
+
+<h4 id="writing-to-logs-asynchronously">Writing to logs asynchronously</h4>
+
+<h3 id="reader-api">Reader API</h3>
+
+<h4 id="reading-from-logs-synchronously">Reading from logs synchronously</h4>
+
+<h4 id="reading-from-logs-asynchronously">Reading from logs asynchronously</h4>
 
         </section>
 
@@ -676,8 +759,18 @@
 <li class="toc-entry toc-h2"><a href="#api">API</a></li>
 <li class="toc-entry toc-h3"><a href="#namespace-api">Namespace API</a></li>
 <li class="toc-entry toc-h4"><a href="#building-namespaces">Building namespaces</a></li>
+<li class="toc-entry toc-h3"><a href="#log-api">Log API</a></li>
 <li class="toc-entry toc-h4"><a href="#creating-logs">Creating logs</a></li>
 <li class="toc-entry toc-h4"><a href="#opening-logs">Opening logs</a></li>
+<li class="toc-entry toc-h4"><a href="#deleting-logs">Deleting logs</a></li>
+<li class="toc-entry toc-h4"><a href="#checking-for-the-existence-of-a-log">Checking for the existence of a log</a></li>
+<li class="toc-entry toc-h4"><a href="#listing-logs">Listing logs</a></li>
+<li class="toc-entry toc-h3"><a href="#writer-api">Writer API</a></li>
+<li class="toc-entry toc-h4"><a href="#writing-to-logs-synchronously">Writing to logs synchronously</a></li>
+<li class="toc-entry toc-h4"><a href="#writing-to-logs-asynchronously">Writing to logs asynchronously</a></li>
+<li class="toc-entry toc-h3"><a href="#reader-api">Reader API</a></li>
+<li class="toc-entry toc-h4"><a href="#reading-from-logs-synchronously">Reading from logs synchronously</a></li>
+<li class="toc-entry toc-h4"><a href="#reading-from-logs-asynchronously">Reading from logs asynchronously</a></li>
 </ul>
 </div>
 
@@ -757,15 +850,7 @@ tippy('#journal-popover', {
   <div class="container">
     <div class="content has-text-centered">
       <p>
-        <strong>Apache BookKeeper</strong> is an Apache project.
-      </p>
-      <p>
-        <a class="icon" href="https://github.com/apache/bookkeeper">
-          <i class="fa fa-github"></i>
-        </a>
-        <a class="icon" href="https://stackoverflow.com/search?q=apache+bookkeeper">
-          <i class="fa fa-stack-overflow"></i>
-        </a>
+        Copyright &copy; 2016 - 2017 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
       </p>
     </div>
   </div>

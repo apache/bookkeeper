@@ -115,6 +115,8 @@ DistributedLogNamespace = builder
         .build();
 ```
 
+### Log API
+
 #### Creating logs
 
 You can create a log by calling the `createLog` method on a [`DistributedLogNamespace`]() object, passing in a name for the log. This creates the log under the namespace but does *not* return a handle for operating the log.
@@ -147,8 +149,89 @@ DistributedLogManager logManager = namespace.openLog("test-log");
 Sometimes, applications may open a log with a different configuration from the enclosing namespace. This can be done using the same `openLog` method:
 
 ```java
+// Namespace configuration
 DistributedLogConfiguration namespaceConf = new DistributedLogConfiguration();
 conf.setRetentionPeriodHours(24);
 URI uri = URI.create("distributedlog-bk://zookeeper-domain/path/to/stream");
-
+DistributedLogNamespace namespace = DistributedLogNamespace.newBuilder()
+        .conf(namespaceConf)
+        .uri(uri)
+        // Other builder attributes
+        .build();
+// Log-specific configuration
+DistributedLogConfiguration logConf = new DistributedLogConfiguration();
+logConf.setRetentionPeriodHours(12);
+DistributedLogManager logManager = namespace.openLog(
+        "test-log",
+        Optional.of(logConf),
+        Optional.absent()
+);
 ```
+
+#### Deleting logs
+
+The [`DistributedLogNamespace`]() class provides `deleteLog` function that can be used to delete logs. When you delete a lot, the client library will attempt to acquire a lock on the log before deletion. If the log is being written to by an active writer, deletion will fail (as the other writer currently holds the lock).
+
+```java
+try {
+    namespace.deleteLog("test-log");
+} catch (IOException e) {
+    // Handle exception
+}
+```
+
+#### Checking for the existence of a log
+
+Applications can check whether a log exists by calling the `logExists` function.
+
+```java
+if (namespace.logExists("test-log")) {
+  // Perform some action when the log exists
+} else {
+  // Perform some action when the log doesn't exist
+}
+```
+
+#### Listing logs
+
+Applications can retrieve a list of all logs under a namespace using the `getLogs` function.
+
+```java
+Iterator<String> logs = namespace.getLogs();
+while (logs.hasNext()) {
+  String logName = logs.next();
+  // Do something with the log name, such as print
+}
+```
+
+### Writer API
+
+You can write to DistributedLog logs either [synchronously](#writing-to-logs-synchronously) using the [`LogWriter`]() class or [asynchronously](#writing-to-logs-asynchronously) using the [`AsyncLogWriter`]() class.
+
+#### Writing to logs synchronously
+
+To write records to a log synchronously, you need to instantiate a [`LogWriter`]() object using a [`DistributedLogManager`](). Here's an example:
+
+```java
+DistributedLogNamespace namespace = /* Some namespace object */;
+DistributedLogManager logManager = namespace.openLog("test-log");
+LogWriter writer = logManager.startLogSegmentNonPartitioned();
+```
+
+> The DistributedLog library enforces single-writer semantics by deploying a ZooKeeper locking mechanism. If there is only one active writer, subsequent calls to `startLogSegmentNonPartitioned` will fail with an [`OwnershipAcquireFailedException`]().
+
+Log records represent the data written to a log stream. Each log record is associated with an application-defined [TransactionID](#log-records). This ID must be non decreasing or else writing a record will be rejected with [`TransactionIdOutOfOrderException`](). The application is allowed to bypass the TransactionID sanity checking by setting `maxIdSanityCheck` to `false` in the configuration. System time and atomic numbers are good candidates for TransactionID.
+
+```java
+long txid = 1L;
+byte[] data = "some byte array".getBytes();
+LogRecord record = new LogRecord(txid, data);
+```
+
+#### Writing to logs asynchronously
+
+### Reader API
+
+#### Reading from logs synchronously
+
+#### Reading from logs asynchronously

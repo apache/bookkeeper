@@ -8,8 +8,16 @@
       </a>
     </div>
 
-    <div class="nav-center">
-      <a class="nav-item" href="{{ site.github_repo }}">
+    <div class="nav-right nav-menu">
+      <a class="nav-item is-tab{% if page.url == docs_url %} is-active{% endif %}" href="{{ site.baseurl }}docs">
+        Docs
+      </a>
+
+      <a class="nav-item is-tab" href="{{ site.baseurl }}javadoc">
+        Javadoc
+      </a>
+
+      <a class="nav-item is-tab" href="{{ site.github_repo }}">
         <span class="icon is-medium">
           <i class="fa fa-github"></i>
         </span>
@@ -19,18 +27,8 @@
           <i class="fa fa-stack-overflow"></i>
         </span>
       </a>
-    </div>
 
-    <div class="nav-right nav-menu">
-      <a class="nav-item is-tab{% if page.url == docs_url %} is-active{% endif %}" href="{{ site.baseurl }}docs">
-        Docs
-      </a>
-
-      <a class="nav-item is-tab" href="{{ site.baseurl }}api">
-        Javadoc
-      </a>
-
-      <div class="nav-item">
+      <div class="nav-item is-tab">
         <div class="field is-grouped">
           <p class="control">
             <a class="button is-primary" href="{{ site.baseurl }}docs/getting-started/installation">

@@ -3,8 +3,8 @@
 source scripts/common.sh
 
 (
-  rm -rf api
+  rm -rf $JAVADOC_DEST_DIR
   cd $ROOT_DIR
   mvn compile javadoc:aggregate
-  cp -r $JAVADOC_GEN_DIR $JAVADOC_DEST_DIR
+  mv $JAVADOC_GEN_DIR $JAVADOC_DEST_DIR
 )
