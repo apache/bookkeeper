@@ -25,7 +25,8 @@
   </head>
   <body class="body">
     <main class="main">
-      <nav class="nav has-shadow bk-navbar">
+      
+<nav class="nav has-shadow bk-navbar">
   <div class="container">
     <div class="nav-left bk-brand">
       <a class="nav-item" href="/bookkeeper/">
@@ -205,7 +206,7 @@
     
     <li>
       <a href="/bookkeeper/docs/api/distributedlog-api">
-      DistributedLog API
+      DistributedLog
       </a>
     </li>
     
@@ -392,7 +393,7 @@
     
     <li>
       <a href="/bookkeeper/docs/api/distributedlog-api">
-      DistributedLog API
+      DistributedLog
       </a>
     </li>
     
@@ -470,17 +471,50 @@
 
       <div class="content is-medium">
         <section class="bk-docs-content">
-          <h2 id="stats-providers">Stats providers</h2>
+          <p>BookKeeper enables metrics collection through a variety of <a href="#stats-providers">stats providers</a>.</p>
+
+<blockquote>
+  <p>For a full listing of available metrics, see the <a href="../../reference/metrics">Metrics</a> reference doc.</p>
+</blockquote>
+
+<h2 id="stats-providers">Stats providers</h2>
 
 <p>BookKeeper has stats provider implementations for four five sinks:</p>
 
-<ul>
-  <li><a href="https://mvnrepository.com/artifact/org.apache.bookkeeper.stats/codahale-metrics-provider">Codahale Metrics</a></li>
-  <li><a href="https://prometheus.io/">Prometheus</a></li>
-  <li><a href="https://twitter.github.io/finagle/guide/Metrics.html">Finagle</a></li>
-  <li><a href="https://github.com/twitter/ostrich">Ostrich</a></li>
-  <li><a href="https://mvnrepository.com/artifact/org.apache.bookkeeper.stats/twitter-science-provider">Twitter Science Provider</a></li>
-</ul>
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Provider</th>
+      <th style="text-align: left">Provider class name</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left"><a href="https://mvnrepository.com/artifact/org.apache.bookkeeper.stats/codahale-metrics-provider">Codahale Metrics</a></td>
+      <td style="text-align: left"><code class="highlighter-rouge">org.apache.bookkeeper.stats.CodahaleMetricsProvider</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><a href="https://prometheus.io/">Prometheus</a></td>
+      <td style="text-align: left"><code class="highlighter-rouge">org.apache.bookkeeper.stats.PrometheusMetricsProvider</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><a href="https://twitter.github.io/finagle/guide/Metrics.html">Finagle</a></td>
+      <td style="text-align: left"><code class="highlighter-rouge">org.apache.bookkeeper.stats.FinagleStatsProvider</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><a href="https://github.com/twitter/ostrich">Ostrich</a></td>
+      <td style="text-align: left"><code class="highlighter-rouge">org.apache.bookkeeper.stats.OstrichProvider</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><a href="https://mvnrepository.com/artifact/org.apache.bookkeeper.stats/twitter-science-provider">Twitter Science Provider</a></td>
+      <td style="text-align: left"><code class="highlighter-rouge">org.apache.bookkeeper.stats.TwitterStatsProvider</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<blockquote>
+  <p>The <a href="https://github.com/apache/bookkeeper/tree/master/bookkeeper-stats-providers/codahale-metrics-provider">Codahale Metrics</a> stats provider is the default provider.</p>
+</blockquote>
 
 <h2 id="enabling-stats-providers-in-bookies">Enabling stats providers in bookies</h2>
 
@@ -498,7 +532,7 @@
     <tr>
       <td style="text-align: left"><code class="highlighter-rouge">enableStatistics</code></td>
       <td style="text-align: left">Whether statistics are enabled for the bookie</td>
-      <td style="text-align: left"><code class="highlighter-rouge">true</code></td>
+      <td style="text-align: left"><code class="highlighter-rouge">false</code></td>
     </tr>
     <tr>
       <td style="text-align: left"><code class="highlighter-rouge">statsProviderClass</code></td>
@@ -508,7 +542,16 @@
   </tbody>
 </table>
 
-<p>As you can see, the <a href="https://github.com/apache/bookkeeper/tree/master/bookkeeper-stats-providers/codahale-metrics-provider">Codahale Metrics</a></p>
+<p>To enable stats:</p>
+
+<ul>
+  <li>set the <code class="highlighter-rouge">enableStatistics</code> parameter to <code class="highlighter-rouge">true</code></li>
+  <li>set <code class="highlighter-rouge">statsProviderClass</code> to the desired provider (see the <a href="#stats-providers">table above</a> for a listing of classes)</li>
+</ul>
+
+<h2 id="enabling-stats-in-the-bookkeeper-library">Enabling stats in the bookkeeper library</h2>
+
+<p>TODO</p>
 
         </section>
 
@@ -523,6 +566,7 @@
   <ul class="section-nav">
 <li class="toc-entry toc-h2"><a href="#stats-providers">Stats providers</a></li>
 <li class="toc-entry toc-h2"><a href="#enabling-stats-providers-in-bookies">Enabling stats providers in bookies</a></li>
+<li class="toc-entry toc-h2"><a href="#enabling-stats-in-the-bookkeeper-library">Enabling stats in the bookkeeper library</a></li>
 </ul>
 </div>
 

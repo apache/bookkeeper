@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Apache BookKeeper - The DistributedLog API</title>
+    <title>Apache BookKeeper - DistributedLog</title>
 
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -25,7 +25,8 @@
   </head>
   <body class="body">
     <main class="main">
-      <nav class="nav has-shadow bk-navbar">
+      
+<nav class="nav has-shadow bk-navbar">
   <div class="container">
     <div class="nav-left bk-brand">
       <a class="nav-item" href="/bookkeeper/">
@@ -205,7 +206,7 @@
     
     <li>
       <a href="/bookkeeper/docs/api/distributedlog-api">
-      DistributedLog API
+      DistributedLog
       </a>
     </li>
     
@@ -392,7 +393,7 @@
     
     <li>
       <a href="/bookkeeper/docs/api/distributedlog-api">
-      DistributedLog API
+      DistributedLog
       </a>
     </li>
     
@@ -457,20 +458,199 @@
         <nav class="level">
           <div class="level-left">
             <div class="level-item">
-              <h1 class="title">The DistributedLog API</h1>
+              <h1 class="title">DistributedLog</h1>
             </div>
           </div>
           
         </nav>
 
-        
+        <h2 class="subtitle">A higher-level API for managing BookKeeper entries</h2>
       </header>
 
       <hr />
 
       <div class="content is-medium">
         <section class="bk-docs-content">
-          
+          <blockquote>
+  <p>DistributedLog began its life as a separate project under the Apache Foundation. It was merged into BookKeeper in 2017.</p>
+</blockquote>
+
+<p>The DistributedLog API is an easy-to-use interface for managing BookKeeper entries that enables you to use BookKeeper without needing to interact with <a href="../ledger-api">ledgers</a> directly.</p>
+
+<p>DistributedLog (DL) maintains sequences of records in categories called <em>logs</em> (aka <em>log streams</em>). <em>Writers</em> append records to DL logs, while <em>readers</em> fetch and process those records.</p>
+
+<h2 id="architecture">Architecture</h2>
+
+<p>The diagram below illustrates how the DistributedLog API works with BookKeeper:</p>
+
+<p><img src="/bookkeeper/img/distributedlog.png" alt="DistributedLog API" /></p>
+
+<h2 id="logs">Logs</h2>
+
+<p>A <em>log</em> in DistributedLog is an ordered, immutable sequence of <em>log records</em>.</p>
+
+<p>The diagram below illustrates the anatomy of a log stream:</p>
+
+<p><img src="/bookkeeper/img/logs.png" alt="DistributedLog log" /></p>
+
+<h3 id="log-records">Log records</h3>
+
+<p>Each log record is a sequence of bytes. Applications are responsible for serializing and deserializing byte sequences stored in log records.</p>
+
+<p>Log records are written sequentially into a <em>log stream</em> and assigned with a a unique sequence number called a DLSN (<strong>D</strong>istributed<strong>L</strong>og <strong>S</strong>equence <strong>N</strong>umber).</p>
+
+<p>In addition to a DLSN, applications can assign their own sequence number when constructing log records. Application-defined sequence numbers are known as <em>TransactionIDs</em> (or <em>txid</em>). Either a DLSN or a TransactionID can be used for positioning readers to start reading from a specific log record.</p>
+
+<h3 id="log-segments">Log segments</h3>
+
+<p>Each log is broken down into <em>log segments</em> that contain subsets of records. Log segments are distributed and stored in BookKeeper. DistributedLog rolls the log segments based on the configured <em>rolling policy</em>, which be either</p>
+
+<ul>
+  <li>a configurable period of time (such as every 2 hours), or</li>
+  <li>a configurable maximum size (such as every 128 MB).</li>
+</ul>
+
+<p>The data in logs is divided up into equally sized log segments and distributed evenly across <span class="pop" id="bookie-popover">bookies</span>. This allows logs to scale beyond a size that would fit on a single server and spreads read traffic across the cluster.</p>
+
+<h3 id="namespaces">Namespaces</h3>
+
+<p>Log streams that belong to the same organization are typically categorized and managed under a <em>namespace</em>. DistributedLog namespaces essentially enable applications to locate log streams. Applications can perform the following actions under a namespace:</p>
+
+<ul>
+  <li>create streams</li>
+  <li>delete streams</li>
+  <li>truncate streams to a given sequence number (either a DLSN or a TransactionID)</li>
+</ul>
+
+<h2 id="writers">Writers</h2>
+
+<p>Through the DistributedLog API, writers write data into logs of their choice. All records are appended into logs in order. The sequencing is performed by the writer, which means that there is only one active writer for a log at any given time.</p>
+
+<p>DistributedLog guarantees correctness when two writers attempt to write to the same log when a network partition occurs using a <em>fencing</em> mechanism in the log segment store.</p>
+
+<h3 id="write-proxy">Write Proxy</h3>
+
+<p>Log writers are served and managed in a service tier called the <em>Write Proxy</em> (see the diagram <a href="#architecture">above</a>). The Write Proxy is used for accepting writes from a large number of clients.</p>
+
+<h2 id="readers">Readers</h2>
+
+<p>DistributedLog readers read records from logs of their choice, starting with a provided position. The provided position can be either a DLSN or a TransactionID.</p>
+
+<p>Readers read records from logs in strict order. Different readers can read records from different positions in the same log.</p>
+
+<p>Unlike other pub-sub systems, DistributedLog doesn’t record or manage readers’ positions. This means that tracking is the responsibility of applications, as different applications may have different requirements for tracking and coordinating positions. This is hard to get right with a single approach. Distributed databases, for example, might store reader positions along with SSTables, so they would resume applying transactions from the positions store in SSTables. Tracking reader positions could easily be done at the application level using various stores (such as ZooKeeper, the filesystem, or key-value stores).</p>
+
+<h3 id="read-proxy">Read Proxy</h3>
+
+<p>Log records can be cached in a service tier called the <em>Read Proxy</em> to serve a large number of readers. See the diagram <a href="#architecture">above</a>. The Read Proxy is the analogue of the <a href="#write-proxy">Write Proxy</a>.</p>
+
+<h2 id="guarantees">Guarantees</h2>
+
+<p>The DistributedLog API for BookKeeper provides a number of guarantees for applications:</p>
+
+<ul>
+  <li>Records written by a <a href="#writers">writer</a> to a <a href="#logs">log</a> are appended in the order in which they are written. If a record <strong>R1</strong> is written by the same writer as a record <strong>R2</strong>, <strong>R1</strong> will have a smaller sequence number than <strong>R2</strong>.</li>
+  <li><a href="#readers">Readers</a> see <a href="#log-records">records</a> in the same order in which they are <a href="#writers">written</a> to the log.</li>
+  <li>All records are persisted on disk by BookKeeper before acknowledgements, which guarantees durability.</li>
+  <li>For a log with a replication factor of N, DistributedLog tolerates up to N-1 server failures without losing any records.</li>
+</ul>
+
+<h2 id="api">API</h2>
+
+<p>The DistributedLog core library is written in Java and interacts with namespaces and logs directly.</p>
+
+<h3 id="namespace-api">Namespace API</h3>
+
+<p>A DL <a href="#namespace">namespace</a> is a collection of <a href="#log-streams">log streams</a>. Namespaces are identified on the basis of a <a href="https://en.wikipedia.org/wiki/Uniform_Resource_Identifier">URI</a>, which has this structure:</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code>distributedlog-bk://&lt;domain-name&gt;/path/to/stream
+</code></pre>
+</div>
+
+<p>Namespace URIs have three components:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Component</th>
+      <th style="text-align: left">Structure</th>
+      <th style="text-align: left">Meaning</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left">Scheme</td>
+      <td style="text-align: left"><code class="highlighter-rouge">distributedlog-bk</code></td>
+      <td style="text-align: left">Specifies that the URI is a DistributedLog/BookKeeper URI</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">Domain name</td>
+      <td style="text-align: left">Host/port</td>
+      <td style="text-align: left">The domain name that is used to talk to the BookKeeper storage backend (often a ZooKeeper domain)</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">Path</td>
+      <td style="text-align: left"><code class="highlighter-rouge">/path/to/stream</code></td>
+      <td style="text-align: left">Points to the location that stores logs. This could be a ZooKeeper <a href="https://zookeeper.apache.org/doc/current/zookeeperOver.html">znode</a>.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="building-namespaces">Building namespaces</h4>
+
+<p>Once you have a namespace URI, you can build a namespace instance, which will be used for operating streams. Use the <a href=""><code class="highlighter-rouge">DistributedLogNamespaceBuilder</code></a> to build the <a href=""><code class="highlighter-rouge">DistributedLogNamespace</code></a> object, passing in a <a href=""><code class="highlighter-rouge">DistributedLogConfiguration</code></a>, a URI, and optionally a stats logger and a feature provider.</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">DistributedLogConfiguration</span> <span class="n">conf</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DistributedLogConfiguration</span><span class="o">();</span>
+<span class="n">URI</span> <span class="n">uri</span> <span class="o">=</span> <span class="n">URI</span><span class="o">.</span><span class="na">create</span><span class="o">(</span><span class="s">"distributedlog-bk://zookeeper-domain/path/to/stream"</span><span class="o">);</span>
+<span class="n">DistributedLogNamespaceBuilder</span> <span class="n">builder</span> <span class="o">=</span> <span class="n">DistributedLogNamespaceBuilder</span><span class="o">.</span><span class="na">newBuilder</span><span class="o">();</span>
+<span class="n">DistributedLogNamespace</span> <span class="o">=</span> <span class="n">builder</span>
+        <span class="o">.</span><span class="na">conf</span><span class="o">(</span><span class="n">conf</span><span class="o">)</span>           <span class="c1">// Configuration for the namespace</span>
+        <span class="o">.</span><span class="na">uri</span><span class="o">(</span><span class="n">uri</span><span class="o">)</span>             <span class="c1">// URI for the namespace</span>
+        <span class="o">.</span><span class="na">statsLogger</span><span class="o">(...)</span>     <span class="c1">// Stats logger for statistics</span>
+        <span class="o">.</span><span class="na">featureProvider</span><span class="o">(...)</span> <span class="c1">// Feature provider for controlling features</span>
+        <span class="o">.</span><span class="na">build</span><span class="o">();</span>
+</code></pre>
+</div>
+
+<h4 id="creating-logs">Creating logs</h4>
+
+<p>You can create a log by calling the <code class="highlighter-rouge">createLog</code> method on a <a href=""><code class="highlighter-rouge">DistributedLogNamespace</code></a> object, passing in a name for the log. This creates the log under the namespace but does <em>not</em> return a handle for operating the log.</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">DistributedLogNamespace</span> <span class="n">namespace</span> <span class="o">=</span> <span class="cm">/* Create namespace */</span><span class="o">;</span>
+<span class="k">try</span> <span class="o">{</span>
+    <span class="n">namespace</span><span class="o">.</span><span class="na">createLog</span><span class="o">(</span><span class="s">"test-log"</span><span class="o">);</span>
+<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">IOException</span> <span class="n">e</span><span class="o">)</span> <span class="o">}</span>
+    <span class="c1">// Handle the log creation exception</span>
+<span class="o">}</span>
+</code></pre>
+</div>
+
+<h4 id="opening-logs">Opening logs</h4>
+
+<p>A <a href=""><code class="highlighter-rouge">DistributedLogManager</code></a> handle will be returned when opening a log using the <code class="highlighter-rouge">openLog</code> function, which takes the name of the log. This handle can be used for writing records to or reading records from the log.</p>
+
+<blockquote>
+  <p>If the log doesn’t exist and <code class="highlighter-rouge">createStreamIfNotExists</code> is set to <code class="highlighter-rouge">true</code> in the configuration, the log will be created automatically when writing the first record.</p>
+</blockquote>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">DistributedLogConfiguration</span> <span class="n">conf</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DistributedLogConfiguration</span><span class="o">();</span>
+<span class="n">conf</span><span class="o">.</span><span class="na">setCreateStreamIfNotExists</span><span class="o">(</span><span class="kc">true</span><span class="o">);</span>
+<span class="n">DistributedLogNamespace</span> <span class="n">namespace</span> <span class="o">=</span> <span class="n">DistributedLogNamespace</span><span class="o">.</span><span class="na">newBuilder</span><span class="o">()</span>
+        <span class="o">.</span><span class="na">conf</span><span class="o">(</span><span class="n">conf</span><span class="o">)</span>
+        <span class="c1">// Other builder attributes</span>
+        <span class="o">.</span><span class="na">build</span><span class="o">();</span>
+<span class="n">DistributedLogManager</span> <span class="n">logManager</span> <span class="o">=</span> <span class="n">namespace</span><span class="o">.</span><span class="na">openLog</span><span class="o">(</span><span class="s">"test-log"</span><span class="o">);</span>
+</code></pre>
+</div>
+
+<p>Sometimes, applications may open a log with a different configuration from the enclosing namespace. This can be done using the same <code class="highlighter-rouge">openLog</code> method:</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">DistributedLogConfiguration</span> <span class="n">namespaceConf</span> <span class="o">=</span> <span class="k">new</span> <span class="n">DistributedLogConfiguration</span><span class="o">();</span>
+<span class="n">conf</span><span class="o">.</span><span class="na">setRetentionPeriodHours</span><span class="o">(</span><span class="mi">24</span><span class="o">);</span>
+<span class="n">URI</span> <span class="n">uri</span> <span class="o">=</span> <span class="n">URI</span><span class="o">.</span><span class="na">create</span><span class="o">(</span><span class="s">"distributedlog-bk://zookeeper-domain/path/to/stream"</span><span class="o">);</span>
+
+</code></pre>
+</div>
 
         </section>
 
@@ -481,8 +661,23 @@
     <div class="column is-2">
       
       <div class="toc">
-  <h2 class="title">The DistributedLog API</h2>
+  <h2 class="title">DistributedLog</h2>
   <ul class="section-nav">
+<li class="toc-entry toc-h2"><a href="#architecture">Architecture</a></li>
+<li class="toc-entry toc-h2"><a href="#logs">Logs</a></li>
+<li class="toc-entry toc-h3"><a href="#log-records">Log records</a></li>
+<li class="toc-entry toc-h3"><a href="#log-segments">Log segments</a></li>
+<li class="toc-entry toc-h3"><a href="#namespaces">Namespaces</a></li>
+<li class="toc-entry toc-h2"><a href="#writers">Writers</a></li>
+<li class="toc-entry toc-h3"><a href="#write-proxy">Write Proxy</a></li>
+<li class="toc-entry toc-h2"><a href="#readers">Readers</a></li>
+<li class="toc-entry toc-h3"><a href="#read-proxy">Read Proxy</a></li>
+<li class="toc-entry toc-h2"><a href="#guarantees">Guarantees</a></li>
+<li class="toc-entry toc-h2"><a href="#api">API</a></li>
+<li class="toc-entry toc-h3"><a href="#namespace-api">Namespace API</a></li>
+<li class="toc-entry toc-h4"><a href="#building-namespaces">Building namespaces</a></li>
+<li class="toc-entry toc-h4"><a href="#creating-logs">Creating logs</a></li>
+<li class="toc-entry toc-h4"><a href="#opening-logs">Opening logs</a></li>
 </ul>
 </div>
 

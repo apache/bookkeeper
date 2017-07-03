@@ -1,3 +1,4 @@
+{% capture docs_url %}{{ site.baseurl }}docs/{% endcapture %}
 <nav class="nav has-shadow bk-navbar">
   <div class="container">
     <div class="nav-left bk-brand">
@@ -21,7 +22,7 @@
     </div>
 
     <div class="nav-right nav-menu">
-      <a class="nav-item is-tab{% if page.url == '{{ site.baseurl }}{{ site.baseurl }}docs/' %} is-active{% endif %}" href="{{ site.baseurl }}docs">
+      <a class="nav-item is-tab{% if page.url == docs_url %} is-active{% endif %}" href="{{ site.baseurl }}docs">
         Docs
       </a>
 

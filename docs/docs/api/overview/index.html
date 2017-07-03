@@ -25,7 +25,8 @@
   </head>
   <body class="body">
     <main class="main">
-      <nav class="nav has-shadow bk-navbar">
+      
+<nav class="nav has-shadow bk-navbar">
   <div class="container">
     <div class="nav-left bk-brand">
       <a class="nav-item" href="/bookkeeper/">
@@ -205,7 +206,7 @@
     
     <li>
       <a href="/bookkeeper/docs/api/distributedlog-api">
-      DistributedLog API
+      DistributedLog
       </a>
     </li>
     
@@ -392,7 +393,7 @@
     
     <li>
       <a href="/bookkeeper/docs/api/distributedlog-api">
-      DistributedLog API
+      DistributedLog
       </a>
     </li>
     
@@ -470,7 +471,18 @@
 
       <div class="content is-medium">
         <section class="bk-docs-content">
-          
+          <p>BookKeeper offers two APIs that applications can use to interact with it:</p>
+
+<ul>
+  <li>The <a href="../ledger-api">ledger API</a> is a lower-level API that enables you to interact with ledgers directly</li>
+  <li>The <a href="../distributedlog-api">DistributedLog API</a></li>
+</ul>
+
+<h2 id="trade-offs">Trade-offs</h2>
+
+<p>The advantage of the ledger API is that it provides direct access to ledgers and thus enables you to use BookKeeper however you’d like. The disadvantage is that it requires you to manage things like leader election.</p>
+
+<p>The advantage of the DistributedLog API is that it’s easier to use, acting like a simple key/value store from the standpoint of applications.</p>
 
         </section>
 
@@ -483,6 +495,7 @@
       <div class="toc">
   <h2 class="title">The ledger API vs. the DistributedLog API</h2>
   <ul class="section-nav">
+<li class="toc-entry toc-h2"><a href="#trade-offs">Trade-offs</a></li>
 </ul>
 </div>
 

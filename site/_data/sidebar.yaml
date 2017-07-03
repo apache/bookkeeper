@@ -39,7 +39,7 @@ groups:
     endpoint: overview
   - name: Ledger API
     endpoint: ledger-api
-  - name: DistributedLog API
+  - name: DistributedLog
     endpoint: distributedlog-api
 - name: Development
   dir: development

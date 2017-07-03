@@ -2,6 +2,10 @@
 title: Metric collection
 ---
 
+BookKeeper enables metrics collection through a variety of [stats providers](#stats-providers).
+
+> For a full listing of available metrics, see the [Metrics](../../reference/metrics) reference doc.
+
 ## Stats providers
 
 BookKeeper has stats provider implementations for four five sinks:
