@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -14,32 +14,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.bookkeeper.stats;
-
-import org.apache.commons.configuration.Configuration;
-
 /**
- * Provider to provide stats logger for different scopes.
+ * @TODO: Write JavaDoc comment
  */
-public interface StatsProvider {
-    /**
-     * Intialize the stats provider by loading the given configuration <i>conf</i>.
-     *
-     * @param conf
-     *          Configuration to configure the stats provider.
-     */
-    void start(Configuration conf);
-
-    /**
-     * Close the stats provider.
-     */
-    void stop();
-
-    /**
-     * Return the stats logger to a given <i>scope</i>.
-     * @param scope
-     *          Scope for the given stats
-     * @return stats logger for the given <i>scope</i>
-     */
-    StatsLogger getStatsLogger(String scope);
-}
+package org.apache.bookkeeper.stats;

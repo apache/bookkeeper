@@ -21,6 +21,9 @@ import org.apache.commons.configuration.Configuration;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * @TODO: Write JavaDoc comment
+ */
 public class CachingStatsProvider implements StatsProvider {
 
     protected final StatsProvider underlying;
