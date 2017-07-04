@@ -167,7 +167,7 @@ public abstract class BookKeeperClusterTestCase {
      */
     protected void stopBKCluster() throws Exception {
         if (bkc != null) {
-            bkc.close();;
+            bkc.close();
         }
 
         for (BookieServer server : bs) {
@@ -629,7 +629,7 @@ public abstract class BookKeeperClusterTestCase {
      * isAutoRecoveryEnabled is true.
      */
     public void stopReplicationService() throws Exception{
-        if(false == isAutoRecoveryEnabled()){
+        if(!isAutoRecoveryEnabled()){
             return;
         }
         for (Entry<BookieServer, AutoRecoveryMain> autoRecoveryProcess : autoRecoveryProcesses

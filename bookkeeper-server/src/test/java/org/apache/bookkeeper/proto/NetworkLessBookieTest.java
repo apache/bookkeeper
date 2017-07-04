@@ -64,8 +64,8 @@ public class NetworkLessBookieTest extends BaseTestCase {
         zkUtil.sleepServer(5, l);
         l.await();
                 
-        try (BookKeeper bkc = new BookKeeper(conf);) {
-            try (LedgerHandle h = bkc.createLedger(1,1,digestType, "testPasswd".getBytes());) {
+        try (BookKeeper bkc = new BookKeeper(conf)) {
+            try (LedgerHandle h = bkc.createLedger(1,1,digestType, "testPasswd".getBytes())) {
                 h.addEntry("test".getBytes());
             }
         }

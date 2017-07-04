@@ -244,7 +244,7 @@ public class ConcurrentLongHashMapTest {
 
         map.put(0, "zero");
 
-        assertEquals(map.keys(), Lists.newArrayList(0l));
+        assertEquals(map.keys(), Lists.newArrayList(0L));
         assertEquals(map.values(), Lists.newArrayList("zero"));
 
         map.remove(0);
@@ -258,7 +258,7 @@ public class ConcurrentLongHashMapTest {
 
         List<Long> keys = map.keys();
         Collections.sort(keys);
-        assertEquals(keys, Lists.newArrayList(0l, 1l, 2l));
+        assertEquals(keys, Lists.newArrayList(0L, 1L, 2L));
 
         List<String> values = map.values();
         Collections.sort(values);
@@ -268,7 +268,7 @@ public class ConcurrentLongHashMapTest {
 
         keys = map.keys();
         Collections.sort(keys);
-        assertEquals(keys, Lists.newArrayList(0l, 1l, 2l));
+        assertEquals(keys, Lists.newArrayList(0L, 1L, 2L));
 
         values = map.values();
         Collections.sort(values);

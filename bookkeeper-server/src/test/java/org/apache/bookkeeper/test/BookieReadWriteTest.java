@@ -222,7 +222,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
             lh.asyncReadEntries(0, numEntriesToWrite - 1, this, sync);
 
             synchronized (sync) {
-                while (sync.value == false) {
+                while (!sync.value) {
                     sync.wait();
                 }
                 assertEquals("Error reading", BKException.Code.OK, sync.getReturnCode());
@@ -345,7 +345,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
             lh.asyncReadEntries(0, numEntries - 1, this, sync);
 
             synchronized (sync) {
-                while (sync.value == false) {
+                while (!sync.value) {
                     sync.wait();
                 }
                 assertEquals("Error reading", BKException.Code.OK, sync.getReturnCode());
@@ -430,7 +430,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
             LOG.info("Ledger ID: " + lh.getId());
             for (int i = 0; i < numEntriesToWrite; i++) {
                 int randomInt = rng.nextInt(maxInt);
-                byte[] entry = new String(Integer.toString(randomInt)).getBytes(charset);
+                byte[] entry = Integer.toString(randomInt).getBytes(charset);
                 entries.add(entry);
                 lh.asyncAddEntry(entry, this, sync);
             }
@@ -765,7 +765,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
             long toRead = lac - 1;
 
             Enumeration<LedgerEntry> readEntry = lhOpen.readEntries(toRead, toRead);
-            assertTrue("Enumeration of ledger entries has no element", readEntry.hasMoreElements() == true);
+            assertTrue("Enumeration of ledger entries has no element", readEntry.hasMoreElements());
             LedgerEntry e = readEntry.nextElement();
             assertEquals(toRead, e.getEntryId());
             Assert.assertArrayEquals(entries.get((int)toRead), e.getEntry());
@@ -851,7 +851,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
             long readLastConfirmed = lhOpen.readLastConfirmed();
             assertTrue(readLastConfirmed != 0);
             Enumeration<LedgerEntry> readEntry = lhOpen.readEntries(toRead, toRead);
-            assertTrue("Enumeration of ledger entries has no element", readEntry.hasMoreElements() == true);
+            assertTrue("Enumeration of ledger entries has no element", readEntry.hasMoreElements());
             LedgerEntry e = readEntry.nextElement();
             assertEquals(toRead, e.getEntryId());
             Assert.assertArrayEquals(entries.get(toRead), e.getEntry());

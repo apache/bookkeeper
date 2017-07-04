@@ -50,7 +50,7 @@ import org.slf4j.LoggerFactory;
 public class TestBackwardCompat {
     private final static Logger LOG = LoggerFactory.getLogger(TestBackwardCompat.class);
 
-    private static ZooKeeperUtil zkUtil = new ZooKeeperUtil();;
+    private static ZooKeeperUtil zkUtil = new ZooKeeperUtil();
     private static byte[] ENTRY_DATA = "ThisIsAnEntry".getBytes();
 
     static void waitUp(int port) throws Exception {

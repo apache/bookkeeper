@@ -474,7 +474,7 @@ public class BookKeeperAdmin implements AutoCloseable {
 
         // Wait for the async method to complete.
         synchronized (sync) {
-            while (sync.value == false) {
+            while (!sync.value) {
                 sync.wait();
             }
         }
@@ -520,7 +520,6 @@ public class BookKeeperAdmin implements AutoCloseable {
                 getAvailableBookies(bookieSrc, bookieDest, cb, context);
             }
 
-            ;
         }, null);
     }
 

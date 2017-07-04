@@ -32,7 +32,6 @@ import io.netty.util.HashedWheelTimer;
 
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.feature.SettableFeature;
 import org.apache.bookkeeper.feature.SettableFeatureProvider;
@@ -47,7 +46,6 @@ import org.slf4j.LoggerFactory;
 
 import junit.framework.TestCase;
 
-import static org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicy.REPP_DNS_RESOLVER_CLASS;
 import static org.apache.bookkeeper.client.RegionAwareEnsemblePlacementPolicy.*;
 import static org.apache.bookkeeper.feature.SettableFeatureProvider.DISABLE_ALL;
 
