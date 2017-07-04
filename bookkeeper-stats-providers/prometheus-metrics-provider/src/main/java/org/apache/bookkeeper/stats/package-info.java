@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -14,46 +14,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.bookkeeper.stats;
-
-import io.prometheus.client.Collector;
-import io.prometheus.client.CollectorRegistry;
-import io.prometheus.client.Gauge;
-
 /**
  * @TODO: Write JavaDoc comment
  */
-public class PrometheusCounter implements Counter {
-
-    private final Gauge gauge;
-
-    public PrometheusCounter(CollectorRegistry registry, String name) {
-        this.gauge = Gauge.build().name(Collector.sanitizeMetricName(name)).help("-").create().register(registry);
-    }
-
-    @Override
-    public void clear() {
-        gauge.clear();
-    }
-
-    @Override
-    public void inc() {
-        gauge.inc();
-    }
-
-    @Override
-    public void dec() {
-        gauge.dec();
-    }
-
-    @Override
-    public void add(long delta) {
-        gauge.inc(delta);
-    }
-
-    @Override
-    public Long get() {
-        return (long) gauge.get();
-    }
-
-}
+package org.apache.bookkeeper.stats;
