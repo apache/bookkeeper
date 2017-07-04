@@ -624,7 +624,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
                     + event.getPath());
             for (Long ledgerId : ledgerList) {
                 if (event.getPath().contains(ledgerId + "")) {
-                    urLedgerList.add(Long.valueOf(ledgerId));
+                    urLedgerList.add(ledgerId);
                 }
             }
             LOG.debug("Count down and waiting for next notification");

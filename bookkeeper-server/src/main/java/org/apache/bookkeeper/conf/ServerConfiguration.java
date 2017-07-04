@@ -1713,7 +1713,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     public String getLedgerStorageClass() {
         String ledgerStorageClass = getString(LEDGER_STORAGE_CLASS, SortedLedgerStorage.class.getName());
         if (ledgerStorageClass.equals(SortedLedgerStorage.class.getName())
-                && getSortedLedgerStorageEnabled() == false) {
+                && !getSortedLedgerStorageEnabled()) {
             // This is to retain compatibility with BK-4.3 configuration
             // In BK-4.3, the ledger storage is configured through the "sortedLedgerStorageEnabled" flag :
             // sortedLedgerStorageEnabled == true (default) ---> use SortedLedgerStorage

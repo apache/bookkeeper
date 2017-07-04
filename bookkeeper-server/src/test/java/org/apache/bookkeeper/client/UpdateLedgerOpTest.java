@@ -240,7 +240,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
                     lh.asyncAddEntry(("foobar" + i).getBytes(), cb, null);
                 }
 
-            };
+            }
         };
         th.start();
         ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsemble(0);

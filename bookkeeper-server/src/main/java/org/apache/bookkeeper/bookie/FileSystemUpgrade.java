@@ -44,12 +44,7 @@ import java.net.MalformedURLException;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Scanner;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 import static com.google.common.base.Charsets.UTF_8;
 
@@ -100,9 +95,7 @@ public class FileSystemUpgrade {
     private static List<File> getAllDirectories(ServerConfiguration conf) {
         List<File> dirs = new ArrayList<File>();
         dirs.addAll(Lists.newArrayList(conf.getJournalDirs()));
-        for (File d: conf.getLedgerDirs()) {
-            dirs.add(d);
-        }
+        Collections.addAll(dirs, conf.getLedgerDirs());
         return dirs;
     }
 

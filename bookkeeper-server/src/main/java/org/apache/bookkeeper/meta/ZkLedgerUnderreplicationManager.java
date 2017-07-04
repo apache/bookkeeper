@@ -49,7 +49,6 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
@@ -93,7 +92,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
 
         String getLockZNode() { return lockZNode; }
         int getLedgerZNodeVersion() { return ledgerZNodeVersion; }
-    };
+    }
     private final Map<Long, Lock> heldLocks = new ConcurrentHashMap<Long, Lock>();
     private final Pattern idExtractionPattern;
 

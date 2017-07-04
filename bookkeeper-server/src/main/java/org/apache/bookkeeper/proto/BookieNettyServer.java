@@ -257,7 +257,7 @@ class BookieNettyServer {
                     pipeline.addLast("lengthprepender", new LengthFieldPrepender(4));
 
                     pipeline.addLast("bookieProtoDecoder", new BookieProtoEncoding.RequestDecoder(registry));
-                    pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.ResponseEncoder(registry));;
+                    pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.ResponseEncoder(registry));
                     pipeline.addLast("bookieAuthHandler", new AuthHandler.ServerSideHandler(contextHandler.getConnectionPeer(), authProviderFactory));
 
                     ChannelInboundHandler requestHandler = isRunning.get()
