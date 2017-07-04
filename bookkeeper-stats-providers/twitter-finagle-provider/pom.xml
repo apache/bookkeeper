@@ -53,8 +53,8 @@
               <goal>check</goal>
             </goals>
             <configuration>
-              <configLocation>https://raw.githubusercontent.com/apache/incubator-distributedlog/master/distributedlog-build-tools/src/main/resources/distributedlog/checkstyle.xml</configLocation>
-              <suppressionsLocation>https://raw.githubusercontent.com/apache/incubator-distributedlog/master/distributedlog-build-tools/src/main/resources/distributedlog/suppressions.xml</suppressionsLocation>
+              <configLocation>../../checkstyle.xml</configLocation>
+              <suppressionsLocation>../../suppressions.xml</suppressionsLocation>
               <encoding>UTF-8</encoding>
               <consoleOutput>true</consoleOutput>
               <failsOnError>true</failsOnError>
