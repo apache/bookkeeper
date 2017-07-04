@@ -28,6 +28,8 @@ class LogMark {
     long logFileId;
     long logFileOffset;
 
+    public static final LogMark MAX_VALUE = new LogMark(Long.MAX_VALUE, Long.MAX_VALUE);
+
     public LogMark() {
         setLogMark(0, 0);
     }
