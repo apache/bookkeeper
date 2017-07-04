@@ -39,6 +39,8 @@ public interface BookKeeperClientStats {
     public final static String READ_OP = "READ_ENTRY";
     public final static String WRITE_LAC_OP = "WRITE_LAC";
     public final static String READ_LAC_OP = "READ_LAC";
+    public final static String READ_LAST_CONFIRMED_AND_ENTRY = "READ_LAST_CONFIRMED_AND_ENTRY";
+    public final static String READ_LAST_CONFIRMED_AND_ENTRY_RESPONSE = "READ_LAST_CONFIRMED_AND_ENTRY_RESPONSE";
     public final static String PENDING_ADDS = "NUM_PENDING_ADD";
     public final static String ENSEMBLE_CHANGES = "NUM_ENSEMBLE_CHANGE";
     public final static String LAC_UPDATE_HITS = "LAC_UPDATE_HITS";

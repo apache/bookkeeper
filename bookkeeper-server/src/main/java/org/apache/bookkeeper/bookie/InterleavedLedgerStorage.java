@@ -21,24 +21,23 @@
 
 package org.apache.bookkeeper.bookie;
 
+import com.google.common.collect.Lists;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.Observable;
+import java.util.Observer;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
-
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.TimeUnit;
-
-import java.util.Map;
-import java.util.NavigableMap;
-
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookieProtocol;
@@ -48,8 +47,6 @@ import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.SnapshotMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.Lists;
 
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_OFFSET;
@@ -262,6 +259,12 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         }
         return lac;
     }
+
+    @Override
+    public Observable waitForLastAddConfirmedUpdate(long ledgerId, long previoisLAC, Observer observer) throws IOException {
+        return ledgerCache.waitForLastAddConfirmedUpdate(ledgerId, previoisLAC, observer);
+    }
+
 
     @Override
     synchronized public long addEntry(ByteBuf entry) throws IOException {
