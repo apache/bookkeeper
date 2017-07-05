@@ -32,16 +32,18 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
  * The SkipListArena is basically a bump-the-pointer allocator that allocates
  * big (default 2MB) byte[] chunks from and then handles it out to threads that
  * request slices into the array.
+ * </p>
  * <p>
  * The purpose of this class is to combat heap fragmentation in the
  * bookie. By ensuring that all KeyValues in a given SkipList refer
  * only to large chunks of contiguous memory, we ensure that large blocks
  * get freed up when the SkipList is flushed.
+ * </p>
  * <p>
  * Without the Arena, the byte array allocated during insertion end up
  * interleaved throughout the heap, and the old generation gets progressively
  * more fragmented until a stop-the-world compacting collection occurs.
- * <p>
+ * </p>
  */
 public class SkipListArena {
     private AtomicReference<Chunk> curChunk = new AtomicReference<Chunk>();
@@ -57,11 +59,11 @@ public class SkipListArena {
     }
 
     /**
-    * Allocate a slice of the given length.
-    *
-    * If the size is larger than the maximum size specified for this
-    * allocator, returns null.
-    */
+     * Allocate a slice of the given length.
+     * <p>
+     * If the size is larger than the maximum size specified for this allocator, returns null.
+     * </p>
+     */
     public MemorySlice allocateBytes(int size) {
         assert size >= 0;
 
@@ -125,7 +127,7 @@ public class SkipListArena {
     * A chunk of memory out of which allocations are sliced.
     */
     private static class Chunk {
-        /** Actual underlying data */
+        /** Actual underlying data. */
         private byte[] data;
 
         private static final int UNINITIALIZED = -1;
@@ -133,13 +135,13 @@ public class SkipListArena {
         /**
          * Offset for the next allocation, or the sentinel value -1
          * which implies that the chunk is still uninitialized.
-         * */
+         */
         private AtomicInteger nextFreeOffset = new AtomicInteger(UNINITIALIZED);
 
-        /** Total number of allocations satisfied from this buffer */
+        /** Total number of allocations satisfied from this buffer. */
         private AtomicInteger allocCount = new AtomicInteger();
 
-        /** Size of chunk in bytes */
+        /** Size of chunk in bytes. */
         private final int size;
 
         /**
@@ -202,9 +204,8 @@ public class SkipListArena {
 
         @Override
         public String toString() {
-            return "Chunk@" + System.identityHashCode(this) +
-                ": used(" + allocCount.get() + "), free(" +
-                (data.length - nextFreeOffset.get() + ")");
+            return "Chunk@" + System.identityHashCode(this) + ": used(" + allocCount.get() + "), free("
+                    + (data.length - nextFreeOffset.get() + ")");
         }
     }
 

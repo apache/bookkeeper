@@ -43,7 +43,8 @@ import org.slf4j.LoggerFactory;
  * It is used by LedgerCache.
  *
  * <p>
- * Ledger index file is made of a header and several fixed-length index pages, which records the offsets of data stored in entry loggers
+ * Ledger index file is made of a header and several fixed-length index pages, which records the offsets of data stored
+ * in entry loggers
  * <pre>&lt;header&gt;&lt;index pages&gt;</pre>
  * <b>Header</b> is formated as below:
  * <pre>&lt;magic bytes&gt;&lt;len of master key&gt;&lt;master key&gt;</pre>
@@ -53,11 +54,12 @@ import org.slf4j.LoggerFactory;
  * <li>master key: master key
  * <li>state: bit map to indicate the state, 32 bits.
  * </ul>
- * <b>Index page</b> is a fixed-length page, which contains serveral entries which point to the offsets of data stored in entry loggers.
+ * <b>Index page</b> is a fixed-length page, which contains serveral entries which point to the offsets of data stored
+ * in entry loggers.
  * </p>
  */
 class FileInfo extends Observable {
-    private final static Logger LOG = LoggerFactory.getLogger(FileInfo.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FileInfo.class);
 
     static final int NO_MASTER_KEY = -1;
     static final int STATE_FENCED_BIT = 0x1;
@@ -69,10 +71,10 @@ class FileInfo extends Observable {
     byte[] masterKey;
 
     /**
-     * The fingerprint of a ledger index file
+     * The fingerprint of a ledger index file.
      */
-    static final public int signature = ByteBuffer.wrap("BKLE".getBytes(UTF_8)).getInt();
-    static final public int headerVersion = 0;
+    public static final int SIGNATURE = ByteBuffer.wrap("BKLE".getBytes(UTF_8)).getInt();
+    public static final int HEADER_VERSION = 0;
 
     static final long START_OF_DATA = 1024;
     private long size;
@@ -138,13 +140,13 @@ class FileInfo extends Observable {
 
     public ByteBuf getExplicitLac() {
         ByteBuf retLac = null;
-        synchronized(this) {
+        synchronized (this) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("fileInfo:GetLac: {}", explicitLac);
             }
             if (explicitLac != null) {
                 retLac = Unpooled.buffer(explicitLac.capacity());
-                explicitLac.rewind();//copy from the beginning
+                explicitLac.rewind(); //copy from the beginning
                 retLac.writeBytes(explicitLac);
                 explicitLac.rewind();
                 return retLac;
@@ -154,7 +156,7 @@ class FileInfo extends Observable {
     }
 
     public void setExplicitLac(ByteBuf lac) {
-        synchronized(this) {
+        synchronized (this) {
             if (explicitLac == null) {
                 explicitLac = ByteBuffer.allocate(lac.capacity());
             }
@@ -172,7 +174,7 @@ class FileInfo extends Observable {
         }
     }
 
-    synchronized public void readHeader() throws IOException {
+    public synchronized void readHeader() throws IOException {
         if (lf.exists()) {
             if (fc != null) {
                 return;
@@ -183,16 +185,16 @@ class FileInfo extends Observable {
             sizeSinceLastwrite = size;
 
             // avoid hang on reading partial index
-            ByteBuffer bb = ByteBuffer.allocate((int)(Math.min(size, START_OF_DATA)));
-            while(bb.hasRemaining()) {
+            ByteBuffer bb = ByteBuffer.allocate((int) (Math.min(size, START_OF_DATA)));
+            while (bb.hasRemaining()) {
                 fc.read(bb);
             }
             bb.flip();
-            if (bb.getInt() != signature) {
+            if (bb.getInt() != SIGNATURE) {
                 throw new IOException("Missing ledger signature while reading header for " + lf);
             }
             int version = bb.getInt();
-            if (version != headerVersion) {
+            if (version != HEADER_VERSION) {
                 throw new IOException("Incompatible ledger version " + version + " while reading header for " + lf);
             }
             int length = bb.getInt();
@@ -206,7 +208,7 @@ class FileInfo extends Observable {
             stateBits = bb.getInt();
             needFlushHeader = false;
         } else {
-            throw new IOException("Ledger index file " + lf +" does not exist");
+            throw new IOException("Ledger index file " + lf + " does not exist");
         }
     }
 
@@ -255,9 +257,9 @@ class FileInfo extends Observable {
     }
 
     private void writeHeader() throws IOException {
-        ByteBuffer bb = ByteBuffer.allocate((int)START_OF_DATA);
-        bb.putInt(signature);
-        bb.putInt(headerVersion);
+        ByteBuffer bb = ByteBuffer.allocate((int) START_OF_DATA);
+        bb.putInt(SIGNATURE);
+        bb.putInt(HEADER_VERSION);
         bb.putInt(masterKey.length);
         bb.put(masterKey);
         bb.putInt(stateBits);
@@ -266,7 +268,7 @@ class FileInfo extends Observable {
         fc.write(bb);
     }
 
-    synchronized public boolean isFenced() throws IOException {
+    public synchronized boolean isFenced() throws IOException {
         checkOpen(false);
         return (stateBits & STATE_FENCED_BIT) == STATE_FENCED_BIT;
     }
@@ -297,7 +299,7 @@ class FileInfo extends Observable {
     }
 
     // flush the header when header is changed
-    synchronized public void flushHeader() throws IOException {
+    public synchronized void flushHeader() throws IOException {
         if (needFlushHeader) {
             checkOpen(true);
             writeHeader();
@@ -305,9 +307,9 @@ class FileInfo extends Observable {
         }
     }
 
-    synchronized public long size() throws IOException {
+    public synchronized long size() throws IOException {
         checkOpen(false);
-        long rc = size-START_OF_DATA;
+        long rc = size - START_OF_DATA;
         if (rc < 0) {
             rc = 0;
         }
@@ -344,7 +346,7 @@ class FileInfo extends Observable {
         }
         int total = 0;
         int rc = 0;
-        while(bb.remaining() > 0) {
+        while (bb.remaining() > 0) {
             synchronized (this) {
                 rc = fc.read(bb, start);
             }
@@ -389,12 +391,12 @@ class FileInfo extends Observable {
         notifyObservers(new LastAddConfirmedUpdateNotification(Long.MAX_VALUE));
     }
 
-    synchronized public long write(ByteBuffer[] buffs, long position) throws IOException {
+    public synchronized long write(ByteBuffer[] buffs, long position) throws IOException {
         checkOpen(true);
         long total = 0;
         try {
-            fc.position(position+START_OF_DATA);
-            while(buffs[buffs.length-1].remaining() > 0) {
+            fc.position(position + START_OF_DATA);
+            while (buffs[buffs.length - 1].remaining() > 0) {
                 long rc = fc.write(buffs);
                 if (rc <= 0) {
                     throw new IOException("Short write");
@@ -403,7 +405,7 @@ class FileInfo extends Observable {
             }
         } finally {
             fc.force(true);
-            long newsize = position+START_OF_DATA+total;
+            long newsize = position + START_OF_DATA + total;
             if (newsize > size) {
                 size = newsize;
             }
@@ -467,7 +469,7 @@ class FileInfo extends Observable {
         lf = newFile;
     }
 
-    synchronized public byte[] getMasterKey() throws IOException {
+    public synchronized byte[] getMasterKey() throws IOException {
         checkOpen(false);
         return masterKey;
     }
@@ -481,7 +483,7 @@ class FileInfo extends Observable {
         return useCount.get();
     }
 
-    synchronized public void release() {
+    public synchronized void release() {
         int count = useCount.decrementAndGet();
         if (isClosed && (count == 0) && fc != null) {
             try {
@@ -496,7 +498,7 @@ class FileInfo extends Observable {
         return lf.delete();
     }
 
-    static final private void checkParents(File f) throws IOException {
+    private static void checkParents(File f) throws IOException {
         File parent = f.getParentFile();
         if (parent.exists()) {
             return;

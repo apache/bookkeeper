@@ -20,6 +20,9 @@
  */
 package org.apache.bookkeeper.bookie;
 
+/**
+ * @TODO: Write JavaDoc comment
+ */
 public interface BookKeeperServerStats {
 
     String SERVER_SCOPE = "bookkeeper_server";

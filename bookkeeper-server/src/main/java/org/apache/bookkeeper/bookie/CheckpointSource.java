@@ -27,9 +27,9 @@ public interface CheckpointSource {
     /**
      * A checkpoint presented a time point. All entries added before this checkpoint are already persisted.
      */
-    public static interface Checkpoint extends Comparable<Checkpoint> {
+    public interface Checkpoint extends Comparable<Checkpoint> {
 
-        public static final Checkpoint MAX = new Checkpoint() {
+        Checkpoint MAX = new Checkpoint() {
 
             @Override
             public int compareTo(Checkpoint o) {
@@ -46,7 +46,7 @@ public interface CheckpointSource {
 
         };
 
-        public static final Checkpoint MIN = new Checkpoint() {
+        Checkpoint MIN = new Checkpoint() {
             @Override
             public int compareTo(Checkpoint o) {
                 if (o == MIN) {
@@ -67,7 +67,7 @@ public interface CheckpointSource {
      *
      * @return checkpoint.
      */
-    public Checkpoint newCheckpoint();
+    Checkpoint newCheckpoint();
 
     /**
      * Tell checkpoint source that the checkpoint is completed.
@@ -79,5 +79,5 @@ public interface CheckpointSource {
      * @param compact
      *          Flag to compact old checkpoints.
      */
-    public void checkpointComplete(Checkpoint checkpoint, boolean compact) throws IOException;
+    void checkpointComplete(Checkpoint checkpoint, boolean compact) throws IOException;
 }

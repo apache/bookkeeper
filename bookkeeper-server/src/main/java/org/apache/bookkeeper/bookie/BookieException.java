@@ -21,9 +21,9 @@ package org.apache.bookkeeper.bookie;
  *
  */
 
-
-import java.lang.Exception;
-
+/**
+ * @TODO: Write JavaDoc comment
+ */
 @SuppressWarnings("serial")
 public abstract class BookieException extends Exception {
 
@@ -55,6 +55,9 @@ public abstract class BookieException extends Exception {
         }
     }
 
+    /**
+     * @TODO: Write JavaDoc comment
+     */
     public interface Code {
         int OK = 0;
         int UnauthorizedAccessException = -1;
@@ -109,24 +112,36 @@ public abstract class BookieException extends Exception {
         }
     }
 
+    /**
+     * @TODO: Write JavaDoc comment
+     */
     public static class BookieUnauthorizedAccessException extends BookieException {
         public BookieUnauthorizedAccessException() {
             super(Code.UnauthorizedAccessException);
         }
     }
 
+    /**
+     * @TODO: Write JavaDoc comment
+     */
     public static class BookieIllegalOpException extends BookieException {
         public BookieIllegalOpException() {
             super(Code.UnauthorizedAccessException);
         }
     }
 
+    /**
+     * @TODO: Write JavaDoc comment
+     */
     public static class LedgerFencedException extends BookieException {
         public LedgerFencedException() {
             super(Code.LedgerFencedException);
         }
     }
 
+    /**
+     * @TODO: Write JavaDoc comment
+     */
     public static class InvalidCookieException extends BookieException {
         public InvalidCookieException() {
             this("");
@@ -141,6 +156,9 @@ public abstract class BookieException extends Exception {
         }
     }
 
+    /**
+     * @TODO: Write JavaDoc comment
+     */
     public static class UpgradeException extends BookieException {
         public UpgradeException() {
             super(Code.UpgradeException);

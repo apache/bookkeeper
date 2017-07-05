@@ -27,7 +27,7 @@ import java.nio.ByteBuffer;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 
 /**
- * Read Only Entry Logger
+ * Read Only Entry Logger.
  */
 public class ReadOnlyEntryLogger extends EntryLogger {
 

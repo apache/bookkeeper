@@ -21,6 +21,9 @@
 
 package org.apache.bookkeeper.bookie;
 
+/**
+ * @TODO: Write JavaDoc comment
+ */
 public class EntryLocation {
     public final long ledger;
     public final long entry;

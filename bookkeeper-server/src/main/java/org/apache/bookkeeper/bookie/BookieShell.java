@@ -141,8 +141,8 @@ public class BookieShell implements Tool {
     int entriesPerPage;
 
     interface Command {
-        public int runCmd(String[] args) throws Exception;
-        public void printUsage();
+        int runCmd(String[] args) throws Exception;
+        void printUsage();
     }
 
     abstract class MyCommand implements Command {
@@ -179,7 +179,7 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Format the bookkeeper metadata present in zookeeper
+     * Format the bookkeeper metadata present in zookeeper.
      */
     class MetaFormatCmd extends MyCommand {
         Options opts = new Options();
@@ -221,7 +221,7 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Formats the local data present in current bookie server
+     * Formats the local data present in current bookie server.
      */
     class BookieFormatCmd extends MyCommand {
         Options opts = new Options();
@@ -279,7 +279,7 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Recover command for ledger data recovery for failed bookie
+     * Recover command for ledger data recovery for failed bookie.
      */
     class RecoverCmd extends MyCommand {
         Options opts = new Options();
@@ -358,7 +358,7 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Ledger Command Handles ledger related operations
+     * Ledger Command Handles ledger related operations.
      */
     class LedgerCmd extends MyCommand {
         Options lOpts = new Options();
@@ -415,7 +415,7 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Command for reading ledger entries
+     * Command for reading ledger entries.
      */
     class ReadLedgerEntriesCmd extends MyCommand {
         Options lOpts = new Options();
@@ -491,7 +491,7 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Command for listing underreplicated ledgers
+     * Command for listing underreplicated ledgers.
      */
     class ListUnderreplicatedCmd extends MyCommand {
         Options opts = new Options();
@@ -539,9 +539,9 @@ public class BookieShell implements Tool {
         }
     }
 
-    final static int LIST_BATCH_SIZE = 1000;
+    static final int LIST_BATCH_SIZE = 1000;
     /**
-     * Command to list all ledgers in the cluster
+     * Command to list all ledgers in the cluster.
      */
     class ListLedgersCmd extends MyCommand {
         Options lOpts = new Options();
@@ -566,8 +566,7 @@ public class BookieShell implements Tool {
                 m = mFactory.newLedgerManager();
                 LedgerRangeIterator iter = m.getLedgerRanges();
                 if (cmdLine.hasOption("m")) {
-                    List<ReadMetadataCallback> futures
-                        = new ArrayList<ReadMetadataCallback>(LIST_BATCH_SIZE);
+                    List<ReadMetadataCallback> futures = new ArrayList<ReadMetadataCallback>(LIST_BATCH_SIZE);
                     while (iter.hasNext()) {
                         LedgerRange r = iter.next();
                         for (Long lid : r.getLedgers()) {
@@ -655,7 +654,7 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Print the metadata for a ledger
+     * Print the metadata for a ledger.
      */
     class LedgerMetadataCmd extends MyCommand {
         Options lOpts = new Options();
@@ -720,7 +719,7 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Simple test to create a ledger and write to it
+     * Simple test to create a ledger and write to it.
      */
     class SimpleTestCmd extends MyCommand {
         Options lOpts = new Options();
@@ -782,7 +781,7 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Command to run a bookie sanity test
+     * Command to run a bookie sanity test.
      */
     class BookieSanityTestCmd extends MyCommand {
         Options lOpts = new Options();
@@ -811,7 +810,7 @@ public class BookieShell implements Tool {
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
             int numberOfEntries = getOptionIntValue(cmdLine, "entries", 10);
-            int timeoutSecs= getOptionIntValue(cmdLine, "timeout", 1);
+            int timeoutSecs = getOptionIntValue(cmdLine, "timeout", 1);
 
             ClientConfiguration conf = new ClientConfiguration();
             conf.addConfiguration(bkConf);
@@ -943,8 +942,8 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "readlog      [-msg] <entry_log_id | entry_log_file_name> [-ledgerid <ledgerid> [-entryid <entryid>]] "
-                    + "[-startpos <startEntryLogBytePos> [-endpos <endEntryLogBytePos>]]";
+            return "readlog      [-msg] <entry_log_id | entry_log_file_name> [-ledgerid <ledgerid> "
+                    + "[-entryid <entryid>]] [-startpos <startEntryLogBytePos> [-endpos <endEntryLogBytePos>]]";
         }
 
         @Override
@@ -954,7 +953,7 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Command to read journal files
+     * Command to read journal files.
      */
     class ReadJournalCmd extends MyCommand {
         Options rjOpts = new Options();
@@ -1042,7 +1041,7 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Command to print last log mark
+     * Command to print last log mark.
      */
     class LastMarkCmd extends MyCommand {
         LastMarkCmd() {
@@ -1072,7 +1071,7 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * List available bookies
+     * List available bookies.
      */
     class ListBookiesCmd extends MyCommand {
         Options opts = new Options();
@@ -1210,7 +1209,7 @@ public class BookieShell implements Tool {
 
 
     /**
-     * Command to print help message
+     * Command to print help message.
      */
     class HelpCmd extends MyCommand {
         HelpCmd() {
@@ -1252,7 +1251,7 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Command for administration of autorecovery
+     * Command for administration of autorecovery.
      */
     class AutoRecoveryCmd extends MyCommand {
         Options opts = new Options();
@@ -1327,7 +1326,7 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Print which node has the auditor lock
+     * Print which node has the auditor lock.
      */
     class WhoIsAuditorCmd extends MyCommand {
         Options opts = new Options();
@@ -1380,7 +1379,7 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Update cookie command
+     * Update cookie command.
      */
     class UpdateCookieCmd extends MyCommand {
         Options opts = new Options();
@@ -1523,7 +1522,7 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Expand the storage directories owned by a bookie
+     * Expand the storage directories owned by a bookie.
      */
     class ExpandStorageCmd extends MyCommand {
         Options opts = new Options();
@@ -1580,7 +1579,7 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Update ledger command
+     * Update ledger command.
      */
     class UpdateLedgerCmd extends MyCommand {
         private final Options opts = new Options();
@@ -1607,7 +1606,8 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "updateledger -bookieId <hostname|ip> [-updatespersec N] [-limit N] [-verbose true/false] [-printprogress N]";
+            return "updateledger -bookieId <hostname|ip> [-updatespersec N] [-limit N] [-verbose true/false] "
+                   + "[-printprogress N]";
         }
 
         @Override
@@ -1786,8 +1786,8 @@ public class BookieShell implements Tool {
             String unit[] = {"", "KB", "MB", "GB", "TB" };
             int cnt = 0;
             double d = val;
-            while (d >= 1000 && cnt < unit.length-1) {
-                d = d/1000;
+            while (d >= 1000 && cnt < unit.length - 1) {
+                d = d / 1000;
                 cnt++;
             }
             DecimalFormat df = new DecimalFormat("#.###");
@@ -1809,11 +1809,12 @@ public class BookieShell implements Tool {
             }
 
             System.out.println("Free disk space info:");
-            long totalFree = 0, total=0;
+            long totalFree = 0, total = 0;
             for (Map.Entry<BookieSocketAddress, BookieInfo> e : map.entrySet()) {
                 BookieInfo bInfo = e.getValue();
-                System.out.println(e.getKey() + ":\tFree: " + bInfo.getFreeDiskSpace() +  getReadable(bInfo.getFreeDiskSpace()) +
-                        "\tTotal: " + bInfo.getTotalDiskSpace() +  getReadable(bInfo.getTotalDiskSpace()));
+                System.out.println(e.getKey() + ":\tFree: " + bInfo.getFreeDiskSpace()
+                        + getReadable(bInfo.getFreeDiskSpace()) + "\tTotal: " + bInfo.getTotalDiskSpace()
+                        + getReadable(bInfo.getTotalDiskSpace()));
                 totalFree += bInfo.getFreeDiskSpace();
                 total += bInfo.getTotalDiskSpace();
             }
@@ -1994,8 +1995,7 @@ public class BookieShell implements Tool {
     /**
      * Get the ledger file of a specified ledger.
      *
-     * @param ledgerId
-     *          Ledger Id
+     * @param ledgerId Ledger Id
      *
      * @return file object.
      */
@@ -2015,14 +2015,14 @@ public class BookieShell implements Tool {
     /**
      * Get FileInfo for a specified ledger.
      *
-     * @param ledgerId
-     *          Ledger Id
+     * @param ledgerId Ledger Id
      * @return read only file info instance
      */
     ReadOnlyFileInfo getFileInfo(long ledgerId) throws IOException {
         File ledgerFile = getLedgerFile(ledgerId);
         if (null == ledgerFile) {
-            throw new FileNotFoundException("No index file found for ledger " + ledgerId + ". It may be not flushed yet.");
+            throw new FileNotFoundException("No index file found for ledger " + ledgerId
+                    + ". It may be not flushed yet.");
         }
         ReadOnlyFileInfo fi = new ReadOnlyFileInfo(ledgerFile, null);
         fi.readHeader();
@@ -2037,12 +2037,10 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * scan over entry log
+     * Scan over entry log.
      *
-     * @param logId
-     *          Entry Log Id
-     * @param scanner
-     *          Entry Log Scanner
+     * @param logId Entry Log Id
+     * @param scanner Entry Log Scanner
      */
     protected void scanEntryLog(long logId, EntryLogScanner scanner) throws IOException {
         initEntryLogger();
@@ -2060,12 +2058,10 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Scan journal file
+     * Scan journal file.
      *
-     * @param journalId
-     *          Journal File Id
-     * @param scanner
-     *          Journal File Scanner
+     * @param journalId Journal File Id
+     * @param scanner Journal File Scanner
      */
     protected void scanJournal(Journal journal, long journalId, JournalScanner scanner) throws IOException {
         journal.scanJournal(journalId, 0L, scanner);
@@ -2076,10 +2072,9 @@ public class BookieShell implements Tool {
     ///
 
     /**
-     * Read ledger meta
+     * Read ledger meta.
      *
-     * @param ledgerId
-     *          Ledger Id
+     * @param ledgerId Ledger Id
      */
     protected void readLedgerMeta(long ledgerId) throws Exception {
         System.out.println("===== LEDGER: " + ledgerId + " =====");
@@ -2101,10 +2096,9 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Read ledger index entires
+     * Read ledger index entires.
      *
-     * @param ledgerId
-     *          Ledger Id
+     * @param ledgerId Ledger Id
      * @throws IOException
      */
     protected void readLedgerIndexEntries(long ledgerId) throws IOException {
@@ -2122,7 +2116,7 @@ public class BookieShell implements Tool {
                 lep.readPage(fi);
 
                 // process a page
-                for (int i=0; i<entriesPerPage; i++) {
+                for (int i = 0; i < entriesPerPage; i++) {
                     long offset = lep.getOffset(i * 8);
                     if (0 == offset) {
                         System.out.println("entry " + curEntry + "\t:\tN/A");
@@ -2139,10 +2133,11 @@ public class BookieShell implements Tool {
         } catch (IOException ie) {
             LOG.error("Failed to read index page : ", ie);
             if (curSize + pageSize < size) {
-                System.out.println("Failed to read index page @ " + curSize + ", the index file may be corrupted : " + ie.getMessage());
+                System.out.println("Failed to read index page @ " + curSize + ", the index file may be corrupted : "
+                        + ie.getMessage());
             } else {
-                System.out.println("Failed to read last index page @ " + curSize
-                                 + ", the index file may be corrupted or last index page is not fully flushed yet : " + ie.getMessage());
+                System.out.println("Failed to read last index page @ " + curSize + ", the index file may be corrupted "
+                        + "or last index page is not fully flushed yet : " + ie.getMessage());
             }
         }
     }
@@ -2170,27 +2165,23 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Scan over an entry log file for a particular entry
+     * Scan over an entry log file for a particular entry.
      *
-     * @param logId
-     *          Entry Log File id.
-     * @param ledgerId
-     *          id of the ledger
-     * @param entryId
-     *          entryId of the ledger we are looking for (-1 for all of the entries of the ledger)
-     * @param printMsg
-     *          Whether printing the entry data.
+     * @param logId Entry Log File id.
+     * @param ledgerId id of the ledger
+     * @param entryId entryId of the ledger we are looking for (-1 for all of the entries of the ledger)
+     * @param printMsg Whether printing the entry data.
      * @throws Exception
      */
-    protected void scanEntryLogForSpecificEntry(long logId, final long lId, final long eId, final boolean printMsg)
-            throws Exception {
-        System.out.println("Scan entry log " + logId + " (" + Long.toHexString(logId) + ".log)" + " for LedgerId " + lId
-                + ((eId == -1) ? "" : " for EntryId " + eId));
+    protected void scanEntryLogForSpecificEntry(long logId, final long ledgerId, final long entryId,
+                                                final boolean printMsg) throws Exception {
+        System.out.println("Scan entry log " + logId + " (" + Long.toHexString(logId) + ".log)" + " for LedgerId "
+                + ledgerId + ((entryId == -1) ? "" : " for EntryId " + entryId));
         final MutableBoolean entryFound = new MutableBoolean(false);
         scanEntryLog(logId, new EntryLogScanner() {
             @Override
             public boolean accept(long ledgerId) {
-                return ((lId == ledgerId) && ((!entryFound.booleanValue()) || (eId == -1)));
+                return (((!entryFound.booleanValue()) || (entryId == -1)));
             }
 
             @Override
@@ -2198,33 +2189,29 @@ public class BookieShell implements Tool {
                 long entrysLedgerId = entry.getLong();
                 long entrysEntryId = entry.getLong();
                 entry.rewind();
-                if ((ledgerId == entrysLedgerId) && (ledgerId == lId) && ((entrysEntryId == eId)) || (eId == -1)) {
+                if ((ledgerId == entrysLedgerId) && ((entrysEntryId == entryId)) || (entryId == -1)) {
                     entryFound.setValue(true);
                     formatEntry(startPos, entry, printMsg);
                 }
             }
         });
         if (!entryFound.booleanValue()) {
-            System.out.println("LedgerId " + lId + ((eId == -1) ? "" : " EntryId " + eId)
+            System.out.println("LedgerId " + ledgerId + ((entryId == -1) ? "" : " EntryId " + entryId)
                     + " is not available in the entry log " + logId + " (" + Long.toHexString(logId) + ".log)");
         }
     }
 
     /**
-     * Scan over an entry log file for entries in the given position range
+     * Scan over an entry log file for entries in the given position range.
      *
-     * @param logId
-     *          Entry Log File id.
-     * @param rangeStartPos
-     *          Start position of the entry we are looking for
-     * @param rangeEndPos
-     *          End position of the entry we are looking for (-1 for till the end of the entrylog)
-     * @param printMsg
-     *          Whether printing the entry data.
+     * @param logId Entry Log File id.
+     * @param rangeStartPos Start position of the entry we are looking for
+     * @param rangeEndPos End position of the entry we are looking for (-1 for till the end of the entrylog)
+     * @param printMsg Whether printing the entry data.
      * @throws Exception
      */
-    protected void scanEntryLogForPositionRange(long logId, final long rangeStartPos, final long rangeEndPos, final boolean printMsg)
- throws Exception {
+    protected void scanEntryLogForPositionRange(long logId, final long rangeStartPos, final long rangeEndPos,
+                                                final boolean printMsg) throws Exception {
         System.out.println("Scan entry log " + logId + " (" + Long.toHexString(logId) + ".log)" + " for PositionRange: "
                 + rangeStartPos + " - " + rangeEndPos);
         final MutableBoolean entryFound = new MutableBoolean(false);
@@ -2269,12 +2256,10 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Scan a journal file
+     * Scan a journal file.
      *
-     * @param journalId
-     *          Journal File Id
-     * @param printMsg
-     *          Whether printing the entry data.
+     * @param journalId Journal File Id
+     * @param printMsg Whether printing the entry data.
      */
     protected void scanJournal(Journal journal, long journalId, final boolean printMsg) throws Exception {
         System.out.println("Scan journal " + journalId + " (" + Long.toHexString(journalId) + ".txn)");
@@ -2292,7 +2277,7 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Print last log mark
+     * Print last log mark.
      */
     protected void printLastLogMark() throws IOException {
         for (Journal journal : getJournals()) {

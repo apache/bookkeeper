@@ -39,7 +39,7 @@ import io.netty.buffer.ByteBuf;
  * This class serves two purposes.
  */
 public class LedgerCacheImpl implements LedgerCache {
-    private final static Logger LOG = LoggerFactory.getLogger(LedgerCacheImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LedgerCacheImpl.class);
 
     private final IndexInMemPageMgr indexPageManager;
     private final IndexPersistenceMgr indexPersistenceManager;
@@ -87,7 +87,8 @@ public class LedgerCacheImpl implements LedgerCache {
     }
 
     @Override
-    public Observable waitForLastAddConfirmedUpdate(long ledgerId, long previoisLAC, Observer observer) throws IOException {
+    public Observable waitForLastAddConfirmedUpdate(long ledgerId, long previoisLAC, Observer observer)
+            throws IOException {
         return indexPersistenceManager.waitForLastAddConfirmedUpdate(ledgerId, previoisLAC, observer);
     }
 
