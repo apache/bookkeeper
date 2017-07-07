@@ -1361,6 +1361,18 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Sets the maximum latency to impose on a journal write to achieve grouping
+     *
+     * @param journalMaxGroupWaitMSec
+     *          maximum time to wait in milliseconds.
+     * @return server configuration.
+     */
+    public ServerConfiguration setJournalMaxGroupWaitMSec(long journalMaxGroupWaitMSec) {
+        setProperty(JOURNAL_MAX_GROUP_WAIT_MSEC, journalMaxGroupWaitMSec);
+        return this;
+    }
+
+    /**
      * Maximum bytes to buffer to impose on a journal write to achieve grouping
      *
      * @return max bytes to buffer
