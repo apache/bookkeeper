@@ -9,6 +9,10 @@ destination: ../docs
 
 livereload: true
 
+versions:
+- "4.5.0"
+latest: "4.5.0"
+
 defaults:
 - scope:
     path: docs

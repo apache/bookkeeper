@@ -3,7 +3,7 @@
 
 $fa-font-path: "../fonts"
 @import vendor/font-awesome/font-awesome
-@import vendor/bulma/sass/utilities/initial-variables
+@import vendor/bulma/utilities/initial-variables
 @import variables
 @import mixins
 @import syntax
@@ -137,22 +137,5 @@ aside.sidebar
         a
           color: white
 
-nav.bk-navbar
-  +sticky-navbar
-  height: $navbar-height
-
-
-  .container
-    width: 90%
-
-    a
-      font-size: 1.5rem
-
-    .bk-brand
-      h3
-        margin-left: 1rem
-        font-size: 2rem
-
-    .nav-right
-      .nav-item + .nav-item
-        margin-left: $base-margin * 2
+nav.navbar
+  position: sticky
