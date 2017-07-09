@@ -35,6 +35,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.util.DiskChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,12 +58,14 @@ public class LedgerDirsManager {
     private boolean forceGCAllowWhenNoSpace;
     private long minUsableSizeForIndexFileCreation;
 
-    public LedgerDirsManager(ServerConfiguration conf, File[] dirs) {
-        this(conf, dirs, NullStatsLogger.INSTANCE);
+    private final DiskChecker diskChecker;
+
+    public LedgerDirsManager(ServerConfiguration conf, File[] dirs, DiskChecker diskChecker) {
+        this(conf, dirs, diskChecker, NullStatsLogger.INSTANCE);
     }
 
     @VisibleForTesting
-    LedgerDirsManager(ServerConfiguration conf, File[] dirs, StatsLogger statsLogger) {
+    LedgerDirsManager(ServerConfiguration conf, File[] dirs, DiskChecker diskChecker, StatsLogger statsLogger) {
         this.ledgerDirectories = Arrays.asList(Bookie
                 .getCurrentDirectories(dirs));
         this.writableLedgerDirectories = new ArrayList<File>(ledgerDirectories);
@@ -87,7 +90,10 @@ public class LedgerDirsManager {
                 }
             });
         }
+
+        this.diskChecker = diskChecker;
         statsLogger.registerGauge(LD_WRITABLE_DIRS, new Gauge<Number>() {
+
             @Override
             public Number getDefaultValue() {
                 return 0;
@@ -119,28 +125,22 @@ public class LedgerDirsManager {
      * Calculate the total amount of free space available in all of the ledger directories put together.
      *
      * @return totalDiskSpace in bytes
+     * @throws IOException 
      */
-    public long getTotalFreeSpace() {
-        long totalFreeSpace = 0;
-        for (File dir: this.ledgerDirectories) {
-            totalFreeSpace += dir.getFreeSpace();
-        }
-        return totalFreeSpace;
+    public long getTotalFreeSpace(List<File> dirs) throws IOException {
+        return diskChecker.getTotalFreeSpace(dirs);
     }
 
     /**
      * Calculate the total amount of free space available in all of the ledger directories put together.
      *
      * @return freeDiskSpace in bytes
+     * @throws IOException 
      */
-    public long getTotalDiskSpace() {
-        long totalDiskSpace = 0;
-        for (File dir: this.ledgerDirectories) {
-            totalDiskSpace += dir.getTotalSpace();
-        }
-        return totalDiskSpace;
+    public long getTotalDiskSpace(List<File> dirs) throws IOException {
+        return diskChecker.getTotalDiskSpace(dirs);
     }
-
+    
     /**
      * Get disk usages map.
      * @return disk usages map
