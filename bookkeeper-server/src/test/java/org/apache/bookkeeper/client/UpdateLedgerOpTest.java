@@ -72,10 +72,22 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
     };
 
     /**
-     * Tests verifies update bookie id when there are many ledgers.
+     * Tests verifies update bookie id to FQDN hostname when there are many ledgers.
      */
     @Test
-    public void testManyLedgers() throws Exception {
+    public void testManyLedgersWithFQDNHostname() throws Exception {
+        testManyLedgers(false);
+    }
+
+    /**
+     * Tests verifies update bookie id to short hostname when there are many ledgers.
+     */
+    @Test(timeout = 120000)
+    public void testManyLedgersWithShortHostname() throws Exception {
+        testManyLedgers(true);
+    }
+
+    public void testManyLedgers(boolean useShortHostName) throws Exception {
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
         BookKeeperAdmin bkadmin = new BookKeeperAdmin(bk);
 
@@ -91,6 +103,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
 
         BookieSocketAddress curBookieAddr = ensemble.get(0);
         baseConf.setUseHostNameAsBookieID(true);
+        baseConf.setUseShortHostName(useShortHostName);
         BookieSocketAddress curBookieId = Bookie.getBookieAddress(baseConf);
         BookieSocketAddress toBookieAddr = new BookieSocketAddress(curBookieId.getHostName() + ":"
                 + curBookieAddr.getPort());
@@ -156,11 +169,24 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Tests verifies the ensemble reformation after updating the bookie id in
-     * the existing ensemble.
+     * Tests verifies the ensemble reformation after updating the bookie id to
+     * FQDN hostname in the existing ensemble.
      */
     @Test
-    public void testChangeEnsembleAfterRenaming() throws Exception {
+    public void testChangeEnsembleAfterRenamingToFQDNHostname() throws Exception {
+        testChangeEnsembleAfterRenaming(false);
+    }
+
+    /**
+     * Tests verifies the ensemble reformation after updating the bookie id to
+     * short hostname in the existing ensemble.
+     */
+    @Test(timeout = 120000)
+    public void testChangeEnsembleAfterRenamingToShortHostname() throws Exception {
+        testChangeEnsembleAfterRenaming(true);
+    }
+
+    public void testChangeEnsembleAfterRenaming(boolean useShortHostName) throws Exception {
 
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
         BookKeeperAdmin bkadmin = new BookKeeperAdmin(bk);
@@ -178,6 +204,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
         }
         assertNotNull("Couldn't find the bookie in ledger metadata!", curBookieAddr);
         baseConf.setUseHostNameAsBookieID(true);
+        baseConf.setUseShortHostName(useShortHostName);
         BookieSocketAddress toBookieId = Bookie.getBookieAddress(baseConf);
         BookieSocketAddress toBookieAddr = new BookieSocketAddress(toBookieId.getHostName() + ":"
                 + curBookieAddr.getPort());

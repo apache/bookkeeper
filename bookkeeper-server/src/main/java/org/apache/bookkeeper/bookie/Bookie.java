@@ -43,6 +43,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
@@ -559,15 +560,26 @@ public class Bookie extends BookieCriticalThread {
         if (iface == null) {
             iface = "default";
         }
+
         String hostName = DNS.getDefaultHost(iface);
         InetSocketAddress inetAddr = new InetSocketAddress(hostName, conf.getBookiePort());
         if (inetAddr.isUnresolved()) {
             throw new UnknownHostException("Unable to resolve default hostname: "
                     + hostName + " for interface: " + iface);
         }
-        String hostAddress = inetAddr.getAddress().getHostAddress();
+        String hostAddress = null;
+        InetAddress iAddress = inetAddr.getAddress();
         if (conf.getUseHostNameAsBookieID()) {
-            hostAddress = inetAddr.getAddress().getCanonicalHostName();
+            hostAddress = iAddress.getCanonicalHostName();
+            if (conf.getUseShortHostName()) {
+                /*
+                 * if short hostname is used, then FQDN is not used. Short
+                 * hostname is the hostname cut at the first dot.
+                 */
+                hostAddress = hostAddress.split("\\.", 2)[0];
+            }
+        } else {
+            hostAddress = iAddress.getHostAddress();
         }
 
         BookieSocketAddress addr =

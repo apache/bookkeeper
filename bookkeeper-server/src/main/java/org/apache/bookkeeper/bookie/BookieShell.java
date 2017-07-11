@@ -23,6 +23,7 @@ import static com.google.common.base.Charsets.UTF_8;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.AbstractFuture;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -110,7 +111,6 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 /**
  * Bookie Shell is to provide utilities for users to administer a bookkeeper cluster.
@@ -1244,8 +1244,6 @@ public class BookieShell implements Tool {
             super(CMD_LISTBOOKIES);
             opts.addOption("rw", "readwrite", false, "Print readwrite bookies");
             opts.addOption("ro", "readonly", false, "Print readonly bookies");
-            opts.addOption("h", "hostnames", false,
-                    "Also print hostname of the bookie");
         }
 
         @Override
@@ -1274,11 +1272,7 @@ public class BookieShell implements Tool {
                 bookies.addAll(roBookies);
             }
             for (BookieSocketAddress b : bookies) {
-                System.out.print(b);
-                if (cmdLine.hasOption("h")) {
-                    System.out.print("\t" + b.getSocketAddress().getHostName());
-                }
-                System.out.println("");
+                System.out.println(getBookieSocketAddrStringRepresentation(b));
                 count++;
             }
             if (count == 0) {
@@ -1586,10 +1580,7 @@ public class BookieShell implements Tool {
                     LOG.info("No auditor elected");
                     return -1;
                 }
-                LOG.info("Auditor: {}/{}:{}",
-                        bookieId.getSocketAddress().getAddress().getCanonicalHostName(),
-                        bookieId.getSocketAddress().getAddress().getHostAddress(),
-                        bookieId.getSocketAddress().getPort());
+                LOG.info("Auditor: " + getBookieSocketAddrStringRepresentation(bookieId));
             } finally {
                 if (zk != null) {
                     zk.close();
@@ -2020,9 +2011,10 @@ public class BookieShell implements Tool {
             long totalFree = 0, total = 0;
             for (Map.Entry<BookieSocketAddress, BookieInfo> e : map.entrySet()) {
                 BookieInfo bInfo = e.getValue();
-                System.out.println(e.getKey() + ":\tFree: " + bInfo.getFreeDiskSpace()
-                        + getReadable(bInfo.getFreeDiskSpace()) + "\tTotal: " + bInfo.getTotalDiskSpace()
-                        + getReadable(bInfo.getTotalDiskSpace()));
+                BookieSocketAddress bookieId = e.getKey();
+                System.out.println(getBookieSocketAddrStringRepresentation(bookieId) + ":\tFree: "
+                        + bInfo.getFreeDiskSpace() + getReadable(bInfo.getFreeDiskSpace()) + "\tTotal: "
+                        + bInfo.getTotalDiskSpace() + getReadable(bInfo.getTotalDiskSpace()));
                 totalFree += bInfo.getFreeDiskSpace();
                 total += bInfo.getTotalDiskSpace();
             }
@@ -2445,6 +2437,27 @@ public class BookieShell implements Tool {
         String[] newArgs = new String[args.length - 1];
         System.arraycopy(args, 1, newArgs, 0, newArgs.length);
         return cmd.runCmd(newArgs);
+    }
+
+    /*
+     * The string returned is of the form:
+     * 'hostname'('otherformofhostname'):'port number'
+     *
+     * where hostname and otherformofhostname are ipaddress and
+     * canonicalhostname or viceversa
+     */
+    private static String getBookieSocketAddrStringRepresentation(BookieSocketAddress bookieId) {
+        String hostname = bookieId.getHostName();
+        boolean isHostNameIpAddress = InetAddresses.isInetAddress(hostname);
+        String otherFormOfHostname = null;
+        if (isHostNameIpAddress) {
+            otherFormOfHostname = bookieId.getSocketAddress().getAddress().getCanonicalHostName();
+        } else {
+            otherFormOfHostname = bookieId.getSocketAddress().getAddress().getHostAddress();
+        }
+        String bookieSocketAddrStringRepresentation = hostname + "(" + otherFormOfHostname + ")" + ":"
+                + bookieId.getSocketAddress().getPort();
+        return bookieSocketAddrStringRepresentation;
     }
 
     /**
