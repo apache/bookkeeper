@@ -59,12 +59,12 @@ public class DefaultSpeculativeRequestExecutionPolicy implements SpeculativeRequ
      * @param requestExecutor The executor is used to issue the actual speculative requests
      */
     @Override
-    public void initiateSpeculativeRequest(final ScheduledExecutorService scheduler, final SpeculativeRequestExectuor requestExecutor) {
+    public void initiateSpeculativeRequest(final ScheduledExecutorService scheduler, final SpeculativeRequestExecutor requestExecutor) {
         scheduleSpeculativeRead(scheduler, requestExecutor, firstSpeculativeRequestTimeout);
     }
 
     private void scheduleSpeculativeRead(final ScheduledExecutorService scheduler,
-                                         final SpeculativeRequestExectuor requestExecutor,
+                                         final SpeculativeRequestExecutor requestExecutor,
                                          final int speculativeRequestTimeout) {
         try {
             scheduler.schedule(new Runnable() {
