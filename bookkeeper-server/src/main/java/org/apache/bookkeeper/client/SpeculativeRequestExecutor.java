@@ -22,7 +22,7 @@ package org.apache.bookkeeper.client;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
-public interface SpeculativeRequestExectuor {
+public interface SpeculativeRequestExecutor {
 
     /**
      * Issues a speculative request and indicates if more speculative
