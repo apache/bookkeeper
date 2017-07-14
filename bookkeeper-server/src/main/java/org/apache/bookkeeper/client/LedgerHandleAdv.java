@@ -121,7 +121,7 @@ public class LedgerHandleAdv extends LedgerHandle {
      *            some control object
      */
     @Override
-    public void asyncAddEntry(long entryId, byte[] data, AddCallback cb, Object ctx) throws BKException {
+    public void asyncAddEntry(long entryId, byte[] data, AddCallback cb, Object ctx) {
         asyncAddEntry(entryId, data, 0, data.length, cb, ctx);
     }
 
@@ -165,6 +165,11 @@ public class LedgerHandleAdv extends LedgerHandle {
      */
     @Override
     protected void doAsyncAddEntry(final PendingAddOp op, final ByteBuf data, final AddCallback cb, final Object ctx) {
+        if (op.entryId < 0 ) {
+            super.doAsyncAddEntry(op, data, cb, ctx);
+            return;
+        }
+
         if (throttler != null) {
             throttler.acquire();
         }

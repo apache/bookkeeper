@@ -38,6 +38,7 @@ import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.MultiLedgerManagerMultiDigestTestCase;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -174,6 +175,27 @@ public class BookieWriteLedgerTest extends
             lh.addEntry(i, entry.array());
         }
 
+        readEntries(lh, entries1);
+        lh.close();
+    }
+
+    /**
+     * Verify that LedgerHandleAdv can handle asynchAddEntry without the entryId
+     *
+     * @throws Exception
+     */
+    @Test(timeout = 60000)
+    public void testAsynchAddEntryLedgerCreateAdv() throws Exception {
+        // Create a ledger
+        lh = bkc.createLedgerAdv(5, 3, 2, digestType, ledgerPassword);
+        for (int i = 0; i < numEntriesToWrite; i++) {
+            ByteBuffer entry = ByteBuffer.allocate(4);
+            entry.putInt(rng.nextInt(maxInt));
+            entry.position(0);
+
+            entries1.add(entry.array());
+            lh.addEntry(entry.array());
+        }
         readEntries(lh, entries1);
         lh.close();
     }
