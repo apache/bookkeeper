@@ -4,11 +4,16 @@
 set -x -e -u
 # -------------- #
 
+export PATH=$PATH:${BK_DIR}/bin
+export JAVA_HOME=/usr
+
+env
+
 # -------------- #
 # Allow the container to be started with `--user`
 if [ "$1" = 'bookkeeper' -a "$(id -u)" = '0' ]; then
     chown -R "$BK_USER" "${BK_DIR}" "${BK_JOURNAL_DIR}" "${BK_LEDGER_DIR}" "${BK_INDEX_DIR}"
-    exec su-exec "$BK_USER" /bin/bash "$0" "$@"
+    sudo -s -E -u "$BK_USER" /bin/bash "$0" "$@"
     exit
 fi
 # -------------- #
@@ -41,18 +46,19 @@ diff ${BK_DIR}/conf/bk_server.conf.bak ${BK_DIR}/conf/bk_server.conf || true
 
 # -------------- #
 # Wait for zookeeper server
-set +x
-zk_server1=$(echo ${ZK_SERVERS} | cut -d"," -f1)
-zk_server1_host=$(echo ${zk_server1} | cut -d":" -f1)
-zk_server1_port=$(echo ${zk_server1} | cut -d":" -f2)
-
-echo -en "\nWaiting for Zookeeper (${zk_server1_host}:${zk_server1_port})..."
-while [[ $(nc -z ${zk_server1_host} ${zk_server1_port}) -ne 0 ]] ; do
-	echo -n "."
-	sleep 2
-done
-echo " Connected!"
-set -x
+# NOTE: In CentOS nc -z doesn't work because the of the old nmap-ncat version. We could uncomment when this package will be updated
+#set +x
+#zk_server1=$(echo ${ZK_SERVERS} | cut -d"," -f1)
+#zk_server1_host=$(echo ${zk_server1} | cut -d":" -f1)
+#zk_server1_port=$(echo ${zk_server1} | cut -d":" -f2)
+#
+#echo -en "\nWaiting for Zookeeper (${zk_server1_host}:${zk_server1_port})..."
+#while [[ $(nc -z ${zk_server1_host} ${zk_server1_port}) -ne 0 ]] ; do
+#	echo -n "."
+#	sleep 2
+#done
+#echo " Connected!"
+#set -x
 # -------------- #
 
 

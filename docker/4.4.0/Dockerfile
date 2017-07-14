@@ -1,10 +1,11 @@
-FROM java:openjdk-8-jre-alpine
+FROM centos:7
 MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
 # Install required packages
-RUN apk add --no-cache \
-    bash \
-    su-exec
+RUN yum install -y \
+        java-1.8.0-openjdk-headless \
+        sudo \
+    && yum clean all
 
 ENV ZK_SERVERS= \
     BK_USER=bookkeeper \
@@ -19,7 +20,7 @@ ENV ZK_SERVERS= \
 
 # Add a user and make dirs
 RUN set -x \
-    && adduser -D "${BK_USER}" \
+    && adduser "${BK_USER}" \
     && mkdir -p "${BK_JOURNAL_DIR}" "${BK_LEDGER_DIR}" "${BK_INDEX_DIR}" \
     && chown "$BK_USER:$BK_USER" "${BK_JOURNAL_DIR}" "${BK_LEDGER_DIR}" "${BK_INDEX_DIR}"
 
@@ -30,8 +31,7 @@ ENV DISTRO_NAME=bookkeeper-server-${BK_VERSION}-bin
 	
 # Download Apache Bookkeeper, verify its PGP signature, untar and clean up
 RUN set -x \
-    && apk add --no-cache --virtual .build-deps \
-        gnupg \
+    && yum install -y \
         wget \
     && mkdir -pv /opt \
     && cd /opt \
@@ -43,7 +43,9 @@ RUN set -x \
     && tar -xzf "$DISTRO_NAME.tar.gz" \
     && rm -r "$GNUPGHOME" "$DISTRO_NAME.tar.gz" "$DISTRO_NAME.tar.gz.asc" \
     && mv bookkeeper-server-* bookkeeper \
-    && apk del .build-deps
+    && yum remove -y \
+        wget \
+    && yum clean all
 
 ENV BK_DIR=/opt/bookkeeper
 ENV PATH=$PATH:${BK_DIR}/bin

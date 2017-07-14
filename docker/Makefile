@@ -1,5 +1,5 @@
 
-VERSION ?= 4.4.0-alpine
+VERSION ?= 4.4.0
 IMAGE ?= caiok/bookkeeper:$(VERSION)
 BOOKIE ?= 1
 DOCKER_NETWORK ?= bk_network
@@ -16,8 +16,13 @@ ZK_LOCAL_DATA_DIR=$(BK_LOCAL_DATA_DIR)/zookkeeper
 
 CONTAINER_IP=$(shell docker inspect --format '{{ .NetworkSettings.IPAddress }}' $(CONTAINER_NAME))
 
+TRY_METAFORMAT ?= 
+
 #NOCACHE=--no-cache
 NOCACHE=
+
+# e.g. x-terminal-emulator, gnome-terminal
+TERMINAL_EMULATOR=gnome-terminal
 
 # -------------------------------- #
 
@@ -48,9 +53,6 @@ build:
 #   make run-bk BOOKIE=4
 
 run-bk:
-	# Temporary gimmick: clear all data because of bookkeeper blocking check on host / data integrity
-	#-sudo rm -rf $(BK_LOCAL_CONTAINER_DATA_DIR)
-	
 	mkdir -p $(BK_LOCAL_DATA_DIR) \
 			$(BK_LOCAL_CONTAINER_DATA_DIR) \
 			$(BK_LOCAL_CONTAINER_DATA_DIR)/journal \
@@ -66,6 +68,7 @@ run-bk:
 	    --name "$(CONTAINER_NAME)" \
 	    --hostname "$(CONTAINER_NAME)" \
 	    --env ZK_SERVERS=$(ZK_CONTAINER_NAME):2181 \
+	    --env BK_TRY_METAFORMAT=$(TRY_METAFORMAT) \
 	    $(IMAGE)
 
 # -------------------------------- #
@@ -115,17 +118,17 @@ run-dice:
 #   make run-demo 
 run-demo:
 	$(eval WAIT_CMD := read -p 'Press Enter to close...')
-	x-terminal-emulator -e "bash -c \"make run-zk ; $(WAIT_CMD)"\"
+	$(TERMINAL_EMULATOR) -e "bash -l -c \"make run-zk ; $(WAIT_CMD)"\"
 	sleep 3
-	#x-terminal-emulator -e "bash -c \"make run-format FORMAT_OPTS=-nonInteractive ; make run-bk BOOKIE=1 ; $(WAIT_CMD)\""
+	#$(TERMINAL_EMULATOR) -e "bash -c \"make run-format FORMAT_OPTS=-nonInteractive ; make run-bk BOOKIE=1 ; $(WAIT_CMD)\""
 	#sleep 3
-	x-terminal-emulator -e "bash -c \"make run-bk BOOKIE=1 ; $(WAIT_CMD)\""
-	x-terminal-emulator -e "bash -c \"make run-bk BOOKIE=2 ; $(WAIT_CMD)\""
-	x-terminal-emulator -e "bash -c \"make run-bk BOOKIE=3 ; $(WAIT_CMD)\""
+	$(TERMINAL_EMULATOR) -e "bash -l -c \"make run-bk BOOKIE=1 TRY_METAFORMAT=true; $(WAIT_CMD)\""
+	$(TERMINAL_EMULATOR) -e "bash -l -c \"make run-bk BOOKIE=2 TRY_METAFORMAT=true; $(WAIT_CMD)\""
+	$(TERMINAL_EMULATOR) -e "bash -l -c \"make run-bk BOOKIE=3 TRY_METAFORMAT=true; $(WAIT_CMD)\""
 	sleep 6
-	x-terminal-emulator -e "bash -c \"make run-dice ; $(WAIT_CMD)\""
+	$(TERMINAL_EMULATOR) -e "bash -l -c \"make run-dice ; $(WAIT_CMD)\""
 	sleep 2
-	x-terminal-emulator -e "bash -c \"make run-dice ; $(WAIT_CMD)\""
+	$(TERMINAL_EMULATOR) -e "bash -l -c \"make run-dice ; $(WAIT_CMD)\""
 	
 	@echo
 	@echo "If you want to restart from scratch the application, remove all its data:"

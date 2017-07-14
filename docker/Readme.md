@@ -11,7 +11,7 @@ Apache ZooKeeper is a software project of the Apache Software Foundation, provid
 
 # How to use this image
 
-Bookkeeper needs [Zookeeper](https://zookeeper.apache.org/) in order to preserve its state and publish its bookies (bookkepeer servers). The client only need to connect to a Zookkeeper server in the ensamble in order to obtain the list of Bookkeeper servers.
+Bookkeeper needs [Zookeeper](https://zookeeper.apache.org/) in order to preserve its state and publish its bookies (bookkepeer servers). The client only need to connect to a Zookkeeper server in the ensemble in order to obtain the list of Bookkeeper servers.
 
 ## TL;DR
 
@@ -19,10 +19,11 @@ If you just want to see things working, you can play with Makefile hosted in thi
 
 	git clone https://github.com/caiok/bookkeeper-docker
 	cd bookkeeper-docker
+        make build
 	make run-demo
 
-This will do all the following steps and start up a working ensamble with two dice applications.
-You only need GNU Make 4.0 or above and a X terminal emulator (or, if you don't have access to a X enviornment, you can play by hand all commands in "run-demo" target).
+This will do all the following steps and start up a working ensemble with two dice applications.
+You only need GNU Make 4.0 or above and a X terminal emulator (or, if you don't have access to a X environment, you can play by hand all commands in "run-demo" target).
 
 
 ## Step by step
@@ -46,7 +47,7 @@ And initialize the filesystem that bookies will use to store informations:
 	docker run -it --rm \
 		--network "my-bookkeeper-network" \
 		--env ZK_SERVERS=my-zookeeper:2181 \
-		bookkeeper \
+		apache/bookkeeper \
 		bookkeeper shell metaformat
 
 Where the last line is the command is going to be executed in the bookkeeper container). Now we can start our Bookkeeper ensamble (e.g. with three bookies):
@@ -58,11 +59,11 @@ Where the last line is the command is going to be executed in the bookkeeper con
 		--hostname "bookie1" \
 		bookkeeper
 
-And so on for "bookie2" and "bookie3". We have now our fully functional ensamble, ready to accept clients. 
+And so on for "bookie2" and "bookie3". We have now our fully functional ensemble, ready to accept clients. 
 
-In order to play with our freshly created ensamble, you can use the simple application taken from [Bookkeeper Tutorial](http://bookkeeper.apache.org/docs/master/bookkeeperTutorial.html) and packaged in a docker image for conveniece (you may be interested in [see its source code](https://github.com/caiok/bookkeeper-tutorial)). This application check if he can be leader, if yes start to roll a dice and book this rolls on bookkeeper, otherwise it will start to follow the leader rolls. If leader stops, follower will try to become leader and so on.
+In order to play with our freshly created ensemble, you can use the simple application taken from [Bookkeeper Tutorial](http://bookkeeper.apache.org/docs/master/bookkeeperTutorial.html) and packaged in a docker image for convenience (you may be interested in [see its source code](https://github.com/caiok/bookkeeper-tutorial)). This application check if he can be leader, if yes start to roll a dice and book this rolls on bookkeeper, otherwise it will start to follow the leader rolls. If leader stops, follower will try to become leader and so on.
 
-Start a dice application (you can run it several times to view the behavior in a cuncurrent environment):
+Start a dice application (you can run it several times to view the behavior in a concurrent environment):
 	
 	docker run -it --rm \
 		--network "my-bookkeeper-network" \
@@ -83,7 +84,7 @@ Example showing how to use your own configuration files:
 		-v $(pwd)/<file>.conf:/conf/<file>.conf \
 		-e BK_PORT=3181 \
 		-e ZK_SERVERS=zk-server1:2181,zk-server2:2181 \
-		 bookkeeper
+		 apache/bookkeeper
 
 ### `BK_PORT`
 
@@ -97,11 +98,15 @@ This variable allows you to specify a list of machines of the Zookeeper ensemble
 
 This variable allows you to specify the root directory bookkeeper will use on Zookeeper.
 
+### `BK_TRY_METAFORMAT`
+
+If this variable is not empty, the container will try to do a format of ensemble metadata on zookeeper. This operation is required the first time you setup the ensemble. With BK_TRY_METAFORMAT=true this operation will be performed only if metadata has not been formatted yet, but it's important to underline that this kind of automatism could lead to undesired behaviors and in production environments it's strongly suggested to manually perform metaformat and to not use this variable.
+
 ### Caveats
 
 If you pass one of these environment variables, the corresponding value in bk_server.conf will be rewritten, regardless of whether you have passed bk_server.con via volume mount.
 
-When run starts, the option `useHostNameAsBookieID=true` is always setted (no ways to change this behavior yet). Open an issue on Github if this creates inconvenients.
+When run starts, the option `useHostNameAsBookieID=true` is always set (no ways to change this behavior yet). Open an issue on Github if this creates problems.
 
 
 ## Where to store data
