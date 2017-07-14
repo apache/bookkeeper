@@ -432,28 +432,5 @@
         </dependency>
       </dependencies>
     </profile>
-    <profile>
-        <id>code-coverage</id>
-        <build>
-            <plugins>
-                <plugin>
-                    <groupId>org.eluder.coveralls</groupId>
-                    <artifactId>coveralls-maven-plugin</artifactId>
-                    <version>4.3.0</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>cobertura-maven-plugin</artifactId>
-                    <version>2.7</version>
-                    <configuration>
-                        <formats>
-                            <format>html</format>
-                            <format>xml</format>
-                        </formats>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </build>
-    </profile>
   </profiles>
 </project>
