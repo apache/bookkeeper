@@ -322,6 +322,26 @@ public abstract class BookKeeperClusterTestCase {
     }
 
     /**
+     * Kill bookie by index and verify that it's stopped
+     *
+     * @param index index of bookie to kill
+     *
+     * @return configuration of killed bookie
+     */
+    public ServerConfiguration killBookieAndWaitForZK(int index) throws Exception {
+        if (index >= bs.size()) {
+            throw new IOException("Bookie does not exist");
+        }
+        BookieServer server = bs.get(index);
+        ServerConfiguration ret = killBookie(index);
+        while (zkc.exists(baseConf.getZkAvailableBookiesPath() + "/"
+                + server.getLocalAddress().toString(), false) != null) {
+            Thread.sleep(500);
+        }
+        return ret;
+    }
+
+    /**
      * Sleep a bookie
      *
      * @param addr
