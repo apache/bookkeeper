@@ -43,4 +43,4 @@ cache:
     - $HOME/.m2
 
 after_success:
-  - mvn clean cobertura:cobertura coveralls:report
+  - mvn clean install cobertura:cobertura coveralls:report
