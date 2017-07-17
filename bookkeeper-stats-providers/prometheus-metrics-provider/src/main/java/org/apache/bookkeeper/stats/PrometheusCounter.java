@@ -21,7 +21,7 @@ import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 
 /**
- * @TODO: Write JavaDoc comment
+ * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
  */
 public class PrometheusCounter implements Counter {
 

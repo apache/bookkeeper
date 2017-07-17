@@ -48,7 +48,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.google.common.base.Charsets.UTF_8;
 
 /**
- * @TODO: Write JavaDoc comment
+ * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
  */
 public class BenchReadThroughputLatency {
     static final Logger LOG = LoggerFactory.getLogger(BenchReadThroughputLatency.class);

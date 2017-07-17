@@ -16,6 +16,6 @@
  * limitations under the License.
  */
 /**
- * @TODO: Write JavaDoc comment
+ * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
  */
 package org.apache.bookkeeper.stats.twitter.finagle;

@@ -15,6 +15,6 @@
  * the License.
  */
 /**
- * @TODO: Write JavaDOc comment
+ * @TODO: Write JavaDOc comment {@link https://github.com/apache/bookkepeer/issues/247}
  */
 package org.apache.bookkeeper.stats.twitter.ostrich;

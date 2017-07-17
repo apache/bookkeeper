@@ -22,7 +22,7 @@ import io.prometheus.client.Collector;
 import io.prometheus.client.CollectorRegistry;
 
 /**
- * @TODO: Write JavaDoc comment
+ * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
  */
 public class PrometheusStatsLogger implements StatsLogger {
 

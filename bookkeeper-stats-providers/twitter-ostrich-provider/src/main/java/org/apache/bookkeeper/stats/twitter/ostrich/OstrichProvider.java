@@ -36,7 +36,7 @@ import scala.util.matching.Regex;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @TODO: Write JavaDoc comment
+ * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
  */
 public class OstrichProvider implements StatsProvider {
 
