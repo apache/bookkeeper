@@ -325,8 +325,15 @@ public class LedgerDirsManager {
         }
         return pickRandomDir(writableDirsForNewIndexFile, excludedDir);
     }
-    
-    File pickRandomDir(List<File> dirs, File excludedDir) throws NoWritableLedgerDirException{
+
+    /**
+     * Return one dir from all dirs, regardless writable or not.
+     */
+    File pickRandomDir(File excludedDir) throws NoWritableLedgerDirException {
+        return pickRandomDir(getAllLedgerDirs(), excludedDir);
+    }
+
+    File pickRandomDir(List<File> dirs, File excludedDir) throws NoWritableLedgerDirException {
         final int start = rand.nextInt(dirs.size());
         int idx = start;
         File candidate = dirs.get(idx);
