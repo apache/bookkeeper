@@ -157,7 +157,7 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
     }
 
     @Override
-    Observable waitForLastAddConfirmedUpdate(long previoisLAC, Observer observer) throws IOException {
-        return ledgerStorage.waitForLastAddConfirmedUpdate(ledgerId, previoisLAC, observer);
+    Observable waitForLastAddConfirmedUpdate(long previousLAC, Observer observer) throws IOException {
+        return ledgerStorage.waitForLastAddConfirmedUpdate(ledgerId, previousLAC, observer);
     }
 }
