@@ -110,7 +110,9 @@ class FileInfo extends Observable {
             }
             lacToReturn = this.lac;
         }
-        LOG.trace("Updating LAC {} , {}", lacToReturn, lac);
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("Updating LAC {} , {}", lacToReturn, lac);
+        }
 
 
         notifyObservers(new LastAddConfirmedUpdateNotification(lacToReturn));
@@ -120,7 +122,9 @@ class FileInfo extends Observable {
     synchronized Observable waitForLastAddConfirmedUpdate(long previousLAC, Observer observe) {
         if ((null != lac && lac > previousLAC)
                 || isClosed || ((stateBits & STATE_FENCED_BIT) == STATE_FENCED_BIT)) {
-            LOG.trace("Wait For LAC {} , {}", this.lac, previousLAC);
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("Wait For LAC {} , {}", this.lac, previousLAC);
+            }
             return null;
         }
 
