@@ -48,13 +48,16 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 
+/**
+ * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ */
 public class BenchBookie {
     static final Logger LOG = LoggerFactory.getLogger(BenchBookie.class);
 
     static class LatencyCallback implements WriteCallback {
         boolean complete;
         @Override
-        synchronized public void writeComplete(int rc, long ledgerId, long entryId,
+        public synchronized void writeComplete(int rc, long ledgerId, long entryId,
                 BookieSocketAddress addr, Object ctx) {
             if (rc != 0) {
                 LOG.error("Got error " + rc);
@@ -62,11 +65,11 @@ public class BenchBookie {
             complete = true;
             notifyAll();
         }
-        synchronized public void resetComplete() {
+        public synchronized void resetComplete() {
             complete = false;
         }
-        synchronized public void waitForComplete() throws InterruptedException {
-            while(!complete) {
+        public synchronized void waitForComplete() throws InterruptedException {
+            while (!complete) {
                 wait();
             }
         }
@@ -75,7 +78,7 @@ public class BenchBookie {
     static class ThroughputCallback implements WriteCallback {
         int count;
         int waitingCount = Integer.MAX_VALUE;
-        synchronized public void writeComplete(int rc, long ledgerId, long entryId,
+        public synchronized void writeComplete(int rc, long ledgerId, long entryId,
                 BookieSocketAddress addr, Object ctx) {
             if (rc != 0) {
                 LOG.error("Got error " + rc);
@@ -85,8 +88,8 @@ public class BenchBookie {
                 notifyAll();
             }
         }
-        synchronized public void waitFor(int count) throws InterruptedException {
-            while(this.count < count) {
+        public synchronized void waitFor(int count) throws InterruptedException {
+            while (this.count < count) {
                 waitingCount = count;
                 wait(1000);
             }
@@ -100,14 +103,18 @@ public class BenchBookie {
         LedgerHandle lh = null;
         long id = 0;
         try {
-            bkc =new BookKeeper(zkServers);
+            bkc = new BookKeeper(zkServers);
             lh = bkc.createLedger(1, 1, BookKeeper.DigestType.CRC32,
                                   new byte[20]);
             id = lh.getId();
             return id;
         } finally {
-            if (lh != null) { lh.close(); }
-            if (bkc != null) { bkc.close(); }
+            if (lh != null) {
+                lh.close();
+            }
+            if (bkc != null) {
+                bkc.close();
+            }
         }
     }
     /**
@@ -163,7 +170,7 @@ public class BenchBookie {
         int warmUpCount = 999;
 
         long ledger = getValidLedgerId(servers);
-        for(long entry = 0; entry < warmUpCount; entry++) {
+        for (long entry = 0; entry < warmUpCount; entry++) {
             ByteBuf toSend = Unpooled.buffer(size);
             toSend.resetReaderIndex();
             toSend.resetWriterIndex();
@@ -180,7 +187,7 @@ public class BenchBookie {
         LOG.info("Benchmarking latency");
         int entryCount = 5000;
         long startTime = System.nanoTime();
-        for(long entry = 0; entry < entryCount; entry++) {
+        for (long entry = 0; entry < entryCount; entry++) {
             ByteBuf toSend = Unpooled.buffer(size);
             toSend.resetReaderIndex();
             toSend.resetWriterIndex();
@@ -193,7 +200,7 @@ public class BenchBookie {
             lc.waitForComplete();
         }
         long endTime = System.nanoTime();
-        LOG.info("Latency: " + (((double)(endTime-startTime))/((double)entryCount))/1000000.0);
+        LOG.info("Latency: " + (((double) (endTime - startTime)) / ((double) entryCount)) / 1000000.0);
 
         entryCount = 50000;
 
@@ -201,7 +208,7 @@ public class BenchBookie {
         LOG.info("Benchmarking throughput");
         startTime = System.currentTimeMillis();
         tc = new ThroughputCallback();
-        for(long entry = 0; entry < entryCount; entry++) {
+        for (long entry = 0; entry < entryCount; entry++) {
             ByteBuf toSend = Unpooled.buffer(size);
             toSend.resetReaderIndex();
             toSend.resetWriterIndex();
@@ -213,7 +220,7 @@ public class BenchBookie {
         }
         tc.waitFor(entryCount);
         endTime = System.currentTimeMillis();
-        LOG.info("Throughput: " + ((long)entryCount)*1000/(endTime-startTime));
+        LOG.info("Throughput: " + ((long) entryCount) * 1000 / (endTime - startTime));
 
         bc.close();
         eventLoop.shutdownGracefully();

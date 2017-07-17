@@ -23,12 +23,15 @@ import org.apache.commons.configuration.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ */
 public class TwitterStatsProvider implements StatsProvider {
 
     static final Logger LOG = LoggerFactory.getLogger(TwitterStatsProvider.class);
 
-    protected final static String STATS_EXPORT = "statsExport";
-    protected final static String STATS_HTTP_PORT = "statsHttpPort";
+    protected static final String STATS_EXPORT = "statsExport";
+    protected static final String STATS_HTTP_PORT = "statsHttpPort";
 
     private HTTPStatsExporter statsExporter = null;
     private final CachingStatsProvider cachingStatsProvider;

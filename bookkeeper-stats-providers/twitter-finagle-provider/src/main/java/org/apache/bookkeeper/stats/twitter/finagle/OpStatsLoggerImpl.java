@@ -27,13 +27,13 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
  * A percentile stat that will delegate to Finagle stats' implementation library
  * to compute the percentiles.
  *
- * Note: metrics will be exposed in form $name/success.p99 for successful events,
- * and $name/failure.p99 for failed ones.
+ * <p>Note: metrics will be exposed in form $name/success.p99 for successful events,
+ * and $name/failure.p99 for failed ones.</p>
  */
 public class OpStatsLoggerImpl implements OpStatsLogger {
-    final private static OpStatsData NULL_OP_STATS = new OpStatsData(0, 0, 0, new long[6]);
-    final private Stat success;
-    final private Stat failure;
+    private static final OpStatsData NULL_OP_STATS = new OpStatsData(0, 0, 0, new long[6]);
+    private final Stat success;
+    private final Stat failure;
 
     public OpStatsLoggerImpl(final String name, final StatsReceiver stats) {
         this.success = stats.scope(String.format("%s/success", name)).stat0(name);
