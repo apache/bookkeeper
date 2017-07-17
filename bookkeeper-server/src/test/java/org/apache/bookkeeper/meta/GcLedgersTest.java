@@ -38,6 +38,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
@@ -417,6 +419,11 @@ public class GcLedgersTest extends LedgerManagerTestCase {
 
         @Override
         public void flushEntriesLocationsIndex() throws IOException {
+        }
+
+        @Override
+        public Observable waitForLastAddConfirmedUpdate(long ledgerId, long previoisLAC, Observer observer) throws IOException {
+            return null;
         }
     }
 }

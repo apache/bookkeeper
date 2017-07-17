@@ -43,19 +43,17 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
 import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
-import org.apache.bookkeeper.bookie.Journal;
 import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.BookieInfoReader;
-import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
+import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
@@ -68,11 +66,12 @@ import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookieClient;
-import org.apache.bookkeeper.proto.BookkeeperProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
 import org.apache.bookkeeper.replication.AuditorElector;
+import org.apache.bookkeeper.replication.BookieLedgerIndexer;
+import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.util.BookKeeperConstants;
+import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
@@ -86,13 +85,10 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.HexDump;
-import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.zookeeper.KeeperException;
@@ -102,8 +98,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.AbstractFuture;
-
-import javax.sql.rowset.serial.SerialRef;
 
 /**
  * Bookie Shell is to provide utilities for users to administer a bookkeeper cluster.
@@ -136,6 +130,9 @@ public class BookieShell implements Tool {
     static final String CMD_UPDATELEDGER = "updateledgers";
     static final String CMD_DELETELEDGER = "deleteledger";
     static final String CMD_BOOKIEINFO = "bookieinfo";
+    static final String CMD_DECOMMISSIONBOOKIE = "decommissionbookie";
+    static final String CMD_LOSTBOOKIERECOVERYDELAY = "lostbookierecoverydelay"; 
+    static final String CMD_TRIGGERAUDIT = "triggeraudit";
     static final String CMD_HELP = "help";
 
     final ServerConfiguration bkConf = new ServerConfiguration();
@@ -508,6 +505,8 @@ public class BookieShell implements Tool {
 
         public ListUnderreplicatedCmd() {
             super(CMD_LISTUNDERREPLICATED);
+            opts.addOption("missingreplica", true, "Bookie Id of missing replica");
+            opts.addOption("excludingmissingreplica", true, "Bookie Id of missing replica to ignore");
         }
 
         @Override
@@ -517,16 +516,30 @@ public class BookieShell implements Tool {
 
         @Override
         String getDescription() {
-            return "List ledgers marked as underreplicated";
+            return "List ledgers marked as underreplicated, with optional options to specify missingreplica (BookieId) and to exclude missingreplica";
         }
 
         @Override
         String getUsage() {
-            return "listunderreplicated";
+            return "listunderreplicated [[-missingreplica <bookieaddress>] [-excludingmissingreplica <bookieaddress>]]";
         }
 
         @Override
         int runCmd(CommandLine cmdLine) throws Exception {
+
+            final String includingBookieId = cmdLine.getOptionValue("missingreplica");
+            final String excludingBookieId = cmdLine.getOptionValue("excludingmissingreplica");
+
+            Predicate<List<String>> predicate = null;
+            if (!StringUtils.isBlank(includingBookieId) && !StringUtils.isBlank(excludingBookieId)) {
+                predicate = replicasList -> (replicasList.contains(includingBookieId)
+                        && !replicasList.contains(excludingBookieId));
+            } else if (!StringUtils.isBlank(includingBookieId)) {
+                predicate = replicasList -> replicasList.contains(includingBookieId);
+            } else if (!StringUtils.isBlank(excludingBookieId)) {
+                predicate = replicasList -> !replicasList.contains(excludingBookieId);
+            }
+
             ZooKeeper zk = null;
             try {
                 zk = ZooKeeperClient.newBuilder()
@@ -535,7 +548,7 @@ public class BookieShell implements Tool {
                         .build();
                 LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(bkConf, zk);
                 LedgerUnderreplicationManager underreplicationManager = mFactory.newLedgerUnderreplicationManager();
-                Iterator<Long> iter = underreplicationManager.listLedgersToRereplicate();
+                Iterator<Long> iter = underreplicationManager.listLedgersToRereplicate(predicate);
                 while (iter.hasNext()) {
                     System.out.println(iter.next());
                 }
@@ -1337,6 +1350,65 @@ public class BookieShell implements Tool {
     }
 
     /**
+     * Setter and Getter for LostBookieRecoveryDelay value (in seconds) in Zookeeper
+     */
+    class LostBookieRecoveryDelayCmd extends MyCommand {
+        Options opts = new Options();
+
+        public LostBookieRecoveryDelayCmd() {
+            super(CMD_LOSTBOOKIERECOVERYDELAY);
+            opts.addOption("g", "get", false, "Get LostBookieRecoveryDelay value (in seconds)");
+            opts.addOption("s", "set", true, "Set LostBookieRecoveryDelay value (in seconds)");
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Setter and Getter for LostBookieRecoveryDelay value (in seconds) in Zookeeper";
+        }
+
+        @Override
+        String getUsage() {
+            return "lostbookierecoverydelay [-get|-set <value>]";
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            boolean getter = cmdLine.hasOption("g");
+            boolean setter = cmdLine.hasOption("s");
+
+            if ((!getter && !setter) || (getter && setter)) {
+                LOG.error("One and only one of -get and -set must be specified");
+                printUsage();
+                return 1;
+            }
+            ClientConfiguration adminConf = new ClientConfiguration(bkConf);
+            BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
+            try {
+                if (getter) {
+                    int lostBookieRecoveryDelay = admin.getLostBookieRecoveryDelay();
+                    LOG.info("LostBookieRecoveryDelay value in ZK: {}", String.valueOf(lostBookieRecoveryDelay));
+                } else {
+                    int lostBookieRecoveryDelay = Integer.parseInt(cmdLine.getOptionValue("set"));
+                    admin.setLostBookieRecoveryDelay(lostBookieRecoveryDelay);
+                    LOG.info("Successfully set LostBookieRecoveryDelay value in ZK: {}",
+                            String.valueOf(lostBookieRecoveryDelay));
+                }
+            } finally {
+                if (admin != null) {
+                    admin.close();
+                }
+            }
+            return 0;
+        }
+    }
+    
+    
+    /**
      * Print which node has the auditor lock
      */
     class WhoIsAuditorCmd extends MyCommand {
@@ -1835,6 +1907,91 @@ public class BookieShell implements Tool {
     }
 
     /**
+     * Command to trigger AuditTask by resetting lostBookieRecoveryDelay to its current value
+     */
+    class TriggerAuditCmd extends MyCommand {
+        Options opts = new Options();
+
+        TriggerAuditCmd() {
+            super(CMD_TRIGGERAUDIT);
+        }
+
+        @Override
+        String getDescription() {
+            return "Force trigger the Audit by resetting the lostBookieRecoveryDelay";
+        }
+
+        @Override
+        String getUsage() {
+            return CMD_TRIGGERAUDIT;
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        public int runCmd(CommandLine cmdLine) throws Exception {
+            ClientConfiguration adminConf = new ClientConfiguration(bkConf);
+            BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
+            try {
+                admin.triggerAudit();
+            } finally {
+                if (admin != null) {
+                    admin.close();
+                }
+            }
+            return 0;
+        }
+    }
+    
+    /**
+     * Command to trigger AuditTask by resetting lostBookieRecoveryDelay and then make sure the 
+     * ledgers stored in the bookie are properly replicated.
+     */
+    class DecommissionBookieCmd extends MyCommand {
+        Options lOpts = new Options();
+        
+        DecommissionBookieCmd() {
+            super(CMD_DECOMMISSIONBOOKIE);
+        }
+
+        @Override
+        String getDescription() {
+            return "Force trigger the Audittask and make sure all the ledgers stored in the decommissioning bookie are replicated";
+        }
+
+        @Override
+        String getUsage() {
+            return CMD_DECOMMISSIONBOOKIE;
+        }
+
+        @Override
+        Options getOptions() {
+            return lOpts;
+        }
+
+        @Override
+        public int runCmd(CommandLine cmdLine) throws Exception {
+            ClientConfiguration adminConf = new ClientConfiguration(bkConf);
+            BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
+            try {
+                BookieSocketAddress thisBookieAddress = Bookie.getBookieAddress(bkConf);
+                admin.decommissionBookie(thisBookieAddress);
+                return 0;
+            } catch (Exception e) {
+                LOG.error("Received exception in DecommissionBookieCmd ", e);
+                return -1;
+            } finally {
+                if (admin != null) {
+                    admin.close();
+                }
+            }
+        }
+    }
+    
+    /**
      * A facility for reporting update ledger progress.
      */
     public interface UpdateLedgerNotifier {
@@ -1865,7 +2022,10 @@ public class BookieShell implements Tool {
         commands.put(CMD_UPDATELEDGER, new UpdateLedgerCmd());
         commands.put(CMD_DELETELEDGER, new DeleteLedgerCmd());
         commands.put(CMD_BOOKIEINFO, new BookieInfoCmd());
+        commands.put(CMD_DECOMMISSIONBOOKIE, new DecommissionBookieCmd());
         commands.put(CMD_HELP, new HelpCmd());
+        commands.put(CMD_LOSTBOOKIERECOVERYDELAY, new LostBookieRecoveryDelayCmd());  
+        commands.put(CMD_TRIGGERAUDIT, new TriggerAuditCmd());
     }
 
     @Override
@@ -2063,7 +2223,8 @@ public class BookieShell implements Tool {
         if (null == journals) {
             journals = Lists.newArrayListWithCapacity(bkConf.getJournalDirs().length);
             for (File journalDir : bkConf.getJournalDirs()) {
-                journals.add(new Journal(journalDir, bkConf, new LedgerDirsManager(bkConf, bkConf.getLedgerDirs())));
+                journals.add(new Journal(journalDir, bkConf, new LedgerDirsManager(bkConf, bkConf.getLedgerDirs(),
+                    new DiskChecker(bkConf.getDiskUsageThreshold(), bkConf.getDiskUsageWarnThreshold()))));
             }
         }
         return journals;

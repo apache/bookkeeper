@@ -35,19 +35,35 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
+import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Predicate;
 
+import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
 import org.apache.bookkeeper.client.BookKeeper.SyncOpenCallback;
 import org.apache.bookkeeper.client.LedgerFragmentReplicator.SingleFragmentCallback;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
+import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
+import org.apache.bookkeeper.replication.AuditorElector;
+import org.apache.bookkeeper.replication.BookieLedgerIndexer;
+import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
+import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
+import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
@@ -63,6 +79,8 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.util.concurrent.AbstractFuture;
 
 /**
  * Admin client for BookKeeper clusters
@@ -89,6 +107,14 @@ public class BookKeeperAdmin implements AutoCloseable {
      */
     private Random rand = new Random();
 
+    private LedgerManagerFactory mFactory;
+
+    /*
+     * underreplicationManager is not initialized as part of constructor use its
+     * getter (getUnderreplicationManager) so that it can be lazy-initialized
+     */
+    private LedgerUnderreplicationManager underreplicationManager;
+    
     /**
      * Constructor that takes in a ZooKeeper servers connect string so we know
      * how to connect to ZooKeeper to retrieve information about the BookKeeper
@@ -144,6 +170,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         bkc = new BookKeeper(conf, zk);
         ownsBK = true;
         this.lfr = new LedgerFragmentReplicator(bkc, NullStatsLogger.INSTANCE);
+        this.mFactory = bkc.ledgerManagerFactory;
     }
 
     /**
@@ -162,6 +189,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         ownsZK = false;
         this.bookiesPath = bkc.getConf().getZkAvailableBookiesPath();
         this.lfr = new LedgerFragmentReplicator(bkc, statsLogger);
+        this.mFactory = bkc.ledgerManagerFactory;
     }
 
     public BookKeeperAdmin(final BookKeeper bkc) {
@@ -474,7 +502,7 @@ public class BookKeeperAdmin implements AutoCloseable {
 
         // Wait for the async method to complete.
         synchronized (sync) {
-            while (sync.value == false) {
+            while (!sync.value) {
                 sync.wait();
             }
         }
@@ -520,7 +548,6 @@ public class BookKeeperAdmin implements AutoCloseable {
                 getAvailableBookies(bookieSrc, bookieDest, cb, context);
             }
 
-            ;
         }, null);
     }
 
@@ -1064,5 +1091,286 @@ public class BookKeeperAdmin implements AutoCloseable {
      */
     public LedgerMetadata getLedgerMetadata(LedgerHandle lh) {
         return lh.getLedgerMetadata();
+    }
+    
+    private LedgerUnderreplicationManager getUnderreplicationManager()
+            throws CompatibilityException, KeeperException, InterruptedException {
+        if (underreplicationManager == null) {
+            underreplicationManager = mFactory.newLedgerUnderreplicationManager();
+        }
+        return underreplicationManager;
+    }
+
+    /**
+     * Setter for LostBookieRecoveryDelay value (in seconds) in Zookeeper
+     * 
+     * @param lostBookieRecoveryDelay
+     *                              lostBookieRecoveryDelay value (in seconds) to set 
+     * @throws CompatibilityException
+     * @throws KeeperException
+     * @throws InterruptedException
+     * @throws UnavailableException
+     */
+    public void setLostBookieRecoveryDelay(int lostBookieRecoveryDelay)
+            throws CompatibilityException, KeeperException, InterruptedException, UnavailableException {
+        LedgerUnderreplicationManager urlManager = getUnderreplicationManager();
+        urlManager.setLostBookieRecoveryDelay(lostBookieRecoveryDelay);
+    }
+
+    /**
+     * returns the current LostBookieRecoveryDelay value (in seconds) in Zookeeper
+     * 
+     * @return
+     *          current lostBookieRecoveryDelay value (in seconds)
+     * @throws CompatibilityException
+     * @throws KeeperException
+     * @throws InterruptedException
+     * @throws UnavailableException
+     */
+    public int getLostBookieRecoveryDelay()
+            throws CompatibilityException, KeeperException, InterruptedException, UnavailableException {
+        LedgerUnderreplicationManager urlManager = getUnderreplicationManager();
+        return urlManager.getLostBookieRecoveryDelay();
+    }
+
+    /**
+     * trigger AuditTask by resetting lostBookieRecoveryDelay to its current
+     * value. If Autorecovery is not enabled or if there is no Auditor then this
+     * method will throw UnavailableException.
+     * 
+     * @throws CompatibilityException
+     * @throws KeeperException
+     * @throws InterruptedException
+     * @throws UnavailableException
+     * @throws IOException
+     */
+    public void triggerAudit()
+            throws CompatibilityException, KeeperException, InterruptedException, UnavailableException, IOException {
+        LedgerUnderreplicationManager urlManager = getUnderreplicationManager();
+        if (!urlManager.isLedgerReplicationEnabled()) {
+            LOG.error("Autorecovery is disabled. So giving up!");
+            throw new UnavailableException("Autorecovery is disabled. So giving up!");
+        }
+        
+        BookieSocketAddress auditorId = AuditorElector.getCurrentAuditor(new ServerConfiguration(bkc.conf), zk);
+        if (auditorId == null) {
+            LOG.error("No auditor elected, though Autorecovery is enabled. So giving up.");
+            throw new UnavailableException("No auditor elected, though Autorecovery is enabled. So giving up.");
+        }
+
+        int previousLostBookieRecoveryDelayValue = urlManager.getLostBookieRecoveryDelay();
+        LOG.info("Resetting LostBookieRecoveryDelay value: {}, to kickstart audit task",
+                previousLostBookieRecoveryDelayValue);
+        urlManager.setLostBookieRecoveryDelay(previousLostBookieRecoveryDelayValue);
+    }
+    
+    /**
+     * Triggers AuditTask by resetting lostBookieRecoveryDelay and then make
+     * sure the ledgers stored in the given decommissioning bookie are properly
+     * replicated and they are not underreplicated because of the given bookie.
+     * This method waits untill there are no underreplicatedledgers because of this 
+     * bookie. If the given Bookie is not shutdown yet, then it will throw 
+     * BKIllegalOpException.
+     * 
+     * @param bookieAddress
+     *            address of the decommissioning bookie
+     * @throws CompatibilityException
+     * @throws UnavailableException
+     * @throws KeeperException
+     * @throws InterruptedException
+     * @throws IOException
+     * @throws BKAuditException
+     * @throws TimeoutException
+     * @throws BKException 
+     */
+    public void decommissionBookie(BookieSocketAddress bookieAddress)
+            throws CompatibilityException, UnavailableException, KeeperException, InterruptedException, IOException,
+            BKAuditException, TimeoutException, BKException {
+        if (getAvailableBookies().contains(bookieAddress) || getReadOnlyBookies().contains(bookieAddress)) {
+            LOG.error("Bookie: {} is not shutdown yet", bookieAddress);
+            throw BKException.create(BKException.Code.IllegalOpException);
+        }
+        
+        triggerAudit();
+
+        /*
+         * Sleep for 30 secs, so that Auditor gets chance to trigger its
+         * force audittask and let the underreplicationmanager process
+         * to do its replication process
+         */
+        Thread.sleep(30 * 1000);
+        
+        /*
+         * get the collection of the ledgers which are stored in this
+         * bookie, by making a call to
+         * bookieLedgerIndexer.getBookieToLedgerIndex.
+         */
+        
+        BookieLedgerIndexer bookieLedgerIndexer = new BookieLedgerIndexer(bkc.ledgerManager);
+        Map<String, Set<Long>> bookieToLedgersMap = bookieLedgerIndexer.getBookieToLedgerIndex();
+        Set<Long> ledgersStoredInThisBookie = bookieToLedgersMap.get(bookieAddress.toString());
+        if ((ledgersStoredInThisBookie != null) && (!ledgersStoredInThisBookie.isEmpty())) {
+            /*
+             * wait untill all the ledgers are replicated to other
+             * bookies by making sure that these ledgers metadata don't
+             * contain this bookie as part of their ensemble.
+             */
+            waitForLedgersToBeReplicated(ledgersStoredInThisBookie, bookieAddress, bkc.ledgerManager);
+        }
+
+        // for double-checking, check if any ledgers are listed as underreplicated because of this bookie
+        Predicate<List<String>> predicate = replicasList -> replicasList.contains(bookieAddress.toString());
+        Iterator<Long> urLedgerIterator = underreplicationManager.listLedgersToRereplicate(predicate);
+        if (urLedgerIterator.hasNext()) {
+            //if there are any then wait and make sure those ledgers are replicated properly
+            LOG.info("Still in some underreplicated ledgers metadata, this bookie is part of its ensemble. "
+                    + "Have to make sure that those ledger fragments are rereplicated");
+            List<Long> urLedgers = new ArrayList<>();
+            urLedgerIterator.forEachRemaining(urLedgers::add);
+            waitForLedgersToBeReplicated(urLedgers, bookieAddress, bkc.ledgerManager);
+        }
+    }
+
+    private void waitForLedgersToBeReplicated(Collection<Long> ledgers, BookieSocketAddress thisBookieAddress,
+            LedgerManager ledgerManager) throws InterruptedException, TimeoutException {
+        int maxSleepTimeInBetweenChecks = 10 * 60 * 1000; // 10 minutes
+        int sleepTimePerLedger = 10 * 1000; // 10 secs
+        Predicate<Long> validateBookieIsNotPartOfEnsemble = ledgerId -> !areEntriesOfLedgerStoredInTheBookie(ledgerId,
+                thisBookieAddress, ledgerManager);
+        while (!ledgers.isEmpty()) {
+            LOG.info("Count of Ledgers which need to be rereplicated: {}", ledgers.size());
+            int sleepTimeForThisCheck = ledgers.size() * sleepTimePerLedger > maxSleepTimeInBetweenChecks
+                    ? maxSleepTimeInBetweenChecks : ledgers.size() * sleepTimePerLedger;
+            Thread.sleep(sleepTimeForThisCheck);
+            LOG.debug("Making sure following ledgers replication to be completed: {}", ledgers);
+            ledgers.removeIf(validateBookieIsNotPartOfEnsemble);
+        }
+    }
+
+    private boolean areEntriesOfLedgerStoredInTheBookie(long ledgerId, BookieSocketAddress bookieAddress,
+            LedgerManager ledgerManager) {
+        ReadMetadataCallback cb = new ReadMetadataCallback(ledgerId);
+        ledgerManager.readLedgerMetadata(ledgerId, cb);
+        try {
+            LedgerMetadata ledgerMetadata = cb.get();
+            Collection<ArrayList<BookieSocketAddress>> ensemblesOfSegments = ledgerMetadata.getEnsembles().values();
+            Iterator<ArrayList<BookieSocketAddress>> ensemblesOfSegmentsIterator = ensemblesOfSegments.iterator();
+            ArrayList<BookieSocketAddress> ensemble;
+            int segmentNo = 0;
+            while (ensemblesOfSegmentsIterator.hasNext()) {
+                ensemble = ensemblesOfSegmentsIterator.next();
+                if (ensemble.contains(bookieAddress)) {
+                    if (areEntriesOfSegmentStoredInTheBookie(ledgerMetadata, bookieAddress, segmentNo++)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        } catch (InterruptedException | ExecutionException e) {
+            if (e.getCause() != null
+                    && e.getCause().getClass().equals(BKException.BKNoSuchLedgerExistsException.class)) {
+                LOG.debug("Ledger: {} has been deleted", ledgerId);
+                return false;
+            } else {
+                LOG.error("Got exception while trying to read LedgerMeatadata of " + ledgerId, e);
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private boolean areEntriesOfSegmentStoredInTheBookie(LedgerMetadata ledgerMetadata,
+            BookieSocketAddress bookieAddress, int segmentNo) {
+        boolean isLedgerClosed = ledgerMetadata.isClosed();
+        int ensembleSize = ledgerMetadata.getEnsembleSize();
+        int writeQuorumSize = ledgerMetadata.getWriteQuorumSize();
+
+        List<Entry<Long, ArrayList<BookieSocketAddress>>> segments = new LinkedList<Entry<Long, ArrayList<BookieSocketAddress>>>(
+                ledgerMetadata.getEnsembles().entrySet());
+
+        boolean lastSegment = (segmentNo == (segments.size() - 1));
+        
+        /*
+         * Checking the last segment of the ledger can be complicated in
+         * some cases. In the case that the ledger is closed, we can just
+         * check the fragments of the segment as normal, except in the case
+         * that no entry was ever written, to the ledger, in which case we
+         * check no fragments.
+         * 
+         * Following the same approach as in LedgerChecker.checkLedger
+         */
+        if (lastSegment && isLedgerClosed && (ledgerMetadata.getLastEntryId() < segments.get(segmentNo).getKey())) {
+            return false;
+        }
+
+        /*
+         * if ensembleSize is equal to writeQuorumSize, then ofcourse all
+         * the entries of this segment are supposed to be stored in this
+         * bookie. If this is last segment of the ledger and if the ledger
+         * is not closed (this is a corner case), then we have to return
+         * true. For more info. Check BOOKKEEPER-237 and BOOKKEEPER-325.
+         */
+        if ((lastSegment && !isLedgerClosed) || (ensembleSize == writeQuorumSize)) {
+            return true;
+        }
+
+        /*
+         * the following check is required because ensembleSize can be
+         * greater than writeQuorumSize and in this case if there are only
+         * couple of entries then based on RoundRobinDistributionSchedule
+         * there might not be any entry copy in this bookie though this
+         * bookie is part of the ensemble of this segment. If no entry is
+         * stored in this bookie then we should return false, because
+         * ReplicationWorker wont take care of fixing the ledgerMetadata of
+         * this segment in this case.
+         * 
+         * if ensembleSize > writeQuorumSize, then in LedgerFragment.java
+         * firstEntryID may not be equal to firstStoredEntryId lastEntryId
+         * may not be equalto lastStoredEntryId. firstStoredEntryId and
+         * lastStoredEntryId will be LedgerHandle.INVALID_ENTRY_ID, if no
+         * entry of this segment stored in this bookie. In this case
+         * LedgerChecker.verifyLedgerFragment will not consider it as
+         * unavailable/bad fragment though this bookie is part of the
+         * ensemble of the segment and it is down.
+         */
+        DistributionSchedule distributionSchedule = new RoundRobinDistributionSchedule(
+                ledgerMetadata.getWriteQuorumSize(), ledgerMetadata.getAckQuorumSize(),
+                ledgerMetadata.getEnsembleSize());
+        ArrayList<BookieSocketAddress> currentSegmentEnsemble = segments.get(segmentNo).getValue();
+        int thisBookieIndexInCurrentEnsemble = currentSegmentEnsemble.indexOf(bookieAddress);
+        long firstEntryId = segments.get(segmentNo).getKey();
+        long lastEntryId = lastSegment ? ledgerMetadata.getLastEntryId() : segments.get(segmentNo + 1).getKey() - 1;
+        long firstStoredEntryId = LedgerHandle.INVALID_ENTRY_ID;
+        long firstEntryIter = firstEntryId;
+        // following the same approach followed in LedgerFragment.getFirstStoredEntryId()
+        for (int i = 0; i < ensembleSize && firstEntryIter <= lastEntryId; i++) {
+            if (distributionSchedule.hasEntry(firstEntryIter, thisBookieIndexInCurrentEnsemble)) {
+                firstStoredEntryId = firstEntryIter;
+                break;
+            } else {
+                firstEntryIter++;
+            }
+        }
+        return firstStoredEntryId != LedgerHandle.INVALID_ENTRY_ID;
+    }
+
+    static class ReadMetadataCallback extends AbstractFuture<LedgerMetadata>
+            implements GenericCallback<LedgerMetadata> {
+        final long ledgerId;
+
+        ReadMetadataCallback(long ledgerId) {
+            this.ledgerId = ledgerId;
+        }
+
+        long getLedgerId() {
+            return ledgerId;
+        }
+
+        public void operationComplete(int rc, LedgerMetadata result) {
+            if (rc != 0) {
+                setException(BKException.create(rc));
+            } else {
+                set(result);
+            }
+        }
     }
 }

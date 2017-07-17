@@ -19,9 +19,7 @@ package org.apache.bookkeeper.meta;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Formatter;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 
 import org.apache.bookkeeper.client.BKException;
@@ -70,7 +68,7 @@ public class LongZkLedgerIdGenerator implements LedgerIdGenerator {
         UNKNOWN,
         PRESENT,
         NOT_PRESENT
-    };
+    }
 
     public LongZkLedgerIdGenerator(ZooKeeper zk, String ledgersPath, String idGenZnodeName, ZkLedgerIdGenerator shortIdGen, List<ACL> zkAcls) {
         this.zk = zk;
@@ -91,8 +89,8 @@ public class LongZkLedgerIdGenerator implements LedgerIdGenerator {
             @Override
             public void operationComplete(int rc, Long result) {
                 if(rc == BKException.Code.OK) {
-                    assert((highBits & 0xFFFFFFFF00000000l) == 0);
-                    assert((result & 0xFFFFFFFF00000000l) == 0);
+                    assert((highBits & 0xFFFFFFFF00000000L) == 0);
+                    assert((result & 0xFFFFFFFF00000000L) == 0);
                     cb.operationComplete(rc, (highBits << 32) | result);
                 }
                 else if(rc == BKException.Code.LedgerIdOverflowException) {

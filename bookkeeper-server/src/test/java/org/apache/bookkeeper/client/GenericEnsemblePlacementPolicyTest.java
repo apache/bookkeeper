@@ -85,7 +85,7 @@ public class GenericEnsemblePlacementPolicyTest extends BookKeeperClusterTestCas
         try {
             Map<String, byte[]> customMetadata = new HashMap<>();
             customMetadata.put(property, value);
-            try (BookKeeper bk = new BookKeeper(baseClientConf, zkc);) {
+            try (BookKeeper bk = new BookKeeper(baseClientConf, zkc)) {
                 bk.createLedger(1, 1, 1, digestType, PASSWORD.getBytes(), customMetadata);
             }
             assertEquals(1, customMetadataOnNewEnsembleStack.size());
@@ -102,7 +102,7 @@ public class GenericEnsemblePlacementPolicyTest extends BookKeeperClusterTestCas
             startBKCluster();
             Map<String, byte[]> customMetadata = new HashMap<>();
             customMetadata.put(property, value);
-            try (BookKeeper bk = new BookKeeper(baseClientConf, zkc);) {
+            try (BookKeeper bk = new BookKeeper(baseClientConf, zkc)) {
                 bk.createLedger(1, 1, 1, digestType, PASSWORD.getBytes(), customMetadata);
                 fail("creation should fail");
             } catch (BKException.BKNotEnoughBookiesException bneb) {
@@ -122,8 +122,8 @@ public class GenericEnsemblePlacementPolicyTest extends BookKeeperClusterTestCas
         try {
             Map<String, byte[]> customMetadata = new HashMap<>();
             customMetadata.put(property, value);
-            try (BookKeeper bk = new BookKeeper(baseClientConf, zkc);) {
-                try (LedgerHandle lh = bk.createLedger(2, 2, 2, digestType, PASSWORD.getBytes(), customMetadata);) {
+            try (BookKeeper bk = new BookKeeper(baseClientConf, zkc)) {
+                try (LedgerHandle lh = bk.createLedger(2, 2, 2, digestType, PASSWORD.getBytes(), customMetadata)) {
                     lh.addEntry(value);
                     long lId = lh.getId();
                     ArrayList<BookieSocketAddress> ensembleAtFirstEntry = lh.getLedgerMetadata().getEnsemble(lId);

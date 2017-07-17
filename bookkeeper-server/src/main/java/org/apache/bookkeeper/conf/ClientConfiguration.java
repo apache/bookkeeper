@@ -20,7 +20,9 @@ package org.apache.bookkeeper.conf;
 import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.util.BookKeeperConstants.FEATURE_DISABLE_ENSEMBLE_CHANGE;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -66,8 +68,12 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String FIRST_SPECULATIVE_READ_TIMEOUT = "firstSpeculativeReadTimeout";
     protected final static String MAX_SPECULATIVE_READ_TIMEOUT = "maxSpeculativeReadTimeout";
     protected final static String SPECULATIVE_READ_TIMEOUT_BACKOFF_MULTIPLIER = "speculativeReadTimeoutBackoffMultiplier";
+    protected final static String FIRST_SPECULATIVE_READ_LAC_TIMEOUT = "firstSpeculativeReadLACTimeout";
+    protected final static String MAX_SPECULATIVE_READ_LAC_TIMEOUT = "maxSpeculativeReadLACTimeout";
+    protected final static String SPECULATIVE_READ_LAC_TIMEOUT_BACKOFF_MULTIPLIER = "speculativeReadLACTimeoutBackoffMultiplier";
     protected final static String ENABLE_PARALLEL_RECOVERY_READ = "enableParallelRecoveryRead";
     protected final static String RECOVERY_READ_BATCH_SIZE = "recoveryReadBatchSize";
+    protected final static String REORDER_READ_SEQUENCE_ENABLED = "reorderReadSequenceEnabled";
     // Add Parameters
     protected final static String DELAY_ENSEMBLE_CHANGE = "delayEnsembleChange";
     // Timeout Setting
@@ -103,7 +109,11 @@ public class ClientConfiguration extends AbstractConfiguration {
     // Stats
     protected final static String ENABLE_TASK_EXECUTION_STATS = "enableTaskExecutionStats";
     protected final static String TASK_EXECUTION_WARN_TIME_MICROS = "taskExecutionWarnTimeMicros";
-    
+
+    // Failure History Settings
+    protected final static String ENABLE_BOOKIE_FAILURE_TRACKING = "enableBookieFailureTracking";
+    protected final static String BOOKIE_FAILURE_HISTORY_EXPIRATION_MS = "bookieFailureHistoryExpirationMSec";
+
     // Names of dynamic features
     protected final static String DISABLE_ENSEMBLE_CHANGE_FEATURE_NAME = "disableEnsembleChangeFeatureName";
 
@@ -846,6 +856,27 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Multipler to use when determining time between successive speculative read LAC requests
+     *
+     * @return speculative read LAC timeout backoff multiplier.
+     */
+    public float getSpeculativeReadLACTimeoutBackoffMultiplier() {
+        return getFloat(SPECULATIVE_READ_LAC_TIMEOUT_BACKOFF_MULTIPLIER, 2.0f);
+    }
+
+    /**
+     * Set the multipler to use when determining time between successive speculative read LAC requests
+     *
+     * @param speculativeReadLACTimeoutBackoffMultiplier
+     *          multipler to use when determining time between successive speculative read LAC requests.
+     * @return client configuration.
+     */
+    public ClientConfiguration setSpeculativeReadLACTimeoutBackoffMultiplier(float speculativeReadLACTimeoutBackoffMultiplier) {
+        setProperty(SPECULATIVE_READ_LAC_TIMEOUT_BACKOFF_MULTIPLIER, speculativeReadLACTimeoutBackoffMultiplier);
+        return this;
+    }
+
+    /**
      * Get the max speculative read timeout.
      *
      * @return max speculative read timeout.
@@ -863,6 +894,66 @@ public class ClientConfiguration extends AbstractConfiguration {
      */
     public ClientConfiguration setMaxSpeculativeReadTimeout(int timeout) {
         setProperty(MAX_SPECULATIVE_READ_TIMEOUT, timeout);
+        return this;
+    }
+
+    /**
+     * Get the period of time after which the first speculative read last add confirmed and entry
+     * should be triggered.
+     * A speculative entry request is sent to the next replica bookie before
+     * an error or response has been received for the previous entry read request.
+     *
+     * A speculative entry read is only sent if we have not heard from the current
+     * replica bookie during the entire read operation which may comprise of many entries.
+     *
+     * Speculative requests allow the client to avoid having to wait for the connect timeout
+     * in the case that a bookie has failed. It induces higher load on the network and on
+     * bookies. This should be taken into account before changing this configuration value.
+     *
+     * @return the speculative request timeout in milliseconds. Default 1500.
+     */
+    public int getFirstSpeculativeReadLACTimeout() {
+        return getInt(FIRST_SPECULATIVE_READ_LAC_TIMEOUT, 1500);
+    }
+
+
+    /**
+     * Get the maximum interval between successive speculative read last add confirmed and entry
+     * requests.
+     *
+     * @return the max speculative request timeout in milliseconds. Default 5000.
+     */
+    public int getMaxSpeculativeReadLACTimeout() {
+        return getInt(MAX_SPECULATIVE_READ_LAC_TIMEOUT, 5000);
+    }
+
+    /**
+     * Set the period of time after which the first speculative read last add confirmed and entry
+     * should be triggered.
+     * A lower timeout will reduce read latency in the case of a failed bookie,
+     * while increasing the load on bookies and the network.
+     *
+     * The default is 1500 milliseconds. A value of 0 will disable speculative reads
+     * completely.
+     *
+     * @see #getSpeculativeReadTimeout()
+     * @param timeout the timeout value, in milliseconds
+     * @return client configuration
+     */
+    public ClientConfiguration setFirstSpeculativeReadLACTimeout(int timeout) {
+        setProperty(FIRST_SPECULATIVE_READ_LAC_TIMEOUT, timeout);
+        return this;
+    }
+
+    /**
+     * Set the maximum interval between successive speculative read last add confirmed and entry
+     * requests.
+     *
+     * @param timeout the timeout value, in milliseconds
+     * @return client configuration
+     */
+    public ClientConfiguration setMaxSpeculativeReadLACTimeout(int timeout) {
+        setProperty(MAX_SPECULATIVE_READ_LAC_TIMEOUT, timeout);
         return this;
     }
 
@@ -905,6 +996,34 @@ public class ClientConfiguration extends AbstractConfiguration {
      */
     public ClientConfiguration setRecoveryReadBatchSize(int batchSize) {
         setProperty(RECOVERY_READ_BATCH_SIZE, batchSize);
+        return this;
+    }
+
+    /**
+     * If reorder read sequence enabled or not.
+     *
+     * @return true if reorder read sequence is enabled, otherwise false.
+     */
+    public boolean isReorderReadSequenceEnabled() {
+        return getBoolean(REORDER_READ_SEQUENCE_ENABLED, false);
+    }
+
+    /**
+     * Enable/disable reordering read sequence on reading entries.
+     *
+     * <p>If this flag is enabled, the client will use
+     * {@link EnsemblePlacementPolicy#reorderReadSequence(ArrayList, List, Map)}
+     * to figure out a better read sequence to attempt reads from replicas and use
+     * {@link EnsemblePlacementPolicy#reorderReadLACSequence(ArrayList, List, Map)}
+     * to figure out a better read sequence to attempt long poll reads from replicas.
+     *
+     * <p>The order of read sequence is determined by the placement policy implementations.
+     *
+     * @param enabled the flag to enable/disable reorder read sequence.
+     * @return client configuration instance.
+     */
+    public ClientConfiguration setReorderReadSequenceEnabled(boolean enabled) {
+        setProperty(REORDER_READ_SEQUENCE_ENABLED, enabled);
         return this;
     }
 
@@ -1236,6 +1355,48 @@ public class ClientConfiguration extends AbstractConfiguration {
      */
     public ClientConfiguration setDelayEnsembleChange(boolean enabled) {
         setProperty(DELAY_ENSEMBLE_CHANGE, enabled);
+        return this;
+    }
+
+    /**
+     * Whether to enable bookie failure tracking
+     *
+     * @return flag to enable/disable bookie failure tracking
+     */
+    public boolean getEnableBookieFailureTracking() {
+        return getBoolean(ENABLE_BOOKIE_FAILURE_TRACKING, true);
+    }
+
+    /**
+     * Enable/Disable bookie failure tracking.
+     *
+     * @param enabled
+     *          flag to enable/disable bookie failure tracking
+     * @return client configuration.
+     */
+    public ClientConfiguration setEnableBookieFailureTracking(boolean enabled) {
+        setProperty(ENABLE_BOOKIE_FAILURE_TRACKING, enabled);
+        return this;
+    }
+
+    /**
+     * Get the bookie failure tracking expiration timeout.
+     *
+     * @return bookie failure tracking expiration timeout.
+     */
+    public int getBookieFailureHistoryExpirationMSec() {
+        return getInt(BOOKIE_FAILURE_HISTORY_EXPIRATION_MS, 60000);
+    }
+
+    /**
+     * Set the bookie failure tracking expiration timeout.
+     *
+     * @param timeout
+     *          bookie failure tracking expiration timeout.
+     * @return client configuration.
+     */
+    public ClientConfiguration setBookieFailureHistoryExpirationMSec(int expirationMSec) {
+        setProperty(BOOKIE_FAILURE_HISTORY_EXPIRATION_MS, expirationMSec);
         return this;
     }
 

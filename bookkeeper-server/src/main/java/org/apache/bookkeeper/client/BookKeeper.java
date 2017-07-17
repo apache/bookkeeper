@@ -99,6 +99,8 @@ public class BookKeeper implements AutoCloseable {
     private OpStatsLogger deleteOpLogger;
     private OpStatsLogger recoverOpLogger;
     private OpStatsLogger readOpLogger;
+    private OpStatsLogger readLacAndEntryOpLogger;
+    private OpStatsLogger readLacAndEntryRespLogger;
     private OpStatsLogger addOpLogger;
     private OpStatsLogger writeLacOpLogger;
     private OpStatsLogger readLacOpLogger;
@@ -137,8 +139,10 @@ public class BookKeeper implements AutoCloseable {
     final ClientConfiguration conf;
     final int explicitLacInterval;
     final boolean delayEnsembleChange;
+    final boolean reorderReadSequence;
 
     final Optional<SpeculativeRequestExecutionPolicy> readSpeculativeRequestPolicy;
+    final Optional<SpeculativeRequestExecutionPolicy> readLACSpeculativeRequestPolicy;
 
     // Close State
     boolean closed = false;
@@ -301,6 +305,7 @@ public class BookKeeper implements AutoCloseable {
             throws IOException, InterruptedException, KeeperException {
         this.conf = conf;
         this.delayEnsembleChange = conf.getDelayEnsembleChange();
+        this.reorderReadSequence = conf.isReorderReadSequenceEnabled();
 
         // initialize zookeeper client
         if (zkc == null) {
@@ -374,6 +379,15 @@ public class BookKeeper implements AutoCloseable {
             this.readSpeculativeRequestPolicy = Optional.<SpeculativeRequestExecutionPolicy>absent();
         }
 
+        if (conf.getFirstSpeculativeReadLACTimeout() > 0) {
+            this.readLACSpeculativeRequestPolicy =
+                    Optional.of((SpeculativeRequestExecutionPolicy)(new DefaultSpeculativeRequestExecutionPolicy(
+                        conf.getFirstSpeculativeReadLACTimeout(),
+                        conf.getMaxSpeculativeReadLACTimeout(),
+                        conf.getSpeculativeReadLACTimeoutBackoffMultiplier())));
+        } else {
+            this.readLACSpeculativeRequestPolicy = Optional.<SpeculativeRequestExecutionPolicy>absent();
+        }
         // initialize main worker pool
         this.mainWorkerPool = OrderedSafeExecutor.newBuilder()
                 .name("BookKeeperClientWorker")
@@ -502,6 +516,10 @@ public class BookKeeper implements AutoCloseable {
 
     public Optional<SpeculativeRequestExecutionPolicy> getReadSpeculativeRequestPolicy() {
         return readSpeculativeRequestPolicy;
+    }
+
+    public Optional<SpeculativeRequestExecutionPolicy> getReadLACSpeculativeRequestPolicy() {
+        return readLACSpeculativeRequestPolicy;
     }
 
     /**
@@ -1275,6 +1293,8 @@ public class BookKeeper implements AutoCloseable {
         openOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.OPEN_OP);
         recoverOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.RECOVER_OP);
         readOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_OP);
+        readLacAndEntryOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY);
+        readLacAndEntryRespLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY_RESPONSE);
         addOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.ADD_OP);
         writeLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.WRITE_LAC_OP);
         readLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAC_OP);
@@ -1287,6 +1307,8 @@ public class BookKeeper implements AutoCloseable {
     OpStatsLogger getDeleteOpLogger() { return deleteOpLogger; }
     OpStatsLogger getRecoverOpLogger() { return recoverOpLogger; }
     OpStatsLogger getReadOpLogger() { return readOpLogger; }
+    OpStatsLogger getReadLacAndEntryOpLogger() { return readLacAndEntryOpLogger; }
+    OpStatsLogger getReadLacAndEntryRespLogger() { return readLacAndEntryRespLogger; }
     OpStatsLogger getAddOpLogger() { return addOpLogger; }
     OpStatsLogger getWriteLacOpLogger() { return writeLacOpLogger; }
     OpStatsLogger getReadLacOpLogger() { return readLacOpLogger; }

@@ -77,7 +77,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
     boolean parallelRead = false;
     final AtomicBoolean complete = new AtomicBoolean(false);
 
-    abstract class LedgerEntryRequest extends LedgerEntry implements SpeculativeRequestExectuor {
+    abstract class LedgerEntryRequest extends LedgerEntry implements SpeculativeRequestExecutor {
 
         final AtomicBoolean complete = new AtomicBoolean(false);
 
@@ -92,7 +92,13 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             super(lId, eId);
 
             this.ensemble = ensemble;
-            this.writeSet = lh.distributionSchedule.getWriteSet(entryId);
+
+            if (lh.bk.reorderReadSequence) {
+                this.writeSet = lh.bk.placementPolicy.reorderReadSequence(ensemble,
+                    lh.distributionSchedule.getWriteSet(entryId), lh.bookieFailureHistory.asMap());
+            } else {
+                this.writeSet = lh.distributionSchedule.getWriteSet(entryId);
+            }
         }
 
         /**

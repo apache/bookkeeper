@@ -242,8 +242,8 @@ public class ConcurrentLongLongHashMapTest {
 
         map.put(0, 0);
 
-        assertEquals(map.keys(), Lists.newArrayList(0l));
-        assertEquals(map.values(), Lists.newArrayList(0l));
+        assertEquals(map.keys(), Lists.newArrayList(0L));
+        assertEquals(map.values(), Lists.newArrayList(0L));
 
         map.remove(0);
 
@@ -256,21 +256,21 @@ public class ConcurrentLongLongHashMapTest {
 
         List<Long> keys = map.keys();
         Collections.sort(keys);
-        assertEquals(keys, Lists.newArrayList(0l, 1l, 2l));
+        assertEquals(keys, Lists.newArrayList(0L, 1L, 2L));
 
         List<Long> values = map.values();
         Collections.sort(values);
-        assertEquals(values, Lists.newArrayList(0l, 11l, 22l));
+        assertEquals(values, Lists.newArrayList(0L, 11L, 22L));
 
         map.put(1, 111);
 
         keys = map.keys();
         Collections.sort(keys);
-        assertEquals(keys, Lists.newArrayList(0l, 1l, 2l));
+        assertEquals(keys, Lists.newArrayList(0L, 1L, 2L));
 
         values = map.values();
         Collections.sort(values);
-        assertEquals(values, Lists.newArrayList(0l, 22l, 111l));
+        assertEquals(values, Lists.newArrayList(0L, 22L, 111L));
 
         map.clear();
         assertTrue(map.isEmpty());
@@ -464,9 +464,9 @@ public class ConcurrentLongLongHashMapTest {
         lmap.put(3, 33);
 
         Map<Long, Long> map = Maps.newTreeMap();
-        map.put(1l, 11l);
-        map.put(2l, 22l);
-        map.put(3l, 33l);
+        map.put(1L, 11L);
+        map.put(2L, 22L);
+        map.put(3L, 33L);
 
         assertEquals(map, lmap.asMap());
     }

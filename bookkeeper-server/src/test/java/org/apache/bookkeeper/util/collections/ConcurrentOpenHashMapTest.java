@@ -229,33 +229,33 @@ public class ConcurrentOpenHashMapTest {
         assertEquals(map.keys(), Collections.emptyList());
         assertEquals(map.values(), Collections.emptyList());
 
-        map.put(0l, "zero");
+        map.put(0L, "zero");
 
-        assertEquals(map.keys(), Lists.newArrayList(0l));
+        assertEquals(map.keys(), Lists.newArrayList(0L));
         assertEquals(map.values(), Lists.newArrayList("zero"));
 
-        map.remove(0l);
+        map.remove(0L);
 
         assertEquals(map.keys(), Collections.emptyList());
         assertEquals(map.values(), Collections.emptyList());
 
-        map.put(0l, "zero");
-        map.put(1l, "one");
-        map.put(2l, "two");
+        map.put(0L, "zero");
+        map.put(1L, "one");
+        map.put(2L, "two");
 
         List<Long> keys = map.keys();
         Collections.sort(keys);
-        assertEquals(keys, Lists.newArrayList(0l, 1l, 2l));
+        assertEquals(keys, Lists.newArrayList(0L, 1L, 2L));
 
         List<String> values = map.values();
         Collections.sort(values);
         assertEquals(values, Lists.newArrayList("one", "two", "zero"));
 
-        map.put(1l, "uno");
+        map.put(1L, "uno");
 
         keys = map.keys();
         Collections.sort(keys);
-        assertEquals(keys, Lists.newArrayList(0l, 1l, 2l));
+        assertEquals(keys, Lists.newArrayList(0L, 1L, 2L));
 
         values = map.values();
         Collections.sort(values);
@@ -302,11 +302,11 @@ public class ConcurrentOpenHashMapTest {
     @Test
     public void testPutIfAbsent() {
         ConcurrentOpenHashMap<Long, String> map = new ConcurrentOpenHashMap<>();
-        assertEquals(map.putIfAbsent(1l, "one"), null);
-        assertEquals(map.get(1l), "one");
+        assertEquals(map.putIfAbsent(1L, "one"), null);
+        assertEquals(map.get(1L), "one");
 
-        assertEquals(map.putIfAbsent(1l, "uno"), "one");
-        assertEquals(map.get(1l), "one");
+        assertEquals(map.putIfAbsent(1L, "uno"), "one");
+        assertEquals(map.get(1L), "one");
     }
 
     @Test

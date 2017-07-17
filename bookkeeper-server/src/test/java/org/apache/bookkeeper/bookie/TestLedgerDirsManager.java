@@ -79,7 +79,8 @@ public class TestLedgerDirsManager {
         conf.setIsForceGCAllowWhenNoSpace(true);
 
         mockDiskChecker = new MockDiskChecker(threshold, warnThreshold);
-        dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(), NullStatsLogger.INSTANCE);
+        dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
         ledgerMonitor = new LedgerDirsMonitor(conf, 
                 mockDiskChecker, dirsManager);
         ledgerMonitor.init();
@@ -184,7 +185,8 @@ public class TestLedgerDirsManager {
         conf.setDiskUsageWarnThreshold(warn);
 
         mockDiskChecker = new MockDiskChecker(nospace, warnThreshold);
-        dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(), NullStatsLogger.INSTANCE);
+        dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
         ledgerMonitor = new LedgerDirsMonitor(conf, mockDiskChecker, dirsManager);
         ledgerMonitor.init();
         final MockLedgerDirsListener mockLedgerDirsListener = new MockLedgerDirsListener();
@@ -230,7 +232,6 @@ public class TestLedgerDirsManager {
 
         final float nospace = 0.90f;
         final float lwm = 0.80f;
-        final float warn = 0.99f;
         HashMap<File, Float> usageMap;
 
         File tmpDir1 = createTempDir("bkTest", ".dir");
@@ -243,11 +244,12 @@ public class TestLedgerDirsManager {
 
         conf.setDiskUsageThreshold(nospace);
         conf.setDiskLowWaterMarkUsageThreshold(lwm);
-        conf.setDiskUsageWarnThreshold(warn);
+        conf.setDiskUsageWarnThreshold(nospace);
         conf.setLedgerDirNames(new String[] { tmpDir1.toString(), tmpDir2.toString() });
 
         mockDiskChecker = new MockDiskChecker(nospace, warnThreshold);
-        dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(), NullStatsLogger.INSTANCE);
+        dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
         ledgerMonitor = new LedgerDirsMonitor(conf, mockDiskChecker, dirsManager);
         usageMap = new HashMap<File, Float>();
         usageMap.put(curDir1, 0.1f);
