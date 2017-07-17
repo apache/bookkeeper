@@ -165,7 +165,9 @@ public class LedgerHandleAdv extends LedgerHandle {
      */
     @Override
     protected void doAsyncAddEntry(final PendingAddOp op, final ByteBuf data, final AddCallback cb, final Object ctx) {
-        if (op.entryId < 0 ) {
+        if (op.entryId == LedgerHandle.INVALID_ENTRY_ID) {
+            // if entryId has not been set we need to fallback to normal LedgerHandle doAsyncAddEntry
+            // and assign a new entryId
             super.doAsyncAddEntry(op, data, cb, ctx);
             return;
         }
