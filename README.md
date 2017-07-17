@@ -1,14 +1,20 @@
-Build instructions for BookKeeper
+![logo](https://pbs.twimg.com/profile_images/545716709311520769/piLLa1iC_400x400.png)
 
--------------------------------------------------------------------------------
-Requirements:
+[![Build Status](https://travis-ci.org/apache/bookkeeper.svg?branch=master)](https://travis-ci.org/apache/bookkeeper)
+[![Build Status](https://builds.apache.org/buildStatus/icon?job=bookkeeper-master)](https://builds.apache.org/job/bookkeeper-master/)
+[![Coverage Status](https://coveralls.io/repos/github/apache/bookkeeper/badge.svg?branch=master)](https://coveralls.io/github/apache/bookkeeper?branch=master)
+
+## Build instructions for BookKeeper
+
+### Requirements
 
 * Unix System
 * JDK 1.6
 * Maven 3.0
 * Internet connection for first build (to fetch all dependencies)
 
--------------------------------------------------------------------------------
+### Modules
+
 The BookKeeper project contains:
 
  - bookkeeper-server            (BookKeeper server and client)
@@ -17,11 +23,10 @@ The BookKeeper project contains:
  - bookkeeper-stats-providers   (BookKeeper stats providers)
 
 BookKeeper is a system to reliably log streams of records. It is designed to 
-store  write ahead logs, such as those found in database or database like 
+store write ahead logs, such as those found in database or database like 
 applications.
 
---------------------------------------------------------------------------------
-How do I build?
+### How do I build?
 
  BookKeeper uses maven as its build system. To build, run "mvn package" from the 
  top-level directory, or from within any of the submodules.
@@ -47,8 +52,7 @@ How do I build?
  * -Dtest.exclude=<TESTCLASSNAME>
  * -Dtest.exclude.pattern=**/<TESTCLASSNAME1>.java,**/<TESTCLASSNAME2>.java
 
---------------------------------------------------------------------------------
-How do I run the services?
+### How do I run the services?
 
  Running BookKeeper service, requires a running ZooKeeper service 
  (see http://zookeeper.apache.org). 
