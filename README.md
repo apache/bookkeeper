@@ -3,73 +3,72 @@
 [![Build Status](https://travis-ci.org/apache/bookkeeper.svg?branch=master)](https://travis-ci.org/apache/bookkeeper)
 [![Build Status](https://builds.apache.org/buildStatus/icon?job=bookkeeper-master)](https://builds.apache.org/job/bookkeeper-master/)
 [![Coverage Status](https://coveralls.io/repos/github/apache/bookkeeper/badge.svg?branch=master)](https://coveralls.io/github/apache/bookkeeper?branch=master)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.apache.bookkeeper/bookkeeper/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.apache.bookkeeper/bookkeeper)
 
-## Build instructions for BookKeeper
+# Apache BookKeeper
 
-### Requirements
+Apache BookKeeper is a scalable, fault tolerant and low latency storage service optimized for append-only workloads.
 
-* Unix System
-* JDK 1.6
-* Maven 3.0
-* Internet connection for first build (to fetch all dependencies)
+It is suitable for being used in following scenerios:
 
-### Modules
+- WAL (Write-Ahead-Logging), e.g. HDFS NameNode.
+- Message Store, e.g. Apache Pulsar.
+- Offset/Cursor Store, e.g. Apache Pulsar.
+- Object/Blob Store, e.g. storing state machine snapshots.
 
-The BookKeeper project contains:
+## Get Started
 
- - bookkeeper-server            (BookKeeper server and client)
- - bookkeeper-benchmark         (Benchmark suite for testing BookKeeper performance)
- - bookkeeper-stats             (BookKeeper stats library)
- - bookkeeper-stats-providers   (BookKeeper stats providers)
+* *Concepts*: Start with the [basic concepts](http://bookkeeper.apache.org/docs/master/bookkeeperOverview.html) of Apache BookKeeper.
+  This will help you to fully understand the other parts of the documentation.
+* [Getting Started](http://bookkeeper.apache.org/docs/master/bookkeeperStarted.html) to setup BookKeeper to write logs.
 
-BookKeeper is a system to reliably log streams of records. It is designed to 
-store write ahead logs, such as those found in database or database like 
-applications.
+## Documentation
 
-### How do I build?
+### Developers
 
- BookKeeper uses maven as its build system. To build, run "mvn package" from the 
- top-level directory, or from within any of the submodules.
+* [Programmer Guide](http://bookkeeper.apache.org/docs/master/bookkeeperProgrammer.html)
+* [Tutorial](http://bookkeeper.apache.org/docs/master/bookkeeperTutorial.html)
+* [Java API](http://bookkeeper.apache.org/docs/master/apidocs/)
 
- Useful maven commands are:
+You can also read [Turning Ledgers into Logs](http://bookkeeper.apache.org/docs/master/bookkeeperLedgers2Logs.html) to learn how to turn **ledgers** into continous **log streams**.
+If you are looking for a high level **log stream** API, you can checkout [DistributedLog](http://distributedlog.io).
 
- * Clean                     : mvn clean
- * Compile                   : mvn compile
- * Run tests                 : mvn test 
- * Create JAR                : mvn package
- * Run findbugs              : mvn compile findbugs:findbugs
- * Install JAR in M2 cache   : mvn install
- * Deploy JAR to Maven repo  : mvn deploy
- * Run Rat                   : mvn apache-rat:check
- * Build javadocs            : mvn compile javadoc:aggregate
- * Build distribution        : mvn package assembly:single
+### Administrators
 
- Tests options:
+* [Admin Guide](http://bookkeeper.apache.org/docs/master/bookkeeperConfig.html)
+* [Configuration Parameters](http://bookkeeper.apache.org/docs/master/bookieConfigParams.html)
 
- * Use -DskipTests to skip tests when running the following Maven goals:
-    'package',  'install', 'deploy' or 'verify'
- * -Dtest=<TESTCLASSNAME>,<TESTCLASSNAME#METHODNAME>,....
- * -Dtest.exclude=<TESTCLASSNAME>
- * -Dtest.exclude.pattern=**/<TESTCLASSNAME1>.java,**/<TESTCLASSNAME2>.java
+### Contributors
 
-### How do I run the services?
+* [BookKeeper Internals](http://bookkeeper.apache.org/docs/master/bookkeeperInternals.html)
 
- Running BookKeeper service, requires a running ZooKeeper service 
- (see http://zookeeper.apache.org). 
+## Get In Touch
 
- To start a bookkeeper service quickly for testing, run:
-   
-   $ bookkeeper-server/bin/bookkeeper localbookie 10
+### Report a Bug
 
- This will start a standalone, ZooKeeper instance and 10 BookKeeper bookies.
- Note that this is only useful for testing. Data is not persisted between runs.
+For filing bugs, suggesting improvements, or requesting new features, help us out by [opening a Github issue](https://github.com/apache/bookkeeper/issues) or [opening an Apache jira](https://issues.apache.org/jira/browse/BOOKKEEPER).
 
- To start a real BookKeeper service, you must set up a ZooKeeper instance and
- run start a bookie on several machines. Modify bookkeeper-server/conf/bk_server.conf
- to point to your ZooKeeper instance. To start a bookie run:
+### Need Help?
 
-   $ bookkeeper-server/bin/bookkeeper bookie
+[Subscribe](mailto:user-subscribe@bookkeeper.apache.org) or [mail](mailto:user@bookkeeper.apache.org) the [user@bookkeeper.apache.org](mailto:user@bookkeeper.apache.org) list - Ask questions, find answers, and also help other users.
 
- You can get more help on using these commands by running:
+[Subscribe](mailto:dev-subscribe@bookkeeper.apache.org) or [mail](mailto:dev@bookkeeper.apache.org) the [dev@bookkeeper.apache.org](mailto:dev@bookkeeper.apache.org) list - Join developement discussions, propose new ideas and connect with contributors.
 
-   $ bookkeeper-server/bin/bookkeeper help
+## Contributing
+
+We feel that a welcoming open community is important and welcome contributions.
+
+### Contributing Code
+
+1. See [Developer Setup](https://cwiki.apache.org/confluence/display/BOOKKEEPER/Developer+Setup) to get your local environment setup.
+
+2. Take a look at our open issues: [JIRA Issues](https://issues.apache.org/jira/browse/BOOKKEEPER) [Github Issues](https://github.com/apache/bookkeeper/issues).
+
+3. Review our [coding style](https://cwiki.apache.org/confluence/display/BOOKKEEPER/Coding+Guide) and follow our [pull requests](https://github.com/apache/bookkeeper/pulls) to learn about our conventions.
+
+4. Make your changes according to our [contribution guide](https://cwiki.apache.org/confluence/display/BOOKKEEPER/Contributing+to+BookKeeper).
+
+### Improving Website and Documentation
+
+1. See [Building the website and documentation](https://cwiki.apache.org/confluence/display/BOOKKEEPER/Building+the+website+and+documentation) on how to build the website and documentation.
+
