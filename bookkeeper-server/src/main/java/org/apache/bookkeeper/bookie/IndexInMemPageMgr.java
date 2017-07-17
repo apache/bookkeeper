@@ -637,7 +637,7 @@ class IndexInMemPageMgr {
         int offsetInPage = (int) (entry % entriesPerPage);
         // find the id of the first entry of the page that has the entry
         // we are looking for
-        long pageEntry = entry-offsetInPage;
+        long pageEntry = entry - offsetInPage;
         LedgerEntryPage lep = null;
         try {
             lep = getLedgerEntryPage(ledger, pageEntry);
