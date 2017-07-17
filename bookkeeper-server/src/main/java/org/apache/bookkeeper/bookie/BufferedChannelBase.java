@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 
 /**
- * @TODO: Write JavaDoc comment
+ * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
  */
 public abstract class BufferedChannelBase {
     protected final FileChannel fileChannel;

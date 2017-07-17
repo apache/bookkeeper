@@ -22,7 +22,7 @@ package org.apache.bookkeeper.bookie;
  */
 
 /**
- * @TODO: Write JavaDoc comment
+ * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
  */
 @SuppressWarnings("serial")
 public abstract class BookieException extends Exception {
@@ -58,7 +58,7 @@ public abstract class BookieException extends Exception {
     }
 
     /**
-     * @TODO: Write JavaDoc comment
+     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
      */
     public interface Code {
         int OK = 0;
@@ -119,7 +119,7 @@ public abstract class BookieException extends Exception {
     }
 
     /**
-     * @TODO: Write JavaDoc comment
+     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
      */
     public static class BookieUnauthorizedAccessException extends BookieException {
         public BookieUnauthorizedAccessException() {
@@ -128,7 +128,7 @@ public abstract class BookieException extends Exception {
     }
 
     /**
-     * @TODO: Write JavaDoc comment
+     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
      */
     public static class BookieIllegalOpException extends BookieException {
         public BookieIllegalOpException() {
@@ -137,7 +137,7 @@ public abstract class BookieException extends Exception {
     }
 
     /**
-     * @TODO: Write JavaDoc comment
+     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
      */
     public static class LedgerFencedException extends BookieException {
         public LedgerFencedException() {
@@ -146,7 +146,7 @@ public abstract class BookieException extends Exception {
     }
 
     /**
-     * @TODO: Write JavaDoc comment
+     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
      */
     public static class InvalidCookieException extends BookieException {
         public InvalidCookieException() {
@@ -163,7 +163,7 @@ public abstract class BookieException extends Exception {
     }
 
     /**
-     * @TODO: Write JavaDoc comment
+     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
      */
     public static class UpgradeException extends BookieException {
         public UpgradeException() {

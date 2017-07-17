@@ -22,7 +22,7 @@ package org.apache.bookkeeper.auth;
 public abstract class AuthCallbacks {
 
     /**
-     * @TODO: Write JavaDoc comment
+     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
      */
     public interface GenericCallback<T> {
 

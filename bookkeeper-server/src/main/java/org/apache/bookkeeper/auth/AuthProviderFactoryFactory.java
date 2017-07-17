@@ -30,7 +30,7 @@ import org.apache.bookkeeper.client.ClientConnectionPeer;
 import org.apache.bookkeeper.bookie.BookieConnectionPeer;
 
 /**
- * @TODO: Write JavaDoc comment
+ * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
  */
 public class AuthProviderFactoryFactory {
 

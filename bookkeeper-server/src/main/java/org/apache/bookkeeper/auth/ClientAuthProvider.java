@@ -32,7 +32,7 @@ import org.apache.bookkeeper.client.ClientConnectionPeer;
  */
 public interface ClientAuthProvider {
     /**
-     * @TODO: Write JavaDoc comment
+     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
      */
     interface Factory {
         /**

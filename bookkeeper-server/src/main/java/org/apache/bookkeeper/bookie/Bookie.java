@@ -176,7 +176,7 @@ public class Bookie extends BookieCriticalThread {
     private final OpStatsLogger readBytesStats;
 
     /**
-     * @TODO: Write JavaDoc comment
+     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
      */
     public static class NoLedgerException extends IOException {
         private static final long serialVersionUID = 1L;
@@ -191,7 +191,7 @@ public class Bookie extends BookieCriticalThread {
     }
 
     /**
-     * @TODO: Write JavaDoc comment
+     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
      */
     public static class NoEntryException extends IOException {
         private static final long serialVersionUID = 1L;

@@ -148,7 +148,7 @@ public interface LedgerStorage {
     void deleteLedger(long ledgerId) throws IOException;
 
     /**
-     * @TODO: Write JavaDoc comment
+     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
      */
     interface LedgerDeletionListener {
         void ledgerDeleted(long ledgerId);

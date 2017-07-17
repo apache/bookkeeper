@@ -33,7 +33,7 @@ import org.apache.bookkeeper.bookie.BookieConnectionPeer;
  */
 public interface BookieAuthProvider {
     /**
-     * @TODO: Write JavaDoc comment
+     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
      */
     interface Factory {
         /**
