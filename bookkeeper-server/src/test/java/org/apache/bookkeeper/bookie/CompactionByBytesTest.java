@@ -18,17 +18,10 @@
  * under the License.
  *
  */
-package org.apache.bookkeeper.client;
+package org.apache.bookkeeper.bookie;
 
-import com.google.common.util.concurrent.ListenableFuture;
-
-public interface SpeculativeRequestExectuor {
-
-    /**
-     * Issues a speculative request and indicates if more speculative
-     * requests should be issued
-     *
-     * @return whether more speculative requests should be issued
-     */
-    ListenableFuture<Boolean> issueSpeculativeRequest();
+public class CompactionByBytesTest extends CompactionTest {
+    public CompactionByBytesTest() {
+        super(true);
+    }
 }

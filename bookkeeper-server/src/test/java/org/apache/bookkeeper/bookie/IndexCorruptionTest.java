@@ -81,7 +81,7 @@ public class IndexCorruptionTest extends BookKeeperClusterTestCase {
         restartBookies();
 
         Enumeration<LedgerEntry> seq = wlh.readEntries(0, numMsgs - 1);
-        assertTrue("Enumeration of ledger entries has no element", seq.hasMoreElements() == true);
+        assertTrue("Enumeration of ledger entries has no element", seq.hasMoreElements());
         int entryId = 0;
         while (seq.hasMoreElements()) {
             LedgerEntry e = seq.nextElement();
@@ -139,7 +139,7 @@ public class IndexCorruptionTest extends BookKeeperClusterTestCase {
 
         numMsgs += 3;
         Enumeration<LedgerEntry> seq = lh2.readEntries(0, numMsgs - 1);
-        assertTrue("Enumeration of ledger entries has no element", seq.hasMoreElements() == true);
+        assertTrue("Enumeration of ledger entries has no element", seq.hasMoreElements());
         int entryId = 0;
         while (seq.hasMoreElements()) {
             LedgerEntry e = seq.nextElement();

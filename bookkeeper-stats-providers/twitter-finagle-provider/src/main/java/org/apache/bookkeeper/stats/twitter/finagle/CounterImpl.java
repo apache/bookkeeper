@@ -25,7 +25,7 @@ import org.apache.bookkeeper.stats.Counter;
  * It also has a limitation in size: max bound is signed integer, not long.
  */
 class CounterImpl implements Counter {
-    final private com.twitter.finagle.stats.Counter counter;
+    private final com.twitter.finagle.stats.Counter counter;
 
     public CounterImpl(final String name,
                        final StatsReceiver stats) {

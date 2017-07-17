@@ -24,6 +24,7 @@ import java.util.List;
 import org.junit.Assert;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.util.DiskChecker;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -82,7 +83,8 @@ public class CreateNewLogTest {
         // Creating a new configuration with a number of 
         // ledger directories.
         conf.setLedgerDirNames(ledgerDirs);
-        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs());
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
         EntryLogger el = new EntryLogger(conf, ledgerDirsManager);
         
         // Extracted from createNewLog()
@@ -106,7 +108,8 @@ public class CreateNewLogTest {
         // Creating a new configuration with a number of ledger directories.
         conf.setLedgerDirNames(ledgerDirs);
         conf.setIsForceGCAllowWhenNoSpace(true);
-        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs());
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
         EntryLogger el = new EntryLogger(conf, ledgerDirsManager);
 
         // Extracted from createNewLog()

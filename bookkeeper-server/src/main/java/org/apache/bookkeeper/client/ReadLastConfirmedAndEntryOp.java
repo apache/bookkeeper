@@ -39,7 +39,7 @@ import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEntryCallback, SpeculativeRequestExectuor {
+public class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEntryCallback, SpeculativeRequestExecutor {
     static final Logger LOG = LoggerFactory.getLogger(ReadLastConfirmedAndEntryOp.class);
 
     final private ScheduledExecutorService scheduler;
@@ -78,8 +78,12 @@ public class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.
 
             this.ensemble = ensemble;
             this.writeSet = lh.distributionSchedule.getWriteSet(entryId);
-            this.orderedEnsemble = lh.bk.placementPolicy.reorderReadLACSequence(ensemble,
-                writeSet, lh.bookieFailureHistory.asMap());
+            if (lh.bk.reorderReadSequence) {
+                this.orderedEnsemble = lh.bk.placementPolicy.reorderReadLACSequence(ensemble,
+                    writeSet, lh.bookieFailureHistory.asMap());
+            } else {
+                this.orderedEnsemble = writeSet;
+            }
         }
 
         synchronized int getFirstError() {

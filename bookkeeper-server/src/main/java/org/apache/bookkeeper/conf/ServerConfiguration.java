@@ -21,16 +21,17 @@ import java.io.File;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.annotations.Beta;
-
+import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
+import org.apache.bookkeeper.bookie.LedgerStorage;
+import org.apache.bookkeeper.bookie.SortedLedgerStorage;
 import org.apache.bookkeeper.stats.NullStatsProvider;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
-import org.apache.bookkeeper.bookie.SortedLedgerStorage;
 import org.apache.commons.lang.StringUtils;
+
+import com.google.common.annotations.Beta;
 
 /**
  * Configuration manages server-side settings
@@ -149,6 +150,8 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String BOOKIE_AUTH_PROVIDER_FACTORY_CLASS = "bookieAuthProviderFactoryClass";
     
     protected final static String MIN_USABLESIZE_FOR_INDEXFILE_CREATION = "minUsableSizeForIndexFileCreation";
+
+    protected final static String ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION = "allowMultipleDirsUnderSameDiskPartition";
 
     /**
      * Construct a default configuration object
@@ -1358,6 +1361,18 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Sets the maximum latency to impose on a journal write to achieve grouping
+     *
+     * @param journalMaxGroupWaitMSec
+     *          maximum time to wait in milliseconds.
+     * @return server configuration.
+     */
+    public ServerConfiguration setJournalMaxGroupWaitMSec(long journalMaxGroupWaitMSec) {
+        setProperty(JOURNAL_MAX_GROUP_WAIT_MSEC, journalMaxGroupWaitMSec);
+        return this;
+    }
+
+    /**
      * Maximum bytes to buffer to impose on a journal write to achieve grouping
      *
      * @return max bytes to buffer
@@ -1778,7 +1793,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     public String getLedgerStorageClass() {
         String ledgerStorageClass = getString(LEDGER_STORAGE_CLASS, SortedLedgerStorage.class.getName());
         if (ledgerStorageClass.equals(SortedLedgerStorage.class.getName())
-                && getSortedLedgerStorageEnabled() == false) {
+                && !getSortedLedgerStorageEnabled()) {
             // This is to retain compatibility with BK-4.3 configuration
             // In BK-4.3, the ledger storage is configured through the "sortedLedgerStorageEnabled" flag :
             // sortedLedgerStorageEnabled == true (default) ---> use SortedLedgerStorage
@@ -2006,7 +2021,7 @@ public class ServerConfiguration extends AbstractConfiguration {
         super.setNettyMaxFrameSizeBytes(maxSize);
         return this;
     }
-    
+
     /**
      * Gets the minimum safe Usable size to be available in index directory for Bookie to create Index File while replaying 
      * journal at the time of Bookie Start in Readonly Mode (in bytes)
@@ -2026,6 +2041,29 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public ServerConfiguration setMinUsableSizeForIndexFileCreation(long minUsableSizeForIndexFileCreation) {
         this.setProperty(MIN_USABLESIZE_FOR_INDEXFILE_CREATION, Long.toString(minUsableSizeForIndexFileCreation));
+        return this;
+    }
+
+    /**
+     * returns whether it is allowed to have multiple ledger/index/journal
+     * Directories in the same filesystem diskpartition
+     *
+     * @return
+     */
+    public boolean isAllowMultipleDirsUnderSameDiskPartition() {
+        return this.getBoolean(ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION, true);
+    }
+
+    /**
+     * Configure the Bookie to allow/disallow multiple ledger/index/journal
+     * directories in the same filesystem diskpartition
+     *
+     * @param allow
+     * 
+     * @return server configuration object.
+     */
+    public ServerConfiguration setAllowMultipleDirsUnderSameDiskPartition(boolean allow) {
+        this.setProperty(ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION, allow);
         return this;
     }
 }

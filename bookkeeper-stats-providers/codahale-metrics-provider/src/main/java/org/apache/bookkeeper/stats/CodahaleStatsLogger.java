@@ -20,11 +20,9 @@ import com.codahale.metrics.Timer;
 import com.codahale.metrics.MetricRegistry;
 import static com.codahale.metrics.MetricRegistry.name;
 
-import org.apache.bookkeeper.stats.Counter;
-import org.apache.bookkeeper.stats.Gauge;
-import org.apache.bookkeeper.stats.OpStatsLogger;
-import org.apache.bookkeeper.stats.StatsLogger;
-
+/**
+ * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ */
 public class CodahaleStatsLogger implements StatsLogger {
     protected final String basename;
     final MetricRegistry metrics;
@@ -37,7 +35,7 @@ public class CodahaleStatsLogger implements StatsLogger {
     @Override
     public OpStatsLogger getOpStatsLogger(String statName) {
         Timer success = metrics.timer(name(basename, statName));
-        Timer failure = metrics.timer(name(basename, statName+"-fail"));
+        Timer failure = metrics.timer(name(basename, statName + "-fail"));
         return new CodahaleOpStatsLogger(success, failure);
     }
 

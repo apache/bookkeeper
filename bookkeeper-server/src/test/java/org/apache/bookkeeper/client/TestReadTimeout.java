@@ -63,9 +63,7 @@ public class TestReadTimeout extends BookKeeperClusterTestCase {
         }
         
         Set<BookieSocketAddress> beforeSet = new HashSet<BookieSocketAddress>();
-        for (BookieSocketAddress addr : writelh.getLedgerMetadata().getEnsemble(numEntries)) {
-            beforeSet.add(addr);
-        }
+        beforeSet.addAll(writelh.getLedgerMetadata().getEnsemble(numEntries));
 
         final BookieSocketAddress bookieToSleep
             = writelh.getLedgerMetadata().getEnsemble(numEntries).get(0);
@@ -84,9 +82,7 @@ public class TestReadTimeout extends BookKeeperClusterTestCase {
         Assert.assertTrue("Write request did not finish", completed.get());
 
         Set<BookieSocketAddress> afterSet = new HashSet<BookieSocketAddress>();
-        for (BookieSocketAddress addr : writelh.getLedgerMetadata().getEnsemble(numEntries + 1)) {
-            afterSet.add(addr);
-        }
+        afterSet.addAll(writelh.getLedgerMetadata().getEnsemble(numEntries + 1));
         beforeSet.removeAll(afterSet);
         Assert.assertTrue("Bookie set should not match", beforeSet.size() != 0);
     }

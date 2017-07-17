@@ -139,6 +139,7 @@ public class BookKeeper implements AutoCloseable {
     final ClientConfiguration conf;
     final int explicitLacInterval;
     final boolean delayEnsembleChange;
+    final boolean reorderReadSequence;
 
     final Optional<SpeculativeRequestExecutionPolicy> readSpeculativeRequestPolicy;
     final Optional<SpeculativeRequestExecutionPolicy> readLACSpeculativeRequestPolicy;
@@ -304,6 +305,7 @@ public class BookKeeper implements AutoCloseable {
             throws IOException, InterruptedException, KeeperException {
         this.conf = conf;
         this.delayEnsembleChange = conf.getDelayEnsembleChange();
+        this.reorderReadSequence = conf.isReorderReadSequenceEnabled();
 
         // initialize zookeeper client
         if (zkc == null) {

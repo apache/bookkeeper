@@ -20,7 +20,11 @@ package org.apache.bookkeeper.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileStore;
+import java.nio.file.Files;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
@@ -155,25 +159,59 @@ public class DiskChecker {
         }
     }
 
+
+    /**
+     * Calculate the total amount of free space available
+     * in all of the ledger directories put together.
+     *
+     * @return totalDiskSpace in bytes
+     * @throws IOException 
+     */
+    public long getTotalFreeSpace(List<File> dirs) throws IOException {
+        long totalFreeSpace = 0;
+        Set<FileStore> dirsFileStore = new HashSet<FileStore>();
+        for (File dir : dirs) {
+            FileStore fileStore = Files.getFileStore(dir.toPath());
+            if (dirsFileStore.add(fileStore)) {
+                totalFreeSpace += fileStore.getUsableSpace();
+            }
+        }
+        return totalFreeSpace;
+    }
+
+    /**
+     * Calculate the total amount of free space available
+     * in all of the ledger directories put together.
+     *
+     * @return freeDiskSpace in bytes
+     * @throws IOException 
+     */
+    public long getTotalDiskSpace(List<File> dirs) throws IOException {
+        long totalDiskSpace = 0;
+        Set<FileStore> dirsFileStore = new HashSet<FileStore>();
+        for (File dir : dirs) {
+            FileStore fileStore = Files.getFileStore(dir.toPath());
+            if (dirsFileStore.add(fileStore)) {
+                totalDiskSpace += fileStore.getTotalSpace();
+            }
+        }
+        return totalDiskSpace;
+    }
+    
     /**
      * calculates and returns the disk usage factor in the provided list of dirs
      * 
      * @param dirs
      *            list of directories
      * @return disk usage factor in the provided list of dirs
+     * @throws IOException 
      */
-    public float getTotalDiskUsage(List<File> dirs) {
+    public float getTotalDiskUsage(List<File> dirs) throws IOException {
         if (dirs == null || dirs.isEmpty()) {
             throw new IllegalArgumentException(
                     "list argument of getTotalDiskUsage is not supposed to be null or empty");
         }
-        long totalUsableSpace = 0;
-        long totalSpace = 0;
-        for (File dir : dirs) {
-            totalUsableSpace += dir.getUsableSpace();
-            totalSpace += dir.getTotalSpace();
-        }
-        float free = (float) totalUsableSpace / (float) totalSpace;
+        float free = (float) getTotalFreeSpace(dirs) / (float) getTotalDiskSpace(dirs);
         float used = 1f - free;
         return used;
     }

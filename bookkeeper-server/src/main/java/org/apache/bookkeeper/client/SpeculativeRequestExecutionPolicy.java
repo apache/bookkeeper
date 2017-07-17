@@ -30,5 +30,5 @@ public interface SpeculativeRequestExecutionPolicy {
      * @param scheduler The scheduler service to issue the speculative request
      * @param requestExectuor The executor is used to issue the actual speculative requests
      */
-    void initiateSpeculativeRequest(ScheduledExecutorService scheduler, SpeculativeRequestExectuor requestExectuor);
+    void initiateSpeculativeRequest(ScheduledExecutorService scheduler, SpeculativeRequestExecutor requestExectuor);
 }

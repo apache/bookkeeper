@@ -501,7 +501,7 @@ class FileInfo extends Observable {
         if (parent.exists()) {
             return;
         }
-        if (parent.mkdirs() == false) {
+        if (!parent.mkdirs()) {
             throw new IOException("Counldn't mkdirs for " + parent);
         }
     }

@@ -487,7 +487,7 @@ public class LedgerHandle implements AutoCloseable {
                     public String toString() {
                         return String.format("WriteLedgerConfigForClose(%d)", ledgerId);
                     }
-                };
+                }
 
                 writeLedgerConfig(new CloseCb());
 

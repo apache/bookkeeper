@@ -62,7 +62,6 @@ import static com.google.common.base.Charsets.UTF_8;
  * BookKeeper and to the local file system.
  *
  */
-
 public class TestClient {
     private static final Logger LOG = LoggerFactory.getLogger(TestClient.class);
 
@@ -102,7 +101,7 @@ public class TestClient {
         long runfor = Long.parseLong(cmd.getOptionValue("runfor", "60")) * 1000;
 
         StringBuilder sb = new StringBuilder();
-        while(length-- > 0) {
+        while (length-- > 0) {
             sb.append('a');
         }
 
@@ -190,9 +189,8 @@ public class TestClient {
                 }
                 count += c;
             }
-            long time = end-start;
-            LOG.info("Finished processing writes (ms): {} TPT: {} op/s",
-                     time, count/((double)time/1000));
+            long time = end - start;
+            LOG.info("Finished processing writes (ms): {} TPT: {} op/s", time, count / ((double) time / 1000));
             executor.shutdown();
         } catch (ExecutionException ee) {
             LOG.error("Exception in worker", ee);
@@ -236,9 +234,9 @@ public class TestClient {
                 long count = 0;
                 long start = System.currentTimeMillis();
                 long stopat = start + time;
-                while(System.currentTimeMillis() < stopat) {
+                while (System.currentTimeMillis() < stopat) {
                     FSDataOutputStream stream = streams.get(r.nextInt(streams.size()));
-                    synchronized(stream) {
+                    synchronized (stream) {
                         stream.write(data);
                         stream.flush();
                         stream.hflush();
@@ -247,10 +245,10 @@ public class TestClient {
                 }
 
                 long time = (System.currentTimeMillis() - start);
-                LOG.info("Worker finished processing writes (ms): {} TPT: {} op/s",
-                         time, count/((double)time/1000));
+                LOG.info("Worker finished processing writes (ms): {} TPT: {} op/s", time,
+                         count / ((double) time / 1000));
                 return count;
-            } catch(IOException ioe) {
+            } catch (IOException ioe) {
                 LOG.error("Exception in worker thread", ioe);
                 return 0L;
             }
@@ -276,9 +274,9 @@ public class TestClient {
                 long start = System.currentTimeMillis();
 
                 long stopat = start + time;
-                while(System.currentTimeMillis() < stopat) {
+                while (System.currentTimeMillis() < stopat) {
                     FileOutputStream stream = streams.get(r.nextInt(streams.size()));
-                    synchronized(stream) {
+                    synchronized (stream) {
                         stream.write(data);
                         stream.flush();
                         stream.getChannel().force(false);
@@ -287,9 +285,10 @@ public class TestClient {
                 }
 
                 long time = (System.currentTimeMillis() - start);
-                LOG.info("Worker finished processing writes (ms): {} TPT: {} op/s", time, count/((double)time/1000));
+                LOG.info("Worker finished processing writes (ms): {} TPT: {} op/s", time,
+                         count / ((double) time / 1000));
                 return count;
-            } catch(IOException ioe) {
+            } catch (IOException ioe) {
                 LOG.error("Exception in worker thread", ioe);
                 return 0L;
             }
@@ -318,7 +317,7 @@ public class TestClient {
                 long start = System.currentTimeMillis();
 
                 long stopat = start + time;
-                while(System.currentTimeMillis() < stopat) {
+                while (System.currentTimeMillis() < stopat) {
                     LedgerHandle lh = handles.get(r.nextInt(handles.size()));
                     if (sync) {
                         lh.addEntry(data);
@@ -335,8 +334,8 @@ public class TestClient {
                 }
 
                 long time = (System.currentTimeMillis() - start);
-                LOG.info("Worker finished processing writes (ms): {} TPT: {} op/s",
-                         time, success.get()/((double)time/1000));
+                LOG.info("Worker finished processing writes (ms): {} TPT: {} op/s", time,
+                         success.get() / ((double) time / 1000));
                 return success.get();
             } catch (BKException e) {
                 LOG.error("Exception in worker thread", e);

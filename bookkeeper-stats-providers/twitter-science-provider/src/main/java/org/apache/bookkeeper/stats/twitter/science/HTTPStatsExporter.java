@@ -23,7 +23,11 @@ import com.twitter.common.net.http.handlers.VarsHandler;
 import com.twitter.common.net.http.handlers.VarsJsonHandler;
 import com.twitter.common.quantity.Amount;
 import com.twitter.common.quantity.Time;
-import com.twitter.common.stats.*;
+import com.twitter.common.stats.JvmStats;
+import com.twitter.common.stats.Stat;
+import com.twitter.common.stats.Stats;
+import com.twitter.common.stats.TimeSeriesRepository;
+import com.twitter.common.stats.TimeSeriesRepositoryImpl;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -45,7 +49,7 @@ public class HTTPStatsExporter {
 
     public void start() throws Exception {
         // Start the sampler. Sample every 1 second and retain for 1 hour
-        // TODO(Aniruddha): Make this configurable if needed.
+        // TODO: Make this configurable if needed.
         TimeSeriesRepository sampler = new TimeSeriesRepositoryImpl(Stats.STAT_REGISTRY,
                 Amount.of(1L, Time.SECONDS), Amount.of(1L, Time.HOURS));
         sampler.start(this.shutDownRegistry);

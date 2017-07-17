@@ -33,7 +33,6 @@ import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 import org.junit.AfterClass;
 import static org.junit.Assert.assertEquals;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -86,8 +85,8 @@ public class EnableZkSecurityBasicTest extends BookKeeperClusterTestCase {
 
         conf.setZkEnableSecurity(true);
 
-        try (BookKeeper bkc = new BookKeeper(conf);) {
-            try (LedgerHandle lh = bkc.createLedger(1, 1, 1, BookKeeper.DigestType.CRC32, "testPasswd".getBytes());) {
+        try (BookKeeper bkc = new BookKeeper(conf)) {
+            try (LedgerHandle lh = bkc.createLedger(1, 1, 1, BookKeeper.DigestType.CRC32, "testPasswd".getBytes())) {
                 lh.addEntry("foo".getBytes(StandardCharsets.UTF_8));
             }
         }

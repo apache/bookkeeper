@@ -20,7 +20,9 @@ package org.apache.bookkeeper.conf;
 import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.util.BookKeeperConstants.FEATURE_DISABLE_ENSEMBLE_CHANGE;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -71,6 +73,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String SPECULATIVE_READ_LAC_TIMEOUT_BACKOFF_MULTIPLIER = "speculativeReadLACTimeoutBackoffMultiplier";
     protected final static String ENABLE_PARALLEL_RECOVERY_READ = "enableParallelRecoveryRead";
     protected final static String RECOVERY_READ_BATCH_SIZE = "recoveryReadBatchSize";
+    protected final static String REORDER_READ_SEQUENCE_ENABLED = "reorderReadSequenceEnabled";
     // Add Parameters
     protected final static String DELAY_ENSEMBLE_CHANGE = "delayEnsembleChange";
     // Timeout Setting
@@ -993,6 +996,34 @@ public class ClientConfiguration extends AbstractConfiguration {
      */
     public ClientConfiguration setRecoveryReadBatchSize(int batchSize) {
         setProperty(RECOVERY_READ_BATCH_SIZE, batchSize);
+        return this;
+    }
+
+    /**
+     * If reorder read sequence enabled or not.
+     *
+     * @return true if reorder read sequence is enabled, otherwise false.
+     */
+    public boolean isReorderReadSequenceEnabled() {
+        return getBoolean(REORDER_READ_SEQUENCE_ENABLED, false);
+    }
+
+    /**
+     * Enable/disable reordering read sequence on reading entries.
+     *
+     * <p>If this flag is enabled, the client will use
+     * {@link EnsemblePlacementPolicy#reorderReadSequence(ArrayList, List, Map)}
+     * to figure out a better read sequence to attempt reads from replicas and use
+     * {@link EnsemblePlacementPolicy#reorderReadLACSequence(ArrayList, List, Map)}
+     * to figure out a better read sequence to attempt long poll reads from replicas.
+     *
+     * <p>The order of read sequence is determined by the placement policy implementations.
+     *
+     * @param enabled the flag to enable/disable reorder read sequence.
+     * @return client configuration instance.
+     */
+    public ClientConfiguration setReorderReadSequenceEnabled(boolean enabled) {
+        setProperty(REORDER_READ_SEQUENCE_ENABLED, enabled);
         return this;
     }
 
