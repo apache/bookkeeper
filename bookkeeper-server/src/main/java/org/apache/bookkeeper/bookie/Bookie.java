@@ -1495,29 +1495,7 @@ public class Bookie extends BookieCriticalThread {
      */
     public SettableFuture<Boolean> fenceLedger(long ledgerId, byte[] masterKey) throws IOException, BookieException {
         LedgerDescriptor handle = handles.getHandle(ledgerId, masterKey);
-        boolean success;
-        synchronized (handle) {
-            success = handle.setFenced();
-        }
-        if (success) {
-            // fenced first time, we should add the key to journal ensure we can rebuild
-            ByteBuffer bb = ByteBuffer.allocate(8 + 8);
-            bb.putLong(ledgerId);
-            bb.putLong(METAENTRY_ID_FENCE_KEY);
-            bb.flip();
-
-            FutureWriteCallback fwc = new FutureWriteCallback();
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("record fenced state for ledger {} in journal.", ledgerId);
-            }
-            getJournal(ledgerId).logAddEntry(bb, fwc, null);
-            return fwc.getResult();
-        } else {
-            // already fenced
-            SettableFuture<Boolean> successFuture = SettableFuture.create();
-            successFuture.set(true);
-            return successFuture;
-        }
+        return handle.fenceAndLogInJournal(getJournal(ledgerId));
     }
 
     public ByteBuf readEntry(long ledgerId, long entryId)

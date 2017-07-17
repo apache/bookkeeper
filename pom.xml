@@ -45,7 +45,7 @@
     <netty.version>4.1.10.Final</netty.version>
     <protobuf.version>2.6.1</protobuf.version>
     <slf4j.version>1.7.25</slf4j.version>
-    <zookeeper.version>3.5.1-alpha</zookeeper.version>
+    <zookeeper.version>3.5.3-beta</zookeeper.version>
   </properties>
   <url>http://bookkeeper.apache.org</url>
   <build>
@@ -54,6 +54,22 @@
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>findbugs-maven-plugin</artifactId>
         <version>3.0.4</version>
+      </plugin>
+      <plugin>
+        <groupId>org.eluder.coveralls</groupId>
+        <artifactId>coveralls-maven-plugin</artifactId>
+        <version>4.3.0</version>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>cobertura-maven-plugin</artifactId>
+        <version>2.7</version>
+        <configuration>
+         <formats>
+          <format>html</format>
+          <format>xml</format>
+         </formats>
+        </configuration>
       </plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>

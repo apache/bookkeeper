@@ -43,7 +43,7 @@ class CounterImpl implements Counter {
 
     @Override
     public void add(long delta) {
-        this.ostrichCounter.incr((int)delta);
+        this.ostrichCounter.incr((int) delta);
     }
 
     @Override

@@ -20,15 +20,15 @@
  */
 package org.apache.bookkeeper.client;
 
-import java.util.concurrent.ScheduledExecutorService;
+import com.google.common.util.concurrent.ListenableFuture;
 
-public interface SpeculativeRequestExecutionPolicy {
+public interface SpeculativeRequestExecutor {
 
     /**
-     * Initialize the speculative request execution policy and initiate requests
+     * Issues a speculative request and indicates if more speculative
+     * requests should be issued
      *
-     * @param scheduler The scheduler service to issue the speculative request
-     * @param requestExectuor The executor is used to issue the actual speculative requests
+     * @return whether more speculative requests should be issued
      */
-    void initiateSpeculativeRequest(ScheduledExecutorService scheduler, SpeculativeRequestExecutor requestExectuor);
+    ListenableFuture<Boolean> issueSpeculativeRequest();
 }

@@ -47,6 +47,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.google.common.base.Charsets.UTF_8;
 
+/**
+ * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ */
 public class BenchReadThroughputLatency {
     static final Logger LOG = LoggerFactory.getLogger(BenchReadThroughputLatency.class);
 
@@ -101,7 +104,7 @@ public class BenchReadThroughputLatency {
                 while (lastRead < lastConfirmed) {
                     long nextLimit = lastRead + 100000;
                     long readTo = Math.min(nextLimit, lastConfirmed);
-                    Enumeration<LedgerEntry> entries = lh.readEntries(lastRead+1, readTo);
+                    Enumeration<LedgerEntry> entries = lh.readEntries(lastRead + 1, readTo);
                     lastRead = readTo;
                     while (entries.hasMoreElements()) {
                         LedgerEntry e = entries.nextElement();
@@ -120,10 +123,10 @@ public class BenchReadThroughputLatency {
             }
         } catch (InterruptedException ie) {
             // ignore
-        } catch (Exception e ) {
+        } catch (Exception e) {
             LOG.error("Exception in reader", e);
         } finally {
-            LOG.info("Read {} in {}ms", entriesRead, time/1000/1000);
+            LOG.info("Read {} in {}ms", entriesRead, time / 1000 / 1000);
 
             try {
                 if (lh != null) {
