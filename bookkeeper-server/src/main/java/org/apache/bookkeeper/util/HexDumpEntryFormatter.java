@@ -50,4 +50,4 @@ public class HexDumpEntryFormatter extends EntryFormatter {
         }
     }
 
-};
+}

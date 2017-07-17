@@ -20,24 +20,14 @@
  */
 package org.apache.bookkeeper.test;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Random;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.BookKeeperTestClient;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.zookeeper.KeeperException;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 

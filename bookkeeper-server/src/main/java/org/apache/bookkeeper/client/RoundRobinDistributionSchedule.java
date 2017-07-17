@@ -17,11 +17,14 @@
  */
 package org.apache.bookkeeper.client;
 
-import org.apache.bookkeeper.util.MathUtils;
+import com.google.common.collect.ImmutableMap;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Map;
 
 /**
  * A specific {@link DistributionSchedule} that places entries in round-robin
@@ -54,40 +57,71 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
     @Override
     public AckSet getAckSet() {
         final HashSet<Integer> ackSet = new HashSet<Integer>();
+        final HashMap<Integer, BookieSocketAddress> failureMap =
+                new HashMap<Integer, BookieSocketAddress>();
         return new AckSet() {
-            public boolean addBookieAndCheck(int bookieIndexHeardFrom) {
+            public boolean completeBookieAndCheck(int bookieIndexHeardFrom) {
+                failureMap.remove(bookieIndexHeardFrom);
                 ackSet.add(bookieIndexHeardFrom);
                 return ackSet.size() >= ackQuorumSize;
             }
 
-            public void removeBookie(int bookie) {
+            @Override
+            public boolean failBookieAndCheck(int bookieIndexHeardFrom, BookieSocketAddress address) {
+                ackSet.remove(bookieIndexHeardFrom);
+                failureMap.put(bookieIndexHeardFrom, address);
+                return failureMap.size() > (writeQuorumSize - ackQuorumSize);
+            }
+
+            @Override
+            public Map<Integer, BookieSocketAddress> getFailedBookies() {
+                return ImmutableMap.copyOf(failureMap);
+            }
+
+            public boolean removeBookieAndCheck(int bookie) {
                 ackSet.remove(bookie);
+                failureMap.remove(bookie);
+                return ackSet.size() >= ackQuorumSize;
             }
         };
     }
 
     private class RRQuorumCoverageSet implements QuorumCoverageSet {
-        private final boolean[] covered = new boolean[ensembleSize];
+        private final int[] covered = new int[ensembleSize];
 
         private RRQuorumCoverageSet() {
             for (int i = 0; i < covered.length; i++) {
-                covered[i] = false;
+                covered[i] = BKException.Code.UNINITIALIZED;
             }
         }
 
-        public synchronized boolean addBookieAndCheckCovered(int bookieIndexHeardFrom) {
-            covered[bookieIndexHeardFrom] = true;
+        @Override
+        public synchronized void addBookie(int bookieIndexHeardFrom, int rc) {
+            covered[bookieIndexHeardFrom] = rc;
+        }
 
+        @Override
+        public synchronized boolean checkCovered() {
             // now check if there are any write quorums, with |ackQuorum| nodes available
             for (int i = 0; i < ensembleSize; i++) {
                 int nodesNotCovered = 0;
+                int nodesOkay = 0;
+                int nodesUninitialized = 0;
                 for (int j = 0; j < writeQuorumSize; j++) {
                     int nodeIndex = (i + j) % ensembleSize;
-                    if (!covered[nodeIndex]) {
+                    if (covered[nodeIndex] == BKException.Code.OK) {
+                        nodesOkay++;
+                    } else if (covered[nodeIndex] != BKException.Code.NoSuchEntryException &&
+                            covered[nodeIndex] != BKException.Code.NoSuchLedgerExistsException) {
                         nodesNotCovered++;
+                    } else if (covered[nodeIndex] == BKException.Code.UNINITIALIZED) {
+                        nodesUninitialized++;
                     }
                 }
-                if (nodesNotCovered >= ackQuorumSize) {
+                // if we haven't seen any OK responses and there are still nodes not heard from,
+                // let's wait until
+                if (nodesNotCovered >= ackQuorumSize ||
+                        (nodesOkay == 0 && nodesUninitialized > 0)) {
                     return false;
                 }
             }
@@ -99,7 +133,7 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
     public QuorumCoverageSet getCoverageSet() {
         return new RRQuorumCoverageSet();
     }
-    
+
     @Override
     public boolean hasEntry(long entryId, int bookieIndex) {
         return getWriteSet(entryId).contains(bookieIndex);

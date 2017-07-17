@@ -25,6 +25,8 @@ import com.google.common.util.concurrent.SettableFuture;
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -152,5 +154,10 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
     @Override
     long getLastAddConfirmed() throws IOException {
         return ledgerStorage.getLastAddConfirmed(ledgerId);
+    }
+
+    @Override
+    Observable waitForLastAddConfirmedUpdate(long previoisLAC, Observer observer) throws IOException {
+        return ledgerStorage.waitForLastAddConfirmedUpdate(ledgerId, previoisLAC, observer);
     }
 }

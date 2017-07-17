@@ -125,7 +125,7 @@ class Cookie {
     }
 
     private boolean verifyLedgerDirs(Cookie c, boolean checkIfSuperSet) {
-        if (checkIfSuperSet == false) {
+        if (!checkIfSuperSet) {
             return ledgerDirs.equals(c.ledgerDirs);
         } else {
             return isSuperSet(decodeDirPathFromCookie(ledgerDirs), decodeDirPathFromCookie(c.ledgerDirs));

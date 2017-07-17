@@ -25,6 +25,8 @@ import com.google.common.util.concurrent.SettableFuture;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.IOException;
+import java.util.Observable;
+import java.util.Observer;
 
 import static org.apache.bookkeeper.bookie.Bookie.METAENTRY_ID_FENCE_KEY;
 
@@ -76,6 +78,7 @@ public abstract class LedgerDescriptor {
     abstract ByteBuf readEntry(long entryId) throws IOException;
 
     abstract long getLastAddConfirmed() throws IOException;
+    abstract Observable waitForLastAddConfirmedUpdate(long previoisLAC, Observer observer) throws IOException;
 
     abstract void setExplicitLac(ByteBuf entry) throws IOException;
 

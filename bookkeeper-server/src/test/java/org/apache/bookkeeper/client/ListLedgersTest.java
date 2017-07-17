@@ -23,8 +23,6 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.test.BaseTestCase;
 
-import org.apache.zookeeper.KeeperException;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
