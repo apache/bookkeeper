@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements. See the NOTICE file distributed with this
  * work for additional information regarding copyright ownership. The ASF
@@ -14,18 +14,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.bookkeeper.auth;
-
 /**
- * Callbacks for AuthProviders.
+ * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
  */
-public abstract class AuthCallbacks {
-
-    /**
-     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
-     */
-    public interface GenericCallback<T> {
-
-        void operationComplete(int rc, T result);
-    }
-}
+package org.apache.bookkeeper.auth;

@@ -31,6 +31,9 @@ import org.apache.bookkeeper.client.ClientConnectionPeer;
  * an authentication mechanism for bookkeeper connections.
  */
 public interface ClientAuthProvider {
+    /**
+     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+     */
     interface Factory {
         /**
          * Initialize the factory with the client configuration
@@ -66,7 +69,7 @@ public interface ClientAuthProvider {
         String getPluginName();
 
         /**
-        * Release resources
+        * Release resources.
         */
         default void close() {}
     }
@@ -88,7 +91,7 @@ public interface ClientAuthProvider {
     void process(AuthToken m, AuthCallbacks.GenericCallback<AuthToken> cb);
 
     /**
-     * Release resources
+     * Release resources.
      */
     default void close() {}
 }

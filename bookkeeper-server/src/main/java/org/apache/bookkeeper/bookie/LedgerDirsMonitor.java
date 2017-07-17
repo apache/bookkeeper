@@ -41,17 +41,16 @@ import org.slf4j.LoggerFactory;
  * Thread to monitor the disk space periodically.
  */
 class LedgerDirsMonitor extends BookieThread {
-    private final static Logger LOG = LoggerFactory.getLogger(LedgerDirsMonitor.class);
-    
+    private static final Logger LOG = LoggerFactory.getLogger(LedgerDirsMonitor.class);
+
     private final int interval;
     private final ServerConfiguration conf;
     private final ConcurrentMap<File, Float> diskUsages;
     private final DiskChecker diskChecker;
     private final LedgerDirsManager ldm;
 
-    public LedgerDirsMonitor(final ServerConfiguration conf, 
-            final DiskChecker diskChecker,
-            final LedgerDirsManager ldm) {
+    public LedgerDirsMonitor(final ServerConfiguration conf, final DiskChecker diskChecker,
+                             final LedgerDirsManager ldm) {
         super("LedgerDirsMonitorThread");
         this.interval = conf.getDiskCheckInterval();
         this.conf = conf;
@@ -90,8 +89,8 @@ class LedgerDirsMonitor extends BookieThread {
                 }
                 // Let's get NoWritableLedgerDirException without waiting for the next iteration
                 // in case we are out of writable dirs
-                // otherwise for the duration of {interval} we end up in the state where 
-                // bookie cannot get writable dir but considered to be writable 
+                // otherwise for the duration of {interval} we end up in the state where
+                // bookie cannot get writable dir but considered to be writable
                 ldm.getWritableLedgerDirs();
             } catch (NoWritableLedgerDirException e) {
                 for (LedgerDirsListener listener : ldm.getListeners()) {

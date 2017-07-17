@@ -37,15 +37,15 @@ public class LedgerEntryPage {
 
     private static final Logger LOG = LoggerFactory.getLogger(LedgerEntryPage.class);
 
-    private final static int indexEntrySize = 8;
+    private static final int indexEntrySize = 8;
     private final int pageSize;
     private final int entriesPerPage;
-    volatile private EntryKey entryKey = new EntryKey(-1, BookieProtocol.INVALID_ENTRY_ID);
+    private volatile EntryKey entryKey = new EntryKey(-1, BookieProtocol.INVALID_ENTRY_ID);
     private final ByteBuffer page;
-    volatile private boolean clean = true;
+    private volatile boolean clean = true;
     private final AtomicInteger useCount = new AtomicInteger(0);
     private final AtomicInteger version = new AtomicInteger(0);
-    volatile private int last = -1; // Last update position
+    private volatile int last = -1; // Last update position
     private final LEPStateChangeCallback callback;
 
     public static int getIndexEntrySize() {
@@ -135,7 +135,7 @@ public class LedgerEntryPage {
 
     @Override
     public int hashCode() {
-        return (int)getLedger() ^ (int)(getFirstEntry());
+        return (int) getLedger() ^ (int) (getFirstEntry());
     }
 
     void setClean(int versionOfCleaning) {
@@ -154,8 +154,8 @@ public class LedgerEntryPage {
         checkPage();
         page.putLong(position, offset);
         version.incrementAndGet();
-        if (last < position/getIndexEntrySize()) {
-            last = position/getIndexEntrySize();
+        if (last < position / getIndexEntrySize()) {
+            last = position / getIndexEntrySize();
         }
         this.clean = false;
 
@@ -245,8 +245,8 @@ public class LedgerEntryPage {
     }
 
     private int getLastEntryIndex() {
-        for(int i = entriesPerPage - 1; i >= 0; i--) {
-            if (getOffset(i*getIndexEntrySize()) > 0) {
+        for (int i = entriesPerPage - 1; i >= 0; i--) {
+            if (getOffset(i * getIndexEntrySize()) > 0) {
                 return i;
             }
         }

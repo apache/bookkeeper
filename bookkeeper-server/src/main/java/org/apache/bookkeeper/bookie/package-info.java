@@ -1,5 +1,4 @@
-/**
- *
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,15 +15,8 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
+ */
+/**
+ * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
  */
 package org.apache.bookkeeper.bookie;
-
-import org.apache.bookkeeper.proto.ConnectionPeer;
-
-/**
- * Represents the connection to a BookKeeper client, from the Bookie side.
- */
-public interface BookieConnectionPeer extends ConnectionPeer {
-
-}

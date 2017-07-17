@@ -44,18 +44,23 @@ import java.net.MalformedURLException;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Scanner;
 
 import static com.google.common.base.Charsets.UTF_8;
 
 /**
- * Application for upgrading the bookkeeper filesystem
- * between versions
+ * Application for upgrading the bookkeeper filesystem between versions.
  */
 public class FileSystemUpgrade {
-    private final static Logger LOG = LoggerFactory.getLogger(FileSystemUpgrade.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FileSystemUpgrade.class);
 
-    static FilenameFilter BOOKIE_FILES_FILTER = new FilenameFilter() {
+    static FilenameFilter bookieFilesFilter = new FilenameFilter() {
             private boolean containsIndexFiles(File dir, String name) {
                 if (name.endsWith(".idx")) {
                     return true;
@@ -93,14 +98,14 @@ public class FileSystemUpgrade {
         };
 
     private static List<File> getAllDirectories(ServerConfiguration conf) {
-        List<File> dirs = new ArrayList<File>();
+        List<File> dirs = new ArrayList<>();
         dirs.addAll(Lists.newArrayList(conf.getJournalDirs()));
         Collections.addAll(dirs, conf.getLedgerDirs());
         return dirs;
     }
 
     private static int detectPreviousVersion(File directory) throws IOException {
-        String[] files = directory.list(BOOKIE_FILES_FILTER);
+        String[] files = directory.list(bookieFilesFilter);
         File v2versionFile = new File(directory,
                 BookKeeperConstants.VERSION_FILENAME);
         if ((files == null || files.length == 0) && !v2versionFile.exists()) { // no old data, so we're ok
@@ -151,7 +156,7 @@ public class FileSystemUpgrade {
         for (String f : files) {
             if (f.endsWith(".idx")) { // this is an index dir, create the links
                 if (!targetPath.mkdirs()) {
-                    throw new IOException("Could not create target path ["+targetPath+"]");
+                    throw new IOException("Could not create target path [" + targetPath + "]");
                 }
                 HardLink.createHardLinkMult(srcPath, files, targetPath);
                 return;
@@ -175,7 +180,7 @@ public class FileSystemUpgrade {
 
         ZooKeeper zk = newZookeeper(conf);
         try {
-            Map<File,File> deferredMoves = new HashMap<File, File>();
+            Map<File, File> deferredMoves = new HashMap<File, File>();
             Cookie.Builder cookieBuilder = Cookie.generateCookie(conf);
             Cookie c = cookieBuilder.build();
             for (File d : getAllDirectories(conf)) {
@@ -196,7 +201,7 @@ public class FileSystemUpgrade {
 
                     String[] files = d.list(new FilenameFilter() {
                             public boolean accept(File dir, String name) {
-                                return BOOKIE_FILES_FILTER.accept(dir, name)
+                                return bookieFilesFilter.accept(dir, name)
                                     && !(new File(dir, name).isDirectory());
                             }
                         });
@@ -209,7 +214,7 @@ public class FileSystemUpgrade {
                 }
             }
 
-            for (Map.Entry<File,File> e : deferredMoves.entrySet()) {
+            for (Map.Entry<File, File> e : deferredMoves.entrySet()) {
                 try {
                     FileUtils.moveDirectory(e.getValue(), e.getKey());
                 } catch (IOException ioe) {
@@ -254,12 +259,12 @@ public class FileSystemUpgrade {
                             LOG.warn("Could not delete old version file {}", v2versionFile);
                         }
                     }
-                    File[] files = d.listFiles(BOOKIE_FILES_FILTER);
+                    File[] files = d.listFiles(bookieFilesFilter);
                     if (files != null) {
                         for (File f : files) {
                             if (f.isDirectory()) {
                                 FileUtils.deleteDirectory(f);
-                            } else{
+                            } else {
                                 if (!f.delete()) {
                                     LOG.warn("Could not delete {}", f);
                                 }

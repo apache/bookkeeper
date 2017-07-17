@@ -22,7 +22,7 @@ package org.apache.bookkeeper.bookie;
 import java.nio.ByteBuffer;
 
 /**
- * Journal stream position
+ * Journal stream position.
  */
 class LogMark {
     long logFileId;
@@ -70,7 +70,7 @@ class LogMark {
         if (ret == 0) {
             ret = this.logFileOffset - other.getLogFileOffset();
         }
-        return (ret < 0)? -1 : ((ret > 0)? 1 : 0);
+        return (ret < 0) ? -1 : ((ret > 0) ? 1 : 0);
     }
 
     @Override
