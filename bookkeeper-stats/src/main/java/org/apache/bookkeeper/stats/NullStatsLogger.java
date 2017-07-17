@@ -18,6 +18,9 @@ package org.apache.bookkeeper.stats;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ */
 public class NullStatsLogger implements StatsLogger {
 
     public static final NullStatsLogger INSTANCE = new NullStatsLogger();

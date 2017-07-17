@@ -25,10 +25,10 @@ import org.apache.commons.configuration.Configuration;
 /**
  * Main entry point to use Finagle stats for Bookkeeper.
  *
- * There's no requirement to start or stop it.
+ * <p>There's no requirement to start or stop it.</p>
  */
 public class FinagleStatsProvider implements StatsProvider {
-    final private StatsReceiver stats;
+    private final StatsReceiver stats;
 
     public FinagleStatsProvider(final StatsReceiver stats) {
         this.stats = stats;

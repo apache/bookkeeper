@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,14 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.bookkeeper.stats;
-
 /**
- * A guage is a value that has only one value at a specific point in time.
- * An example is the number of elements in a queue. The value of T must be
- * some numeric type.
+ * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
  */
-public interface Gauge<T extends Number> {
-    T getDefaultValue();
-    T getSample();
-}
+package org.apache.bookkeeper.stats.twitter.finagle;

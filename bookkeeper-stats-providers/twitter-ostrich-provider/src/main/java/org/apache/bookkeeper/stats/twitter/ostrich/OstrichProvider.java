@@ -35,11 +35,14 @@ import scala.util.matching.Regex;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ */
 public class OstrichProvider implements StatsProvider {
 
-    protected final static String STATS_EXPORT = "statsExport";
-    protected final static String STATS_HTTP_PORT = "statsHttpPort";
-    protected final static String SHOULD_SHUTDOWN_SERVICE_TRACKER = "shouldShutdownServiceTracker";
+    protected static final String STATS_EXPORT = "statsExport";
+    protected static final String STATS_HTTP_PORT = "statsHttpPort";
+    protected static final String SHOULD_SHUTDOWN_SERVICE_TRACKER = "shouldShutdownServiceTracker";
 
     private com.twitter.ostrich.admin.AdminHttpService statsExporter = null;
     private final CachingStatsProvider cachingStatsProvider;
@@ -48,7 +51,7 @@ public class OstrichProvider implements StatsProvider {
     private static List<Duration> list(Duration ... ts) {
         List<Duration> result = List$.MODULE$.empty();
         for (int i = ts.length; i > 0; i--) {
-            result = new $colon$colon<>(ts[i-1], result);
+            result = new $colon$colon<>(ts[i - 1], result);
         }
         return result;
     }
