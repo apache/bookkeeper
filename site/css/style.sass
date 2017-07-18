@@ -6,12 +6,10 @@ $fa-font-path: "../fonts"
 @import vendor/bulma/utilities/initial-variables
 @import variables
 @import mixins
+@import navbar
 @import syntax
 @import typography
 @import vendor/bulma/bulma
-
-footer.footer
-  z-index: 999
 
 img.logo
   height: 3rem
@@ -53,6 +51,11 @@ span.pop
 
 $base-font-size: 1rem
 $docs-side-padding: 6rem
+$footer-height: 20rem
+
+footer.footer
+  z-index: 10
+  height: $footer-height
 
 // Popovers
 .popover-template
@@ -86,6 +89,13 @@ $docs-side-padding: 6rem
 body
   font-size: 1.25em
 
+h1.bk-title
+  font-size: $base-font-size * 3.5
+
+h2.bk-subtitle
+  font-size: $base-font-size * 2
+  margin-bottom: 1rem
+
 .bk-docs-container
   width: 95%
   margin-top: $docs-container-vertical-margin
@@ -106,8 +116,12 @@ body
         font-size: $base-font-size * 1.2
 
   .bk-docs-content
-    ul, li
+    min-height: 100vh
+
+    ul, li, ol
       margin-left: .75rem
+    
+    ul li
       list-style-type: square
 
     & + .pagination
@@ -116,9 +130,9 @@ body
 aside.sidebar
   position: fixed
   overflow-y: scroll
-  top: $navbar-height + 3rem
   bottom: 0
-  padding: 0 0 5rem 0
+  top: $navbar-height + 3rem
+  padding: 0 0 $footer-height * 1.1 0
 
   p + ul.sidebar-items
     margin-top: .8rem

@@ -1,45 +1,59 @@
 {% capture docs_url %}{{ site.baseurl }}docs/{% endcapture %}
-<nav class="navbar">
-  <div class="navbar-brand">
-    <a class="navbar-item">
-      <img src="{{ site.baseurl }}img/bk-logo.png"> {{ site.title }}
-    </a>
+<section class="bk-topnav">
+  <nav class="navbar is-transparent">
+    <div class="navbar-brand">
+      <a class="navbar-item">
+        <img class="navbar-logo" src="{{ site.baseurl }}img/bk-logo.png"> {{ site.title }}
+      </a>
 
-    <div class="navbar-burger">
-      <span></span>
-      <span></span>
-      <span></span>
-    </div>
-  </div>
-  <div id="navMenu" class="navbar-menu">
-    <div class="navbar-start">
-      <div class="navbar-item has-dropdown">
-        <a class="navbar-link">
-          Versions
-        </a>
+      <div class="navbar-burger">
+        <span></span>
+        <span></span>
+        <span></span>
       </div>
     </div>
-    <div class="navbar-end">
-      <div class="navbar-item">
-        <div class="field is-grouped">
-          <p class="control">
-            <a class="button">
-              <span class="icon">
-                <i class="fa fa-twitter"></i>
-              </span>
-              <span>Tweet</span>
-            </a>
-          </p>
-          <p class="control">
-            <a class="button is-primary">
-              <span class="icon">
-                <i class="fa fa-download"></i>
-              </span>
-              <span>Download</span>
-            </a>
-          </p>
+    <div id="navMenu" class="navbar-menu">
+      <div class="navbar-start">
+        <!--
+        <div class="navbar-item has-dropdown">
+          <a class="navbar-link">
+            Versions
+          </a>
+        </div>
+        -->
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="/docs">
+            Documentation
+          </a>
+          <div class="navbar-dropdown">
+            <a class="navbar-item" href="/docs/getting-started/installation">Install</a>
+            <a class="navbar-item" href="/docs/deployment/kubernetes">Deploy on Kubernetes</a>
+            <a class="navbar-item" href="/docs/deployment/dcos">Deploy on DC/OS</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+        <div class="navbar-item">
+          <div class="field is-grouped">
+            <p class="control">
+              <a class="button" href="{{ site.twitter_url }}">
+                <span class="icon">
+                  <i class="fa fa-twitter"></i>
+                </span>
+                <span>Tweet</span>
+              </a>
+            </p>
+            <p class="control">
+              <a class="button is-primary" href="{{ site.baseurl }}docs/getting-started/installation">
+                <span class="icon">
+                  <i class="fa fa-download"></i>
+                </span>
+                <span>Download</span>
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</nav>
+  </nav>
+</section>

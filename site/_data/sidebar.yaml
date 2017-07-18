@@ -22,7 +22,7 @@ groups:
   docs:
   - name: BookKeeper administration
     endpoint: bookies
-  - name: Setting up AutoRecovery
+  - name: AutoRecovery
     endpoint: autorecovery
   - name: Metric collection
     endpoint: metrics

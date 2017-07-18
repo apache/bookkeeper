@@ -35,9 +35,6 @@ groups:
   - param: explicitLacInterval
     description: Interval between sending an explicit LAC in seconds
     default: 1
-  - param: auditorPeriodicBookieCheckInterval
-    description: The time interval between auditor bookie checks, in seconds. The auditor bookie check checks ledger metadata to see which bookies should contain entries for each ledger. If a bookie that should contain entries is unavailable, then the ledger containing that entry is marked for recovery. Setting this to 0 disables the periodic check. Bookie checks will still run when a bookie fails. The default is once per day.
-    default: 86400
   - param: lostBookieRecoveryDelay
     description: How long to wait, in seconds, before starting autorecovery of a lost bookie.
     default: 0
@@ -56,6 +53,18 @@ groups:
   - param: numReadWorkerThreads
     description: The umber of threads that handle read requests. If 0, reads are handled by [Netty threads](http://netty.io/wiki/thread-model.html) directly.
     default: 1
+
+- name: AutoRecovery settings
+  params:
+  - param: auditorPeriodicBookieCheckInterval
+    description: The time interval between auditor bookie checks, in seconds. The auditor bookie check checks ledger metadata to see which bookies should contain entries for each ledger. If a bookie that should contain entries is unavailable, then the ledger containing that entry is marked for recovery. Setting this to 0 disables the periodic check. Bookie checks will still run when a bookie fails. The default is once per day.
+    default: 86400
+  - param: rereplicationEntryBatchSize
+    description: The number of entries that a replication will rereplicate in parallel.
+    default: 10
+  - param: openLedgerRereplicationGracePeriod
+    description: The grace period, in seconds, that the replication worker waits before fencing and replicating a ledger fragment that's still being written to upon bookie failure.
+    default: 30
 
 - name: Netty server settings
   params:
@@ -194,12 +203,6 @@ groups:
   - param: statsProviderClass
     description: Stats provider class.
     default: org.apache.bookkeeper.stats.CodahaleMetricsProvider
-
-- name: Auto-replication
-  params:
-  - param: openLedgerRereplicationGracePeriod
-    description: The grace period, in seconds, that the replication worker waits before fencing and replicating a ledger fragment that's still being written to upon bookie failure.
-    default: 30
 
 - name: Read-only mode support
   params:

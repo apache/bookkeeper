@@ -7213,6 +7213,9 @@ footer.footer {
 img.logo {
   height: 3rem; }
 
+img.navbar-logo {
+  margin-right: 0.25rem; }
+
 blockquote code {
   background-color: white; }
 
