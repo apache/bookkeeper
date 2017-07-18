@@ -28,7 +28,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.DiskChecker;
 
 /**
- * Read Only Entry Logger
+ * Read Only Entry Logger.
  */
 public class ReadOnlyEntryLogger extends EntryLogger {
 

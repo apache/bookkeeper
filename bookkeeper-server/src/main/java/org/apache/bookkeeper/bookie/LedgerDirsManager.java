@@ -45,8 +45,7 @@ import com.google.common.annotations.VisibleForTesting;
  * This class manages ledger directories used by the bookie.
  */
 public class LedgerDirsManager {
-    private final static Logger LOG = LoggerFactory
-            .getLogger(LedgerDirsManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LedgerDirsManager.class);
 
     private volatile List<File> filledDirs;
     private final List<File> ledgerDirectories;
@@ -108,23 +107,22 @@ public class LedgerDirsManager {
     }
 
     /**
-     * Get all ledger dirs configured
+     * Get all ledger dirs configured.
      */
     public List<File> getAllLedgerDirs() {
         return ledgerDirectories;
     }
-    
+
     /**
-     * Get all dir listeners
-     * @return List<LedgerDirsListener> listeners
+     * Get all dir listeners.
+     * @return list of listeners
      */
     public List<LedgerDirsListener> getListeners() {
         return listeners;
     }
 
     /**
-     * Calculate the total amount of free space available
-     * in all of the ledger directories put together.
+     * Calculate the total amount of free space available in all of the ledger directories put together.
      *
      * @return totalDiskSpace in bytes
      * @throws IOException 
@@ -134,8 +132,7 @@ public class LedgerDirsManager {
     }
 
     /**
-     * Calculate the total amount of free space available
-     * in all of the ledger directories put together.
+     * Calculate the total amount of free space available in all of the ledger directories put together.
      *
      * @return freeDiskSpace in bytes
      * @throws IOException 
@@ -145,13 +142,13 @@ public class LedgerDirsManager {
     }
     
     /**
-     * Get disk usages map
-     * @return ConcurrentMap<File, Float> diskUsages
+     * Get disk usages map.
+     * @return disk usages map
      */
     public ConcurrentMap<File, Float> getDiskUsages() {
         return diskUsages;
     }
-    
+
     /**
      * Get only writable ledger dirs.
      */
@@ -168,7 +165,7 @@ public class LedgerDirsManager {
     }
 
     /**
-     * returns true if the writableLedgerDirs list has entries
+     * @return true if the writableLedgerDirs list has entries
      */
     public boolean hasWritableLedgerDirs() {
         return !writableLedgerDirectories.isEmpty();
@@ -198,7 +195,7 @@ public class LedgerDirsManager {
         List<File> fullLedgerDirsToAccomodate = new ArrayList<File>();
         for (File dir: this.ledgerDirectories) {
             // Pick dirs which can accommodate little more than thresholdSize
-            if (dir.getUsableSpace() > (thresholdSize) ) {
+            if (dir.getUsableSpace() > thresholdSize) {
                 fullLedgerDirsToAccomodate.add(dir);
             }
         }
@@ -216,7 +213,7 @@ public class LedgerDirsManager {
         LOG.error(errMsg, e);
         throw e;
     }
-    
+
     /**
      * @return full-filled ledger dirs.
      */
@@ -225,20 +222,19 @@ public class LedgerDirsManager {
     }
 
     /**
-     * Get dirs, which are full more than threshold
+     * Get dirs, which are full more than threshold.
      */
     public boolean isDirFull(File dir) {
         return filledDirs.contains(dir);
     }
 
     /**
-     * Add the dir to filled dirs list
+     * Add the dir to filled dirs list.
      */
     @VisibleForTesting
     public void addToFilledDirs(File dir) {
         if (!filledDirs.contains(dir)) {
-            LOG.warn(dir + " is out of space."
-                    + " Adding it to filled dirs list");
+            LOG.warn(dir + " is out of space. Adding it to filled dirs list");
             // Update filled dirs list
             List<File> updatedFilledDirs = new ArrayList<File>(filledDirs);
             updatedFilledDirs.add(dir);
@@ -306,9 +302,8 @@ public class LedgerDirsManager {
      * Pick up a dir randomly from writableLedgerDirectories. If writableLedgerDirectories is empty
      * then pick up a dir randomly from the ledger/indexdirs which have usable space more than
      * minUsableSizeForIndexFileCreation.
-     * 
-     * @param excludedDir
-     *          The directory to exclude during pickup.
+     *
+     * @param excludedDir The directory to exclude during pickup.
      * @return
      * @throws NoWritableLedgerDirException if there is no dir available.
      */
@@ -318,8 +313,8 @@ public class LedgerDirsManager {
             writableDirsForNewIndexFile = writableLedgerDirectories;
         } else {
             // We don't have writable Index Dirs.
-            // That means we must have turned readonly. But 
-            // during the Bookie restart, while replaying the journal there might be a need 
+            // That means we must have turned readonly. But
+            // during the Bookie restart, while replaying the journal there might be a need
             // to create new Index file and it should proceed.
             writableDirsForNewIndexFile = getDirsAboveUsableThresholdSize(minUsableSizeForIndexFileCreation);
         }
@@ -372,43 +367,38 @@ public class LedgerDirsManager {
      * Listener for the disk check events will be notified from the
      * {@link LedgerDirsManager} whenever disk full/failure detected.
      */
-    public static interface LedgerDirsListener {
+    public interface LedgerDirsListener {
         /**
-         * This will be notified on disk failure/disk error
+         * This will be notified on disk failure/disk error.
          *
-         * @param disk
-         *            Failed disk
+         * @param disk Failed disk
          */
         void diskFailed(File disk);
 
         /**
-         * Notified when the disk usage warn threshold is exceeded on
-         * the drive.
+         * Notified when the disk usage warn threshold is exceeded on the drive.
          * @param disk
          */
         void diskAlmostFull(File disk);
 
         /**
-         * This will be notified on disk detected as full
+         * This will be notified on disk detected as full.
          *
-         * @param disk
-         *            Filled disk
+         * @param disk Filled disk
          */
         void diskFull(File disk);
 
         /**
-         * This will be notified on disk detected as writable and under warn threshold
+         * This will be notified on disk detected as writable and under warn threshold.
          *
-         * @param disk
-         *          Writable disk
+         * @param disk Writable disk
          */
         void diskWritable(File disk);
 
         /**
-         * This will be notified on disk detected as writable but still in warn threshold
+         * This will be notified on disk detected as writable but still in warn threshold.
          *
-         * @param disk
-         *          Writable disk
+         * @param disk Writable disk
          */
         void diskJustWritable(File disk);
 

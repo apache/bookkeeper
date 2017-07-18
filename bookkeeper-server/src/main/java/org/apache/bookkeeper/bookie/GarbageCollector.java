@@ -27,25 +27,23 @@ package org.apache.bookkeeper.bookie;
  */
 public interface GarbageCollector {
     /**
-     * Do the garbage collector work
+     * Do the garbage collector work.
      *
-     * @param garbageCleaner
-     *          cleaner used to clean selected garbages
+     * @param garbageCleaner cleaner used to clean selected garbages
      */
-    public abstract void gc(GarbageCleaner garbageCleaner);
+    void gc(GarbageCleaner garbageCleaner);
 
     /**
-     * A interface used to define customised garbage cleaner
+     * A interface used to define customised garbage cleaner.
      */
-    public interface GarbageCleaner {
+    interface GarbageCleaner {
 
         /**
-         * Clean a specific ledger
+         * Clean a specific ledger.
          *
-         * @param ledgerId
-         *          Ledger ID to be cleaned
+         * @param ledgerId Ledger ID to be cleaned
          */
-        public void clean(final long ledgerId) ;
+        void clean(final long ledgerId);
     }
 
 }

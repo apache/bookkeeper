@@ -34,10 +34,9 @@ import org.slf4j.LoggerFactory;
 /**
  * Implements a ledger inside a bookie. In particular, it implements operations
  * to write entries to a ledger and read entries from a ledger.
- *
  */
 public class LedgerDescriptorImpl extends LedgerDescriptor {
-    private final static Logger LOG = LoggerFactory.getLogger(LedgerDescriptor.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LedgerDescriptor.class);
     final LedgerStorage ledgerStorage;
     private long ledgerId;
     final byte[] masterKey;

@@ -25,6 +25,9 @@ import java.util.List;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
+/**
+ * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ */
 public class CheckpointSourceList implements CheckpointSource {
 
     private final List<? extends CheckpointSource> checkpointSourcesList;

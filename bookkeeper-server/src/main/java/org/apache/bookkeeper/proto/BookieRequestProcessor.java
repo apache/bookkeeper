@@ -196,7 +196,7 @@ public class BookieRequestProcessor implements RequestProcessor {
                     LOG.info("Ignoring auth operation from client {}",c.remoteAddress());
                     BookkeeperProtocol.AuthMessage message = BookkeeperProtocol.AuthMessage
                         .newBuilder()
-                        .setAuthPluginName(AuthProviderFactoryFactory.authenticationDisabledPluginName)
+                        .setAuthPluginName(AuthProviderFactoryFactory.AUTHENTICATION_DISABLED_PLUGIN_NAME)
                         .setPayload(ByteString.copyFrom(AuthToken.NULL.getData()))
                         .build();
                     BookkeeperProtocol.Response.Builder authResponse =

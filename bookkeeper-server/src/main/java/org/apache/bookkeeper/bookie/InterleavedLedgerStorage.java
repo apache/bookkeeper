@@ -57,9 +57,11 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_OFF
  * file and maintains an index file for each ledger.
  */
 public class InterleavedLedgerStorage implements CompactableLedgerStorage, EntryLogListener {
-    private final static Logger LOG = LoggerFactory.getLogger(InterleavedLedgerStorage.class);
+    private static final Logger LOG = LoggerFactory.getLogger(InterleavedLedgerStorage.class);
 
-    // Hold the last checkpoint
+    /**
+     * Hold the last checkpoint.
+     */
     protected static class CheckpointHolder {
         Checkpoint lastCheckpoint = Checkpoint.MAX;
 
@@ -84,7 +86,8 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     LedgerCache ledgerCache;
     private CheckpointSource checkpointSource;
     protected final CheckpointHolder checkpointHolder = new CheckpointHolder();
-    private final CopyOnWriteArrayList<LedgerDeletionListener> ledgerDeletionListeners = Lists.newCopyOnWriteArrayList();
+    private final CopyOnWriteArrayList<LedgerDeletionListener> ledgerDeletionListeners =
+            Lists.newCopyOnWriteArrayList();
 
     // A sorted map to stored all active ledger ids
     protected final SnapshotMap<Long, Boolean> activeLedgers;
@@ -261,13 +264,14 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     }
 
     @Override
-    public Observable waitForLastAddConfirmedUpdate(long ledgerId, long previoisLAC, Observer observer) throws IOException {
+    public Observable waitForLastAddConfirmedUpdate(long ledgerId, long previoisLAC, Observer observer)
+            throws IOException {
         return ledgerCache.waitForLastAddConfirmedUpdate(ledgerId, previoisLAC, observer);
     }
 
 
     @Override
-    synchronized public long addEntry(ByteBuf entry) throws IOException {
+    public synchronized long addEntry(ByteBuf entry) throws IOException {
         long ledgerId = entry.getLong(entry.readerIndex() + 0);
         long entryId = entry.getLong(entry.readerIndex() + 8);
         long lac = entry.getLong(entry.readerIndex() + 16);
@@ -371,7 +375,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     }
 
     @Override
-    synchronized public void flush() throws IOException {
+    public synchronized void flush() throws IOException {
         if (!somethingWritten) {
             return;
         }
@@ -431,7 +435,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         processEntry(ledgerId, entryId, entry, true);
     }
 
-    synchronized protected void processEntry(long ledgerId, long entryId, ByteBuffer entry, boolean rollLog)
+    protected synchronized void processEntry(long ledgerId, long entryId, ByteBuffer entry, boolean rollLog)
             throws IOException {
         /*
          * Touch dirty flag

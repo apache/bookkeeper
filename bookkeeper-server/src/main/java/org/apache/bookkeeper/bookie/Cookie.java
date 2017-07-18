@@ -65,14 +65,13 @@ import org.apache.bookkeeper.util.ZkUtils;
  * bookie, its configuration stays the same. If any of the bookie directories
  * becomes unavailable, the bookie becomes unavailable. If the bookie changes
  * port, it must also reset all of its data.
- *
  * This is done to ensure data integrity. Without the cookie a bookie could
  * start with one of its ledger directories missing, so data would be missing,
  * but the bookie would be up, so the client would think that everything is ok
  * with the cluster. It's better to fail early and obviously.
  */
 class Cookie {
-    private final static Logger LOG = LoggerFactory.getLogger(Cookie.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Cookie.class);
 
     static final int CURRENT_COOKIE_LAYOUT_VERSION = 4;
     private final int layoutVersion;
@@ -103,7 +102,7 @@ class Cookie {
         // the first part of the string contains a count of how many
         // directories are present; to skip it, we look for subString
         // from the first '/'
-        return s.substring(s.indexOf(SEPARATOR)+SEPARATOR.length()).split(SEPARATOR);
+        return s.substring(s.indexOf(SEPARATOR) + SEPARATOR.length()).split(SEPARATOR);
     }
 
     String[] getLedgerDirPathsFromCookie() {
@@ -114,13 +113,13 @@ class Cookie {
      * Receives 2 String arrays, that each contain a list of directory paths,
      * and checks if first is a super set of the second.
      *
-     * @param superSet
-     * @param subSet
-     * @return true if s1 is a superSet of s2; false otherwise
+     * @param superS
+     * @param subS
+     * @return true if superS is a superSet of subS; false otherwise
      */
-    private boolean isSuperSet(String[] s1, String[] s2) {
-        Set<String> superSet = Sets.newHashSet(s1);
-        Set<String> subSet = Sets.newHashSet(s2);
+    private boolean isSuperSet(String[] superS, String[] subS) {
+        Set<String> superSet = Sets.newHashSet(superS);
+        Set<String> subSet = Sets.newHashSet(subS);
         return superSet.containsAll(subSet);
     }
 
@@ -236,15 +235,11 @@ class Cookie {
     }
 
     /**
-     * Writes cookie details to ZooKeeper
+     * Writes cookie details to ZooKeeper.
      *
-     * @param zk
-     *            ZooKeeper instance
-     * @param conf
-     *            configuration
-     * @param version
-     *            version
-     *
+     * @param zk ZooKeeper instance
+     * @param conf configuration
+     * @param version version
      * @throws KeeperException
      * @throws InterruptedException
      * @throws UnknownHostException
@@ -277,15 +272,11 @@ class Cookie {
     }
 
     /**
-     * Deletes cookie from ZooKeeper and sets znode version to DEFAULT_COOKIE_ZNODE_VERSION
+     * Deletes cookie from ZooKeeper and sets znode version to DEFAULT_COOKIE_ZNODE_VERSION.
      *
-     * @param zk
-     *            ZooKeeper instance
-     * @param conf
-     *            configuration
-     * @param version
-     *            zookeeper version
-     *
+     * @param zk ZooKeeper instance
+     * @param conf configuration
+     * @param version zookeeper version
      * @throws KeeperException
      * @throws InterruptedException
      * @throws UnknownHostException
@@ -297,7 +288,7 @@ class Cookie {
     }
 
     /**
-     * Delete cookie from zookeeper
+     * Delete cookie from zookeeper.
      *
      * @param zk zookeeper client
      * @param conf configuration instance
@@ -315,18 +306,15 @@ class Cookie {
         }
 
         String zkPath = getZkPath(conf, address);
-        zk.delete(zkPath, ((ZkVersion)version).getZnodeVersion());
+        zk.delete(zkPath, ((ZkVersion) version).getZnodeVersion());
         LOG.info("Removed cookie from {} for bookie {}.", conf.getZkLedgersRootPath(), address);
     }
 
     /**
-     * Generate cookie from the given configuration
+     * Generate cookie from the given configuration.
      *
-     * @param conf
-     *            configuration
-     *
+     * @param conf configuration
      * @return cookie builder object
-     *
      * @throws UnknownHostException
      */
     static Builder generateCookie(ServerConfiguration conf)
@@ -342,13 +330,9 @@ class Cookie {
     /**
      * Read cookie from ZooKeeper.
      *
-     * @param zk
-     *            ZooKeeper instance
-     * @param conf
-     *            configuration
-     *
+     * @param zk ZooKeeper instance
+     * @param conf configuration
      * @return versioned cookie object
-     *
      * @throws KeeperException
      * @throws InterruptedException
      * @throws IOException
@@ -360,7 +344,7 @@ class Cookie {
     }
 
     /**
-     * Read cookie from zookeeper for a given bookie <i>address</i>
+     * Read cookie from zookeeper for a given bookie <i>address</i>.
      *
      * @param zk zookeeper client
      * @param conf configuration instance
@@ -390,18 +374,14 @@ class Cookie {
     }
 
     /**
-     * Returns cookie from the given directory
+     * Returns cookie from the given directory.
      *
-     * @param directory
-     *            directory
-     *
+     * @param directory directory
      * @return cookie object
-     *
      * @throws IOException
      */
     static Cookie readFromDirectory(File directory) throws IOException {
-        File versionFile = new File(directory,
-                BookKeeperConstants.VERSION_FILENAME);
+        File versionFile = new File(directory, BookKeeperConstants.VERSION_FILENAME);
         BufferedReader reader = new BufferedReader(
                 new InputStreamReader(new FileInputStream(versionFile), UTF_8));
         try {
@@ -412,13 +392,10 @@ class Cookie {
     }
 
     /**
-     * Returns cookie path in zookeeper
+     * Returns cookie path in zookeeper.
      *
-     * @param conf
-     *            configuration
-     *          
+     * @param conf configuration
      * @return cookie zk path
-     *
      * @throws UnknownHostException
      */
     static String getZkPath(ServerConfiguration conf)
@@ -427,15 +404,14 @@ class Cookie {
     }
 
     /**
-     * Return cookie path for a given bookie <i>address</i>
+     * Return cookie path for a given bookie <i>address</i>.
      *
      * @param conf configuration
      * @param address bookie address
      * @return cookie path for bookie
      */
     static String getZkPath(AbstractConfiguration conf, BookieSocketAddress address) {
-        String bookieCookiePath = conf.getZkLedgersRootPath() + "/"
-                + BookKeeperConstants.COOKIE_NODE;
+        String bookieCookiePath = conf.getZkLedgersRootPath() + "/" + BookKeeperConstants.COOKIE_NODE;
         return bookieCookiePath + "/" + address;
     }
 
@@ -444,7 +420,7 @@ class Cookie {
      * address. Represent as 'hostname/IPaddress' if the InetSocketAddress was
      * created using hostname. Represent as '/IPaddress' if the
      * InetSocketAddress was created using an IPaddress
-     * 
+     *
      * @return true if the 'bookieHost' was created using an IP address, false
      *         if the 'bookieHost' was created using a hostname
      */
@@ -465,7 +441,7 @@ class Cookie {
     }
 
     /**
-     * Cookie builder
+     * Cookie builder.
      */
     public static class Builder {
         private int layoutVersion = 0;
@@ -477,7 +453,8 @@ class Cookie {
         private Builder() {
         }
 
-        private Builder(int layoutVersion, String bookieHost, String journalDirs, String ledgerDirs, String instanceId) {
+        private Builder(int layoutVersion, String bookieHost, String journalDirs, String ledgerDirs,
+                        String instanceId) {
             this.layoutVersion = layoutVersion;
             this.bookieHost = bookieHost;
             this.journalDirs = journalDirs;
@@ -516,8 +493,8 @@ class Cookie {
     }
 
     /**
-     * Returns Cookie builder
-     * 
+     * Returns Cookie builder.
+     *
      * @return cookie builder
      */
     static Builder newBuilder() {
@@ -525,10 +502,9 @@ class Cookie {
     }
 
     /**
-     * Returns Cookie builder with the copy of given oldCookie
+     * Returns Cookie builder with the copy of given oldCookie.
      *
-     * @param oldCookie
-     *            build new cookie from this cookie
+     * @param oldCookie build new cookie from this cookie
      * @return cookie builder
      */
     static Builder newBuilder(Cookie oldCookie) {

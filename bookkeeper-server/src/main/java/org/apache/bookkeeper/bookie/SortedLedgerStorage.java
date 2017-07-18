@@ -38,9 +38,12 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ */
 public class SortedLedgerStorage extends InterleavedLedgerStorage
         implements LedgerStorage, CacheCallback, SkipListFlusher {
-    private final static Logger LOG = LoggerFactory.getLogger(SortedLedgerStorage.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SortedLedgerStorage.class);
 
     EntryMemTable memTable;
     private ScheduledExecutorService scheduler;
@@ -59,7 +62,7 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
         this.scheduler = Executors.newSingleThreadScheduledExecutor(
                 new ThreadFactoryBuilder()
                 .setNameFormat("SortedLedgerStorage-%d")
-                .setPriority((Thread.NORM_PRIORITY + Thread.MAX_PRIORITY)/2).build());
+                .setPriority((Thread.NORM_PRIORITY + Thread.MAX_PRIORITY) / 2).build());
     }
 
     @Override
