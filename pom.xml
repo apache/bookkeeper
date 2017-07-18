@@ -32,6 +32,7 @@
   <name>bookkeeper</name>
   <inceptionYear>2011</inceptionYear>
   <modules>
+    <module>buildtools</module>
     <module>compat-deps</module>
     <module>bookkeeper-stats</module>
     <module>bookkeeper-server</module>
@@ -46,6 +47,10 @@
     <protobuf.version>2.6.1</protobuf.version>
     <slf4j.version>1.7.25</slf4j.version>
     <zookeeper.version>3.5.3-beta</zookeeper.version>
+    <!-- plugin dependencies -->
+    <findbugs-maven-plugin.version>3.0.3</findbugs-maven-plugin.version>
+    <puppycrawl.checkstyle.version>6.19</puppycrawl.checkstyle.version>
+    <maven-checkstyle-plugin.version>2.17</maven-checkstyle-plugin.version>
   </properties>
   <url>http://bookkeeper.apache.org</url>
   <build>
@@ -53,7 +58,10 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>findbugs-maven-plugin</artifactId>
-        <version>3.0.4</version>
+        <version>${findbugs-maven-plugin.version}</version>
+        <configuration>
+          <excludeFilterFile>${session.executionRootDirectory}/buildtools/src/main/resources/bookkeeper/findbugsExclude.xml</excludeFilterFile>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.eluder.coveralls</groupId>
