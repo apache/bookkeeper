@@ -66,7 +66,7 @@ public class BookKeeperTools {
         final BookieSocketAddress bookieSrc = new BookieSocketAddress(bookieSrcString[0], Integer
                 .parseInt(bookieSrcString[1]));
         BookieSocketAddress bookieDest = null;
-        if (args.length < 3) {
+        if (args.length > 2) {
             String bookieDestString[] = args[2].split(":");
             if (bookieDestString.length < 2) {
                 System.err.println("BookieDest inputted has invalid name format (host:port expected): "
