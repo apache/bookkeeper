@@ -209,7 +209,7 @@ elif [ $COMMAND == "autorecovery" ]; then
 elif [ $COMMAND == "localbookie" ]; then
   NUMBER=$1
   shift
-  exec $JAVA $OPTS $JMX_ARGS org.apache.bookkeeper.util.LocalBookKeeper $NUMBER $BOOKIE_CONF $@
+  exec $JAVA $OPTS $JMX_ARGS -Dzookeeper.4lw.commands.whitelist='*' org.apache.bookkeeper.util.LocalBookKeeper $NUMBER $BOOKIE_CONF $@
 elif [ $COMMAND == "upgrade" ]; then
   exec $JAVA $OPTS org.apache.bookkeeper.bookie.FileSystemUpgrade --conf $BOOKIE_CONF $@
 elif [ $COMMAND == "shell" ]; then
