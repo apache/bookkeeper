@@ -165,13 +165,6 @@ public class LedgerHandleAdv extends LedgerHandle {
      */
     @Override
     protected void doAsyncAddEntry(final PendingAddOp op, final ByteBuf data, final AddCallback cb, final Object ctx) {
-        if (op.entryId == LedgerHandle.INVALID_ENTRY_ID) {
-            // if entryId has not been set we need to fallback to normal LedgerHandle doAsyncAddEntry
-            // and assign a new entryId
-            super.doAsyncAddEntry(op, data, cb, ctx);
-            return;
-        }
-
         if (throttler != null) {
             throttler.acquire();
         }
@@ -230,6 +223,23 @@ public class LedgerHandleAdv extends LedgerHandle {
             cb.addComplete(bk.getReturnRc(BKException.Code.InterruptedException),
                     LedgerHandleAdv.this, op.getEntryId(), ctx);
         }
+    }
+
+    /**
+     * LedgerHandleAdv will not allow addEntry without providing an entryId
+     */
+    @Override
+    public void asyncAddEntry(ByteBuf data, AddCallback cb, Object ctx) {
+        cb.addComplete(BKException.Code.IllegalOpException, this, LedgerHandle.INVALID_ENTRY_ID, ctx);
+    }
+
+    /**
+     * LedgerHandleAdv will not allow addEntry without providing an entryId
+     */
+    @Override
+    public void asyncAddEntry(final byte[] data, final int offset, final int length,
+                              final AddCallback cb, final Object ctx) {
+        cb.addComplete(BKException.Code.IllegalOpException, this, LedgerHandle.INVALID_ENTRY_ID, ctx);
     }
 
 }
