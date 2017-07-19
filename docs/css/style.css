@@ -7207,14 +7207,8 @@ label.panel-block {
   background-color: whitesmoke;
   padding: 3rem 1.5rem 6rem; }
 
-footer.footer {
-  z-index: 999; }
-
 img.logo {
   height: 3rem; }
-
-img.navbar-logo {
-  margin-right: 0.25rem; }
 
 blockquote code {
   background-color: white; }
@@ -7250,6 +7244,10 @@ span.pop {
   .body .main {
     flex: 1; }
 
+footer.footer {
+  z-index: 10;
+  height: 20rem; }
+
 .popover-template {
   display: none; }
 
@@ -7272,6 +7270,13 @@ span.pop {
 body {
   font-size: 1.25em; }
 
+h1.bk-title {
+  font-size: 3.5rem; }
+
+h2.bk-subtitle {
+  font-size: 2rem;
+  margin-bottom: 1rem; }
+
 .bk-docs-container {
   width: 95%;
   margin-top: 3rem;
@@ -7285,18 +7290,21 @@ body {
     .bk-docs-container .bk-docs-block .docs-title .title + .subtitle {
       padding-top: 0.75rem;
       font-size: 1.2rem; }
-  .bk-docs-container .bk-docs-content ul, .bk-docs-container .bk-docs-content li {
-    margin-left: 0.75rem;
-    list-style-type: square; }
-  .bk-docs-container .bk-docs-content + .pagination {
-    margin-top: 2rem; }
+  .bk-docs-container .bk-docs-content {
+    min-height: 100vh; }
+    .bk-docs-container .bk-docs-content ul, .bk-docs-container .bk-docs-content li, .bk-docs-container .bk-docs-content ol {
+      margin-left: 0.75rem; }
+    .bk-docs-container .bk-docs-content ul li {
+      list-style-type: square; }
+    .bk-docs-container .bk-docs-content + .pagination {
+      margin-top: 2rem; }
 
 aside.sidebar {
   position: fixed;
   overflow-y: scroll;
-  top: 8rem;
   bottom: 0;
-  padding: 0 0 5rem 0; }
+  top: 8rem;
+  padding: 0 0 22rem 0; }
   aside.sidebar p + ul.sidebar-items {
     margin-top: 0.8rem; }
   aside.sidebar ul.sidebar-items {

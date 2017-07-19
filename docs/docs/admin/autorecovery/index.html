@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Apache BookKeeper - Setting up AutoRecovery</title>
+    <title>Apache BookKeeper - AutoRecovery</title>
 
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -16,9 +16,9 @@
 <script src="/bookkeeper/js/tippy.min.js"></script>
 
 <script type="text/javascript">
-  var shiftWindow = function() { scrollBy(0, -100); };
+  var shiftWindow = function() { scrollBy(0, -40); };
   window.addEventListener("hashchange", shiftWindow);
-  //window.addEventListener("pageshow", shiftWindow);
+  window.addEventListener("pageshow", shiftWindow);
   function load() { if (window.location.hash) shiftWindow(); }
 </script>
 
@@ -26,50 +26,64 @@
   <body class="body">
     <main class="main">
       
-<nav class="navbar">
-  <div class="navbar-brand">
-    <a class="navbar-item">
-      <img class="navbar-logo" src="/bookkeeper/img/bk-logo.png"> Apache BookKeeper
-    </a>
+<div class="bk-topnav container">
+  <nav class="navbar is-transparent">
+    <div class="navbar-brand">
+      <a class="navbar-item">
+        <img class="navbar-logo" src="/bookkeeper/img/bk-logo.png"> Apache BookKeeper
+      </a>
 
-    <div class="navbar-burger">
-      <span></span>
-      <span></span>
-      <span></span>
-    </div>
-  </div>
-  <div id="navMenu" class="navbar-menu">
-    <div class="navbar-start">
-      <div class="navbar-item has-dropdown">
-        <a class="navbar-link">
-          Versions
-        </a>
+      <div class="navbar-burger">
+        <span></span>
+        <span></span>
+        <span></span>
       </div>
     </div>
-    <div class="navbar-end">
-      <div class="navbar-item">
-        <div class="field is-grouped">
-          <p class="control">
-            <a class="button" href="https://twitter.com/asfbookkeeper">
-              <span class="icon">
-                <i class="fa fa-twitter"></i>
-              </span>
-              <span>Tweet</span>
-            </a>
-          </p>
-          <p class="control">
-            <a class="button is-primary" href="/bookkeeper/docs/getting-started/installation">
-              <span class="icon">
-                <i class="fa fa-download"></i>
-              </span>
-              <span>Download</span>
-            </a>
-          </p>
+    <div id="navMenu" class="navbar-menu">
+      <div class="navbar-start">
+        <!--
+        <div class="navbar-item has-dropdown">
+          <a class="navbar-link">
+            Versions
+          </a>
+        </div>
+        -->
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="/docs">
+            Documentation
+          </a>
+          <div class="navbar-dropdown is-block">
+            <a class="navbar-item" href="/docs/getting-started/installation">Install</a>
+            <a class="navbar-item" href="/docs/deployment/kubernetes">Deploy on Kubernetes</a>
+            <a class="navbar-item" href="/docs/deployment/dcos">Deploy on DC/OS</a>
+          </div>
+        </div>
+      </div>
+      <div class="navbar-end">
+        <div class="navbar-item">
+          <div class="field is-grouped">
+            <p class="control">
+              <a class="button" href="https://twitter.com/asfbookkeeper">
+                <span class="icon">
+                  <i class="fa fa-twitter"></i>
+                </span>
+                <span>Tweet</span>
+              </a>
+            </p>
+            <p class="control">
+              <a class="button is-primary" href="/bookkeeper/docs/getting-started/installation">
+                <span class="icon">
+                  <i class="fa fa-download"></i>
+                </span>
+                <span>Download</span>
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</nav>
+  </nav>
+</div>
 
       <div class="container bk-docs-container">
   <div class="columns">
@@ -147,7 +161,7 @@
     
     <li>
       <a href="/bookkeeper/docs/admin/autorecovery">
-      Setting up AutoRecovery
+      AutoRecovery
       </a>
     </li>
     
@@ -259,195 +273,6 @@
   </ul>
   
 </aside>
-
-<!--
-<aside class="menu">
-  
-  <p class="menu-label">
-    Getting started
-  </p>
-  <ul class="menu-list">
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/getting-started/installation">
-      Installation
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/getting-started/run-locally">
-      Run bookies locally
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/getting-started/concepts">
-      Concepts and architecture
-      </a>
-    </li>
-    
-  </ul>
-  
-  <p class="menu-label">
-    Deployment
-  </p>
-  <ul class="menu-list">
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/deployment/manual">
-      Manual deployment
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/deployment/dcos">
-      BookKeeper on DC/OS
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/deployment/kubernetes">
-      BookKeeper on Kubernetes
-      </a>
-    </li>
-    
-  </ul>
-  
-  <p class="menu-label">
-    Administration
-  </p>
-  <ul class="menu-list">
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/admin/bookies">
-      BookKeeper administration
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/admin/autorecovery">
-      Setting up AutoRecovery
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/admin/metrics">
-      Metric collection
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/admin/geo-replication">
-      Geo-replication
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/admin/placement">
-      Customized placement policies
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/admin/perf">
-      Performance tuning
-      </a>
-    </li>
-    
-  </ul>
-  
-  <p class="menu-label">
-    API
-  </p>
-  <ul class="menu-list">
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/api/overview">
-      Overview
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/api/ledger-api">
-      Ledger API
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/api/distributedlog-api">
-      DistributedLog
-      </a>
-    </li>
-    
-  </ul>
-  
-  <p class="menu-label">
-    Development
-  </p>
-  <ul class="menu-list">
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/development/protocol">
-      BookKeeper protocol
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/development/codebase">
-      Codebase
-      </a>
-    </li>
-    
-  </ul>
-  
-  <p class="menu-label">
-    Reference
-  </p>
-  <ul class="menu-list">
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/reference/config">
-      Configuration
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/reference/cli">
-      Command-line tools
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/reference/metrics">
-      Metrics
-      </a>
-    </li>
-    
-  </ul>
-  
-</aside>
--->
-
     </div>
 
     <div class="column is-8 bk-docs-block">
@@ -455,7 +280,7 @@
         <nav class="level">
           <div class="level-left">
             <div class="level-item">
-              <h1 class="title">Setting up AutoRecovery</h1>
+              <h1 class="title">AutoRecovery</h1>
             </div>
           </div>
           
@@ -468,7 +293,61 @@
 
       <div class="content is-medium">
         <section class="bk-docs-content">
-          
+          <p>When a <span class="pop" id="bookie-popover">bookie</span> crashes, all <span class="pop" id="ledger-popover">ledgers</span> on that bookie become under-replicated. In order to bring all ledgers in your BookKeeper cluster back to full replication, you’ll need to <em>recover</em> the data from any offline bookies. There are two ways to recover bookies’ data:</p>
+
+<ol>
+  <li>Automatically, using <a href="#autorecovery"><em>AutoRecovery</em></a></li>
+  <li>Using <a href="#manual-recovery">manual recovery</a></li>
+</ol>
+
+<h2 id="autorecovery">AutoRecovery</h2>
+
+<p>AutoRecovery is a process that:</p>
+
+<ul>
+  <li>detects when a <span class="pop" id="bookie-popover">bookie</span> in your BookKeeper cluster has become unavailable, and</li>
+  <li>rereplicates all the <span class="pop" id="ledger-popover">ledgers</span> that were stored on that bookie.</li>
+</ul>
+
+<p>AutoRecovery can be run in two ways:</p>
+
+<ol>
+  <li>On dedicated nodes in your BookKeeper cluster</li>
+  <li></li>
+</ol>
+
+<h2 id="running-autorecovery-nodes">Running AutoRecovery nodes</h2>
+
+<h2 id="disable-autorecovery">Disable AutoRecovery</h2>
+
+<p>You can disable AutoRecovery at any time, for example during maintenance. Disabling AutoRecovery ensures that bookies’ data isn’t unnecessarily rereplicated when the bookie is only taken down for a short period of time, for example when the bookie is being updated or the configuration if being changed.</p>
+
+<p>You can disable AutoRecover using the <a href="../../reference/cli#bookkeeper-shell-autorecovery"><code class="highlighter-rouge">bookkeeper</code></a> CLI tool:</p>
+
+<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell autorecovery -disable
+</code></pre>
+</div>
+
+<p>Once disabled, you can reenable AutoRecovery using the <a href="../../reference/cli#bookkeeper-shell-autorecovery"><code class="highlighter-rouge">enable</code></a> shell command:</p>
+
+<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell autorecovery -enable
+</code></pre>
+</div>
+
+<h2 id="configuration">Configuration</h2>
+
+<p>There are a handful of AutoRecovery-related configs in the <a href="../../reference/config"><code class="highlighter-rouge">bk_server.conf</code></a> configuration file. For a listing of those configs, see <a href="../../reference/config#autorecovery-settings">AutoRecovery settings</a>.</p>
+
+<h2 id="autorecovery-architecture">AutoRecovery architecture</h2>
+
+<p>AutoRecovery has two components:</p>
+
+<ol>
+  <li>The <a href="/bookkeeper/docs/javadoc/org/apache/bookkeeper/replication/Auditor.html"><code class="highlighter-rouge">Auditor</code></a> is a singleton node that watches bookies to see if they fail and creates rereplication tasks for the ledgers on failed bookies.</li>
+  <li>The <strong>ReplicationWorker</strong> runs on each bookie and executes rereplication tasks provided by the auditor.</li>
+</ol>
+
+<p>Both of these components run as threads in the <a href=""><code class="highlighter-rouge">AutoRecoveryMain</code></a> process</p>
 
         </section>
 
@@ -479,8 +358,13 @@
     <div class="column is-2">
       
       <div class="toc">
-  <h2 class="title">Setting up AutoRecovery</h2>
+  <h2 class="title">AutoRecovery</h2>
   <ul class="section-nav">
+<li class="toc-entry toc-h2"><a href="#autorecovery">AutoRecovery</a></li>
+<li class="toc-entry toc-h2"><a href="#running-autorecovery-nodes">Running AutoRecovery nodes</a></li>
+<li class="toc-entry toc-h2"><a href="#disable-autorecovery">Disable AutoRecovery</a></li>
+<li class="toc-entry toc-h2"><a href="#configuration">Configuration</a></li>
+<li class="toc-entry toc-h2"><a href="#autorecovery-architecture">AutoRecovery architecture</a></li>
 </ul>
 </div>
 

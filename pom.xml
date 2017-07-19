@@ -86,7 +86,7 @@
         <configuration>
           <!-- Prevent missing javadoc comments from being marked as errors -->
           <additionalparam>-Xdoclint:none</additionalparam>
-          <subpackages>org.apache.bookkeeper.bookie:org.apache.bookkeeper.client:org.apache.bookkeeper.conf:org.apache.bookkeeper.meta</subpackages>
+          <subpackages>org.apache.bookkeeper.bookie:org.apache.bookkeeper.client:org.apache.bookkeeper.conf:org.apache.bookkeeper.meta:org.apache.bookkeeper.replication</subpackages>
           <groups>
             <group>
               <title>Bookkeeper</title>

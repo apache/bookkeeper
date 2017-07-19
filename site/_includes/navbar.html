@@ -1,5 +1,5 @@
 {% capture docs_url %}{{ site.baseurl }}docs/{% endcapture %}
-<section class="bk-topnav">
+<div class="bk-topnav container">
   <nav class="navbar is-transparent">
     <div class="navbar-brand">
       <a class="navbar-item">
@@ -25,7 +25,7 @@
           <a class="navbar-link" href="/docs">
             Documentation
           </a>
-          <div class="navbar-dropdown">
+          <div class="navbar-dropdown is-block">
             <a class="navbar-item" href="/docs/getting-started/installation">Install</a>
             <a class="navbar-item" href="/docs/deployment/kubernetes">Deploy on Kubernetes</a>
             <a class="navbar-item" href="/docs/deployment/dcos">Deploy on DC/OS</a>
@@ -56,4 +56,4 @@
       </div>
     </div>
   </nav>
-</section>
+</div>

@@ -17,7 +17,7 @@ build: clean
 	${JEKYLL} build \
 		--config _config.yml
 
-javadoc:
+javadoc-gen:
 	scripts/javadoc-gen.sh
 
 serve: build
@@ -25,4 +25,4 @@ serve: build
 		--incremental \
 		--config _config.local.yml
 
-publish: javadoc build
+publish: javadoc-gen build
