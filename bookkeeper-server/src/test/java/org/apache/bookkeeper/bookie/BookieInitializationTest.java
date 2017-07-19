@@ -47,7 +47,6 @@ import org.apache.bookkeeper.test.PortManager;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 import org.junit.Assert;
 import org.junit.Test;
@@ -61,18 +60,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
     private static final Logger LOG = LoggerFactory
             .getLogger(BookieInitializationTest.class);
 
-    ZooKeeper newzk = null;
-
     public BookieInitializationTest() {
         super(0);
-    }
-
-    @Override
-    public void tearDown() throws Exception {
-        if (null != newzk) {
-            newzk.close();
-        }
-        super.tearDown();
     }
 
     private static class MockBookie extends Bookie {
@@ -166,14 +155,13 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
         // simulating bookie restart, on restart bookie will create new
         // zkclient and doing the registration.
-        createNewZKClient();
-        b.zk = newzk;
+        ZooKeeperClient newZk = createNewZKClient();
+        b.zk = newZk;
 
-        // deleting the znode, so that the bookie registration should
-        // continue successfully on NodeDeleted event
-        new Thread() {
-            @Override
-            public void run() {
+        try {
+            // deleting the znode, so that the bookie registration should
+            // continue successfully on NodeDeleted event
+            new Thread(() -> {
                 try {
                     Thread.sleep(conf.getZkTimeout() / 3);
                     zkc.delete(bkRegPath, -1);
@@ -181,27 +169,29 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                     // Not handling, since the testRegisterBookie will fail
                     LOG.error("Failed to delete the znode :" + bkRegPath, e);
                 }
-            }
-        }.start();
-        try {
-            b.testRegisterBookie(conf);
-        } catch (IOException e) {
-            Throwable t = e.getCause();
-            if (t instanceof KeeperException) {
-                KeeperException ke = (KeeperException) t;
-                Assert.assertTrue("ErrorCode:" + ke.code()
-                        + ", Registration node exists",
+            }).start();
+            try {
+                b.testRegisterBookie(conf);
+            } catch (IOException e) {
+                Throwable t = e.getCause();
+                if (t instanceof KeeperException) {
+                    KeeperException ke = (KeeperException) t;
+                    Assert.assertTrue("ErrorCode:" + ke.code()
+                            + ", Registration node exists",
                         ke.code() != KeeperException.Code.NODEEXISTS);
+                }
+                throw e;
             }
-            throw e;
-        }
 
-        // verify ephemeral owner of the bkReg znode
-        Stat bkRegNode2 = newzk.exists(bkRegPath, false);
-        Assert.assertNotNull("Bookie registration has been failed", bkRegNode2);
-        Assert.assertTrue("Bookie is referring to old registration znode:"
+            // verify ephemeral owner of the bkReg znode
+            Stat bkRegNode2 = newZk.exists(bkRegPath, false);
+            Assert.assertNotNull("Bookie registration has been failed", bkRegNode2);
+            Assert.assertTrue("Bookie is referring to old registration znode:"
                 + bkRegNode1 + ", New ZNode:" + bkRegNode2, bkRegNode1
                 .getEphemeralOwner() != bkRegNode2.getEphemeralOwner());
+        } finally {
+            newZk.close();
+        }
     }
 
     /**
@@ -230,7 +220,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
         // simulating bookie restart, on restart bookie will create new
         // zkclient and doing the registration.
-        createNewZKClient();
+        ZooKeeperClient newzk = createNewZKClient();
         b.zk = newzk;
         try {
             b.testRegisterBookie(conf);
@@ -255,6 +245,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                 return;
             }
             throw e;
+        } finally {
+            newzk.close();
         }
     }
 
@@ -633,10 +625,10 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         }
     }
     
-    private void createNewZKClient() throws Exception {
+    private ZooKeeperClient createNewZKClient() throws Exception {
         // create a zookeeper client
         LOG.debug("Instantiate ZK Client");
-        newzk = ZooKeeperClient.newBuilder()
+        return ZooKeeperClient.newBuilder()
                 .connectString(zkUtil.getZooKeeperConnectString())
                 .build();
     }
