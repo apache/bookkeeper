@@ -27,6 +27,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_ADD_ENTR
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_READ_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_READ_ENTRY_BYTES;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_RECOVERY_ADD_ENTRY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_INDEX_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_LEDGER_SCOPE;
@@ -165,6 +166,7 @@ public class Bookie extends BookieCriticalThread {
             new ThreadFactoryBuilder().setNameFormat("BookieStateService-%d").build());
 
     // Expose Stats
+    private final StatsLogger statsLogger;
     private final Counter writeBytes;
     private final Counter readBytes;
     // Bookie Operation Latency Stats
@@ -649,6 +651,7 @@ public class Bookie extends BookieCriticalThread {
     public Bookie(ServerConfiguration conf, StatsLogger statsLogger)
             throws IOException, KeeperException, InterruptedException, BookieException {
         super("Bookie-" + conf.getBookiePort());
+        this.statsLogger = statsLogger;
         this.zkAcls = ZkUtils.getACLs(conf);
         this.bookieRegistrationPath = conf.getZkAvailableBookiesPath() + "/";
         this.bookieReadonlyRegistrationPath =
@@ -1205,6 +1208,8 @@ public class Bookie extends BookieCriticalThread {
                 .watchers(watchers)
                 .operationRetryPolicy(new BoundExponentialBackoffRetryPolicy(conf.getZkRetryBackoffStartMs(),
                         conf.getZkRetryBackoffMaxMs(), Integer.MAX_VALUE))
+                .requestRateLimit(conf.getZkRequestRateLimit())
+                .statsLogger(this.statsLogger.scope(BOOKIE_SCOPE))
                 .build();
     }
 
