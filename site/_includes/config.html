@@ -14,7 +14,7 @@
   </thead>
   <tbody>
     {% for param in group.params %}
-    <tr id="{{ config.param }}">
+    <tr id="{{ param.param }}">
       <td><code>{{ param.param }}</code></td>
       <td>{{ param.description | markdownify }}</td>
       <td>{% if param.default %}<code>{{ param.default }}</code>{% endif %}</td>
