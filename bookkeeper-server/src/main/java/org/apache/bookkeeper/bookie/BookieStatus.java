@@ -19,6 +19,9 @@
 
 package org.apache.bookkeeper.bookie;
 
+import static com.google.common.base.Charsets.UTF_8;
+import static org.apache.bookkeeper.util.BookKeeperConstants.BOOKIE_STATUS_FILENAME;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -28,14 +31,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.google.common.base.Charsets.UTF_8;
-
-import static org.apache.bookkeeper.util.BookKeeperConstants.BOOKIE_STATUS_FILENAME;
-
+/**
+ * The status object represents the current status of a bookie instance.
+ */
 public class BookieStatus {
     static Logger LOG = LoggerFactory.getLogger(BookieStatus.class);
     static final int CURRENT_STATUS_LAYOUT_VERSION = 1;
@@ -56,6 +57,10 @@ public class BookieStatus {
         this.bookieMode = BookieMode.READ_WRITE;
         this.layoutVersion = CURRENT_STATUS_LAYOUT_VERSION;
         this.lastUpdateTime = INVALID_UPDATE_TIME;
+    }
+
+    private synchronized BookieMode getBookieMode() {
+        return bookieMode;
     }
 
     public synchronized boolean isInWritable() {
@@ -139,17 +144,21 @@ public class BookieStatus {
      * @param directories list of directories that store the status file
      * @return true if successfully read from file, otherwise false.
      */
-    synchronized boolean readFromDirectories(List<File> directories) {
+    boolean readFromDirectories(List<File> directories) {
         boolean success = false;
         for (File dir : directories) {
             File statusFile = new File(dir, BOOKIE_STATUS_FILENAME);
             try {
                 BookieStatus status = readFromFile(statusFile);
-                if (status != null && status.lastUpdateTime > this.lastUpdateTime) {
-                    this.lastUpdateTime = status.lastUpdateTime;
-                    this.layoutVersion = status.layoutVersion;
-                    this.bookieMode = status.bookieMode;
-                    success = true;
+                if (null != status) {
+                    synchronized (status) {
+                        if (status.lastUpdateTime > this.lastUpdateTime) {
+                            this.lastUpdateTime = status.lastUpdateTime;
+                            this.layoutVersion = status.layoutVersion;
+                            this.bookieMode = status.bookieMode;
+                            success = true;
+                        }
+                    }
                 }
             } catch (IOException e) {
                 LOG.warn("IOException while trying to read bookie status from directory {}." +
@@ -160,10 +169,10 @@ public class BookieStatus {
             }
         }
         if (success) {
-            LOG.info("Successfully retrieve bookie status {} from disks.", this.bookieMode);
+            LOG.info("Successfully retrieve bookie status {} from disks.", getBookieMode());
         } else {
             LOG.warn("Failed to retrieve bookie status from disks." +
-                    " Fall back to current or default bookie status: {}", this.bookieMode);
+                    " Fall back to current or default bookie status: {}", getBookieMode());
         }
         return success;
     }
@@ -176,7 +185,7 @@ public class BookieStatus {
      * @return BookieStatus if not error, null if file not exist or any exception happens
      * @throws IOException
      */
-    private synchronized BookieStatus readFromFile(File file)
+    private BookieStatus readFromFile(File file)
             throws IOException, IllegalArgumentException {
         if (!file.exists()) {
             return null;
@@ -197,7 +206,7 @@ public class BookieStatus {
      * @return BookieStatus if parse succeed, otherwise return null
      * @throws IOException
      */
-    public synchronized BookieStatus parse(BufferedReader reader)
+    public BookieStatus parse(BufferedReader reader)
             throws IOException, IllegalArgumentException {
         BookieStatus status = new BookieStatus();
         String line = reader.readLine();
@@ -210,23 +219,24 @@ public class BookieStatus {
             LOG.debug("Error in parsing bookie status: {}", line);
             return null;
         }
-        status.layoutVersion = Integer.parseInt(parts[0].trim());
-        if (status.layoutVersion == 1 && parts.length == 3) {
-            status.bookieMode = BookieMode.valueOf(parts[1]);
-            status.lastUpdateTime = Long.parseLong(parts[2].trim());
-            return status;
+        synchronized (status) {
+            status.layoutVersion = Integer.parseInt(parts[0].trim());
+            if (status.layoutVersion == 1 && parts.length == 3) {
+                status.bookieMode = BookieMode.valueOf(parts[1]);
+                status.lastUpdateTime = Long.parseLong(parts[2].trim());
+                return status;
+            }
         }
         return null;
 
     }
 
-
     @Override
-    public synchronized String toString() {
+    public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append(CURRENT_STATUS_LAYOUT_VERSION);
         builder.append(",");
-        builder.append(bookieMode);
+        builder.append(getBookieMode());
         builder.append(",");
         builder.append(System.currentTimeMillis());
         builder.append("\n");
