@@ -58,7 +58,7 @@ public class BookieStatus {
         this.lastUpdateTime = INVALID_UPDATE_TIME;
     }
 
-    public boolean isInWritable() {
+    public synchronized boolean isInWritable() {
         return bookieMode.equals(BookieMode.READ_WRITE);
     }
 
@@ -71,7 +71,7 @@ public class BookieStatus {
         return false;
     }
 
-    boolean isInReadOnlyMode() {
+    synchronized boolean isInReadOnlyMode() {
         return bookieMode.equals(BookieMode.READ_ONLY);
     }
 
@@ -176,7 +176,8 @@ public class BookieStatus {
      * @return BookieStatus if not error, null if file not exist or any exception happens
      * @throws IOException
      */
-    private BookieStatus readFromFile(File file) throws IOException, IllegalArgumentException {
+    private synchronized BookieStatus readFromFile(File file)
+            throws IOException, IllegalArgumentException {
         if (!file.exists()) {
             return null;
         }
@@ -196,7 +197,8 @@ public class BookieStatus {
      * @return BookieStatus if parse succeed, otherwise return null
      * @throws IOException
      */
-    public BookieStatus parse(BufferedReader reader) throws IOException, IllegalArgumentException {
+    public synchronized BookieStatus parse(BufferedReader reader)
+            throws IOException, IllegalArgumentException {
         BookieStatus status = new BookieStatus();
         String line = reader.readLine();
         if (line == null || line.trim().isEmpty()) {
@@ -220,7 +222,7 @@ public class BookieStatus {
 
 
     @Override
-    public String toString() {
+    public synchronized String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append(CURRENT_STATUS_LAYOUT_VERSION);
         builder.append(",");
