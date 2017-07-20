@@ -1,4 +1,4 @@
-<img src="https://pbs.twimg.com/profile_images/545716709311520769/piLLa1iC_400x400.png" alt="logo" style="width: 128px;"/>
+<img src="https://pbs.twimg.com/profile_images/545716709311520769/piLLa1iC_400x400.png" alt="logo" style="width: 32px;"/>
 
 [![Build Status](https://travis-ci.org/apache/bookkeeper.svg?branch=master)](https://travis-ci.org/apache/bookkeeper)
 [![Build Status](https://builds.apache.org/buildStatus/icon?job=bookkeeper-master)](https://builds.apache.org/job/bookkeeper-master/)
