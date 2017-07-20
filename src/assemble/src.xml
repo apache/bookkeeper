@@ -27,7 +27,7 @@
       <directory>.</directory>
       <useDefaultExcludes>true</useDefaultExcludes>
       <includes>
-        <include>**/README</include>
+        <include>**/README.md</include>
         <include>**/LICENSE</include>
         <include>**/NOTICE</include>
         <include>**/pom.xml</include>
