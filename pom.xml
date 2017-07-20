@@ -149,7 +149,7 @@
             <exclude>**/target/**/*</exclude>
             <exclude>**/.svn/**/*</exclude>
             <exclude>CHANGES.txt</exclude>
-            <exclude>**/README</exclude>
+            <exclude>**/README.md</exclude>
             <exclude>**/apidocs/*</exclude>
             <exclude>test-patch/**/*</exclude>
             <exclude>**/.classpath</exclude>
