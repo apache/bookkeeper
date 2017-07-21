@@ -998,6 +998,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
             running = false;
             this.interrupt();
             this.join();
+            LOG.info("Finished Shutting down Journal thread");
         } catch (InterruptedException ie) {
             LOG.warn("Interrupted during shutting down journal : ", ie);
         }
