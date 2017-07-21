@@ -651,4 +651,50 @@ public class BookKeeperTest extends BaseTestCase {
 
         }
     }
+
+    @Test(timeout = 60000)
+    public void testReadWriteWithV2WireProtocol() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration()
+                .setZkServers(zkUtil.getZooKeeperConnectString())
+                .setUseV2WireProtocol(true);
+        int numEntries = 100;
+        byte[] data = "foobar".getBytes();
+        try (BookKeeper bkc = new BookKeeper(conf)) {
+
+            // basic read/write
+            {
+                long ledgerId;
+                try (LedgerHandle lh = bkc.createLedger(digestType, "testPasswd".getBytes())) {
+                    ledgerId = lh.getId();
+                    for (int i = 0; i < numEntries; i++) {
+                        lh.addEntry(data);
+                    }
+                }
+                try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                    assertEquals(numEntries - 1, lh.readLastConfirmed());
+                    for (Enumeration<LedgerEntry> readEntries = lh.readEntries(0, numEntries - 1);
+                        readEntries.hasMoreElements();) {
+                        LedgerEntry entry = readEntries.nextElement();
+                        assertArrayEquals(data, entry.getEntry());
+                    }
+                }
+            }
+
+            // basic fencing
+            {
+                long ledgerId;
+                try (LedgerHandle lh2 = bkc.createLedger(digestType, "testPasswd".getBytes())) {
+                    ledgerId = lh2.getId();
+                    lh2.addEntry(data);
+                    try (LedgerHandle lh2_fence = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                    }
+                    try {
+                        lh2.addEntry(data);
+                        fail("ledger should be fenced");
+                    } catch (BKException.BKLedgerFencedException ex){
+                    }
+                }
+            }
+        }
+    }
 }
