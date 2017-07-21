@@ -7292,6 +7292,8 @@ h2.bk-subtitle {
       font-size: 1.2rem; }
   .bk-docs-container .bk-docs-content {
     min-height: 100vh; }
+    .bk-docs-container .bk-docs-content ol ol, .bk-docs-container .bk-docs-content ol ul {
+      margin: 0.5rem 0 0.5rem 0.75rem; }
     .bk-docs-container .bk-docs-content ul, .bk-docs-container .bk-docs-content li, .bk-docs-container .bk-docs-content ol {
       margin-left: 0.75rem; }
     .bk-docs-container .bk-docs-content ul li {
