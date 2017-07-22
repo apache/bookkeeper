@@ -1470,7 +1470,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Whether to persist the bookie status so that when bookie server restart,
+     * Whether to persist the bookie status so that when bookie server restarts,
      * it will continue using the previous status
      *
      * @param enabled
@@ -1483,7 +1483,8 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get whether the Bookie is force started in read only mode or not
+     * Get whether to persist the bookie status so that when bookie server restarts,
+     * it will continue using the previous status.
      *
      * @return true - if need to start a bookie in read only mode. Otherwise false.
      */

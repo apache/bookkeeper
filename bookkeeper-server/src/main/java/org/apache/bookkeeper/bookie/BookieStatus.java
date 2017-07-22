@@ -38,7 +38,9 @@ import org.slf4j.LoggerFactory;
  * The status object represents the current status of a bookie instance.
  */
 public class BookieStatus {
-    static Logger LOG = LoggerFactory.getLogger(BookieStatus.class);
+
+    private static final Logger LOG = LoggerFactory.getLogger(BookieStatus.class);
+
     static final int CURRENT_STATUS_LAYOUT_VERSION = 1;
 
     enum BookieMode {
@@ -93,10 +95,9 @@ public class BookieStatus {
      * Write bookie status to multiple directories in best effort
      *
      * @param directories list of directories to write to
-     * @return true if any write succeed, false if all failed
      *
      */
-    synchronized boolean writeToDirectories(List<File> directories) {
+    synchronized void writeToDirectories(List<File> directories) {
         boolean success = false;
         for (File dir : directories) {
             try {
@@ -113,7 +114,6 @@ public class BookieStatus {
         } else {
             LOG.warn("Failed to persist bookie status {}", this.bookieMode);
         }
-        return success;
     }
 
     /**
@@ -123,7 +123,7 @@ public class BookieStatus {
      * @param body content to write
      * @throws IOException
      */
-    private void writeToFile(File file, String body) throws IOException {
+    private static void writeToFile(File file, String body) throws IOException {
         FileOutputStream fos = new FileOutputStream(file);
         BufferedWriter bw = null;
         try {
@@ -142,9 +142,8 @@ public class BookieStatus {
      * If a status file is not readable or not found, it will skip and try to read from the next file.
      *
      * @param directories list of directories that store the status file
-     * @return true if successfully read from file, otherwise false.
      */
-    boolean readFromDirectories(List<File> directories) {
+    void readFromDirectories(List<File> directories) {
         boolean success = false;
         for (File dir : directories) {
             File statusFile = new File(dir, BOOKIE_STATUS_FILENAME);
@@ -174,7 +173,6 @@ public class BookieStatus {
             LOG.warn("Failed to retrieve bookie status from disks." +
                     " Fall back to current or default bookie status: {}", getBookieMode());
         }
-        return success;
     }
 
 
@@ -190,12 +188,10 @@ public class BookieStatus {
         if (!file.exists()) {
             return null;
         }
-        BufferedReader reader = new BufferedReader(
-            new InputStreamReader(new FileInputStream(file), UTF_8));
-        try {
+        
+        try (BufferedReader reader = new BufferedReader(
+            new InputStreamReader(new FileInputStream(file), UTF_8))) {
             return parse(reader);
-        } finally {
-            reader.close();
         }
     }
 

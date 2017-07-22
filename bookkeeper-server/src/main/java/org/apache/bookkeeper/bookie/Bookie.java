@@ -151,7 +151,7 @@ public class Bookie extends BookieCriticalThread {
     // Flag identify whether it is in shutting down progress
     private volatile boolean shuttingdown = false;
     // Bookie status
-    private BookieStatus bookieStatus = new BookieStatus();
+    private final BookieStatus bookieStatus = new BookieStatus();
 
     private int exitCode = ExitCode.OK;
 
@@ -751,9 +751,9 @@ public class Bookie extends BookieCriticalThread {
 
             @Override
             public Number getSample() {
-                if(!zkRegistered.get()){
+                if (!zkRegistered.get()){
                     return -1;
-                } else if(forceReadOnly.get() || bookieStatus.isInReadOnlyMode()){
+                } else if (forceReadOnly.get() || bookieStatus.isInReadOnlyMode()) {
                     return 0;
                 } else {
                     return 1;

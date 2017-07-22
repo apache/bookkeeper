@@ -282,8 +282,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             bs2.start();
             fail("Should throw BindException, as the bk server is already running!");
         } catch (BindException e) {
-            Assert.assertTrue("BKServer allowed duplicate startups!",
-                    e.getMessage().contains("Address already in use"));
+            // Ok
         } catch (IOException e) {
             Assert.assertTrue("BKServer allowed duplicate Startups!",
                     e.getMessage().contains("bind"));
@@ -750,8 +749,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         assertTrue(bookie.isReadOnly());
         // corrupt status file
         List<File> ledgerDirs = bookie.getLedgerDirsManager().getAllLedgerDirs();
-        corrupteFile(new File(ledgerDirs.get(0), BOOKIE_STATUS_FILENAME));
-        corrupteFile(new File(ledgerDirs.get(1), BOOKIE_STATUS_FILENAME));
+        corruptFile(new File(ledgerDirs.get(0), BOOKIE_STATUS_FILENAME));
+        corruptFile(new File(ledgerDirs.get(1), BOOKIE_STATUS_FILENAME));
         // restart the bookie should be in read only mode
         bookieServer.shutdown();
         bookieServer = new BookieServer(conf);
@@ -802,7 +801,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         bookieServer.shutdown();
     }
 
-    private void corrupteFile(File file) throws IOException {
+    private void corruptFile(File file) throws IOException {
         FileOutputStream fos = new FileOutputStream(file);
         BufferedWriter bw = null;
         try {
