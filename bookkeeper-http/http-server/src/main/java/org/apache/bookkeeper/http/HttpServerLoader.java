@@ -18,7 +18,6 @@
  * under the License.
  *
  */
-
 package org.apache.bookkeeper.http;
 
 import java.lang.reflect.Constructor;
@@ -28,12 +27,14 @@ import org.apache.commons.configuration.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Class to load and instantiate http server from config.
+ */
 public class HttpServerLoader {
 
     static final Logger LOG = LoggerFactory.getLogger(HttpServerLoader.class);
 
-    public final static String HTTP_SERVER_CLASS = "httpServerClass";
-
+    public static final String HTTP_SERVER_CLASS = "httpServerClass";
     static HttpServer server = null;
 
     public static void loadHttpServer(Configuration conf) {
@@ -43,10 +44,10 @@ public class HttpServerLoader {
                 Class cls = Class.forName(className);
                 @SuppressWarnings("unchecked")
                 Constructor<? extends HttpServer> cons =
-                    (Constructor<? extends HttpServer>)cls.getDeclaredConstructor();
+                    (Constructor<? extends HttpServer>) cls.getDeclaredConstructor();
                 server = cons.newInstance();
             } catch (ClassNotFoundException cnfe) {
-                LOG.error("Couldn't find configured class(" + className +")", cnfe);
+                LOG.error("Couldn't find configured class(" + className + ")", cnfe);
             } catch (NoSuchMethodException nsme) {
                 LOG.error("Couldn't find default constructor for class (" + className + ")", nsme);
             } catch (InstantiationException ie) {

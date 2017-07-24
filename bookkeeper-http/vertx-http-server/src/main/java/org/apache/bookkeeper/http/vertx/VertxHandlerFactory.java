@@ -38,7 +38,7 @@ public class VertxHandlerFactory extends AbstractHandlerFactory<VertxAbstractHan
         return new VertxAbstractHandler() {
             @Override
             public void handle(RoutingContext context) {
-                processRequest(serviceProvider.provideHeartbeatService(), context);
+                processRequest(getServiceProvider().provideHeartbeatService(), context);
             }
         };
     }
@@ -48,7 +48,7 @@ public class VertxHandlerFactory extends AbstractHandlerFactory<VertxAbstractHan
         return new VertxAbstractHandler() {
             @Override
             public void handle(RoutingContext context) {
-                processRequest(serviceProvider.provideConfigurationService(), context);
+                processRequest(getServiceProvider().provideConfigurationService(), context);
             }
         };
     }

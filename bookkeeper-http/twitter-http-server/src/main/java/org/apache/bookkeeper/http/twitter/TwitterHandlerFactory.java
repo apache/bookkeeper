@@ -40,7 +40,7 @@ public class TwitterHandlerFactory extends AbstractHandlerFactory<TwitterAbstrac
         return new TwitterAbstractHandler() {
             @Override
             public Future<Response> apply(Request request) {
-                return processRequest(serviceProvider.provideHeartbeatService(), request);
+                return processRequest(getServiceProvider().provideHeartbeatService(), request);
             }
         };
     }
@@ -49,7 +49,7 @@ public class TwitterHandlerFactory extends AbstractHandlerFactory<TwitterAbstrac
         return new TwitterAbstractHandler() {
             @Override
             public Future<Response> apply(Request request) {
-                return processRequest(serviceProvider.provideConfigurationService(), request);
+                return processRequest(getServiceProvider().provideConfigurationService(), request);
             }
         };
     }

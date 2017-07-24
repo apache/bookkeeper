@@ -18,23 +18,30 @@
  * under the License.
  *
  */
-
 package org.apache.bookkeeper.http;
 
+/**
+ * Abstract handler factory which provide interface
+ * to create handlers for bookkeeper http endpoints.
+ */
 public abstract class AbstractHandlerFactory<Handler> {
-    protected ServiceProvider serviceProvider;
+    private ServiceProvider serviceProvider;
 
     public AbstractHandlerFactory(ServiceProvider serviceProvider) {
         this.serviceProvider = serviceProvider;
     }
 
+    public ServiceProvider getServiceProvider() {
+        return serviceProvider;
+    }
+
     /**
-     * Create a handler for heartbeat api
+     * Create a handler for heartbeat api.
      */
     public abstract Handler newHeartbeatHandler();
 
     /**
-     * Create a handler for server configuration api
+     * Create a handler for server configuration api.
      */
     public abstract Handler newConfigurationHandler();
 

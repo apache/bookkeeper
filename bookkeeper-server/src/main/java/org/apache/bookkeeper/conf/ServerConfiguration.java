@@ -2044,7 +2044,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * @return true - if http server should start with auto-recovery service
      */
     public boolean isHttpServerEnabled() {
-        return getBoolean(HTTP_SERVER_ENABLED, true);
+        return getBoolean(HTTP_SERVER_ENABLED, false);
     }
 
     /**

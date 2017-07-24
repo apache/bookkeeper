@@ -18,15 +18,22 @@
  * under the License.
  *
  */
-
 package org.apache.bookkeeper.http;
 
+/**
+ * Provide the interface to start, stop bookkeeper http server.
+ * It also provide the interface to inject service provider,
+ * which is the implementation of services for http endpoints.
+ */
 public interface HttpServer {
 
-    static final String HEARTBEAT             = "/heartbeat";
-    static final String SERVER_CONFIG         = "/api/config/serverConfig";
+    String HEARTBEAT             = "/heartbeat";
+    String SERVER_CONFIG         = "/api/config/serverConfig";
 
-    static enum StatusCode {
+    /**
+     * Http Status Code.
+     */
+    enum StatusCode {
         OK(200),
         REDIRECT(302),
         NOT_FOUND(404),
@@ -43,7 +50,10 @@ public interface HttpServer {
         }
     }
 
-    static enum Method {
+    /**
+     * Http Request Method.
+     */
+    enum Method {
         GET,
         POST,
         PUT,
@@ -51,22 +61,22 @@ public interface HttpServer {
     }
 
     /**
-     * Initialize the HTTP server with underline service provider
+     * Initialize the HTTP server with underline service provider.
      */
     void initialize(ServiceProvider serviceProvider);
 
     /**
-     * Start the HTTP server on given port
+     * Start the HTTP server on given port.
      */
     void startServer(int port);
 
     /**
-     * Stop the HTTP server
+     * Stop the HTTP server.
      */
     void stopServer();
 
     /**
-     * Check whether the HTTP is still running
+     * Check whether the HTTP server is still running.
      */
     boolean isRunning();
 }
