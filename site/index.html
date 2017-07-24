@@ -14,18 +14,26 @@ layout: default
           <h2 class="bk-subtitle">
             {{ site.subtitle }}
           </h2>
-          <div class="block">
-            <a class="button is-primary is-large" href="{{ site.baseurl }}docs/getting-started/installation">
-              <span class="icon">
-                <i class="fa fa-download"></i>
-              </span>
-              <span>Get started</span>
-            </a>
-            <a class="button is-large" href="{{ site.baseurl }}docs">
-              <span class="icon"><i class="fa fa-book"></i></span><span>Documentation</span>
-            </a>
-            {% include javadoc-button.html %}
-          </div>
+          <nav class="level is-mobile">
+            <div class="level-left">
+              <div class="level-item">
+                <a class="button is-primary is-large" href="{{ site.baseurl }}docs/getting-started/installation">
+                  <span class="icon">
+                    <i class="fa fa-download"></i>
+                  </span>
+                  <span>Get started</span>
+                </a>
+              </div>
+              <div class="level-item">
+                <a class="button is-large" href="{{ site.baseurl }}docs">
+                  <span class="icon"><i class="fa fa-book"></i></span><span>Documentation</span>
+                </a>
+              </div>
+              <div class="level-item">
+                {% include javadoc-button.html %}
+              </div>
+            </div>
+          </nav>
         </div>
         <div class="column is-6">
           <div class="container">
