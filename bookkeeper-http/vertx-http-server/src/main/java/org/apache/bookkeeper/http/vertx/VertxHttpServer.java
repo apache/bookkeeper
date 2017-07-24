@@ -19,23 +19,21 @@
  *
  */
 
-package org.apache.bookkeeper.http;
+package org.apache.bookkeeper.http.vertx;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 
-import org.apache.bookkeeper.http.handler.AbstractHandlerFactory;
-import org.apache.bookkeeper.http.handler.VertxHandlerFactory;
+import org.apache.bookkeeper.http.HttpServer;
+import org.apache.bookkeeper.http.ServiceProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.Router;
-import io.vertx.ext.web.RoutingContext;
 
 public class VertxHttpServer implements HttpServer {
 
@@ -43,27 +41,24 @@ public class VertxHttpServer implements HttpServer {
 
     private Vertx vertx;
     private boolean isRunning;
-    private ServerOptions serverOptions;
+    private ServiceProvider serviceProvider;
 
     public VertxHttpServer() {
-        this.serverOptions = new ServerOptions();
         this.vertx = Vertx.vertx();
     }
 
     @Override
-    public void initialize(ServerOptions serverOptions) {
-        this.serverOptions = serverOptions;
+    public void initialize(ServiceProvider serviceProvider) {
+        this.serviceProvider = serviceProvider;
     }
 
     @Override
-    public void startServer() {
-        int port = serverOptions.getPort();
+    public void startServer(int port) {
         CompletableFuture<AsyncResult> future = new CompletableFuture<>();
-        AbstractHandlerFactory<Handler<RoutingContext>> handlerFactory = new VertxHandlerFactory(serverOptions);
+        VertxHandlerFactory handlerFactory = new VertxHandlerFactory(serviceProvider);
         Router router = Router.router(vertx);
         router.get(HEARTBEAT).handler(handlerFactory.newHeartbeatHandler());
         router.get(SERVER_CONFIG).handler(handlerFactory.newConfigurationHandler());
-        router.get(BOOKIE_STATUS).handler(handlerFactory.newBookieStatusHandler());
         vertx.deployVerticle(new AbstractVerticle() {
             @Override
             public void start() throws Exception {
@@ -77,12 +72,12 @@ public class VertxHttpServer implements HttpServer {
         try {
             AsyncResult asyncResult = future.get();
             if (asyncResult.succeeded()) {
-                LOG.info("Http server started successfully");
+                LOG.info("Vertx Http server started successfully");
             } else {
-                LOG.error("Failed to start http server on port {}", port, asyncResult.cause());
+                LOG.error("Failed to start org.apache.bookkeeper.http server on port {}", port, asyncResult.cause());
             }
         } catch (InterruptedException | ExecutionException e) {
-            LOG.error("Failed to start http server on port {}", port, e);
+            LOG.error("Failed to start org.apache.bookkeeper.http server on port {}", port, e);
         }
     }
 
@@ -98,7 +93,7 @@ public class VertxHttpServer implements HttpServer {
         try {
             shutdownLatch.await();
         } catch (InterruptedException e) {
-            LOG.error("Interrupted while shutting down http server");
+            LOG.error("Interrupted while shutting down org.apache.bookkeeper.http server");
         }
     }
 

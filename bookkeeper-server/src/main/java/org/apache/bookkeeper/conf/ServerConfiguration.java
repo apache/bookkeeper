@@ -23,16 +23,13 @@ import java.util.concurrent.TimeUnit;
 
 import com.google.common.annotations.Beta;
 
-import org.apache.bookkeeper.http.HttpServer;
-import org.apache.bookkeeper.http.TwitterHttpServer;
-import org.apache.bookkeeper.http.VertxHttpServer;
+import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
+import org.apache.bookkeeper.bookie.SortedLedgerStorage;
 import org.apache.bookkeeper.stats.NullStatsProvider;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
-import org.apache.bookkeeper.bookie.SortedLedgerStorage;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -1991,29 +1988,4 @@ public class ServerConfiguration extends AbstractConfiguration {
         return getInt(HTTP_SERVER_PORT, 8080);
     }
 
-    /**
-     * Get Http server Class.
-     *
-     * @return Http server class.
-     */
-    public Class<? extends HttpServer> getHttpServer()
-        throws ConfigurationException {
-        return ReflectionUtils.getClass(this, HTTP_SERVER_CLASS ,
-            VertxHttpServer.class,
-            HttpServer.class,
-            defaultLoader);
-    }
-
-    /**
-     * Set Http server Class.
-     *
-     * @param httpClass
-     *          Http server Class.
-     *
-     * @return server configuration
-     */
-    public ServerConfiguration setHttpServer(Class<? extends HttpServer> httpClass) {
-        setProperty(HTTP_SERVER_CLASS, httpClass.getName());
-        return this;
-    }
 }

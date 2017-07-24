@@ -24,18 +24,19 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
-import java.lang.Integer;
 import java.util.Arrays;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import org.apache.bookkeeper.bookie.Bookie;
-import org.apache.bookkeeper.bookie.ReadOnlyBookie;
 import org.apache.bookkeeper.bookie.BookieCriticalThread;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.ExitCode;
+import org.apache.bookkeeper.bookie.ReadOnlyBookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.http.BKServiceProvider;
 import org.apache.bookkeeper.http.HttpServer;
-import org.apache.bookkeeper.http.ServerLoader;
-import org.apache.bookkeeper.http.ServerOptions;
+import org.apache.bookkeeper.http.HttpServerLoader;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.processor.RequestProcessor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
@@ -48,15 +49,13 @@ import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
 import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.annotations.VisibleForTesting;
 
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SERVER_SCOPE;
@@ -126,14 +125,14 @@ public class BookieServer {
             this.autoRecoveryMain.start();
         }
         if (conf.isHttpServerEnabled()) {
-            ServerOptions serverOptions = new ServerOptions()
-                .setPort(conf.getHttpServerPort())
-                .setBookieServer(this)
-                .setServerConf(conf);
-            this.httpServer = ServerLoader.loadHttpServer(conf);
+            BKServiceProvider serviceProvider = new BKServiceProvider()
+                .setConf(conf)
+                .setBookieServer(this);
+            HttpServerLoader.loadHttpServer(conf);
+            this.httpServer = HttpServerLoader.get();
             if (this.httpServer != null) {
-                this.httpServer.initialize(serverOptions);
-                this.httpServer.startServer();
+                this.httpServer.initialize(serviceProvider);
+                this.httpServer.startServer(conf.getHttpServerPort());
             }
         }
         this.nettyServer.start();

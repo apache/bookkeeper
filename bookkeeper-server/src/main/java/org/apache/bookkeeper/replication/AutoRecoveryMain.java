@@ -32,16 +32,14 @@ import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieCriticalThread;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.http.BKServiceProvider;
 import org.apache.bookkeeper.http.HttpServer;
-import org.apache.bookkeeper.http.ServerLoader;
-import org.apache.bookkeeper.http.ServerOptions;
+import org.apache.bookkeeper.http.HttpServerLoader;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
-import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
@@ -301,15 +299,15 @@ public class AutoRecoveryMain {
         try {
             final AutoRecoveryMain autoRecoveryMain = new AutoRecoveryMain(conf);
             autoRecoveryMain.start();
-            final HttpServer httpServer = ServerLoader.loadHttpServer(conf);
+            HttpServerLoader.loadHttpServer(conf);
+            final HttpServer httpServer = HttpServerLoader.get();
             if (conf.isHttpServerEnabled()) {
-                ServerOptions serverOptions = new ServerOptions()
-                    .setPort(conf.getHttpServerPort())
-                    .setServerConf(conf)
+                BKServiceProvider serviceProvider = new BKServiceProvider()
+                    .setConf(conf)
                     .setAutoRecovery(autoRecoveryMain);
                 if (httpServer != null) {
-                    httpServer.initialize(serverOptions);
-                    httpServer.startServer();
+                    httpServer.initialize(serviceProvider);
+                    httpServer.startServer(conf.getHttpServerPort());
                 }
             }
             Runtime.getRuntime().addShutdownHook(new Thread() {

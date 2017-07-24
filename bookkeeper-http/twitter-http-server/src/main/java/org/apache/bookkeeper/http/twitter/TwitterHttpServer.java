@@ -19,21 +19,18 @@
  *
  */
 
-package org.apache.bookkeeper.http;
+package org.apache.bookkeeper.http.twitter;
 
 import java.net.InetSocketAddress;
 
-import org.apache.bookkeeper.http.handler.AbstractHandlerFactory;
-import org.apache.bookkeeper.http.handler.TwitterHandlerFactory;
+import org.apache.bookkeeper.http.HttpServer;
+import org.apache.bookkeeper.http.ServiceProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.twitter.finagle.Http;
 import com.twitter.finagle.ListeningServer;
-import com.twitter.finagle.Service;
 import com.twitter.finagle.http.HttpMuxer;
-import com.twitter.finagle.http.Request;
-import com.twitter.finagle.http.Response;
 import com.twitter.server.AbstractTwitterServer;
 
 public class TwitterHttpServer extends AbstractTwitterServer implements HttpServer {
@@ -42,24 +39,22 @@ public class TwitterHttpServer extends AbstractTwitterServer implements HttpServ
 
     private ListeningServer server;
     private boolean isRunning;
-    private ServerOptions serverOptions;
+    private int port;
+    private ServiceProvider serviceProvider;
 
-    public TwitterHttpServer() {
-        this.serverOptions = new ServerOptions();
+    @Override
+    public void initialize(ServiceProvider serviceProvider) {
+        this.serviceProvider = serviceProvider;
     }
 
     @Override
-    public void initialize(ServerOptions serverOptions) {
-        this.serverOptions = serverOptions;
-    }
-
-    @Override
-    public void startServer() {
+    public void startServer(int port) {
         try {
+            this.port = port;
             this.main();
-            LOG.info("HTTP server started successfully");
+            LOG.info("Twitter HTTP server started successfully");
         } catch (Throwable throwable) {
-            LOG.error("Failed to start http server", throwable);
+            LOG.error("Failed to start Twitter Http Server", throwable);
         }
     }
 
@@ -78,13 +73,11 @@ public class TwitterHttpServer extends AbstractTwitterServer implements HttpServ
 
     @Override
     public void main() throws Throwable {
-        int port = serverOptions.getPort();
         LOG.info("Starting Twitter HTTP server on port {}", port);
-        AbstractHandlerFactory<Service<Request, Response>> handlerFactory = new TwitterHandlerFactory(serverOptions);
+        TwitterHandlerFactory handlerFactory = new TwitterHandlerFactory(serviceProvider);
         HttpMuxer muxer = new HttpMuxer()
             .withHandler(HEARTBEAT, handlerFactory.newHeartbeatHandler())
-            .withHandler(SERVER_CONFIG, handlerFactory.newConfigurationHandler())
-            .withHandler(BOOKIE_STATUS, handlerFactory.newBookieStatusHandler());
+            .withHandler(SERVER_CONFIG, handlerFactory.newConfigurationHandler());
         InetSocketAddress addr = new InetSocketAddress(port);
         server = Http.server().serve(addr, muxer);
         isRunning = true;

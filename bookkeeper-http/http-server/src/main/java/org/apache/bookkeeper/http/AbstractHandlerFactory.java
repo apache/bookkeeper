@@ -19,26 +19,23 @@
  *
  */
 
-package org.apache.bookkeeper.http.service;
+package org.apache.bookkeeper.http;
 
-import org.apache.bookkeeper.bookie.Bookie;
-import org.json.JSONObject;
+public abstract class AbstractHandlerFactory<Handler> {
+    protected ServiceProvider serviceProvider;
 
-public class BookieStatusService {
-
-    private Bookie bookie;
-
-    public BookieStatusService(Bookie bookie) {
-        this.bookie = bookie;
+    public AbstractHandlerFactory(ServiceProvider serviceProvider) {
+        this.serviceProvider = serviceProvider;
     }
 
-    public String getBookieStatus() {
-        JSONObject response = new JSONObject();
-        if (bookie.isReadOnly()) {
-            response.put("bookie_status", "readonly");
-        } else {
-            response.put("bookie_status", "writable");
-        }
-        return response.toString(2);
-    }
+    /**
+     * Create a handler for heartbeat api
+     */
+    public abstract Handler newHeartbeatHandler();
+
+    /**
+     * Create a handler for server configuration api
+     */
+    public abstract Handler newConfigurationHandler();
+
 }

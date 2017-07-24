@@ -25,7 +25,6 @@ public interface HttpServer {
 
     static final String HEARTBEAT             = "/heartbeat";
     static final String SERVER_CONFIG         = "/api/config/serverConfig";
-    static final String BOOKIE_STATUS         = "/api/bookie/bookieStatus";
 
     static enum StatusCode {
         OK(200),
@@ -44,15 +43,22 @@ public interface HttpServer {
         }
     }
 
-    /**
-     * Initialize the HTTP server with the given options
-     */
-    void initialize(ServerOptions serverOptions);
+    static enum Method {
+        GET,
+        POST,
+        PUT,
+        DELETE;
+    }
 
     /**
-     * Start the HTTP server
+     * Initialize the HTTP server with underline service provider
      */
-    void startServer();
+    void initialize(ServiceProvider serviceProvider);
+
+    /**
+     * Start the HTTP server on given port
+     */
+    void startServer(int port);
 
     /**
      * Stop the HTTP server
