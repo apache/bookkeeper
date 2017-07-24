@@ -48,7 +48,7 @@ How do I create job ?
 
 Get an username and an "API Token" for your Jenkins configuration
 
-In order to test jenkins job configuration, run:
+In order to test jenkins job configuration, go to 'jenkins' directory and run:
 
 ```
    $ jenkins-jobs test bookkeeper-master-job-configuration.yaml
