@@ -19,7 +19,7 @@ package org.apache.bookkeeper.stats;
 import org.apache.commons.configuration.Configuration;
 
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * A <i>no-op</i> stats provider implementation.
  */
 public class NullStatsProvider implements StatsProvider {
 

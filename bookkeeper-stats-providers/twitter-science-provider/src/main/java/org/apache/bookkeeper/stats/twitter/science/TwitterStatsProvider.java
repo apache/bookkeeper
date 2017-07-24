@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * A stats provider implemented based on <i>Twitter Stats</i> library.
  */
 public class TwitterStatsProvider implements StatsProvider {
 

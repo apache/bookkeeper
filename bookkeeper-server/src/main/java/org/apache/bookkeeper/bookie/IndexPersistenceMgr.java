@@ -48,7 +48,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LEDGER_CACHE_NU
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.NUM_OPEN_LEDGERS;
 
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * A {@code IndexPersistenceMgr} is responsible for managing the persistence state for the index in a bookie.
  */
 public class IndexPersistenceMgr {
     private static final Logger LOG = LoggerFactory.getLogger(IndexPersistenceMgr.class);

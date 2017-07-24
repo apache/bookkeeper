@@ -80,7 +80,6 @@ class HierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
 
     @Override
     protected long getLedgerId(String ledgerPath) throws IOException {
-        // TODO Auto-generated method stub
         if (!ledgerPath.startsWith(ledgerRootPath)) {
             throw new IOException("it is not a valid hashed path name : " + ledgerPath);
         }

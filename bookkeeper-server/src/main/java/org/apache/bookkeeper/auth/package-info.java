@@ -15,6 +15,6 @@
  * the License.
  */
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * Classes used to handle authentication in bookies and clients.
  */
 package org.apache.bookkeeper.auth;

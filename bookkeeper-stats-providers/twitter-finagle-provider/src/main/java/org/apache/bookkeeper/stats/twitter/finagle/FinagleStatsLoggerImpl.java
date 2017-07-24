@@ -30,7 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * A <i>Finagle Stats</i> library based {@link StatsLogger} implementation.
  */
 public class FinagleStatsLoggerImpl implements StatsLogger {
     private final StatsReceiver stats;

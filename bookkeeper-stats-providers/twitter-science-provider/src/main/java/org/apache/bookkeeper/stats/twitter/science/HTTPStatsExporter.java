@@ -49,7 +49,6 @@ public class HTTPStatsExporter {
 
     public void start() throws Exception {
         // Start the sampler. Sample every 1 second and retain for 1 hour
-        // TODO: Make this configurable if needed.
         TimeSeriesRepository sampler = new TimeSeriesRepositoryImpl(Stats.STAT_REGISTRY,
                 Amount.of(1L, Time.SECONDS), Amount.of(1L, Time.HOURS));
         sampler.start(this.shutDownRegistry);

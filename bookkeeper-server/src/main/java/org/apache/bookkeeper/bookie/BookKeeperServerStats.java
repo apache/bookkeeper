@@ -21,7 +21,7 @@
 package org.apache.bookkeeper.bookie;
 
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * A utility class used for managing the <i>stats constants</i> used in server side.
  */
 public interface BookKeeperServerStats {
 

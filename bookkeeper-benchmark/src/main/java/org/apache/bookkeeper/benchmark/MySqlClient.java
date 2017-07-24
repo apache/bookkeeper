@@ -35,7 +35,7 @@ import static com.google.common.base.Charsets.UTF_8;
 import org.apache.zookeeper.KeeperException;
 
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * A mysql client performing writes and reads that used for benchmark comparison with BookKeeper.
  */
 public class MySqlClient {
     static final Logger LOG = LoggerFactory.getLogger(MySqlClient.class);
@@ -67,8 +67,6 @@ public class MySqlClient {
             stmt.execute("create table data(transaction_id bigint PRIMARY KEY AUTO_INCREMENT, content TEXT);");
             LOG.info("Database initialization terminated");
         } catch (SQLException e) {
-
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }

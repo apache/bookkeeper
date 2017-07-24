@@ -70,7 +70,7 @@ class ReadEntryProcessor extends PacketProcessorBase {
                 LOG.debug("##### Read entry ##### {} -- ref-count: {}", data.readableBytes(), data.refCnt());
             }
             if (null != fenceResult) {
-                // TODO:
+                // TODO: {@link https://github.com/apache/bookkeeper/issues/283}
                 // currently we don't have readCallback to run in separated read
                 // threads. after BOOKKEEPER-429 is complete, we could improve
                 // following code to make it not wait here

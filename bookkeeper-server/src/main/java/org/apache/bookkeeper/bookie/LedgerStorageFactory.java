@@ -25,7 +25,7 @@ import java.io.IOException;
 import org.apache.bookkeeper.util.ReflectionUtils;
 
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * A factory that creates {@link LedgerStorage} by reflection.
  */
 public class LedgerStorageFactory {
     public static LedgerStorage createLedgerStorage(String name) throws IOException {

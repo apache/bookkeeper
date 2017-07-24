@@ -22,7 +22,7 @@
 package org.apache.bookkeeper.bookie;
 
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * An {@code EntryLocation} represents the location where an entry is stored.
  */
 public class EntryLocation {
     public final long ledger;

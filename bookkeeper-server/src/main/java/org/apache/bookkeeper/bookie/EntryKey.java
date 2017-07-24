@@ -23,7 +23,9 @@ import java.io.Serializable;
 import java.util.Comparator;
 
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * An {@code EntryKey} represents an entry in a ledger, identified by {@code ledgerId} and {@code entryId}.
+ *
+ * <p>This class is mainly used in {@code SortedLedgerStorage} for managing and sorting the entries in the memtable.
  */
 public class EntryKey {
     long ledgerId;

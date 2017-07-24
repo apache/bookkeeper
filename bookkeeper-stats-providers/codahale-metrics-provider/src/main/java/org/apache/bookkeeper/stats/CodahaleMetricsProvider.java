@@ -44,7 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * A {@link StatsProvider} implemented based on <i>Codahale</i> metrics library.
  */
 @SuppressWarnings("deprecation")
 public class CodahaleMetricsProvider implements StatsProvider {

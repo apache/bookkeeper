@@ -57,7 +57,7 @@ import org.slf4j.LoggerFactory;
 import static com.google.common.base.Charsets.UTF_8;
 
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * A benchmark that benchmarks write throughput and latency.
  */
 public class BenchThroughputLatency implements AddCallback, Runnable {
     static final Logger LOG = LoggerFactory.getLogger(BenchThroughputLatency.class);
