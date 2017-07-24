@@ -210,7 +210,7 @@ You can write to DistributedLog logs either [synchronously](#writing-to-logs-syn
 
 #### Writing to logs synchronously
 
-To write records to a log synchronously, you need to instantiate a [`LogWriter`]() object using a [`DistributedLogManager`](). Here's an example:
+To write records to a log synchronously, you need to instantiate a `LogWriter` object using a `DistributedLogManager`. Here's an example:
 
 ```java
 DistributedLogNamespace namespace = /* Some namespace object */;
@@ -218,7 +218,7 @@ DistributedLogManager logManager = namespace.openLog("test-log");
 LogWriter writer = logManager.startLogSegmentNonPartitioned();
 ```
 
-> The DistributedLog library enforces single-writer semantics by deploying a ZooKeeper locking mechanism. If there is only one active writer, subsequent calls to `startLogSegmentNonPartitioned` will fail with an [`OwnershipAcquireFailedException`]().
+> The DistributedLog library enforces single-writer semantics by deploying a ZooKeeper locking mechanism. If there is only one active writer, subsequent calls to `startLogSegmentNonPartitioned` will fail with an `OwnershipAcquireFailedException`.
 
 Log records represent the data written to a log stream. Each log record is associated with an application-defined [TransactionID](#log-records). This ID must be non decreasing or else writing a record will be rejected with [`TransactionIdOutOfOrderException`](). The application is allowed to bypass the TransactionID sanity checking by setting `maxIdSanityCheck` to `false` in the configuration. System time and atomic numbers are good candidates for TransactionID.
 
@@ -228,10 +228,66 @@ byte[] data = "some byte array".getBytes();
 LogRecord record = new LogRecord(txid, data);
 ```
 
+Your application can write either a single record, using the `write` method, or many records, using the `writeBulk` method.
+
+```java
+// Single record
+writer.write(record);
+
+// Bulk write
+List<LogRecord> records = Lists.newArrayList();
+records.add(record);
+writer.writeBulk(records);
+```
+
+The write calls return immediately after the records are added into the output buffer of writer. This means that the data isn't guaranteed to be durable until the writer explicitly calls `setReadyToFlush` and `flushAndSync`. Those two calls will first transmit buffered data to the backend, wait for transmit acknowledgements (acks), and commit the written data to make them visible to readers.
+
+```java
+// Flush the records
+writer.setReadyToFlush();
+
+// Commit the records to make them visible to readers
+writer.flushAndSync();
+```
+
+Log streams in DistributedLog are endless streams *unless they are sealed*. Endless in this case means that writers can keep writing records to those streams, readers can keep reading from the end of those streams, and the process never stops. Your application can seal a log stream using the `markEndOfStream` method:
+
+```java
+writer.markEndOfStream();
+```
+
 #### Writing to logs asynchronously
 
-### Reader API
+In order to write to DistributedLog logs asynchronously, you need to create an `AsyncLogWriter` instread of a `LogWriter`.
 
-#### Reading from logs synchronously
+```java
+DistributedLogNamespace namespace = /* Some namespace object */;
+DistributedLogManager logManager = namespace.openLog("test-async-log");
+AsyncLogWriter writer = logManager.startAsyncLogSegmentNonPartitioned();
+```
 
-#### Reading from logs asynchronously
+All writes to `AsyncLogWriter` are non partitioned. The futures representing write results are only satisfied when the data is durably persisted in the stream. A [DLSN](#log-records) will be returned for each write, which is used to represent the position (aka offset) of the record in the log stream. All the records added in order are guaranteed to be persisted in order. Here's an example of an async writer that gathers a list of futures representing multiple async write results:
+
+```java
+List<Future<DLSN>> addFutures = Lists.newArrayList();
+for (long txid = 1L; txid <= 100L; txid++) {
+    byte[] data = /* some byte array */;
+    LogRecord record = new LogRecord(txid, data);
+    addFutures.add(writer.write(record));
+}
+List<DLSN> addResults = Await.result(Future.collect(addFutures));
+```
+
+The `AsyncLogWriter` also provides a method for truncating a stream to a given DLSN. This is useful for building replicated state machines that need explicit controls on when the data can be deleted.
+
+```java
+DLSN truncateDLSN = /* some DLSN */;
+Future<DLSN> truncateFuture = writer.truncate(truncateDLSN);
+
+// Wait for truncation result
+Await.result(truncateFuture);
+```
+
+<!--
+TODO: Reader API
+-->
