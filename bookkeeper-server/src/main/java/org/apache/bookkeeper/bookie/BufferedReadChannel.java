@@ -21,9 +21,6 @@
 
 package org.apache.bookkeeper.bookie;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -32,7 +29,7 @@ import java.nio.channels.FileChannel;
  * A Buffered channel without a write buffer. Only reads are buffered.
  */
 public class BufferedReadChannel extends BufferedChannelBase {
-    private static Logger LOG = LoggerFactory.getLogger(BufferedReadChannel.class);
+
     // The capacity of the read buffer.
     protected final int readCapacity;
     // The buffer for read operations.
@@ -56,10 +53,11 @@ public class BufferedReadChannel extends BufferedChannelBase {
      * depending on the implementation..
      * @param dest
      * @param pos
-     * @return The total number of bytes read. -1 if the given position is greater than or equal to the file's current size.
+     * @return The total number of bytes read.
+     *         -1 if the given position is greater than or equal to the file's current size.
      * @throws IOException if I/O error occurs
      */
-    synchronized public int read(ByteBuffer dest, long pos) throws IOException {
+    public synchronized int read(ByteBuffer dest, long pos) throws IOException {
         invocationCount++;
         long currentPosition = pos;
         long eof = validateAndGetFileChannel().size();
@@ -69,12 +67,13 @@ public class BufferedReadChannel extends BufferedChannelBase {
         }
         while (dest.remaining() > 0) {
             // Check if the data is in the buffer, if so, copy it.
-            if (readBufferStartPosition <= currentPosition && currentPosition < readBufferStartPosition + readBuffer.limit()) {
+            if (readBufferStartPosition <= currentPosition
+                    && currentPosition < readBufferStartPosition + readBuffer.limit()) {
                 long posInBuffer = currentPosition - readBufferStartPosition;
                 long bytesToCopy = Math.min(dest.remaining(), readBuffer.limit() - posInBuffer);
                 ByteBuffer rbDup = readBuffer.duplicate();
-                rbDup.position((int)posInBuffer);
-                rbDup.limit((int)(posInBuffer + bytesToCopy));
+                rbDup.position((int) posInBuffer);
+                rbDup.limit((int) (posInBuffer + bytesToCopy));
                 dest.put(rbDup);
                 currentPosition += bytesToCopy;
                 cacheHitCount++;
@@ -92,10 +91,10 @@ public class BufferedReadChannel extends BufferedChannelBase {
                 readBuffer.limit(readBytes);
             }
         }
-        return (int)(currentPosition - pos);
+        return (int) (currentPosition - pos);
     }
 
-    synchronized public void clear() {
+    public synchronized void clear() {
         readBuffer.clear();
         readBuffer.limit(0);
     }

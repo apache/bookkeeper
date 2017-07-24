@@ -41,7 +41,7 @@ import static com.google.common.base.Charsets.UTF_8;
  * information to the file.
  */
 class JournalChannel implements Closeable {
-    private final static Logger LOG = LoggerFactory.getLogger(JournalChannel.class);
+    private static final Logger LOG = LoggerFactory.getLogger(JournalChannel.class);
 
     final RandomAccessFile randomAccessFile;
     final int fd;
@@ -50,11 +50,11 @@ class JournalChannel implements Closeable {
     final int formatVersion;
     long nextPrealloc = 0;
 
-    final byte[] MAGIC_WORD = "BKLG".getBytes(UTF_8);
+    final byte[] magicWord = "BKLG".getBytes(UTF_8);
 
-    final static int SECTOR_SIZE = 512;
-    private final static int START_OF_FILE = -12345;
-    private static long CACHE_DROP_LAG_BYTES = 8 * 1024 * 1024;
+    static final int SECTOR_SIZE = 512;
+    private static final int START_OF_FILE = -12345;
+    private static long cacheDropLagBytes = 8 * 1024 * 1024;
 
     // No header
     static final int V1 = 1;
@@ -156,7 +156,7 @@ class JournalChannel implements Closeable {
             ByteBuffer bb = ByteBuffer.allocate(headerSize);
             ZeroBuffer.put(bb);
             bb.clear();
-            bb.put(MAGIC_WORD);
+            bb.put(magicWord);
             bb.putInt(formatVersion);
             bb.clear();
             fc.write(bb);
@@ -178,7 +178,7 @@ class JournalChannel implements Closeable {
                 byte[] first4 = new byte[4];
                 bb.get(first4);
 
-                if (Arrays.equals(first4, MAGIC_WORD)) {
+                if (Arrays.equals(first4, magicWord)) {
                     formatVersion = bb.getInt();
                 } else {
                     // pre magic word journal, reset to 0;
@@ -255,7 +255,7 @@ class JournalChannel implements Closeable {
         // For POSIX_FADV_DONTNEED, we want to drop from the beginning
         // of the file to a position prior to the current position.
         //
-        // The CACHE_DROP_LAG_BYTES is to prevent dropping a page that will
+        // The cacheDropLagBytes is to prevent dropping a page that will
         // be appended again, which would introduce random seeking on journal
         // device.
         //
@@ -265,7 +265,7 @@ class JournalChannel implements Closeable {
         // lastDropPosition     newDropPos             lastForceWritePosition
         //
         if (fRemoveFromPageCache) {
-            long newDropPos = newForceWritePosition - CACHE_DROP_LAG_BYTES;
+            long newDropPos = newForceWritePosition - cacheDropLagBytes;
             if (lastDropPosition < newDropPos) {
                 NativeIO.bestEffortRemoveFromPageCache(fd, lastDropPosition, newDropPos - lastDropPosition);
             }

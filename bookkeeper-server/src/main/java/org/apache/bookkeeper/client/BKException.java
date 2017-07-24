@@ -114,6 +114,7 @@ public abstract class BKException extends Exception {
      *
      */
     public interface Code {
+        int UNINITIALIZED = 1;
         int OK = 0;
         int ReadException = -1;
         int QuorumException = -2;

@@ -31,13 +31,13 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Implements a read only bookie.
- * 
+ * <p>
  * ReadOnlyBookie is force started as readonly, and will not change to writable.
- *
+ * </p>
  */
 public class ReadOnlyBookie extends Bookie {
 
-    private final static Logger LOG = LoggerFactory.getLogger(ReadOnlyBookie.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ReadOnlyBookie.class);
 
     public ReadOnlyBookie(ServerConfiguration conf, StatsLogger statsLogger)
             throws IOException, KeeperException, InterruptedException, BookieException {

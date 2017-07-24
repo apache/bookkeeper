@@ -34,6 +34,9 @@ import static com.google.common.base.Charsets.UTF_8;
 
 import org.apache.zookeeper.KeeperException;
 
+/**
+ * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ */
 public class MySqlClient {
     static final Logger LOG = LoggerFactory.getLogger(MySqlClient.class);
 
@@ -73,12 +76,13 @@ public class MySqlClient {
     public void closeHandle() throws KeeperException, InterruptedException, SQLException {
         con.close();
     }
+
     /**
-     * First parameter is an integer defining the length of the message
-     * Second parameter is the number of writes
-     * Third parameter is host:port
-     * Fourth parameter is username
-     * Fifth parameter is password
+     * First parameter is an integer defining the length of the message.
+     * Second parameter is the number of writes.
+     * Third parameter is host:port.
+     * Fourth parameter is username.
+     * Fifth parameter is password.
      * @param args
      * @throws ClassNotFoundException
      * @throws SQLException
@@ -86,7 +90,7 @@ public class MySqlClient {
     public static void main(String[] args) throws ClassNotFoundException, SQLException {
         int lenght = Integer.parseInt(args[1]);
         StringBuilder sb = new StringBuilder();
-        while(lenght-- > 0) {
+        while (lenght-- > 0) {
             sb.append('a');
         }
         try {
@@ -105,15 +109,16 @@ public class MySqlClient {
     }
 
     /**
-     * 	Adds  data entry to the DB
-     * 	@param data 	the entry to be written, given as a byte array
-     * 	@param times	the number of times the entry should be written on the DB	*/
+     * Adds data entry to the DB.
+     * @param data the entry to be written, given as a byte array
+     * @param times the number of times the entry should be written on the DB
+     */
     void writeSameEntryBatch(byte[] data, int times) throws InterruptedException, SQLException {
         start = System.currentTimeMillis();
         int count = times;
         String content = new String(data, UTF_8);
         System.out.println("Data: " + content + ", " + data.length);
-        while(count-- > 0) {
+        while (count-- > 0) {
             stmt.addBatch("insert into data(content) values(\"" + content + "\");");
         }
         LOG.info("Finished writing batch SQL command in ms: " + (System.currentTimeMillis() - start));
@@ -128,7 +133,7 @@ public class MySqlClient {
         int count = times;
         String content = new String(data, UTF_8);
         System.out.println("Data: " + content + ", " + data.length);
-        while(count-- > 0) {
+        while (count-- > 0) {
             stmt.executeUpdate("insert into data(content) values(\"" + content + "\");");
         }
         System.out.println("Finished " + times + " writes in ms: " + (System.currentTimeMillis() - start));

@@ -30,8 +30,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 
 /**
- * This class is just a stub that can be used in collections with
- * FileChannels
+ * This class is just a stub that can be used in collections with FileChannels.
  */
 public class MarkerFileChannel extends FileChannel {
 

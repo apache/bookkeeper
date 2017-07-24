@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 import com.google.common.annotations.Beta;
 
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
+import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.SortedLedgerStorage;
 import org.apache.bookkeeper.stats.NullStatsProvider;
 import org.apache.bookkeeper.stats.StatsProvider;
@@ -115,6 +116,11 @@ public class ServerConfiguration extends AbstractConfiguration {
     // Worker Thread parameters.
     protected final static String NUM_ADD_WORKER_THREADS = "numAddWorkerThreads";
     protected final static String NUM_READ_WORKER_THREADS = "numReadWorkerThreads";
+    protected final static String NUM_LONG_POLL_WORKER_THREADS = "numLongPollWorkerThreads";
+
+    // Long poll parameters
+    protected final static String REQUEST_TIMER_TICK_DURATION_MILLISEC = "requestTimerTickDurationMs";
+    protected final static String REQUEST_TIMER_NO_OF_TICKS = "requestTimerNumTicks";
 
     protected final static String READ_BUFFER_SIZE = "readBufferSizeBytes";
     protected final static String WRITE_BUFFER_SIZE = "writeBufferSizeBytes";
@@ -142,12 +148,14 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     // Bookie auth provider factory class name
     protected final static String BOOKIE_AUTH_PROVIDER_FACTORY_CLASS = "bookieAuthProviderFactoryClass";
+    
+    protected final static String MIN_USABLESIZE_FOR_INDEXFILE_CREATION = "minUsableSizeForIndexFileCreation";
+
+    protected final static String ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION = "allowMultipleDirsUnderSameDiskPartition";
 
     // Http Server parameters
     protected final static String HTTP_SERVER_ENABLED = "httpServerEnabled";
     protected final static String HTTP_SERVER_PORT = "httpServerPort";
-    protected final static String HTTP_SERVER_CLASS = "httpServerClass";
-
 
     /**
      * Construct a default configuration object
@@ -1135,6 +1143,26 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Set the number of threads that should handle long poll requests
+     *
+     * @param numThreads
+     *          number of threads to handle long poll requests.
+     * @return server configuration
+     */
+    public ServerConfiguration setNumLongPollWorkerThreads(int numThreads) {
+        setProperty(NUM_LONG_POLL_WORKER_THREADS, numThreads);
+        return this;
+    }
+
+    /**
+     * Get the number of threads that should handle long poll requests.
+     * @return
+     */
+    public int getNumLongPollWorkerThreads() {
+        return getInt(NUM_LONG_POLL_WORKER_THREADS, 10);
+    }
+
+    /**
      * Set the number of threads that would handle read requests.
      *
      * @param numThreads
@@ -1151,6 +1179,46 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public int getNumReadWorkerThreads() {
         return getInt(NUM_READ_WORKER_THREADS, 8);
+    }
+    
+    /**
+     * Set the tick duration in milliseconds
+     *
+     * @param tickDuration
+     *          tick duration in milliseconds.
+     * @return server configuration
+     */
+    public ServerConfiguration setRequestTimerTickDurationMs(int tickDuration) {
+        setProperty(REQUEST_TIMER_TICK_DURATION_MILLISEC, tickDuration);
+        return this;
+    }
+
+    /**
+     * Get the tick duration in milliseconds.
+     * @return
+     */
+    public int getRequestTimerTickDurationMs() {
+        return getInt(REQUEST_TIMER_TICK_DURATION_MILLISEC, 10);
+    }
+
+    /**
+     * Set the number of ticks per wheel for the request timer.
+     *
+     * @param tickCount
+     *          number of ticks per wheel for the request timer.
+     * @return server configuration
+     */
+    public ServerConfiguration setRequestTimerNumTicks(int tickCount) {
+        setProperty(REQUEST_TIMER_NO_OF_TICKS, tickCount);
+        return this;
+    }
+
+    /**
+     * Get the number of ticks per wheel for the request timer.
+     * @return
+     */
+    public int getRequestTimerNumTicks() {
+        return getInt(REQUEST_TIMER_NO_OF_TICKS, 1024);
     }
 
     /**
@@ -1294,6 +1362,18 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public long getJournalMaxGroupWaitMSec() {
         return getLong(JOURNAL_MAX_GROUP_WAIT_MSEC, 2);
+    }
+
+    /**
+     * Sets the maximum latency to impose on a journal write to achieve grouping
+     *
+     * @param journalMaxGroupWaitMSec
+     *          maximum time to wait in milliseconds.
+     * @return server configuration.
+     */
+    public ServerConfiguration setJournalMaxGroupWaitMSec(long journalMaxGroupWaitMSec) {
+        setProperty(JOURNAL_MAX_GROUP_WAIT_MSEC, journalMaxGroupWaitMSec);
+        return this;
     }
 
     /**
@@ -1717,7 +1797,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     public String getLedgerStorageClass() {
         String ledgerStorageClass = getString(LEDGER_STORAGE_CLASS, SortedLedgerStorage.class.getName());
         if (ledgerStorageClass.equals(SortedLedgerStorage.class.getName())
-                && getSortedLedgerStorageEnabled() == false) {
+                && !getSortedLedgerStorageEnabled()) {
             // This is to retain compatibility with BK-4.3 configuration
             // In BK-4.3, the ledger storage is configured through the "sortedLedgerStorageEnabled" flag :
             // sortedLedgerStorageEnabled == true (default) ---> use SortedLedgerStorage
@@ -1986,6 +2066,51 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public int getHttpServerPort() {
         return getInt(HTTP_SERVER_PORT, 8080);
+    }
+
+    /**
+     * Gets the minimum safe Usable size to be available in index directory for Bookie to create Index File while replaying
+     * journal at the time of Bookie Start in Readonly Mode (in bytes)
+     * 
+     * @return
+     */
+    public long getMinUsableSizeForIndexFileCreation() {
+        return this.getLong(MIN_USABLESIZE_FOR_INDEXFILE_CREATION, 100 * 1024 * 1024L);
+    }
+
+    /**
+     * Sets the minimum safe Usable size to be available in index directory for Bookie to create Index File while replaying 
+     * journal at the time of Bookie Start in Readonly Mode (in bytes)
+     * 
+     * @param minUsableSizeForIndexFileCreation
+     * @return
+     */
+    public ServerConfiguration setMinUsableSizeForIndexFileCreation(long minUsableSizeForIndexFileCreation) {
+        this.setProperty(MIN_USABLESIZE_FOR_INDEXFILE_CREATION, Long.toString(minUsableSizeForIndexFileCreation));
+        return this;
+    }
+
+    /**
+     * returns whether it is allowed to have multiple ledger/index/journal
+     * Directories in the same filesystem diskpartition
+     *
+     * @return
+     */
+    public boolean isAllowMultipleDirsUnderSameDiskPartition() {
+        return this.getBoolean(ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION, true);
+    }
+
+    /**
+     * Configure the Bookie to allow/disallow multiple ledger/index/journal
+     * directories in the same filesystem diskpartition
+     *
+     * @param allow
+     * 
+     * @return server configuration object.
+     */
+    public ServerConfiguration setAllowMultipleDirsUnderSameDiskPartition(boolean allow) {
+        this.setProperty(ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION, allow);
+        return this;
     }
 
 }

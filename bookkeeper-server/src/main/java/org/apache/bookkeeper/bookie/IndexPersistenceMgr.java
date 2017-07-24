@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import com.google.common.annotations.VisibleForTesting;
+import io.netty.buffer.ByteBuf;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -28,9 +30,10 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -41,15 +44,14 @@ import org.apache.bookkeeper.util.SnapshotMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.annotations.VisibleForTesting;
-
-import io.netty.buffer.ByteBuf;
-
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LEDGER_CACHE_NUM_EVICTED_LEDGERS;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.NUM_OPEN_LEDGERS;
 
+/**
+ * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ */
 public class IndexPersistenceMgr {
-    private final static Logger LOG = LoggerFactory.getLogger(IndexPersistenceMgr.class);
+    private static final Logger LOG = LoggerFactory.getLogger(IndexPersistenceMgr.class);
 
     private static final String IDX = ".idx";
     static final String RLOC = ".rloc";
@@ -177,7 +179,7 @@ public class IndexPersistenceMgr {
      */
     private File getNewLedgerIndexFile(Long ledger, File excludedDir)
                     throws NoWritableLedgerDirException {
-        File dir = ledgerDirsManager.pickRandomWritableDir(excludedDir);
+        File dir = ledgerDirsManager.pickRandomWritableDirForNewIndexFile(excludedDir);
         String ledgerName = getLedgerName(ledger);
         return new File(dir, ledgerName);
     }
@@ -327,6 +329,18 @@ public class IndexPersistenceMgr {
         try {
             fi = getFileInfo(ledgerId, null);
             return fi.getLastAddConfirmed();
+        } finally {
+            if (null != fi) {
+                fi.release();
+            }
+        }
+    }
+
+    Observable waitForLastAddConfirmedUpdate(long ledgerId, long previoisLAC, Observer observer) throws IOException {
+        FileInfo fi = null;
+        try {
+            fi = getFileInfo(ledgerId, null);
+            return fi.waitForLastAddConfirmedUpdate(previoisLAC, observer);
         } finally {
             if (null != fi) {
                 fi.release();
@@ -587,7 +601,15 @@ public class IndexPersistenceMgr {
         }
     }
 
-    void updatePage(LedgerEntryPage lep) throws IOException {
+    /**
+     * Update the ledger entry page
+     *
+     * @param lep
+     *          ledger entry page
+     * @return true if it is a new page, otherwise false.
+     * @throws IOException
+     */
+    boolean updatePage(LedgerEntryPage lep) throws IOException {
         if (!lep.isClean()) {
             throw new IOException("Trying to update a dirty page");
         }
@@ -597,8 +619,10 @@ public class IndexPersistenceMgr {
             long pos = lep.getFirstEntryPosition();
             if (pos >= fi.size()) {
                 lep.zeroPage();
+                return true;
             } else {
                 lep.readPage(fi);
+                return false;
             }
         } finally {
             if (fi != null) {
@@ -626,7 +650,15 @@ public class IndexPersistenceMgr {
                 if (position < 0) {
                     position = 0;
                 }
-                fi.read(bb, position);
+                // we read the last page from file size minus page size, so it should not encounter short read
+                // exception. if it does, it is an unexpected situation, then throw the exception and fail it
+                // immediately.
+                try {
+                    fi.read(bb, position, false);
+                } catch (ShortReadException sre) {
+                    // throw a more meaningful exception with ledger id
+                    throw new ShortReadException("Short read on ledger " + ledgerId + " : ", sre);
+                }
                 bb.flip();
                 long startingEntryId = position / LedgerEntryPage.getIndexEntrySize();
                 for (int i = entriesPerPage - 1; i >= 0; i--) {

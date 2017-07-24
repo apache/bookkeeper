@@ -32,6 +32,9 @@ import org.apache.bookkeeper.bookie.BookieConnectionPeer;
  * an authentication mechanism for bookkeeper connections.
  */
 public interface BookieAuthProvider {
+    /**
+     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+     */
     interface Factory {
         /**
          * Initialize the factory with the server configuration
@@ -69,7 +72,7 @@ public interface BookieAuthProvider {
         String getPluginName();
 
         /**
-        * Release resources
+        * Release resources.
         */
         default void close() {}
     }
@@ -83,7 +86,7 @@ public interface BookieAuthProvider {
     void process(AuthToken m, AuthCallbacks.GenericCallback<AuthToken> cb);
 
     /**
-     * Release resources
+     * Release resources.
      */
     default void close() {}
 }

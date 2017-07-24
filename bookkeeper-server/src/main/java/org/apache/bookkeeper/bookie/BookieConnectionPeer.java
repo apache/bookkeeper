@@ -23,7 +23,7 @@ package org.apache.bookkeeper.bookie;
 import org.apache.bookkeeper.proto.ConnectionPeer;
 
 /**
- * Represents the connection to a BookKeeper client, from the Bookie side 
+ * Represents the connection to a BookKeeper client, from the Bookie side.
  */
 public interface BookieConnectionPeer extends ConnectionPeer {
 

@@ -20,9 +20,11 @@
  */
 package org.apache.bookkeeper.client;
 
-import static com.google.common.base.Charsets.UTF_8;
-
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Objects;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.RateLimiter;
 import io.netty.buffer.ByteBuf;
@@ -40,6 +42,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
@@ -79,6 +82,7 @@ public class LedgerHandle implements AutoCloseable {
     final DigestManager macManager;
     final DistributionSchedule distributionSchedule;
     final RateLimiter throttler;
+    final LoadingCache<BookieSocketAddress, Long> bookieFailureHistory;
     final boolean enableParallelRecoveryRead;
     final int recoveryReadBatchSize;
 
@@ -89,6 +93,7 @@ public class LedgerHandle implements AutoCloseable {
     final static public long INVALID_ENTRY_ID = BookieProtocol.INVALID_ENTRY_ID;
 
     final AtomicInteger blockAddCompletions = new AtomicInteger(0);
+    final AtomicInteger numEnsembleChanges = new AtomicInteger(0);
     Queue<PendingAddOp> pendingAddOps;
     ExplicitLacFlushPolicy explicitLacFlushPolicy;
 
@@ -138,6 +143,13 @@ public class LedgerHandle implements AutoCloseable {
         this.ledgerKey = password.length > 0 ? MacDigestManager.genDigest("ledger", password) : emptyLedgerKey;
         distributionSchedule = new RoundRobinDistributionSchedule(
                 metadata.getWriteQuorumSize(), metadata.getAckQuorumSize(), metadata.getEnsembleSize());
+        this.bookieFailureHistory = CacheBuilder.newBuilder()
+            .expireAfterWrite(bk.getConf().getBookieFailureHistoryExpirationMSec(), TimeUnit.MILLISECONDS)
+            .build(new CacheLoader<BookieSocketAddress, Long>() {
+            public Long load(BookieSocketAddress key) {
+                return -1L;
+            }
+        });
 
         ensembleChangeCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.ENSEMBLE_CHANGES);
         lacUpdateHitsCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.LAC_UPDATE_HITS);
@@ -183,8 +195,12 @@ public class LedgerHandle implements AutoCloseable {
      *
      * @return the last confirmed entry id or {@link #INVALID_ENTRY_ID INVALID_ENTRY_ID} if no entry has been confirmed
      */
-    public long getLastAddConfirmed() {
+    public synchronized long getLastAddConfirmed() {
         return lastAddConfirmed;
+    }
+
+    synchronized void setLastAddConfirmed(long lac) {
+        this.lastAddConfirmed = lac;
     }
 
     /**
@@ -425,8 +441,8 @@ public class LedgerHandle implements AutoCloseable {
                                 @Override
                                 public void safeOperationComplete(int newrc, LedgerMetadata newMeta) {
                                     if (newrc != BKException.Code.OK) {
-                                        LOG.error("Error reading new metadata from ledger " + ledgerId
-                                                  + " when closing, code=" + newrc);
+                                        LOG.error("Error reading new metadata from ledger {} when closing, code={}",
+                                                ledgerId, newrc);
                                         cb.closeComplete(rc, LedgerHandle.this, ctx);
                                     } else {
                                         metadata.setState(prevState);
@@ -442,13 +458,13 @@ public class LedgerHandle implements AutoCloseable {
                                             metadata.setEnsembles(newMeta.getEnsembles());
                                             metadata.setVersion(newMeta.version);
                                             metadata.setLength(length);
-                                            metadata.close(lastAddConfirmed);
+                                            metadata.close(getLastAddConfirmed());
                                             writeLedgerConfig(new CloseCb());
                                             return;
                                         } else {
                                             metadata.setLength(length);
-                                            metadata.close(lastAddConfirmed);
-                                            LOG.warn("Conditional update ledger metadata for ledger " + ledgerId + " failed.");
+                                            metadata.close(getLastAddConfirmed());
+                                            LOG.warn("Conditional update ledger metadata for ledger {} failed.", ledgerId);
                                             cb.closeComplete(rc, LedgerHandle.this, ctx);
                                         }
                                     }
@@ -460,7 +476,7 @@ public class LedgerHandle implements AutoCloseable {
                                 }
                             });
                         } else if (rc != BKException.Code.OK) {
-                            LOG.error("Error update ledger metadata for ledger " + ledgerId + " : " + rc);
+                            LOG.error("Error update ledger metadata for ledger {} : {}", ledgerId, rc);
                             cb.closeComplete(rc, LedgerHandle.this, ctx);
                         } else {
                             cb.closeComplete(BKException.Code.OK, LedgerHandle.this, ctx);
@@ -471,7 +487,7 @@ public class LedgerHandle implements AutoCloseable {
                     public String toString() {
                         return String.format("WriteLedgerConfigForClose(%d)", ledgerId);
                     }
-                };
+                }
 
                 writeLedgerConfig(new CloseCb());
 
@@ -953,6 +969,81 @@ public class LedgerHandle implements AutoCloseable {
         new TryReadLastConfirmedOp(this, innercb, getLastAddConfirmed()).initiate();
     }
 
+
+    /**
+     * Asynchronous read next entry and the latest last add confirmed.
+     * If the next entryId is less than known last add confirmed, the call will read next entry directly.
+     * If the next entryId is ahead of known last add confirmed, the call will issue a long poll read
+     * to wait for the next entry <i>entryId</i>.
+     *
+     * The callback will return the latest last add confirmed and next entry if it is available within timeout period <i>timeOutInMillis</i>.
+     *
+     * @param entryId
+     *          next entry id to read
+     * @param timeOutInMillis
+     *          timeout period to wait for the entry id to be available (for long poll only)
+     * @param parallel
+     *          whether to issue the long poll reads in parallel
+     * @param cb
+     *          callback to return the result
+     * @param ctx
+     *          callback context
+     */
+    public void asyncReadLastConfirmedAndEntry(final long entryId,
+                                               final long timeOutInMillis,
+                                               final boolean parallel,
+                                               final AsyncCallback.ReadLastConfirmedAndEntryCallback cb,
+                                               final Object ctx) {
+        boolean isClosed;
+        long lac;
+        synchronized (this) {
+            isClosed = metadata.isClosed();
+            lac = metadata.getLastEntryId();
+        }
+        if (isClosed) {
+            if (entryId > lac) {
+                cb.readLastConfirmedAndEntryComplete(BKException.Code.OK, lac, null, ctx);
+                return;
+            }
+        } else {
+            lac = getLastAddConfirmed();
+        }
+        if (entryId <= lac) {
+            asyncReadEntries(entryId, entryId, new ReadCallback() {
+                @Override
+                public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
+                    if (BKException.Code.OK == rc) {
+                        if (seq.hasMoreElements()) {
+                            cb.readLastConfirmedAndEntryComplete(rc, getLastAddConfirmed(), seq.nextElement(), ctx);
+                        } else {
+                            cb.readLastConfirmedAndEntryComplete(rc, getLastAddConfirmed(), null, ctx);
+                        }
+                    } else {
+                        cb.readLastConfirmedAndEntryComplete(rc, INVALID_ENTRY_ID, null, ctx);
+                    }
+                }
+            }, ctx);
+            return;
+        }
+        // wait for entry <i>entryId</i>
+        ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback innercb = new ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback() {
+            AtomicBoolean completed = new AtomicBoolean(false);
+            @Override
+            public void readLastConfirmedAndEntryComplete(int rc, long lastAddConfirmed, LedgerEntry entry) {
+                if (rc == BKException.Code.OK) {
+                    if (completed.compareAndSet(false, true)) {
+                        cb.readLastConfirmedAndEntryComplete(rc, lastAddConfirmed, entry, ctx);
+                    }
+                } else {
+                    if (completed.compareAndSet(false, true)) {
+                        cb.readLastConfirmedAndEntryComplete(rc, INVALID_ENTRY_ID, null, ctx);
+                    }
+                }
+            }
+        };
+        new ReadLastConfirmedAndEntryOp(this, innercb, entryId - 1, timeOutInMillis, bk.scheduler).parallelRead(parallel).initiate();
+    }
+
     /**
      * Context objects for synchronous call to read last confirmed.
      */
@@ -1184,70 +1275,89 @@ public class LedgerHandle implements AutoCloseable {
 
     }
 
-    ArrayList<BookieSocketAddress> replaceBookieInMetadata(final BookieSocketAddress addr, final int bookieIndex)
+    EnsembleInfo replaceBookieInMetadata(final Map<Integer, BookieSocketAddress> failedBookies,
+                                         int ensembleChangeIdx)
             throws BKException.BKNotEnoughBookiesException {
-        BookieSocketAddress newBookie;
-        LOG.info("Handling failure of bookie: {} index: {}", addr, bookieIndex);
         final ArrayList<BookieSocketAddress> newEnsemble = new ArrayList<BookieSocketAddress>();
-        final long newEnsembleStartEntry = lastAddConfirmed + 1;
-
-        // avoid parallel ensemble changes to same ensemble.
+        final long newEnsembleStartEntry = getLastAddConfirmed() + 1;
+        final HashSet<Integer> replacedBookies = new HashSet<Integer>();
         synchronized (metadata) {
             newEnsemble.addAll(metadata.currentEnsemble);
-            newBookie = bk.bookieWatcher.replaceBookie(metadata.getEnsembleSize(),
-                    metadata.getWriteQuorumSize(),
-                    metadata.getAckQuorumSize(),
-                    metadata.getCustomMetadata(),
-                    newEnsemble,
-                    bookieIndex, new HashSet<>(Arrays.asList(addr)));
-
-
-            newEnsemble.set(bookieIndex, newBookie);
-
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Changing ensemble from: " + metadata.currentEnsemble
-                        + " to: " + newEnsemble + " for ledger: " + ledgerId
-                        + " starting at entry: " + (lastAddConfirmed + 1));
+            for (Map.Entry<Integer, BookieSocketAddress> entry : failedBookies.entrySet()) {
+                int idx = entry.getKey();
+                BookieSocketAddress addr = entry.getValue();
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("[EnsembleChange-L{}-{}] : replacing bookie: {} index: {}",
+                        new Object[]{getId(), ensembleChangeIdx, addr, idx});
+                }
+                if (!newEnsemble.get(idx).equals(addr)) {
+                    // ensemble has already changed, failure of this addr is immaterial
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Write did not succeed to {}, bookieIndex {}, but we have already fixed it.",
+                                  addr, idx);
+                    }
+                    continue;
+                }
+                try {
+                    BookieSocketAddress newBookie = bk.bookieWatcher.replaceBookie(
+                        metadata.getEnsembleSize(),
+                        metadata.getWriteQuorumSize(),
+                        metadata.getAckQuorumSize(),
+                        metadata.getCustomMetadata(),
+                        newEnsemble,
+                        idx,
+                        new HashSet<BookieSocketAddress>(failedBookies.values()));
+                    newEnsemble.set(idx, newBookie);
+                    replacedBookies.add(idx);
+                } catch (BKException.BKNotEnoughBookiesException e) {
+                    // if there is no bookie replaced, we throw not enough bookie exception
+                    if (replacedBookies.size() <= 0) {
+                        throw e;
+                    } else {
+                        break;
+                    }
+                }
             }
-
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("[EnsembleChange-L{}-{}] : changing ensemble from: {} to: {} starting at entry: {}," +
+                    " failed bookies: {}, replaced bookies: {}",
+                      new Object[] { ledgerId, ensembleChangeIdx, metadata.currentEnsemble, newEnsemble,
+                              (getLastAddConfirmed() + 1), failedBookies, replacedBookies });
+            }
             metadata.addEnsemble(newEnsembleStartEntry, newEnsemble);
         }
-        return newEnsemble;
+        return new EnsembleInfo(newEnsemble, failedBookies, replacedBookies);
     }
 
-    void handleBookieFailure(final BookieSocketAddress addr, final int bookieIndex) {
-        // If this is the first failure,
-        // try to submit completed pendingAddOps before this failure.
-        if (0 == blockAddCompletions.get()) {
-            sendAddSuccessCallbacks();
+    void handleBookieFailure(final Map<Integer, BookieSocketAddress> failedBookies) {
+        int curBlockAddCompletions = blockAddCompletions.incrementAndGet();
+
+        if (bk.disableEnsembleChangeFeature.isAvailable()) {
+            blockAddCompletions.decrementAndGet();
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Ensemble change is disabled. Retry sending to failed bookies {} for ledger {}.",
+                    failedBookies, ledgerId);
+            }
+            unsetSuccessAndSendWriteRequest(failedBookies.keySet());
+            return;
         }
 
-        blockAddCompletions.incrementAndGet();
+        int curNumEnsembleChanges = numEnsembleChanges.incrementAndGet();
 
         synchronized (metadata) {
-            if (!metadata.currentEnsemble.get(bookieIndex).equals(addr)) {
-                // ensemble has already changed, failure of this addr is immaterial
-                LOG.warn("Write did not succeed to {}, bookieIndex {}, but we have already fixed it.",
-                         addr, bookieIndex);
-                blockAddCompletions.decrementAndGet();
-
-                // Try to submit completed pendingAddOps, pending by this fix.
-                if (0 == blockAddCompletions.get()) {
-                    sendAddSuccessCallbacks();
-                }
-
-                return;
-            }
-
             try {
-                ArrayList<BookieSocketAddress> newEnsemble = replaceBookieInMetadata(addr, bookieIndex);
-
-                EnsembleInfo ensembleInfo = new EnsembleInfo(newEnsemble, bookieIndex,
-                                                             addr);
-                writeLedgerConfig(new ChangeEnsembleCb(ensembleInfo));
+                EnsembleInfo ensembleInfo = replaceBookieInMetadata(failedBookies, curNumEnsembleChanges);
+                if (ensembleInfo.replacedBookies.isEmpty()) {
+                    blockAddCompletions.decrementAndGet();
+                    return;
+                }
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("[EnsembleChange-L{}-{}] : writing new ensemble info = {}, block add completions = {}",
+                        new Object[]{getId(), curNumEnsembleChanges, ensembleInfo, curBlockAddCompletions});
+                }
+                writeLedgerConfig(new ChangeEnsembleCb(ensembleInfo, curBlockAddCompletions, curNumEnsembleChanges));
             } catch (BKException.BKNotEnoughBookiesException e) {
-                LOG.error("Could not get additional bookie to "
-                          + "remake ensemble, closing ledger: " + ledgerId);
+                LOG.error("Could not get additional bookie to remake ensemble, closing ledger: {}", ledgerId);
                 handleUnrecoverableErrorDuringAdd(e.getCode());
                 return;
             }
@@ -1255,16 +1365,26 @@ public class LedgerHandle implements AutoCloseable {
     }
 
     // Contains newly reformed ensemble, bookieIndex, failedBookieAddress
-    private static final class EnsembleInfo {
+    static final class EnsembleInfo {
         private final ArrayList<BookieSocketAddress> newEnsemble;
-        private final int bookieIndex;
-        private final BookieSocketAddress addr;
+        private final Map<Integer, BookieSocketAddress> failedBookies;
+        final Set<Integer> replacedBookies;
 
-        public EnsembleInfo(ArrayList<BookieSocketAddress> newEnsemble, int bookieIndex,
-                            BookieSocketAddress addr) {
+        public EnsembleInfo(ArrayList<BookieSocketAddress> newEnsemble,
+                            Map<Integer, BookieSocketAddress> failedBookies,
+                            Set<Integer> replacedBookies) {
             this.newEnsemble = newEnsemble;
-            this.bookieIndex = bookieIndex;
-            this.addr = addr;
+            this.failedBookies = failedBookies;
+            this.replacedBookies = replacedBookies;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("Ensemble Info : failed bookies = ").append(failedBookies)
+                    .append(", replaced bookies = ").append(replacedBookies)
+                    .append(", new ensemble = ").append(newEnsemble);
+            return sb.toString();
         }
     }
 
@@ -1275,10 +1395,16 @@ public class LedgerHandle implements AutoCloseable {
      */
     private final class ChangeEnsembleCb extends OrderedSafeGenericCallback<Void> {
         private final EnsembleInfo ensembleInfo;
+        private final int curBlockAddCompletions;
+        private final int ensembleChangeIdx;
 
-        ChangeEnsembleCb(EnsembleInfo ensembleInfo) {
+        ChangeEnsembleCb(EnsembleInfo ensembleInfo,
+                         int curBlockAddCompletions,
+                         int ensembleChangeIdx) {
             super(bk.mainWorkerPool, ledgerId);
             this.ensembleInfo = ensembleInfo;
+            this.curBlockAddCompletions = curBlockAddCompletions;
+            this.ensembleChangeIdx = ensembleChangeIdx;
         }
 
         @Override
@@ -1287,30 +1413,39 @@ public class LedgerHandle implements AutoCloseable {
                 // We changed the ensemble, but got a version exception. We
                 // should still consider this as an ensemble change
                 ensembleChangeCounter.inc();
+
+                if (LOG.isDebugEnabled()) {
+                    LOG.info("[EnsembleChange-L{}-{}] : encountered version conflicts, re-read ledger metadata.",
+                        getId(), ensembleChangeIdx);
+                }
+
                 rereadMetadata(new ReReadLedgerMetadataCb(rc,
-                                       ensembleInfo));
+                                       ensembleInfo, curBlockAddCompletions, ensembleChangeIdx));
                 return;
             } else if (rc != BKException.Code.OK) {
-                LOG.error("Could not persist ledger metadata while "
-                          + "changing ensemble to: "
-                          + ensembleInfo.newEnsemble
-                          + " , closing ledger");
+                LOG.error("[EnsembleChange-L{}-{}] : could not persist ledger metadata : info = {}, closing ledger : {}.",
+                        new Object[] { getId(), ensembleChangeIdx, ensembleInfo, rc });
                 handleUnrecoverableErrorDuringAdd(rc);
                 return;
             }
-            blockAddCompletions.decrementAndGet();
+            int newBlockAddCompletions = blockAddCompletions.decrementAndGet();
+
+            if (LOG.isDebugEnabled()) {
+                LOG.info("[EnsembleChange-L{}-{}] : completed ensemble change, block add completion {} => {}",
+                    new Object[]{getId(), ensembleChangeIdx, curBlockAddCompletions, newBlockAddCompletions});
+            }
 
             // We've successfully changed an ensemble
             ensembleChangeCounter.inc();
             // the failed bookie has been replaced
-            unsetSuccessAndSendWriteRequest(ensembleInfo.bookieIndex);
+            unsetSuccessAndSendWriteRequest(ensembleInfo.replacedBookies);
         }
 
         @Override
         public String toString() {
             return String.format("ChangeEnsemble(%d)", ledgerId);
         }
-    };
+    }
 
     /**
      * Callback which is reading the ledgerMetadata present in zk. This will try
@@ -1319,29 +1454,32 @@ public class LedgerHandle implements AutoCloseable {
     private final class ReReadLedgerMetadataCb extends OrderedSafeGenericCallback<LedgerMetadata> {
         private final int rc;
         private final EnsembleInfo ensembleInfo;
+        private final int curBlockAddCompletions;
+        private final int ensembleChangeIdx;
 
-        ReReadLedgerMetadataCb(int rc, EnsembleInfo ensembleInfo) {
+        ReReadLedgerMetadataCb(int rc,
+                               EnsembleInfo ensembleInfo,
+                               int curBlockAddCompletions,
+                               int ensembleChangeIdx) {
             super(bk.mainWorkerPool, ledgerId);
             this.rc = rc;
             this.ensembleInfo = ensembleInfo;
+            this.curBlockAddCompletions = curBlockAddCompletions;
+            this.ensembleChangeIdx = ensembleChangeIdx;
         }
 
         @Override
         public void safeOperationComplete(int newrc, LedgerMetadata newMeta) {
             if (newrc != BKException.Code.OK) {
-                LOG.error("Error reading new metadata from ledger "
-                        + "after changing ensemble, code=" + newrc);
+                LOG.error("[EnsembleChange-L{}-{}] : error re-reading metadata to address ensemble change conflicts," +
+                        " code=", new Object[] { ledgerId, ensembleChangeIdx, newrc });
                 handleUnrecoverableErrorDuringAdd(rc);
             } else {
                 if (!resolveConflict(newMeta)) {
-                    LOG.error("Could not resolve ledger metadata conflict "
-                            + "while changing ensemble to: "
-                            + ensembleInfo.newEnsemble
-                            + ", old meta data is \n"
-                            + new String(metadata.serialize(), UTF_8)
-                            + "\n, new meta data is \n"
-                            + new String(newMeta.serialize(), UTF_8)
-                            + "\n ,closing ledger");
+                    LOG.error("[EnsembleChange-L{}-{}] : could not resolve ledger metadata conflict" +
+                            " while changing ensemble to: {}, local meta data is \n {} \n," +
+                            " zk meta data is \n {} \n, closing ledger",
+                            new Object[] { ledgerId, ensembleChangeIdx, ensembleInfo.newEnsemble, metadata, newMeta });
                     handleUnrecoverableErrorDuringAdd(rc);
                 }
             }
@@ -1362,8 +1500,17 @@ public class LedgerHandle implements AutoCloseable {
          * </p>
          */
         private boolean resolveConflict(LedgerMetadata newMeta) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("[EnsembleChange-L{}-{}] : resolving conflicts - local metadata = \n {} \n," +
+                    " zk metadata = \n {} \n", new Object[]{ledgerId, ensembleChangeIdx, metadata, newMeta});
+            }
             // make sure the ledger isn't closed by other ones.
             if (metadata.getState() != newMeta.getState()) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.info("[EnsembleChange-L{}-{}] : resolving conflicts but state changed," +
+                            " local metadata = \n {} \n, zk metadata = \n {} \n",
+                        new Object[]{ledgerId, ensembleChangeIdx, metadata, newMeta});
+                }
                 return false;
             }
 
@@ -1375,6 +1522,11 @@ public class LedgerHandle implements AutoCloseable {
             //           than the metadata changed by recovery.
             int diff = newMeta.getEnsembles().size() - metadata.getEnsembles().size();
             if (0 != diff) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("[EnsembleChange-L{}-{}] : resolving conflicts but ensembles have {} differences," +
+                            " local metadata = \n {} \n, zk metadata = \n {} \n",
+                        new Object[]{ledgerId, ensembleChangeIdx, diff, metadata, newMeta});
+                }
                 if (-1 == diff) {
                     // Case 1: metadata is changed by other ones (e.g. Recovery)
                     return updateMetadataIfPossible(newMeta);
@@ -1389,45 +1541,76 @@ public class LedgerHandle implements AutoCloseable {
             // the ensemble change of the failed bookie is failed due to metadata conflicts. so try to
             // update the ensemble change metadata again. Otherwise, it means that the ensemble change
             // is already succeed, unset the success and re-adding entries.
-            if (newMeta.currentEnsemble.get(ensembleInfo.bookieIndex).equals(
-                    ensembleInfo.addr)) {
+            if (!areFailedBookiesReplaced(newMeta, ensembleInfo)) {
                 // If the in-memory data doesn't contains the failed bookie, it means the ensemble change
                 // didn't finish, so try to resolve conflicts with the metadata read from zookeeper and
                 // update ensemble changed metadata again.
-                if (!metadata.currentEnsemble.get(ensembleInfo.bookieIndex)
-                        .equals(ensembleInfo.addr)) {
+                if (areFailedBookiesReplaced(metadata, ensembleInfo)) {
                     return updateMetadataIfPossible(newMeta);
                 }
             } else {
                 ensembleChangeCounter.inc();
                 // We've successfully changed an ensemble
                 // the failed bookie has been replaced
-                blockAddCompletions.decrementAndGet();
-                unsetSuccessAndSendWriteRequest(ensembleInfo.bookieIndex);
+                int newBlockAddCompletions = blockAddCompletions.decrementAndGet();
+                unsetSuccessAndSendWriteRequest(ensembleInfo.replacedBookies);
+                if (LOG.isDebugEnabled()) {
+                    LOG.info("[EnsembleChange-L{}-{}] : resolved conflicts, block add complectiosn {} => {}.",
+                        new Object[]{ledgerId, ensembleChangeIdx, curBlockAddCompletions, newBlockAddCompletions});
+                }
             }
             return true;
+        }
+
+        /**
+         * Check whether all the failed bookies are replaced.
+         *
+         * @param newMeta
+         *          new ledger metadata
+         * @param ensembleInfo
+         *          ensemble info used for ensemble change.
+         * @return true if all failed bookies are replaced, false otherwise
+         */
+        private boolean areFailedBookiesReplaced(LedgerMetadata newMeta, EnsembleInfo ensembleInfo) {
+            boolean replaced = true;
+            for (Integer replacedBookieIdx : ensembleInfo.replacedBookies) {
+                BookieSocketAddress failedBookieAddr = ensembleInfo.failedBookies.get(replacedBookieIdx);
+                BookieSocketAddress replacedBookieAddr = newMeta.currentEnsemble.get(replacedBookieIdx);
+                replaced &= !Objects.equal(replacedBookieAddr, failedBookieAddr);
+            }
+            return replaced;
         }
 
         private boolean updateMetadataIfPossible(LedgerMetadata newMeta) {
             // if the local metadata is newer than zookeeper metadata, it means that metadata is updated
             // again when it was trying re-reading the metatada, re-kick the reread again
             if (metadata.isNewerThan(newMeta)) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("[EnsembleChange-L{}-{}] : reread metadata because local metadata is newer.",
+                        new Object[]{ledgerId, ensembleChangeIdx});
+                }
                 rereadMetadata(this);
                 return true;
             }
             // make sure the metadata doesn't changed by other ones.
             if (metadata.isConflictWith(newMeta)) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("[EnsembleChange-L{}-{}] : metadata is conflicted, local metadata = \n {} \n," +
+                        " zk metadata = \n {} \n", new Object[]{ledgerId, ensembleChangeIdx, metadata, newMeta});
+                }
                 return false;
             }
-            LOG.info("Resolve ledger metadata conflict while changing ensemble to: {},"
-                    + " old meta data is \n {} \n, new meta data is \n {}.", new Object[] {
-                    ensembleInfo.newEnsemble, metadata, newMeta });
+            if (LOG.isDebugEnabled()) {
+                LOG.info("[EnsembleChange-L{}-{}] : resolved ledger metadata conflict and writing to zookeeper,"
+                        + " local meta data is \n {} \n, zk meta data is \n {}.",
+                    new Object[]{ledgerId, ensembleChangeIdx, metadata, newMeta});
+            }
             // update znode version
             metadata.setVersion(newMeta.getVersion());
             // merge ensemble infos from new meta except last ensemble
             // since they might be modified by recovery tool.
             metadata.mergeEnsembles(newMeta.getEnsembles());
-            writeLedgerConfig(new ChangeEnsembleCb(ensembleInfo));
+            writeLedgerConfig(new ChangeEnsembleCb(ensembleInfo, curBlockAddCompletions, ensembleChangeIdx));
             return true;
         }
 
@@ -1435,17 +1618,26 @@ public class LedgerHandle implements AutoCloseable {
         public String toString() {
             return String.format("ReReadLedgerMetadata(%d)", ledgerId);
         }
-    };
+    }
 
-    void unsetSuccessAndSendWriteRequest(final int bookieIndex) {
+    void unsetSuccessAndSendWriteRequest(final Set<Integer> bookies) {
         for (PendingAddOp pendingAddOp : pendingAddOps) {
-            pendingAddOp.unsetSuccessAndSendWriteRequest(bookieIndex);
+            for (Integer bookieIndex: bookies) {
+                pendingAddOp.unsetSuccessAndSendWriteRequest(bookieIndex);
+            }
         }
     }
 
     void rereadMetadata(final GenericCallback<LedgerMetadata> cb) {
         bk.getLedgerManager().readLedgerMetadata(ledgerId, cb);
     }
+
+    void registerOperationFailureOnBookie(BookieSocketAddress bookie, long entryId) {
+        if (bk.getConf().getEnableBookieFailureTracking()) {
+            bookieFailureHistory.put(bookie, entryId);
+        }
+    }
+
 
     void recover(GenericCallback<Void> finalCb) {
         recover(finalCb, null, false);

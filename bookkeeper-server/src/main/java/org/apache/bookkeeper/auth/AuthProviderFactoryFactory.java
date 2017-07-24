@@ -26,14 +26,13 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.ReflectionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.bookkeeper.client.ClientConnectionPeer;
 import org.apache.bookkeeper.bookie.BookieConnectionPeer;
 
-
+/**
+ * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ */
 public class AuthProviderFactoryFactory {
-    static Logger LOG = LoggerFactory.getLogger(AuthProviderFactoryFactory.class);
 
     public static BookieAuthProvider.Factory newBookieAuthProviderFactory(ServerConfiguration conf) throws IOException {
         String factoryClassName = conf.getBookieAuthProviderFactoryClass();
@@ -61,12 +60,12 @@ public class AuthProviderFactoryFactory {
         return factory;
     }
 
-    public final static String authenticationDisabledPluginName = "AuthDisabledPlugin";
+    public static final String AUTHENTICATION_DISABLED_PLUGIN_NAME = "AuthDisabledPlugin";
 
     private static class AuthenticationDisabledAuthProviderFactory implements BookieAuthProvider.Factory {
         @Override
         public String getPluginName() {
-            return authenticationDisabledPluginName;
+            return AUTHENTICATION_DISABLED_PLUGIN_NAME;
         }
 
         @Override
@@ -90,7 +89,7 @@ public class AuthProviderFactoryFactory {
     private static class NullClientAuthProviderFactory implements ClientAuthProvider.Factory {
         @Override
         public String getPluginName() {
-            return authenticationDisabledPluginName;
+            return AUTHENTICATION_DISABLED_PLUGIN_NAME;
         }
 
         @Override

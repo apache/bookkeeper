@@ -278,7 +278,7 @@ class AuthHandler {
                     } else {
                         assert (resp.hasAuthResponse());
                         BookkeeperProtocol.AuthMessage am = resp.getAuthResponse();
-                        if (AuthProviderFactoryFactory.authenticationDisabledPluginName.equals(am.getAuthPluginName())){
+                        if (AuthProviderFactoryFactory.AUTHENTICATION_DISABLED_PLUGIN_NAME.equals(am.getAuthPluginName())){
                             SocketAddress remote  = ctx.channel().remoteAddress();
                             LOG.info("Authentication is not enabled."
                                 + "Considering this client {0} authenticated", remote);

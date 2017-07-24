@@ -27,9 +27,12 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
+/**
+ * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ */
 public class Stats {
     static final Logger LOG = LoggerFactory.getLogger(Stats.class);
-    public final static String STATS_PROVIDER_CLASS = "statsProviderClass";
+    public static final String STATS_PROVIDER_CLASS = "statsProviderClass";
 
     static StatsProvider prov = new NullStatsProvider();
 
@@ -40,10 +43,10 @@ public class Stats {
                 Class cls = Class.forName(className);
                 @SuppressWarnings("unchecked")
                 Constructor<? extends StatsProvider> cons =
-                    (Constructor<? extends StatsProvider>)cls.getDeclaredConstructor();
+                    (Constructor<? extends StatsProvider>) cls.getDeclaredConstructor();
                 prov = cons.newInstance();
             } catch (ClassNotFoundException cnfe) {
-                LOG.error("Couldn't find configured class(" + className +")", cnfe);
+                LOG.error("Couldn't find configured class(" + className + ")", cnfe);
             } catch (NoSuchMethodException nsme) {
                 LOG.error("Couldn't find default constructor for class (" + className + ")", nsme);
             } catch (InstantiationException ie) {

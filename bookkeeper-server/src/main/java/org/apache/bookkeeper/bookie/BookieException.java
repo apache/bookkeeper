@@ -21,9 +21,9 @@ package org.apache.bookkeeper.bookie;
  *
  */
 
-
-import java.lang.Exception;
-
+/**
+ * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ */
 @SuppressWarnings("serial")
 public abstract class BookieException extends Exception {
 
@@ -50,11 +50,16 @@ public abstract class BookieException extends Exception {
             return new InvalidCookieException();
         case Code.UpgradeException:
             return new UpgradeException();
+        case Code.DiskPartitionDuplicationException:
+            return new DiskPartitionDuplicationException();
         default:
             return new BookieIllegalOpException();
         }
     }
 
+    /**
+     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+     */
     public interface Code {
         int OK = 0;
         int UnauthorizedAccessException = -1;
@@ -64,6 +69,7 @@ public abstract class BookieException extends Exception {
 
         int InvalidCookieException = -102;
         int UpgradeException = -103;
+        int DiskPartitionDuplicationException = -104;
     }
 
     public void setCode(int code) {
@@ -92,6 +98,9 @@ public abstract class BookieException extends Exception {
         case Code.UpgradeException:
             err = "Error performing an upgrade operation ";
             break;
+        case Code.DiskPartitionDuplicationException:
+            err = "Disk Partition Duplication is not allowed";
+            break;
         default:
             err = "Invalid operation";
             break;
@@ -109,24 +118,36 @@ public abstract class BookieException extends Exception {
         }
     }
 
+    /**
+     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+     */
     public static class BookieUnauthorizedAccessException extends BookieException {
         public BookieUnauthorizedAccessException() {
             super(Code.UnauthorizedAccessException);
         }
     }
 
+    /**
+     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+     */
     public static class BookieIllegalOpException extends BookieException {
         public BookieIllegalOpException() {
             super(Code.UnauthorizedAccessException);
         }
     }
 
+    /**
+     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+     */
     public static class LedgerFencedException extends BookieException {
         public LedgerFencedException() {
             super(Code.LedgerFencedException);
         }
     }
 
+    /**
+     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+     */
     public static class InvalidCookieException extends BookieException {
         public InvalidCookieException() {
             this("");
@@ -141,6 +162,9 @@ public abstract class BookieException extends Exception {
         }
     }
 
+    /**
+     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+     */
     public static class UpgradeException extends BookieException {
         public UpgradeException() {
             super(Code.UpgradeException);
@@ -152,6 +176,20 @@ public abstract class BookieException extends Exception {
 
         public UpgradeException(String reason) {
             super(Code.UpgradeException, reason);
+        }
+    }
+    
+    public static class DiskPartitionDuplicationException extends BookieException {
+        public DiskPartitionDuplicationException() {
+            super(Code.DiskPartitionDuplicationException);
+        }
+
+        public DiskPartitionDuplicationException(Throwable cause) {
+            super(Code.DiskPartitionDuplicationException, cause);
+        }
+
+        public DiskPartitionDuplicationException(String reason) {
+            super(Code.DiskPartitionDuplicationException, reason);
         }
     }
 }

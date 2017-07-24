@@ -175,11 +175,11 @@ public class BookieServer {
     }
 
     public synchronized void shutdown() {
+        LOG.info("Shutting down BookieServer");
+        this.nettyServer.shutdown();
         if (!running) {
             return;
         }
-        LOG.info("Shutting down BookieServer");
-        this.nettyServer.shutdown();
         exitCode = bookie.shutdown();
         if (isAutoRecoveryDaemonEnabled && this.autoRecoveryMain != null) {
             this.autoRecoveryMain.shutdown();

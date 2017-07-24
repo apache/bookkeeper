@@ -447,7 +447,7 @@ def get_reviewers(pr_num):
             username = user['name'].strip()
         if username is None:
             continue
-        reviewers_emails.append('{0} <{1}>'.format(username, useremail))
+        reviewers_emails.append('{0} <{1}>'.format(username.encode('utf8'), useremail))
     return ', '.join(reviewers_emails)
 
 def main():

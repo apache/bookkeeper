@@ -121,9 +121,8 @@ public class GarbageCollectorThread extends SafeRunnable {
             this.isThrottleByBytes  = isThrottleByBytes;
             this.compactionRateByBytes = compactionRateByBytes;
             this.compactionRateByEntries = compactionRateByEntries;
-            this.rateLimiter = RateLimiter.create(this.isThrottleByBytes ?
-                                                  this.compactionRateByBytes :
-                                                  this.compactionRateByEntries);
+            this.rateLimiter = RateLimiter.create(this.isThrottleByBytes
+                    ? this.compactionRateByBytes : this.compactionRateByEntries);
         }
 
         // acquire. if bybytes: bytes of this entry; if byentries: 1.
@@ -133,7 +132,7 @@ public class GarbageCollectorThread extends SafeRunnable {
     }
 
     /**
-     * A scanner wrapper to check whether a ledger is alive in an entry log file
+     * A scanner wrapper to check whether a ledger is alive in an entry log file.
      */
     class CompactionScannerFactory {
         List<EntryLocation> offsets = new ArrayList<EntryLocation>();
@@ -262,8 +261,8 @@ public class GarbageCollectorThread extends SafeRunnable {
         }
 
         if (enableMinorCompaction && enableMajorCompaction) {
-            if (minorCompactionInterval >= majorCompactionInterval ||
-                minorCompactionThreshold >= majorCompactionThreshold) {
+            if (minorCompactionInterval >= majorCompactionInterval
+                || minorCompactionThreshold >= majorCompactionThreshold) {
                 throw new IOException("Invalid minor/major compaction settings : minor ("
                                     + minorCompactionThreshold + ", " + minorCompactionInterval
                                     + "), major (" + majorCompactionThreshold + ", "
@@ -294,7 +293,7 @@ public class GarbageCollectorThread extends SafeRunnable {
     }
 
     /**
-     * Manually trigger GC (for testing)
+     * Manually trigger GC (for testing).
      */
     Future<?> triggerGC() {
         return gcExecutor.submit(this);
@@ -308,7 +307,8 @@ public class GarbageCollectorThread extends SafeRunnable {
 
     public void resumeMajorGC() {
         if (suspendMajorCompaction.compareAndSet(true, false)) {
-            LOG.info("{} Major Compaction back to normal since bookie has enough space now.", Thread.currentThread().getName());
+            LOG.info("{} Major Compaction back to normal since bookie has enough space now.",
+                    Thread.currentThread().getName());
         }
     }
 
@@ -320,7 +320,8 @@ public class GarbageCollectorThread extends SafeRunnable {
 
     public void resumeMinorGC() {
         if (suspendMinorCompaction.compareAndSet(true, false)) {
-            LOG.info("{} Minor Compaction back to normal since bookie has enough space now.", Thread.currentThread().getName());
+            LOG.info("{} Minor Compaction back to normal since bookie has enough space now.",
+                    Thread.currentThread().getName());
         }
     }
 
@@ -358,8 +359,8 @@ public class GarbageCollectorThread extends SafeRunnable {
         }
 
         long curTime = MathUtils.now();
-        if (enableMajorCompaction && (!suspendMajor) &&
-            (force || curTime - lastMajorCompactionTime > majorCompactionInterval)) {
+        if (enableMajorCompaction && (!suspendMajor)
+            && (force || curTime - lastMajorCompactionTime > majorCompactionInterval)) {
             // enter major compaction
             LOG.info("Enter major compaction, suspendMajor {}", suspendMajor);
             doCompactEntryLogs(majorCompactionThreshold);
@@ -370,8 +371,8 @@ public class GarbageCollectorThread extends SafeRunnable {
             return;
         }
 
-        if (enableMinorCompaction && (!suspendMinor) &&
-            (force || curTime - lastMinorCompactionTime > minorCompactionInterval)) {
+        if (enableMinorCompaction && (!suspendMinor)
+            && (force || curTime - lastMinorCompactionTime > minorCompactionInterval)) {
             // enter minor compaction
             LOG.info("Enter minor compaction, suspendMinor {}", suspendMinor);
             doCompactEntryLogs(minorCompactionThreshold);
@@ -381,18 +382,18 @@ public class GarbageCollectorThread extends SafeRunnable {
     }
 
     /**
-     * Do garbage collection ledger index files
+     * Do garbage collection ledger index files.
      */
     private void doGcLedgers() {
         garbageCollector.gc(garbageCleaner);
     }
 
     /**
-     * Garbage collect those entry loggers which are not associated with any active ledgers
+     * Garbage collect those entry loggers which are not associated with any active ledgers.
      */
     private void doGcEntryLogs() {
         // Loop through all of the entry logs and remove the non-active ledgers.
-        for (Map.Entry<Long,EntryLogMetadata> entry :  entryLogMetaMap.entrySet()) {
+        for (Map.Entry<Long, EntryLogMetadata> entry :  entryLogMetaMap.entrySet()) {
             long entryLogId = entry.getKey();
             EntryLogMetadata meta = entry.getValue();
             for (Long entryLogLedger : meta.getLedgersMap().keySet()) {
@@ -510,8 +511,8 @@ public class GarbageCollectorThread extends SafeRunnable {
     /**
      * Compact an entry log.
      *
-     * @param entryLogId
-     *          Entry Log File Id
+     * @param scannerFactory
+     * @param entryLogMeta
      */
     protected void compactEntryLog(CompactionScannerFactory scannerFactory,
                                    EntryLogMetadata entryLogMeta) throws IOException {
@@ -571,8 +572,8 @@ public class GarbageCollectorThread extends SafeRunnable {
                 entryLogMetaMap.put(entryLogId, entryLogMeta);
             } catch (IOException e) {
                 hasExceptionWhenScan = true;
-                LOG.warn("Premature exception when processing " + entryLogId +
-                         " recovery will take care of the problem", e);
+                LOG.warn("Premature exception when processing " + entryLogId
+                         + " recovery will take care of the problem", e);
             }
 
             // if scan failed on some entry log, we don't move 'scannedLogId' to next id

@@ -27,7 +27,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
 import org.apache.bookkeeper.util.IOUtils;
-import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
 import org.apache.commons.io.FileUtils;
@@ -48,6 +47,12 @@ import org.slf4j.LoggerFactory;
 import static org.junit.Assert.*;
 
 public class ZooKeeperUtil {
+
+    static {
+        // org.apache.zookeeper.test.ClientBase uses FourLetterWordMain, from 3.5.3 four letter words
+        // are disabled by default due to security reasons
+        System.setProperty("zookeeper.4lw.commands.whitelist", "*");
+    }
     static final Logger LOG = LoggerFactory.getLogger(ZooKeeperUtil.class);
 
     // ZooKeeper related variables

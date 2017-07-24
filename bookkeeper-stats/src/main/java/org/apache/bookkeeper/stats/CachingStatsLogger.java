@@ -19,6 +19,9 @@ package org.apache.bookkeeper.stats;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ */
 public class CachingStatsLogger implements StatsLogger {
 
     protected final StatsLogger underlying;

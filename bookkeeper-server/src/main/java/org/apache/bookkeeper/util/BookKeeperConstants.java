@@ -40,6 +40,7 @@ public class BookKeeperConstants {
     public static final String UNDER_REPLICATION_NODE = "underreplication";
     public static final String UNDER_REPLICATION_LOCK = "locks";
     public static final String DISABLE_NODE = "disable";
+    public static final String LOSTBOOKIERECOVERYDELAY_NODE = "lostBookieRecoveryDelay";
     public static final String DEFAULT_ZK_LEDGERS_ROOT_PATH = "/ledgers";
     public static final String LAYOUT_ZNODE = "LAYOUT";
     public static final String INSTANCEID = "INSTANCEID";
@@ -52,4 +53,5 @@ public class BookKeeperConstants {
     public static final long MAX_LOG_SIZE_LIMIT = 1 * 1024 * 1024 * 1024;
 
     public static final String FEATURE_REPP_DISABLE_DURABILITY_ENFORCEMENT = "repp_disable_durability_enforcement";
+    public static final String FEATURE_DISABLE_ENSEMBLE_CHANGE = "disable_ensemble_change";
 }
