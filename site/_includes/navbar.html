@@ -5,33 +5,14 @@
       <a class="navbar-item">
         <img class="navbar-logo" src="{{ site.baseurl }}img/bk-logo.png"> {{ site.title }}
       </a>
-
-      <div class="navbar-burger">
-        <span></span>
-        <span></span>
-        <span></span>
-      </div>
     </div>
-    <div id="navMenu" class="navbar-menu">
+    <div class="navbar-menu">
       <div class="navbar-start">
-        <!--
-        <div class="navbar-item has-dropdown">
-          <a class="navbar-link">
-            Versions
-          </a>
-        </div>
-        -->
-        <div class="navbar-item has-dropdown is-hoverable">
-          <a class="navbar-link" href="/docs">
-            Documentation
-          </a>
-          <div class="navbar-dropdown is-block">
-            <a class="navbar-item" href="/docs/getting-started/installation">Install</a>
-            <a class="navbar-item" href="/docs/deployment/kubernetes">Deploy on Kubernetes</a>
-            <a class="navbar-item" href="/docs/deployment/dcos">Deploy on DC/OS</a>
-          </div>
-        </div>
+        <a class="navbar-item" href="/docs">
+          Documentation
+        </a>
       </div>
+
       <div class="navbar-end">
         <div class="navbar-item">
           <div class="field is-grouped">

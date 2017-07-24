@@ -7207,6 +7207,10 @@ label.panel-block {
   background-color: whitesmoke;
   padding: 3rem 1.5rem 6rem; }
 
+.navbar-brand a {
+  font-size: 120%;
+  margin-right: 2rem; }
+
 img.logo {
   height: 3rem; }
 
@@ -7319,6 +7323,3 @@ aside.sidebar {
         border-radius: 3px; }
         aside.sidebar ul.sidebar-items li.active a {
           color: white; }
-
-nav.navbar {
-  position: sticky; }
