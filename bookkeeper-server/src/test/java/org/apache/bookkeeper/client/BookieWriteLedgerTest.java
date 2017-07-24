@@ -211,7 +211,7 @@ public class BookieWriteLedgerTest extends
         }
 
         try {
-            CompletableFuture done = new CompletableFuture();
+            CompletableFuture<Object> done = new CompletableFuture<>();
             lh.asyncAddEntry(Unpooled.wrappedBuffer(entry.array()),
                 (int rc, LedgerHandle lh1, long entryId, Object ctx) -> {
                 SynchCallbackUtils.finish(rc, null, done);
@@ -224,7 +224,7 @@ public class BookieWriteLedgerTest extends
         }
 
         try {
-            CompletableFuture done = new CompletableFuture();
+            CompletableFuture<Object> done = new CompletableFuture<>();
             lh.asyncAddEntry(entry.array(),
                 (int rc, LedgerHandle lh1, long entryId, Object ctx) -> {
                 SynchCallbackUtils.finish(rc, null, done);
@@ -237,7 +237,7 @@ public class BookieWriteLedgerTest extends
         }
 
         try {
-            CompletableFuture done = new CompletableFuture();
+            CompletableFuture<Object> done = new CompletableFuture<>();
             lh.asyncAddEntry(entry.array(),0, 4,
                 (int rc, LedgerHandle lh1, long entryId, Object ctx) -> {
                 SynchCallbackUtils.finish(rc, null, done);
