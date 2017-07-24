@@ -1,6 +1,5 @@
 ---
 title: Apache BookKeeper Documentation
-layout: docs
 toc_disable: true
 ---
 

@@ -14,6 +14,10 @@ defaults:
   values:
     layout: docs
     toc: true
+- scope:
+    path: community
+  values:
+    layout: community
 
 gems:
 - jekyll-toc

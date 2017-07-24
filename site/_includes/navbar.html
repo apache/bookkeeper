@@ -8,9 +8,21 @@
     </div>
     <div class="navbar-menu">
       <div class="navbar-start">
-        <a class="navbar-item" href="/docs">
-          Documentation
-        </a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="{{ site.baseurl }}docs">Documentation</a>
+          <div class="navbar-dropdown is-boxed">
+            <a class="navbar-item">Foo</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Community</a>
+          <div class="navbar-dropdown is-boxed">
+            <a class="navbar-item" href="{{ site.baseurl }}community/mailing-lists">Mailing lists</a>
+            <a class="navbar-item" href="{{ site.baseurl }}community/irc">IRC</a>
+            <a class="navbar-item" href="{{ site.baseurl }}community/contributing">Contributing</a>
+            <a class="navbar-item" href="https://issues.apache.org/jira/projects/BOOKKEEPER">JIRA Issue Tracker</a>
+          </div>
+        </div>
       </div>
 
       <div class="navbar-end">

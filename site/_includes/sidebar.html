@@ -1,3 +1,4 @@
+{% unless page.no_sidebar %}
 <aside class="sidebar">
   {% for group in site.data.sidebar.groups %}{% assign docs = group.docs %}
   <p>
@@ -15,3 +16,4 @@
   </ul>
   {% endfor %}
 </aside>
+{% endunless %}

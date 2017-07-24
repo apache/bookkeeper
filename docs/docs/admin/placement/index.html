@@ -29,15 +29,26 @@
 <div class="bk-topnav container">
   <nav class="navbar is-transparent">
     <div class="navbar-brand">
-      <a class="navbar-item">
+      <a class="navbar-item" href="/bookkeeper/">
         <img class="navbar-logo" src="/bookkeeper/img/bk-logo.png"> Apache BookKeeper
       </a>
     </div>
     <div class="navbar-menu">
       <div class="navbar-start">
-        <a class="navbar-item" href="/docs">
-          Documentation
-        </a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="/bookkeeper/docs">Documentation</a>
+          <div class="navbar-dropdown is-boxed">
+            <a class="navbar-item">Foo</a>
+          </div>
+        </div>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Community</a>
+          <div class="navbar-dropdown is-boxed">
+            <a class="navbar-item" href="/bookkeeper/community/mailing-lists">Mailing lists</a>
+            <a class="navbar-item">IRC</a>
+            <hr class="dropdown-divider">
+          </div>
+        </div>
       </div>
 
       <div class="navbar-end">
@@ -69,7 +80,8 @@
       <div class="container bk-docs-container">
   <div class="columns">
     <div class="column is-2">
-      <aside class="sidebar">
+      
+<aside class="sidebar">
   
   <p>
     Getting started
@@ -254,6 +266,7 @@
   </ul>
   
 </aside>
+
     </div>
 
     <div class="column is-8 bk-docs-block">
@@ -284,11 +297,13 @@
 
     <div class="column is-2">
       
-      <div class="toc">
+      
+<div class="toc">
   <h2 class="title">Customized placement policies</h2>
   <ul class="section-nav">
 </ul>
 </div>
+
 
       
     </div>
