@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.conf;
 
 import static com.google.common.base.Charsets.UTF_8;
+import io.netty.buffer.ByteBuf;
 import static org.apache.bookkeeper.util.BookKeeperConstants.FEATURE_DISABLE_ENSEMBLE_CHANGE;
 
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy;
+import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicy;
 import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.util.ReflectionUtils;
@@ -113,6 +115,10 @@ public class ClientConfiguration extends AbstractConfiguration {
     // Failure History Settings
     protected final static String ENABLE_BOOKIE_FAILURE_TRACKING = "enableBookieFailureTracking";
     protected final static String BOOKIE_FAILURE_HISTORY_EXPIRATION_MS = "bookieFailureHistoryExpirationMSec";
+
+    // Netty
+    protected final static String NETTY_USE_POOLED_BUFFERS = "nettyUsePooledBuffers";
+    protected final static boolean DEFAULT_NETTY_USE_POOLED_BUFFERS = true;
 
     // Names of dynamic features
     protected final static String DISABLE_ENSEMBLE_CHANGE_FEATURE_NAME = "disableEnsembleChangeFeatureName";
@@ -1418,6 +1424,32 @@ public class ClientConfiguration extends AbstractConfiguration {
      */
     public ClientConfiguration setDisableEnsembleChangeFeatureName(String disableEnsembleChangeFeatureName) {
         setProperty(DISABLE_ENSEMBLE_CHANGE_FEATURE_NAME, disableEnsembleChangeFeatureName);
+        return this;
+    }
+
+
+    /**
+     * Option to use Netty Pooled ByteBufs
+     *
+     * @return the value of the option
+     */
+    public boolean isNettyUsePooledBuffers() {
+        return getBoolean(NETTY_USE_POOLED_BUFFERS, DEFAULT_NETTY_USE_POOLED_BUFFERS);
+    }
+
+    /**
+     * Enable/Disable the usage of Pooled Netty buffers. While using v2 wire protocol the application will be
+     * responsible for releasing ByteBufs returned by BookKeeper
+     *
+     * @param enabled
+     *          if enabled BookKeeper will use default Pooled Netty Buffer allocator
+     *
+     * @see #setUseV2WireProtocol(boolean)
+     * @see ByteBuf#release()
+     * @see LedgerHandle#readEntries(long, long)
+     */
+    public ClientConfiguration setNettyUsePooledBuffers(boolean enabled) {
+        setProperty(NETTY_USE_POOLED_BUFFERS, enabled);
         return this;
     }
 }
