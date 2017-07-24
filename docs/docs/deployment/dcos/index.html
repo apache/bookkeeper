@@ -35,12 +35,7 @@
     </div>
     <div class="navbar-menu">
       <div class="navbar-start">
-        <div class="navbar-item has-dropdown is-hoverable">
-          <a class="navbar-link" href="/bookkeeper/docs">Documentation</a>
-          <div class="navbar-dropdown is-boxed">
-            <a class="navbar-item">Foo</a>
-          </div>
-        </div>
+        <a class="navbar-item" href="/bookkeeper/docs/getting-started/installation">Documentation</a>
         <div class="navbar-item has-dropdown is-hoverable">
           <a class="navbar-link">Community</a>
           <div class="navbar-dropdown is-boxed">
@@ -78,10 +73,11 @@
   </nav>
 </div>
 
-      <div class="container bk-docs-container">
-  <div class="columns">
-    <div class="column is-2">
-      
+      <div class="bk-docs-container">
+  <div class="container">
+    <div class="columns">
+      <div class="column is-2">
+        
 <aside class="sidebar">
   
   <p>
@@ -131,13 +127,6 @@
       </a>
     </li>
     
-    
-    <li>
-      <a href="/bookkeeper/docs/deployment/kubernetes">
-      BookKeeper on Kubernetes
-      </a>
-    </li>
-    
   </ul>
   
   <p>
@@ -163,27 +152,6 @@
     <li>
       <a href="/bookkeeper/docs/admin/metrics">
       Metric collection
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/admin/geo-replication">
-      Geo-replication
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/admin/placement">
-      Customized placement policies
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/admin/perf">
-      Performance tuning
       </a>
     </li>
     
@@ -218,27 +186,6 @@
   </ul>
   
   <p>
-    Development
-  </p>
-  <ul class="sidebar-items">
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/development/protocol">
-      BookKeeper protocol
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/development/codebase">
-      Codebase
-      </a>
-    </li>
-    
-  </ul>
-  
-  <p>
     Reference
   </p>
   <ul class="sidebar-items">
@@ -266,35 +213,39 @@
     
   </ul>
   
+  <hr />
+  <a class="button is-info">
+    Latest version: 4.5.0
+  </a>
 </aside>
 
-    </div>
+      </div>
 
-    <div class="column is-8 bk-docs-block">
-      <header class="docs-title">
-        <nav class="level">
-          <div class="level-left">
-            <div class="level-item">
-              <h1 class="title">Deploying BookKeeper on DC/OS</h1>
+      <div class="column is-8 bk-docs-block">
+        <header class="docs-title">
+          <nav class="level">
+            <div class="level-left">
+              <div class="level-item">
+                <h1 class="title">Deploying BookKeeper on DC/OS</h1>
+              </div>
             </div>
-          </div>
-          
-          <div class="level-right">
-            <div class="level-item">
-              <img class="logo" src="/bookkeeper/img/dcos-logo.png">
+            
+            <div class="level-right">
+              <div class="level-item">
+                <img class="logo" src="/bookkeeper/img/dcos-logo.png">
+              </div>
             </div>
-          </div>
-          
-        </nav>
+            
+          </nav>
 
-        <h2 class="subtitle">Get up and running easily on an Apache Mesos cluster</h2>
-      </header>
+          <h2 class="subtitle">Get up and running easily on an Apache Mesos cluster</h2>
+        </header>
 
-      <hr />
+        <hr />
 
-      <div class="content is-medium">
-        <section class="bk-docs-content">
-          <p><a href="https://dcos.io/">DC/OS</a> (the <strong>D</strong>ata<strong>C</strong>enter <strong>O</strong>perating <strong>S</strong>ystem) is a distributed operating system used for deploying and managing applications and systems on <a href="http://mesos.apache.org/">Apache Mesos</a>. DC/OS is an open-source tool created and maintained by <a href="https://mesosphere.com/">Mesosphere</a>.</p>
+        <div class="content is-medium">
+          <section class="bk-docs-content">
+            <p><a href="https://dcos.io/">DC/OS</a> (the <strong>D</strong>ata<strong>C</strong>enter <strong>O</strong>perating <strong>S</strong>ystem) is a distributed operating system used for deploying and managing applications and systems on <a href="http://mesos.apache.org/">Apache Mesos</a>. DC/OS is an open-source tool created and maintained by <a href="https://mesosphere.com/">Mesosphere</a>.</p>
 
 <p>BookKeeper is available as a <a href="http://universe.dcos.io/#/package/bookkeeper/version/latest">DC/OS package</a> from the <a href="http://universe.dcos.io/#/packages">Mesosphere DC/OS Universe</a>.</p>
 
@@ -486,15 +437,15 @@ Thank you <span class="k">for </span>using bookkeeper.
 </code></pre>
 </div>
 
-        </section>
+          </section>
 
-        
+          
+        </div>
       </div>
-    </div>
 
-    <div class="column is-2">
-      
-      
+      <div class="column is-2">
+        
+        
 <div class="toc">
   <h2 class="title">Deploying BookKeeper on DC/OS</h2>
   <ul class="section-nav">
@@ -513,7 +464,8 @@ Thank you <span class="k">for </span>using bookkeeper.
 </div>
 
 
-      
+        
+      </div>
     </div>
   </div>
 </div>

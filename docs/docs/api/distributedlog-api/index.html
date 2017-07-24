@@ -35,12 +35,7 @@
     </div>
     <div class="navbar-menu">
       <div class="navbar-start">
-        <div class="navbar-item has-dropdown is-hoverable">
-          <a class="navbar-link" href="/bookkeeper/docs">Documentation</a>
-          <div class="navbar-dropdown is-boxed">
-            <a class="navbar-item">Foo</a>
-          </div>
-        </div>
+        <a class="navbar-item" href="/bookkeeper/docs/getting-started/installation">Documentation</a>
         <div class="navbar-item has-dropdown is-hoverable">
           <a class="navbar-link">Community</a>
           <div class="navbar-dropdown is-boxed">
@@ -78,10 +73,11 @@
   </nav>
 </div>
 
-      <div class="container bk-docs-container">
-  <div class="columns">
-    <div class="column is-2">
-      
+      <div class="bk-docs-container">
+  <div class="container">
+    <div class="columns">
+      <div class="column is-2">
+        
 <aside class="sidebar">
   
   <p>
@@ -131,13 +127,6 @@
       </a>
     </li>
     
-    
-    <li>
-      <a href="/bookkeeper/docs/deployment/kubernetes">
-      BookKeeper on Kubernetes
-      </a>
-    </li>
-    
   </ul>
   
   <p>
@@ -163,27 +152,6 @@
     <li>
       <a href="/bookkeeper/docs/admin/metrics">
       Metric collection
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/admin/geo-replication">
-      Geo-replication
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/admin/placement">
-      Customized placement policies
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/admin/perf">
-      Performance tuning
       </a>
     </li>
     
@@ -218,27 +186,6 @@
   </ul>
   
   <p>
-    Development
-  </p>
-  <ul class="sidebar-items">
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/development/protocol">
-      BookKeeper protocol
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/development/codebase">
-      Codebase
-      </a>
-    </li>
-    
-  </ul>
-  
-  <p>
     Reference
   </p>
   <ul class="sidebar-items">
@@ -266,29 +213,33 @@
     
   </ul>
   
+  <hr />
+  <a class="button is-info">
+    Latest version: 4.5.0
+  </a>
 </aside>
 
-    </div>
+      </div>
 
-    <div class="column is-8 bk-docs-block">
-      <header class="docs-title">
-        <nav class="level">
-          <div class="level-left">
-            <div class="level-item">
-              <h1 class="title">DistributedLog</h1>
+      <div class="column is-8 bk-docs-block">
+        <header class="docs-title">
+          <nav class="level">
+            <div class="level-left">
+              <div class="level-item">
+                <h1 class="title">DistributedLog</h1>
+              </div>
             </div>
-          </div>
-          
-        </nav>
+            
+          </nav>
 
-        <h2 class="subtitle">A higher-level API for managing BookKeeper entries</h2>
-      </header>
+          <h2 class="subtitle">A higher-level API for managing BookKeeper entries</h2>
+        </header>
 
-      <hr />
+        <hr />
 
-      <div class="content is-medium">
-        <section class="bk-docs-content">
-          <blockquote>
+        <div class="content is-medium">
+          <section class="bk-docs-content">
+            <blockquote>
   <p>DistributedLog began its life as a separate project under the Apache Foundation. It was merged into BookKeeper in 2017.</p>
 </blockquote>
 
@@ -526,7 +477,7 @@
 
 <h4 id="writing-to-logs-synchronously">Writing to logs synchronously</h4>
 
-<p>To write records to a log synchronously, you need to instantiate a <a href=""><code class="highlighter-rouge">LogWriter</code></a> object using a <a href=""><code class="highlighter-rouge">DistributedLogManager</code></a>. Here’s an example:</p>
+<p>To write records to a log synchronously, you need to instantiate a <code class="highlighter-rouge">LogWriter</code> object using a <code class="highlighter-rouge">DistributedLogManager</code>. Here’s an example:</p>
 
 <div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">DistributedLogNamespace</span> <span class="n">namespace</span> <span class="o">=</span> <span class="cm">/* Some namespace object */</span><span class="o">;</span>
 <span class="n">DistributedLogManager</span> <span class="n">logManager</span> <span class="o">=</span> <span class="n">namespace</span><span class="o">.</span><span class="na">openLog</span><span class="o">(</span><span class="s">"test-log"</span><span class="o">);</span>
@@ -535,7 +486,7 @@
 </div>
 
 <blockquote>
-  <p>The DistributedLog library enforces single-writer semantics by deploying a ZooKeeper locking mechanism. If there is only one active writer, subsequent calls to <code class="highlighter-rouge">startLogSegmentNonPartitioned</code> will fail with an <a href=""><code class="highlighter-rouge">OwnershipAcquireFailedException</code></a>.</p>
+  <p>The DistributedLog library enforces single-writer semantics by deploying a ZooKeeper locking mechanism. If there is only one active writer, subsequent calls to <code class="highlighter-rouge">startLogSegmentNonPartitioned</code> will fail with an <code class="highlighter-rouge">OwnershipAcquireFailedException</code>.</p>
 </blockquote>
 
 <p>Log records represent the data written to a log stream. Each log record is associated with an application-defined <a href="#log-records">TransactionID</a>. This ID must be non decreasing or else writing a record will be rejected with <a href=""><code class="highlighter-rouge">TransactionIdOutOfOrderException</code></a>. The application is allowed to bypass the TransactionID sanity checking by setting <code class="highlighter-rouge">maxIdSanityCheck</code> to <code class="highlighter-rouge">false</code> in the configuration. System time and atomic numbers are good candidates for TransactionID.</p>
@@ -546,23 +497,79 @@
 </code></pre>
 </div>
 
+<p>Your application can write either a single record, using the <code class="highlighter-rouge">write</code> method, or many records, using the <code class="highlighter-rouge">writeBulk</code> method.</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="c1">// Single record</span>
+<span class="n">writer</span><span class="o">.</span><span class="na">write</span><span class="o">(</span><span class="n">record</span><span class="o">);</span>
+
+<span class="c1">// Bulk write</span>
+<span class="n">List</span><span class="o">&lt;</span><span class="n">LogRecord</span><span class="o">&gt;</span> <span class="n">records</span> <span class="o">=</span> <span class="n">Lists</span><span class="o">.</span><span class="na">newArrayList</span><span class="o">();</span>
+<span class="n">records</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">record</span><span class="o">);</span>
+<span class="n">writer</span><span class="o">.</span><span class="na">writeBulk</span><span class="o">(</span><span class="n">records</span><span class="o">);</span>
+</code></pre>
+</div>
+
+<p>The write calls return immediately after the records are added into the output buffer of writer. This means that the data isn’t guaranteed to be durable until the writer explicitly calls <code class="highlighter-rouge">setReadyToFlush</code> and <code class="highlighter-rouge">flushAndSync</code>. Those two calls will first transmit buffered data to the backend, wait for transmit acknowledgements (acks), and commit the written data to make them visible to readers.</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="c1">// Flush the records</span>
+<span class="n">writer</span><span class="o">.</span><span class="na">setReadyToFlush</span><span class="o">();</span>
+
+<span class="c1">// Commit the records to make them visible to readers</span>
+<span class="n">writer</span><span class="o">.</span><span class="na">flushAndSync</span><span class="o">();</span>
+</code></pre>
+</div>
+
+<p>Log streams in DistributedLog are endless streams <em>unless they are sealed</em>. Endless in this case means that writers can keep writing records to those streams, readers can keep reading from the end of those streams, and the process never stops. Your application can seal a log stream using the <code class="highlighter-rouge">markEndOfStream</code> method:</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">writer</span><span class="o">.</span><span class="na">markEndOfStream</span><span class="o">();</span>
+</code></pre>
+</div>
+
 <h4 id="writing-to-logs-asynchronously">Writing to logs asynchronously</h4>
 
-<h3 id="reader-api">Reader API</h3>
+<p>In order to write to DistributedLog logs asynchronously, you need to create an <code class="highlighter-rouge">AsyncLogWriter</code> instread of a <code class="highlighter-rouge">LogWriter</code>.</p>
 
-<h4 id="reading-from-logs-synchronously">Reading from logs synchronously</h4>
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">DistributedLogNamespace</span> <span class="n">namespace</span> <span class="o">=</span> <span class="cm">/* Some namespace object */</span><span class="o">;</span>
+<span class="n">DistributedLogManager</span> <span class="n">logManager</span> <span class="o">=</span> <span class="n">namespace</span><span class="o">.</span><span class="na">openLog</span><span class="o">(</span><span class="s">"test-async-log"</span><span class="o">);</span>
+<span class="n">AsyncLogWriter</span> <span class="n">writer</span> <span class="o">=</span> <span class="n">logManager</span><span class="o">.</span><span class="na">startAsyncLogSegmentNonPartitioned</span><span class="o">();</span>
+</code></pre>
+</div>
 
-<h4 id="reading-from-logs-asynchronously">Reading from logs asynchronously</h4>
+<p>All writes to <code class="highlighter-rouge">AsyncLogWriter</code> are non partitioned. The futures representing write results are only satisfied when the data is durably persisted in the stream. A <a href="#log-records">DLSN</a> will be returned for each write, which is used to represent the position (aka offset) of the record in the log stream. All the records added in order are guaranteed to be persisted in order. Here’s an example of an async writer that gathers a list of futures representing multiple async write results:</p>
 
-        </section>
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">List</span><span class="o">&lt;</span><span class="n">Future</span><span class="o">&lt;</span><span class="n">DLSN</span><span class="o">&gt;&gt;</span> <span class="n">addFutures</span> <span class="o">=</span> <span class="n">Lists</span><span class="o">.</span><span class="na">newArrayList</span><span class="o">();</span>
+<span class="k">for</span> <span class="o">(</span><span class="kt">long</span> <span class="n">txid</span> <span class="o">=</span> <span class="mi">1L</span><span class="o">;</span> <span class="n">txid</span> <span class="o">&lt;=</span> <span class="mi">100L</span><span class="o">;</span> <span class="n">txid</span><span class="o">++)</span> <span class="o">{</span>
+    <span class="kt">byte</span><span class="o">[]</span> <span class="n">data</span> <span class="o">=</span> <span class="cm">/* some byte array */</span><span class="o">;</span>
+    <span class="n">LogRecord</span> <span class="n">record</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LogRecord</span><span class="o">(</span><span class="n">txid</span><span class="o">,</span> <span class="n">data</span><span class="o">);</span>
+    <span class="n">addFutures</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">writer</span><span class="o">.</span><span class="na">write</span><span class="o">(</span><span class="n">record</span><span class="o">));</span>
+<span class="o">}</span>
+<span class="n">List</span><span class="o">&lt;</span><span class="n">DLSN</span><span class="o">&gt;</span> <span class="n">addResults</span> <span class="o">=</span> <span class="n">Await</span><span class="o">.</span><span class="na">result</span><span class="o">(</span><span class="n">Future</span><span class="o">.</span><span class="na">collect</span><span class="o">(</span><span class="n">addFutures</span><span class="o">));</span>
+</code></pre>
+</div>
 
-        
+<p>The <code class="highlighter-rouge">AsyncLogWriter</code> also provides a method for truncating a stream to a given DLSN. This is useful for building replicated state machines that need explicit controls on when the data can be deleted.</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">DLSN</span> <span class="n">truncateDLSN</span> <span class="o">=</span> <span class="cm">/* some DLSN */</span><span class="o">;</span>
+<span class="n">Future</span><span class="o">&lt;</span><span class="n">DLSN</span><span class="o">&gt;</span> <span class="n">truncateFuture</span> <span class="o">=</span> <span class="n">writer</span><span class="o">.</span><span class="na">truncate</span><span class="o">(</span><span class="n">truncateDLSN</span><span class="o">);</span>
+
+<span class="c1">// Wait for truncation result</span>
+<span class="n">Await</span><span class="o">.</span><span class="na">result</span><span class="o">(</span><span class="n">truncateFuture</span><span class="o">);</span>
+</code></pre>
+</div>
+
+<!--
+TODO: Reader API
+-->
+
+          </section>
+
+          
+        </div>
       </div>
-    </div>
 
-    <div class="column is-2">
-      
-      
+      <div class="column is-2">
+        
+        
 <div class="toc">
   <h2 class="title">DistributedLog</h2>
   <ul class="section-nav">
@@ -588,14 +595,12 @@
 <li class="toc-entry toc-h3"><a href="#writer-api">Writer API</a></li>
 <li class="toc-entry toc-h4"><a href="#writing-to-logs-synchronously">Writing to logs synchronously</a></li>
 <li class="toc-entry toc-h4"><a href="#writing-to-logs-asynchronously">Writing to logs asynchronously</a></li>
-<li class="toc-entry toc-h3"><a href="#reader-api">Reader API</a></li>
-<li class="toc-entry toc-h4"><a href="#reading-from-logs-synchronously">Reading from logs synchronously</a></li>
-<li class="toc-entry toc-h4"><a href="#reading-from-logs-asynchronously">Reading from logs asynchronously</a></li>
 </ul>
 </div>
 
 
-      
+        
+      </div>
     </div>
   </div>
 </div>

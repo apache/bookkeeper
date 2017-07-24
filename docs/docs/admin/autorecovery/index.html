@@ -35,12 +35,7 @@
     </div>
     <div class="navbar-menu">
       <div class="navbar-start">
-        <div class="navbar-item has-dropdown is-hoverable">
-          <a class="navbar-link" href="/bookkeeper/docs">Documentation</a>
-          <div class="navbar-dropdown is-boxed">
-            <a class="navbar-item">Foo</a>
-          </div>
-        </div>
+        <a class="navbar-item" href="/bookkeeper/docs/getting-started/installation">Documentation</a>
         <div class="navbar-item has-dropdown is-hoverable">
           <a class="navbar-link">Community</a>
           <div class="navbar-dropdown is-boxed">
@@ -78,10 +73,11 @@
   </nav>
 </div>
 
-      <div class="container bk-docs-container">
-  <div class="columns">
-    <div class="column is-2">
-      
+      <div class="bk-docs-container">
+  <div class="container">
+    <div class="columns">
+      <div class="column is-2">
+        
 <aside class="sidebar">
   
   <p>
@@ -131,13 +127,6 @@
       </a>
     </li>
     
-    
-    <li>
-      <a href="/bookkeeper/docs/deployment/kubernetes">
-      BookKeeper on Kubernetes
-      </a>
-    </li>
-    
   </ul>
   
   <p>
@@ -163,27 +152,6 @@
     <li>
       <a href="/bookkeeper/docs/admin/metrics">
       Metric collection
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/admin/geo-replication">
-      Geo-replication
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/admin/placement">
-      Customized placement policies
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/admin/perf">
-      Performance tuning
       </a>
     </li>
     
@@ -218,27 +186,6 @@
   </ul>
   
   <p>
-    Development
-  </p>
-  <ul class="sidebar-items">
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/development/protocol">
-      BookKeeper protocol
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/development/codebase">
-      Codebase
-      </a>
-    </li>
-    
-  </ul>
-  
-  <p>
     Reference
   </p>
   <ul class="sidebar-items">
@@ -266,29 +213,33 @@
     
   </ul>
   
+  <hr />
+  <a class="button is-info">
+    Latest version: 4.5.0
+  </a>
 </aside>
 
-    </div>
+      </div>
 
-    <div class="column is-8 bk-docs-block">
-      <header class="docs-title">
-        <nav class="level">
-          <div class="level-left">
-            <div class="level-item">
-              <h1 class="title">Using AutoRecovery</h1>
+      <div class="column is-8 bk-docs-block">
+        <header class="docs-title">
+          <nav class="level">
+            <div class="level-left">
+              <div class="level-item">
+                <h1 class="title">Using AutoRecovery</h1>
+              </div>
             </div>
-          </div>
+            
+          </nav>
+
           
-        </nav>
+        </header>
 
-        
-      </header>
+        <hr />
 
-      <hr />
-
-      <div class="content is-medium">
-        <section class="bk-docs-content">
-          <p>When a <span class="pop" id="bookie-popover">bookie</span> crashes, all <span class="pop" id="ledger-popover">ledgers</span> on that bookie become under-replicated. In order to bring all ledgers in your BookKeeper cluster back to full replication, you’ll need to <em>recover</em> the data from any offline bookies. There are two ways to recover bookies’ data:</p>
+        <div class="content is-medium">
+          <section class="bk-docs-content">
+            <p>When a <span class="pop" id="bookie-popover">bookie</span> crashes, all <span class="pop" id="ledger-popover">ledgers</span> on that bookie become under-replicated. In order to bring all ledgers in your BookKeeper cluster back to full replication, you’ll need to <em>recover</em> the data from any offline bookies. There are two ways to recover bookies’ data:</p>
 
 <ol>
   <li>Using <a href="#manual-recovery">manual recovery</a></li>
@@ -432,15 +383,15 @@
 </ol>
 
 
-        </section>
+          </section>
 
-        
+          
+        </div>
       </div>
-    </div>
 
-    <div class="column is-2">
-      
-      
+      <div class="column is-2">
+        
+        
 <div class="toc">
   <h2 class="title">Using AutoRecovery</h2>
   <ul class="section-nav">
@@ -458,7 +409,8 @@
 </div>
 
 
-      
+        
+      </div>
     </div>
   </div>
 </div>

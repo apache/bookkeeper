@@ -35,12 +35,7 @@
     </div>
     <div class="navbar-menu">
       <div class="navbar-start">
-        <div class="navbar-item has-dropdown is-hoverable">
-          <a class="navbar-link" href="/bookkeeper/docs">Documentation</a>
-          <div class="navbar-dropdown is-boxed">
-            <a class="navbar-item">Foo</a>
-          </div>
-        </div>
+        <a class="navbar-item" href="/bookkeeper/docs/getting-started/installation">Documentation</a>
         <div class="navbar-item has-dropdown is-hoverable">
           <a class="navbar-link">Community</a>
           <div class="navbar-dropdown is-boxed">
@@ -78,10 +73,11 @@
   </nav>
 </div>
 
-      <div class="container bk-docs-container">
-  <div class="columns">
-    <div class="column is-2">
-      
+      <div class="bk-docs-container">
+  <div class="container">
+    <div class="columns">
+      <div class="column is-2">
+        
 <aside class="sidebar">
   
   <p>
@@ -131,13 +127,6 @@
       </a>
     </li>
     
-    
-    <li>
-      <a href="/bookkeeper/docs/deployment/kubernetes">
-      BookKeeper on Kubernetes
-      </a>
-    </li>
-    
   </ul>
   
   <p>
@@ -163,27 +152,6 @@
     <li>
       <a href="/bookkeeper/docs/admin/metrics">
       Metric collection
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/admin/geo-replication">
-      Geo-replication
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/admin/placement">
-      Customized placement policies
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/admin/perf">
-      Performance tuning
       </a>
     </li>
     
@@ -218,27 +186,6 @@
   </ul>
   
   <p>
-    Development
-  </p>
-  <ul class="sidebar-items">
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/development/protocol">
-      BookKeeper protocol
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="/bookkeeper/docs/development/codebase">
-      Codebase
-      </a>
-    </li>
-    
-  </ul>
-  
-  <p>
     Reference
   </p>
   <ul class="sidebar-items">
@@ -266,47 +213,108 @@
     
   </ul>
   
+  <hr />
+  <a class="button is-info">
+    Latest version: 4.5.0
+  </a>
 </aside>
 
-    </div>
-
-    <div class="column is-8 bk-docs-block">
-      <header class="docs-title">
-        <nav class="level">
-          <div class="level-left">
-            <div class="level-item">
-              <h1 class="title">Manual deployment</h1>
-            </div>
-          </div>
-          
-        </nav>
-
-        
-      </header>
-
-      <hr />
-
-      <div class="content is-medium">
-        <section class="bk-docs-content">
-          
-
-        </section>
-
-        
       </div>
-    </div>
 
-    <div class="column is-2">
-      
-      
+      <div class="column is-8 bk-docs-block">
+        <header class="docs-title">
+          <nav class="level">
+            <div class="level-left">
+              <div class="level-item">
+                <h1 class="title">Manual deployment</h1>
+              </div>
+            </div>
+            
+          </nav>
+
+          
+        </header>
+
+        <hr />
+
+        <div class="content is-medium">
+          <section class="bk-docs-content">
+            <p>The easiest way to deploy BookKeeper is using schedulers like <a href="../dcos">DC/OS</a>, but you can also deploy BookKeeper clusters manually. A BookKeeper clusters consists of two main components:</p>
+
+<ul>
+  <li>A <a href="#zookeeper-setup">ZooKeeper</a> cluster that is used for configuration- and coordination-related tasks</li>
+  <li>A <a href="#starting-up-bookies">cluster</a> of <span class="pop" id="bookie-popover">bookies</span></li>
+</ul>
+
+<h2 id="zookeeper-setup">ZooKeeper setup</h2>
+
+<p>We won’t provide a full guide to setting up a ZooKeeper cluster here. We recommend that you consult <a href="https://zookeeper.apache.org/doc/current/zookeeperAdmin.html">this guide</a> in the official ZooKeeper documentation.</p>
+
+<h2 id="starting-up-bookies">Starting up bookies</h2>
+
+<p>Once your ZooKeeper cluster is up and running, you can start up as many <span class="pop" id="bookie-popover">bookies</span> as you’d like to form a cluster. Before starting up each bookie, you need to modify the bookie’s configuration to make sure that it points to the right ZooKeeper cluster.</p>
+
+<p>On each bookie host, you need to <a href="../../getting-started/installation#download">download</a> the BookKeeper package as a tarball. Once you’ve done that, you need to configure the bookie by setting values in the <code class="highlighter-rouge">bookkeeper-server/conf/bk_server.conf</code> config file. The one parameter that you will absolutely need to change is the <a href=""><code class="highlighter-rouge">zkServers</code></a> parameter, which you will need to set to the ZooKeeper connection string for your ZooKeeper cluster. Here’s an example:</p>
+
+<div class="language-properties highlighter-rouge"><pre class="highlight"><code><span class="py">zkServers</span><span class="p">=</span><span class="s">100.0.0.1:2181,100.0.0.2:2181,100.0.0.3:2181</span>
+</code></pre>
+</div>
+
+<blockquote>
+  <p>A full listing of configurable parameters in <code class="highlighter-rouge">bookkeeper-server/conf/bk_server.conf</code> can be found in the <a href="../../reference/config">Configuration</a> reference manual.</p>
+</blockquote>
+
+<p>Once the bookie’s configuration is set, you can start it up using the <a href="../../reference/cli#bookkeeper-bookie"><code class="highlighter-rouge">bookie</code></a> command of the <a href="../../reference/cli#bookkeeper"><code class="highlighter-rouge">bookkeeper</code></a> CLI tool:</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper bookie
+</code></pre>
+</div>
+
+<blockquote>
+  <p>You can also build BookKeeper <a href="../../getting-started/installation#clone">by cloning it from source</a> or <a href="../../getting-started/installation#build-using-maven">using Maven</a>.</p>
+</blockquote>
+
+<h2 id="cluster-metadata-setup">Cluster metadata setup</h2>
+
+<p>Once you’ve started up a cluster of bookies, you need to set up cluster metadata for the cluster by running the following command from any bookie in the cluster:</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell metaformat
+</code></pre>
+</div>
+
+<blockquote>
+  <p>The <code class="highlighter-rouge">metaformat</code> command performs all the necessary ZooKeeper cluster metadata tasks and thus only needs to be run <em>once</em> and from <em>any</em> bookie in the BookKeeper cluster.</p>
+</blockquote>
+
+<p>Once cluster metadata formatting has been completed, your BookKeeper cluster is ready to go!</p>
+
+<!--
+## AutoRecovery
+
+[this guide](../../admin/autorecovery)
+-->
+
+          </section>
+
+          
+        </div>
+      </div>
+
+      <div class="column is-2">
+        
+        
 <div class="toc">
   <h2 class="title">Manual deployment</h2>
   <ul class="section-nav">
+<li class="toc-entry toc-h2"><a href="#zookeeper-setup">ZooKeeper setup</a></li>
+<li class="toc-entry toc-h2"><a href="#starting-up-bookies">Starting up bookies</a></li>
+<li class="toc-entry toc-h2"><a href="#cluster-metadata-setup">Cluster metadata setup</a></li>
 </ul>
 </div>
 
 
-      
+        
+      </div>
     </div>
   </div>
 </div>
