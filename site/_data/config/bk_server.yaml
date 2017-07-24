@@ -228,7 +228,7 @@ groups:
   params:
   - param: zkServers
     description: |
-      "A list of one of more servers on which zookeeper is running. The server list can be comma separated values, for example `zkServers=zk1:2181,zk2:2181,zk3:2181`."
+      A list of one of more servers on which zookeeper is running. The server list can be comma separated values, for example `zkServers=zk1:2181,zk2:2181,zk3:2181`.
     default: "localhost:2181"
   - param: zkTimeout
     description: ZooKeeper client session timeout in milliseconds. Bookie server will exit if it received SESSION_EXPIRED because it was partitioned off from ZooKeeper for more than the session timeout  JVM garbage collection, disk I/O will cause SESSION_EXPIRED. Increment this value could help avoiding this issue.

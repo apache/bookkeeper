@@ -15,8 +15,8 @@ groups:
     endpoint: manual
   - name: BookKeeper on DC/OS
     endpoint: dcos
-  - name: BookKeeper on Kubernetes
-    endpoint: kubernetes
+  #- name: BookKeeper on Kubernetes
+  #  endpoint: kubernetes
 - name: Administration
   dir: admin
   docs:
@@ -26,12 +26,12 @@ groups:
     endpoint: autorecovery
   - name: Metric collection
     endpoint: metrics
-  - name: Geo-replication
-    endpoint: geo-replication
-  - name: Customized placement policies
-    endpoint: placement
-  - name: Performance tuning
-    endpoint: perf
+  #- name: Geo-replication
+  #  endpoint: geo-replication
+  #- name: Customized placement policies
+  #  endpoint: placement
+  #- name: Performance tuning
+  #  endpoint: perf
 - name: API
   dir: api
   docs:
@@ -41,13 +41,13 @@ groups:
     endpoint: ledger-api
   - name: DistributedLog
     endpoint: distributedlog-api
-- name: Development
-  dir: development
-  docs:
-  - name: BookKeeper protocol
-    endpoint: protocol
-  - name: Codebase
-    endpoint: codebase
+#- name: Development
+#  dir: development
+#  docs:
+  #- name: BookKeeper protocol
+  #  endpoint: protocol
+  #- name: Codebase
+  #  endpoint: codebase
 - name: Reference
   dir: reference
   docs:

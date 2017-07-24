@@ -11,20 +11,14 @@ $fa-font-path: "../fonts"
 @import typography
 @import vendor/bulma/bulma
 
+
+
 .navbar-brand a
   font-size: 120%
   margin-right: 2rem
 
 img.logo
   height: 3rem
-
-blockquote
-  code
-    background-color: lighten($sx-light-gray, 30%)
-
-.highlighter-rouge
-  & + blockquote, & + h1, & + h2, & + h3, & + h4, & + h5, & + p
-    margin-top: 1.5rem
 
 em
   margin-right: $em-right-margin
@@ -66,6 +60,9 @@ footer.footer
   display: none
 
 .toc
+  overflow-y: scroll
+  bottom: 0
+  top: $navbar-height + 3rem
   $toc-base-font-size: 1.2rem
   position: fixed
   max-width: 20rem
@@ -89,6 +86,9 @@ footer.footer
       a
         &:hover
           color: darken($tan, 20%)
+    
+      & + .toc-entry
+        margin-top: $toc-base-font-size
 
 body
   font-size: 1.25em
@@ -100,8 +100,7 @@ h2.bk-subtitle
   font-size: $base-font-size * 2
   margin-bottom: 1rem
 
-.bk-docs-container
-  width: 95%
+.bk-docs-container, .bk-community-container
   margin-top: $docs-container-vertical-margin
   margin-bottom: $docs-container-vertical-margin * 2
 
@@ -120,7 +119,7 @@ h2.bk-subtitle
         font-size: $base-font-size * 1.2
 
   .bk-docs-content
-    min-height: 100vh
+    min-height: 70vh
 
     ol ol, ol ul
       margin: .5rem 0 .5rem .75rem
@@ -133,6 +132,12 @@ h2.bk-subtitle
 
     & + .pagination
       margin-top: 2rem
+
+.bk-docs-container .container
+  width: 95%
+
+.bk-community-container .container
+  width: 60%
 
 aside.sidebar
   position: fixed

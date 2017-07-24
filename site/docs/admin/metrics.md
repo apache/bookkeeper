@@ -35,6 +35,7 @@ To enable stats:
 * set the `enableStatistics` parameter to `true`
 * set `statsProviderClass` to the desired provider (see the [table above](#stats-providers) for a listing of classes)
 
-## Enabling stats in the bookkeeper library
+<!-- ## Enabling stats in the bookkeeper library
 
 TODO
+-->

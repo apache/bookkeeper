@@ -1,4 +1,11 @@
+blockquote
+  code
+    background-color: lighten($sx-light-gray, 30%)
+
 .highlighter-rouge
+  & + blockquote, & + h1, & + h2, & + h3, & + h4, & + h5, & + p
+    margin-top: 1.5rem
+
   // Language-specific overrides
   &.language-shell, &.language-bash
     .highlight

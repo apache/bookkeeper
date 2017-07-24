@@ -57,7 +57,7 @@ Command | Action
 `mvn compile findbugs:findbugs` | Compile using the Maven [FindBugs](http://gleclaire.github.io/findbugs-maven-plugin) plugin
 `mvn install` | Install the BookKeeper JAR locally in your local Maven cache (usually in the `~/.m2` directory)
 `mvn deploy` | Deploy the BookKeeper JAR to the Maven repo (if you have the proper credentials)
-`mvn verify` | TODO
+`mvn verify` | Performs a wide variety of verification and validation tasks
 `mvn apache-rat:check` | Run Maven using the [Apache Rat](http://creadur.apache.org/rat/apache-rat-plugin/) plugin
 `mvn compile javadoc:aggregate` | Build Javadocs locally
 `mvn package assembly:single` | Build a complete distribution using the Maven [Assembly](http://maven.apache.org/plugins/maven-assembly-plugin/) plugin
