@@ -726,6 +726,8 @@ public class BookKeeperTest extends BaseTestCase {
                 for (Enumeration<LedgerEntry> readEntries = lh.readEntries(0, numEntries - 1);
                     readEntries.hasMoreElements();) {
                     LedgerEntry entry = readEntries.nextElement();
+                    assertTrue(entry.data.getClass().getName(),
+                        entry.data.getClass().getName().contains("PooledNonRetainedSlicedByteBuf"));
                     assertTrue(entry.data.release());
                     try {
                         entry.data.release();
@@ -749,6 +751,8 @@ public class BookKeeperTest extends BaseTestCase {
                     LedgerEntry entry = readEntries.nextElement();
                     // ButeBufs no reference counter
                     assertTrue(entry.data.release());
+                    assertTrue(entry.data.getClass().getName(),
+                        entry.data.getClass().getName().contains("UnpooledSlicedByteBuf"));
                     try {
                         entry.data.release();
                         fail("ByteBuf already released");
@@ -770,6 +774,8 @@ public class BookKeeperTest extends BaseTestCase {
                     readEntries.hasMoreElements();) {
                     LedgerEntry entry = readEntries.nextElement();
                     // ButeBufs not reference counter
+                    assertTrue(entry.data.getClass().getName(),
+                        entry.data.getClass().getName().contains("UnpooledSlicedByteBuf"));
                     assertTrue(entry.data.release());
                     try {
                         entry.data.release();
@@ -793,6 +799,8 @@ public class BookKeeperTest extends BaseTestCase {
                     readEntries.hasMoreElements();) {
                     LedgerEntry entry = readEntries.nextElement();
                     // ButeBufs not reference counter
+                    assertTrue(entry.data.getClass().getName(),
+                        entry.data.getClass().getName().contains("UnpooledSlicedByteBuf"));
                     assertTrue(entry.data.release());
                     try {
                         entry.data.release();
