@@ -724,8 +724,24 @@ public class EntryLogger {
         if (null == channels) {
             return;
         }
-        for (BufferedLogChannel channel : channels) {
-            channel.flush(true);
+        Iterator<BufferedLogChannel> chIter = channels.iterator();
+        while (chIter.hasNext()) {
+            BufferedLogChannel channel = chIter.next();
+            try {
+                channel.flush(true);
+            } catch (IOException ioe) {
+                // rescue from flush exception, add unflushed channels back
+                synchronized (this) {
+                    if (null == logChannelsToFlush) {
+                        logChannelsToFlush = channels;
+                    } else {
+                        logChannelsToFlush.addAll(0, channels);
+                    }
+                }
+                throw ioe;
+            }
+            // remove the channel from the list after it is successfully flushed
+            chIter.remove();
             // since this channel is only used for writing, after flushing the channel,
             // we had to close the underlying file channel. Otherwise, we might end up
             // leaking fds which cause the disk spaces could not be reclaimed.
