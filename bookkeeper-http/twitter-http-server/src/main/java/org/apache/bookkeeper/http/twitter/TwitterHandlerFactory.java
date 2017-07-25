@@ -18,7 +18,6 @@
  * under the License.
  *
  */
-
 package org.apache.bookkeeper.http.twitter;
 
 import org.apache.bookkeeper.http.AbstractHandlerFactory;
@@ -28,7 +27,9 @@ import com.twitter.finagle.http.Request;
 import com.twitter.finagle.http.Response;
 import com.twitter.util.Future;
 
-
+/**
+ * Factory which provide http handlers for TwitterServer based Http Server.
+ */
 public class TwitterHandlerFactory extends AbstractHandlerFactory<TwitterAbstractHandler> {
 
     public TwitterHandlerFactory(ServiceProvider serviceProvider) {

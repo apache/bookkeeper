@@ -33,9 +33,12 @@ import com.twitter.finagle.ListeningServer;
 import com.twitter.finagle.http.HttpMuxer;
 import com.twitter.server.AbstractTwitterServer;
 
+/**
+ * TwitterServer implementation of Http Server.
+ */
 public class TwitterHttpServer extends AbstractTwitterServer implements HttpServer {
 
-    private final Logger LOG = LoggerFactory.getLogger(TwitterHttpServer.class);
+    static final Logger LOG = LoggerFactory.getLogger(TwitterHttpServer.class);
 
     private ListeningServer server;
     private boolean isRunning;

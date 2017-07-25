@@ -18,7 +18,6 @@
  * under the License.
  *
  */
-
 package org.apache.bookkeeper.http.vertx;
 
 import java.util.HashMap;
@@ -31,29 +30,37 @@ import org.apache.bookkeeper.http.service.ServiceRequest;
 import org.apache.bookkeeper.http.service.ServiceResponse;
 
 import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
-import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
 
+/**
+ * Http Handler for Vertx based Http Server.
+ */
 public abstract class VertxAbstractHandler implements Handler<RoutingContext> {
 
+    /**
+     * Process the request using the given service.
+     */
     void processRequest(Service service, RoutingContext context) {
         HttpServerRequest httpRequest = context.request();
         HttpServerResponse httpResponse = context.response();
         ServiceRequest request = new ServiceRequest()
-            .setMethod(convertMethod(httpRequest.method()))
-            .setParams(convertParams(httpRequest.params()))
+            .setMethod(convertMethod(httpRequest))
+            .setParams(convertParams(httpRequest))
             .setBody(context.getBodyAsString());
         ServiceResponse response = service.handle(request);
         httpResponse.setStatusCode(response.getStatusCode());
         httpResponse.end(response.getBody());
     }
 
-    Map convertParams(MultiMap params) {
+    /**
+     * Convert http request parameters to a map.
+     */
+    @SuppressWarnings("unchecked")
+    Map convertParams(HttpServerRequest request) {
         Map map = new HashMap();
-        Iterator<Map.Entry<String, String>> iterator = params.iterator();
+        Iterator<Map.Entry<String, String>> iterator = request.params().iterator();
         while (iterator.hasNext()) {
             Map.Entry entry = iterator.next();
             map.put(entry.getKey(), entry.getValue());
@@ -61,8 +68,12 @@ public abstract class VertxAbstractHandler implements Handler<RoutingContext> {
         return map;
     }
 
-    HttpServer.Method convertMethod(HttpMethod method) {
-        switch (method) {
+    /**
+     * Convert http request method to the method that
+     * can be recognized by HttpServer.
+     */
+    HttpServer.Method convertMethod(HttpServerRequest request) {
+        switch (request.method()) {
             case GET:
                 return HttpServer.Method.GET;
             case POST:

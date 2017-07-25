@@ -18,7 +18,6 @@
  * under the License.
  *
  */
-
 package org.apache.bookkeeper.http.vertx;
 
 import java.util.concurrent.CompletableFuture;
@@ -35,9 +34,12 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.Router;
 
+/**
+ * Vertx.io implementation of Http Server.
+ */
 public class VertxHttpServer implements HttpServer {
 
-    private final Logger LOG = LoggerFactory.getLogger(VertxHttpServer.class);
+    static final Logger LOG = LoggerFactory.getLogger(VertxHttpServer.class);
 
     private Vertx vertx;
     private boolean isRunning;

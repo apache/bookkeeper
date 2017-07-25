@@ -59,7 +59,7 @@ public class ConfigurationService implements Service {
         while (iterator.hasNext()) {
             String key = iterator.next().toString();
             List values = conf.getList(key);
-            if (values.size() >= 0) {
+            if (values.size() > 0) {
                 configMap.put(key, values.get(0));
             }
         }

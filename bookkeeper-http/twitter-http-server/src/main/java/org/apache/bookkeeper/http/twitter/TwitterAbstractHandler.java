@@ -18,7 +18,6 @@
  * under the License.
  *
  */
-
 package org.apache.bookkeeper.http.twitter;
 
 import java.util.HashMap;
@@ -29,16 +28,21 @@ import org.apache.bookkeeper.http.service.ServiceRequest;
 import org.apache.bookkeeper.http.service.ServiceResponse;
 
 import com.twitter.finagle.Service;
-import com.twitter.finagle.http.Method;
 import com.twitter.finagle.http.Request;
 import com.twitter.finagle.http.Response;
 import com.twitter.util.Future;
 
+/**
+ * Http handler for TwitterServer.
+ */
 public abstract class TwitterAbstractHandler extends Service<Request, Response> {
 
+    /**
+     * Process the request using the given service.
+     */
     Future<Response> processRequest(org.apache.bookkeeper.http.service.Service service, Request request) {
         ServiceRequest serviceRequest = new ServiceRequest()
-            .setMethod(convertMethod(request.method()))
+            .setMethod(convertMethod(request))
             .setParams(convertParams(request))
             .setBody(request.contentString());
         ServiceResponse serviceResponse = service.handle(serviceRequest);
@@ -48,6 +52,9 @@ public abstract class TwitterAbstractHandler extends Service<Request, Response> 
         return Future.value(response);
     }
 
+    /**
+     * Convert http request parameters to Map.
+     */
     @SuppressWarnings("unchecked")
     Map convertParams(Request request) {
         Map map = new HashMap();
@@ -57,8 +64,12 @@ public abstract class TwitterAbstractHandler extends Service<Request, Response> 
         return map;
     }
 
-    HttpServer.Method convertMethod(Method method) {
-        switch (method.name()) {
+    /**
+     * Convert http request method to the method that
+     * can be recognized by HttpServer.
+     */
+    HttpServer.Method convertMethod(Request request) {
+        switch (request.method().name()) {
             case "GET":
                 return HttpServer.Method.GET;
             case "POST":

@@ -26,6 +26,9 @@ import org.apache.bookkeeper.http.ServiceProvider;
 
 import io.vertx.ext.web.RoutingContext;
 
+/**
+ * Factory which provide http handlers for Vertx based Http Server.
+ */
 public class VertxHandlerFactory extends AbstractHandlerFactory<VertxAbstractHandler> {
 
 
