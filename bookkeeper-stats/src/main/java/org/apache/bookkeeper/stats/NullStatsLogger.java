@@ -19,12 +19,18 @@ package org.apache.bookkeeper.stats;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * A <i>no-op</i> {@code StatsLogger}.
+ *
+ * <p>Metrics are not recorded, making this receiver useful in unit tests and as defaults in
+ * situations where metrics are not strictly required.
  */
 public class NullStatsLogger implements StatsLogger {
 
     public static final NullStatsLogger INSTANCE = new NullStatsLogger();
 
+    /**
+     * A <i>no-op</i> {@code OpStatsLogger}.
+     */
     static class NullOpStatsLogger implements OpStatsLogger {
         final OpStatsData nullOpStats = new OpStatsData(0, 0, 0, new long[6]);
 
@@ -60,6 +66,9 @@ public class NullStatsLogger implements StatsLogger {
     }
     static NullOpStatsLogger nullOpStatsLogger = new NullOpStatsLogger();
 
+    /**
+     * A <i>no-op</i> {@code Counter}.
+     */
     static class NullCounter implements Counter {
         @Override
         public void clear() {

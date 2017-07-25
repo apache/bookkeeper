@@ -22,7 +22,8 @@ package org.apache.bookkeeper.bookie;
  */
 
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * Signals that a Bookie exception of some sort has occurred. This class
+ * is the general class of exceptions produced by failed or interrupted bookie operations.
  */
 @SuppressWarnings("serial")
 public abstract class BookieException extends Exception {
@@ -58,7 +59,7 @@ public abstract class BookieException extends Exception {
     }
 
     /**
-     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+     * An exception code indicates the failure reason.
      */
     public interface Code {
         int OK = 0;
@@ -119,7 +120,7 @@ public abstract class BookieException extends Exception {
     }
 
     /**
-     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+     * Signals that an unauthorized operation attempts to access the data in a bookie.
      */
     public static class BookieUnauthorizedAccessException extends BookieException {
         public BookieUnauthorizedAccessException() {
@@ -128,7 +129,7 @@ public abstract class BookieException extends Exception {
     }
 
     /**
-     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+     * Signals that an illegal operation attempts to access the data in a bookie.
      */
     public static class BookieIllegalOpException extends BookieException {
         public BookieIllegalOpException() {
@@ -137,7 +138,7 @@ public abstract class BookieException extends Exception {
     }
 
     /**
-     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+     * Signals that a ledger has been fenced in a bookie. No more entries can be appended to that ledger.
      */
     public static class LedgerFencedException extends BookieException {
         public LedgerFencedException() {
@@ -146,7 +147,9 @@ public abstract class BookieException extends Exception {
     }
 
     /**
-     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+     * Signal that an invalid cookie is found when starting a bookie.
+     *
+     * <p>This exception is mainly used for detecting if there is any malformed configuration in a bookie.
      */
     public static class InvalidCookieException extends BookieException {
         public InvalidCookieException() {
@@ -163,7 +166,7 @@ public abstract class BookieException extends Exception {
     }
 
     /**
-     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+     * Signals that an exception occurs on upgrading a bookie.
      */
     public static class UpgradeException extends BookieException {
         public UpgradeException() {
@@ -179,6 +182,9 @@ public abstract class BookieException extends Exception {
         }
     }
     
+    /**
+     * Signals when multiple ledger/journal directories are mounted in same disk partition.
+     */
     public static class DiskPartitionDuplicationException extends BookieException {
         public DiskPartitionDuplicationException() {
             super(Code.DiskPartitionDuplicationException);

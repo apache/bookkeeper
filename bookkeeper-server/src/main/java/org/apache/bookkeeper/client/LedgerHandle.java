@@ -379,7 +379,7 @@ public class LedgerHandle implements AutoCloseable {
                 List<PendingAddOp> pendingAdds;
 
                 if (isClosed()) {
-                    // TODO: make ledger metadata immutable
+                    // TODO: make ledger metadata immutable {@link https://github.com/apache/bookkeeper/issues/281}
                     // Although the metadata is already closed, we don't need to proceed zookeeper metadata update, but
                     // we still need to error out the pending add ops.
                     //

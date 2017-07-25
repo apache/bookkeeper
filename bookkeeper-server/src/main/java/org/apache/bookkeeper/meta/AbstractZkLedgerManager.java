@@ -178,16 +178,6 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
     public void process(WatchedEvent event) {
         LOG.info("Received watched event {} from zookeeper based ledger manager.", event);
         if (Event.EventType.None == event.getType()) {
-            /** TODO: BOOKKEEPER-537 to handle expire events.
-            if (Event.KeeperState.Expired == event.getState()) {
-                LOG.info("ZooKeeper client expired on ledger manager.");
-                Set<Long> keySet = new HashSet<Long>(listeners.keySet());
-                for (Long lid : keySet) {
-                    scheduler.submit(new ReadLedgerMetadataTask(lid));
-                    LOG.info("Re-read ledger metadata for {} after zookeeper session expired.", lid);
-                }
-            }
-            **/
             return;
         }
         String path = event.getPath();

@@ -15,6 +15,6 @@
  * the License.
  */
 /**
- * @TODO: Write JavaDoc Comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * A lightweight stats library implemention based on <i>Codahale</i> metrics library.
  */
 package org.apache.bookkeeper.stats;

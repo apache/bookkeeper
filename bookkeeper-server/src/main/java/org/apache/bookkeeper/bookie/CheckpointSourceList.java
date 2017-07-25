@@ -26,7 +26,7 @@ import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * A {@code CheckpointSourceList} manages a list of {@link CheckpointSource}s.
  */
 public class CheckpointSourceList implements CheckpointSource {
 

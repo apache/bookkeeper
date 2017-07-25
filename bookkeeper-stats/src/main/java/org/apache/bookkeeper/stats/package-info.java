@@ -15,6 +15,6 @@
  * the License.
  */
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * A lightweight stats library used for exporting bookkeeper stats.
  */
 package org.apache.bookkeeper.stats;

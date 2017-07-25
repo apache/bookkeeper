@@ -18,6 +18,6 @@
  *
  */
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * Benchmark utils for benchmarking the performance of Apache BookKeeper.
  */
 package org.apache.bookkeeper.benchmark;
