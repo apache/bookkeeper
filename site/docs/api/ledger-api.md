@@ -2,7 +2,7 @@
 title: The Ledger API
 ---
 
-The ledger API is a lower-level API for BookKeeper.
+The ledger API is a lower-level API for BookKeeper that enables you to interact with {% pop ledgers %} directly.
 
 ## The Java ledger API client
 
@@ -45,14 +45,22 @@ dependencies {
 }
 ```
 
+## Connection string
+
+When interacting with BookKeeper using the Java client, you need to provide your client with a connection string. You have three options for the connection string:
+
+* Provide your entire ZooKeeper connection string, for example `zk1:2181,zk2:2181,zk3:2181`.
+* Provide a host and port for one node in your ZooKeeper cluster, for example `zk1:2181`. In general, it's better to provide a full connection string.
+* If your ZooKeeper cluster can be discovered via DNS, you can provide the DNS name, for example `my-zookeeper-cluster.com`.
+
 ## Creating a new client
 
 The easiest way to create a new [`BookKeeper`](/javadoc/org/apache/bookkeeper/client/BookKeeper) client is to pass in a ZooKeeper connection string as the sole constructor:
 
 ```java
 try {
-    String zkConnectionString = "127.0.0.1:2181";
-    BookKeeper bkClient = new BookKeeper(zkConnectionString);
+    String connectionString = "127.0.0.1:2181"; // For a single-node ZooKeeper cluster
+    BookKeeper bkClient = new BookKeeper(connectionString);
 } catch (InterruptedException | IOException | KeeperException e) {
     e.printStackTrace();
 }

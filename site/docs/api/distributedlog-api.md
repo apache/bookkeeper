@@ -81,31 +81,89 @@ The DistributedLog API for BookKeeper provides a number of guarantees for applic
 
 ## API
 
+Documentation for the DistributedLog API can be found [here](https://distributedlog.incubator.apache.org/docs/latest/user_guide/api/core).
+
+> At a later date, the DistributeLog API docs will be added here.
+
+<!--
+
 The DistributedLog core library is written in Java and interacts with namespaces and logs directly.
+
+### Installation
+
+The BookKeeper Java client library is available via [Maven Central](http://search.maven.org/) and can be installed using [Maven](#maven), [Gradle](#gradle), and other build tools.
+
+### Maven
+
+If you're using [Maven](https://maven.apache.org/), add this to your [`pom.xml`](https://maven.apache.org/guides/introduction/introduction-to-the-pom.html) build configuration file:
+
+```xml
+<-- in your <properties> block ->
+<bookkeeper.version>{{ site.distributedlog_version }}</bookkeeper.version>
+
+<-- in your <dependencies> block ->
+<dependency>
+  <groupId>org.apache.bookkeeper</groupId>
+  <artifactId>bookkeeper-server</artifactId>
+  <version>${bookkeeper.version}</version>
+</dependency>
+```
+
+### Gradle
+
+If you're using [Gradle](https://gradle.org/), add this to your [`build.gradle`](https://spring.io/guides/gs/gradle/) build configuration file:
+
+```groovy
+dependencies {
+    compile group: 'org.apache.bookkeeper', name: 'bookkeeper-server', version: '{{ site.bk_version }}'
+}
+
+// Alternatively:
+dependencies {
+    compile 'org.apache.bookkeeper:bookkeeper-server:{{ site.bk_version }}'
+}
+```
 
 ### Namespace API
 
-A DL [namespace](#namespace) is a collection of [log streams](#log-streams). Namespaces are identified on the basis of a [URI](https://en.wikipedia.org/wiki/Uniform_Resource_Identifier), which has this structure:
+A DL [namespace](#namespace) is a collection of [log streams](#log-streams). When using the DistributedLog API with BookKeeper, you need to provide your Java client with a namespace URI. That URI consists of three elements:
+
+1. The `distributedlog-bk` scheme
+1. A connection string for your BookKeeper cluster. You have three options for the connection string:
+   * An entire ZooKeeper connection string, for example `zk1:2181,zk2:2181,zk3:2181`
+   * A host and port for one node in your ZooKeeper cluster, for example `zk1:2181`. In general, it's better to provide a full ZooKeeper connection string.
+   * If your ZooKeeper cluster can be discovered via DNS, you can provide the DNS name, for example `my-zookeeper-cluster.com`.
+1. A path that points to the location where logs are stored. This could be a ZooKeeper [znode](https://zookeeper.apache.org/doc/current/zookeeperOver.html).
+  
+This is the general structure of a namespace URI:
 
 ```shell
-distributedlog-bk://<domain-name>/path/to/stream
+distributedlog-bk://{connection-string}/{path}
 ```
 
-Namespace URIs have three components:
+Here are some example URIs:
 
-Component | Structure | Meaning
-:---------|:----------|:-------
-Scheme | `distributedlog-bk` | Specifies that the URI is a DistributedLog/BookKeeper URI
-Domain name | Host/port | The domain name that is used to talk to the BookKeeper storage backend (often a ZooKeeper domain)
-Path | `/path/to/stream` | Points to the location that stores logs. This could be a ZooKeeper [znode](https://zookeeper.apache.org/doc/current/zookeeperOver.html).
+```shell
+distributedlog-bk://zk1:2181,zk2:2181,zk3:2181/my-namespace # Full ZooKeeper connection string
+distributedlog-bk://localhost:2181/my-namespace             # Single ZooKeeper node
+distributedlog-bk://my-zookeeper-cluster.com/my-namespace   # DNS name for ZooKeeper
+```
 
-#### Building namespaces
+#### Creating namespaces
 
-Once you have a namespace URI, you can build a namespace instance, which will be used for operating streams. Use the [`DistributedLogNamespaceBuilder`]() to build the [`DistributedLogNamespace`]() object, passing in a [`DistributedLogConfiguration`](), a URI, and optionally a stats logger and a feature provider.
+In order to create namespaces, you need to use the command-line tool.
+
+```shell
+$ 
+```
+
+#### Using namespaces
+
+Once you have a namespace URI, you can build a namespace instance, which will be used for operating streams. Use the `DistributedLogNamespaceBuilder` to build a `DistributedLogNamespace` object, passing in a `DistributedLogConfiguration`, a URI, and optionally a stats logger and a feature provider.
 
 ```java
 DistributedLogConfiguration conf = new DistributedLogConfiguration();
-URI uri = URI.create("distributedlog-bk://zookeeper-domain/path/to/stream");
+URI uri = URI.create("distributedlog-bk://localhost:2181/my-namespace ");
 DistributedLogNamespaceBuilder builder = DistributedLogNamespaceBuilder.newBuilder();
 DistributedLogNamespace = builder
         .conf(conf)           // Configuration for the namespace
@@ -119,7 +177,7 @@ DistributedLogNamespace = builder
 
 #### Creating logs
 
-You can create a log by calling the `createLog` method on a [`DistributedLogNamespace`]() object, passing in a name for the log. This creates the log under the namespace but does *not* return a handle for operating the log.
+You can create a log by calling the `createLog` method on a `DistributedLogNamespace` object, passing in a name for the log. This creates the log under the namespace but does *not* return a handle for operating the log.
 
 ```java
 DistributedLogNamespace namespace = /* Create namespace */;
@@ -132,7 +190,7 @@ try {
 
 #### Opening logs
 
-A [`DistributedLogManager`]() handle will be returned when opening a log using the `openLog` function, which takes the name of the log. This handle can be used for writing records to or reading records from the log.
+A `DistributedLogManager` handle will be returned when opening a log using the `openLog` function, which takes the name of the log. This handle can be used for writing records to or reading records from the log.
 
 > If the log doesn't exist and `createStreamIfNotExists` is set to `true` in the configuration, the log will be created automatically when writing the first record.
 
@@ -152,7 +210,7 @@ Sometimes, applications may open a log with a different configuration from the e
 // Namespace configuration
 DistributedLogConfiguration namespaceConf = new DistributedLogConfiguration();
 conf.setRetentionPeriodHours(24);
-URI uri = URI.create("distributedlog-bk://zookeeper-domain/path/to/stream");
+URI uri = URI.create("distributedlog-bk://localhost:2181/my-namespace");
 DistributedLogNamespace namespace = DistributedLogNamespace.newBuilder()
         .conf(namespaceConf)
         .uri(uri)
@@ -170,7 +228,7 @@ DistributedLogManager logManager = namespace.openLog(
 
 #### Deleting logs
 
-The [`DistributedLogNamespace`]() class provides `deleteLog` function that can be used to delete logs. When you delete a lot, the client library will attempt to acquire a lock on the log before deletion. If the log is being written to by an active writer, deletion will fail (as the other writer currently holds the lock).
+The `DistributedLogNamespace` class provides `deleteLog` function that can be used to delete logs. When you delete a lot, the client library will attempt to acquire a lock on the log before deletion. If the log is being written to by an active writer, deletion will fail (as the other writer currently holds the lock).
 
 ```java
 try {
@@ -206,7 +264,25 @@ while (logs.hasNext()) {
 
 ### Writer API
 
-You can write to DistributedLog logs either [synchronously](#writing-to-logs-synchronously) using the [`LogWriter`]() class or [asynchronously](#writing-to-logs-asynchronously) using the [`AsyncLogWriter`]() class.
+You can write to DistributedLog logs either [synchronously](#writing-to-logs-synchronously) using the `LogWriter` class or [asynchronously](#writing-to-logs-asynchronously) using the `AsyncLogWriter` class.
+
+#### Immediate flush
+
+By default, records are buffered rather than being written immediately. You can disable this behavior and make DL writers write ("flush") entries immediately by adding the following to your configuration object:
+
+```java
+conf.setImmediateFlushEnabled(true);
+conf.setOutputBufferSize(0);
+conf.setPeriodicFlushFrequencyMilliSeconds(0);
+```
+
+#### Immediate locking
+
+By default, DL writers can write to a log stream when other writers are also writing to that stream. You can override this behavior and disable other writers from writing to the stream by adding this to your configuration:
+
+```java
+conf.setLockTimeout(DistributedLogConstants.LOCK_IMMEDIATE);
+```
 
 #### Writing to logs synchronously
 
@@ -220,7 +296,7 @@ LogWriter writer = logManager.startLogSegmentNonPartitioned();
 
 > The DistributedLog library enforces single-writer semantics by deploying a ZooKeeper locking mechanism. If there is only one active writer, subsequent calls to `startLogSegmentNonPartitioned` will fail with an `OwnershipAcquireFailedException`.
 
-Log records represent the data written to a log stream. Each log record is associated with an application-defined [TransactionID](#log-records). This ID must be non decreasing or else writing a record will be rejected with [`TransactionIdOutOfOrderException`](). The application is allowed to bypass the TransactionID sanity checking by setting `maxIdSanityCheck` to `false` in the configuration. System time and atomic numbers are good candidates for TransactionID.
+Log records represent the data written to a log stream. Each log record is associated with an application-defined [TransactionID](#log-records). This ID must be non decreasing or else writing a record will be rejected with `TransactionIdOutOfOrderException`. The application is allowed to bypass the TransactionID sanity checking by setting `maxIdSanityCheck` to `false` in the configuration. System time and atomic numbers are good candidates for TransactionID.
 
 ```java
 long txid = 1L;
@@ -263,7 +339,7 @@ In order to write to DistributedLog logs asynchronously, you need to create an `
 ```java
 DistributedLogNamespace namespace = /* Some namespace object */;
 DistributedLogManager logManager = namespace.openLog("test-async-log");
-AsyncLogWriter writer = logManager.startAsyncLogSegmentNonPartitioned();
+AsyncLogWriter asyncWriter = logManager.startAsyncLogSegmentNonPartitioned();
 ```
 
 All writes to `AsyncLogWriter` are non partitioned. The futures representing write results are only satisfied when the data is durably persisted in the stream. A [DLSN](#log-records) will be returned for each write, which is used to represent the position (aka offset) of the record in the log stream. All the records added in order are guaranteed to be persisted in order. Here's an example of an async writer that gathers a list of futures representing multiple async write results:
@@ -273,7 +349,7 @@ List<Future<DLSN>> addFutures = Lists.newArrayList();
 for (long txid = 1L; txid <= 100L; txid++) {
     byte[] data = /* some byte array */;
     LogRecord record = new LogRecord(txid, data);
-    addFutures.add(writer.write(record));
+    addFutures.add(asyncWriter.write(record));
 }
 List<DLSN> addResults = Await.result(Future.collect(addFutures));
 ```
@@ -282,10 +358,36 @@ The `AsyncLogWriter` also provides a method for truncating a stream to a given D
 
 ```java
 DLSN truncateDLSN = /* some DLSN */;
-Future<DLSN> truncateFuture = writer.truncate(truncateDLSN);
+Future<DLSN> truncateFuture = asyncWriter.truncate(truncateDLSN);
 
 // Wait for truncation result
 Await.result(truncateFuture);
+```
+
+##### Register a listener
+
+Instead of returning a future from write operations, you can also set up a listener that performs assigned actions upon success or failure of the write. Here's an example:
+
+```java
+asyncWriter.addEventListener(new FutureEventListener<DLSN>() {
+    @Override
+    public void onFailure(Throwable cause) {
+        // Execute if the attempt fails
+    }
+
+    @Override
+    public void onSuccess(DLSN value) {
+        // Execute if the attempt succeeds
+    }
+});
+```
+
+##### Close the writer
+
+You can close an async writer when you're finished with it like this:
+
+```java
+FutureUtils.result(asyncWriter.asyncClose());
 ```
 
 <!--

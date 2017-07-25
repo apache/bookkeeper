@@ -113,6 +113,7 @@ h2.bk-subtitle
     .docs-title
       h1.title
         font-size: 2.4rem
+        width: 100%
 
       .title + .subtitle
         padding-top: .75rem
@@ -128,8 +129,10 @@ h2.bk-subtitle
   ul li
     list-style-type: square
 
-.bk-docs-container .container
-  width: 95%
+.bk-docs-container
+  margin-left: auto
+  margin-right: auto
+  width: 80%
 
   .bk-main-content
     min-height: 70vh
@@ -138,6 +141,7 @@ h2.bk-subtitle
   width: 60%
 
 aside.sidebar
+  width: 15rem
   position: fixed
   overflow-y: scroll
   bottom: 0
@@ -153,6 +157,7 @@ aside.sidebar
     li
       padding: .25rem 0 .25rem 1rem
       font-size: 1rem
+      width: 100%
 
       &.active
         background-color: $tan
