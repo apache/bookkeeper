@@ -241,7 +241,7 @@ public class LedgerMetadata {
         state = LedgerMetadataFormat.State.CLOSED;
     }
 
-    void addEnsemble(long startEntryId, ArrayList<BookieSocketAddress> ensemble) {
+    public void addEnsemble(long startEntryId, ArrayList<BookieSocketAddress> ensemble) {
         assert ensembles.isEmpty() || startEntryId >= ensembles.lastKey();
 
         ensembles.put(startEntryId, ensemble);

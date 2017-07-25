@@ -59,6 +59,7 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     protected final static String LEDGER_MANAGER_TYPE = "ledgerManagerType";
     protected final static String LEDGER_MANAGER_FACTORY_CLASS = "ledgerManagerFactoryClass";
     protected final static String ZK_LEDGERS_ROOT_PATH = "zkLedgersRootPath";
+    protected final static String ZK_REQUEST_RATE_LIMIT = "zkRequestRateLimit";
     protected final static String AVAILABLE_NODE = "available";
     protected final static String REREPLICATION_ENTRY_BATCH_SIZE = "rereplicationEntryBatchSize";
 
@@ -191,6 +192,25 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      */
     public String getZkLedgersRootPath() {
         return getString(ZK_LEDGERS_ROOT_PATH, "/ledgers");
+    }
+
+    /**
+     * Get zookeeper access request rate limit.
+     *
+     * @return zookeeper access request rate limit.
+     */
+    public double getZkRequestRateLimit() {
+        return getDouble(ZK_REQUEST_RATE_LIMIT, 0);
+    }
+
+    /**
+     * Set zookeeper access request rate limit.
+     *
+     * @param rateLimit
+     *          zookeeper access request rate limit.
+     */
+    public void setZkRequestRateLimit(double rateLimit) {
+        setProperty(ZK_REQUEST_RATE_LIMIT, rateLimit);
     }
 
     /**

@@ -38,9 +38,15 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * A {@code SortedLedgerStorage} is an extension of {@link InterleavedLedgerStorage}. It
+ * is comprised of two {@code MemTable}s and a {@code InterleavedLedgerStorage}. All the
+ * entries will be first added into a {@code MemTable}, and then be flushed back to the
+ * {@code InterleavedLedgerStorage} when the {@code MemTable} becomes full.
+ */
 public class SortedLedgerStorage extends InterleavedLedgerStorage
         implements LedgerStorage, CacheCallback, SkipListFlusher {
-    private final static Logger LOG = LoggerFactory.getLogger(SortedLedgerStorage.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SortedLedgerStorage.class);
 
     EntryMemTable memTable;
     private ScheduledExecutorService scheduler;
@@ -59,7 +65,7 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
         this.scheduler = Executors.newSingleThreadScheduledExecutor(
                 new ThreadFactoryBuilder()
                 .setNameFormat("SortedLedgerStorage-%d")
-                .setPriority((Thread.NORM_PRIORITY + Thread.MAX_PRIORITY)/2).build());
+                .setPriority((Thread.NORM_PRIORITY + Thread.MAX_PRIORITY) / 2).build());
     }
 
     @Override
@@ -196,7 +202,7 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
                     }
                 } catch (IOException e) {
                     // TODO: if we failed to flush data, we should switch the bookie back to readonly mode
-                    //       or shutdown it.
+                    //       or shutdown it. {@link https://github.com/apache/bookkeeper/issues/280}
                     LOG.error("Exception thrown while flushing skip list cache.", e);
                 }
             }

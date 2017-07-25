@@ -180,7 +180,7 @@ public class GSSAPIBookKeeperTest extends BookKeeperClusterTestCase {
 
         try (BookKeeper bkc = new BookKeeper(clientConf, zkc);
             LedgerHandle lh = bkc.openLedger(ledgerId, DigestType.CRC32,
-                PASSWD);) {
+                PASSWD)) {
             if (lh.getLastAddConfirmed() < 0) {
                 return 0;
             }

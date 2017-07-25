@@ -20,6 +20,9 @@ import io.prometheus.client.Collector;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 
+/**
+ * A {@link Counter} implementation based on <i>Prometheus</i> metrics library.
+ */
 public class PrometheusCounter implements Counter {
 
     private final Gauge gauge;

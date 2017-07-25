@@ -23,17 +23,12 @@ package org.apache.bookkeeper.test;
 
 import java.io.File;
 import org.junit.Test;
-import org.junit.Before;
-import org.junit.After;
 import static org.junit.Assert.*;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
 
-import java.net.InetAddress;
 import java.util.HashSet;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.bookkeeper.bookie.Bookie;
-import org.apache.bookkeeper.util.IOUtils;
 
 public class BookieZKExpireTest extends BookKeeperClusterTestCase {
 

@@ -20,6 +20,11 @@
  */
 package org.apache.bookkeeper.replication;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -33,6 +38,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -40,13 +46,19 @@ import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.test.MultiLedgerManagerTestCase;
+import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -55,8 +67,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.junit.Assert.*;
 
 /**
  * Tests publishing of under replicated ledgers by the Auditor bookie node when
@@ -337,7 +347,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
                 .size());
 
         // wait for 5 seconds before starting the recovery work when a bookie fails
-        baseConf.setLostBookieRecoveryDelay(5);
+        urLedgerMgr.setLostBookieRecoveryDelay(5);
 
         // shutdown a non auditor bookie; choosing non-auditor to avoid another election
         String shutdownBookie = shutDownNonAuditorBookie();
@@ -395,6 +405,247 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
         _testDelayedAuditOfLostBookies();
     }
 
+    @Test(timeout=60000)
+    public void testRescheduleOfDelayedAuditOfLostBookiesToStartImmediately() throws Exception {
+     // wait for a second so that the initial periodic check finishes
+        Thread.sleep(1000);
+        
+        LedgerHandle lh1 = createAndAddEntriesToLedger();
+        Long ledgerId = lh1.getId();
+        LOG.debug("Created ledger : " + ledgerId);
+        ledgerList.add(ledgerId);
+        lh1.close();
+
+        final CountDownLatch underReplicaLatch = registerUrLedgerWatcher(ledgerList
+                .size());
+
+        // wait for 50 seconds before starting the recovery work when a bookie fails
+        urLedgerMgr.setLostBookieRecoveryDelay(50);
+
+        // shutdown a non auditor bookie; choosing non-auditor to avoid another election
+        String shutdownBookie = shutDownNonAuditorBookie();
+
+        LOG.debug("Waiting for ledgers to be marked as under replicated");
+        assertFalse("audit of lost bookie isn't delayed", underReplicaLatch.await(4, TimeUnit.SECONDS));
+        assertEquals("under replicated ledgers identified when it was not expected", 0,
+                urLedgerList.size());
+
+        // set lostBookieRecoveryDelay to 0, so that it triggers AuditTask immediately
+        urLedgerMgr.setLostBookieRecoveryDelay(0);
+        
+        // wait for 1 second for the ledger to get reported as under replicated
+        assertTrue("audit of lost bookie isn't delayed", underReplicaLatch.await(1, TimeUnit.SECONDS));
+
+        assertTrue("Ledger is not marked as underreplicated:" + ledgerId,
+                urLedgerList.contains(ledgerId));
+        Map<Long, String> urLedgerData = getUrLedgerData(urLedgerList);
+        String data = urLedgerData.get(ledgerId);
+        assertTrue("Bookie " + shutdownBookie
+                + "is not listed in the ledger as missing replica :" + data,
+                data.contains(shutdownBookie));
+    }
+    
+    @Test(timeout=60000)
+    public void testRescheduleOfDelayedAuditOfLostBookiesToStartLater() throws Exception {
+     // wait for a second so that the initial periodic check finishes
+        Thread.sleep(1000);
+        
+        LedgerHandle lh1 = createAndAddEntriesToLedger();
+        Long ledgerId = lh1.getId();
+        LOG.debug("Created ledger : " + ledgerId);
+        ledgerList.add(ledgerId);
+        lh1.close();
+
+        final CountDownLatch underReplicaLatch = registerUrLedgerWatcher(ledgerList
+                .size());
+
+        // wait for 3 seconds before starting the recovery work when a bookie fails
+        urLedgerMgr.setLostBookieRecoveryDelay(3);
+
+        // shutdown a non auditor bookie; choosing non-auditor to avoid another election
+        String shutdownBookie = shutDownNonAuditorBookie();
+
+        LOG.debug("Waiting for ledgers to be marked as under replicated");
+        assertFalse("audit of lost bookie isn't delayed", underReplicaLatch.await(2, TimeUnit.SECONDS));
+        assertEquals("under replicated ledgers identified when it was not expected", 0,
+                urLedgerList.size());
+        
+        // set lostBookieRecoveryDelay to 4, so the pending AuditTask is resheduled
+        urLedgerMgr.setLostBookieRecoveryDelay(4);
+        
+        // since we changed the BookieRecoveryDelay period to 4, the audittask shouldn't have been executed
+        LOG.debug("Waiting for ledgers to be marked as under replicated");
+        assertFalse("audit of lost bookie isn't delayed", underReplicaLatch.await(2, TimeUnit.SECONDS));
+        assertEquals("under replicated ledgers identified when it was not expected", 0,
+                urLedgerList.size());        
+        
+        // wait for 3 seconds (since we already waited for 2 secs) for the ledger to get reported as under replicated
+        assertTrue("audit of lost bookie isn't delayed", underReplicaLatch.await(3, TimeUnit.SECONDS));
+        assertTrue("Ledger is not marked as underreplicated:" + ledgerId,
+                urLedgerList.contains(ledgerId));
+        Map<Long, String> urLedgerData = getUrLedgerData(urLedgerList);
+        String data = urLedgerData.get(ledgerId);
+        assertTrue("Bookie " + shutdownBookie
+                + "is not listed in the ledger as missing replica :" + data,
+                data.contains(shutdownBookie));
+    }
+    
+    @Test(timeout=60000)
+    public void testTriggerAuditorWithNoPendingAuditTask() throws Exception {
+        // wait for a second so that the initial periodic check finishes
+        Thread.sleep(1000);
+        int lostBookieRecoveryDelayConfValue = baseConf.getLostBookieRecoveryDelay();
+        Auditor auditorBookiesAuditor = getAuditorBookiesAuditor();
+        Future<?> auditTask = auditorBookiesAuditor.getAuditTask();
+        int lostBookieRecoveryDelayBeforeChange = auditorBookiesAuditor.getLostBookieRecoveryDelayBeforeChange();
+        Assert.assertEquals("auditTask is supposed to be null", null, auditTask);
+        Assert.assertEquals(
+                "lostBookieRecoveryDelayBeforeChange of Auditor should be equal to BaseConf's lostBookieRecoveryDelay",
+                lostBookieRecoveryDelayConfValue, lostBookieRecoveryDelayBeforeChange);
+        
+        // there is no easy way to validate if the Auditor has executed Audit process (Auditor.startAudit), 
+        // without shuttingdown Bookie. To test if by resetting LostBookieRecoveryDelay it does Auditing
+        // even when there is no pending AuditTask, following approach is needed.
+        
+        // Here we are creating few ledgers ledgermetadata with non-existing bookies as its ensemble.
+        // When Auditor does audit it recognizes these ledgers as underreplicated and mark them as 
+        // under-replicated, since these bookies are not available. 
+        int numofledgers = 5;
+        Random rand = new Random();
+        for (int i = 0; i < numofledgers; i++) {
+            LedgerMetadata metadata = new LedgerMetadata(3, 2, 2, DigestType.CRC32, "passwd".getBytes(), null);
+            ArrayList<BookieSocketAddress> ensemble = new ArrayList<BookieSocketAddress>();
+            ensemble.add(new BookieSocketAddress("99.99.99.99:9999"));
+            ensemble.add(new BookieSocketAddress("11.11.11.11:1111"));
+            ensemble.add(new BookieSocketAddress("88.88.88.88:8888"));
+            metadata.addEnsemble(0, ensemble);
+            LedgerManager ledgerManager = LedgerManagerFactory.newLedgerManagerFactory(baseClientConf, zkc)
+                    .newLedgerManager();
+            MutableInt ledgerCreateRC = new MutableInt(-1);
+            CountDownLatch latch = new CountDownLatch(1);
+            long ledgerId = (Math.abs(rand.nextLong())) % 100000000;
+            ledgerManager.createLedgerMetadata(ledgerId, metadata,
+                    new BookkeeperInternalCallbacks.GenericCallback<Void>() {
+                        @Override
+                        public void operationComplete(int rc, Void result) {
+                            ledgerCreateRC.setValue(rc);
+                            latch.countDown();
+                        }
+                    });
+            Assert.assertTrue("Ledger creation should complete within 2 secs",
+                    latch.await(2000, TimeUnit.MILLISECONDS));
+            Assert.assertEquals("LedgerCreate should succeed and return OK rc value", BKException.Code.OK,
+                    ledgerCreateRC.getValue());
+            ledgerList.add(ledgerId);
+        }
+        
+        final CountDownLatch underReplicaLatch = registerUrLedgerWatcher(ledgerList.size());
+        urLedgerMgr.setLostBookieRecoveryDelay(lostBookieRecoveryDelayBeforeChange);
+        assertTrue("Audit should be triggered and created ledgers should be marked as underreplicated",
+                underReplicaLatch.await(2, TimeUnit.SECONDS));
+        assertEquals("All the ledgers should be marked as underreplicated", ledgerList.size(), urLedgerList.size());
+        
+        auditTask = auditorBookiesAuditor.getAuditTask();
+        Assert.assertEquals("auditTask is supposed to be null", null, auditTask);
+        Assert.assertEquals(
+                "lostBookieRecoveryDelayBeforeChange of Auditor should be equal to BaseConf's lostBookieRecoveryDelay",
+                lostBookieRecoveryDelayBeforeChange, auditorBookiesAuditor.getLostBookieRecoveryDelayBeforeChange());
+    }
+    
+    @Test(timeout=60000)
+    public void testTriggerAuditorWithPendingAuditTask() throws Exception {
+     // wait for a second so that the initial periodic check finishes
+        Thread.sleep(1000);
+        
+        Auditor auditorBookiesAuditor = getAuditorBookiesAuditor();
+        LedgerHandle lh1 = createAndAddEntriesToLedger();
+        Long ledgerId = lh1.getId();
+        LOG.debug("Created ledger : " + ledgerId);
+        ledgerList.add(ledgerId);
+        lh1.close();
+
+        final CountDownLatch underReplicaLatch = registerUrLedgerWatcher(ledgerList
+                .size());
+
+        int lostBookieRecoveryDelay = 5;
+        // wait for 5 seconds before starting the recovery work when a bookie fails
+        urLedgerMgr.setLostBookieRecoveryDelay(lostBookieRecoveryDelay);
+
+        // shutdown a non auditor bookie; choosing non-auditor to avoid another election
+        String shutdownBookie = shutDownNonAuditorBookie();
+
+        LOG.debug("Waiting for ledgers to be marked as under replicated");
+        assertFalse("audit of lost bookie isn't delayed", underReplicaLatch.await(2, TimeUnit.SECONDS));
+        assertEquals("under replicated ledgers identified when it was not expected", 0,
+                urLedgerList.size());
+        
+        Future<?> auditTask = auditorBookiesAuditor.getAuditTask();
+        Assert.assertNotEquals("auditTask is not supposed to be null", null, auditTask);
+        Assert.assertEquals(
+                "lostBookieRecoveryDelayBeforeChange of Auditor should be equal to what we set",
+                lostBookieRecoveryDelay, auditorBookiesAuditor.getLostBookieRecoveryDelayBeforeChange());
+        
+        // set lostBookieRecoveryDelay to 5 (previous value), so that Auditor is triggered immediately 
+        urLedgerMgr.setLostBookieRecoveryDelay(lostBookieRecoveryDelay);
+        assertTrue("audit of lost bookie shouldn't be delayed", underReplicaLatch.await(2, TimeUnit.SECONDS));
+        assertEquals("all under replicated ledgers should be identified", ledgerList.size(),
+                urLedgerList.size());        
+        
+        Thread.sleep(100);
+        auditTask = auditorBookiesAuditor.getAuditTask();
+        Assert.assertEquals("auditTask is supposed to be null", null, auditTask);
+        Assert.assertEquals(
+                "lostBookieRecoveryDelayBeforeChange of Auditor should be equal to previously set value",
+                lostBookieRecoveryDelay, auditorBookiesAuditor.getLostBookieRecoveryDelayBeforeChange());
+    }
+    
+    @Test(timeout=60000)
+    public void testTriggerAuditorBySettingDelayToZeroWithPendingAuditTask() throws Exception {
+     // wait for a second so that the initial periodic check finishes
+        Thread.sleep(1000);
+        
+        Auditor auditorBookiesAuditor = getAuditorBookiesAuditor();
+        LedgerHandle lh1 = createAndAddEntriesToLedger();
+        Long ledgerId = lh1.getId();
+        LOG.debug("Created ledger : " + ledgerId);
+        ledgerList.add(ledgerId);
+        lh1.close();
+
+        final CountDownLatch underReplicaLatch = registerUrLedgerWatcher(ledgerList
+                .size());
+
+        int lostBookieRecoveryDelay = 5;
+        // wait for 5 seconds before starting the recovery work when a bookie fails
+        urLedgerMgr.setLostBookieRecoveryDelay(lostBookieRecoveryDelay);
+
+        // shutdown a non auditor bookie; choosing non-auditor to avoid another election
+        String shutdownBookie = shutDownNonAuditorBookie();
+
+        LOG.debug("Waiting for ledgers to be marked as under replicated");
+        assertFalse("audit of lost bookie isn't delayed", underReplicaLatch.await(2, TimeUnit.SECONDS));
+        assertEquals("under replicated ledgers identified when it was not expected", 0,
+                urLedgerList.size());
+        
+        Future<?> auditTask = auditorBookiesAuditor.getAuditTask();
+        Assert.assertNotEquals("auditTask is not supposed to be null", null, auditTask);
+        Assert.assertEquals(
+                "lostBookieRecoveryDelayBeforeChange of Auditor should be equal to what we set",
+                lostBookieRecoveryDelay, auditorBookiesAuditor.getLostBookieRecoveryDelayBeforeChange());
+        
+        // set lostBookieRecoveryDelay to 0, so that Auditor is triggered immediately 
+        urLedgerMgr.setLostBookieRecoveryDelay(0);
+        assertTrue("audit of lost bookie shouldn't be delayed", underReplicaLatch.await(1, TimeUnit.SECONDS));
+        assertEquals("all under replicated ledgers should be identified", ledgerList.size(),
+                urLedgerList.size());        
+        
+        Thread.sleep(100);
+        auditTask = auditorBookiesAuditor.getAuditTask();
+        Assert.assertEquals("auditTask is supposed to be null", null, auditTask);
+        Assert.assertEquals(
+                "lostBookieRecoveryDelayBeforeChange of Auditor should be equal to previously set value",
+                0, auditorBookiesAuditor.getLostBookieRecoveryDelayBeforeChange());
+    }
+    
     /**
      * Test audit of bookies is delayed when one bookie is down. But when
      * another one goes down, the audit is started immediately.
@@ -414,7 +665,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
         CountDownLatch underReplicaLatch = registerUrLedgerWatcher(ledgerList.size());
 
         // wait for 10 seconds before starting the recovery work when a bookie fails
-        baseConf.setLostBookieRecoveryDelay(10);
+        urLedgerMgr.setLostBookieRecoveryDelay(10);
 
         // shutdown a non auditor bookie to avoid an election
         String shutdownBookie1 = shutDownNonAuditorBookie();
@@ -467,7 +718,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
         CountDownLatch underReplicaLatch = registerUrLedgerWatcher(ledgerList.size());
 
         // wait for 5 seconds before starting the recovery work when a bookie fails
-        baseConf.setLostBookieRecoveryDelay(5);
+        urLedgerMgr.setLostBookieRecoveryDelay(5);
 
         // shutdown a non auditor bookie to avoid an election
         int idx1 = getShutDownNonAuditorBookieIdx("");
@@ -624,7 +875,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
                     + event.getPath());
             for (Long ledgerId : ledgerList) {
                 if (event.getPath().contains(ledgerId + "")) {
-                    urLedgerList.add(Long.valueOf(ledgerId));
+                    urLedgerList.add(ledgerId);
                 }
             }
             LOG.debug("Count down and waiting for next notification");
@@ -645,6 +896,12 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
         Assert.assertEquals("Multiple Bookies acting as Auditor!", 1, auditors
                 .size());
         return auditors.get(0);
+    }
+
+    private Auditor getAuditorBookiesAuditor() throws Exception {
+        BookieServer auditorBookieServer = getAuditorBookie();
+        String bookieAddr = auditorBookieServer.getLocalAddress().toString();
+        return auditorElectors.get(bookieAddr).auditor;
     }
 
     private String  shutDownNonAuditorBookie() throws Exception {

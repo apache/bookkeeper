@@ -65,7 +65,8 @@ public class IndexPersistenceMgrTest {
         conf.setJournalDirName(journalDir.getPath());
         conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });
 
-        ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs());
+        ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
         ledgerMonitor = new LedgerDirsMonitor(conf, 
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()), ledgerDirsManager);
         ledgerMonitor.init();
@@ -73,7 +74,6 @@ public class IndexPersistenceMgrTest {
 
     @After
     public void tearDown() throws Exception {
-        //TODO: it is being shut down but never started. why?
         ledgerMonitor.shutdown();
         FileUtils.deleteDirectory(journalDir);
         FileUtils.deleteDirectory(ledgerDir);

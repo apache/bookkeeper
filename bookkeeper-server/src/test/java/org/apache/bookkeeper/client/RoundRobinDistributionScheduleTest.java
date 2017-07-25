@@ -43,10 +43,10 @@ public class RoundRobinDistributionScheduleTest {
         assertEquals("Write set is wrong size", wSet.size(), 3);
 
         DistributionSchedule.AckSet ackSet = schedule.getAckSet();
-        assertFalse("Shouldn't ack yet", ackSet.addBookieAndCheck(wSet.get(0)));
-        assertFalse("Shouldn't ack yet", ackSet.addBookieAndCheck(wSet.get(0)));
-        assertTrue("Should ack after 2 unique", ackSet.addBookieAndCheck(wSet.get(2)));
-        assertTrue("Should still be acking", ackSet.addBookieAndCheck(wSet.get(1)));
+        assertFalse("Shouldn't ack yet", ackSet.completeBookieAndCheck(wSet.get(0)));
+        assertFalse("Shouldn't ack yet", ackSet.completeBookieAndCheck(wSet.get(0)));
+        assertTrue("Should ack after 2 unique", ackSet.completeBookieAndCheck(wSet.get(2)));
+        assertTrue("Should still be acking", ackSet.completeBookieAndCheck(wSet.get(1)));
     }
 
     /**
@@ -113,10 +113,10 @@ public class RoundRobinDistributionScheduleTest {
         int errors = 0;
         for (Set<Integer> subset : subsets) {
             DistributionSchedule.QuorumCoverageSet covSet = schedule.getCoverageSet();
-            boolean covSetSays = false;
             for (Integer i : subset) {
-                covSetSays = covSet.addBookieAndCheckCovered(i);
+                covSet.addBookie(i, BKException.Code.OK);
             }
+            boolean covSetSays = covSet.checkCovered();
 
             boolean[] nodesAvailable = buildAvailable(ensemble, subset);
             boolean canGetAck = canGetAckQuorum(ensemble, writeQuorum, ackQuorum, nodesAvailable);

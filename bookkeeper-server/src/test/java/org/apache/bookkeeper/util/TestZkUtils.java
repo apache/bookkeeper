@@ -62,12 +62,12 @@ public class TestZkUtils extends TestCase {
         /*
          * "/ledgers/available" is already created in ZooKeeperUtil.startServer
          */
-        String ledgerZnodePath = new String("/ledgers/000/000/000/001");
+        String ledgerZnodePath = "/ledgers/000/000/000/001";
         ZkUtils.createFullPathOptimistic(zkc, ledgerZnodePath, "data".getBytes(), Ids.OPEN_ACL_UNSAFE,
                 CreateMode.PERSISTENT);
         assertTrue(ledgerZnodePath + " zNode should exist", null != zkc.exists(ledgerZnodePath, false));
 
-        ledgerZnodePath = new String("/ledgers/000/000/000/002");
+        ledgerZnodePath = "/ledgers/000/000/000/002";
         ZkUtils.createFullPathOptimistic(zkc, ledgerZnodePath, "data".getBytes(), Ids.OPEN_ACL_UNSAFE,
                 CreateMode.PERSISTENT);
         assertTrue(ledgerZnodePath + " zNode should exist", null != zkc.exists(ledgerZnodePath, false));
@@ -76,7 +76,7 @@ public class TestZkUtils extends TestCase {
         assertTrue(ledgerZnodePath + " zNode should not exist, since it is deleted",
                 null == zkc.exists(ledgerZnodePath, false));
 
-        ledgerZnodePath = new String("/ledgers/000/000/000/001");
+        ledgerZnodePath = "/ledgers/000/000/000/001";
         assertTrue(ledgerZnodePath + " zNode should exist", null != zkc.exists(ledgerZnodePath, false));
         ZkUtils.deleteFullPathOptimistic(zkc, ledgerZnodePath, -1);
         assertTrue(ledgerZnodePath + " zNode should not exist, since it is deleted",

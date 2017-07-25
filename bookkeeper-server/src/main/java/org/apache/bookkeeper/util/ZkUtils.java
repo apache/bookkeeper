@@ -38,7 +38,6 @@ import org.apache.zookeeper.KeeperException.Code;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -241,7 +240,7 @@ public class ZkUtils {
         });
 
         synchronized (ctx) {
-            while (ctx.done == false) {
+            while (!ctx.done) {
                 ctx.wait();
             }
         }

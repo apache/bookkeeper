@@ -23,28 +23,28 @@ package org.apache.bookkeeper.bookie;
 
 import static com.google.common.base.Charsets.UTF_8;
 
+import com.google.common.annotations.VisibleForTesting;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.annotations.VisibleForTesting;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 
 /**
  * This is the file handle for a ledger's index file that maps entry ids to location.
  * It is used by LedgerCache.
  *
  * <p>
- * Ledger index file is made of a header and several fixed-length index pages, which records the offsets of data stored in entry loggers
+ * Ledger index file is made of a header and several fixed-length index pages, which records the offsets of data stored
+ * in entry loggers
  * <pre>&lt;header&gt;&lt;index pages&gt;</pre>
  * <b>Header</b> is formated as below:
  * <pre>&lt;magic bytes&gt;&lt;len of master key&gt;&lt;master key&gt;</pre>
@@ -54,11 +54,12 @@ import io.netty.buffer.Unpooled;
  * <li>master key: master key
  * <li>state: bit map to indicate the state, 32 bits.
  * </ul>
- * <b>Index page</b> is a fixed-length page, which contains serveral entries which point to the offsets of data stored in entry loggers.
+ * <b>Index page</b> is a fixed-length page, which contains serveral entries which point to the offsets of data stored
+ * in entry loggers.
  * </p>
  */
-class FileInfo {
-    private final static Logger LOG = LoggerFactory.getLogger(FileInfo.class);
+class FileInfo extends Observable {
+    private static final Logger LOG = LoggerFactory.getLogger(FileInfo.class);
 
     static final int NO_MASTER_KEY = -1;
     static final int STATE_FENCED_BIT = 0x1;
@@ -70,10 +71,10 @@ class FileInfo {
     byte[] masterKey;
 
     /**
-     * The fingerprint of a ledger index file
+     * The fingerprint of a ledger index file.
      */
-    static final public int signature = ByteBuffer.wrap("BKLE".getBytes(UTF_8)).getInt();
-    static final public int headerVersion = 0;
+    public static final int SIGNATURE = ByteBuffer.wrap("BKLE".getBytes(UTF_8)).getInt();
+    public static final int HEADER_VERSION = 0;
 
     static final long START_OF_DATA = 1024;
     private long size;
@@ -102,14 +103,38 @@ class FileInfo {
         return lac;
     }
 
-    synchronized long setLastAddConfirmed(long lac) {
-        if (null == this.lac || this.lac < lac) {
-            this.lac = lac;
+    long setLastAddConfirmed(long lac) {
+        long lacToReturn;
+        synchronized (this) {
+            if (null == this.lac || this.lac < lac) {
+                this.lac = lac;
+                setChanged();
+            }
+            lacToReturn = this.lac;
         }
-        return this.lac;
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("Updating LAC {} , {}", lacToReturn, lac);
+        }
+
+
+        notifyObservers(new LastAddConfirmedUpdateNotification(lacToReturn));
+        return lacToReturn;
     }
 
-    public File getLf() {
+    synchronized Observable waitForLastAddConfirmedUpdate(long previousLAC, Observer observe) {
+        if ((null != lac && lac > previousLAC)
+                || isClosed || ((stateBits & STATE_FENCED_BIT) == STATE_FENCED_BIT)) {
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("Wait For LAC {} , {}", this.lac, previousLAC);
+            }
+            return null;
+        }
+
+        addObserver(observe);
+        return this;
+    }
+
+    public synchronized File getLf() {
         return lf;
     }
 
@@ -119,13 +144,13 @@ class FileInfo {
 
     public ByteBuf getExplicitLac() {
         ByteBuf retLac = null;
-        synchronized(this) {
+        synchronized (this) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("fileInfo:GetLac: {}", explicitLac);
             }
             if (explicitLac != null) {
                 retLac = Unpooled.buffer(explicitLac.capacity());
-                explicitLac.rewind();//copy from the beginning
+                explicitLac.rewind(); //copy from the beginning
                 retLac.writeBytes(explicitLac);
                 explicitLac.rewind();
                 return retLac;
@@ -135,7 +160,7 @@ class FileInfo {
     }
 
     public void setExplicitLac(ByteBuf lac) {
-        synchronized(this) {
+        synchronized (this) {
             if (explicitLac == null) {
                 explicitLac = ByteBuffer.allocate(lac.capacity());
             }
@@ -153,7 +178,7 @@ class FileInfo {
         }
     }
 
-    synchronized public void readHeader() throws IOException {
+    public synchronized void readHeader() throws IOException {
         if (lf.exists()) {
             if (fc != null) {
                 return;
@@ -164,21 +189,21 @@ class FileInfo {
             sizeSinceLastwrite = size;
 
             // avoid hang on reading partial index
-            ByteBuffer bb = ByteBuffer.allocate((int)(Math.min(size, START_OF_DATA)));
-            while(bb.hasRemaining()) {
+            ByteBuffer bb = ByteBuffer.allocate((int) (Math.min(size, START_OF_DATA)));
+            while (bb.hasRemaining()) {
                 fc.read(bb);
             }
             bb.flip();
-            if (bb.getInt() != signature) {
-                throw new IOException("Missing ledger signature");
+            if (bb.getInt() != SIGNATURE) {
+                throw new IOException("Missing ledger signature while reading header for " + lf);
             }
             int version = bb.getInt();
-            if (version != headerVersion) {
-                throw new IOException("Incompatible ledger version " + version);
+            if (version != HEADER_VERSION) {
+                throw new IOException("Incompatible ledger version " + version + " while reading header for " + lf);
             }
             int length = bb.getInt();
             if (length < 0) {
-                throw new IOException("Length " + length + " is invalid");
+                throw new IOException("Length " + length + " is invalid while reading header for " + lf);
             } else if (length > bb.remaining()) {
                 throw new BufferUnderflowException();
             }
@@ -187,11 +212,17 @@ class FileInfo {
             stateBits = bb.getInt();
             needFlushHeader = false;
         } else {
-            throw new IOException("Ledger index file does not exist");
+            throw new IOException("Ledger index file " + lf + " does not exist");
         }
     }
 
-    synchronized void checkOpen(boolean create) throws IOException {
+    @VisibleForTesting
+    void checkOpen(boolean create) throws IOException {
+        checkOpen(create, false);
+    }
+
+    private synchronized void checkOpen(boolean create, boolean openBeforeClose)
+            throws IOException {
         if (fc != null) {
             return;
         }
@@ -211,6 +242,10 @@ class FileInfo {
                 }
             }
         } else {
+            if (openBeforeClose) {
+                // if it is checking for close, skip reading header
+                return;
+            }
             try {
                 readHeader();
             } catch (BufferUnderflowException buf) {
@@ -226,9 +261,9 @@ class FileInfo {
     }
 
     private void writeHeader() throws IOException {
-        ByteBuffer bb = ByteBuffer.allocate((int)START_OF_DATA);
-        bb.putInt(signature);
-        bb.putInt(headerVersion);
+        ByteBuffer bb = ByteBuffer.allocate((int) START_OF_DATA);
+        bb.putInt(SIGNATURE);
+        bb.putInt(HEADER_VERSION);
         bb.putInt(masterKey.length);
         bb.put(masterKey);
         bb.putInt(stateBits);
@@ -237,7 +272,7 @@ class FileInfo {
         fc.write(bb);
     }
 
-    synchronized public boolean isFenced() throws IOException {
+    public synchronized boolean isFenced() throws IOException {
         checkOpen(false);
         return (stateBits & STATE_FENCED_BIT) == STATE_FENCED_BIT;
     }
@@ -246,23 +281,29 @@ class FileInfo {
      * @return true if set fence succeed, otherwise false when
      * it already fenced or failed to set fenced.
      */
-    synchronized public boolean setFenced() throws IOException {
-        checkOpen(false);
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Try to set fenced state in file info {} : state bits {}.", lf, stateBits);
+    public boolean setFenced() throws IOException {
+        boolean returnVal = false;
+        synchronized (this) {
+            checkOpen(false);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Try to set fenced state in file info {} : state bits {}.", lf, stateBits);
+            }
+            if ((stateBits & STATE_FENCED_BIT) != STATE_FENCED_BIT) {
+                // not fenced yet
+                stateBits |= STATE_FENCED_BIT;
+                needFlushHeader = true;
+                synchronized (this) {
+                    setChanged();
+                }
+                returnVal = true;
+            }
         }
-        if ((stateBits & STATE_FENCED_BIT) != STATE_FENCED_BIT) {
-            // not fenced yet
-            stateBits |= STATE_FENCED_BIT;
-            needFlushHeader = true;
-            return true;
-        } else {
-            return false;
-        }
+        notifyObservers(new LastAddConfirmedUpdateNotification(Long.MAX_VALUE));
+        return returnVal;
     }
 
     // flush the header when header is changed
-    synchronized public void flushHeader() throws IOException {
+    public synchronized void flushHeader() throws IOException {
         if (needFlushHeader) {
             checkOpen(true);
             writeHeader();
@@ -270,20 +311,37 @@ class FileInfo {
         }
     }
 
-    synchronized public long size() throws IOException {
+    public synchronized long size() throws IOException {
         checkOpen(false);
-        long rc = size-START_OF_DATA;
+        long rc = size - START_OF_DATA;
         if (rc < 0) {
             rc = 0;
         }
         return rc;
     }
 
-    public int read(ByteBuffer bb, long position) throws IOException {
-        return readAbsolute(bb, position + START_OF_DATA);
+    public int read(ByteBuffer bb, long position, boolean bestEffort)
+            throws IOException {
+        return readAbsolute(bb, position + START_OF_DATA, bestEffort);
     }
 
-    private int readAbsolute(ByteBuffer bb, long start) throws IOException {
+    /**
+     * Read data from position <i>start</i> to fill the byte buffer <i>bb</i>.
+     * If <i>bestEffort </i> is provided, it would return when it reaches EOF.
+     * Otherwise, it would throw {@link org.apache.bookkeeper.bookie.ShortReadException}
+     * if it reaches EOF.
+     *
+     * @param bb
+     *          byte buffer of data
+     * @param start
+     *          start position to read data
+     * @param bestEffort
+     *          flag indicates if it is a best-effort read
+     * @return number of bytes read
+     * @throws IOException
+     */
+    private int readAbsolute(ByteBuffer bb, long start, boolean bestEffort)
+            throws IOException {
         checkOpen(false);
         synchronized (this) {
             if (fc == null) {
@@ -292,12 +350,16 @@ class FileInfo {
         }
         int total = 0;
         int rc = 0;
-        while(bb.remaining() > 0) {
+        while (bb.remaining() > 0) {
             synchronized (this) {
                 rc = fc.read(bb, start);
             }
             if (rc <= 0) {
-                throw new IOException("Short read");
+                if (bestEffort) {
+                    return total;
+                } else {
+                    throw new ShortReadException("Short read at " + getLf().getPath() + "@" + start);
+                }
             }
             total += rc;
             // should move read position
@@ -307,31 +369,38 @@ class FileInfo {
     }
 
     /**
-     * Close a file info
+     * Close a file info. Generally, force should be set to true. If set to false metadata will not be flushed and
+     * accessing metadata before restart and recovery will be unsafe (since reloading from the index file will
+     * cause metadata to be lost). Setting force=false helps avoid expensive file create during shutdown with many
+     * dirty ledgers, and is safe because ledger metadata will be recovered before being accessed again.
      *
      * @param force
      *          if set to true, the index is forced to create before closed,
      *          if set to false, the index is not forced to create.
      */
-    synchronized public void close(boolean force) throws IOException {
-        isClosed = true;
-        checkOpen(force);
-        // Any time when we force close a file, we should try to flush header. otherwise, we might lose fence bit.
-        if (force) {
-            flushHeader();
+    public void close(boolean force) throws IOException {
+        synchronized (this) {
+            isClosed = true;
+            checkOpen(force, true);
+            // Any time when we force close a file, we should try to flush header. otherwise, we might lose fence bit.
+            if (force) {
+                flushHeader();
+            }
+            setChanged();
+            if (useCount.get() == 0 && fc != null) {
+                fc.close();
+                fc = null;
+            }
         }
-        if (useCount.get() == 0 && fc != null) {
-            fc.close();
-            fc = null;
-        }
+        notifyObservers(new LastAddConfirmedUpdateNotification(Long.MAX_VALUE));
     }
 
-    synchronized public long write(ByteBuffer[] buffs, long position) throws IOException {
+    public synchronized long write(ByteBuffer[] buffs, long position) throws IOException {
         checkOpen(true);
         long total = 0;
         try {
-            fc.position(position+START_OF_DATA);
-            while(buffs[buffs.length-1].remaining() > 0) {
+            fc.position(position + START_OF_DATA);
+            while (buffs[buffs.length - 1].remaining() > 0) {
                 long rc = fc.write(buffs);
                 if (rc <= 0) {
                     throw new IOException("Short write");
@@ -340,7 +409,7 @@ class FileInfo {
             }
         } finally {
             fc.force(true);
-            long newsize = position+START_OF_DATA+total;
+            long newsize = position + START_OF_DATA + total;
             if (newsize > size) {
                 size = newsize;
             }
@@ -404,7 +473,7 @@ class FileInfo {
         lf = newFile;
     }
 
-    synchronized public byte[] getMasterKey() throws IOException {
+    public synchronized byte[] getMasterKey() throws IOException {
         checkOpen(false);
         return masterKey;
     }
@@ -418,7 +487,7 @@ class FileInfo {
         return useCount.get();
     }
 
-    synchronized public void release() {
+    public synchronized void release() {
         int count = useCount.decrementAndGet();
         if (isClosed && (count == 0) && fc != null) {
             try {
@@ -429,21 +498,21 @@ class FileInfo {
         }
     }
 
-    public boolean delete() {
+    public synchronized boolean delete() {
         return lf.delete();
     }
 
-    static final private void checkParents(File f) throws IOException {
+    private static void checkParents(File f) throws IOException {
         File parent = f.getParentFile();
         if (parent.exists()) {
             return;
         }
-        if (parent.mkdirs() == false) {
+        if (!parent.mkdirs()) {
             throw new IOException("Counldn't mkdirs for " + parent);
         }
     }
 
-    public boolean isSameFile(File f) {
+    public synchronized boolean isSameFile(File f) {
         return this.lf.equals(f);
     }
 }

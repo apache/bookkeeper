@@ -21,12 +21,14 @@
 
 package org.apache.bookkeeper.meta;
 
+import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.NavigableMap;
-
+import java.util.Observable;
+import java.util.Observer;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
@@ -43,17 +45,12 @@ import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import io.netty.buffer.ByteBuf;
 
 /**
  * Test case to run over serveral ledger managers
  */
 @RunWith(Parameterized.class)
 public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
-    static final Logger LOG = LoggerFactory.getLogger(LedgerManagerTestCase.class);
 
     protected LedgerManagerFactory ledgerManagerFactory;
     protected LedgerManager ledgerManager = null;
@@ -208,14 +205,16 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public void setExplicitlac(long ledgerId, ByteBuf lac) throws IOException {
-            // TODO Auto-generated method stub
+        public Observable waitForLastAddConfirmedUpdate(long ledgerId, long previoisLAC, Observer observer) throws IOException {
+            return null;
+        }
 
+        @Override
+        public void setExplicitlac(long ledgerId, ByteBuf lac) throws IOException {
         }
 
         @Override
         public ByteBuf getExplicitLac(long ledgerId) {
-            // TODO Auto-generated method stub
             return null;
         }
     }

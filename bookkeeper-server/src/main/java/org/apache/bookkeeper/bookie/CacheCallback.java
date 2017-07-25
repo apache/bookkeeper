@@ -24,11 +24,11 @@ package org.apache.bookkeeper.bookie;
 import java.io.IOException;
 
 /**
- * Interface plugged into caching to receive callback notifications
+ * Interface plugged into caching to receive callback notifications.
  */
 public interface CacheCallback {
     /**
      * Process notification that cache size limit reached.
      */
-    public void onSizeLimitReached() throws IOException;
+    void onSizeLimitReached() throws IOException;
 }

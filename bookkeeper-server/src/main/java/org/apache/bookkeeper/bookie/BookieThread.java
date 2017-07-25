@@ -20,11 +20,11 @@ package org.apache.bookkeeper.bookie;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/*
-* Wrapper that wraps bookie threads
-* Any common handing that we require for all bookie threads
-* should be implemented here
-*/
+/**
+ * Wrapper that wraps bookie threads.
+ * Any common handing that we require for all bookie threads
+ * should be implemented here
+ */
 public class BookieThread extends Thread implements
         Thread.UncaughtExceptionHandler {
 
@@ -47,7 +47,7 @@ public class BookieThread extends Thread implements
     }
 
     /**
-     * Handles uncaught exception occurred in thread
+     * Handles uncaught exception occurred in thread.
      */
     protected void handleException(Thread t, Throwable e) {
         LOG.error("Uncaught exception in thread {}", t.getName(), e);

@@ -29,8 +29,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * A <i>Finagle Stats</i> library based {@link StatsLogger} implementation.
+ */
 public class FinagleStatsLoggerImpl implements StatsLogger {
-    final private StatsReceiver stats;
+    private final StatsReceiver stats;
     // keep the references for finagle gauges. they are destroyed when the stats logger is destroyed.
     final Map<Gauge, com.twitter.finagle.stats.Gauge> finagleGauges;
 

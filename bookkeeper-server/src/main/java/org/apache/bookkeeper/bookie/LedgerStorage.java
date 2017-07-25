@@ -22,55 +22,49 @@
 package org.apache.bookkeeper.bookie;
 
 import io.netty.buffer.ByteBuf;
-
 import java.io.IOException;
-
+import java.util.Observable;
+import java.util.Observer;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.meta.LedgerManager;
 
 /**
- * Interface for storing ledger data
- * on persistant storage.
+ * Interface for storing ledger data on persistent storage.
  */
 public interface LedgerStorage {
 
     /**
-     * Initialize the LedgerStorage implementation
+     * Initialize the LedgerStorage implementation.
      *
      * @param conf
      * @param ledgerManager
      * @param ledgerDirsManager
      */
-    public void initialize(ServerConfiguration conf, LedgerManager ledgerManager,
-                           LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
-                           CheckpointSource checkpointSource, StatsLogger statsLogger)
+    void initialize(ServerConfiguration conf, LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager,
+                    LedgerDirsManager indexDirsManager, CheckpointSource checkpointSource, StatsLogger statsLogger)
             throws IOException;
 
     /**
-     * Start any background threads
-     * belonging to the storage system. For example,
-     * garbage collection.
+     * Start any background threads belonging to the storage system. For example, garbage collection.
      */
     void start();
 
     /**
-     * Cleanup and free any resources
-     * being used by the storage system.
+     * Cleanup and free any resources being used by the storage system.
      */
     void shutdown() throws InterruptedException;
 
     /**
-     * Whether a ledger exists
+     * Whether a ledger exists.
      */
     boolean ledgerExists(long ledgerId) throws IOException;
 
     /**
      * Fenced the ledger id in ledger storage.
      *
-     * @param ledgerId
-     *          Ledger Id.
+     * @param ledgerId Ledger Id.
      * @throws IOException when failed to fence the ledger.
      */
     boolean setFenced(long ledgerId) throws IOException;
@@ -78,19 +72,19 @@ public interface LedgerStorage {
     /**
      * Check whether the ledger is fenced in ledger storage or not.
      *
-     * @param ledgerId
-     *          Ledger ID.
+     * @param ledgerId Ledger ID.
      * @throws IOException
      */
     boolean isFenced(long ledgerId) throws IOException;
 
     /**
-     * Set the master key for a ledger
+     * Set the master key for a ledger.
      */
     void setMasterKey(long ledgerId, byte[] masterKey) throws IOException;
 
     /**
-     * Get the master key for a ledger
+     * Get the master key for a ledger.
+     *
      * @throws IOException if there is an error reading the from the ledger
      * @throws BookieException if no such ledger exists
      */
@@ -98,24 +92,34 @@ public interface LedgerStorage {
 
     /**
      * Add an entry to the storage.
+     *
      * @return the entry id of the entry added
      */
     long addEntry(ByteBuf entry) throws IOException;
 
     /**
-     * Read an entry from storage
+     * Read an entry from storage.
      */
     ByteBuf getEntry(long ledgerId, long entryId) throws IOException;
 
     /**
      * Get last add confirmed.
      *
-     * @param ledgerId
-     *          ledger id.
+     * @param ledgerId ledger id.
      * @return last add confirmed.
      * @throws IOException
      */
     long getLastAddConfirmed(long ledgerId) throws IOException;
+
+    /**
+     * Wait for last add confirmed update.
+     *
+     * @param previoisLAC - The threshold beyond which we would wait for the update
+     * @param observer  - Observer to notify on update
+     * @return
+     * @throws IOException
+     */
+    Observable waitForLastAddConfirmedUpdate(long ledgerId, long previoisLAC, Observer observer) throws IOException;
 
     /**
      * Flushes all data in the storage. Once this is called,
@@ -130,29 +134,29 @@ public interface LedgerStorage {
      * that it finished. The returned the checkpoint indicates that all entries added
      * before that point already persist.
      *
-     * @param checkpoint
-     *          Check Point that {@link Checkpoint} proposed.
+     * @param checkpoint Check Point that {@link Checkpoint} proposed.
      * @throws IOException
      * @return the checkpoint that the ledger storage finished.
      */
     Checkpoint checkpoint(Checkpoint checkpoint) throws IOException;
 
-    /*
-     *
+    /**
      * @param ledgerId
      * @throws IOException
      */
     void deleteLedger(long ledgerId) throws IOException;
 
-    public static interface LedgerDeletionListener {
+    /**
+     * Signals that a ledger is deleted by the garbage collection thread.
+     */
+    interface LedgerDeletionListener {
         void ledgerDeleted(long ledgerId);
     }
 
     /**
-     * Register a listener for ledgers deletion notifications
+     * Register a listener for ledgers deletion notifications.
      *
-     * @param listener
-     *            object that will be notified every time a ledger is deleted
+     * @param listener object that will be notified every time a ledger is deleted
      */
     void registerLedgerDeletionListener(LedgerDeletionListener listener);
 

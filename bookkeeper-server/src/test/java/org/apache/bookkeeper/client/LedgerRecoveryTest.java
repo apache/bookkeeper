@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.client;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,21 +18,26 @@ package org.apache.bookkeeper.client;
  * under the License.
  *
  */
+package org.apache.bookkeeper.client;
 
 import io.netty.buffer.ByteBuf;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieProtocol;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.test.BaseTestCase;
 import org.junit.Test;
@@ -45,9 +48,7 @@ import static org.junit.Assert.*;
 
 /**
  * This unit test tests ledger recovery.
- *
  */
-
 public class LedgerRecoveryTest extends BaseTestCase {
     private final static Logger LOG = LoggerFactory.getLogger(LedgerRecoveryTest.class);
 
@@ -420,5 +421,85 @@ public class LedgerRecoveryTest extends BaseTestCase {
         };
         bsConfs.add(conf);
         bs.add(startBookie(conf, rBookie));
+    }
+
+    @Test(timeout = 60000)
+    public void testBatchRecoverySize3() throws Exception {
+        batchRecovery(3);
+    }
+
+    @Test(timeout = 60000)
+    public void testBatchRecoverySize13() throws Exception {
+        batchRecovery(13);
+    }
+
+    private void batchRecovery(int batchSize) throws Exception {
+        ClientConfiguration newConf = new ClientConfiguration()
+            .setReadEntryTimeout(60000)
+            .setAddEntryTimeout(60000)
+            .setRecoveryReadBatchSize(batchSize);
+
+        newConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        BookKeeper newBk = new BookKeeper(newConf);
+
+        LedgerHandle lh = newBk.createLedger(numBookies, 2, 2, digestType, "".getBytes());
+
+        CountDownLatch latch1 = new CountDownLatch(1);
+        CountDownLatch latch2 = new CountDownLatch(1);
+        sleepBookie(lh.getLedgerMetadata().currentEnsemble.get(0), latch1);
+        sleepBookie(lh.getLedgerMetadata().currentEnsemble.get(1), latch2);
+
+        int numEntries = (numBookies * 3) + 1;
+        final AtomicInteger numPendingAdds = new AtomicInteger(numEntries);
+        final CountDownLatch addDone = new CountDownLatch(1);
+        for (int i = 0; i < numEntries; i++) {
+            lh.asyncAddEntry(("" + i).getBytes(), new AddCallback() {
+                @Override
+                public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
+                    if (BKException.Code.OK != rc) {
+                        addDone.countDown();
+                        return;
+                    }
+                    if (numPendingAdds.decrementAndGet() == 0) {
+                        addDone.countDown();
+                    }
+                }
+            }, null);
+        }
+        latch1.countDown();
+        latch2.countDown();
+        addDone.await(10, TimeUnit.SECONDS);
+        assertEquals(0, numPendingAdds.get());
+
+        LedgerHandle recoverLh = newBk.openLedgerNoRecovery(lh.getId(), digestType, "".getBytes());
+        assertEquals(BookieProtocol.INVALID_ENTRY_ID, recoverLh.getLastAddConfirmed());
+
+        final CountDownLatch recoverLatch = new CountDownLatch(1);
+        final AtomicBoolean success = new AtomicBoolean(false);
+        LedgerRecoveryOp recoveryOp = new LedgerRecoveryOp(recoverLh, new BookkeeperInternalCallbacks.GenericCallback<Void>() {
+            @Override
+            public void operationComplete(int rc, Void result) {
+                success.set(BKException.Code.OK == rc);
+                recoverLatch.countDown();
+            }
+        }).parallelRead(true).readBatchSize(newConf.getRecoveryReadBatchSize());
+        recoveryOp.initiate();
+        recoverLatch.await(10, TimeUnit.SECONDS);
+        assertTrue(success.get());
+        assertEquals(numEntries, recoveryOp.readCount.get());
+        assertEquals(numEntries, recoveryOp.writeCount.get());
+
+        Enumeration<LedgerEntry> enumeration = recoverLh.readEntries(0, numEntries - 1);
+
+        int numReads = 0;
+        while (enumeration.hasMoreElements()) {
+            LedgerEntry entry = enumeration.nextElement();
+            assertEquals((long) numReads, entry.getEntryId());
+            assertEquals(numReads, Integer.parseInt(new String(entry.getEntry())));
+            ++numReads;
+        }
+        assertEquals(numEntries, numReads);
+
+        newBk.close();
     }
 }

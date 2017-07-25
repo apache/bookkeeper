@@ -283,7 +283,7 @@ public class BookieProtoEncoding {
                 BookkeeperProtocol.AuthMessage am = builder.build();
                 return new BookieProtocol.AuthResponse(version, am);
             default:
-                return buffer;
+                throw new IllegalStateException("Received unknown response : op code = " + opCode);
             }
         }
     }

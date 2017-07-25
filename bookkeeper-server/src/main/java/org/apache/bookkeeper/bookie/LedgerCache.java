@@ -21,10 +21,11 @@
 
 package org.apache.bookkeeper.bookie;
 
+import io.netty.buffer.ByteBuf;
 import java.io.Closeable;
 import java.io.IOException;
-
-import io.netty.buffer.ByteBuf;
+import java.util.Observable;
+import java.util.Observer;
 
 /**
  * This class maps a ledger entry number into a location (entrylogid, offset) in
@@ -48,6 +49,7 @@ interface LedgerCache extends Closeable {
 
     Long getLastAddConfirmed(long ledgerId) throws IOException;
     long updateLastAddConfirmed(long ledgerId, long lac) throws IOException;
+    Observable waitForLastAddConfirmedUpdate(long ledgerId, long previoisLAC, Observer observer) throws IOException;
 
     void deleteLedger(long ledgerId) throws IOException;
 

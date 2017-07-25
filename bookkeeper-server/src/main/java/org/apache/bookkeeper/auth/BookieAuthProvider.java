@@ -28,10 +28,14 @@ import org.apache.bookkeeper.bookie.BookieConnectionPeer;
 
 /**
  * Bookie authentication provider interface.
- * This must be implemented by any party wishing to implement
+ *
+ * <p>This must be implemented by any party wishing to implement
  * an authentication mechanism for bookkeeper connections.
  */
 public interface BookieAuthProvider {
+    /**
+     * A factory to create the bookie authentication provider.
+     */
     interface Factory {
         /**
          * Initialize the factory with the server configuration
@@ -69,7 +73,7 @@ public interface BookieAuthProvider {
         String getPluginName();
 
         /**
-        * Release resources
+        * Release resources.
         */
         default void close() {}
     }
@@ -83,7 +87,7 @@ public interface BookieAuthProvider {
     void process(AuthToken m, AuthCallbacks.GenericCallback<AuthToken> cb);
 
     /**
-     * Release resources
+     * Release resources.
      */
     default void close() {}
 }

@@ -25,19 +25,16 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
- * Flush entries from skip list
+ * Flush entries from skip list.
  */
 public interface SkipListFlusher {
     /**
      * Process an entry.
      *
-     * @param ledgerId
-     *          Ledger ID.
-     * @param entryId
-     *          The entry id this entry.
-     * @param entry
-     *          Entry ByteBuffer
+     * @param ledgerId Ledger ID.
+     * @param entryId The entry id this entry.
+     * @param entry Entry ByteBuffer
      * @throws IOException
      */
-    public void process(long ledgerId, long entryId, ByteBuffer entry) throws IOException;
+    void process(long ledgerId, long entryId, ByteBuffer entry) throws IOException;
 }

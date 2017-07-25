@@ -29,7 +29,7 @@ import org.apache.bookkeeper.meta.MSLedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
-import org.apache.bookkeeper.test.MultiLedgerManagerMultiDigestTestCase;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -57,7 +57,8 @@ import static org.junit.Assert.*;
 /**
  * This class tests the bookie recovery admin functionality.
  */
-public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
+public class BookieRecoveryTest extends BookKeeperClusterTestCase {
+
     private final static Logger LOG = LoggerFactory.getLogger(BookieRecoveryTest.class);
 
     // Object used for synchronizing async method calls
@@ -93,10 +94,11 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
     BookKeeperAdmin bkAdmin;
 
     // Constructor
-    public BookieRecoveryTest(String ledgerManagerFactory, DigestType digestType) {
+    public BookieRecoveryTest() {
         super(3);
-        this.digestType = digestType;
-        this.ledgerManagerFactory = ledgerManagerFactory;
+
+        this.digestType = DigestType.CRC32;
+        this.ledgerManagerFactory = "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory";
         LOG.info("Using ledger manager " + ledgerManagerFactory);
         // set ledger manager
         baseConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
@@ -241,6 +243,23 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
      */
     @Test(timeout = 60000)
     public void testMetadataConflictWithRecovery() throws Exception {
+        metadataConflictWithRecovery(bkc);
+    }
+
+    @Test(timeout = 60000)
+    public void testMetadataConflictWhenDelayingEnsembleChange() throws Exception {
+        ClientConfiguration newConf = new ClientConfiguration(baseClientConf);
+        newConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        newConf.setDelayEnsembleChange(true);
+        BookKeeper newBkc = new BookKeeper(newConf);
+        try {
+            metadataConflictWithRecovery(newBkc);
+        } finally {
+            newBkc.close();
+        }
+    }
+
+    void metadataConflictWithRecovery(BookKeeper bkc) throws Exception {
         int numEntries = 10;
         byte[] data = "testMetadataConflictWithRecovery".getBytes();
 
@@ -315,7 +334,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
 
         // Wait for the async method to complete.
         synchronized (sync) {
-            while (sync.value == false) {
+            while (!sync.value) {
                 sync.wait();
             }
             assertTrue(bookieRecoverCb.success);
@@ -372,7 +391,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
 
         // Wait for the async method to complete.
         synchronized (sync) {
-            while (sync.value == false) {
+            while (!sync.value) {
                 sync.wait();
             }
             assertTrue(bookieRecoverCb.success);
@@ -495,7 +514,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         }
 
         long await() throws InterruptedException {
-            if (latch.await(60, TimeUnit.SECONDS) == false) {
+            if (!latch.await(60, TimeUnit.SECONDS)) {
                 LOG.warn("Didn't get all responses in verification");
                 return 0;
             } else {
@@ -574,7 +593,7 @@ public class BookieRecoveryTest extends MultiLedgerManagerMultiDigestTestCase {
         });
 
         synchronized (syncObj) {
-            while (syncObj.value == false) {
+            while (!syncObj.value) {
                 syncObj.wait();
             }
         }

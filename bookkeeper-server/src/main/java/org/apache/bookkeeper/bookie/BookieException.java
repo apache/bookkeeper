@@ -21,9 +21,10 @@ package org.apache.bookkeeper.bookie;
  *
  */
 
-
-import java.lang.Exception;
-
+/**
+ * Signals that a Bookie exception of some sort has occurred. This class
+ * is the general class of exceptions produced by failed or interrupted bookie operations.
+ */
 @SuppressWarnings("serial")
 public abstract class BookieException extends Exception {
 
@@ -50,11 +51,16 @@ public abstract class BookieException extends Exception {
             return new InvalidCookieException();
         case Code.UpgradeException:
             return new UpgradeException();
+        case Code.DiskPartitionDuplicationException:
+            return new DiskPartitionDuplicationException();
         default:
             return new BookieIllegalOpException();
         }
     }
 
+    /**
+     * An exception code indicates the failure reason.
+     */
     public interface Code {
         int OK = 0;
         int UnauthorizedAccessException = -1;
@@ -64,6 +70,7 @@ public abstract class BookieException extends Exception {
 
         int InvalidCookieException = -102;
         int UpgradeException = -103;
+        int DiskPartitionDuplicationException = -104;
     }
 
     public void setCode(int code) {
@@ -92,6 +99,9 @@ public abstract class BookieException extends Exception {
         case Code.UpgradeException:
             err = "Error performing an upgrade operation ";
             break;
+        case Code.DiskPartitionDuplicationException:
+            err = "Disk Partition Duplication is not allowed";
+            break;
         default:
             err = "Invalid operation";
             break;
@@ -109,24 +119,38 @@ public abstract class BookieException extends Exception {
         }
     }
 
+    /**
+     * Signals that an unauthorized operation attempts to access the data in a bookie.
+     */
     public static class BookieUnauthorizedAccessException extends BookieException {
         public BookieUnauthorizedAccessException() {
             super(Code.UnauthorizedAccessException);
         }
     }
 
+    /**
+     * Signals that an illegal operation attempts to access the data in a bookie.
+     */
     public static class BookieIllegalOpException extends BookieException {
         public BookieIllegalOpException() {
             super(Code.UnauthorizedAccessException);
         }
     }
 
+    /**
+     * Signals that a ledger has been fenced in a bookie. No more entries can be appended to that ledger.
+     */
     public static class LedgerFencedException extends BookieException {
         public LedgerFencedException() {
             super(Code.LedgerFencedException);
         }
     }
 
+    /**
+     * Signal that an invalid cookie is found when starting a bookie.
+     *
+     * <p>This exception is mainly used for detecting if there is any malformed configuration in a bookie.
+     */
     public static class InvalidCookieException extends BookieException {
         public InvalidCookieException() {
             this("");
@@ -141,6 +165,9 @@ public abstract class BookieException extends Exception {
         }
     }
 
+    /**
+     * Signals that an exception occurs on upgrading a bookie.
+     */
     public static class UpgradeException extends BookieException {
         public UpgradeException() {
             super(Code.UpgradeException);
@@ -152,6 +179,23 @@ public abstract class BookieException extends Exception {
 
         public UpgradeException(String reason) {
             super(Code.UpgradeException, reason);
+        }
+    }
+    
+    /**
+     * Signals when multiple ledger/journal directories are mounted in same disk partition.
+     */
+    public static class DiskPartitionDuplicationException extends BookieException {
+        public DiskPartitionDuplicationException() {
+            super(Code.DiskPartitionDuplicationException);
+        }
+
+        public DiskPartitionDuplicationException(Throwable cause) {
+            super(Code.DiskPartitionDuplicationException, cause);
+        }
+
+        public DiskPartitionDuplicationException(String reason) {
+            super(Code.DiskPartitionDuplicationException, reason);
         }
     }
 }

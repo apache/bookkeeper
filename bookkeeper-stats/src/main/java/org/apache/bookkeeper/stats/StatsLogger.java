@@ -26,14 +26,14 @@ public interface StatsLogger {
      *          Stats Name
      * @return Get the logger for an OpStat described by the <i>name</i>.
      */
-    public OpStatsLogger getOpStatsLogger(String name);
+    OpStatsLogger getOpStatsLogger(String name);
 
     /**
      * @param name
      *          Stats Name
      * @return Get the logger for a simple stat described by the <i>name</i>
      */
-    public Counter getCounter(String name);
+    Counter getCounter(String name);
 
     /**
      * Register given <i>gauge</i> as name <i>name</i>.
@@ -43,7 +43,7 @@ public interface StatsLogger {
      * @param gauge
      *          gauge function
      */
-    public <T extends Number> void registerGauge(String name, Gauge<T> gauge);
+    <T extends Number> void registerGauge(String name, Gauge<T> gauge);
 
     /**
      * Unregister given <i>gauge</i> from name <i>name</i>.
@@ -53,7 +53,7 @@ public interface StatsLogger {
      * @param gauge
      *          gauge function
      */
-    public <T extends Number> void unregisterGauge(String name, Gauge<T> gauge);
+    <T extends Number> void unregisterGauge(String name, Gauge<T> gauge);
 
     /**
      * Provide the stats logger under scope <i>name</i>.
@@ -62,7 +62,7 @@ public interface StatsLogger {
      *          scope name.
      * @return stats logger under scope <i>name</i>.
      */
-    public StatsLogger scope(String name);
+    StatsLogger scope(String name);
 
     /**
      * Remove the given <i>statsLogger</i> for scope <i>name</i>.
@@ -71,6 +71,6 @@ public interface StatsLogger {
      * @param name name of the scope
      * @param statsLogger the stats logger of this scope.
      */
-    public void removeScope(String name, StatsLogger statsLogger);
+    void removeScope(String name, StatsLogger statsLogger);
 
 }

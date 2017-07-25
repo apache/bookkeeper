@@ -231,7 +231,7 @@ public class BookieClientTest {
     }
 
     private ByteBuf createByteBuffer(int i, long lid, long eid) {
-        ByteBuf bb = Unpooled.buffer(4 + 16);
+        ByteBuf bb = Unpooled.buffer(4 + 24);
         bb.writeLong(lid);
         bb.writeLong(eid);
         bb.writeLong(eid - 1);
@@ -269,7 +269,7 @@ public class BookieClientTest {
                 this.freeDiskSpace = 0L;
                 this.totalDiskCapacity = 0L;
             }
-        };
+        }
         CallbackObj obj = new CallbackObj(flags);
         bc.getBookieInfo(addr, flags, new GetBookieInfoCallback() {
             @Override

@@ -40,10 +40,8 @@ import org.slf4j.LoggerFactory;
 import com.google.common.util.concurrent.SettableFuture;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Enumeration;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -470,7 +468,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
     @Test(timeout = 60000)
     public void testBookKeeperAdmin() throws Exception {
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
-        try (BookKeeperAdmin bkadmin = new BookKeeperAdmin(bk);) {
+        try (BookKeeperAdmin bkadmin = new BookKeeperAdmin(bk)) {
 
             LOG.info("Create ledger and add entries to it");
             LedgerHandle lh1 = createLedgerWithEntries(bk, 100);

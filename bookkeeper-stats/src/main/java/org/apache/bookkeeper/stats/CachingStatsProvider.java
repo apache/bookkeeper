@@ -21,6 +21,12 @@ import org.apache.commons.configuration.Configuration;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * A {@code CachingStatsProvider} adds the caching functionality to an existing {@code StatsProvider}.
+ *
+ * <p>The stats provider will cache the stats objects created by the other {@code StatsProvider} to allow
+ * the reusability of stats objects and avoid creating a lot of stats objects.
+ */
 public class CachingStatsProvider implements StatsProvider {
 
     protected final StatsProvider underlying;
