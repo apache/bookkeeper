@@ -41,11 +41,11 @@ groups:
     endpoint: ledger-api
   - name: DistributedLog
     endpoint: distributedlog-api
-#- name: Development
-#  dir: development
-#  docs:
-  #- name: BookKeeper protocol
-  #  endpoint: protocol
+- name: Development
+  dir: development
+  docs:
+  - name: BookKeeper protocol
+    endpoint: protocol
   #- name: Codebase
   #  endpoint: codebase
 - name: Reference

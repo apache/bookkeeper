@@ -7,7 +7,11 @@
     A bookie is an individial BookKeeper storage server.
 
     Bookies store the content of ledgers and act as a distributed ensemble.
+- term: rereplication
+  d: A subsystem that runs in the background on bookies to ensure that ledgers are fully replicated even if one bookie from the ensemble is down.
 - term: striping
   d: Striping is the process of distributing BookKeeper ledgers to sub-groups of bookies rather than to all bookies in a BookKeeper ensemble. Striping is essential to ensuring fast performance.
 - term: journal
   d: A journal file stores BookKeeper transaction logs.
+- term: fencing
+  d: When a reader forces a ledger to close, preventing any further entries from being written to the ledger.

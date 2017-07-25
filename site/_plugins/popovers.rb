@@ -7,6 +7,8 @@ module Jekyll
     def initialize(tag_name, text, tokens)
       @original_term = text.strip.split(' ').join(' ')
       @term = @original_term.gsub(' ', '-').downcase
+      @term = 'entry' if @term == 'entries'
+      @term = 'fencing' if @term == 'fence'
       @term = @term[0...-1] if @term.end_with? 's'
     end
 
