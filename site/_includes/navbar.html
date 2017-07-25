@@ -1,6 +1,6 @@
 {% capture docs_url %}{{ site.baseurl }}docs/{% endcapture %}
 <div class="bk-topnav container">
-  <nav class="navbar is-transparent">
+  <nav class="navbar">
     <div class="navbar-brand">
       <a class="navbar-item" href="{{ site.baseurl }}">
         <img class="navbar-logo" src="{{ site.baseurl }}img/bk-logo.png"> {{ site.title }}
@@ -24,11 +24,19 @@
         <div class="navbar-item">
           <div class="field is-grouped">
             <p class="control">
-              <a class="button" href="{{ site.twitter_url }}">
+              <a class="button bk-twitter" href="{{ site.twitter_url }}">
                 <span class="icon">
                   <i class="fa fa-twitter"></i>
                 </span>
-                <span>Tweet</span>
+                <span>Twitter</span>
+              </a>
+            </p>
+            <p class="control">
+              <a class="button" href="{{ site.github_repo }}">
+                <span class="icon">
+                  <i class="fa fa-github"></i>
+                </span>
+                <span>GitHub</span>
               </a>
             </p>
             <p class="control">
