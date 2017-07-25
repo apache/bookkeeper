@@ -141,3 +141,40 @@ $ bookkeeper-server/bin/bookkeeper shell bookieformat
 ## AutoRecovery
 
 For a guide to AutoRecovery in BookKeeper, see [this doc](../autorecovery).
+
+## Missing disks or directories
+
+Accidentally replacing disks or removing directories can cause a bookie to fail while trying to read a ledger fragment that, according to the ledger metadata, exists on the bookie. For this reason, when a bookie is started for the first time, its disk configuration is fixed for the lifetime of that bookie. Any change to its disk configuration, such as a crashed disk or an accidental configuration change, will result in the bookie being unable to start. That will throw an error like this:
+
+```
+2017-05-29 18:19:13,790 - ERROR - [main:BookieServer314] – Exception running bookie server : @
+org.apache.bookkeeper.bookie.BookieException$InvalidCookieException
+.......at org.apache.bookkeeper.bookie.Cookie.verify(Cookie.java:82)
+.......at org.apache.bookkeeper.bookie.Bookie.checkEnvironment(Bookie.java:275)
+.......at org.apache.bookkeeper.bookie.Bookie.<init>(Bookie.java:351)
+```
+
+If the change was the result of an accidental configuration change, the change can be reverted and the bookie can be restarted. However, if the change *cannot* be reverted, such as is the case when you want to add a new disk or replace a disk, the bookie must be wiped and then all its data re-replicated onto it.
+
+1. Increment the [`bookiePort`](../../reference/config#bookiePort) parameter in the [`bk_server.conf`](../../reference/config)
+1. Ensure that all directories specified by [`journalDirectory`](../../reference/config#journalDirectory) and [`ledgerDirectories`](../../reference/config#ledgerDirectories) are empty.
+1. [Start the bookie](#starting-and-stopping-bookies).
+1. Run the following command to re-replicate the data:
+
+   ```bash
+   $ bin/bookkeeper org.apache.bookkeeper.tools.BookKeeperTools \
+     <zkserver> \
+     <oldbookie> \
+     <newbookie>
+   ```
+
+   The ZooKeeper server, old bookie, and new bookie, are all identified by their external IP and `bookiePort` (3181 by default). Here's an example:
+
+   ```bash
+   $ bin/bookkeeper org.apache.bookkeeper.tools.BookKeeperTools \
+     zk1.example.com \
+     192.168.1.10:3181 \
+     192.168.1.10:3181
+   ```
+
+   See the [AutoRecovery](../autorecovery) documentation for more information.

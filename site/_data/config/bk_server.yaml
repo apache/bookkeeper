@@ -5,7 +5,7 @@ groups:
     description: The port that the bookie server listens on.
     default: 3181
   - param: journalDirectory
-    description: The directory to which Bookkeeper outputs its write ahead log (WAL).
+    description: The directory to which Bookkeeper outputs its write-ahead log (WAL).
     default: /tmp/bk-txn
   - param: indexDirectories
     description: The directories in which index files are stored. If not specified, the value of [`ledgerDirectories`](#ledgerDirectories) will be used.

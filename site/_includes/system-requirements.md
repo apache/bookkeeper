@@ -3,3 +3,6 @@ The number of bookies you should run in a BookKeeper cluster depends on the quor
 Quorum type | Number of bookies
 :-----------|:-----------------
 Self-verifying quorum | 3
+Generic | 4
+
+Increasing the number of bookies will enable higher throughput, and there is **no upper limit** on the number of bookies. 
