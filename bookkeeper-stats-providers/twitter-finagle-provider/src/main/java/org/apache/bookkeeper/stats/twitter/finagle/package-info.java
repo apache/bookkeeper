@@ -16,6 +16,6 @@
  * limitations under the License.
  */
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * A stats provider implemented based on <i>finagle stats</i> library.
  */
 package org.apache.bookkeeper.stats.twitter.finagle;

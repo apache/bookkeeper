@@ -178,7 +178,7 @@ public class Bookie extends BookieCriticalThread {
     private final OpStatsLogger readBytesStats;
 
     /**
-     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+     * Exception is thrown when no such a ledger is found in this bookie.
      */
     public static class NoLedgerException extends IOException {
         private static final long serialVersionUID = 1L;
@@ -193,7 +193,7 @@ public class Bookie extends BookieCriticalThread {
     }
 
     /**
-     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+     * Exception is thrown when no such an entry is found in this bookie.
      */
     public static class NoEntryException extends IOException {
         private static final long serialVersionUID = 1L;

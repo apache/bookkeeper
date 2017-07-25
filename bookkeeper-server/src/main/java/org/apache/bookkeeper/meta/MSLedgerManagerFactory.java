@@ -107,6 +107,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
             metastore = MetastoreFactory.createMetaStore(msName);
 
             // TODO: should record version in somewhere. e.g. ZooKeeper
+            // {@link https://github.com/apache/bookkeeper/issues/282}
             int msVersion = metastore.getVersion();
             metastore.init(conf, msVersion);
         } catch (Throwable t) {

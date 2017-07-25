@@ -15,6 +15,6 @@
  * the License.
  */
 /**
- * @TODO: Write JavaDOc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * A stats provider implemented based on <i>Twitter Ostrich</i> library.
  */
 package org.apache.bookkeeper.stats.twitter.ostrich;

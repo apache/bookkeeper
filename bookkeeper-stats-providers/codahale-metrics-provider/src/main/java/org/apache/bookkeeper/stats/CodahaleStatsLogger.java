@@ -21,7 +21,7 @@ import com.codahale.metrics.MetricRegistry;
 import static com.codahale.metrics.MetricRegistry.name;
 
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * A {@link StatsLogger} implemented based on <i>Codahale</i> metrics library.
  */
 public class CodahaleStatsLogger implements StatsLogger {
     protected final String basename;

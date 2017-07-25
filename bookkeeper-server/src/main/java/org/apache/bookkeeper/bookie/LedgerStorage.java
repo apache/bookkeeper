@@ -31,8 +31,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.meta.LedgerManager;
 
 /**
- * Interface for storing ledger data
- * on persistant storage.
+ * Interface for storing ledger data on persistent storage.
  */
 public interface LedgerStorage {
 
@@ -148,7 +147,7 @@ public interface LedgerStorage {
     void deleteLedger(long ledgerId) throws IOException;
 
     /**
-     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+     * Signals that a ledger is deleted by the garbage collection thread.
      */
     interface LedgerDeletionListener {
         void ledgerDeleted(long ledgerId);

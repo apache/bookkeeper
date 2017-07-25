@@ -15,6 +15,6 @@
  * the License.
  */
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * A stats provider implementation based on {@link Prometheus}.
  */
 package org.apache.bookkeeper.stats;

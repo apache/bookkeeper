@@ -54,7 +54,6 @@ public class OpStatsLoggerImpl implements OpStatsLogger {
     }
 
     public synchronized void clear() {
-        //TODO: Figure out how to clear RequestStats. Till then this is a no-op
     }
 
     /**

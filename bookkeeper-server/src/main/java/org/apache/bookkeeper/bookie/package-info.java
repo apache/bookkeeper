@@ -17,6 +17,6 @@
  * under the License.
  */
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * Provides a <i>Bookie</i> server that stores entries for clients.
  */
 package org.apache.bookkeeper.bookie;

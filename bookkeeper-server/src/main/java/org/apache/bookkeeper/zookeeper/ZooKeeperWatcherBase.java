@@ -125,6 +125,7 @@ public class ZooKeeperWatcherBase implements Watcher {
             LOG.debug("Received {} from ZooKeeper server", event.getState());
         }
         // TODO: Needs to handle AuthFailed, SaslAuthenticated events
+        //       {@link https://github.com/apache/bookkeeper/issues/284}
         switch (event.getState()) {
         case SyncConnected:
             LOG.info("ZooKeeper client is connected now.");
