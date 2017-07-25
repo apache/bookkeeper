@@ -153,10 +153,10 @@ def merge_pr(pr_num, target_ref, title, body, default_pr_reviewers, pr_repo_desc
         else:
             continue_maybe("Unit tests execution FAILED. Do you want to continue with the merge anyway?")
 
-    # Offer to run findbugs and rat before committing
+    # Offer to run findbugs, rat and checkstyle before committing
     result = raw_input('Do you want to validate findbugs and rat after the merge? (y/n): ')
     if result.lower() == 'y':
-        test_res = subprocess.call('mvn clean install -DskipTests findbugs:check apache-rat:check'.split())
+        test_res = subprocess.call('mvn clean install -DskipTests findbugs:check apache-rat:check checkstyle:checkstyle'.split())
         if test_res == 0:
             print('QA tests execution succeeded')
         else:
