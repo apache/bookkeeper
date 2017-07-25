@@ -83,7 +83,7 @@ The DistributedLog API for BookKeeper provides a number of guarantees for applic
 
 Documentation for the DistributedLog API can be found [here](https://distributedlog.incubator.apache.org/docs/latest/user_guide/api/core).
 
-> At a later date, the DistributeLog API docs will be added here.
+> At a later date, the DistributedLog API docs will be added here.
 
 <!--
 
