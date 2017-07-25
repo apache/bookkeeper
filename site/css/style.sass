@@ -104,15 +104,6 @@ h2.bk-subtitle
   hr
     height: 2px
 
-  ol ol, ol ul
-    margin: .5rem 0 .5rem .75rem
-
-  ul, li, ol
-    margin-left: .75rem
-  
-  ul li
-    list-style-type: square
-
   & + .pagination
     margin-top: 2rem
 
@@ -127,11 +118,21 @@ h2.bk-subtitle
         padding-top: .75rem
         font-size: $base-font-size * 1.2
 
-  .bk-docs-content
-    min-height: 70vh
+.bk-main-content
+  ol ol, ol ul
+    margin: .5rem 0 .5rem .75rem
+
+  ul, li, ol
+    margin-left: .75rem
+  
+  ul li
+    list-style-type: square
 
 .bk-docs-container .container
   width: 95%
+
+  .bk-main-content
+    min-height: 70vh
 
 .bk-community-container .container
   width: 60%
