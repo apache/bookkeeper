@@ -103,12 +103,16 @@ The data flush flow in Sync Thread is as follows:
 
 Records a LastLogMark in memory. The LastLogMark contains two parts: first one is txnLogId (file id of a journal) and the second one is txnLogPos (offset in a journal). The LastLogMark indicates that those entries before it have been persisted to both index and entry log files.
 Flushes dirty index pages from LedgerCache to index file, and flushes entry log files to ensure all buffered entries in entry log files are persisted to disk.
+
 Ideally, a bookie just needs to flush index pages and entry log files that contains entries before LastLogMark. There is no such information in LedgerCache and Entry Log mapping to journal files, though. Consequently, the thread flushes LedgerCache and Entry Log entirely here, and may flush entries after the LastLogMark. Flushing more is not a problem, though, just redundant.
+
 Persists LastLogMark to disk, which means entries added before LastLogMark whose entry data and index page were also persisted to disk. It is the time to safely remove journal files created earlier than txnLogId.
+
 If the bookie has crashed before persisting LastLogMark to disk, it still has journal files containing entries for which index pages may not have been persisted. Consequently, when this bookie restarts, it inspects journal files to restore those entries; data isn't lost.
 Using the above data flush mechanism, it is safe for the Sync Thread to skip data flushing when the bookie shuts down. However, in Entry Logger, it uses BufferedChannel to write entries in batches and there might be data buffered in BufferedChannel upon a shut down. The bookie needs to ensure Entry Logger flushes its buffered data during shutting down. Otherwise, Entry Log files become corrupted with partial entries.
 
 As described above, EntryLogger#flush is invoked in the following two cases:
+
 * in Sync Thread : used to ensure entries added before LastLogMark are persisted to disk.
 * in ShutDown : used to ensure its buffered data persisted to disk to avoid data corruption with partial entries.
 
