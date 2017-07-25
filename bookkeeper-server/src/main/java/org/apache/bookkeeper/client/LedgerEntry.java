@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.client;
 
+import com.google.common.base.Preconditions;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 
@@ -62,9 +63,7 @@ public class LedgerEntry {
      * @return the content of the entry
      */
     public byte[] getEntry() {
-        if (data == null) {
-            throw new IllegalStateException("entry content can be accessed only once");
-        }
+        Preconditions.checkNotNull(data, "entry content can be accessed only once");
         byte[] entry = new byte[data.readableBytes()];
         data.readBytes(entry);
         data.release();
@@ -81,9 +80,7 @@ public class LedgerEntry {
      * @return an InputStream which gives access to the content of the entry
      */
     public InputStream getEntryInputStream() {
-        if (data == null) {
-            throw new IllegalStateException("entry content can be accessed only once");
-        }
+        Preconditions.checkNotNull(data, "entry content can be accessed only once");
         ByteBufInputStream res = new ByteBufInputStream(data);
         data = null;
         return res;
