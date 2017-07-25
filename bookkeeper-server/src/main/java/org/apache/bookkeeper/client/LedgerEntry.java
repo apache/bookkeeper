@@ -56,9 +56,10 @@ public class LedgerEntry {
 
     /**
      * Returns the content of the entry.
-     * This method can be called only once.
-     * While using v2 wire protocol this method will automatically release the internal ByteBuf
-     * @return
+     * This method can be called only once. While using v2 wire protocol this method will automatically release
+     * the internal ByteBuf
+     * 
+     * @return the content of the entry
      */
     public byte[] getEntry() {
         if (data == null) {
@@ -73,8 +74,8 @@ public class LedgerEntry {
 
     /**
      * Returns the content of the entry.
-     * This method can be called only once.
-     * While using v2 wire protocol this method will automatically release the internal ByteBuf when calling the close
+     * This method can be called only once. While using v2 wire protocol this method will automatically release
+     * the internal ByteBuf when calling the close
      * method of the returned InputStream
      *
      * @return an InputStream which gives access to the content of the entry
@@ -90,7 +91,6 @@ public class LedgerEntry {
 
     /**
      * Return the internal buffer that contains the entry payload.
-     * <p>
      *
      * Note: Using v2 wire protocol it is responsibility of the caller to ensure to release the buffer after usage.
      *

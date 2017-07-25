@@ -64,6 +64,8 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String CLIENT_CONNECT_TIMEOUT_MILLIS = "clientConnectTimeoutMillis";
     protected final static String NUM_CHANNELS_PER_BOOKIE = "numChannelsPerBookie";
     protected final static String USE_V2_WIRE_PROTOCOL = "useV2WireProtocol";
+    protected final static String NETTY_USE_POOLED_BUFFERS = "nettyUsePooledBuffers";
+
     // Read Parameters
     protected final static String READ_TIMEOUT = "readTimeout";
     protected final static String SPECULATIVE_READ_TIMEOUT = "speculativeReadTimeout";
@@ -115,10 +117,6 @@ public class ClientConfiguration extends AbstractConfiguration {
     // Failure History Settings
     protected final static String ENABLE_BOOKIE_FAILURE_TRACKING = "enableBookieFailureTracking";
     protected final static String BOOKIE_FAILURE_HISTORY_EXPIRATION_MS = "bookieFailureHistoryExpirationMSec";
-
-    // Netty
-    protected final static String NETTY_USE_POOLED_BUFFERS = "nettyUsePooledBuffers";
-    protected final static boolean DEFAULT_NETTY_USE_POOLED_BUFFERS = true;
 
     // Names of dynamic features
     protected final static String DISABLE_ENSEMBLE_CHANGE_FEATURE_NAME = "disableEnsembleChangeFeatureName";
@@ -1434,7 +1432,7 @@ public class ClientConfiguration extends AbstractConfiguration {
      * @return the value of the option
      */
     public boolean isNettyUsePooledBuffers() {
-        return getBoolean(NETTY_USE_POOLED_BUFFERS, DEFAULT_NETTY_USE_POOLED_BUFFERS);
+        return getBoolean(NETTY_USE_POOLED_BUFFERS, true);
     }
 
     /**
