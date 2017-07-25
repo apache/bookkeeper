@@ -7,7 +7,7 @@ This document is a guide to deploying, administering, and maintaining BookKeeper
 
 ## Requirements
 
-A typically BookKeeper installation comprises a set of {% pop bookies %} and a ZooKeeper quorum. The exact number of bookies depends on the quorum mode that you choose, desired throughput, and the number of clients using the installation simultaneously.
+A typical BookKeeper installation consists of an ensemble of {% pop bookies %} and a ZooKeeper quorum. The exact number of bookies depends on the quorum mode that you choose, desired throughput, and the number of clients using the installation simultaneously.
 
 The minimum number of bookies depends on the type of installation:
 
@@ -177,4 +177,4 @@ If the change was the result of an accidental configuration change, the change c
      192.168.1.10:3181
    ```
 
-   See the [AutoRecovery](../autorecovery) documentation for more information.
+   See the [AutoRecovery](../autorecovery) documentation for more info on the re-replication process.

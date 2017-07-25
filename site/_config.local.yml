@@ -18,6 +18,10 @@ defaults:
     path: community
   values:
     layout: community
+- scope:
+    path: project
+  values:
+    layout: community
 
 gems:
 - jekyll-toc
