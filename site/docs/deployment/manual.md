@@ -7,6 +7,10 @@ The easiest way to deploy BookKeeper is using schedulers like [DC/OS](../dcos), 
 * A [ZooKeeper](#zookeeper-setup) cluster that is used for configuration- and coordination-related tasks
 * A [cluster](#starting-up-bookies) of {% pop bookies %}
 
+### System requirements
+
+{% include system-requirements.md %}
+
 ## ZooKeeper setup
 
 We won't provide a full guide to setting up a ZooKeeper cluster here. We recommend that you consult [this guide](https://zookeeper.apache.org/doc/current/zookeeperAdmin.html) in the official ZooKeeper documentation.
