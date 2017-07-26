@@ -139,9 +139,9 @@
           <source>1.8</source>
           <target>1.8</target>
           <compilerArguments>
-	    <Werror />
-	    <-Xlint:deprecation />
-	    <-Xlint:unchecked />
+            <compilerArgument>-Werror</compilerArgument>
+            <compilerArgument>-Xlint:deprecation</compilerArgument>
+            <compilerArgument>-Xlint:unchecked</compilerArgument>
 	  </compilerArguments>
         </configuration>
       </plugin>
