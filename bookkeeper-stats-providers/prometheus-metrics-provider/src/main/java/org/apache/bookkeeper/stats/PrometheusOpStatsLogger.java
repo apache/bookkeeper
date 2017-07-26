@@ -21,6 +21,9 @@ import java.util.concurrent.TimeUnit;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Summary;
 
+/**
+ * A {@code Prometheus} based {@link OpStatsLogger} implementation.
+ */
 public class PrometheusOpStatsLogger implements OpStatsLogger {
 
     private final Summary summary;

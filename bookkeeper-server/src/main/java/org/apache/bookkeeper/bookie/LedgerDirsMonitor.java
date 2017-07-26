@@ -22,6 +22,7 @@
 package org.apache.bookkeeper.bookie;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
@@ -40,17 +41,16 @@ import org.slf4j.LoggerFactory;
  * Thread to monitor the disk space periodically.
  */
 class LedgerDirsMonitor extends BookieThread {
-    private final static Logger LOG = LoggerFactory.getLogger(LedgerDirsMonitor.class);
-    
+    private static final Logger LOG = LoggerFactory.getLogger(LedgerDirsMonitor.class);
+
     private final int interval;
     private final ServerConfiguration conf;
     private final ConcurrentMap<File, Float> diskUsages;
     private final DiskChecker diskChecker;
     private final LedgerDirsManager ldm;
 
-    public LedgerDirsMonitor(final ServerConfiguration conf, 
-            final DiskChecker diskChecker,
-            final LedgerDirsManager ldm) {
+    public LedgerDirsMonitor(final ServerConfiguration conf, final DiskChecker diskChecker,
+                             final LedgerDirsManager ldm) {
         super("LedgerDirsMonitorThread");
         this.interval = conf.getDiskCheckInterval();
         this.conf = conf;
@@ -89,8 +89,8 @@ class LedgerDirsMonitor extends BookieThread {
                 }
                 // Let's get NoWritableLedgerDirException without waiting for the next iteration
                 // in case we are out of writable dirs
-                // otherwise for the duration of {interval} we end up in the state where 
-                // bookie cannot get writable dir but considered to be writable 
+                // otherwise for the duration of {interval} we end up in the state where
+                // bookie cannot get writable dir but considered to be writable
                 ldm.getWritableLedgerDirs();
             } catch (NoWritableLedgerDirException e) {
                 for (LedgerDirsListener listener : ldm.getListeners()) {
@@ -106,32 +106,41 @@ class LedgerDirsMonitor extends BookieThread {
             // - Check if the total disk usage is below DiskLowWaterMarkUsageThreshold.
             // - If So, walk through the entire list of fullfilledDirs and add them back to writableLedgerDirs list if
             // their usage is < conf.getDiskUsageThreshold.
-            if (hasWritableLedgerDirs || (totalDiskUsage = diskChecker.getTotalDiskUsage(ldm.getAllLedgerDirs())) < conf
-                    .getDiskLowWaterMarkUsageThreshold()) {
-                // Check all full-filled disk space usage
-                for (File dir : fullfilledDirs) {
-                    try {
-                        diskUsages.put(dir, diskChecker.checkDir(dir));
-                        ldm.addToWritableDirs(dir, true);
-                    } catch (DiskErrorException e) {
-                        // Notify disk failure to all the listeners
-                        for (LedgerDirsListener listener : ldm.getListeners()) {
-                            listener.diskFailed(dir);
+            try {
+                if (hasWritableLedgerDirs
+                        || (totalDiskUsage = diskChecker.getTotalDiskUsage(ldm.getAllLedgerDirs())) < conf
+                                .getDiskLowWaterMarkUsageThreshold()) {
+                    // Check all full-filled disk space usage
+                    for (File dir : fullfilledDirs) {
+                        try {
+                            diskUsages.put(dir, diskChecker.checkDir(dir));
+                            ldm.addToWritableDirs(dir, true);
+                        } catch (DiskErrorException e) {
+                            // Notify disk failure to all the listeners
+                            for (LedgerDirsListener listener : ldm.getListeners()) {
+                                listener.diskFailed(dir);
+                            }
+                        } catch (DiskWarnThresholdException e) {
+                            diskUsages.put(dir, e.getUsage());
+                            // the full-filled dir become writable but still
+                            // above
+                            // warn threshold
+                            ldm.addToWritableDirs(dir, false);
+                        } catch (DiskOutOfSpaceException e) {
+                            // the full-filled dir is still full-filled
+                            diskUsages.put(dir, e.getUsage());
                         }
-                    } catch (DiskWarnThresholdException e) {
-                        diskUsages.put(dir, e.getUsage());
-                        // the full-filled dir become writable but still above
-                        // warn threshold
-                        ldm.addToWritableDirs(dir, false);
-                    } catch (DiskOutOfSpaceException e) {
-                        // the full-filled dir is still full-filled
-                        diskUsages.put(dir, e.getUsage());
                     }
+                } else {
+                    LOG.debug(
+                            "Current TotalDiskUsage: {} is greater than LWMThreshold: {}. So not adding any filledDir to WritableDirsList",
+                            totalDiskUsage, conf.getDiskLowWaterMarkUsageThreshold());
                 }
-            } else {
-                LOG.debug(
-                        "Current TotalDiskUsage: {} is greater than LWMThreshold: {}. So not adding any filledDir to WritableDirsList",
-                        totalDiskUsage, conf.getDiskLowWaterMarkUsageThreshold());
+            } catch (IOException ioe) {
+                LOG.error("Got IOException while monitoring Dirs", ioe);
+                for (LedgerDirsListener listener : ldm.getListeners()) {
+                    listener.fatalError();
+                }
             }
             try {
                 Thread.sleep(interval);

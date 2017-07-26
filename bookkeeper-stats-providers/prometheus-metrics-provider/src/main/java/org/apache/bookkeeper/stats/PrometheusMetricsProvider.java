@@ -32,6 +32,9 @@ import io.prometheus.client.hotspot.MemoryPoolsExports;
 import io.prometheus.client.hotspot.StandardExports;
 import io.prometheus.client.hotspot.ThreadExports;
 
+/**
+ * A <i>Prometheus</i> based {@link StatsProvider} implementation.
+ */
 public class PrometheusMetricsProvider implements StatsProvider {
 
     private final CollectorRegistry registry = new CollectorRegistry();

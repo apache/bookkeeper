@@ -141,7 +141,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
             }
             while (start < numMsgs) {
                 Enumeration<LedgerEntry> seq = lhs[j].readEntries(start, end);
-                assertTrue("Enumeration of ledger entries has no element", seq.hasMoreElements() == true);
+                assertTrue("Enumeration of ledger entries has no element", seq.hasMoreElements());
                 while (seq.hasMoreElements()) {
                     LedgerEntry e = seq.nextElement();
                     assertEquals(entryId, e.getEntryId());

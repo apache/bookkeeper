@@ -19,6 +19,9 @@ package org.apache.bookkeeper.stats;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * A {@code StatsLogger} that caches the stats objects created by other {@code StatsLogger}.
+ */
 public class CachingStatsLogger implements StatsLogger {
 
     protected final StatsLogger underlying;

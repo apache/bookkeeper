@@ -231,9 +231,7 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
         }
         SortedMap<Long, ArrayList<BookieSocketAddress>> ensembles = ledgerMetadata.getEnsembles();
         for (ArrayList<BookieSocketAddress> fragmentEnsembles : ensembles.values()) {
-            for (BookieSocketAddress ensemble : fragmentEnsembles) {
-                allAddresses.remove(ensemble);
-            }
+            allAddresses.removeAll(fragmentEnsembles);
         }
         Assert.assertEquals(allAddresses.size(), 1);
         return allAddresses.get(0);

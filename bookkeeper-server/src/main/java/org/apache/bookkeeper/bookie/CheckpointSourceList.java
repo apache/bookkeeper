@@ -25,6 +25,9 @@ import java.util.List;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
+/**
+ * A {@code CheckpointSourceList} manages a list of {@link CheckpointSource}s.
+ */
 public class CheckpointSourceList implements CheckpointSource {
 
     private final List<? extends CheckpointSource> checkpointSourcesList;

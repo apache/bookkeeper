@@ -161,7 +161,7 @@ public class AsyncLedgerOpsTest extends MultiLedgerManagerMultiDigestTestCase
             lh.asyncReadEntries(0, numEntriesToWrite - 1, this, sync);
 
             synchronized (sync) {
-                while (sync.value == false) {
+                while (!sync.value) {
                     sync.wait();
                 }
             }

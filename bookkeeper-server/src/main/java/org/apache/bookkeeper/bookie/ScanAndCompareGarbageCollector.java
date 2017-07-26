@@ -99,7 +99,8 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector{
     public void gc(GarbageCleaner garbageCleaner) {
         try {
             // Get a set of all ledgers on the bookie
-            NavigableSet<Long> bkActiveLedgers = Sets.newTreeSet(ledgerStorage.getActiveLedgersInRange(0, Long.MAX_VALUE));
+            NavigableSet<Long> bkActiveLedgers = Sets.newTreeSet(ledgerStorage.getActiveLedgersInRange(0,
+                    Long.MAX_VALUE));
 
             // Iterate over all the ledger on the metadata store
             LedgerRangeIterator ledgerRangeIterator = ledgerManager.getLedgerRanges();
@@ -129,7 +130,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector{
                 lastOverReplicatedLedgerGcTimeMillis = MathUtils.now();
             }
 
-            while(ledgerRangeIterator.hasNext()) {
+            while (ledgerRangeIterator.hasNext()) {
                 LedgerRange lRange = ledgerRangeIterator.next();
 
                 Long start = lastEnd + 1;
@@ -182,7 +183,8 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector{
                 // we try to acquire the underreplicated ledger lock to not let the bookie replicate the ledger that is
                 // already being checked for deletion, since that might change the ledger ensemble to include the
                 // current bookie again and, in that case, we cannot remove the ledger from local storage
-                ZkLedgerUnderreplicationManager.acquireUnderreplicatedLedgerLock(zk, zkLedgersRootPath, ledgerId, zkAcls);
+                ZkLedgerUnderreplicationManager.acquireUnderreplicatedLedgerLock(zk, zkLedgersRootPath, ledgerId,
+                        zkAcls);
                 semaphore.acquire();
                 ledgerManager.readLedgerMetadata(ledgerId, new GenericCallback<LedgerMetadata>() {
 

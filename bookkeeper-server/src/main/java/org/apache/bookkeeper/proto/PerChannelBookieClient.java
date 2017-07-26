@@ -68,6 +68,7 @@ import com.google.protobuf.ByteString;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperClientStats;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
+import org.apache.bookkeeper.client.ReadLastConfirmedAndEntryOp;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -739,7 +740,36 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
     }
 
-    public void readEntry(final long ledgerId, final long entryId, ReadEntryCallback cb, Object ctx) {
+    /**
+     * Long Poll Reads
+     */
+    public void readEntryWaitForLACUpdate(final long ledgerId,
+                                          final long entryId,
+                                          final long previousLAC,
+                                          final long timeOutInMillis,
+                                          final boolean piggyBackEntry,
+                                          ReadEntryCallback cb,
+                                          Object ctx) {
+        readEntryInternal(ledgerId, entryId, previousLAC, timeOutInMillis, piggyBackEntry, cb, ctx);
+    }
+
+    /**
+     * Normal Reads.
+     */
+    public void readEntry(final long ledgerId,
+                          final long entryId,
+                          ReadEntryCallback cb,
+                          Object ctx) {
+        readEntryInternal(ledgerId, entryId, null, null, false, cb, ctx);
+    }
+
+    private void readEntryInternal(final long ledgerId,
+                                   final long entryId,
+                                   final Long previousLAC,
+                                   final Long timeOutInMillis,
+                                   final boolean piggyBackEntry,
+                                   final ReadEntryCallback cb,
+                                   final Object ctx) {
         Object request = null;
         CompletionKey completion = null;
         if (useV2WireProtocol) {
@@ -759,6 +789,30 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             ReadRequest.Builder readBuilder = ReadRequest.newBuilder()
                     .setLedgerId(ledgerId)
                     .setEntryId(entryId);
+
+            if (null != previousLAC) {
+                readBuilder = readBuilder.setPreviousLAC(previousLAC);
+            }
+
+            if (null != timeOutInMillis) {
+                // Long poll requires previousLAC
+                if (null == previousLAC) {
+                    cb.readEntryComplete(BKException.Code.IncorrectParameterException,
+                        ledgerId, entryId, null, ctx);
+                    return;
+                }
+                readBuilder = readBuilder.setTimeOut(timeOutInMillis);
+            }
+
+            if (piggyBackEntry) {
+                // Long poll requires previousLAC
+                if (null == previousLAC) {
+                    cb.readEntryComplete(BKException.Code.IncorrectParameterException,
+                        ledgerId, entryId, null, ctx);
+                    return;
+                }
+                readBuilder = readBuilder.setFlag(ReadRequest.Flag.ENTRY_PIGGYBACK);
+            }
 
             request = Request.newBuilder()
                     .setHeader(headerBuilder)
@@ -1228,7 +1282,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                             if (readResponse.hasData()) {
                               data = readResponse.getData();
                             }
-                            handleReadResponse(ledgerId, entryId, status, data, INVALID_ENTRY_ID, completionValue);
+                            handleReadResponse(ledgerId, entryId, status, data, INVALID_ENTRY_ID, -1L, completionValue);
                             break;
                         }
                         default:
@@ -1320,7 +1374,11 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                             if (readResponse.hasMaxLAC()) {
                                 maxLAC = readResponse.getMaxLAC();
                             }
-                            handleReadResponse(readResponse.getLedgerId(), readResponse.getEntryId(), status, buffer, maxLAC, completionValue);
+                            long lacUpdateTimestamp = -1L;
+                            if (readResponse.hasLacUpdateTimestamp()) {
+                                lacUpdateTimestamp = readResponse.getLacUpdateTimestamp();
+                            }
+                            handleReadResponse(readResponse.getLedgerId(), readResponse.getEntryId(), status, buffer, maxLAC, lacUpdateTimestamp, completionValue);
                             break;
                         }
                         case WRITE_LAC: {
@@ -1533,6 +1591,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                             StatusCode status,
                             ByteBuf buffer,
                             long maxLAC, // max known lac piggy-back from bookies
+                            long lacUpdateTimestamp, // the timestamp when the lac is updated.
                             CompletionValue completionValue) {
         // The completion value should always be an instance of a ReadCompletion object when we reach here.
         ReadCompletion rc = (ReadCompletion)completionValue;
@@ -1556,6 +1615,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
         if (maxLAC > INVALID_ENTRY_ID && (rc.ctx instanceof ReadEntryCallbackCtx)) {
             ((ReadEntryCallbackCtx) rc.ctx).setLastAddConfirmed(maxLAC);
+        }
+        if (lacUpdateTimestamp > -1L && (rc.ctx instanceof ReadLastConfirmedAndEntryOp.ReadLastConfirmedAndEntryContext)) {
+            ((ReadLastConfirmedAndEntryOp.ReadLastConfirmedAndEntryContext) rc.ctx).setLacUpdateTimestamp(lacUpdateTimestamp);
         }
         rc.cb.readEntryComplete(rcToRet, ledgerId, entryId, buffer, rc.ctx);
     }
@@ -1931,6 +1993,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 break;
             case EFENCED:
                 rcToRet = BKException.Code.LedgerFencedException;
+                break;
+            case EREADONLY:
+                rcToRet = BKException.Code.WriteOnReadOnlyBookieException;
                 break;
             default:
                 break;

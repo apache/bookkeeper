@@ -75,6 +75,10 @@ class PendingReadLacOp implements ReadLacCallback {
     public void readLacComplete(int rc, long ledgerId, final ByteBuf lacBuffer, final ByteBuf lastEntryBuffer,
             Object ctx) {
         int bookieIndex = (Integer) ctx;
+
+        // add the response to coverage set
+        coverageSet.addBookie(bookieIndex, rc);
+
         numResponsesPending--;
         boolean heardValidResponse = false;
 
@@ -127,7 +131,7 @@ class PendingReadLacOp implements ReadLacCallback {
 
         // We don't consider a success until we have coverage set responses.
         if (heardValidResponse
-                && coverageSet.addBookieAndCheckCovered(bookieIndex)
+                && coverageSet.checkCovered()
                 && !completed) {
             completed = true;
             if (LOG.isDebugEnabled()) {

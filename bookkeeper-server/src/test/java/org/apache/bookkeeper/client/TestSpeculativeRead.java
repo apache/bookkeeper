@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.client;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,19 +18,20 @@ package org.apache.bookkeeper.client;
  * under the License.
  *
  */
+package org.apache.bookkeeper.client;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BaseTestCase;
+
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -286,10 +285,13 @@ public class TestSpeculativeRead extends BaseTestCase {
         LedgerHandle l = bkspec.openLedger(id, digestType, passwd);
 
         ArrayList<BookieSocketAddress> ensemble = l.getLedgerMetadata().getEnsembles().get(0L);
-        Set<BookieSocketAddress> allHosts = new HashSet<BookieSocketAddress>(ensemble);
-        Set<BookieSocketAddress> noHost = new HashSet<BookieSocketAddress>();
-        Set<BookieSocketAddress> secondHostOnly = new HashSet<BookieSocketAddress>();
-        secondHostOnly.add(ensemble.get(1));
+        BitSet allHosts = new BitSet(ensemble.size());
+        for (int i = 0; i < ensemble.size(); i++) {
+            allHosts.set(i, true);
+        }
+        BitSet noHost = new BitSet(ensemble.size());
+        BitSet secondHostOnly = new BitSet(ensemble.size());
+        secondHostOnly.set(1, true);
         PendingReadOp.LedgerEntryRequest req0 = null, req2 = null, req4 = null;
         try {
             LatchCallback latch0 = new LatchCallback();

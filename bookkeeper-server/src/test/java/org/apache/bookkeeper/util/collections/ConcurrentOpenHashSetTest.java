@@ -217,21 +217,21 @@ public class ConcurrentOpenHashSetTest {
 
         assertEquals(set.values(), Collections.emptyList());
 
-        set.add(0l);
+        set.add(0L);
 
-        assertEquals(set.values(), Lists.newArrayList(0l));
+        assertEquals(set.values(), Lists.newArrayList(0L));
 
-        set.remove(0l);
+        set.remove(0L);
 
         assertEquals(set.values(), Collections.emptyList());
 
-        set.add(0l);
-        set.add(1l);
-        set.add(2l);
+        set.add(0L);
+        set.add(1L);
+        set.add(2L);
 
         List<Long> values = set.values();
         Collections.sort(values);
-        assertEquals(values, Lists.newArrayList(0l, 1l, 2l));
+        assertEquals(values, Lists.newArrayList(0L, 1L, 2L));
 
         set.clear();
         assertTrue(set.isEmpty());

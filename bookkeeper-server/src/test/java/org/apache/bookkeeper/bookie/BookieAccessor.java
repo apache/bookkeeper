@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.bookie;
 
 import java.io.IOException;
-import java.util.concurrent.Future;
 
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 

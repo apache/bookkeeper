@@ -1,0 +1,48 @@
+Title:        BookKeeper Security
+Notice: Licensed under the Apache License, Version 2.0 (the "License");
+        you may not use this file except in compliance with the License. You may
+        obtain a copy of the License at "http://www.apache.org/licenses/LICENSE-2.0":http://www.apache.org/licenses/LICENSE-2.0.
+        .
+        .        
+        Unless required by applicable law or agreed to in writing,
+        software distributed under the License is distributed on an "AS IS"
+        BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+        implied. See the License for the specific language governing permissions
+        and limitations under the License.
+        .
+        .
+
+h1. Security in BookKeeper
+
+Apache BookKeeper is a decentralized platform and there are multiple aspects to deal with while securing an BookKeeper Cluster.
+
+Metadata are stored on ZooKeeper, so first of all you will need to secure your ZooKeeper cluster, see "ZooKeeper security":https://zookeeper.apache.org/security.html
+
+Then you have to take care of access to Bookies, you can configure authentication and encryption using TLS, out of the box BookKeeper supports Kerberos authentication, DIGEST-MD5 authentication and TLS encryption. You can also leverage TLS client authentication in order to protect your data.
+
+h1. ZookKeeper security on BookKeeper
+
+Both clients and Bookies read and write metadata on ZooKeeper, it is also used for Bookie discovery. 
+The best way to protect data stored on ZooKeeper is to put ACLs on every z-node, this way only authorized users will be able to access (read/write) data
+
+In order to configure BookKeeper and protect ZooKeeper just simply set zkEnableSecurity=true configuration property on Bookie Configuration (conf/bk_server.conf).
+On the client side you have to set zkEnableSecurity property to true or use ClientConfiguration.setZkEnableSecurity(true).
+
+Beware that your Bookies and your clients MUST successfully authenticate to ZooKeeper cluster.
+You MUST use the same ZooKeeper principal for every Bookie and every Client, this is usually achived by using Kerberos.
+
+BookKeeper runtime will use ZooDefs.Ids.CREATOR_ALL_ACL ACLs for every new node. You will get InvalidACL it ZooKeeper authentication is not configured.
+
+In order to make a Bookie authenticate to a secured ZooKeeper cluster you have to:
+
+- create a jaas.conf file in your "conf" directory (you can just rename conf/jaas_example.conf and change it according to your needs)
+
+- add -Djava.security.auth.login.config=absolute/path/to/jaas.conf to BOOKIE_EXTRA_OPTS in conf/bkenv.sh
+
+On the client side you have to follow similar steps but it depends on your application
+
+Currently there is no migration procedure for changing zkEnableSecurity
+
+if you are moving to zkEnableSecurity=true, new z-nodes will be 'secured' but old z-nodes will be not covered by ACLs and you will need to set it manually using ZooKeeper tools
+
+if you are moving to zkEnableSecurity=false you need to reset all ACLs under the z-node set in zkLedgersRootPath, which defaults to '/ledgers'

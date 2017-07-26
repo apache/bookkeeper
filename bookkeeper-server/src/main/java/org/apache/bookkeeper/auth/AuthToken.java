@@ -21,7 +21,7 @@
 package org.apache.bookkeeper.auth;
 
 /**
- * A generic payload for Authentication Messages
+ * A generic payload for Authentication Messages.
  */
 public class AuthToken {
 

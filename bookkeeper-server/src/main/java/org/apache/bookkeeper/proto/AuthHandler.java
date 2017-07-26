@@ -290,7 +290,8 @@ class AuthHandler {
                             byte[] payload = am.getPayload().toByteArray();
                             authProvider.process(AuthToken.wrap(payload), new AuthRequestCallback(ctx,
                                 authProviderFactory.getPluginName()));
-                        }   break;
+                        }
+                        break;
                     default:
                         LOG.warn("dropping received message {} from bookie {}", msg, ctx.channel());
                         // else just drop the message,

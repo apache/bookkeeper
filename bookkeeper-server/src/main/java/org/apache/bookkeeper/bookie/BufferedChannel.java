@@ -64,17 +64,17 @@ public class BufferedChannel extends BufferedReadChannel {
      * @param src The source ByteBuffer which contains the data to be written.
      * @throws IOException if a write operation fails.
      */
-    synchronized public void write(ByteBuffer src) throws IOException {
+    public synchronized void write(ByteBuffer src) throws IOException {
         int copied = 0;
-        while(src.remaining() > 0) {
+        while (src.remaining() > 0) {
             int truncated = 0;
             if (writeBuffer.remaining() < src.remaining()) {
                 truncated = src.remaining() - writeBuffer.remaining();
-                src.limit(src.limit()-truncated);
+                src.limit(src.limit() - truncated);
             }
             copied += src.remaining();
             writeBuffer.put(src);
-            src.limit(src.limit()+truncated);
+            src.limit(src.limit() + truncated);
             // if we have run out of buffer space, we should flush to the file
             if (writeBuffer.remaining() == 0) {
                 flushInternal();
@@ -107,7 +107,7 @@ public class BufferedChannel extends BufferedReadChannel {
      * @throws IOException if the write or sync operation fails.
      */
     public void flush(boolean shouldForceWrite) throws IOException {
-        synchronized(this) {
+        synchronized (this) {
             flushInternal();
         }
         if (shouldForceWrite) {
@@ -116,7 +116,7 @@ public class BufferedChannel extends BufferedReadChannel {
     }
 
     /**
-     * Write any data in the buffer to the file and advance the writeBufferPosition
+     * Write any data in the buffer to the file and advance the writeBufferPosition.
      * Callers are expected to synchronize appropriately
      * @throws IOException if the write fails.
      */
@@ -140,13 +140,13 @@ public class BufferedChannel extends BufferedReadChannel {
     }
 
     @Override
-    synchronized public int read(ByteBuffer dest, long pos) throws IOException {
+    public synchronized int read(ByteBuffer dest, long pos) throws IOException {
         long prevPos = pos;
-        while(dest.remaining() > 0) {
+        while (dest.remaining() > 0) {
             // check if it is in the write buffer
             if (writeBuffer != null && writeBufferStartPosition.get() <= pos) {
                 long positionInBuffer = pos - writeBufferStartPosition.get();
-                long bytesToCopy = writeBuffer.position()-positionInBuffer;
+                long bytesToCopy = writeBuffer.position() - positionInBuffer;
                 if (bytesToCopy > dest.remaining()) {
                     bytesToCopy = dest.remaining();
                 }
@@ -155,22 +155,22 @@ public class BufferedChannel extends BufferedReadChannel {
                 }
                 ByteBuffer src = writeBuffer.duplicate();
                 src.position((int) positionInBuffer);
-                src.limit((int) (positionInBuffer+bytesToCopy));
+                src.limit((int) (positionInBuffer + bytesToCopy));
                 dest.put(src);
-                pos+= bytesToCopy;
+                pos += bytesToCopy;
             } else if (writeBuffer == null && writeBufferStartPosition.get() <= pos) {
                 // here we reach the end
                 break;
                 // first check if there is anything we can grab from the readBuffer
-            } else if (readBufferStartPosition <= pos && pos < readBufferStartPosition+readBuffer.capacity()) {
+            } else if (readBufferStartPosition <= pos && pos < readBufferStartPosition + readBuffer.capacity()) {
                 long positionInBuffer = pos - readBufferStartPosition;
-                long bytesToCopy = readBuffer.capacity()-positionInBuffer;
+                long bytesToCopy = readBuffer.capacity() - positionInBuffer;
                 if (bytesToCopy > dest.remaining()) {
                     bytesToCopy = dest.remaining();
                 }
                 ByteBuffer src = readBuffer.duplicate();
                 src.position((int) positionInBuffer);
-                src.limit((int) (positionInBuffer+bytesToCopy));
+                src.limit((int) (positionInBuffer + bytesToCopy));
                 dest.put(src);
                 pos += bytesToCopy;
                 // let's read it
@@ -181,11 +181,11 @@ public class BufferedChannel extends BufferedReadChannel {
                 if (readBufferStartPosition + readBuffer.capacity() >= writeBufferStartPosition.get()) {
                     readBufferStartPosition = writeBufferStartPosition.get() - readBuffer.capacity();
                     if (readBufferStartPosition < 0) {
-                        ZeroBuffer.put(readBuffer, (int)-readBufferStartPosition);
+                        ZeroBuffer.put(readBuffer, (int) -readBufferStartPosition);
                     }
                 }
-                while(readBuffer.remaining() > 0) {
-                    if (fileChannel.read(readBuffer, readBufferStartPosition+readBuffer.position()) <= 0) {
+                while (readBuffer.remaining() > 0) {
+                    if (fileChannel.read(readBuffer, readBufferStartPosition + readBuffer.position()) <= 0) {
                         throw new IOException("Short read");
                     }
                 }
@@ -193,11 +193,11 @@ public class BufferedChannel extends BufferedReadChannel {
                 readBuffer.clear();
             }
         }
-        return (int)(pos - prevPos);
+        return (int) (pos - prevPos);
     }
 
     @Override
-    synchronized public void clear() {
+    public synchronized void clear() {
         super.clear();
         writeBuffer.clear();
     }

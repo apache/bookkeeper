@@ -24,7 +24,7 @@ package org.apache.bookkeeper.bookie;
 import java.io.IOException;
 
 /**
- * Interface that identifies LedgerStorage implementations using EntryLogger and running periodic entries compaction
+ * Interface that identifies LedgerStorage implementations using EntryLogger and running periodic entries compaction.
  */
 public interface CompactableLedgerStorage extends LedgerStorage {
 
@@ -44,16 +44,15 @@ public interface CompactableLedgerStorage extends LedgerStorage {
             throws IOException;
 
     /**
-     * Update the location of several entries
+     * Update the location of several entries.
      *
-     * @param locations
-     *            the list of locations to update
+     * @param locations the list of locations to update
      * @throws IOException
      */
     void updateEntriesLocations(Iterable<EntryLocation> locations) throws IOException;
 
     /**
-     * Flush the entries locations index for the compacted entries
+     * Flush the entries locations index for the compacted entries.
      *
      * @throws IOException
      */

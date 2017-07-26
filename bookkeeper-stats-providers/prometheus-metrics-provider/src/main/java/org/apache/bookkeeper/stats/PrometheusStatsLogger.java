@@ -21,6 +21,9 @@ import com.google.common.base.Joiner;
 import io.prometheus.client.Collector;
 import io.prometheus.client.CollectorRegistry;
 
+/**
+ * A {@code Prometheus} based {@link StatsLogger} implementation.
+ */
 public class PrometheusStatsLogger implements StatsLogger {
 
     private final CollectorRegistry registry;
