@@ -51,11 +51,11 @@ import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
 import io.netty.util.HashedWheelTimer;
+import java.util.Optional;
 
 /**
  * Simple rackware ensemble placement policy.

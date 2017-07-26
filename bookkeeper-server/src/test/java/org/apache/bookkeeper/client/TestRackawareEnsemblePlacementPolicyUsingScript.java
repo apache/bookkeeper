@@ -46,10 +46,10 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Optional;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import io.netty.util.HashedWheelTimer;
+import java.util.Optional;
 
 /**
  * In this testsuite, ScriptBasedMapping is used as DNS_RESOLVER_CLASS for
@@ -83,7 +83,7 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
                 conf.getTimeoutTimerNumTicks());
         
         repp = new RackawareEnsemblePlacementPolicy();
-        repp.initialize(conf, Optional.<DNSToSwitchMapping>absent(), timer, DISABLE_ALL, null);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, null);
     }
 
     @After

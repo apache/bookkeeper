@@ -17,8 +17,6 @@
  */
 package org.apache.bookkeeper.bookie;
 
-import com.google.common.base.Optional;
-
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -42,6 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.netty.util.HashedWheelTimer;
+import java.util.Optional;
 
 /**
  * Special ensemble placement policy that always return local bookie. Only works with ledgers with ensemble=1.
