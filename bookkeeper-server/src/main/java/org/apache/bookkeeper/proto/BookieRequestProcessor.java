@@ -89,7 +89,7 @@ public class BookieRequestProcessor implements RequestProcessor {
     /**
      * SSL management
      */
-    private SecurityHandlerFactory shFactory;
+    private final SecurityHandlerFactory shFactory;
 
     // Expose Stats
     private final BKStats bkStats = BKStats.getInstance();

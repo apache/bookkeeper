@@ -526,7 +526,7 @@ public class TestAuth extends BookKeeperClusterTestCase {
         public BookieAuthProvider newProvider(BookieConnectionPeer addr,
                                               final AuthCallbacks.GenericCallback<Void> completeCb) {
             return new BookieAuthProvider() {
-                public void process(AuthToken m, AuthCallbacks.GenericCallback<AuthToken> cb) {                                              
+                public void process(AuthToken m, AuthCallbacks.GenericCallback<AuthToken> cb) {
                     addr.disconnect();
                 }
             };
@@ -546,7 +546,6 @@ public class TestAuth extends BookKeeperClusterTestCase {
 
         @Override
         public BookieAuthProvider newProvider(BookieConnectionPeer addr,
-
                                               final AuthCallbacks.GenericCallback<Void> completeCb) {
             return new BookieAuthProvider() {
                 public void process(AuthToken m, AuthCallbacks.GenericCallback<AuthToken> cb) {
@@ -583,7 +582,8 @@ public class TestAuth extends BookKeeperClusterTestCase {
                 public void close() {
                     closeCountersOnConnections.incrementAndGet();
                 }
-                
+
+                @Override
                 public void init(AuthCallbacks.GenericCallback<AuthToken> cb) {
                     initCountersOnConnections.incrementAndGet();
                     completeCb.operationComplete(BKException.Code.OK, null);

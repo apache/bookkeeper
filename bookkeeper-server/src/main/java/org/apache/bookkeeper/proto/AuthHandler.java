@@ -267,7 +267,8 @@ class AuthHandler {
                 if (null == resp.getHeader().getOperation()) {
                     LOG.info("dropping received malformed message {} from bookie {}", msg, ctx.channel());
                     // drop the message without header
-                } else switch (resp.getHeader().getOperation()) {
+                } else {
+                    switch (resp.getHeader().getOperation()) {
                     case START_TLS:
                         super.channelRead(ctx, msg);
                         break;
@@ -295,6 +296,7 @@ class AuthHandler {
                         // else just drop the message,
                         // we're not authenticated so nothing should be coming through
                         break;
+                    }
                 }
             }
         }
