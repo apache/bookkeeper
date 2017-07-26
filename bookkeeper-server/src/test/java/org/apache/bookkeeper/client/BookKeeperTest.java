@@ -1,5 +1,6 @@
 package org.apache.bookkeeper.client;
 
+import io.netty.util.IllegalReferenceCountException;
 import java.util.Collections;
 import java.util.Enumeration;
 
@@ -692,6 +693,142 @@ public class BookKeeperTest extends BaseTestCase {
                         lh2.addEntry(data);
                         fail("ledger should be fenced");
                     } catch (BKException.BKLedgerFencedException ex){
+                    }
+                }
+            }
+        }
+    }
+
+    @Test(timeout = 60000)
+    public void testReadEntryReleaseByteBufs() throws Exception {
+        ClientConfiguration confWriter = new ClientConfiguration()
+            .setZkServers(zkUtil.getZooKeeperConnectString());
+        int numEntries = 10;
+        byte[] data = "foobar".getBytes();
+        long ledgerId;
+        try (BookKeeper bkc = new BookKeeper(confWriter)) {
+            try (LedgerHandle lh = bkc.createLedger(digestType, "testPasswd".getBytes())) {
+                ledgerId = lh.getId();
+                for (int i = 0; i < numEntries; i++) {
+                    lh.addEntry(data);
+                }
+            }
+        }
+
+        // v2 protocol, using pooled buffers
+        ClientConfiguration confReader1 = new ClientConfiguration()
+            .setZkServers(zkUtil.getZooKeeperConnectString())
+            .setUseV2WireProtocol(true)
+            .setNettyUsePooledBuffers(true);
+        try (BookKeeper bkc = new BookKeeper(confReader1)) {
+            try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                assertEquals(numEntries - 1, lh.readLastConfirmed());
+                for (Enumeration<LedgerEntry> readEntries = lh.readEntries(0, numEntries - 1);
+                    readEntries.hasMoreElements();) {
+                    LedgerEntry entry = readEntries.nextElement();
+                    assertTrue(entry.data.getClass().getName(),
+                        entry.data.getClass().getName().contains("PooledNonRetainedSlicedByteBuf"));
+                    assertTrue(entry.data.release());
+                    try {
+                        entry.data.release();
+                        fail("ByteBuf already released");
+                    } catch (IllegalReferenceCountException ok) {
+                    }
+                }
+            }
+        }
+
+        // v2 protocol, not using pooled buffers
+        ClientConfiguration confReader2 = new ClientConfiguration()
+            .setZkServers(zkUtil.getZooKeeperConnectString())
+            .setUseV2WireProtocol(true)
+            .setNettyUsePooledBuffers(false);
+        try (BookKeeper bkc = new BookKeeper(confReader2)) {
+            try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                assertEquals(numEntries - 1, lh.readLastConfirmed());
+                for (Enumeration<LedgerEntry> readEntries = lh.readEntries(0, numEntries - 1);
+                    readEntries.hasMoreElements();) {
+                    LedgerEntry entry = readEntries.nextElement();
+                    // ButeBufs no reference counter
+                    assertTrue(entry.data.release());
+                    assertTrue(entry.data.getClass().getName(),
+                        entry.data.getClass().getName().contains("UnpooledSlicedByteBuf"));
+                    try {
+                        entry.data.release();
+                        fail("ByteBuf already released");
+                    } catch (IllegalReferenceCountException ok) {
+                    }
+                }
+            }
+        }
+
+        // v3 protocol, not using pooled buffers
+        ClientConfiguration confReader3 = new ClientConfiguration()
+            .setZkServers(zkUtil.getZooKeeperConnectString())
+            .setUseV2WireProtocol(false)
+            .setNettyUsePooledBuffers(false);
+        try (BookKeeper bkc = new BookKeeper(confReader3)) {
+            try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                assertEquals(numEntries - 1, lh.readLastConfirmed());
+                for (Enumeration<LedgerEntry> readEntries = lh.readEntries(0, numEntries - 1);
+                    readEntries.hasMoreElements();) {
+                    LedgerEntry entry = readEntries.nextElement();
+                    // ButeBufs not reference counter
+                    assertTrue(entry.data.getClass().getName(),
+                        entry.data.getClass().getName().contains("UnpooledSlicedByteBuf"));
+                    assertTrue(entry.data.release());
+                    try {
+                        entry.data.release();
+                        fail("ByteBuf already released");
+                    } catch (IllegalReferenceCountException ok) {
+                    }
+                }
+            }
+        }
+
+        // v3 protocol, using pooled buffers
+        // v3 protocol from 4.5 always "wraps" buffers returned by protobuf
+        ClientConfiguration confReader4 = new ClientConfiguration()
+            .setZkServers(zkUtil.getZooKeeperConnectString())
+            .setUseV2WireProtocol(false)
+            .setNettyUsePooledBuffers(true);
+        try (BookKeeper bkc = new BookKeeper(confReader4)) {
+            try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                assertEquals(numEntries - 1, lh.readLastConfirmed());
+                for (Enumeration<LedgerEntry> readEntries = lh.readEntries(0, numEntries - 1);
+                    readEntries.hasMoreElements();) {
+                    LedgerEntry entry = readEntries.nextElement();
+                    // ButeBufs not reference counter
+                    assertTrue(entry.data.getClass().getName(),
+                        entry.data.getClass().getName().contains("UnpooledSlicedByteBuf"));
+                    assertTrue(entry.data.release());
+                    try {
+                        entry.data.release();
+                        fail("ByteBuf already released");
+                    } catch (IllegalReferenceCountException ok) {
+                    }                }
+            }
+        }
+
+        // cannot read twice an entry
+        ClientConfiguration confReader5 = new ClientConfiguration()
+            .setZkServers(zkUtil.getZooKeeperConnectString());
+        try (BookKeeper bkc = new BookKeeper(confReader5)) {
+            try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                assertEquals(numEntries - 1, lh.readLastConfirmed());
+                for (Enumeration<LedgerEntry> readEntries = lh.readEntries(0, numEntries - 1);
+                    readEntries.hasMoreElements();) {
+                    LedgerEntry entry = readEntries.nextElement();
+                    entry.getEntry();
+                    try {
+                        entry.getEntry();
+                        fail("entry data accessed twice");
+                    } catch (IllegalStateException ok){
+                    }
+                    try {
+                        entry.getEntryInputStream();
+                        fail("entry data accessed twice");
+                    } catch (IllegalStateException ok){
                     }
                 }
             }
