@@ -29,7 +29,6 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.service.Service;
 import org.apache.bookkeeper.http.service.ServiceRequest;
 import org.apache.bookkeeper.http.service.ServiceResponse;
-import org.json.JSONObject;
 
 /**
  * Service that handle Bookkeeper Configuration related http request.
@@ -44,16 +43,15 @@ public class ConfigurationService implements Service {
     }
 
     @Override
-    public ServiceResponse handle(ServiceRequest request) {
+    public ServiceResponse handle(ServiceRequest request) throws Exception {
         ServiceResponse response = new ServiceResponse();
-        Map configMap = toMap(conf);
-        JSONObject jsonResponse = new JSONObject();
-        jsonResponse.put("server_config", new JSONObject(configMap));
-        response.setBody(jsonResponse.toString(2));
+        Map<String, Object> configMap = toMap(conf);
+        String jsonResponse = JsonUtil.toJson(configMap);
+        response.setBody(jsonResponse);
         return response;
     }
 
-    private Map toMap(ServerConfiguration conf) {
+    private Map<String, Object> toMap(ServerConfiguration conf) {
         Map<String, Object> configMap = new HashMap<>();
         Iterator iterator = conf.getKeys();
         while (iterator.hasNext()) {

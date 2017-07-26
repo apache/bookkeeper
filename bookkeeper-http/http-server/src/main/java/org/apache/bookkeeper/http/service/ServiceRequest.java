@@ -32,11 +32,11 @@ import org.apache.bookkeeper.http.HttpServer;
 public class ServiceRequest {
     private String body;
     private HttpServer.Method method = HttpServer.Method.GET;
-    private Map params = new HashMap();
+    private Map<String, String> params = new HashMap<>();
 
     public ServiceRequest() {}
 
-    public ServiceRequest(String body, HttpServer.Method method, Map params) {
+    public ServiceRequest(String body, HttpServer.Method method, Map<String, String> params) {
         this.body = body;
         this.method = method;
         this.params = params;
@@ -60,11 +60,11 @@ public class ServiceRequest {
         return this;
     }
 
-    public Map getParams() {
+    public Map<String, String> getParams() {
         return params;
     }
 
-    public ServiceRequest setParams(Map params) {
+    public ServiceRequest setParams(Map<String, String> params) {
         this.params = params;
         return this;
     }

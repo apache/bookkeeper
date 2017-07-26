@@ -15,6 +15,6 @@
  * the License.
  */
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * Package provide service related interfaces.
  */
 package org.apache.bookkeeper.http.service;

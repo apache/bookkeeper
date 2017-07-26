@@ -26,5 +26,5 @@ package org.apache.bookkeeper.http.service;
  */
 public interface Service {
 
-    ServiceResponse handle(ServiceRequest request);
+    ServiceResponse handle(ServiceRequest request) throws Exception;
 }

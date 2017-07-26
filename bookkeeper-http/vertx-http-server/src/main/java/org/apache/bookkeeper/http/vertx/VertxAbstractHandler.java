@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.bookkeeper.http.HttpServer;
+import org.apache.bookkeeper.http.service.ErrorService;
 import org.apache.bookkeeper.http.service.Service;
 import org.apache.bookkeeper.http.service.ServiceRequest;
 import org.apache.bookkeeper.http.service.ServiceResponse;
@@ -49,7 +50,12 @@ public abstract class VertxAbstractHandler implements Handler<RoutingContext> {
             .setMethod(convertMethod(httpRequest))
             .setParams(convertParams(httpRequest))
             .setBody(context.getBodyAsString());
-        ServiceResponse response = service.handle(request);
+        ServiceResponse response = null;
+        try {
+            response = service.handle(request);
+        } catch (Exception e) {
+            response = new ErrorService().handle(request);
+        }
         httpResponse.setStatusCode(response.getStatusCode());
         httpResponse.end(response.getBody());
     }
@@ -58,11 +64,11 @@ public abstract class VertxAbstractHandler implements Handler<RoutingContext> {
      * Convert http request parameters to a map.
      */
     @SuppressWarnings("unchecked")
-    Map convertParams(HttpServerRequest request) {
-        Map map = new HashMap();
+    Map<String, String> convertParams(HttpServerRequest request) {
+        Map<String, String> map = new HashMap<>();
         Iterator<Map.Entry<String, String>> iterator = request.params().iterator();
         while (iterator.hasNext()) {
-            Map.Entry entry = iterator.next();
+            Map.Entry<String, String> entry = iterator.next();
             map.put(entry.getKey(), entry.getValue());
         }
         return map;

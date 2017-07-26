@@ -18,31 +18,16 @@
  * under the License.
  *
  */
-package org.apache.bookkeeper.http;
+package org.apache.bookkeeper.http.service;
 
-import org.apache.bookkeeper.http.service.NullService;
-import org.apache.bookkeeper.http.service.Service;
+import org.apache.bookkeeper.http.HttpServer;
 
 /**
- * Service provider which provide service that do nothing.
+ * Service that return internal server error.
  */
-public class NullServiceProvider implements ServiceProvider {
-
-    private static final NullServiceProvider NULL_SERVICE_PROVIDER = new NullServiceProvider();
-
-    static final Service NULL_SERVICE = new NullService();
-
+public class ErrorService implements Service {
     @Override
-    public Service provideHeartbeatService() {
-        return NULL_SERVICE;
-    }
-
-    @Override
-    public Service provideConfigurationService() {
-        return NULL_SERVICE;
-    }
-
-    public static NullServiceProvider getInstance() {
-        return NULL_SERVICE_PROVIDER;
+    public ServiceResponse handle(ServiceRequest request) {
+        return new ServiceResponse().setCode(HttpServer.StatusCode.INTERNAL_ERROR);
     }
 }

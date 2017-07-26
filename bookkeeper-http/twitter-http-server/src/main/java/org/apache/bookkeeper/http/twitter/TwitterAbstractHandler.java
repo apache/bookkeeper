@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.bookkeeper.http.HttpServer;
+import org.apache.bookkeeper.http.service.ErrorService;
 import org.apache.bookkeeper.http.service.ServiceRequest;
 import org.apache.bookkeeper.http.service.ServiceResponse;
 
@@ -45,7 +46,12 @@ public abstract class TwitterAbstractHandler extends Service<Request, Response> 
             .setMethod(convertMethod(request))
             .setParams(convertParams(request))
             .setBody(request.contentString());
-        ServiceResponse serviceResponse = service.handle(serviceRequest);
+        ServiceResponse serviceResponse = null;
+        try {
+            serviceResponse = service.handle(serviceRequest);
+        } catch (Exception e) {
+            serviceResponse = new ErrorService().handle(serviceRequest);
+        }
         Response response = Response.apply();
         response.setContentString(serviceResponse.getBody());
         response.statusCode(serviceResponse.getStatusCode());
@@ -56,8 +62,8 @@ public abstract class TwitterAbstractHandler extends Service<Request, Response> 
      * Convert http request parameters to Map.
      */
     @SuppressWarnings("unchecked")
-    Map convertParams(Request request) {
-        Map map = new HashMap();
+    Map<String, String> convertParams(Request request) {
+        Map<String, String> map = new HashMap<>();
         for (Map.Entry<String, String> entry : request.getParams()) {
             map.put(entry.getKey(), entry.getValue());
         }

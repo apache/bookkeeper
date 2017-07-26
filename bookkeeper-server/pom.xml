@@ -223,14 +223,9 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.json</groupId>
-      <artifactId>json</artifactId>
-      <version>20160810</version>
-    </dependency>
-    <dependency>
       <groupId>org.apache.bookkeeper.http</groupId>
       <artifactId>http-server</artifactId>
-      <version>4.5.0-SNAPSHOT</version>
+      <version>${project.version}</version>
     </dependency>
   </dependencies>
   <build>

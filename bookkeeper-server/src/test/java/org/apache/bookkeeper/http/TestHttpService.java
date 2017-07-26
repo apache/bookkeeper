@@ -18,18 +18,16 @@
  * under the License.
  *
  */
-
 package org.apache.bookkeeper.http;
+
+import java.util.Map;
 
 import org.apache.bookkeeper.http.service.Service;
 import org.apache.bookkeeper.http.service.ServiceResponse;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.json.JSONObject;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 
 public class TestHttpService extends BookKeeperClusterTestCase {
 
@@ -53,13 +51,17 @@ public class TestHttpService extends BookKeeperClusterTestCase {
     @Test(timeout = 60000)
     public void testConfigService() throws Exception {
         // test config service
-
+        String testProperty = "TEST_PROPERTY";
+        String testValue = "TEST_VALUE";
+        baseConf.setProperty(testProperty, testValue);
         Service configService = serviceProvider.provideConfigurationService();
         ServiceResponse response = configService.handle(null);
+        Map configMap = JsonUtil.fromJson(
+            response.getBody(),
+            Map.class
+        );
         assertEquals(HttpServer.StatusCode.OK.getValue(), response.getStatusCode());
-        JSONObject jsonResponse = new JSONObject(response.getBody());
-        JSONObject innerJson = jsonResponse.getJSONObject("server_config");
-        assertTrue(innerJson.length() > 0);
+        assertEquals(testValue, configMap.get(testProperty));
     }
 
 }
