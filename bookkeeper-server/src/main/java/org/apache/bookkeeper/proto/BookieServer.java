@@ -125,9 +125,10 @@ public class BookieServer {
             this.autoRecoveryMain.start();
         }
         if (conf.isHttpServerEnabled()) {
-            BKServiceProvider serviceProvider = new BKServiceProvider()
-                .setConf(conf)
-                .setBookieServer(this);
+            BKServiceProvider serviceProvider = new BKServiceProvider.Builder()
+                .setBookieServer(this)
+                .setServerConfiguration(conf)
+                .build();
             HttpServerLoader.loadHttpServer(conf);
             this.httpServer = HttpServerLoader.get();
             if (this.httpServer != null) {

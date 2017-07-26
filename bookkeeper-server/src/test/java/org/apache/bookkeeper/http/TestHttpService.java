@@ -35,8 +35,9 @@ public class TestHttpService extends BookKeeperClusterTestCase {
 
     public TestHttpService() {
         super(0);
-        this.serviceProvider = new BKServiceProvider()
-            .setConf(baseConf);
+        this.serviceProvider = new BKServiceProvider.Builder()
+            .setServerConfiguration(baseConf)
+            .build();
     }
 
     @Test(timeout = 60000)

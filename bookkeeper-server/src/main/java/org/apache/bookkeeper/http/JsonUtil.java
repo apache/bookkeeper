@@ -32,7 +32,7 @@ public class JsonUtil {
         try {
             return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
         } catch (Exception e) {
-            throw new ParseJsonException("Failed to serialize object to json string");
+            throw new ParseJsonException("Failed to serialize Object to Json string");
         }
     }
 

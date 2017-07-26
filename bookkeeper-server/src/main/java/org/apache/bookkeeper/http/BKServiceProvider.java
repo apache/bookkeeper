@@ -35,9 +35,17 @@ import org.apache.bookkeeper.replication.AutoRecoveryMain;
  */
 public class BKServiceProvider implements ServiceProvider {
 
-    private BookieServer bookieServer;
-    private AutoRecoveryMain autoRecovery;
-    private ServerConfiguration conf;
+    private final BookieServer bookieServer;
+    private final AutoRecoveryMain autoRecovery;
+    private final ServerConfiguration serverConf;
+
+    private BKServiceProvider(BookieServer bookieServer,
+                             AutoRecoveryMain autoRecovery,
+                             ServerConfiguration serverConf) {
+        this.bookieServer = bookieServer;
+        this.autoRecovery = autoRecovery;
+        this.serverConf = serverConf;
+    }
 
     @Override
     public Service provideHeartbeatService() {
@@ -46,30 +54,15 @@ public class BKServiceProvider implements ServiceProvider {
 
     @Override
     public Service provideConfigurationService() {
-        ServerConfiguration configuration = getConf();
+        ServerConfiguration configuration = getServerConf();
         if (configuration == null) {
             return NullServiceProvider.NULL_SERVICE;
         }
         return new ConfigurationService(configuration);
     }
 
-    public BKServiceProvider setBookieServer(BookieServer bookieServer) {
-        this.bookieServer = bookieServer;
-        return this;
-    }
-
-    public BKServiceProvider setAutoRecovery(AutoRecoveryMain autoRecovery) {
-        this.autoRecovery = autoRecovery;
-        return this;
-    }
-
-    public BKServiceProvider setConf(ServerConfiguration conf) {
-        this.conf = conf;
-        return this;
-    }
-
-    private ServerConfiguration getConf() {
-        return conf;
+    private ServerConfiguration getServerConf() {
+        return serverConf;
     }
 
     private Auditor getAuditor() {
@@ -78,6 +71,39 @@ public class BKServiceProvider implements ServiceProvider {
 
     private Bookie getBookie() {
         return bookieServer == null ? null : bookieServer.getBookie();
+    }
+
+    /**
+     * Builder for ServiceProvider.
+     */
+    public static class Builder {
+
+        BookieServer bookieServer = null;
+        AutoRecoveryMain autoRecovery = null;
+        ServerConfiguration serverConf = null;
+
+        public Builder setBookieServer(BookieServer bookieServer) {
+            this.bookieServer = bookieServer;
+            return this;
+        }
+
+        public Builder setAutoRecovery(AutoRecoveryMain autoRecovery) {
+            this.autoRecovery = autoRecovery;
+            return this;
+        }
+
+        public Builder setServerConfiguration(ServerConfiguration conf) {
+            this.serverConf = conf;
+            return this;
+        }
+
+        public BKServiceProvider build() {
+            return new BKServiceProvider(
+                bookieServer,
+                autoRecovery,
+                serverConf
+            );
+        }
     }
 
 }

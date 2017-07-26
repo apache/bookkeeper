@@ -301,14 +301,13 @@ public class AutoRecoveryMain {
             autoRecoveryMain.start();
             HttpServerLoader.loadHttpServer(conf);
             final HttpServer httpServer = HttpServerLoader.get();
-            if (conf.isHttpServerEnabled()) {
-                BKServiceProvider serviceProvider = new BKServiceProvider()
-                    .setConf(conf)
-                    .setAutoRecovery(autoRecoveryMain);
-                if (httpServer != null) {
-                    httpServer.initialize(serviceProvider);
-                    httpServer.startServer(conf.getHttpServerPort());
-                }
+            if (conf.isHttpServerEnabled() && httpServer != null) {
+                BKServiceProvider serviceProvider = new BKServiceProvider.Builder()
+                    .setAutoRecovery(autoRecoveryMain)
+                    .setServerConfiguration(conf)
+                    .build();
+                httpServer.initialize(serviceProvider);
+                httpServer.startServer(conf.getHttpServerPort());
             }
             Runtime.getRuntime().addShutdownHook(new Thread() {
                 @Override
