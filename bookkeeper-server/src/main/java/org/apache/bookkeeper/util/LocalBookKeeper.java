@@ -55,17 +55,15 @@ public class LocalBookKeeper {
     }
 
     public LocalBookKeeper(int numberOfBookies) {
-        this(numberOfBookies, 5000, ZooKeeperDefaultHost, ZooKeeperDefaultPort);
+        this(numberOfBookies, 5000);
     }
 
-    public LocalBookKeeper(int numberOfBookies, int initialPort, String zkHost, int zkPort) {
+    public LocalBookKeeper(int numberOfBookies, int initialPort) {
         this.numberOfBookies = numberOfBookies;
         this.initialPort = initialPort;
-        this.zkServer = String.format("%s:%d", zkHost, zkPort);
-        LOG.info("Running {} bookie(s) on zkServer {}.", this.numberOfBookies, zkServer);
+        LOG.info("Running {} bookie(s) on zkServer {}.", this.numberOfBookies);
     }
 
-    private String zkServer;
     static String ZooKeeperDefaultHost = "127.0.0.1";
     static int ZooKeeperDefaultPort = 2181;
     static int zkSessionTimeOut = 5000;
@@ -101,13 +99,13 @@ public class LocalBookKeeper {
         return server;
     }
 
-    private void initializeZookeeper() throws IOException {
+    private void initializeZookeeper(String zkHost, int zkPort) throws IOException {
         LOG.info("Instantiate ZK Client");
         //initialize the zk client with values
         ZooKeeperClient zkc = null;
         try {
             zkc = ZooKeeperClient.newBuilder()
-                    .connectString(InetAddress.getLoopbackAddress().getHostAddress() + ":" + ZooKeeperDefaultPort)
+                    .connectString(zkHost + ":" + zkPort)
                     .sessionTimeoutMs(zkSessionTimeOut)
                     .build();
             zkc.create("/ledgers", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
@@ -270,7 +268,7 @@ public class LocalBookKeeper {
                                           boolean stopOnExit,
                                           String dirSuffix)
             throws Exception {
-        LocalBookKeeper lb = new LocalBookKeeper(numBookies, initialBookiePort, zkHost, zkPort);
+        LocalBookKeeper lb = new LocalBookKeeper(numBookies, initialBookiePort);
 
         ZooKeeperServerShim zks = null;
         File zkTmpDir = null;
@@ -281,7 +279,7 @@ public class LocalBookKeeper {
                 zks = LocalBookKeeper.runZookeeper(1000, zkPort, zkTmpDir);
             }
 
-            lb.initializeZookeeper();
+            lb.initializeZookeeper(zkHost, zkPort);
             conf.setZkServers(zkHost + ":" + zkPort);
             bkTmpDirs = lb.runBookies(conf, dirSuffix);
 
@@ -299,6 +297,9 @@ public class LocalBookKeeper {
                 }
                 throw ie;
             }
+        } catch (Exception e) {
+            LOG.error("Failed to run {} bookies : zk ensemble = '{}:{}'",
+                new Object[] { numBookies, zkHost, zkPort, e });
         } finally {
             if (stopOnExit) {
                 cleanupDirectories(bkTmpDirs);
