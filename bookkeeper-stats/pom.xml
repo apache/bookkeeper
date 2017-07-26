@@ -25,7 +25,7 @@
   </parent>
   <groupId>org.apache.bookkeeper.stats</groupId>
   <artifactId>bookkeeper-stats-api</artifactId>
-  <name>Stats API for bookkeeper</name>
+  <name>Apache BookKeeper :: Stats API</name>
   <url>http://maven.apache.org</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
