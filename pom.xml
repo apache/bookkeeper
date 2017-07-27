@@ -29,8 +29,29 @@
   <version>4.5.0-SNAPSHOT</version>
   <artifactId>bookkeeper</artifactId>
   <packaging>pom</packaging>
-  <name>bookkeeper</name>
+  <name>Apache BookKeeper :: Parent</name>
+  <url>http://bookkeeeper.apache.org</url>
   <inceptionYear>2011</inceptionYear>
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <scm>
+    <connection>scm:git:https://github.com/apache/bookkeeper.git</connection>
+    <developerConnection>scm:git:https://github.com/apache/bookkeeper.git</developerConnection>
+    <url>https://github.com/apache/bookkeeper</url>
+  </scm>
+  <issueManagement>
+    <system>JIRA</system>
+    <url>https://issues.apache.org/jira/browse/BOOKKEEPER</url>
+  </issueManagement>
+  <ciManagement>
+    <system>Jenkins</system>
+    <url>https://builds.apache.org/job/bookkeeper-master</url>
+  </ciManagement>
   <modules>
     <module>buildtools</module>
     <module>compat-deps</module>
@@ -39,6 +60,38 @@
     <module>bookkeeper-benchmark</module>
     <module>bookkeeper-stats-providers</module>
   </modules>
+  <mailingLists>
+    <mailingList>
+      <name>BookKeeper User</name>
+      <subscribe>user-subscribe@bookkeeper.apache.org</subscribe>
+      <unsubscribe>user-unsubscribe@bookkeeper.apache.org</unsubscribe>
+      <post>user@bookkeeper.apache.org</post>
+      <archive>http://www.mail-archive.com/user@bookkeeper.apache.org</archive>
+    </mailingList>
+    <mailingList>
+      <name>BookKeeper Dev</name>
+      <subscribe>dev-subscribe@bookkeeper.apache.org</subscribe>
+      <unsubscribe>dev-unsubscribe@bookkeeper.apache.org</unsubscribe>
+      <post>dev@bookkeeper.apache.org</post>
+      <archive>http://www.mail-archive.com/dev@bookkeeper.apache.org</archive>
+    </mailingList>
+    <mailingList>
+      <name>BookKeeper Commits</name>
+      <subscribe>commits-subscribe@bookkeeper.apache.org</subscribe>
+      <unsubscribe>commits-unsubscribe@bookkeeper.apache.org</unsubscribe>
+      <post>commits@bookkeeper.apache.org</post>
+      <archive>http://www.mail-archive.com/commits@bookkeeper.apache.org</archive>
+    </mailingList>
+  </mailingLists>
+  <developers>
+    <developer>
+      <name>The Apache BookKeeper Team</name>
+      <email>dev@bookkeeper.apache.org</email>
+      <url>http://bookkeeper.apache.org</url>
+      <organization>Apache Software Foundation</organization>
+      <organizationUrl>http://www.apache.org</organizationUrl>
+    </developer>
+  </developers>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -52,7 +105,6 @@
     <puppycrawl.checkstyle.version>6.19</puppycrawl.checkstyle.version>
     <maven-checkstyle-plugin.version>2.17</maven-checkstyle-plugin.version>
   </properties>
-  <url>http://bookkeeper.apache.org</url>
   <build>
     <plugins>
       <plugin>
@@ -86,9 +138,9 @@
           <source>1.8</source>
           <target>1.8</target>
           <compilerArguments>
-	    <Werror />
-	    <Xlint:deprecation />
-	    <Xlint:unchecked />
+            <Werror />
+            <Xlint:deprecation />
+            <Xlint:unchecked />
 	  </compilerArguments>
         </configuration>
       </plugin>
