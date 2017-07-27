@@ -1,9 +1,9 @@
 {% capture docs_url %}{{ site.baseurl }}docs/{% endcapture %}
-<div class="bk-topnav container">
+<div class="bk-topnav">
   <nav class="navbar">
     <div class="navbar-brand">
-      <a class="navbar-item" href="{{ site.baseurl }}">
-        <img class="navbar-logo" src="{{ site.baseurl }}img/bk-logo.png"> {{ site.title }}
+      <a class="navbar-item bk-brand" href="{{ site.baseurl }}">
+        {{ site.title }}
       </a>
 
       <!--
@@ -29,7 +29,23 @@
 
     <div id="bkNav" class="navbar-menu">
       <div class="navbar-start">
-        <a class="navbar-item" href="{{ site.baseurl }}docs/getting-started/installation">Documentation</a>
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link" href="{{ site.baseurl }}docs/getting-started/installation">Documentation</a>
+          <div class="navbar-dropdown is-boxed">
+            {% for version in site.versions %}
+            <a class="navbar-item" href="{{ site.baseurl }}docs/getting-started/installation">
+              Version {{ version }}{% if version == site.latest %}<span class="tag is-success">LATEST</span>{% endif %}
+            </a>
+            {% endfor %}
+            <hr class="dropdown-divider">
+            <a class="navbar-item" href="{{ site.baseurl }}javadoc">
+              <span class="icon bk-javadoc-icon">
+                <img src="{{ site.baseurl }}img/java-icon.svg">
+              </span>
+              Javadoc</a>
+          </div>
+        </div>
+
         <div class="navbar-item has-dropdown is-hoverable">
           <a class="navbar-link">Community</a>
           <div class="navbar-dropdown is-boxed">
