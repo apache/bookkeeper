@@ -42,6 +42,7 @@ import org.apache.bookkeeper.replication.ReplicationException.CompatibilityExcep
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.ssl.SecurityException;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.PortManager;
 import org.apache.bookkeeper.util.DiskChecker;
@@ -409,7 +410,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         ServerConfiguration conf;
 
         public MockBookieServer(ServerConfiguration conf) throws IOException, KeeperException, InterruptedException,
-                BookieException, UnavailableException, CompatibilityException {
+                BookieException, UnavailableException, CompatibilityException, SecurityException {
             super(conf);
             this.conf = conf;
         }

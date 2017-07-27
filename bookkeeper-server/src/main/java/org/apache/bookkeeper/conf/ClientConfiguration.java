@@ -1437,7 +1437,7 @@ public class ClientConfiguration extends AbstractConfiguration {
      */
     public ClientConfiguration setSSLTrustStoreType(String arg) {
         setProperty(SSL_TRUSTSTORE_TYPE, arg);
-        return this
+        return this;
     }
 
     /**

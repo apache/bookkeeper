@@ -1341,7 +1341,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     private void readV3Response(final Response response) {
         final BKPacketHeader header = response.getHeader();
 
-        final CompletionValue completionValue = completionObjects.get(newCompletionKey(header.getTxnId(),
+        final CompletionValue completionValue = completionObjects.remove(newCompletionKey(header.getTxnId(),
                 header.getOperation()));
 
         if (null == completionValue) {
@@ -1430,8 +1430,6 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 }
             });
         }
-
-        completionObjects.remove(newCompletionKey(header.getTxnId(), header.getOperation()));
     }
 
     void handleStartTLSResponse(StatusCode status, CompletionValue completionValue) {
