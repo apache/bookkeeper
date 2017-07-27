@@ -45,13 +45,12 @@
     <url>https://github.com/apache/bookkeeper</url>
   </scm>
   <issueManagement>
-    <!-- TODO: add github issues as well -->
-    <system>jira</system>
+    <system>JIRA</system>
     <url>https://issues.apache.org/jira/browse/BOOKKEEPER</url>
   </issueManagement>
   <ciManagement>
-    <system>Travis</system>
-    <url>https://travis-ci.org/apache/bookkeeper</url>
+    <system>Jenkins</system>
+    <url>https://builds.apache.org/job/bookkeeper-master</url>
   </ciManagement>
   <modules>
     <module>buildtools</module>
