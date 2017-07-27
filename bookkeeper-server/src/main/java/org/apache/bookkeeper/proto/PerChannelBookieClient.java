@@ -109,6 +109,9 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 import com.google.protobuf.ExtensionRegistry;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.UnpooledByteBufAllocator;
+import java.net.SocketAddress;
 
 import java.net.SocketAddress;
 import java.security.cert.Certificate;
@@ -365,7 +368,14 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             bootstrap.channel(NioSocketChannel.class);
         }
 
-        bootstrap.option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT);
+        ByteBufAllocator allocator;
+        if (this.conf.isNettyUsePooledBuffers()) {
+            allocator = PooledByteBufAllocator.DEFAULT;
+        } else {
+            allocator = UnpooledByteBufAllocator.DEFAULT;
+        }
+
+        bootstrap.option(ChannelOption.ALLOCATOR, allocator);
         bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, conf.getClientConnectTimeoutMillis());
         bootstrap.option(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(
                 conf.getClientWriteBufferLowWaterMark(), conf.getClientWriteBufferHighWaterMark()));
