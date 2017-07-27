@@ -50,8 +50,8 @@ This means that ledgers have *append-only* semantics. Entries cannot be modified
 
 There are currently two APIs that can be used for interacting with BookKeeper:
 
-* The [ledger API](../../api/ledger-api) is a lower-level API that enables you to interact with {% pop ledgers %} directly
-* The [DistributedLog API](../../api/distributedlog-api) is a higher-level API that enables you to use BookKeeper without directly interacting with ledgers
+* The [ledger API](../../api/ledger-api) is a lower-level API that enables you to interact with {% pop ledgers %} directly.
+* The [DistributedLog API](../../api/distributedlog-api) is a higher-level API that enables you to use BookKeeper without directly interacting with ledgers.
 
 In general, you should choose the API based on how much granular control you need over ledger semantics. The two APIs can also both be used within a single application.
 
@@ -101,11 +101,22 @@ A new entry log file is created once the bookie starts or the older entry log fi
 
 An index file is created for each ledger, which comprises a header and several fixed-length index pages that record the offsets of data stored in entry log files.
 
-Since updating index files would introduce random disk I/O index files are updated lazily by a synchronous thread running in the background. This ensures speedy performance for updates. Before index pages are persisted to disk, they are gathered in a ledger cache for lookup.
+Since updating index files would introduce random disk I/O index files are updated lazily by a sync thread running in the background. This ensures speedy performance for updates. Before index pages are persisted to disk, they are gathered in a ledger cache for lookup.
 
 ### Ledger cache
 
 Ledger indexes pages are cached in a memory pool, which allows for more efficient management of disk head scheduling.
+
+### Adding entries
+
+When a client instructs a {% pop bookie %} to write an entry to a ledger, the entry will go through the following steps to be persisted on disk:
+
+1. The entry is appended to an [entry log](#entry-logs)
+1. The index of the entry is updated in the [ledger cache](#ledger-cache)
+1. A transaction corresponding to this entry update is appended to the [journal](#journals)
+1. A response is sent to the BookKeeper client
+
+> For performance reasons, the entry log buffers entries in memory and commits them in batches, while the ledger cache holds index pages in memory and flushes them lazily. This process is described in more detail in the [Data flush](#data-flush) section below.
 
 ### Data flush
 
@@ -114,41 +125,37 @@ Ledger index pages are flushed to index files in the following two cases:
 * The ledger cache memory limit is reached. There is no more space available to hold newer index pages. Dirty index pages will be evicted from the ledger cache and persisted to index files.
 * A background thread synchronous thread is responsible for flushing index pages from the ledger cache to index files periodically.
 
-Besides flushing index pages, Sync Thread is responsible for rolling journal files in case that journal files use too much disk space.
+Besides flushing index pages, the sync thread is responsible for rolling journal files in case that journal files use too much disk space. The data flush flow in the sync thread is as follows:
 
-The data flush flow in Sync Thread is as follows:
+* A `LastLogMark` is recorded in memory. The `LastLogMark` indicates that those entries before it have been persisted (to both index and entry log files) and contains two parts:
+  1. A `txnLogId` (the file ID of a journal)
+  1. A `txnLogPos` (offset in a journal)
+* Dirty index pages are flushed from the ledger cache to the index file, and entry log files are flushed to ensure that all buffered entries in entry log files are persisted to disk.
 
-Records a LastLogMark in memory. The LastLogMark contains two parts: first one is txnLogId (file id of a journal) and the second one is txnLogPos (offset in a journal). The LastLogMark indicates that those entries before it have been persisted to both index and entry log files.
-Flushes dirty index pages from LedgerCache to index file, and flushes entry log files to ensure all buffered entries in entry log files are persisted to disk.
+    Ideally, a bookie only needs to flush index pages and entry log files that contain entries before `LastLogMark`. There is, however, no such information in the ledger and entry log mapping to journal files. Consequently, the thread flushes the ledger cache and entry log entirely here, and may flush entries after the `LastLogMark`. Flushing more is not a problem, though, just redundant.
+* The `LastLogMark` is persisted to disk, which means that entries added before `LastLogMark` whose entry data and index page were also persisted to disk. It is now time to safely remove journal files created earlier than `txnLogId`.
 
-Ideally, a bookie just needs to flush index pages and entry log files that contains entries before LastLogMark. There is no such information in LedgerCache and Entry Log mapping to journal files, though. Consequently, the thread flushes LedgerCache and Entry Log entirely here, and may flush entries after the LastLogMark. Flushing more is not a problem, though, just redundant.
+If the bookie has crashed before persisting `LastLogMark` to disk, it still has journal files containing entries for which index pages may not have been persisted. Consequently, when this bookie restarts, it inspects journal files to restore those entries and data isn't lost.
 
-Persists LastLogMark to disk, which means entries added before LastLogMark whose entry data and index page were also persisted to disk. It is the time to safely remove journal files created earlier than txnLogId.
-
-If the bookie has crashed before persisting LastLogMark to disk, it still has journal files containing entries for which index pages may not have been persisted. Consequently, when this bookie restarts, it inspects journal files to restore those entries; data isn't lost.
-Using the above data flush mechanism, it is safe for the Sync Thread to skip data flushing when the bookie shuts down. However, in Entry Logger, it uses BufferedChannel to write entries in batches and there might be data buffered in BufferedChannel upon a shut down. The bookie needs to ensure Entry Logger flushes its buffered data during shutting down. Otherwise, Entry Log files become corrupted with partial entries.
-
-As described above, EntryLogger#flush is invoked in the following two cases:
-
-* in Sync Thread : used to ensure entries added before LastLogMark are persisted to disk.
-* in ShutDown : used to ensure its buffered data persisted to disk to avoid data corruption with partial entries.
+Using the above data flush mechanism, it is safe for the sync thread to skip data flushing when the bookie shuts down. However, in the entry logger it uses a buffered channel to write entries in batches and there might be data buffered in the buffered channel upon a shut down. The bookie needs to ensure that the entry log flushes its buffered data during shutdown. Otherwise, entry log files become corrupted with partial entries.
 
 ### Data compaction
 
-In bookie server, entries of different ledgers are interleaved in entry log files. A bookie server runs a Garbage Collector thread to delete un-associated entry log files to reclaim disk space. If a given entry log file contains entries from a ledger that has not been deleted, then the entry log file would never be removed and the occupied disk space never reclaimed. In order to avoid such a case, a bookie server compacts entry log files in Garbage Collector thread to reclaim disk space.
+On bookies, entries of different ledgers are interleaved in entry log files. A bookie runs a garbage collector thread to delete un-associated entry log files to reclaim disk space. If a given entry log file contains entries from a ledger that has not been deleted, then the entry log file would never be removed and the occupied disk space never reclaimed. In order to avoid such a case, a bookie server compacts entry log files in a garbage collector thread to reclaim disk space.
 
-There are two kinds of compaction running with different frequency, which are Minor Compaction and Major Compaction. The differences of Minor Compaction and Major Compaction are just their threshold value and compaction interval.
+There are two kinds of compaction running with different frequency: minor compaction and major compaction. The differences between minor compaction and major compaction lies in their threshold value and compaction interval.
 
-Threshold : Size percentage of an entry log file occupied by those undeleted ledgers. Default minor compaction threshold is 0.2, while major compaction threshold is 0.8.
-Interval : How long to run the compaction. Default minor compaction is 1 hour, while major compaction threshold is 1 day.
-NOTE: if either Threshold or Interval is set to less than or equal to zero, then compaction is disabled.
+* The garbage collection threshold is the size percentage of an entry log file occupied by those undeleted ledgers. The default minor compaction threshold is 0.2, while the major compaction threshold is 0.8.
+* The garbage collection interval is how frequently to run the compaction. The default minor compaction interval is 1 hour, while the major compaction threshold is 1 day.
 
-The data compaction flow in Garbage Collector Thread is as follows:
+> If either the threshold or interval is set to less than or equal to zero, compaction is disabled.
 
-Garbage Collector thread scans entry log files to get their entry log metadata, which records a list of ledgers comprising an entry log and their corresponding percentages.
-With the normal garbage collection flow, once the bookie determines that a ledger has been deleted, the ledger will be removed from the entry log metadata and the size of the entry log reduced.
-If the remaining size of an entry log file reaches a specified threshold, the entries of active ledgers in the entry log will be copied to a new entry log file.
-Once all valid entries have been copied, the old entry log file is deleted.
+The data compaction flow in the garbage collector thread is as follows:
+
+* The thread scans entry log files to get their entry log metadata, which records a list of ledgers comprising an entry log and their corresponding percentages.
+* With the normal garbage collection flow, once the bookie determines that a ledger has been deleted, the ledger will be removed from the entry log metadata and the size of the entry log reduced.
+* If the remaining size of an entry log file reaches a specified threshold, the entries of active ledgers in the entry log will be copied to a new entry log file.
+* Once all valid entries have been copied, the old entry log file is deleted.
 
 ## ZooKeeper metadata
 
