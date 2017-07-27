@@ -11,6 +11,10 @@ $fa-font-path: "../fonts"
 @import typography
 @import vendor/bulma/bulma
 
+@media (min-width: 768px)
+  .bk-docs-container .bk-docs-block
+    padding: 0 3rem !important
+
 .bk-twitter span
   color: $twitter-blue
 
@@ -45,7 +49,6 @@ span.pop
 +sticky-footer
 
 $base-font-size: 1rem
-$docs-side-padding: 6rem
 $footer-height: 20rem
 
 footer.footer
@@ -98,8 +101,7 @@ h2.bk-subtitle
   margin-bottom: 1rem
 
 .bk-docs-container, .bk-community-container
-  margin-top: $docs-container-vertical-margin
-  margin-bottom: $docs-container-vertical-margin * 2
+  margin: $docs-container-vertical-margin auto $docs-container-vertical-margin * 2 auto
 
   hr
     height: 2px
@@ -108,8 +110,6 @@ h2.bk-subtitle
     margin-top: 2rem
 
   .bk-docs-block
-    padding: 0 $docs-side-padding
-
     .docs-title
       h1.title
         font-size: 2.4rem
@@ -130,8 +130,6 @@ h2.bk-subtitle
     list-style-type: square
 
 .bk-docs-container
-  margin-left: auto
-  margin-right: auto
   width: 80%
 
   .bk-main-content

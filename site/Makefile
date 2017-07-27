@@ -2,6 +2,11 @@ BUNDLER_VERSION = 1.15.1
 BUNDLE = bundle _${BUNDLER_VERSION}_
 JEKYLL = ${BUNDLE} exec jekyll
 
+dev:
+	code .
+	open http://localhost:4000
+	make serve
+
 clean:
 	rm -rf _site
 

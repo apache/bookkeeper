@@ -5,8 +5,27 @@
       <a class="navbar-item" href="{{ site.baseurl }}">
         <img class="navbar-logo" src="{{ site.baseurl }}img/bk-logo.png"> {{ site.title }}
       </a>
+
+      <a class="navbar-item is-hidden-desktop bk-github" href="{{ site.github_repo }}" target="_blank">
+        <span class="icon">
+          <i class="fa fa-github"></i>
+        </span>
+      </a>
+
+      <a class="navbar-item is-hidden-desktop bk-twitter" href="https://twitter.com/jgthms" target="_blank">
+        <span class="icon">
+          <i class="fa fa-twitter"></i>
+        </span>
+      </a>
+
+      <div class="navbar-burger" data-target="bkNav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
     </div>
-    <div class="navbar-menu">
+
+    <div id="bkNav" class="navbar-menu">
       <div class="navbar-start">
         <a class="navbar-item" href="{{ site.baseurl }}docs/getting-started/installation">Documentation</a>
         <div class="navbar-item has-dropdown is-hoverable">

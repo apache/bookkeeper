@@ -5,7 +5,7 @@ prev: /docs/getting-started/run-locally
 next: /docs/applications/java-client
 ---
 
-BookKeeper is a service used for persistent storage of log streams of records. BookKeeper replicates stored records across multiple servers.
+BookKeeper is a service used for persistent storage of log streams of records (aka {% pop entries %}). BookKeeper replicates stored records across multiple servers.
 
 ## Basic terms
 

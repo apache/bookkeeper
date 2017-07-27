@@ -3,8 +3,8 @@ layout: default
 ---
 
 <div class="bk-docs-container">
-  <div class="columns">
-    <div class="column is-2">
+  <div class="columns is-gapless">
+    <div class="column is-2 is-hidden-mobile">
       <div class="container">
         {% include sidebar.html %}
       </div>
@@ -51,7 +51,7 @@ layout: default
       </div>
     </div>
 
-    <div class="column is-2">
+    <div class="column is-2 is-hidden-mobile">
       {% unless page.toc_disable %}
       {% include table-of-contents.html %}
       {% endunless %}
