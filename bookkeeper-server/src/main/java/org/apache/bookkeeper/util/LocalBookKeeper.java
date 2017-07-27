@@ -300,6 +300,7 @@ public class LocalBookKeeper {
         } catch (Exception e) {
             LOG.error("Failed to run {} bookies : zk ensemble = '{}:{}'",
                 new Object[] { numBookies, zkHost, zkPort, e });
+            throw e;
         } finally {
             if (stopOnExit) {
                 cleanupDirectories(bkTmpDirs);
