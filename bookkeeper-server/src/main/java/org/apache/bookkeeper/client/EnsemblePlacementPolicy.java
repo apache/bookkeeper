@@ -34,12 +34,17 @@ import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.commons.configuration.Configuration;
 
 /**
  * Encapsulation of the algorithm that selects a number of bookies from the cluster as an ensemble for storing
  * data, based on the data input as well as the node properties.
  */
 public interface EnsemblePlacementPolicy {
+
+    public default EnsemblePlacementPolicy initialize(Configuration conf) {
+        return this;
+    }
 
     /**
      * Initialize the policy.
@@ -50,16 +55,21 @@ public interface EnsemblePlacementPolicy {
      * @param featureProvider feature provider
      * @param statsLogger stats logger
      */
-    public EnsemblePlacementPolicy initialize(ClientConfiguration conf,
+    public default EnsemblePlacementPolicy initialize(ClientConfiguration conf,
                                               Optional<DNSToSwitchMapping> optionalDnsResolver,
                                               HashedWheelTimer hashedWheelTimer,
                                               FeatureProvider featureProvider,
-                                              StatsLogger statsLogger);
+                                              StatsLogger statsLogger) {
+        return initialize(conf);
+    }
+
+
 
     /**
      * Uninitialize the policy
      */
-    public void uninitalize();
+    public default void uninitalize() {
+    }
 
     /**
      * A consistent view of the cluster (what bookies are available as writable, what bookies are available as
@@ -89,7 +99,27 @@ public interface EnsemblePlacementPolicy {
      * @throws BKNotEnoughBookiesException if not enough bookies available.
      * @return the java.util.ArrayList<org.apache.bookkeeper.net.BookieSocketAddress>
      */
-    public ArrayList<BookieSocketAddress> newEnsemble(int ensembleSize, int writeQuorumSize, int ackQuorumSize, Map<String, byte[]> customMetadata, Set<BookieSocketAddress> excludeBookies) throws BKNotEnoughBookiesException;
+    public default ArrayList<BookieSocketAddress> newEnsemble(int ensembleSize, int writeQuorumSize,
+        int ackQuorumSize, Map<String, byte[]> customMetadata, Set<BookieSocketAddress> excludeBookies) throws BKNotEnoughBookiesException {
+        return newEnsemble(ensembleSize, ackQuorumSize, excludeBookies);
+    }
+
+    /**
+     * Legacy method introduce for compatibility with 4.4 clients
+     * @param ensembleSize
+     *          Ensemble Size
+     * @param quorumSize
+     *          Quorum Size
+     * @param excludeBookies
+     * @return
+     * @throws org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException
+     *
+     * @see #newEnsemble(int, int, int, java.util.Map, java.util.Set)
+     */
+    public default ArrayList<BookieSocketAddress> newEnsemble(int ensembleSize, int quorumSize,
+            Set<BookieSocketAddress> excludeBookies) throws BKException.BKNotEnoughBookiesException {
+        throw new UnsupportedOperationException("implement newEnsemble");
+    }
 
     /**
      * Choose a new bookie to replace <i>bookieToReplace</i>. If no bookie available in the cluster,
@@ -107,7 +137,24 @@ public interface EnsemblePlacementPolicy {
      * @throws BKNotEnoughBookiesException
      * @return the org.apache.bookkeeper.net.BookieSocketAddress
      */
-    public BookieSocketAddress replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize, java.util.Map<String, byte[]> customMetadata, Collection<BookieSocketAddress> currentEnsemble, BookieSocketAddress bookieToReplace, Set<BookieSocketAddress> excludeBookies) throws BKNotEnoughBookiesException;
+    public default BookieSocketAddress replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
+        java.util.Map<String, byte[]> customMetadata, Collection<BookieSocketAddress> currentEnsemble,
+        BookieSocketAddress bookieToReplace, Set<BookieSocketAddress> excludeBookies) throws BKNotEnoughBookiesException {
+        return replaceBookie(bookieToReplace, excludeBookies);
+    }
+
+    /**
+     * Legacy method introduce for compatibility with 4.4 clients
+     * @param bookieToReplace bookie to replace
+     * @param excludeBookies bookies that should not be considered as candidate.
+     * @return the org.apache.bookkeeper.net.BookieSocketAddress
+     * @throws org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException
+     * @see #replaceBookie(int, int, int, java.util.Map, java.util.Collection, org.apache.bookkeeper.net.BookieSocketAddress, java.util.Set)
+     */
+    public default BookieSocketAddress replaceBookie(BookieSocketAddress bookieToReplace,
+            Set<BookieSocketAddress> excludeBookies) throws BKException.BKNotEnoughBookiesException {
+        throw new UnsupportedOperationException("implement replaceBookie");
+    }
 
     /**
      * Reorder the read sequence of a given write quorum <i>writeSet</i>.
@@ -120,8 +167,10 @@ public interface EnsemblePlacementPolicy {
      *          Observed failures on the bookies
      * @return read sequence of bookies
      */
-    public List<Integer> reorderReadSequence(ArrayList<BookieSocketAddress> ensemble,
-                                             List<Integer> writeSet, Map<BookieSocketAddress, Long> bookieFailureHistory);
+    public default List<Integer> reorderReadSequence(ArrayList<BookieSocketAddress> ensemble,
+                                             List<Integer> writeSet, Map<BookieSocketAddress, Long> bookieFailureHistory) {
+        return writeSet;
+    }
 
 
     /**
@@ -135,12 +184,22 @@ public interface EnsemblePlacementPolicy {
      *          Observed failures on the bookies
      * @return read sequence of bookies
      */
-    public List<Integer> reorderReadLACSequence(ArrayList<BookieSocketAddress> ensemble,
-                                                List<Integer> writeSet, Map<BookieSocketAddress, Long> bookieFailureHistory);
+    public default List<Integer> reorderReadLACSequence(ArrayList<BookieSocketAddress> ensemble,
+                                                List<Integer> writeSet, Map<BookieSocketAddress, Long> bookieFailureHistory) {
+        List<Integer> retList = new ArrayList<>(writeSet);
+        if (retList.size() < ensemble.size()) {
+            for (int i = 0; i < ensemble.size(); i++) {
+                if (!retList.contains(i)) {
+                    retList.add(i);
+                }
+            }
+        }
+        return retList;
+    }
 
     /**
      * Send the bookie info details.
-     * 
+     *
      * @param bookieInfoMap
      *          A map that has the bookie to BookieInfo
      */

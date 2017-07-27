@@ -132,9 +132,9 @@ public class GenericEnsemblePlacementPolicyTest extends BookKeeperClusterTestCas
                     lh.addEntry(value);
                 }
             }
-            assertEquals(2, customMetadataOnNewEnsembleStack.size());
+            assertEquals(1, customMetadataOnNewEnsembleStack.size());
             assertArrayEquals(value, customMetadataOnNewEnsembleStack.get(0).get(property));
-            // replaceBookie by default calls newEnsemble, so newEnsemble gets called twice
+            // replaceBookie by default calls legacy 4.4 newEnsemble
             assertArrayEquals(value, customMetadataOnNewEnsembleStack.get(0).get(property));
 
             assertEquals(1, customMetadataOnReplaceBookieStack.size());
