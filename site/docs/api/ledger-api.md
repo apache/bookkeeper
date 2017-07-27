@@ -47,24 +47,26 @@ dependencies {
 
 ## Connection string
 
-When interacting with BookKeeper using the Java client, you need to provide your client with a connection string. You have three options for the connection string:
+When interacting with BookKeeper using the Java client, you need to provide your client with a connection string, for which you have three options:
 
 * Provide your entire ZooKeeper connection string, for example `zk1:2181,zk2:2181,zk3:2181`.
-* Provide a host and port for one node in your ZooKeeper cluster, for example `zk1:2181`. In general, it's better to provide a full connection string.
+* Provide a host and port for one node in your ZooKeeper cluster, for example `zk1:2181`. In general, it's better to provide a full connection string (in case the ZooKeeper node you attempt to connect to is down).
 * If your ZooKeeper cluster can be discovered via DNS, you can provide the DNS name, for example `my-zookeeper-cluster.com`.
 
 ## Creating a new client
 
-The easiest way to create a new [`BookKeeper`](/javadoc/org/apache/bookkeeper/client/BookKeeper) client is to pass in a ZooKeeper connection string as the sole constructor:
+In order to create a new [`BookKeeper`](/javadoc/org/apache/bookkeeper/client/BookKeeper) client object, you need to pass in a [connection string](#connection-string). Here is an example client object using a ZooKeeper connection string:
 
 ```java
 try {
-    String connectionString = "127.0.0.1:2181"; // For a single-node ZooKeeper cluster
+    String connectionString = "127.0.0.1:2181"; // For a single-node, local ZooKeeper cluster
     BookKeeper bkClient = new BookKeeper(connectionString);
 } catch (InterruptedException | IOException | KeeperException e) {
     e.printStackTrace();
 }
 ```
+
+> If you're running BookKeeper [locally](../../getting-started/run-locally), using the [`localbookie`](../../reference/cli#bookkeeper-localbookie) command, use `"127.0.0.1:2181"` for your connection string, as in the example above.
 
 There are, however, other ways that you can create a client object:
 
@@ -178,17 +180,83 @@ class DeleteEntryCallback implements AsyncCallback.DeleteCallback {
 }
 ```
 
+## Simple example
+
+> For a more involved BookKeeper client example, see the [example application](#example-application) below.
+
+In the code sample below, a BookKeeper client:
+
+* creates a ledger
+* writes entries to the ledger
+* closes the ledger (meaning no further writes are possible)
+* re-opens the ledger for reading
+* reads all available entries
+
+```java
+// Create a client object for the local ensemble. This
+// operation throws multiple exceptions, so make sure to
+// use a try/catch block when instantiating client objects.
+BookKeeper bkc = new BookKeeper("localhost:2181");
+
+// A password for the new ledger
+byte[] ledgerPassword = /* some sequence of bytes, perhaps random */;
+
+// Create a new ledger and fetch its identifier
+LedgerHandle lh = bkc.createLedger(BookKeeper.DigestType.MAC, ledgerPassword);
+long ledgerId = lh.getId();
+
+// Create a buffer for four-byte entries
+ByteBuffer entry = ByteBuffer.allocate(4);
+
+int numberOfEntries = 100;
+
+// Add entries to the ledger, then close it
+for (int i = 0; i < numberOfEntries; i++){
+	entry.putInt(i);
+	entry.position(0);
+	lh.addEntry(entry.array());
+}
+lh.close();
+
+// Open the ledger for reading
+lh = bkc.openLedger(ledgerId, BookKeeper.DigestType.MAC, ledgerPassword);
+
+// Read all available entries
+Enumeration<LedgerEntry> entries = lh.readEntries(0, numberOfEntries - 1);
+
+while(entries.hasMoreElements()) {
+	ByteBuffer result = ByteBuffer.wrap(ls.nextElement().getEntry());
+	Integer retrEntry = result.getInt();
+
+    // Print the integer stored in each entry
+    System.out.println(String.format("Result: %s", retrEntry));
+}
+
+// Close the ledger and the client
+lh.close();
+bkc.close();
+```
+
+Running this should return this output:
+
+```shell
+Result: 0
+Result: 1
+Result: 2
+# etc
+```
+
 ## Example application
 
 This tutorial walks you through building an example application that uses BookKeeper as the replicated log. The application uses the [BookKeeper Java client](../java-client) to interact with BookKeeper.
 
 > The code for this tutorial can be found in [this GitHub repo](https://github.com/ivankelly/bookkeeper-tutorial/). The final code for the `Dice` class can be found [here](https://github.com/ivankelly/bookkeeper-tutorial/blob/master/src/main/java/org/apache/bookkeeper/Dice.java).
 
-## Setup
+### Setup
 
 Before you start, you will need to have a BookKeeper cluster running locally on your machine. For installation instructions, see [Installation](../../getting-started/installation).
 
-To start up a cluster consisting of six bookies locally:
+To start up a cluster consisting of six {% pop bookies %} locally:
 
 ```shell
 $ bookkeeper-server/bin/bookkeeper localbookie 6
@@ -196,7 +264,7 @@ $ bookkeeper-server/bin/bookkeeper localbookie 6
 
 You can specify a different number of bookies if you'd like.
 
-## Goal
+### Goal
 
 The goal of the dice application is to have
 
@@ -230,7 +298,7 @@ Value = 5
 Value = 3
 ```
 
-## The base application
+### The base application
 
 The application in this tutorial is a dice application. The `Dice` class below has a `playDice` function that generates a random number between 1 and 6 every second, prints the value of the dice roll, and runs indefinitely.
 
@@ -260,7 +328,7 @@ public class Dice {
 }
 ```
 
-## Leaders and followers (and a bit of background)
+### Leaders and followers (and a bit of background)
 
 To achieve this common view in multiple instances of the program, we need each instance to agree on what the next number in the sequence will be. For example, the instances must agree that 4 is the first number and 2 is the second number and 5 is the third number and so on. This is a difficult problem, especially in the case that any instance may go away at any time, and messages between the instances can be lost or reordered.
 
@@ -270,7 +338,7 @@ It would be possible to run the Paxos to agree on each number in the sequence. H
 
 Bookkeeper provides the functionality for the second part of the protocol, allowing a leader to write events to a log and have multiple followers tailing the log. However, bookkeeper does not do leader election. You will need a zookeeper or raft instance for that purpose.
 
-## Why not just use ZooKeeper?
+### Why not just use ZooKeeper?
 
 There are a number of reasons:
 
@@ -278,11 +346,9 @@ There are a number of reasons:
 2. A zookeeper ensemble of multiple machines is limited to one log. You may want one log per resource, which will become expensive very quickly.
 3. Adding extra machines to a zookeeper ensemble does not increase capacity nor throughput.
 
-Bookkeeper can be viewed as a means of exposing zookeeper's replicated log to applications in a scalable fashion. However, we still use zookeeper to maintain consistency guarantees.
+Bookkeeper can be seen as a means of exposing ZooKeeper's replicated log to applications in a scalable fashion. ZooKeeper is still used by BookKeeper, however, to maintain consistency guarantees, though clients don't need to interact with ZooKeeper directly.
 
-TL;DR You need to elect a leader instance
-
-## Electing a leader
+### Electing a leader
 
 We'll use zookeeper to elect a leader. A zookeeper instance will have started locally when you started the localbookie application above. To verify it's running, run the following command.
 
@@ -367,7 +433,7 @@ takeLeadership() is the callback called by LeaderSelector when the instance is l
     }
 ```
 
-Finally we modify playDice() to only generate random numbers when it is the leader.
+Finally, we modify the `playDice` function to only generate random numbers when it is the leader.
 
 Run two instances of the program in two different terminals. You'll see that one becomes leader and prints numbers and the other just sits there.
 

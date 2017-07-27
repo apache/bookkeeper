@@ -1,11 +1,11 @@
 ---
 title: BookKeeper concepts and architecture
-subtitle: What drives BookKeeper and how it's built
+subtitle: The core components and how they work
 prev: /docs/getting-started/run-locally
 next: /docs/applications/java-client
 ---
 
-BookKeeper is a service used for persistent storage of log streams of records (aka {% pop entries %}). BookKeeper replicates stored records across multiple servers.
+BookKeeper is a service that provides persistent storage of streams of log [entries](#entries)---aka *records*---in sequences called [ledgers](#ledgers). BookKeeper replicates stored entries across multiple servers.
 
 ## Basic terms
 
@@ -15,11 +15,13 @@ In BookKeeper:
 * streams of log entries are called [*ledgers*](#ledgers)
 * individual servers storing ledgers of entries are called [*bookies*](#bookies)
 
-BookKeeper is designed to be reliable and resilient to a wide variety of failures. Bookies can crash, corrupt data, or discard data, but as long as there are enough bookies behaving correctly in the cluster the service as a whole will behave correctly.
+BookKeeper is designed to be reliable and resilient to a wide variety of failures. Bookies can crash, corrupt data, or discard data, but as long as there are enough bookies behaving correctly in the ensemble the service as a whole will behave correctly.
 
 ## Entries
 
-BookKeeper *entries* are sequences of bytes that are written to [ledgers](#ledgers). Each entry has the following fields:
+> **Entries** contain the actual data written to ledgers, along with some important metadata.
+
+BookKeeper entries are sequences of bytes that are written to [ledgers](#ledgers). Each entry has the following fields:
 
 Field | Java type | Description
 :-----|:----------|:-----------
@@ -29,74 +31,89 @@ Last confirmed (LC) | `long` | The ID of the last recorded entry
 Data | `byte[]` | The entry's data (written by the client application)
 Authentication code | `byte[]` | The message auth code, which includes *all* other fields in the entry
 
-> Entries contain the actual data written to ledgers, along with some important metadata.
-
 ## Ledgers
 
-Ledgers are sequences of entries, while each entry is a sequence of bytes. Entries are written sequentially to a ledger and at most once. Consequently, ledgers have *append-only* semantics.
+> **Ledgers** are the basic unit of storage in BookKeeper.
 
-> Ledgers are the basic unit of storage in BookKeeper.
+Ledgers are sequences of entries, while each entry is a sequence of bytes. Entries are written to a ledger:
 
-## Clients
+* sequentially, and
+* at most once.
 
-BookKeeper clients execute operations on ledgers, such as creating and writing ledgers.
+This means that ledgers have *append-only* semantics. Entries cannot be modified once they've been written to a ledger. Determining the proper write order is the responsbility of [client applications](#clients).
 
-At a high level, a bookkeeper client receives entries from a client application and stores it to sets of bookies, and there are a few advantages in having such a service:
+## Clients and APIs
 
-We can use hardware that is optimized for such a service. We currently believe that such a system has to be optimized only for disk I/O;
-We can have a pool of servers implementing such a log system, and shared among a number of servers;
-We can have a higher degree of replication with such a pool, which makes sense if the hardware necessary for it is cheaper compared to the one the application uses.
+> BookKeeper clients have two main roles: they create and delete ledgers, and they read entries from and write entries to ledgers.
+> 
+> BookKeeper provides both a lower-level and a higher-level API for ledger interaction.
 
-> BookKeeper clients create and write data to ledgers.
+There are currently two APIs that can be used for interacting with BookKeeper:
+
+* The [ledger API](../../api/ledger-api) is a lower-level API that enables you to interact with {% pop ledgers %} directly
+* The [DistributedLog API](../../api/distributedlog-api) is a higher-level API that enables you to use BookKeeper without directly interacting with ledgers
+
+In general, you should choose the API based on how much granular control you need over ledger semantics. The two APIs can also both be used within a single application.
 
 ## Bookies
 
-A bookie is an individual BookKeeper storage server. Bookies store the content of ledgers. For any given ledger L, we call an ensemble the group of bookies storing the content of L. For performance, we store on each bookie of an ensemble only a fragment of a ledger. That is, we stripe when writing entries to a ledger such that each entry is written to sub-group of bookies of the ensemble.
+> **Bookies** are individual BookKeeper servers that handle ledgers (more specifically, fragments of ledgers). Bookies function as part of an ensemble.
 
-> Bookies are servers that handle ledgers.
+A bookie is an individual BookKeeper storage server. Individual bookies store fragments of ledgers, not entire ledgers (for the sake of performance). For any given ledger **L**, an *ensemble* is the group of bookies storing the entries in **L**.
+
+Whenever entries are written to a ledger, those entries are {% pop striped %} across the ensemble (written to a sub-group of bookies rather than to all bookies).
 
 ### Motivation
 
-The initial motivation for BookKeeper comes was the [NameNode](https://wiki.apache.org/hadoop/NameNode) in the [Hadoop Distributed File System](https://wiki.apache.org/hadoop/HDFS) (HDFS).
+> BookKeeper was initially inspired by the NameNode server in HDFS but its uses now extend far beyond this.
 
-Namenodes log operations in a reliable fashion so that recovery is possible in the case of crashes. We have found the applications for BookKeeper extend far beyond HDFS, however. Essentially, any application that requires an append storage can replace their implementations with BookKeeper. BookKeeper has the advantage of writing efficiently, replicating for fault tolerance, and scaling throughput with the number of servers through striping.
+The initial motivation for BookKeeper comes from the [Hadoop](http://hadoop.apache.org/) ecosystem. In the [Hadoop Distributed File System](https://wiki.apache.org/hadoop/HDFS) (HDFS), a special node called the [NameNode](https://wiki.apache.org/hadoop/NameNode) logs all operations in a reliable fashion, which ensures that recovery is possible in case of crashes.
 
-## Metadata storage service
+The NameNode, however, served only as initial inspiration for BookKeeper. The applications for BookKeeper extend far beyond this and include essentially any application that requires an append-based storage system. BookKeeper provides a number of advantages for such applications:
 
-BookKeeper requires a metadata storage service to store information related to [ledgers](#ledgers) and available bookies. We currently use ZooKeeper for such a task.
+* Highly efficient writes
+* High fault tolerance via replication of messages within ensembles of bookies
+* High throughput for write operations via {% pop striping %} (across as many bookies as you wish)
+
+## Metadata storage
+
+BookKeeper requires a metadata storage service to store information related to [ledgers](#ledgers) and available bookies. BookKeeper currently uses [ZooKeeper](https://zookeeper.apache.org) for this and other tasks.
 
 ## Data management in bookies
 
-Bookies manage data in a [log-structured](https://en.wikipedia.org/wiki/Log-structured_file_system) way, which is implemented using three types of files: [journals](#journals), [entry logs](#entry-logs), and [index files](#index-files).
+Bookies manage data in a [log-structured](https://en.wikipedia.org/wiki/Log-structured_file_system) way, which is implemented using three types of files:
+
+* [journals](#journals)
+* [entry logs](#entry-logs)
+* [index files](#index-files)
 
 ### Journals
 
-A journal file contains the BookKeeper transaction logs. Before any update takes place, a bookie ensures that a transaction describing the update is written to non-volatile storage. A new journal file is created once the bookie starts or the older journal file reaches the journal file size threshold.
+A journal file contains BookKeeper transaction logs. Before any update to a ledger takes place, the bookie ensures that a transaction describing the update is written to non-volatile storage. A new journal file is created once the bookie starts or the older journal file reaches the journal file size threshold.
 
 ### Entry logs
 
-An entry log file manages the written entries received from BookKeeper clients. Entries from different ledgers are aggregated and written sequentially, while their offsets are kept as pointers in LedgerCache for fast lookup. A new entry log file is created once the bookie starts or the older entry log file reaches the entry log size threshold. Old entry log files are removed by the Garbage Collector Thread once they are not associated with any active ledger.
+An entry log file manages the written entries received from BookKeeper clients. Entries from different ledgers are aggregated and written sequentially, while their offsets are kept as pointers in a [ledger cache](#ledger-cache) for fast lookup.
 
-#### Log device
+A new entry log file is created once the bookie starts or the older entry log file reaches the entry log size threshold. Old entry log files are removed by the Garbage Collector Thread once they are not associated with any active ledger.
 
 ### Index files
 
-An index file is created for each ledger, which comprises a header and several fixed-length index pages, recording the offsets of data stored in entry log files.
+An index file is created for each ledger, which comprises a header and several fixed-length index pages that record the offsets of data stored in entry log files.
 
-Since updating index files would introduce random disk I/O, for performance reasons, index files are updated lazily by a Sync Thread running in the background. Before index pages are persisted to disk, they are gathered in LedgerCache for lookup.
+Since updating index files would introduce random disk I/O index files are updated lazily by a synchronous thread running in the background. This ensures speedy performance for updates. Before index pages are persisted to disk, they are gathered in a ledger cache for lookup.
 
 ### Ledger cache
 
-A memory pool caches ledger index pages, which more efficiently manage disk head scheduling.
-
-#### Ledger device
+Ledger indexes pages are cached in a memory pool, which allows for more efficient management of disk head scheduling.
 
 ### Data flush
 
 Ledger index pages are flushed to index files in the following two cases:
 
-LedgerCache memory reaches its limit. There is no more space available to hold newer index pages. Dirty index pages will be evicted from LedgerCache and persisted to index files.
-A background thread Sync Thread is responsible for flushing index pages from LedgerCache to index files periodically.
+* The ledger cache memory limit is reached. There is no more space available to hold newer index pages. Dirty index pages will be evicted from the ledger cache and persisted to index files.
+* A background thread synchronous thread is responsible for flushing index pages from the ledger cache to index files periodically.
+
 Besides flushing index pages, Sync Thread is responsible for rolling journal files in case that journal files use too much disk space.
 
 The data flush flow in Sync Thread is as follows:

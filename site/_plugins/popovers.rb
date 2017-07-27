@@ -9,6 +9,7 @@ module Jekyll
       @term = @original_term.gsub(' ', '-').downcase
       @term = 'entry' if @term == 'entries'
       @term = 'fencing' if @term == 'fence'
+      @term = 'striping' if @term == 'stripe' or @term == 'stripedma'
       @term = @term[0...-1] if @term.end_with? 's'
     end
 
