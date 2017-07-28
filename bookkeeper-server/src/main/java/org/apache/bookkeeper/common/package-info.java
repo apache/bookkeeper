@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,21 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.bookkeeper.client;
-
-import org.apache.bookkeeper.common.annotation.InterfaceAudience;
-import org.apache.bookkeeper.common.annotation.InterfaceStability;
 
 /**
- * Listener for the the available bookies changes.
+ * Common functions and utils used across the project.
+ *
+ * <p>NOTE: refactor this package to bookkeeper-common module after 4.5</p>
  */
-
-@InterfaceAudience.Private
-@InterfaceStability.Evolving
-public interface BookiesListener {
-
-    /**
-     * Callback method triggered when the list of available bookies are changed.
-     */
-    void availableBookiesChanged();
-}
+package org.apache.bookkeeper.common;

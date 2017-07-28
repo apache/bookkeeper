@@ -21,6 +21,9 @@
 
 package org.apache.bookkeeper.client;
 
+/**
+ * List of constants for defining client stats names.
+ */
 public interface BookKeeperClientStats {
     public final static String CLIENT_SCOPE = "bookkeeper_client";
 

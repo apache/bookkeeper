@@ -22,6 +22,14 @@ package org.apache.bookkeeper.client;
 
 import java.util.concurrent.ScheduledExecutorService;
 
+/**
+ * Define a policy for speculative request execution. 
+ *
+ * <p>The implementation can define its execution policy. For example, when to issue speculative requests
+ * and how many speculative requests to issue.
+ *
+ * @since 4.5
+ */
 public interface SpeculativeRequestExecutionPolicy {
 
     /**

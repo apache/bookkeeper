@@ -37,7 +37,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *Checks the complete ledger and finds the UnderReplicated fragments if any
+ * A utility class to check the complete ledger and finds the UnderReplicated fragments if any.
+ *
+ * <p>NOTE: This class is tended to be used by this project only. External users should not rely on it directly.
  */
 public class LedgerChecker {
     private final static Logger LOG = LoggerFactory.getLogger(LedgerChecker.class);

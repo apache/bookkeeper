@@ -18,9 +18,7 @@
  * under the License.
  *
  */
-package org.apache.bookkeeper.bookie;
-
-import org.apache.bookkeeper.proto.ConnectionPeer;
+package org.apache.bookkeeper.proto;
 
 /**
  * Represents the connection to a BookKeeper client, from the Bookie side.
