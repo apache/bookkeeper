@@ -30,7 +30,7 @@ import org.apache.bookkeeper.auth.AuthCallbacks;
 import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.ClientConnectionPeer;
+import org.apache.bookkeeper.proto.ClientConnectionPeer;
 import org.slf4j.LoggerFactory;
 
 public class SASLClientAuthProvider implements ClientAuthProvider {

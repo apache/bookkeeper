@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.bookkeeper.common.annotation.InterfaceAudience;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.bookkeeper.client.WeightedRandomSelection.WeightedObject;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -38,6 +39,11 @@ import org.apache.bookkeeper.proto.BookkeeperProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * A utility class to read {@link BookieInfo} from bookies.
+ *
+ * <p>NOTE: This class is tended to be used by this project only. External users should not rely on it directly.
+ */
 public class BookieInfoReader {
     private static final Logger LOG = LoggerFactory.getLogger(BookieInfoReader.class);
     private static final long GET_BOOKIE_INFO_REQUEST_FLAGS
@@ -55,6 +61,11 @@ public class BookieInfoReader {
     private final AtomicBoolean isQueued = new AtomicBoolean();
     private final AtomicBoolean refreshBookieList = new AtomicBoolean();
 
+    /**
+     * A class represents the information (e.g. disk usage, load) of a bookie.
+     *
+     * <p>NOTE: This class is tended to be used by this project only. External users should not rely on it directly.
+     */
     public static class BookieInfo implements WeightedObject {
         private final long freeDiskSpace;
         private final long totalDiskSpace;

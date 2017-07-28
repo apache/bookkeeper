@@ -40,7 +40,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Default Ensemble Placement Policy, which picks bookies randomly
+ * Default Ensemble Placement Policy, which picks bookies randomly.
+ *
+ * @see EnsemblePlacementPolicy
  */
 public class DefaultEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
     static final Logger LOG = LoggerFactory.getLogger(DefaultEnsemblePlacementPolicy.class);

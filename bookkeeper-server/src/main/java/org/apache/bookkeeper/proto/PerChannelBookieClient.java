@@ -19,10 +19,15 @@ package org.apache.bookkeeper.proto;
 
 import static org.apache.bookkeeper.client.LedgerHandle.INVALID_ENTRY_ID;
 
+import com.google.common.collect.Sets;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.ExtensionRegistry;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -46,27 +51,24 @@ import io.netty.handler.codec.TooLongFrameException;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
-
-
 import java.io.IOException;
+import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
+import org.apache.bookkeeper.auth.BookKeeperPrincipal;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
-import com.google.protobuf.ByteString;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperClientStats;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
-import org.apache.bookkeeper.client.ReadLastConfirmedAndEntryOp;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -101,19 +103,9 @@ import org.apache.bookkeeper.util.SafeRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Sets;
-import com.google.protobuf.ExtensionRegistry;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.UnpooledByteBufAllocator;
-import java.net.SocketAddress;
-
-import org.apache.bookkeeper.auth.BookKeeperPrincipal;
-import org.apache.bookkeeper.client.ClientConnectionPeer;
-
 /**
  * This class manages all details of connection to a particular bookie. It also
  * has reconnect logic if a connection to a bookie fails.
- *
  */
 @Sharable
 public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
@@ -1508,8 +1500,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         if (maxLAC > INVALID_ENTRY_ID && (rc.ctx instanceof ReadEntryCallbackCtx)) {
             ((ReadEntryCallbackCtx) rc.ctx).setLastAddConfirmed(maxLAC);
         }
-        if (lacUpdateTimestamp > -1L && (rc.ctx instanceof ReadLastConfirmedAndEntryOp.ReadLastConfirmedAndEntryContext)) {
-            ((ReadLastConfirmedAndEntryOp.ReadLastConfirmedAndEntryContext) rc.ctx).setLacUpdateTimestamp(lacUpdateTimestamp);
+        if (lacUpdateTimestamp > -1L && (rc.ctx instanceof ReadLastConfirmedAndEntryContext)) {
+            ((ReadLastConfirmedAndEntryContext) rc.ctx).setLacUpdateTimestamp(lacUpdateTimestamp);
         }
         rc.cb.readEntryComplete(rcToRet, ledgerId, entryId, buffer, rc.ctx);
     }

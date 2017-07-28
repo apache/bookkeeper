@@ -17,6 +17,8 @@
  */
 package org.apache.bookkeeper.client;
 
+import org.apache.bookkeeper.common.annotation.InterfaceAudience;
+import org.apache.bookkeeper.common.annotation.InterfaceStability;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.Node;
 
@@ -25,19 +27,26 @@ import java.util.Set;
 
 /**
  * Interface for topology aware ensemble placement policy.
+ *
+ * <p>All the implementations of this interface are using {@link org.apache.bookkeeper.net.NetworkTopology}
+ *    for placing ensembles.
+ *
+ * @see EnsemblePlacementPolicy
  */
+@InterfaceAudience.Private
+@InterfaceStability.Evolving
 public interface ITopologyAwareEnsemblePlacementPolicy<T extends Node> extends EnsemblePlacementPolicy {
     /**
      * Predicate used when choosing an ensemble.
      */
-    public static interface Predicate<T extends Node> {
+    static interface Predicate<T extends Node> {
         boolean apply(T candidate, Ensemble<T> chosenBookies);
     }
 
     /**
      * Ensemble used to hold the result of an ensemble selected for placement.
      */
-    public static interface Ensemble<T extends Node> {
+    static interface Ensemble<T extends Node> {
 
         /**
          * Append the new bookie node to the ensemble only if the ensemble doesnt

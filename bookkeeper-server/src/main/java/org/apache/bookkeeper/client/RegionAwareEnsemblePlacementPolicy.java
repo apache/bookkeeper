@@ -43,6 +43,11 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * A placement policy use region information in the network topology for placing ensembles.
+ *
+ * @see EnsemblePlacementPolicy
+ */
 public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlacementPolicy {
     static final Logger LOG = LoggerFactory.getLogger(RegionAwareEnsemblePlacementPolicy.class);
 
