@@ -502,7 +502,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
         long usableSpace = tmpDir.getUsableSpace();
         long totalSpace = tmpDir.getTotalSpace();
-        conf.setDiskUsageThreshold((1.0f - ((float) usableSpace / (float) totalSpace)) * 0.999f)
+        conf.setDiskUsageThreshold(0.001f)
                 .setDiskUsageWarnThreshold(0.0f).setReadOnlyModeEnabled(true).setIsForceGCAllowWhenNoSpace(true)
                 .setMinUsableSizeForIndexFileCreation(Long.MAX_VALUE);
         server = new BookieServer(conf);
