@@ -83,7 +83,7 @@ class BookieNettyServer {
     final ServerConfiguration conf;
     final EventLoopGroup eventLoopGroup;
     final EventLoopGroup jvmEventLoopGroup;
-    final RequestProcessor requestProcessor;
+    RequestProcessor requestProcessor;
     final AtomicBoolean isRunning = new AtomicBoolean(false);
     final AtomicBoolean isClosed = new AtomicBoolean(false);
     final Object suspensionLock = new Object();
@@ -140,6 +140,11 @@ class BookieNettyServer {
         listenOn(bindAddress, bookieAddress);
     }
 
+    public BookieNettyServer setRequestProcessor(RequestProcessor processor) {
+        this.requestProcessor = processor;
+        return this;
+    }
+
     boolean isRunning() {
         return isRunning.get();
     }
@@ -175,7 +180,8 @@ class BookieNettyServer {
         }
     }
 
-    private void listenOn(InetSocketAddress address, BookieSocketAddress bookieAddress) throws InterruptedException {
+    private void listenOn(InetSocketAddress address, BookieSocketAddress bookieAddress)
+            throws InterruptedException {
         if (!conf.isDisableServerSocketBind()) {
             ServerBootstrap bootstrap = new ServerBootstrap();
             bootstrap.childOption(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(true));
@@ -219,7 +225,12 @@ class BookieNettyServer {
             });
 
             // Bind and start to accept incoming connections
-            bootstrap.bind(address.getAddress(), address.getPort()).sync();
+            Channel listen = bootstrap.bind(address.getAddress(), address.getPort()).sync().channel();
+            if (listen.localAddress() instanceof InetSocketAddress) {
+                if (conf.getBookiePort() == 0) {
+                    conf.setBookiePort(((InetSocketAddress) listen.localAddress()).getPort());
+                }
+            }
         }
 
         if (conf.isEnableLocalTransport()) {
