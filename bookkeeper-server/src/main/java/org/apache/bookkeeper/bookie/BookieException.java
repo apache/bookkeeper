@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.bookie;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,6 +18,7 @@ package org.apache.bookkeeper.bookie;
  * under the License.
  *
  */
+package org.apache.bookkeeper.bookie;
 
 /**
  * Signals that a Bookie exception of some sort has occurred. This class
@@ -181,7 +180,7 @@ public abstract class BookieException extends Exception {
             super(Code.UpgradeException, reason);
         }
     }
-    
+
     /**
      * Signals when multiple ledger/journal directories are mounted in same disk partition.
      */

@@ -17,7 +17,6 @@
 package org.apache.bookkeeper.stats;
 
 import com.google.common.base.Joiner;
-
 import io.prometheus.client.Collector;
 import io.prometheus.client.CollectorRegistry;
 

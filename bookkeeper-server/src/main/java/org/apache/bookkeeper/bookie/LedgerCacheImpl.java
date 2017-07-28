@@ -21,8 +21,8 @@
 
 package org.apache.bookkeeper.bookie;
 
+import io.netty.buffer.ByteBuf;
 import java.io.IOException;
-
 import java.util.Observable;
 import java.util.Observer;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -31,8 +31,6 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.SnapshotMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import io.netty.buffer.ByteBuf;
 
 /**
  * Implementation of LedgerCache interface.

@@ -21,9 +21,8 @@
 package org.apache.bookkeeper.auth;
 
 import java.io.IOException;
-
-import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.ClientConnectionPeer;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 
 /**
  * Client authentication provider interface.

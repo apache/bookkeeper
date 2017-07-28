@@ -16,9 +16,10 @@
  */
 package org.apache.bookkeeper.stats;
 
-import com.codahale.metrics.Timer;
-import com.codahale.metrics.MetricRegistry;
 import static com.codahale.metrics.MetricRegistry.name;
+
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 
 /**
  * A {@link StatsLogger} implemented based on <i>Codahale</i> metrics library.

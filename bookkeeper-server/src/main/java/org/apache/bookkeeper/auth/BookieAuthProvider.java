@@ -21,10 +21,8 @@
 package org.apache.bookkeeper.auth;
 
 import java.io.IOException;
-
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.bookie.BookieConnectionPeer;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 
 /**
  * Bookie authentication provider interface.
