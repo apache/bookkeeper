@@ -23,6 +23,7 @@ ROOT_DIR=$(git rev-parse --show-toplevel)
 ORIGIN_REPO=$(git remote show origin | grep 'Push  URL' | awk -F// '{print $NF}')
 echo "ORIGIN_REPO: $ORIGIN_REPO"
 STAGING_REPO=`echo $ORIGIN_REPO | sed -e 's/bookkeeper\.git/bookkeeper-staging-site.git/g'`
+echo "STAGING_REPO: $STAGING_REPO"
 
 GENERATED_SITE_DIR=$ROOT_DIR/docs
 TMP_DIR=/tmp/bookkeeper-site
