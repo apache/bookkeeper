@@ -46,8 +46,9 @@ import com.google.common.collect.Maps;
 
 /**
  * This class encapsulates all the ledger metadata that is persistently stored
- * in zookeeper. It provides parsing and serialization methods of such metadata.
+ * in metadata store.
  *
+ * <p>It provides parsing and serialization methods of such metadata.
  */
 public class LedgerMetadata {
     static final Logger LOG = LoggerFactory.getLogger(LedgerMetadata.class);

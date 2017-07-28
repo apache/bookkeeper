@@ -68,7 +68,6 @@ import java.net.SocketAddress;
 import java.util.Collection;
 import java.util.Collections;
 import org.apache.bookkeeper.auth.BookKeeperPrincipal;
-import org.apache.bookkeeper.bookie.BookieConnectionPeer;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 

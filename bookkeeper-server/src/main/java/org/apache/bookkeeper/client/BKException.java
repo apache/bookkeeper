@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.client;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,6 +18,7 @@ package org.apache.bookkeeper.client;
  * under the License.
  *
  */
+package org.apache.bookkeeper.client;
 
 import java.lang.Exception;
 
@@ -110,48 +109,108 @@ public abstract class BKException extends Exception {
     }
 
     /**
-     * List of return codes
-     *
+     * Codes which represent the various {@link BKException} types.
      */
     public interface Code {
+        /** A placer holder (unused) */
         int UNINITIALIZED = 1;
+        /** Everything is OK */
         int OK = 0;
+        /** Read operations failed (bookie error) */
         int ReadException = -1;
+        /** Unused */
         int QuorumException = -2;
+        /** Unused */
         int NoBookieAvailableException = -3;
+        /** Digest Manager is not initialized (client error) */
         int DigestNotInitializedException = -4;
+        /** Digest doesn't match on returned entries */
         int DigestMatchException = -5;
+        /** Not enough bookies available to form an ensemble */
         int NotEnoughBookiesException = -6;
+        /** No such ledger exists */
         int NoSuchLedgerExistsException = -7;
+        /** Bookies are not available */
         int BookieHandleNotAvailableException = -8;
+        /** ZooKeeper operations failed */
         int ZKException = -9;
+        /** Ledger recovery operations failed */
         int LedgerRecoveryException = -10;
+        /** Executing operations on a closed ledger handle */
         int LedgerClosedException = -11;
+        /** Write operations failed (bookie error) */
         int WriteException = -12;
+        /** No such entry exists */
         int NoSuchEntryException = -13;
+        /** Incorrect parameters (operations are absolutely not executed) */
         int IncorrectParameterException = -14;
+        /** Synchronous operations are interrupted */
         int InterruptedException = -15;
+        /** Protocol version is wrong (operations are absolutely not executed) */
         int ProtocolVersionException = -16;
+        /** Bad version on executing metadata operations */
         int MetadataVersionException = -17;
+        /** Meta store operations failed */
         int MetaStoreException = -18;
+        /** Executing operations on a closed client */
         int ClientClosedException = -19;
+        /** Ledger already exists */
         int LedgerExistException = -20;
+        /**
+         * Add entry operation timeouts on waiting quorum responses.
+         *
+         * @since 4.5
+         */
         int AddEntryQuorumTimeoutException = -21;
+        /**
+         * Duplicated entry id is found when {@link LedgerHandleAdv#addEntry(long, byte[])}.
+         *
+         * @since 4.5
+         */
         int DuplicateEntryIdException = -22;
+        /**
+         * Operations timeouts.
+         *
+         * @since 4.5
+         */
         int TimeoutException = -23;
 
+        /**
+         * Operation is illegal.
+         */
         int IllegalOpException = -100;
+        /**
+         * Operations failed due to ledgers are fenced.
+         */
         int LedgerFencedException = -101;
+        /**
+         * Operations failed due to unauthorized.
+         */
         int UnauthorizedAccessException = -102;
+        /**
+         * Replication failed due to unclosed fragments.
+         */
         int UnclosedFragmentException = -103;
+        /**
+         * Write operations failed due to bookies are readonly
+         */
         int WriteOnReadOnlyBookieException = -104;
         //-105 reserved for TooManyRequestsException
+        /**
+         * Ledger id overflow happens on ledger manager.
+         *
+         * @since 4.5
+         */
         int LedgerIdOverflowException = -106;
 
-        // generic exception code used to propagate in replication pipeline
+        /**
+         * generic exception code used to propagate in replication pipeline
+         */
         int ReplicationException = -200;
 
-        // For all unexpected error conditions
+        /**
+         * Unexpected condition.
+         */
         int UnexpectedConditionException = -999;
     }
 
