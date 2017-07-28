@@ -24,8 +24,7 @@
     <version>4.5.0-SNAPSHOT</version>
   </parent>
   <artifactId>bookkeeper-server</artifactId>
-  <name>bookkeeper-server</name>
-  <url>http://maven.apache.org</url>
+  <name>Apache BookKeeper :: Server</name>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.libdir>${basedir}/lib</project.libdir>
