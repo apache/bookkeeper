@@ -28,7 +28,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.HashedWheelTimer;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +38,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
@@ -439,7 +437,7 @@ public class BookKeeper implements AutoCloseable {
         throws IOException {
         try {
             Class<? extends EnsemblePlacementPolicy> policyCls = conf.getEnsemblePlacementPolicy();
-            return ReflectionUtils.newInstance(policyCls).initialize(conf, Optional.fromNullable(dnsResolver),
+            return ReflectionUtils.newInstance(policyCls).initialize(conf, java.util.Optional.ofNullable(dnsResolver),
                     timer, featureProvider, statsLogger);
         } catch (ConfigurationException e) {
             throw new IOException("Failed to initialize ensemble placement policy : ", e);
@@ -687,8 +685,7 @@ public class BookKeeper implements AutoCloseable {
 
     /**
      * Synchronous call to create ledger. Parameters match those of
-     * {@link #asyncCreateLedger(int, int, int, DigestType, byte[],
-     *                           AsyncCallback.CreateCallback, Object)}
+     * {@link #asyncCreateLedger(int, int, int, DigestType, byte[], CreateCallback, Object, Map)}
      *
      * @param ensSize
      * @param writeQuorumSize
@@ -723,15 +720,13 @@ public class BookKeeper implements AutoCloseable {
      * Synchronous call to create ledger.
      * Creates a new ledger asynchronously and returns {@link LedgerHandleAdv} which can accept entryId.
      * Parameters must match those of
-     * {@link #asyncCreateLedgerAdv(int, int, int, DigestType, byte[],
-     *                           AsyncCallback.CreateCallback, Object)}
+     * {@link #asyncCreateLedgerAdv(int, int, int, DigestType, byte[], CreateCallback, Object, Map)}
      *
      * @param ensSize
      * @param writeQuorumSize
      * @param ackQuorumSize
      * @param digestType
      * @param passwd
-     * @param customMetadata
      * @return a handle to the newly created ledger
      * @throws InterruptedException
      * @throws BKException
@@ -746,8 +741,7 @@ public class BookKeeper implements AutoCloseable {
      * Synchronous call to create ledger.
      * Creates a new ledger asynchronously and returns {@link LedgerHandleAdv} which can accept entryId.
      * Parameters must match those of
-     * {@link #asyncCreateLedgerAdv(int, int, int, DigestType, byte[],
-     *                           AsyncCallback.CreateCallback, Object)}
+     * {@link #asyncCreateLedgerAdv(long, int, int, int, DigestType, byte[], CreateCallback, Object, Map)} )}
      *
      * @param ensSize
      * @param writeQuorumSize
@@ -833,8 +827,7 @@ public class BookKeeper implements AutoCloseable {
      * Synchronously creates a new ledger using the interface which accepts a ledgerId as input.
      * This method returns {@link LedgerHandleAdv} which can accept entryId.
      * Parameters must match those of
-     * {@link #asyncCreateLedgerAdvWithLedgerId(byte[], long, int, int, int, DigestType, byte[],
-     *                           AsyncCallback.CreateCallback, Object)}
+     * {@link #asyncCreateLedgerAdv(int, int, int, DigestType, byte[], CreateCallback, Object, Map)}
      * @param ledgerId
      * @param ensSize
      * @param writeQuorumSize
@@ -883,14 +876,14 @@ public class BookKeeper implements AutoCloseable {
      * a separate write quorum and ack quorum size. The write quorum must be larger than
      * the ack quorum.
      *
-     * Separating the write and the ack quorum allows the BookKeeper client to continue
+     * <p>Separating the write and the ack quorum allows the BookKeeper client to continue
      * writing when a bookie has failed but the failure has not yet been detected. Detecting
      * a bookie has failed can take a number of seconds, as configured by the read timeout
      * {@link ClientConfiguration#getReadTimeout()}. Once the bookie failure is detected,
      * that bookie will be removed from the ensemble.
      *
-     * The other parameters match those of {@link #asyncCreateLedger(long, int, int, DigestType, byte[],
-     *                                      AsyncCallback.CreateCallback, Object)}
+     * <p>The other parameters match those of
+     * {@link #asyncCreateLedgerAdv(int, int, int, DigestType, byte[], CreateCallback, Object, Map)}
      *
      * @param ledgerId
      *          ledger Id to use for the newly created ledger

@@ -20,25 +20,22 @@ package org.apache.bookkeeper.client;
 import static org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicy.REPP_DNS_RESOLVER_CLASS;
 import static org.apache.bookkeeper.feature.SettableFeatureProvider.DISABLE_ALL;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.netty.util.HashedWheelTimer;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
-import com.google.common.base.Optional;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
-import io.netty.util.HashedWheelTimer;
 import junit.framework.TestCase;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.util.StaticDNSResolver;
 import org.junit.Test;
@@ -88,7 +85,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                 conf.getTimeoutTimerNumTicks());
 
         repp = new RackawareEnsemblePlacementPolicy();
-        repp.initialize(conf, Optional.<DNSToSwitchMapping>absent(), timer, DISABLE_ALL, null);
+        repp.initialize(conf, Optional.empty(), timer, DISABLE_ALL, null);
     }
 
     @Override
@@ -110,7 +107,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         updateMyRack(NetworkTopology.DEFAULT_RACK);
 
         repp = new RackawareEnsemblePlacementPolicy();
-        repp.initialize(conf, Optional.<DNSToSwitchMapping>absent(), timer, DISABLE_ALL, null);
+        repp.initialize(conf, Optional.empty(), timer, DISABLE_ALL, null);
 
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);
@@ -138,7 +135,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         updateMyRack("/r1/rack1");
 
         repp = new RackawareEnsemblePlacementPolicy();
-        repp.initialize(conf, Optional.<DNSToSwitchMapping>absent(), timer, DISABLE_ALL, null);
+        repp.initialize(conf, Optional.empty(), timer, DISABLE_ALL, null);
 
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
@@ -169,7 +166,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         updateMyRack("/r1/rack1");
 
         repp = new RackawareEnsemblePlacementPolicy();
-        repp.initialize(conf, Optional.<DNSToSwitchMapping>absent(), timer, DISABLE_ALL, null);
+        repp.initialize(conf, Optional.empty(), timer, DISABLE_ALL, null);
 
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
@@ -199,7 +196,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         updateMyRack("/r1/rack1");
 
         repp = new RackawareEnsemblePlacementPolicy();
-        repp.initialize(conf, Optional.<DNSToSwitchMapping>absent(), timer, DISABLE_ALL, null);
+        repp.initialize(conf, Optional.empty(), timer, DISABLE_ALL, null);
 
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
@@ -444,7 +441,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         int multiple = 10;
         conf.setDiskWeightBasedPlacementEnabled(true);
         conf.setBookieMaxWeightMultipleForWeightBasedPlacement(-1); // no max cap on weight
-        repp.initialize(conf, Optional.<DNSToSwitchMapping>absent(), timer, DISABLE_ALL, null);
+        repp.initialize(conf, Optional.empty(), timer, DISABLE_ALL, null);
 
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
         Map<BookieSocketAddress, BookieInfo> bookieInfoMap = new HashMap<BookieSocketAddress, BookieInfo>();
@@ -491,7 +488,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         int multiple = 10, maxMultiple = 4;
         conf.setDiskWeightBasedPlacementEnabled(true);
         conf.setBookieMaxWeightMultipleForWeightBasedPlacement(maxMultiple);
-        repp.initialize(conf, Optional.<DNSToSwitchMapping>absent(), timer, DISABLE_ALL, null);
+        repp.initialize(conf, Optional.empty(), timer, DISABLE_ALL, null);
 
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
         Map<BookieSocketAddress, BookieInfo> bookieInfoMap = new HashMap<BookieSocketAddress, BookieInfo>();
@@ -567,7 +564,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         int maxMultiple = 4;
         conf.setDiskWeightBasedPlacementEnabled(true);
         conf.setBookieMaxWeightMultipleForWeightBasedPlacement(maxMultiple);
-        repp.initialize(conf, Optional.<DNSToSwitchMapping>absent(), timer, DISABLE_ALL, null);
+        repp.initialize(conf, Optional.empty(), timer, DISABLE_ALL, null);
 
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
         Map<BookieSocketAddress, BookieInfo> bookieInfoMap = new HashMap<BookieSocketAddress, BookieInfo>();
@@ -637,7 +634,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         int maxMultiple = 4;
         conf.setDiskWeightBasedPlacementEnabled(true);
         conf.setBookieMaxWeightMultipleForWeightBasedPlacement(maxMultiple);
-        repp.initialize(conf, Optional.<DNSToSwitchMapping>absent(), timer, DISABLE_ALL, null);
+        repp.initialize(conf, Optional.empty(), timer, DISABLE_ALL, null);
 
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
         Map<BookieSocketAddress, BookieInfo> bookieInfoMap = new HashMap<BookieSocketAddress, BookieInfo>();
@@ -690,7 +687,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         updateMyRack(NetworkTopology.DEFAULT_RACK);
 
         repp = new RackawareEnsemblePlacementPolicy();
-        repp.initialize(conf, Optional.<DNSToSwitchMapping>absent(), timer, DISABLE_ALL, null);
+        repp.initialize(conf, Optional.empty(), timer, DISABLE_ALL, null);
 
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);
@@ -721,7 +718,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         ClientConfiguration confLocal = new ClientConfiguration();
         confLocal.addConfiguration(conf);
         confLocal.setNetworkTopologyStabilizePeriodSeconds(99999);
-        repp.initialize(confLocal, Optional.<DNSToSwitchMapping>absent(), timer, DISABLE_ALL, null);
+        repp.initialize(confLocal, Optional.empty(), timer, DISABLE_ALL, null);
 
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);

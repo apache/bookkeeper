@@ -17,6 +17,9 @@
  */
 package org.apache.bookkeeper.client;
 
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
+import io.netty.util.HashedWheelTimer;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -27,9 +30,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.WeightedRandomSelection.WeightedObject;
@@ -51,16 +54,10 @@ import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
-
-import io.netty.util.HashedWheelTimer;
-
 /**
  * Simple rackware ensemble placement policy.
  *
- * Make most of the class and methods as protected, so it could be extended to implement other algorithms.
+ * <p>Make most of the class and methods as protected, so it could be extended to implement other algorithms.
  */
 class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacementPolicy {
 
