@@ -23,7 +23,7 @@ ROOT_DIR=$(git rev-parse --show-toplevel)
 ORIGIN_REPO=$(git remote show origin | grep 'Push  URL' | awk -F// '{print $NF}')
 echo "ORIGIN_REPO: $ORIGIN_REPO"
 
-GENERATED_SITE_DIR=$ROOT_DIR/generated-site
+GENERATED_SITE_DIR=$ROOT_DIR/site/generated_site
 
 (
   cd $ROOT_DIR

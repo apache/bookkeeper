@@ -25,9 +25,12 @@ build: clean
 javadoc:
 	scripts/javadoc-gen.sh
 
+staging: clean
+	${JEKYLL} build --config _config.yml,_config.staging.yml
+
 serve: build
 	${JEKYLL} serve \
 		--incremental \
-		--config _config.local.yml
+		--config _config.yml,_config.local.yml
 
 publish: javadoc-gen build

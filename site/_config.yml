@@ -5,7 +5,7 @@ github_master: https://github.com/apache/bookkeeper/tree/master
 permalink: pretty
 bk_version: "4.5.0"
 baseurl: /
-destination: ../docs
+destination: generated_site/content
 twitter_url: https://twitter.com/asfbookkeeper
 
 livereload: true
@@ -39,6 +39,7 @@ exclude:
 - Makefile
 - vendor/bundle
 - local-generated
+- generated_site
 - scripts
 - overview
 - README.md

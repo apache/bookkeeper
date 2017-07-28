@@ -25,7 +25,9 @@ echo "ORIGIN_REPO: $ORIGIN_REPO"
 STAGING_REPO=`echo $ORIGIN_REPO | sed -e 's/bookkeeper\.git/bookkeeper-staging-site.git/g'`
 echo "STAGING_REPO: $STAGING_REPO"
 
-GENERATED_SITE_DIR=$ROOT_DIR/docs
+GENERATED_SITE_DIR=$ROOT_DIR/site/local-generated
+echo "GENERATE SITE DIR: $GENERATED_SITE_DIR"
+
 TMP_DIR=/tmp/bookkeeper-site
 
 (
@@ -34,7 +36,8 @@ TMP_DIR=/tmp/bookkeeper-site
   REVISION=$(git rev-parse --short HEAD)
 
   rm -rf $TMP_DIR
-  cp -r $GENERATED_SITE_DIR /tmp
+  mkdir -p $TMP_DIR
+  cp -r $GENERATED_SITE_DIR $TMP_DIR/docs
   cd $TMP_DIR
 
   git init
@@ -48,4 +51,6 @@ TMP_DIR=/tmp/bookkeeper-site
   git add -A .
   git commit -m "Updated site at revision $REVISION"
   git push -q upstream HEAD:master
+
+  rm -rf $TMP_DIR
 )
