@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -280,6 +282,38 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
     }
 
     /**
+     * Verify bookie server starts up on ephemeral ports.
+     */
+    @Test(timeout = 20000)
+    public void testBookieServerStartupOnEphemeralPorts() throws Exception {
+        File tmpDir = createTempDir("bookie", "test");
+
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setZkServers(null)
+            .setBookiePort(0)
+            .setJournalDirName(tmpDir.getPath())
+            .setLedgerDirNames(
+                new String[] { tmpDir.getPath() });
+        assertEquals(0, conf.getBookiePort());
+
+        ServerConfiguration conf1 = new ServerConfiguration();
+        conf1.addConfiguration(conf);
+        BookieServer bs1 = new BookieServer(conf1);
+        bs1.start();
+        assertFalse(0 == conf1.getBookiePort());
+
+        // starting bk server with same conf
+        ServerConfiguration conf2 = new ServerConfiguration();
+        conf2.addConfiguration(conf);
+        BookieServer bs2 = new BookieServer(conf2);
+        bs2.start();
+        assertFalse(0 == conf2.getBookiePort());
+
+        // these two bookies are listening on different ports eventually
+        assertFalse(conf1.getBookiePort() == conf2.getBookiePort());
+    }
+
+    /**
      * Verify bookie start behaviour when ZK Server is not running.
      */
     @Test(timeout = 20000)
@@ -478,7 +512,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         // minUsableSizeForIndexFileCreation to very high value, it wouldn't. be
         // able to find any index dir when all discs are full
         server.start();
-        Assert.assertFalse("Bookie should be Shutdown", server.getBookie().isRunning());
+        assertFalse("Bookie should be Shutdown", server.getBookie().isRunning());
         server.shutdown();
 
         // Here we are setting MinUsableSizeForIndexFileCreation to very low
