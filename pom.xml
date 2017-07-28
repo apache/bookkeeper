@@ -160,15 +160,18 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>2.10.3</version>
         <configuration>
-          <!-- Avoid for missing javadoc comments to be marked as errors -->
+          <!-- Prevent missing javadoc comments from being marked as errors -->
           <additionalparam>-Xdoclint:none</additionalparam>
-          <subpackages>org.apache.bookkeeper.client:org.apache.bookkeeper.conf</subpackages>
+          <subpackages>org.apache.bookkeeper.bookie:org.apache.bookkeeper.client:org.apache.bookkeeper.conf:org.apache.bookkeeper.meta:org.apache.bookkeeper.replication</subpackages>
           <groups>
             <group>
               <title>Bookkeeper</title>
               <packages>org.apache.bookkeeper*</packages>
             </group>
           </groups>
+          <doctitle>BookKeeper Java API (version ${project.version})</doctitle>
+          <overview>site/_site/overview/index.html</overview>
+          <show>package</show>
         </configuration>
         <executions>
           <execution>
