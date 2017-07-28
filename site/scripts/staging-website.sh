@@ -34,7 +34,7 @@ TMP_DIR=/tmp/bookkeeper-site
   REVISION=$(git rev-parse --short HEAD)
 
   rm -rf $TMP_DIR
-  cp -r GENERATED_SITE_DIR $TMP_DIR
+  cp -r $GENERATED_SITE_DIR /tmp
   cd $TMP_DIR
 
   git init
