@@ -12,7 +12,7 @@ layout: default
 
     <div class="column is-8 bk-docs-block">
       <header class="docs-title">
-        <nav class="level">
+        <nav class="level bk-level">
           <div class="level-left">
             <div class="level-item">
               <h1 class="title">{{ page.title }}</h1>
@@ -21,7 +21,7 @@ layout: default
           {% if page.logo %}
           <div class="level-right">
             <div class="level-item">
-              <img class="logo" src="{{ site.baseurl }}{{ page.logo }}">
+              <img src="{{ site.baseurl }}{{ page.logo }}">
             </div>
           </div>
           {% endif %}
