@@ -100,6 +100,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     // Bookie info poll interval
     protected final static String DISK_WEIGHT_BASED_PLACEMENT_ENABLED = "diskWeightBasedPlacementEnabled";
     protected final static String GET_BOOKIE_INFO_INTERVAL_SECONDS = "getBookieInfoIntervalSeconds";
+    protected final static String GET_BOOKIE_INFO_RETRY_INTERVAL_SECONDS = "getBookieInfoRetryIntervalSeconds";
     protected final static String BOOKIE_MAX_MULTIPLE_FOR_WEIGHTED_PLACEMENT = "bookieMaxMultipleForWeightBasedPlacement";
     protected final static String GET_BOOKIE_INFO_TIMEOUT_SECS = "getBookieInfoTimeoutSecs";
 
@@ -1240,6 +1241,16 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Get the time interval between retries on unsuccessful bookie info request.  Default is
+     * 60s.
+     *
+     * @return
+     */
+    public int getGetBookieInfoRetryIntervalSeconds() {
+        return getInt(GET_BOOKIE_INFO_RETRY_INTERVAL_SECONDS, 60);
+    }
+
+    /**
      * Return whether disk weight based placement policy is enabled
      * @return
      */
@@ -1283,6 +1294,19 @@ public class ClientConfiguration extends AbstractConfiguration {
      */
     public ClientConfiguration setGetBookieInfoIntervalSeconds(int pollInterval, TimeUnit unit) {
         setProperty(GET_BOOKIE_INFO_INTERVAL_SECONDS, unit.toSeconds(pollInterval));
+        return this;
+    }
+
+    /**
+     * Set the time interval between retries on unsuccessful GetInfo requests
+     *
+     *
+     * @param interval
+     * @param unit
+     * @return client configuration
+     */
+    public ClientConfiguration setGetBookieInfoRetryIntervalSeconds(int interval, TimeUnit unit) {
+        setProperty(GET_BOOKIE_INFO_RETRY_INTERVAL_SECONDS, unit.toSeconds(interval));
         return this;
     }
 
