@@ -22,7 +22,7 @@ build: clean
 	${JEKYLL} build \
 		--config _config.yml
 
-javadoc-gen:
+javadoc:
 	scripts/javadoc-gen.sh
 
 serve: build
