@@ -30,19 +30,20 @@
     <div id="bkNav" class="navbar-menu">
       <div class="navbar-start">
         <div class="navbar-item has-dropdown is-hoverable">
-          <a class="navbar-link" href="{{ site.baseurl }}docs/getting-started/installation">Documentation</a>
+          <a class="navbar-link">Documentation</a>
           <div class="navbar-dropdown is-boxed">
             {% for version in site.versions %}
-            <a class="navbar-item" href="{{ site.baseurl }}docs/getting-started/installation">
-              Version {{ version }}{% if version == site.latest %}<span class="tag is-success">LATEST</span>{% endif %}
+            <a class="navbar-item" href="{{ site.baseurl }}project/who">
+              Version {{version}}
+              {% if version == site.latest %}<span class="tag is-success">LATEST</span>{% endif %}
             </a>
             {% endfor %}
-            <hr class="dropdown-divider">
             <a class="navbar-item" href="{{ site.baseurl }}javadoc">
-              <span class="icon bk-javadoc-icon">
+              <span class="icon">
                 <img src="{{ site.baseurl }}img/java-icon.svg">
               </span>
-              Javadoc</a>
+              Javadoc
+            </a>
           </div>
         </div>
 
@@ -55,6 +56,7 @@
             <a class="navbar-item" href="https://issues.apache.org/jira/projects/BOOKKEEPER">JIRA Issue Tracker</a>
           </div>
         </div>
+        
         <div class="navbar-item has-dropdown is-hoverable">
           <a class="navbar-link">Project</a>
           <div class="navbar-dropdown is-boxed">
