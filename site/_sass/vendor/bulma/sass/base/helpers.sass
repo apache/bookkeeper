@@ -1,0 +1,136 @@
+// Display
+
+$displays: 'block' 'flex' 'inline' 'inline-block' 'inline-flex'
+
+@each $display in $displays
+  .is-#{$display}
+    display: #{$display}
+  +mobile
+    .is-#{$display}-mobile
+      display: #{$display} !important
+  +tablet
+    .is-#{$display}-tablet
+      display: #{$display} !important
+  +tablet-only
+    .is-#{$display}-tablet-only
+      display: #{$display} !important
+  +touch
+    .is-#{$display}-touch
+      display: #{$display} !important
+  +desktop
+    .is-#{$display}-desktop
+      display: #{$display} !important
+  +desktop-only
+    .is-#{$display}-desktop-only
+      display: #{$display} !important
+  +widescreen
+    .is-#{$display}-widescreen
+      display: #{$display} !important
+
+// Float
+
+.is-clearfix
+  +clearfix
+
+.is-pulled-left
+  float: left !important
+
+.is-pulled-right
+  float: right !important
+
+// Overflow
+
+.is-clipped
+  overflow: hidden !important
+
+// Overlay
+
+.is-overlay
+  +overlay
+
+// Text
+
+@each $size in $sizes
+  $i: index($sizes, $size)
+  .is-size-#{$i}
+    font-size: $size
+  +mobile
+    .is-size-#{$i}-mobile
+      font-size: $size
+  +tablet
+    .is-size-#{$i}-tablet
+      font-size: $size
+  +touch
+    .is-size-#{$i}-touch
+      font-size: $size
+  +desktop
+    .is-size-#{$i}-desktop
+      font-size: $size
+  +widescreen
+    .is-size-#{$i}-widescreen
+      font-size: $size
+  +fullhd
+    .is-size-#{$i}-fullhd
+      font-size: $size
+
+.has-text-centered
+  text-align: center !important
+
+.has-text-left
+  text-align: left !important
+
+.has-text-right
+  text-align: right !important
+
+@each $name, $pair in $colors
+  $color: nth($pair, 1)
+  .has-text-#{$name}
+    color: $color
+  a.has-text-#{$name}
+    &:hover,
+    &:focus
+      color: darken($color, 10%)
+
+// Visibility
+
+.is-hidden
+  display: none !important
+
++mobile
+  .is-hidden-mobile
+    display: none !important
+
++tablet
+  .is-hidden-tablet
+    display: none !important
+
++tablet-only
+  .is-hidden-tablet-only
+    display: none !important
+
++touch
+  .is-hidden-touch
+    display: none !important
+
++desktop
+  .is-hidden-desktop
+    display: none !important
+
++desktop-only
+  .is-hidden-desktop-only
+    display: none !important
+
++widescreen
+  .is-hidden-widescreen
+    display: none !important
+
+// Other
+
+.is-marginless
+  margin: 0 !important
+
+.is-paddingless
+  padding: 0 !important
+
+.is-unselectable
+  +unselectable

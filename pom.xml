@@ -162,7 +162,7 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>${maven-javadoc-plugin.version}</version>
         <configuration>
-          <!-- Avoid for missing javadoc comments to be marked as errors -->
+          <!-- Prevent missing javadoc comments from being marked as errors -->
           <additionalparam>-Xdoclint:none</additionalparam>
           <subpackages>org.apache.bookkeeper.client:org.apache.bookkeeper.common.annotation:org.apache.bookkeeper.conf:org.apache.bookkeeper.feature:org.apache.bookkeeper.stats</subpackages>
           <groups>
@@ -181,6 +181,9 @@
               <packages>org.apache.bookkeeper.stats.twitter.finagle:org.apache.bookkeeper.stats.twitter.ostrich:org.apache.bookkeeper.stats.twitter.science</packages>
             </group>
           </groups>
+          <doctitle>BookKeeper Java API (version ${project.version})</doctitle>
+          <overview>site/_site/overview/index.html</overview>
+          <show>package</show>
         </configuration>
         <executions>
           <execution>
@@ -233,6 +236,7 @@
             <exclude>**/.gitignore</exclude>
             <exclude>**/.project</exclude>
             <exclude>**/.settings/*</exclude>
+            <exclude>site/**</exclude>
           </excludes>
         </configuration>
       </plugin>

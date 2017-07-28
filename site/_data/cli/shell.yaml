@@ -1,0 +1,67 @@
+commands:
+- name: autorecovery
+  options:
+  - flag: -enable
+    description: Enables autorecovery
+  - flag: -disable
+    description: Disables autorecovery
+- name: bookieFormat
+  options:
+  - flag: -nonInteractive
+  - flag: -force
+  - flag: -deleteCookie
+- name: bookiesanity
+  options:
+  - flag: -entries N
+  - flag: -timeout N
+- name: help
+  description: Displays the help message.
+- name: lastmark
+- name: ledger
+  options:
+  - flag: -m LEDGER_ID
+- name: ledgermetadata
+  options:
+  - flag: -ledgerid LEDGER_ID
+- name: listbookies
+  options:
+  - flag: -readwrite
+  - flag: -readonly
+  - flag: -hostnames
+- name: listledgers
+  options:
+  - flag: -meta
+- name: listunderreplicated
+- name: metaformat
+  options:
+  - flag: -nonInteractive
+  - flag: -force
+- name: readjournal
+  options:
+  - flag: -msg JOURNAL_ID|JOURNAL_FILENAME
+- name: readledger
+  argument: <ledger_id> [<start_entry_id> [<end_entry_id>]]
+- name: readlog
+  argument: <entry_log_id | entry_log_file_name>
+  options:
+  - flag: -msg
+- name: recover
+  argument: <bookieSrc> [bookieDest]
+  options:
+  - flag: -deleteCookie
+- name: simpletest
+  options:
+  - flag: -ensemble N
+  - flag: -writeQuorum N
+  - flag: ackQuorum N
+  - flag: -numEntries N
+- name: updatecookie
+  options:
+  - flag: -bookieId <hostname|ip>
+- name: updateledger
+  options:
+  - flag: -bookieId <hostname|ip>
+  - flag: -updatespersec N
+  - flag: -limit N
+  - flag: -verbose
+  - flag: -printprogress N
