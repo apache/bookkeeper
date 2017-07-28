@@ -159,6 +159,7 @@
             <exclude>**/.gitignore</exclude>
             <exclude>**/.project</exclude>
             <exclude>**/.settings/*</exclude>
+            <exclude>site/**</exclude>
           </excludes>
         </configuration>
       </plugin>
