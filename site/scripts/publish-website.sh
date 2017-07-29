@@ -18,19 +18,16 @@
 # under the License.
 #
 
-ROOT_DIR=$(git rev-parse --show-toplevel)
+# NOTE: this is the script used by CI to push to apache. If you are looking for
+#       staging the changes, try the `staging-website.sh` script.
+
+source scripts/common.sh
 
 ORIGIN_REPO=$(git remote show origin | grep 'Push  URL' | awk -F// '{print $NF}')
 echo "ORIGIN_REPO: $ORIGIN_REPO"
 
-GENERATED_SITE_DIR=$ROOT_DIR/site/generated_site
-
 (
-  cd $ROOT_DIR
-
-  REVISION=$(git rev-parse --short HEAD)
-
-  cd $GENERATED_SITE_DIR
+  cd $APACHE_GENERATED_DIR
 
   git init
   git config user.name "Apache BookKeeper Site Updater"
