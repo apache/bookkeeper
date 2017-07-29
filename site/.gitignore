@@ -5,3 +5,4 @@ vendor/bundle/
 .bundle/
 .sass-cache/
 local-generated/
+generated_site/

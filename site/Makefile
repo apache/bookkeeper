@@ -8,7 +8,7 @@ dev:
 	make serve
 
 clean:
-	rm -rf _site
+	rm -rf _site local-generated generated_site
 
 setup:
 	gem install bundler \
@@ -22,12 +22,19 @@ build: clean
 	${JEKYLL} build \
 		--config _config.yml
 
-javadoc-gen:
+apache: clean
+	${JEKYLL} build \
+		--config _config.yml,_config.apache.yml
+
+javadoc:
 	scripts/javadoc-gen.sh
+
+staging: clean
+	${JEKYLL} build --config _config.yml,_config.staging.yml
 
 serve: build
 	${JEKYLL} serve \
 		--incremental \
-		--config _config.local.yml
+		--config _config.yml,_config.local.yml
 
 publish: javadoc-gen build
