@@ -76,8 +76,6 @@ public abstract class TwitterAbstractHandler extends Service<Request, Response> 
      */
     HttpServer.Method convertMethod(Request request) {
         switch (request.method().name()) {
-            case "GET":
-                return HttpServer.Method.GET;
             case "POST":
                 return HttpServer.Method.POST;
             case "DELETE":

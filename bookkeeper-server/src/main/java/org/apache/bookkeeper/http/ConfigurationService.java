@@ -25,6 +25,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.base.Preconditions;
+
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.service.Service;
 import org.apache.bookkeeper.http.service.ServiceRequest;
@@ -38,7 +40,7 @@ public class ConfigurationService implements Service {
     protected ServerConfiguration conf;
 
     public ConfigurationService(ServerConfiguration conf) {
-        assert conf != null;
+        Preconditions.checkNotNull(conf);
         this.conf = conf;
     }
 

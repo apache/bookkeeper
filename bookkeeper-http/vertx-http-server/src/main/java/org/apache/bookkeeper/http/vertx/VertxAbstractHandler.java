@@ -80,8 +80,6 @@ public abstract class VertxAbstractHandler implements Handler<RoutingContext> {
      */
     HttpServer.Method convertMethod(HttpServerRequest request) {
         switch (request.method()) {
-            case GET:
-                return HttpServer.Method.GET;
             case POST:
                 return HttpServer.Method.POST;
             case DELETE:
