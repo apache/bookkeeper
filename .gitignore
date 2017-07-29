@@ -20,6 +20,3 @@ lib/
 log/
 target/
 dependency-reduced-pom.xml
-
-# Generated website
-docs/
