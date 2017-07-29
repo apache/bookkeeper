@@ -376,33 +376,24 @@
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>${maven-checkstyle-plugin.version}</version>
-        <dependencies>
-          <dependency>
-            <groupId>com.puppycrawl.tools</groupId>
-            <artifactId>checkstyle</artifactId>
-            <version>${puppycrawl.checkstyle.version}</version>
-          </dependency>
-          <dependency>
-            <groupId>org.apache.bookkeeper</groupId>
-            <artifactId>buildtools</artifactId>
-            <version>${project.parent.version}</version>
-          </dependency>
-        </dependencies>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>${maven-javadoc-plugin.version}</version>
         <configuration>
-          <configLocation>bookkeeper/checkstyle.xml</configLocation>
-          <suppressionsLocation>bookkeeper/server-suppressions.xml</suppressionsLocation>
-          <encoding>UTF-8</encoding>
-          <consoleOutput>true</consoleOutput>
-          <failsOnError>true</failsOnError>
+          <!-- Avoid for missing javadoc comments to be marked as errors -->
+          <additionalparam>-Xdoclint:none</additionalparam>
+          <subpackages>org.apache.bookkeeper.client:org.apache.bookkeeper.common.annotation:org.apache.bookkeeper.conf:org.apache.bookkeeper.feature:org.apache.bookkeeper.stats</subpackages>
+          <groups>
+            <group>
+              <title>Bookkeeper</title>
+              <packages>org.apache.bookkeeper*</packages>
+            </group>
+          </groups>
         </configuration>
         <executions>
           <execution>
-            <id>checkstyle</id>
-            <phase>validate</phase>
+            <id>attach-javadocs</id>
             <goals>
-              <goal>check</goal>
+              <goal>jar</goal>
             </goals>
           </execution>
         </executions>

@@ -43,8 +43,6 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.bookkeeper.client.ClientConnectionPeer;
-import org.apache.bookkeeper.bookie.BookieConnectionPeer;
 
 class AuthHandler {
     static final Logger LOG = LoggerFactory.getLogger(AuthHandler.class);

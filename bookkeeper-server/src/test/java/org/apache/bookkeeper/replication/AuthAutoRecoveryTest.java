@@ -34,7 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.junit.Assert.*;
-import org.apache.bookkeeper.client.ClientConnectionPeer;
+import org.apache.bookkeeper.proto.ClientConnectionPeer;
 
 /**
  * This test verifies the auditor bookie scenarios from the auth point-of-view

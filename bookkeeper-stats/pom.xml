@@ -66,6 +66,30 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>${maven-javadoc-plugin.version}</version>
+        <configuration>
+          <!-- Avoid for missing javadoc comments to be marked as errors -->
+          <additionalparam>-Xdoclint:none</additionalparam>
+          <subpackages>org.apache.bookkeeper.stats</subpackages>
+          <groups>
+            <group>
+              <title>Bookkeeper Stats API</title>
+              <packages>org.apache.bookkeeper.stats</packages>
+            </group>
+          </groups>
+        </configuration>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
   <dependencies>
