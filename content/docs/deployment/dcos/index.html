@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Apache BookKeeper - Deploying BookKeeper on DC/OS</title>
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet" href="/css/normalize.css">
+<link rel="stylesheet" href="/css/tippy.css">
+<link rel="stylesheet" href="/css/style.css">
+
+<link rel="shortcut icon" href="/img/favicon.ico">
+
+<script src="/js/tippy.min.js"></script>
+
+<script type="text/javascript">
+  var shiftWindow = function() { scrollBy(0, -108); };
+  window.addEventListener("hashchange", shiftWindow);
+  window.addEventListener("pageshow", shiftWindow);
+  function load() { if (window.location.hash) shiftWindow(); }
+</script>
+
+  </head>
+  <body class="body">
+    <main class="main">
+      
+<div class="bk-topnav">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item bk-brand" href="/">
+        Apache BookKeeper
+      </a>
+
+      <!--
+      <a class="navbar-item is-hidden-desktop bk-github" href="https://github.com/apache/bookkeeper" target="_blank">
+        <span class="icon">
+          <i class="fa fa-github"></i>
+        </span>
+      </a>
+
+      <a class="navbar-item is-hidden-desktop bk-twitter" href="https://twitter.com/jgthms" target="_blank">
+        <span class="icon">
+          <i class="fa fa-twitter"></i>
+        </span>
+      </a>
+      -->
+
+      <div class="navbar-burger" data-target="bkNav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+
+    <div id="bkNav" class="navbar-menu">
+      <div class="navbar-start">
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Documentation</a>
+          <div class="navbar-dropdown is-boxed">
+            
+            <a class="navbar-item" href="/docs/getting-started/installation">
+              Version 4.5.0
+              <span class="tag is-success">LATEST</span>
+            </a>
+            
+            <hr class="dropdown-divider">
+            <a class="navbar-item" href="/javadoc">
+              <span class="icon bk-javadoc-icon">
+                <img src="/img/java-icon.svg">
+              </span>
+              Javadoc
+            </a>
+          </div>
+        </div>
+
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Community</a>
+          <div class="navbar-dropdown is-boxed">
+            <a class="navbar-item" href="/community/mailing-lists">Mailing lists</a>
+            <a class="navbar-item" href="/community/irc">IRC</a>
+            <a class="navbar-item" href="/community/contributing">Contributing</a>
+            <a class="navbar-item" href="https://issues.apache.org/jira/projects/BOOKKEEPER">JIRA Issue Tracker</a>
+          </div>
+        </div>
+        
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Project</a>
+          <div class="navbar-dropdown is-boxed">
+            <a class="navbar-item" href="/project/who">Who are we?</a>
+            <a class="navbar-item" href="/project/bylaws">Bylaws</a>
+            <a class="navbar-item" href="http://www.apache.org/licenses/">License</a>
+            <hr class="dropdown-divider">
+            <a class="navbar-item" href="/project/privacy">Privacy policy</a>
+            <a class="navbar-item" href="http://www.apache.org/foundation/sponsorship.html">Sponsorship</a>
+            <a class="navbar-item" href="http://www.apache.org/foundation/thanks.html">Thanks</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="navbar-end">
+        <div class="navbar-item">
+          <div class="field is-grouped">
+            <p class="control">
+              <a class="button bk-twitter" href="https://twitter.com/asfbookkeeper">
+                <span class="icon">
+                  <i class="fa fa-twitter"></i>
+                </span>
+                <span>Twitter</span>
+              </a>
+            </p>
+            <p class="control">
+              <a class="button" href="https://github.com/apache/bookkeeper">
+                <span class="icon">
+                  <i class="fa fa-github"></i>
+                </span>
+                <span>GitHub</span>
+              </a>
+            </p>
+            <p class="control">
+              <a class="button is-primary" href="/docs/getting-started/installation#download">
+                <span class="icon">
+                  <i class="fa fa-download"></i>
+                </span>
+                <span>Download</span>
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</div>
+
+      <div class="bk-docs-container">
+  <div class="columns is-gapless">
+    <div class="column is-2 is-hidden-mobile">
+      <div class="container">
+        
+<aside class="sidebar">
+  
+  <p>
+    Getting started
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/getting-started/installation">
+      Installation
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/getting-started/run-locally">
+      Run bookies locally
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/getting-started/concepts">
+      Concepts and architecture
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Deployment
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/deployment/manual">
+      Manual deployment
+      </a>
+    </li>
+    
+    
+    <li class="active">
+      <a href="/docs/deployment/dcos">
+      BookKeeper on DC/OS
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Administration
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/admin/bookies">
+      BookKeeper administration
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/admin/autorecovery">
+      AutoRecovery
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/admin/metrics">
+      Metric collection
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    API
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/api/overview">
+      Overview
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/api/ledger-api">
+      Ledger API
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/api/distributedlog-api">
+      DistributedLog
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Development
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/development/protocol">
+      BookKeeper protocol
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Reference
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/reference/config">
+      Configuration
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/reference/cli">
+      Command-line tools
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/reference/metrics">
+      Metrics
+      </a>
+    </li>
+    
+  </ul>
+  
+  <hr />
+  <a class="button is-info">
+    Latest version: 4.5.0
+  </a>
+</aside>
+
+      </div>
+    </div>
+
+    <div class="column is-8 bk-docs-block">
+      <header class="docs-title">
+        <nav class="level bk-level">
+          <div class="level-left">
+            <div class="level-item">
+              <h1 class="title">Deploying BookKeeper on DC/OS</h1>
+            </div>
+          </div>
+          
+          <div class="level-right">
+            <div class="level-item">
+              <img src="/img/dcos-logo.png">
+            </div>
+          </div>
+          
+        </nav>
+
+        <h2 class="subtitle">Get up and running easily on an Apache Mesos cluster</h2>
+      </header>
+
+      <hr />
+
+      <div class="content">
+        <section class="bk-main-content">
+          <p><a href="https://dcos.io/">DC/OS</a> (the <strong>D</strong>ata<strong>C</strong>enter <strong>O</strong>perating <strong>S</strong>ystem) is a distributed operating system used for deploying and managing applications and systems on <a href="http://mesos.apache.org/">Apache Mesos</a>. DC/OS is an open-source tool created and maintained by <a href="https://mesosphere.com/">Mesosphere</a>.</p>
+
+<p>BookKeeper is available as a <a href="http://universe.dcos.io/#/package/bookkeeper/version/latest">DC/OS package</a> from the <a href="http://universe.dcos.io/#/packages">Mesosphere DC/OS Universe</a>.</p>
+
+<h2 id="prerequisites">Prerequisites</h2>
+
+<p>In order to run BookKeeper on DC/OS, you will need:</p>
+
+<ul>
+  <li>DC/OS version <a href="https://dcos.io/docs/1.8/">1.8</a> or higher</li>
+  <li>A DC/OS cluster with at least three nodes</li>
+  <li>The <a href="https://dcos.io/docs/1.8/usage/cli/install/">DC/OS CLI tool</a> installed</li>
+</ul>
+
+<p>Each node in your DC/OS-managed Mesos cluster must have at least:</p>
+
+<ul>
+  <li>1 CPU</li>
+  <li>1 GB of memory</li>
+  <li>10 GB of total persistent disk storage</li>
+</ul>
+
+<h2 id="installing-bookkeeper">Installing BookKeeper</h2>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>dcos package install bookkeeper --yes
+</code></pre>
+</div>
+
+<p>This command will:</p>
+
+<ul>
+  <li>Install the <code class="highlighter-rouge">bookkeeper</code> subcommand for the <code class="highlighter-rouge">dcos</code> CLI tool</li>
+  <li>Start a single <span class="pop" id="bookie-popover">bookie</span> on the Mesos cluster with the <a href="../../reference/config">default configuration</a></li>
+</ul>
+
+<p>The bookie that is automatically started up uses the host mode of the network and by default exports the service at <code class="highlighter-rouge">agent_ip:3181</code>.</p>
+
+<blockquote>
+  <p>If you run <code class="highlighter-rouge">dcos package install bookkeeper</code> without setting the <code class="highlighter-rouge">--yes</code> flag, the install will run in interactive mode. For more information on the <code class="highlighter-rouge">package install</code> command, see the <a href="https://docs.mesosphere.com/latest/cli/command-reference/dcos-package/dcos-package-install/">DC/OS docs</a>.</p>
+</blockquote>
+
+<h3 id="services">Services</h3>
+
+<p>To watch BookKeeper start up, click on the <strong>Services</strong> tab in the DC/OS <a href="https://docs.mesosphere.com/latest/gui/">user interface</a> and you should see the <code class="highlighter-rouge">bookkeeper</code> package listed:</p>
+
+<p><img src="/img/dcos/services.png" alt="DC/OS services" /></p>
+
+<h3 id="tasks">Tasks</h3>
+
+<p>To see which tasks have started, click on the <code class="highlighter-rouge">bookkeeper</code> service and you’ll see an interface that looks like this;</p>
+
+<p><img src="/img/dcos/tasks.png" alt="DC/OS tasks" /></p>
+
+<h2 id="scaling-bookkeeper">Scaling BookKeeper</h2>
+
+<p>Once the first <span class="pop" id="bookie-popover">bookie</span> has started up, you can click on the <strong>Scale</strong> tab to scale up your BookKeeper ensemble by adding more bookies (or scale down the ensemble by removing bookies).</p>
+
+<p><img src="/img/dcos/scale.png" alt="DC/OS scale" /></p>
+
+<h2 id="zookeeper-exhibitor">ZooKeeper Exhibitor</h2>
+
+<p>ZooKeeper contains the information for all bookies in the ensemble. When deployed on DC/OS, BookKeeper uses a ZooKeeper instance provided by DC/OS. You can access a visual UI for ZooKeeper using <a href="https://github.com/soabase/exhibitor/wiki">Exhibitor</a>, which is available at <a href="http://master.dcos/exhibitor">http://master.dcos/exhibitor</a>.</p>
+
+<p><img src="/img/dcos/exhibitor.png" alt="ZooKeeper Exhibitor" /></p>
+
+<p>You should see a listing of IP/host information for all bookies under the <code class="highlighter-rouge">messaging/bookkeeper/ledgers/available</code> node.</p>
+
+<h2 id="client-connections">Client connections</h2>
+
+<p>To connect to bookies running on DC/OS using clients running within your Mesos cluster, you need to specify the ZooKeeper connection string for DC/OS’s ZooKeeper cluster:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>master.mesos:2181
+</code></pre>
+</div>
+
+<p>This is the <em>only</em> ZooKeeper host/port you need to include in your connection string. Here’s an example using the <a href="../../api/ledger-api#the-java-ledger-api-client">Java client</a>:</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BookKeeper</span><span class="o">(</span><span class="s">"master.mesos:2181"</span><span class="o">);</span>
+</code></pre>
+</div>
+
+<p>If you’re connecting using a client running outside your Mesos cluster, you need to supply the public-facing connection string for your DC/OS ZooKeeper cluster.</p>
+
+<h2 id="configuring-bookkeeper">Configuring BookKeeper</h2>
+
+<p>By default, the <code class="highlighter-rouge">bookkeeper</code> package will start up a BookKeeper ensemble consisting of one <span class="pop" id="bookie-popover">bookie</span> with one CPU, 1 GB of memory, and a 70 MB persistent volume.</p>
+
+<p>You can supply a non-default configuration when installing the package using a JSON file. Here’s an example command:</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>dcos package install bookkeeper <span class="se">\</span>
+  --options<span class="o">=</span>/path/to/config.json
+</code></pre>
+</div>
+
+<p>You can then fetch the current configuration for BookKeeper at any time using the <code class="highlighter-rouge">package describe</code> command:</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>dcos package describe bookkeeper <span class="se">\</span>
+  --config
+</code></pre>
+</div>
+
+<h3 id="available-parameters">Available parameters</h3>
+
+<blockquote>
+  <p>Not all <a href="../../reference/config">configurable parameters</a> for BookKeeper are available for BookKeeper on DC/OS. Only the parameters show in the table below are available.</p>
+</blockquote>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Param</th>
+      <th style="text-align: left">Type</th>
+      <th style="text-align: left">Description</th>
+      <th style="text-align: left">Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left"><code class="highlighter-rouge">name</code></td>
+      <td style="text-align: left">String</td>
+      <td style="text-align: left">The name of the DC/OS service.</td>
+      <td style="text-align: left"><code class="highlighter-rouge">bookkeeper</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code class="highlighter-rouge">cpus</code></td>
+      <td style="text-align: left">Integer</td>
+      <td style="text-align: left">The number of CPU shares to allocate to each <span class="pop" id="bookie-popover">bookie</span>. The minimum is 1.</td>
+      <td style="text-align: left"><code class="highlighter-rouge">1</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code class="highlighter-rouge">instances</code></td>
+      <td style="text-align: left">Integer</td>
+      <td style="text-align: left">The number of <span class="pop" id="bookie-popover">bookies</span> top run. The minimum is 1.</td>
+      <td style="text-align: left"><code class="highlighter-rouge">1</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code class="highlighter-rouge">mem</code></td>
+      <td style="text-align: left">Number</td>
+      <td style="text-align: left">The memory, in MB, to allocate to each BookKeeper task</td>
+      <td style="text-align: left"><code class="highlighter-rouge">1024.0</code> (1 GB)</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code class="highlighter-rouge">volume_size</code></td>
+      <td style="text-align: left">Number</td>
+      <td style="text-align: left">The persistent volume size, in MB</td>
+      <td style="text-align: left"><code class="highlighter-rouge">70</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code class="highlighter-rouge">zk_client</code></td>
+      <td style="text-align: left">String</td>
+      <td style="text-align: left">The connection string for the ZooKeeper client instance</td>
+      <td style="text-align: left"><code class="highlighter-rouge">master.mesos:2181</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code class="highlighter-rouge">service_port</code></td>
+      <td style="text-align: left">Integer</td>
+      <td style="text-align: left">The BookKeeper export service port, using <code class="highlighter-rouge">PORT0</code> in Marathon</td>
+      <td style="text-align: left"><code class="highlighter-rouge">3181</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="example-json-configuration">Example JSON configuration</h3>
+
+<p>Here’s an example JSON configuration object for BookKeeper on DC/OS:</p>
+
+<div class="language-json highlighter-rouge"><pre class="highlight"><code><span class="p">{</span><span class="w">
+  </span><span class="nt">"instances"</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"cpus"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"mem"</span><span class="p">:</span><span class="w"> </span><span class="mf">2048.0</span><span class="p">,</span><span class="w">
+  </span><span class="nt">"volume_size"</span><span class="p">:</span><span class="w"> </span><span class="mi">250</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre>
+</div>
+
+<p>If that configuration were stored in a file called <code class="highlighter-rouge">bk-config.json</code>, you could apply that configuration upon installating the BookKeeper package using this command:</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>dcos package install bookkeeper <span class="se">\</span>
+  --options<span class="o">=</span>./bk-config.json
+</code></pre>
+</div>
+
+<h2 id="uninstalling-bookkeeper">Uninstalling BookKeeper</h2>
+
+<p>You can shut down and uninstall the <code class="highlighter-rouge">bookkeeper</code> from DC/OS at any time using the <code class="highlighter-rouge">package uninstall</code> command:</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>dcos package uninstall bookkeeper
+Uninstalled package <span class="o">[</span>bookkeeper] version <span class="o">[</span>4.5.0]
+Thank you <span class="k">for </span>using bookkeeper.
+</code></pre>
+</div>
+
+        </section>
+
+        
+      </div>
+    </div>
+
+    <div class="column is-2 is-hidden-mobile">
+      
+      
+<div class="toc">
+  <h2 class="title">Deploying BookKeeper on DC/OS</h2>
+  <ul class="section-nav">
+<li class="toc-entry toc-h2"><a href="#prerequisites">Prerequisites</a></li>
+<li class="toc-entry toc-h2"><a href="#installing-bookkeeper">Installing BookKeeper</a></li>
+<li class="toc-entry toc-h3"><a href="#services">Services</a></li>
+<li class="toc-entry toc-h3"><a href="#tasks">Tasks</a></li>
+<li class="toc-entry toc-h2"><a href="#scaling-bookkeeper">Scaling BookKeeper</a></li>
+<li class="toc-entry toc-h2"><a href="#zookeeper-exhibitor">ZooKeeper Exhibitor</a></li>
+<li class="toc-entry toc-h2"><a href="#client-connections">Client connections</a></li>
+<li class="toc-entry toc-h2"><a href="#configuring-bookkeeper">Configuring BookKeeper</a></li>
+<li class="toc-entry toc-h3"><a href="#available-parameters">Available parameters</a></li>
+<li class="toc-entry toc-h3"><a href="#example-json-configuration">Example JSON configuration</a></li>
+<li class="toc-entry toc-h2"><a href="#uninstalling-bookkeeper">Uninstalling BookKeeper</a></li>
+</ul>
+</div>
+
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+<div id="entry-popover-html" class="popover-template">
+  <p>An entry is a sequence of bytes (plus some metadata) written to a BookKeeper ledger. Entries are also known as records.</p>
+
+</div>
+
+<div id="ledger-popover-html" class="popover-template">
+  <p>A ledger is a sequence of entries written to BookKeeper. Entries are written sequentially to ledgers and at most once, giving ledgers append-only semantics.</p>
+
+</div>
+
+<div id="bookie-popover-html" class="popover-template">
+  <p>A bookie is an individial BookKeeper storage server.</p>
+
+<p>Bookies store the content of ledgers and act as a distributed ensemble.</p>
+
+</div>
+
+<div id="rereplication-popover-html" class="popover-template">
+  <p>A subsystem that runs in the background on bookies to ensure that ledgers are fully replicated even if one bookie from the ensemble is down.</p>
+
+</div>
+
+<div id="striping-popover-html" class="popover-template">
+  <p>Striping is the process of distributing BookKeeper ledgers to sub-groups of bookies rather than to all bookies in a BookKeeper ensemble.</p>
+
+<p>Striping is essential to ensuring fast performance.</p>
+
+</div>
+
+<div id="journal-popover-html" class="popover-template">
+  <p>A journal file stores BookKeeper transaction logs.</p>
+
+</div>
+
+<div id="fencing-popover-html" class="popover-template">
+  <p>When a reader forces a ledger to close, preventing any further entries from being written to the ledger.</p>
+
+</div>
+
+<div id="record-popover-html" class="popover-template">
+  <p>A record is a sequence of bytes (plus some metadata) written to a BookKeeper ledger. Records are also known as entries.</p>
+
+</div>
+
+
+<script type="text/javascript">
+
+tippy('#entry-popover', {
+  html: '#entry-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#ledger-popover', {
+  html: '#ledger-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#bookie-popover', {
+  html: '#bookie-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#rereplication-popover', {
+  html: '#rereplication-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#striping-popover', {
+  html: '#striping-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#journal-popover', {
+  html: '#journal-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#fencing-popover', {
+  html: '#fencing-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#record-popover', {
+  html: '#record-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+</script>
+
+    </main>
+
+    <footer class="footer">
+  <div class="container">
+    <div class="content has-text-centered">
+      <p>
+        Copyright &copy; 2016 - 2017 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
+      </p>
+    </div>
+  </div>
+</footer>
+
+  </body>
+
+  <script src="/js/app.js"></script>
+
+</html>

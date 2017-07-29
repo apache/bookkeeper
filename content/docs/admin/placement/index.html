@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Apache BookKeeper - Customized placement policies</title>
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet" href="/css/normalize.css">
+<link rel="stylesheet" href="/css/tippy.css">
+<link rel="stylesheet" href="/css/style.css">
+
+<link rel="shortcut icon" href="/img/favicon.ico">
+
+<script src="/js/tippy.min.js"></script>
+
+<script type="text/javascript">
+  var shiftWindow = function() { scrollBy(0, -108); };
+  window.addEventListener("hashchange", shiftWindow);
+  window.addEventListener("pageshow", shiftWindow);
+  function load() { if (window.location.hash) shiftWindow(); }
+</script>
+
+  </head>
+  <body class="body">
+    <main class="main">
+      
+<div class="bk-topnav">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item bk-brand" href="/">
+        Apache BookKeeper
+      </a>
+
+      <!--
+      <a class="navbar-item is-hidden-desktop bk-github" href="https://github.com/apache/bookkeeper" target="_blank">
+        <span class="icon">
+          <i class="fa fa-github"></i>
+        </span>
+      </a>
+
+      <a class="navbar-item is-hidden-desktop bk-twitter" href="https://twitter.com/jgthms" target="_blank">
+        <span class="icon">
+          <i class="fa fa-twitter"></i>
+        </span>
+      </a>
+      -->
+
+      <div class="navbar-burger" data-target="bkNav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+
+    <div id="bkNav" class="navbar-menu">
+      <div class="navbar-start">
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Documentation</a>
+          <div class="navbar-dropdown is-boxed">
+            
+            <a class="navbar-item" href="/docs/getting-started/installation">
+              Version 4.5.0
+              <span class="tag is-success">LATEST</span>
+            </a>
+            
+            <hr class="dropdown-divider">
+            <a class="navbar-item" href="/javadoc">
+              <span class="icon bk-javadoc-icon">
+                <img src="/img/java-icon.svg">
+              </span>
+              Javadoc
+            </a>
+          </div>
+        </div>
+
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Community</a>
+          <div class="navbar-dropdown is-boxed">
+            <a class="navbar-item" href="/community/mailing-lists">Mailing lists</a>
+            <a class="navbar-item" href="/community/irc">IRC</a>
+            <a class="navbar-item" href="/community/contributing">Contributing</a>
+            <a class="navbar-item" href="https://issues.apache.org/jira/projects/BOOKKEEPER">JIRA Issue Tracker</a>
+          </div>
+        </div>
+        
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Project</a>
+          <div class="navbar-dropdown is-boxed">
+            <a class="navbar-item" href="/project/who">Who are we?</a>
+            <a class="navbar-item" href="/project/bylaws">Bylaws</a>
+            <a class="navbar-item" href="http://www.apache.org/licenses/">License</a>
+            <hr class="dropdown-divider">
+            <a class="navbar-item" href="/project/privacy">Privacy policy</a>
+            <a class="navbar-item" href="http://www.apache.org/foundation/sponsorship.html">Sponsorship</a>
+            <a class="navbar-item" href="http://www.apache.org/foundation/thanks.html">Thanks</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="navbar-end">
+        <div class="navbar-item">
+          <div class="field is-grouped">
+            <p class="control">
+              <a class="button bk-twitter" href="https://twitter.com/asfbookkeeper">
+                <span class="icon">
+                  <i class="fa fa-twitter"></i>
+                </span>
+                <span>Twitter</span>
+              </a>
+            </p>
+            <p class="control">
+              <a class="button" href="https://github.com/apache/bookkeeper">
+                <span class="icon">
+                  <i class="fa fa-github"></i>
+                </span>
+                <span>GitHub</span>
+              </a>
+            </p>
+            <p class="control">
+              <a class="button is-primary" href="/docs/getting-started/installation#download">
+                <span class="icon">
+                  <i class="fa fa-download"></i>
+                </span>
+                <span>Download</span>
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</div>
+
+      <div class="bk-docs-container">
+  <div class="columns is-gapless">
+    <div class="column is-2 is-hidden-mobile">
+      <div class="container">
+        
+<aside class="sidebar">
+  
+  <p>
+    Getting started
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/getting-started/installation">
+      Installation
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/getting-started/run-locally">
+      Run bookies locally
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/getting-started/concepts">
+      Concepts and architecture
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Deployment
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/deployment/manual">
+      Manual deployment
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/deployment/dcos">
+      BookKeeper on DC/OS
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Administration
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/admin/bookies">
+      BookKeeper administration
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/admin/autorecovery">
+      AutoRecovery
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/admin/metrics">
+      Metric collection
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    API
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/api/overview">
+      Overview
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/api/ledger-api">
+      Ledger API
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/api/distributedlog-api">
+      DistributedLog
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Development
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/development/protocol">
+      BookKeeper protocol
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Reference
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/reference/config">
+      Configuration
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/reference/cli">
+      Command-line tools
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/reference/metrics">
+      Metrics
+      </a>
+    </li>
+    
+  </ul>
+  
+  <hr />
+  <a class="button is-info">
+    Latest version: 4.5.0
+  </a>
+</aside>
+
+      </div>
+    </div>
+
+    <div class="column is-8 bk-docs-block">
+      <header class="docs-title">
+        <nav class="level bk-level">
+          <div class="level-left">
+            <div class="level-item">
+              <h1 class="title">Customized placement policies</h1>
+            </div>
+          </div>
+          
+        </nav>
+
+        
+      </header>
+
+      <hr />
+
+      <div class="content">
+        <section class="bk-main-content">
+          
+
+        </section>
+
+        
+      </div>
+    </div>
+
+    <div class="column is-2 is-hidden-mobile">
+      
+      
+<div class="toc">
+  <h2 class="title">Customized placement policies</h2>
+  <ul class="section-nav">
+</ul>
+</div>
+
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+<div id="entry-popover-html" class="popover-template">
+  <p>An entry is a sequence of bytes (plus some metadata) written to a BookKeeper ledger. Entries are also known as records.</p>
+
+</div>
+
+<div id="ledger-popover-html" class="popover-template">
+  <p>A ledger is a sequence of entries written to BookKeeper. Entries are written sequentially to ledgers and at most once, giving ledgers append-only semantics.</p>
+
+</div>
+
+<div id="bookie-popover-html" class="popover-template">
+  <p>A bookie is an individial BookKeeper storage server.</p>
+
+<p>Bookies store the content of ledgers and act as a distributed ensemble.</p>
+
+</div>
+
+<div id="rereplication-popover-html" class="popover-template">
+  <p>A subsystem that runs in the background on bookies to ensure that ledgers are fully replicated even if one bookie from the ensemble is down.</p>
+
+</div>
+
+<div id="striping-popover-html" class="popover-template">
+  <p>Striping is the process of distributing BookKeeper ledgers to sub-groups of bookies rather than to all bookies in a BookKeeper ensemble.</p>
+
+<p>Striping is essential to ensuring fast performance.</p>
+
+</div>
+
+<div id="journal-popover-html" class="popover-template">
+  <p>A journal file stores BookKeeper transaction logs.</p>
+
+</div>
+
+<div id="fencing-popover-html" class="popover-template">
+  <p>When a reader forces a ledger to close, preventing any further entries from being written to the ledger.</p>
+
+</div>
+
+<div id="record-popover-html" class="popover-template">
+  <p>A record is a sequence of bytes (plus some metadata) written to a BookKeeper ledger. Records are also known as entries.</p>
+
+</div>
+
+
+<script type="text/javascript">
+
+tippy('#entry-popover', {
+  html: '#entry-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#ledger-popover', {
+  html: '#ledger-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#bookie-popover', {
+  html: '#bookie-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#rereplication-popover', {
+  html: '#rereplication-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#striping-popover', {
+  html: '#striping-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#journal-popover', {
+  html: '#journal-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#fencing-popover', {
+  html: '#fencing-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#record-popover', {
+  html: '#record-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+</script>
+
+    </main>
+
+    <footer class="footer">
+  <div class="container">
+    <div class="content has-text-centered">
+      <p>
+        Copyright &copy; 2016 - 2017 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
+      </p>
+    </div>
+  </div>
+</footer>
+
+  </body>
+
+  <script src="/js/app.js"></script>
+
+</html>

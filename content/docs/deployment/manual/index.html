@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Apache BookKeeper - Manual deployment</title>
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet" href="/css/normalize.css">
+<link rel="stylesheet" href="/css/tippy.css">
+<link rel="stylesheet" href="/css/style.css">
+
+<link rel="shortcut icon" href="/img/favicon.ico">
+
+<script src="/js/tippy.min.js"></script>
+
+<script type="text/javascript">
+  var shiftWindow = function() { scrollBy(0, -108); };
+  window.addEventListener("hashchange", shiftWindow);
+  window.addEventListener("pageshow", shiftWindow);
+  function load() { if (window.location.hash) shiftWindow(); }
+</script>
+
+  </head>
+  <body class="body">
+    <main class="main">
+      
+<div class="bk-topnav">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item bk-brand" href="/">
+        Apache BookKeeper
+      </a>
+
+      <!--
+      <a class="navbar-item is-hidden-desktop bk-github" href="https://github.com/apache/bookkeeper" target="_blank">
+        <span class="icon">
+          <i class="fa fa-github"></i>
+        </span>
+      </a>
+
+      <a class="navbar-item is-hidden-desktop bk-twitter" href="https://twitter.com/jgthms" target="_blank">
+        <span class="icon">
+          <i class="fa fa-twitter"></i>
+        </span>
+      </a>
+      -->
+
+      <div class="navbar-burger" data-target="bkNav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+
+    <div id="bkNav" class="navbar-menu">
+      <div class="navbar-start">
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Documentation</a>
+          <div class="navbar-dropdown is-boxed">
+            
+            <a class="navbar-item" href="/docs/getting-started/installation">
+              Version 4.5.0
+              <span class="tag is-success">LATEST</span>
+            </a>
+            
+            <hr class="dropdown-divider">
+            <a class="navbar-item" href="/javadoc">
+              <span class="icon bk-javadoc-icon">
+                <img src="/img/java-icon.svg">
+              </span>
+              Javadoc
+            </a>
+          </div>
+        </div>
+
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Community</a>
+          <div class="navbar-dropdown is-boxed">
+            <a class="navbar-item" href="/community/mailing-lists">Mailing lists</a>
+            <a class="navbar-item" href="/community/irc">IRC</a>
+            <a class="navbar-item" href="/community/contributing">Contributing</a>
+            <a class="navbar-item" href="https://issues.apache.org/jira/projects/BOOKKEEPER">JIRA Issue Tracker</a>
+          </div>
+        </div>
+        
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Project</a>
+          <div class="navbar-dropdown is-boxed">
+            <a class="navbar-item" href="/project/who">Who are we?</a>
+            <a class="navbar-item" href="/project/bylaws">Bylaws</a>
+            <a class="navbar-item" href="http://www.apache.org/licenses/">License</a>
+            <hr class="dropdown-divider">
+            <a class="navbar-item" href="/project/privacy">Privacy policy</a>
+            <a class="navbar-item" href="http://www.apache.org/foundation/sponsorship.html">Sponsorship</a>
+            <a class="navbar-item" href="http://www.apache.org/foundation/thanks.html">Thanks</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="navbar-end">
+        <div class="navbar-item">
+          <div class="field is-grouped">
+            <p class="control">
+              <a class="button bk-twitter" href="https://twitter.com/asfbookkeeper">
+                <span class="icon">
+                  <i class="fa fa-twitter"></i>
+                </span>
+                <span>Twitter</span>
+              </a>
+            </p>
+            <p class="control">
+              <a class="button" href="https://github.com/apache/bookkeeper">
+                <span class="icon">
+                  <i class="fa fa-github"></i>
+                </span>
+                <span>GitHub</span>
+              </a>
+            </p>
+            <p class="control">
+              <a class="button is-primary" href="/docs/getting-started/installation#download">
+                <span class="icon">
+                  <i class="fa fa-download"></i>
+                </span>
+                <span>Download</span>
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</div>
+
+      <div class="bk-docs-container">
+  <div class="columns is-gapless">
+    <div class="column is-2 is-hidden-mobile">
+      <div class="container">
+        
+<aside class="sidebar">
+  
+  <p>
+    Getting started
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/getting-started/installation">
+      Installation
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/getting-started/run-locally">
+      Run bookies locally
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/getting-started/concepts">
+      Concepts and architecture
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Deployment
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li class="active">
+      <a href="/docs/deployment/manual">
+      Manual deployment
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/deployment/dcos">
+      BookKeeper on DC/OS
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Administration
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/admin/bookies">
+      BookKeeper administration
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/admin/autorecovery">
+      AutoRecovery
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/admin/metrics">
+      Metric collection
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    API
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/api/overview">
+      Overview
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/api/ledger-api">
+      Ledger API
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/api/distributedlog-api">
+      DistributedLog
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Development
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/development/protocol">
+      BookKeeper protocol
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Reference
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/reference/config">
+      Configuration
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/reference/cli">
+      Command-line tools
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/reference/metrics">
+      Metrics
+      </a>
+    </li>
+    
+  </ul>
+  
+  <hr />
+  <a class="button is-info">
+    Latest version: 4.5.0
+  </a>
+</aside>
+
+      </div>
+    </div>
+
+    <div class="column is-8 bk-docs-block">
+      <header class="docs-title">
+        <nav class="level bk-level">
+          <div class="level-left">
+            <div class="level-item">
+              <h1 class="title">Manual deployment</h1>
+            </div>
+          </div>
+          
+        </nav>
+
+        
+      </header>
+
+      <hr />
+
+      <div class="content">
+        <section class="bk-main-content">
+          <p>The easiest way to deploy BookKeeper is using schedulers like <a href="../dcos">DC/OS</a>, but you can also deploy BookKeeper clusters manually. A BookKeeper cluster consists of two main components:</p>
+
+<ul>
+  <li>A <a href="#zookeeper-setup">ZooKeeper</a> cluster that is used for configuration- and coordination-related tasks</li>
+  <li>An <a href="#starting-up-bookies">ensemble</a> of <span class="pop" id="bookie-popover">bookies</span></li>
+</ul>
+
+<h2 id="zookeeper-setup">ZooKeeper setup</h2>
+
+<p>We won’t provide a full guide to setting up a ZooKeeper cluster here. We recommend that you consult <a href="https://zookeeper.apache.org/doc/current/zookeeperAdmin.html">this guide</a> in the official ZooKeeper documentation.</p>
+
+<h2 id="starting-up-bookies">Starting up bookies</h2>
+
+<p>Once your ZooKeeper cluster is up and running, you can start up as many <span class="pop" id="bookie-popover">bookies</span> as you’d like to form a cluster. Before starting up each bookie, you need to modify the bookie’s configuration to make sure that it points to the right ZooKeeper cluster.</p>
+
+<p>On each bookie host, you need to <a href="../../getting-started/installation#download">download</a> the BookKeeper package as a tarball. Once you’ve done that, you need to configure the bookie by setting values in the <code class="highlighter-rouge">bookkeeper-server/conf/bk_server.conf</code> config file. The one parameter that you will absolutely need to change is the <a href="../../config#zkServers"><code class="highlighter-rouge">zkServers</code></a> parameter, which you will need to set to the ZooKeeper connection string for your ZooKeeper cluster. Here’s an example:</p>
+
+<div class="language-properties highlighter-rouge"><pre class="highlight"><code><span class="py">zkServers</span><span class="p">=</span><span class="s">100.0.0.1:2181,100.0.0.2:2181,100.0.0.3:2181</span>
+</code></pre>
+</div>
+
+<blockquote>
+  <p>A full listing of configurable parameters available in <code class="highlighter-rouge">bookkeeper-server/conf/bk_server.conf</code> can be found in the <a href="../../reference/config">Configuration</a> reference manual.</p>
+</blockquote>
+
+<p>Once the bookie’s configuration is set, you can start it up using the <a href="../../reference/cli#bookkeeper-bookie"><code class="highlighter-rouge">bookie</code></a> command of the <a href="../../reference/cli#bookkeeper"><code class="highlighter-rouge">bookkeeper</code></a> CLI tool:</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper bookie
+</code></pre>
+</div>
+
+<blockquote>
+  <p>You can also build BookKeeper <a href="../../getting-started/installation#clone">by cloning it from source</a> or <a href="../../getting-started/installation#build-using-maven">using Maven</a>.</p>
+</blockquote>
+
+<h3 id="system-requirements">System requirements</h3>
+
+<p>The number of bookies you should run in a BookKeeper cluster depends on the quorum mode that you’ve chosen, the desired throughput, and the number of clients using the cluster simultaneously.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Quorum type</th>
+      <th style="text-align: left">Number of bookies</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left">Self-verifying quorum</td>
+      <td style="text-align: left">3</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">Generic</td>
+      <td style="text-align: left">4</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Increasing the number of bookies will enable higher throughput, and there is <strong>no upper limit</strong> on the number of bookies.</p>
+
+<h2 id="cluster-metadata-setup">Cluster metadata setup</h2>
+
+<p>Once you’ve started up a cluster of bookies, you need to set up cluster metadata for the cluster by running the following command from any bookie in the cluster:</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell metaformat
+</code></pre>
+</div>
+
+<p>You can run in the formatting</p>
+
+<blockquote>
+  <p>The <code class="highlighter-rouge">metaformat</code> command performs all the necessary ZooKeeper cluster metadata tasks and thus only needs to be run <em>once</em> and from <em>any</em> bookie in the BookKeeper cluster.</p>
+</blockquote>
+
+<p>Once cluster metadata formatting has been completed, your BookKeeper cluster is ready to go!</p>
+
+<!--
+## AutoRecovery
+
+[this guide](../../admin/autorecovery)
+-->
+
+        </section>
+
+        
+      </div>
+    </div>
+
+    <div class="column is-2 is-hidden-mobile">
+      
+      
+<div class="toc">
+  <h2 class="title">Manual deployment</h2>
+  <ul class="section-nav">
+<li class="toc-entry toc-h2"><a href="#zookeeper-setup">ZooKeeper setup</a></li>
+<li class="toc-entry toc-h2"><a href="#starting-up-bookies">Starting up bookies</a></li>
+<li class="toc-entry toc-h3"><a href="#system-requirements">System requirements</a></li>
+<li class="toc-entry toc-h2"><a href="#cluster-metadata-setup">Cluster metadata setup</a></li>
+</ul>
+</div>
+
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+<div id="entry-popover-html" class="popover-template">
+  <p>An entry is a sequence of bytes (plus some metadata) written to a BookKeeper ledger. Entries are also known as records.</p>
+
+</div>
+
+<div id="ledger-popover-html" class="popover-template">
+  <p>A ledger is a sequence of entries written to BookKeeper. Entries are written sequentially to ledgers and at most once, giving ledgers append-only semantics.</p>
+
+</div>
+
+<div id="bookie-popover-html" class="popover-template">
+  <p>A bookie is an individial BookKeeper storage server.</p>
+
+<p>Bookies store the content of ledgers and act as a distributed ensemble.</p>
+
+</div>
+
+<div id="rereplication-popover-html" class="popover-template">
+  <p>A subsystem that runs in the background on bookies to ensure that ledgers are fully replicated even if one bookie from the ensemble is down.</p>
+
+</div>
+
+<div id="striping-popover-html" class="popover-template">
+  <p>Striping is the process of distributing BookKeeper ledgers to sub-groups of bookies rather than to all bookies in a BookKeeper ensemble.</p>
+
+<p>Striping is essential to ensuring fast performance.</p>
+
+</div>
+
+<div id="journal-popover-html" class="popover-template">
+  <p>A journal file stores BookKeeper transaction logs.</p>
+
+</div>
+
+<div id="fencing-popover-html" class="popover-template">
+  <p>When a reader forces a ledger to close, preventing any further entries from being written to the ledger.</p>
+
+</div>
+
+<div id="record-popover-html" class="popover-template">
+  <p>A record is a sequence of bytes (plus some metadata) written to a BookKeeper ledger. Records are also known as entries.</p>
+
+</div>
+
+
+<script type="text/javascript">
+
+tippy('#entry-popover', {
+  html: '#entry-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#ledger-popover', {
+  html: '#ledger-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#bookie-popover', {
+  html: '#bookie-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#rereplication-popover', {
+  html: '#rereplication-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#striping-popover', {
+  html: '#striping-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#journal-popover', {
+  html: '#journal-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#fencing-popover', {
+  html: '#fencing-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#record-popover', {
+  html: '#record-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+</script>
+
+    </main>
+
+    <footer class="footer">
+  <div class="container">
+    <div class="content has-text-centered">
+      <p>
+        Copyright &copy; 2016 - 2017 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
+      </p>
+    </div>
+  </div>
+</footer>
+
+  </body>
+
+  <script src="/js/app.js"></script>
+
+</html>

@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Apache BookKeeper - The Ledger API</title>
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet" href="/css/normalize.css">
+<link rel="stylesheet" href="/css/tippy.css">
+<link rel="stylesheet" href="/css/style.css">
+
+<link rel="shortcut icon" href="/img/favicon.ico">
+
+<script src="/js/tippy.min.js"></script>
+
+<script type="text/javascript">
+  var shiftWindow = function() { scrollBy(0, -108); };
+  window.addEventListener("hashchange", shiftWindow);
+  window.addEventListener("pageshow", shiftWindow);
+  function load() { if (window.location.hash) shiftWindow(); }
+</script>
+
+  </head>
+  <body class="body">
+    <main class="main">
+      
+<div class="bk-topnav">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item bk-brand" href="/">
+        Apache BookKeeper
+      </a>
+
+      <!--
+      <a class="navbar-item is-hidden-desktop bk-github" href="https://github.com/apache/bookkeeper" target="_blank">
+        <span class="icon">
+          <i class="fa fa-github"></i>
+        </span>
+      </a>
+
+      <a class="navbar-item is-hidden-desktop bk-twitter" href="https://twitter.com/jgthms" target="_blank">
+        <span class="icon">
+          <i class="fa fa-twitter"></i>
+        </span>
+      </a>
+      -->
+
+      <div class="navbar-burger" data-target="bkNav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+
+    <div id="bkNav" class="navbar-menu">
+      <div class="navbar-start">
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Documentation</a>
+          <div class="navbar-dropdown is-boxed">
+            
+            <a class="navbar-item" href="/docs/getting-started/installation">
+              Version 4.5.0
+              <span class="tag is-success">LATEST</span>
+            </a>
+            
+            <hr class="dropdown-divider">
+            <a class="navbar-item" href="/javadoc">
+              <span class="icon bk-javadoc-icon">
+                <img src="/img/java-icon.svg">
+              </span>
+              Javadoc
+            </a>
+          </div>
+        </div>
+
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Community</a>
+          <div class="navbar-dropdown is-boxed">
+            <a class="navbar-item" href="/community/mailing-lists">Mailing lists</a>
+            <a class="navbar-item" href="/community/irc">IRC</a>
+            <a class="navbar-item" href="/community/contributing">Contributing</a>
+            <a class="navbar-item" href="https://issues.apache.org/jira/projects/BOOKKEEPER">JIRA Issue Tracker</a>
+          </div>
+        </div>
+        
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Project</a>
+          <div class="navbar-dropdown is-boxed">
+            <a class="navbar-item" href="/project/who">Who are we?</a>
+            <a class="navbar-item" href="/project/bylaws">Bylaws</a>
+            <a class="navbar-item" href="http://www.apache.org/licenses/">License</a>
+            <hr class="dropdown-divider">
+            <a class="navbar-item" href="/project/privacy">Privacy policy</a>
+            <a class="navbar-item" href="http://www.apache.org/foundation/sponsorship.html">Sponsorship</a>
+            <a class="navbar-item" href="http://www.apache.org/foundation/thanks.html">Thanks</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="navbar-end">
+        <div class="navbar-item">
+          <div class="field is-grouped">
+            <p class="control">
+              <a class="button bk-twitter" href="https://twitter.com/asfbookkeeper">
+                <span class="icon">
+                  <i class="fa fa-twitter"></i>
+                </span>
+                <span>Twitter</span>
+              </a>
+            </p>
+            <p class="control">
+              <a class="button" href="https://github.com/apache/bookkeeper">
+                <span class="icon">
+                  <i class="fa fa-github"></i>
+                </span>
+                <span>GitHub</span>
+              </a>
+            </p>
+            <p class="control">
+              <a class="button is-primary" href="/docs/getting-started/installation#download">
+                <span class="icon">
+                  <i class="fa fa-download"></i>
+                </span>
+                <span>Download</span>
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</div>
+
+      <div class="bk-docs-container">
+  <div class="columns is-gapless">
+    <div class="column is-2 is-hidden-mobile">
+      <div class="container">
+        
+<aside class="sidebar">
+  
+  <p>
+    Getting started
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/getting-started/installation">
+      Installation
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/getting-started/run-locally">
+      Run bookies locally
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/getting-started/concepts">
+      Concepts and architecture
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Deployment
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/deployment/manual">
+      Manual deployment
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/deployment/dcos">
+      BookKeeper on DC/OS
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Administration
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/admin/bookies">
+      BookKeeper administration
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/admin/autorecovery">
+      AutoRecovery
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/admin/metrics">
+      Metric collection
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    API
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/api/overview">
+      Overview
+      </a>
+    </li>
+    
+    
+    <li class="active">
+      <a href="/docs/api/ledger-api">
+      Ledger API
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/api/distributedlog-api">
+      DistributedLog
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Development
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/development/protocol">
+      BookKeeper protocol
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Reference
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/reference/config">
+      Configuration
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/reference/cli">
+      Command-line tools
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/reference/metrics">
+      Metrics
+      </a>
+    </li>
+    
+  </ul>
+  
+  <hr />
+  <a class="button is-info">
+    Latest version: 4.5.0
+  </a>
+</aside>
+
+      </div>
+    </div>
+
+    <div class="column is-8 bk-docs-block">
+      <header class="docs-title">
+        <nav class="level bk-level">
+          <div class="level-left">
+            <div class="level-item">
+              <h1 class="title">The Ledger API</h1>
+            </div>
+          </div>
+          
+        </nav>
+
+        
+      </header>
+
+      <hr />
+
+      <div class="content">
+        <section class="bk-main-content">
+          <p>The ledger API is a lower-level API for BookKeeper that enables you to interact with <span class="pop" id="ledger-popover">ledgers</span> directly.</p>
+
+<h2 id="the-java-ledger-api-client">The Java ledger API client</h2>
+
+<p>To get started with the Java client for BookKeeper, install the <code class="highlighter-rouge">bookkeeper-server</code> library as a dependency in your Java application.</p>
+
+<blockquote>
+  <p>For a more in-depth tutorial that involves a real use case for BookKeeper, see the <a href="../example-application">Example application</a> guide.</p>
+</blockquote>
+
+<h2 id="installation">Installation</h2>
+
+<p>The BookKeeper Java client library is available via <a href="http://search.maven.org/">Maven Central</a> and can be installed using <a href="#maven">Maven</a>, <a href="#gradle">Gradle</a>, and other build tools.</p>
+
+<h3 id="maven">Maven</h3>
+
+<p>If you’re using <a href="https://maven.apache.org/">Maven</a>, add this to your <a href="https://maven.apache.org/guides/introduction/introduction-to-the-pom.html"><code class="highlighter-rouge">pom.xml</code></a> build configuration file:</p>
+
+<div class="language-xml highlighter-rouge"><pre class="highlight"><code><span class="c">&lt;!-- in your &lt;properties&gt; block --&gt;</span>
+<span class="nt">&lt;bookkeeper.version&gt;</span>4.5.0<span class="nt">&lt;/bookkeeper.version&gt;</span>
+
+<span class="c">&lt;!-- in your &lt;dependencies&gt; block --&gt;</span>
+<span class="nt">&lt;dependency&gt;</span>
+  <span class="nt">&lt;groupId&gt;</span>org.apache.bookkeeper<span class="nt">&lt;/groupId&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>bookkeeper-server<span class="nt">&lt;/artifactId&gt;</span>
+  <span class="nt">&lt;version&gt;</span>${bookkeeper.version}<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+</code></pre>
+</div>
+
+<h3 id="gradle">Gradle</h3>
+
+<p>If you’re using <a href="https://gradle.org/">Gradle</a>, add this to your <a href="https://spring.io/guides/gs/gradle/"><code class="highlighter-rouge">build.gradle</code></a> build configuration file:</p>
+
+<div class="language-groovy highlighter-rouge"><pre class="highlight"><code><span class="n">dependencies</span> <span class="o">{</span>
+    <span class="n">compile</span> <span class="nl">group:</span> <span class="s1">'org.apache.bookkeeper'</span><span class="o">,</span> <span class="nl">name:</span> <span class="s1">'bookkeeper-server'</span><span class="o">,</span> <span class="nl">version:</span> <span class="s1">'4.5.0'</span>
+<span class="o">}</span>
+
+<span class="c1">// Alternatively:</span>
+<span class="n">dependencies</span> <span class="o">{</span>
+    <span class="n">compile</span> <span class="s1">'org.apache.bookkeeper:bookkeeper-server:4.5.0'</span>
+<span class="o">}</span>
+</code></pre>
+</div>
+
+<h2 id="connection-string">Connection string</h2>
+
+<p>When interacting with BookKeeper using the Java client, you need to provide your client with a connection string, for which you have three options:</p>
+
+<ul>
+  <li>Provide your entire ZooKeeper connection string, for example <code class="highlighter-rouge">zk1:2181,zk2:2181,zk3:2181</code>.</li>
+  <li>Provide a host and port for one node in your ZooKeeper cluster, for example <code class="highlighter-rouge">zk1:2181</code>. In general, it’s better to provide a full connection string (in case the ZooKeeper node you attempt to connect to is down).</li>
+  <li>If your ZooKeeper cluster can be discovered via DNS, you can provide the DNS name, for example <code class="highlighter-rouge">my-zookeeper-cluster.com</code>.</li>
+</ul>
+
+<h2 id="creating-a-new-client">Creating a new client</h2>
+
+<p>In order to create a new <a href="/javadoc/org/apache/bookkeeper/client/BookKeeper"><code class="highlighter-rouge">BookKeeper</code></a> client object, you need to pass in a <a href="#connection-string">connection string</a>. Here is an example client object using a ZooKeeper connection string:</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="k">try</span> <span class="o">{</span>
+    <span class="n">String</span> <span class="n">connectionString</span> <span class="o">=</span> <span class="s">"127.0.0.1:2181"</span><span class="o">;</span> <span class="c1">// For a single-node, local ZooKeeper cluster</span>
+    <span class="n">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BookKeeper</span><span class="o">(</span><span class="n">connectionString</span><span class="o">);</span>
+<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">InterruptedException</span> <span class="o">|</span> <span class="n">IOException</span> <span class="o">|</span> <span class="n">KeeperException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+<span class="o">}</span>
+</code></pre>
+</div>
+
+<blockquote>
+  <p>If you’re running BookKeeper <a href="../../getting-started/run-locally">locally</a>, using the <a href="../../reference/cli#bookkeeper-localbookie"><code class="highlighter-rouge">localbookie</code></a> command, use <code class="highlighter-rouge">"127.0.0.1:2181"</code> for your connection string, as in the example above.</p>
+</blockquote>
+
+<p>There are, however, other ways that you can create a client object:</p>
+
+<ul>
+  <li>
+    <p>By passing in a <a href="/javadoc/org/apache/bookkeeper/conf/ClientConfiguration"><code class="highlighter-rouge">ClientConfiguration</code></a> object. Here’s an example:</p>
+
+    <div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">ClientConfiguration</span> <span class="n">config</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ClientConfiguration</span><span class="o">();</span>
+<span class="n">config</span><span class="o">.</span><span class="na">setZkServers</span><span class="o">(</span><span class="n">zkConnectionString</span><span class="o">);</span>
+<span class="n">config</span><span class="o">.</span><span class="na">setAddEntryTimeout</span><span class="o">(</span><span class="mi">2000</span><span class="o">);</span>
+<span class="n">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BookKeeper</span><span class="o">(</span><span class="n">config</span><span class="o">);</span>
+</code></pre>
+    </div>
+  </li>
+  <li>
+    <p>By specifying a <code class="highlighter-rouge">ClientConfiguration</code> and a <a href="http://zookeeper.apache.org/doc/current/api/org/apache/zookeeper/ZooKeeper.html"><code class="highlighter-rouge">ZooKeeper</code></a> client object:</p>
+
+    <div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">ClientConfiguration</span> <span class="n">config</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ClientConfiguration</span><span class="o">();</span>
+<span class="n">config</span><span class="o">.</span><span class="na">setAddEntryTimeout</span><span class="o">(</span><span class="mi">5000</span><span class="o">);</span>
+<span class="n">ZooKeeper</span> <span class="n">zkClient</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ZooKeeper</span><span class="o">(</span><span class="cm">/* client args */</span><span class="o">);</span>
+<span class="n">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BookKeeper</span><span class="o">(</span><span class="n">config</span><span class="o">,</span> <span class="n">zkClient</span><span class="o">);</span>
+</code></pre>
+    </div>
+  </li>
+  <li>
+    <p>Using the <code class="highlighter-rouge">forConfig</code> method:</p>
+
+    <div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="n">BookKeeper</span><span class="o">.</span><span class="na">forConfig</span><span class="o">(</span><span class="n">conf</span><span class="o">).</span><span class="na">build</span><span class="o">();</span>
+</code></pre>
+    </div>
+  </li>
+</ul>
+
+<h2 id="creating-ledgers">Creating ledgers</h2>
+
+<p>The easiest way to create a <span class="pop" id="ledger-popover">ledger</span> using the Java client is via the <code class="highlighter-rouge">createLedger</code> method, which creates a new ledger synchronously and returns a <a href="/javadoc/org/apache/bookkeeper/client/LedgerHandle"><code class="highlighter-rouge">LedgerHandle</code></a>. You must specify at least a <a href="/javadoc/org/apache/bookkeeper/client/BookKeeper.DigestType"><code class="highlighter-rouge">DigestType</code></a> and a password.</p>
+
+<p>Here’s an example:</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kt">byte</span><span class="o">[]</span> <span class="n">password</span> <span class="o">=</span> <span class="s">"some-password"</span><span class="o">.</span><span class="na">getBytes</span><span class="o">();</span>
+<span class="n">LedgerHandle</span> <span class="n">handle</span> <span class="o">=</span> <span class="n">bkClient</span><span class="o">.</span><span class="na">createLedger</span><span class="o">(</span><span class="n">BookKeeper</span><span class="o">.</span><span class="na">DigestType</span><span class="o">.</span><span class="na">MAC</span><span class="o">,</span> <span class="n">password</span><span class="o">);</span>
+</code></pre>
+</div>
+
+<p>You can also create ledgers asynchronously</p>
+
+<h3 id="create-ledgers-asynchronously">Create ledgers asynchronously</h3>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kd">class</span> <span class="nc">LedgerCreationCallback</span> <span class="kd">implements</span> <span class="n">AsyncCallback</span><span class="o">.</span><span class="na">CreateCallback</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">createComplete</span><span class="o">(</span><span class="kt">int</span> <span class="n">returnCode</span><span class="o">,</span> <span class="n">LedgerHandle</span> <span class="n">handle</span><span class="o">,</span> <span class="n">Object</span> <span class="n">ctx</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Ledger successfully created"</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+<span class="n">client</span><span class="o">.</span><span class="na">asyncCreateLedger</span><span class="o">(</span>
+        <span class="mi">3</span><span class="o">,</span>
+        <span class="mi">2</span><span class="o">,</span>
+        <span class="n">BookKeeper</span><span class="o">.</span><span class="na">DigestType</span><span class="o">.</span><span class="na">MAC</span><span class="o">,</span>
+        <span class="n">password</span><span class="o">,</span>
+        <span class="k">new</span> <span class="nf">LedgerCreationCallback</span><span class="o">(),</span>
+        <span class="s">"some context"</span>
+<span class="o">);</span>
+</code></pre>
+</div>
+
+<h2 id="adding-entries-to-ledgers">Adding entries to ledgers</h2>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kt">long</span> <span class="n">entryId</span> <span class="o">=</span> <span class="n">ledger</span><span class="o">.</span><span class="na">addEntry</span><span class="o">(</span><span class="s">"Some entry data"</span><span class="o">.</span><span class="na">getBytes</span><span class="o">());</span>
+</code></pre>
+</div>
+
+<h3 id="add-entries-asynchronously">Add entries asynchronously</h3>
+
+<h2 id="reading-entries-from-ledgers">Reading entries from ledgers</h2>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">Enumerator</span><span class="o">&lt;</span><span class="n">LedgerEntry</span><span class="o">&gt;</span> <span class="n">entries</span> <span class="o">=</span> <span class="n">handle</span><span class="o">.</span><span class="na">readEntries</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">99</span><span class="o">);</span>
+</code></pre>
+</div>
+
+<p>To read all possible entries from the ledger:</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">Enumerator</span><span class="o">&lt;</span><span class="n">LedgerEntry</span><span class="o">&gt;</span> <span class="n">entries</span> <span class="o">=</span>
+  <span class="n">handle</span><span class="o">.</span><span class="na">readEntries</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">handle</span><span class="o">.</span><span class="na">getLastAddConfirmed</span><span class="o">());</span>
+
+<span class="k">while</span> <span class="o">(</span><span class="n">entries</span><span class="o">.</span><span class="na">hasNextElement</span><span class="o">())</span> <span class="o">{</span>
+    <span class="n">LedgerEntry</span> <span class="n">entry</span> <span class="o">=</span> <span class="n">entries</span><span class="o">.</span><span class="na">nextElement</span><span class="o">();</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Successfully read entry "</span> <span class="o">+</span> <span class="n">entry</span><span class="o">.</span><span class="na">getId</span><span class="o">());</span>
+<span class="o">}</span>
+</code></pre>
+</div>
+
+<h2 id="deleting-ledgers">Deleting ledgers</h2>
+
+<p><span class="pop" id="ledger-popover">Ledgers</span> can also be deleted synchronously or asynchronously.</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kt">long</span> <span class="n">ledgerId</span> <span class="o">=</span> <span class="mi">1234</span><span class="o">;</span>
+
+<span class="k">try</span> <span class="o">{</span>
+    <span class="n">bkClient</span><span class="o">.</span><span class="na">deleteLedger</span><span class="o">(</span><span class="n">ledgerId</span><span class="o">);</span>
+<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+  <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+<span class="o">}</span>
+</code></pre>
+</div>
+
+<h3 id="delete-entries-asynchronously">Delete entries asynchronously</h3>
+
+<p>Exceptions thrown:</p>
+
+<p>*</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kd">class</span> <span class="nc">DeleteEntryCallback</span> <span class="kd">implements</span> <span class="n">AsyncCallback</span><span class="o">.</span><span class="na">DeleteCallback</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">deleteComplete</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Delete completed"</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre>
+</div>
+
+<h2 id="simple-example">Simple example</h2>
+
+<blockquote>
+  <p>For a more involved BookKeeper client example, see the <a href="#example-application">example application</a> below.</p>
+</blockquote>
+
+<p>In the code sample below, a BookKeeper client:</p>
+
+<ul>
+  <li>creates a ledger</li>
+  <li>writes entries to the ledger</li>
+  <li>closes the ledger (meaning no further writes are possible)</li>
+  <li>re-opens the ledger for reading</li>
+  <li>reads all available entries</li>
+</ul>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="c1">// Create a client object for the local ensemble. This</span>
+<span class="c1">// operation throws multiple exceptions, so make sure to</span>
+<span class="c1">// use a try/catch block when instantiating client objects.</span>
+<span class="n">BookKeeper</span> <span class="n">bkc</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BookKeeper</span><span class="o">(</span><span class="s">"localhost:2181"</span><span class="o">);</span>
+
+<span class="c1">// A password for the new ledger</span>
+<span class="kt">byte</span><span class="o">[]</span> <span class="n">ledgerPassword</span> <span class="o">=</span> <span class="cm">/* some sequence of bytes, perhaps random */</span><span class="o">;</span>
+
+<span class="c1">// Create a new ledger and fetch its identifier</span>
+<span class="n">LedgerHandle</span> <span class="n">lh</span> <span class="o">=</span> <span class="n">bkc</span><span class="o">.</span><span class="na">createLedger</span><span class="o">(</span><span class="n">BookKeeper</span><span class="o">.</span><span class="na">DigestType</span><span class="o">.</span><span class="na">MAC</span><span class="o">,</span> <span class="n">ledgerPassword</span><span class="o">);</span>
+<span class="kt">long</span> <span class="n">ledgerId</span> <span class="o">=</span> <span class="n">lh</span><span class="o">.</span><span class="na">getId</span><span class="o">();</span>
+
+<span class="c1">// Create a buffer for four-byte entries</span>
+<span class="n">ByteBuffer</span> <span class="n">entry</span> <span class="o">=</span> <span class="n">ByteBuffer</span><span class="o">.</span><span class="na">allocate</span><span class="o">(</span><span class="mi">4</span><span class="o">);</span>
+
+<span class="kt">int</span> <span class="n">numberOfEntries</span> <span class="o">=</span> <span class="mi">100</span><span class="o">;</span>
+
+<span class="c1">// Add entries to the ledger, then close it</span>
+<span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">numberOfEntries</span><span class="o">;</span> <span class="n">i</span><span class="o">++){</span>
+	<span class="n">entry</span><span class="o">.</span><span class="na">putInt</span><span class="o">(</span><span class="n">i</span><span class="o">);</span>
+	<span class="n">entry</span><span class="o">.</span><span class="na">position</span><span class="o">(</span><span class="mi">0</span><span class="o">);</span>
+	<span class="n">lh</span><span class="o">.</span><span class="na">addEntry</span><span class="o">(</span><span class="n">entry</span><span class="o">.</span><span class="na">array</span><span class="o">());</span>
+<span class="o">}</span>
+<span class="n">lh</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
+
+<span class="c1">// Open the ledger for reading</span>
+<span class="n">lh</span> <span class="o">=</span> <span class="n">bkc</span><span class="o">.</span><span class="na">openLedger</span><span class="o">(</span><span class="n">ledgerId</span><span class="o">,</span> <span class="n">BookKeeper</span><span class="o">.</span><span class="na">DigestType</span><span class="o">.</span><span class="na">MAC</span><span class="o">,</span> <span class="n">ledgerPassword</span><span class="o">);</span>
+
+<span class="c1">// Read all available entries</span>
+<span class="n">Enumeration</span><span class="o">&lt;</span><span class="n">LedgerEntry</span><span class="o">&gt;</span> <span class="n">entries</span> <span class="o">=</span> <span class="n">lh</span><span class="o">.</span><span class="na">readEntries</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">numberOfEntries</span> <span class="o">-</span> <span class="mi">1</span><span class="o">);</span>
+
+<span class="k">while</span><span class="o">(</span><span class="n">entries</span><span class="o">.</span><span class="na">hasMoreElements</span><span class="o">())</span> <span class="o">{</span>
+	<span class="n">ByteBuffer</span> <span class="n">result</span> <span class="o">=</span> <span class="n">ByteBuffer</span><span class="o">.</span><span class="na">wrap</span><span class="o">(</span><span class="n">ls</span><span class="o">.</span><span class="na">nextElement</span><span class="o">().</span><span class="na">getEntry</span><span class="o">());</span>
+	<span class="n">Integer</span> <span class="n">retrEntry</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="na">getInt</span><span class="o">();</span>
+
+    <span class="c1">// Print the integer stored in each entry</span>
+    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">String</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">"Result: %s"</span><span class="o">,</span> <span class="n">retrEntry</span><span class="o">));</span>
+<span class="o">}</span>
+
+<span class="c1">// Close the ledger and the client</span>
+<span class="n">lh</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
+<span class="n">bkc</span><span class="o">.</span><span class="na">close</span><span class="o">();</span>
+</code></pre>
+</div>
+
+<p>Running this should return this output:</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code>Result: 0
+Result: 1
+Result: 2
+<span class="c"># etc</span>
+</code></pre>
+</div>
+
+<h2 id="example-application">Example application</h2>
+
+<p>This tutorial walks you through building an example application that uses BookKeeper as the replicated log. The application uses the <a href="../java-client">BookKeeper Java client</a> to interact with BookKeeper.</p>
+
+<blockquote>
+  <p>The code for this tutorial can be found in <a href="https://github.com/ivankelly/bookkeeper-tutorial/">this GitHub repo</a>. The final code for the <code class="highlighter-rouge">Dice</code> class can be found <a href="https://github.com/ivankelly/bookkeeper-tutorial/blob/master/src/main/java/org/apache/bookkeeper/Dice.java">here</a>.</p>
+</blockquote>
+
+<h3 id="setup">Setup</h3>
+
+<p>Before you start, you will need to have a BookKeeper cluster running locally on your machine. For installation instructions, see <a href="../../getting-started/installation">Installation</a>.</p>
+
+<p>To start up a cluster consisting of six <span class="pop" id="bookie-popover">bookies</span> locally:</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper localbookie 6
+</code></pre>
+</div>
+
+<p>You can specify a different number of bookies if you’d like.</p>
+
+<h3 id="goal">Goal</h3>
+
+<p>The goal of the dice application is to have</p>
+
+<ul>
+  <li>multiple instances of this application,</li>
+  <li>possibly running on different machines,</li>
+  <li>all of which display the exact same sequence of numbers.</li>
+</ul>
+
+<p>In other words, the log needs to be both durable and consistent, regardless of how many <span class="pop" id="bookie-popover">bookies</span> are participating in the BookKeeper ensemble. If one of the bookies crashes or becomes unable to communicate with the other bookies in any way, it should <em>still</em> display the same sequence of numbers as the others. This tutorial will show you how to achieve this.</p>
+
+<p>To begin, download the base application, compile and run it.</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>git clone https://github.com/ivankelly/bookkeeper-tutorial.git
+<span class="gp">$ </span>mvn package
+<span class="gp">$ </span>mvn <span class="nb">exec</span>:java -Dexec.mainClass<span class="o">=</span>org.apache.bookkeeper.Dice
+</code></pre>
+</div>
+
+<p>That should yield output that looks something like this:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>[INFO] Scanning for projects...
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building tutorial 1.0-SNAPSHOT
+[INFO] ------------------------------------------------------------------------
+[INFO]
+[INFO] --- exec-maven-plugin:1.3.2:java (default-cli) @ tutorial ---
+[WARNING] Warning: killAfter is now deprecated. Do you need it ? Please comment on MEXEC-6.
+Value = 4
+Value = 5
+Value = 3
+</code></pre>
+</div>
+
+<h3 id="the-base-application">The base application</h3>
+
+<p>The application in this tutorial is a dice application. The <code class="highlighter-rouge">Dice</code> class below has a <code class="highlighter-rouge">playDice</code> function that generates a random number between 1 and 6 every second, prints the value of the dice roll, and runs indefinitely.</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Dice</span> <span class="o">{</span>
+    <span class="n">Random</span> <span class="n">r</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Random</span><span class="o">();</span>
+
+    <span class="kt">void</span> <span class="nf">playDice</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+        <span class="k">while</span> <span class="o">(</span><span class="kc">true</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">Thread</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">1000</span><span class="o">);</span>
+            <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Value = "</span> <span class="o">+</span> <span class="o">(</span><span class="n">r</span><span class="o">.</span><span class="na">nextInt</span><span class="o">(</span><span class="mi">6</span><span class="o">)</span> <span class="o">+</span> <span class="mi">1</span><span class="o">));</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre>
+</div>
+
+<p>When you run the <code class="highlighter-rouge">main</code> function of this class, a new <code class="highlighter-rouge">Dice</code> object will be instantiated and then run indefinitely:</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Dice</span> <span class="o">{</span>
+    <span class="c1">// other methods</span>
+
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+        <span class="n">Dice</span> <span class="n">d</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Dice</span><span class="o">();</span>
+        <span class="n">d</span><span class="o">.</span><span class="na">playDice</span><span class="o">();</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre>
+</div>
+
+<h3 id="leaders-and-followers-and-a-bit-of-background">Leaders and followers (and a bit of background)</h3>
+
+<p>To achieve this common view in multiple instances of the program, we need each instance to agree on what the next number in the sequence will be. For example, the instances must agree that 4 is the first number and 2 is the second number and 5 is the third number and so on. This is a difficult problem, especially in the case that any instance may go away at any time, and messages between the instances can be lost or reordered.</p>
+
+<p>Luckily, there are already algorithms to solve this. Paxos is an abstract algorithm to implement this kind of agreement, while Zab and Raft are more practical protocols. This video gives a good overview about how these algorithms usually look. They all have a similar core.</p>
+
+<p>It would be possible to run the Paxos to agree on each number in the sequence. However, running Paxos each time can be expensive. What Zab and Raft do is that they use a Paxos-like algorithm to elect a leader. The leader then decides what the sequence of events should be, putting them in a log, which the other instances can then follow to maintain the same state as the leader.</p>
+
+<p>Bookkeeper provides the functionality for the second part of the protocol, allowing a leader to write events to a log and have multiple followers tailing the log. However, bookkeeper does not do leader election. You will need a zookeeper or raft instance for that purpose.</p>
+
+<h3 id="why-not-just-use-zookeeper">Why not just use ZooKeeper?</h3>
+
+<p>There are a number of reasons:</p>
+
+<ol>
+  <li>Zookeeper’s log is only exposed through a tree like interface. It can be hard to shoehorn your application into this.</li>
+  <li>A zookeeper ensemble of multiple machines is limited to one log. You may want one log per resource, which will become expensive very quickly.</li>
+  <li>Adding extra machines to a zookeeper ensemble does not increase capacity nor throughput.</li>
+</ol>
+
+<p>Bookkeeper can be seen as a means of exposing ZooKeeper’s replicated log to applications in a scalable fashion. ZooKeeper is still used by BookKeeper, however, to maintain consistency guarantees, though clients don’t need to interact with ZooKeeper directly.</p>
+
+<h3 id="electing-a-leader">Electing a leader</h3>
+
+<p>We’ll use zookeeper to elect a leader. A zookeeper instance will have started locally when you started the localbookie application above. To verify it’s running, run the following command.</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span><span class="nb">echo </span>stat | nc localhost 2181
+Zookeeper version: 3.4.6-1569965, built on 02/20/2014 09:09 GMT
+Clients:
+ /127.0.0.1:59343[1]<span class="o">(</span><span class="nv">queued</span><span class="o">=</span>0,recved<span class="o">=</span>40,sent<span class="o">=</span>41<span class="o">)</span>
+ /127.0.0.1:49354[1]<span class="o">(</span><span class="nv">queued</span><span class="o">=</span>0,recved<span class="o">=</span>11,sent<span class="o">=</span>11<span class="o">)</span>
+ /127.0.0.1:49361[0]<span class="o">(</span><span class="nv">queued</span><span class="o">=</span>0,recved<span class="o">=</span>1,sent<span class="o">=</span>0<span class="o">)</span>
+ /127.0.0.1:59344[1]<span class="o">(</span><span class="nv">queued</span><span class="o">=</span>0,recved<span class="o">=</span>38,sent<span class="o">=</span>39<span class="o">)</span>
+ /127.0.0.1:59345[1]<span class="o">(</span><span class="nv">queued</span><span class="o">=</span>0,recved<span class="o">=</span>38,sent<span class="o">=</span>39<span class="o">)</span>
+ /127.0.0.1:59346[1]<span class="o">(</span><span class="nv">queued</span><span class="o">=</span>0,recved<span class="o">=</span>38,sent<span class="o">=</span>39<span class="o">)</span>
+
+Latency min/avg/max: 0/0/23
+Received: 167
+Sent: 170
+Connections: 6
+Outstanding: 0
+Zxid: 0x11
+Mode: standalone
+Node count: 16
+</code></pre>
+</div>
+
+<p>To interact with zookeeper, we’ll use the Curator client rather than the stock zookeeper client. Getting things right with the zookeeper client can be tricky, and curator removes a lot of the pointy corners for you. In fact, curator even provides a leader election recipe, so we need to do very little work to get leader election in our application.</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">Dice</span> <span class="kd">extends</span> <span class="n">LeaderSelectorListenerAdapter</span> <span class="kd">implements</span> <span class="n">Closeable</span> <span class="o">{</span>
+
+    <span class="kd">final</span> <span class="kd">static</span> <span class="n">String</span> <span class="n">ZOOKEEPER_SERVER</span> <span class="o">=</span> <span class="s">"127.0.0.1:2181"</span><span class="o">;</span>
+    <span class="kd">final</span> <span class="kd">static</span> <span class="n">String</span> <span class="n">ELECTION_PATH</span> <span class="o">=</span> <span class="s">"/dice-elect"</span><span class="o">;</span>
+
+    <span class="o">...</span>
+
+    <span class="n">Dice</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+        <span class="n">curator</span> <span class="o">=</span> <span class="n">CuratorFrameworkFactory</span><span class="o">.</span><span class="na">newClient</span><span class="o">(</span><span class="n">ZOOKEEPER_SERVER</span><span class="o">,</span>
+                <span class="mi">2000</span><span class="o">,</span> <span class="mi">10000</span><span class="o">,</span> <span class="k">new</span> <span class="n">ExponentialBackoffRetry</span><span class="o">(</span><span class="mi">1000</span><span class="o">,</span> <span class="mi">3</span><span class="o">));</span>
+        <span class="n">curator</span><span class="o">.</span><span class="na">start</span><span class="o">();</span>
+        <span class="n">curator</span><span class="o">.</span><span class="na">blockUntilConnected</span><span class="o">();</span>
+
+        <span class="n">leaderSelector</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LeaderSelector</span><span class="o">(</span><span class="n">curator</span><span class="o">,</span> <span class="n">ELECTION_PATH</span><span class="o">,</span> <span class="k">this</span><span class="o">);</span>
+        <span class="n">leaderSelector</span><span class="o">.</span><span class="na">autoRequeue</span><span class="o">();</span>
+        <span class="n">leaderSelector</span><span class="o">.</span><span class="na">start</span><span class="o">();</span>
+    <span class="o">}</span>
+</code></pre>
+</div>
+
+<p>In the constructor for Dice, we need to create the curator client. We specify four things when creating the client, the location of the zookeeper service, the session timeout, the connect timeout and the retry policy.</p>
+
+<p>The session timeout is a zookeeper concept. If the zookeeper server doesn’t hear anything from the client for this amount of time, any leases which the client holds will be timed out. This is important in leader election. For leader election, the curator client will take a lease on ELECTION_PATH. The first instance to take the lease will become leader and the rest will become followers. However, their claim on the lease will remain in the cue. If the first instance then goes away, due to a crash etc., its session will timeout. Once the session times out, the lease will be released and the next instance in the queue will become the leader. The call to autoRequeue() will make the client queue itself again if it loses the lease for some other reason, such as if it was still alive, but it a garbage collection cycle caused it to lose its session, and thereby its lease. I’ve set the lease to be quite low so that when we test out leader election, transitions will be quite quick. The optimum length for session timeout depends very much on the use case. The other parameters are the connection timeout, i.e. the amount of time it will spend trying to connect to a zookeeper server before giving up, and the retry policy. The retry policy specifies how the client should respond to transient errors, such as connection loss. Operations that fail with transient errors can be retried, and this argument specifies how often the retries should occur.</p>
+
+<p>Finally, you’ll have noticed that Dice now extends LeaderSelectorListenerAdapter and implements Closeable. Closeable is there to close the resource we have initialized in the constructor, the curator client and the leaderSelector. LeaderSelectorListenerAdapter is a callback that the leaderSelector uses to notify the instance that it is now the leader. It is passed as the third argument to the LeaderSelector constructor.</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code>    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">takeLeadership</span><span class="o">(</span><span class="n">CuratorFramework</span> <span class="n">client</span><span class="o">)</span>
+            <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+        <span class="kd">synchronized</span> <span class="o">(</span><span class="k">this</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">leader</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+            <span class="k">try</span> <span class="o">{</span>
+                <span class="k">while</span> <span class="o">(</span><span class="kc">true</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="k">this</span><span class="o">.</span><span class="na">wait</span><span class="o">();</span>
+                <span class="o">}</span>
+            <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">InterruptedException</span> <span class="n">ie</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">().</span><span class="na">interrupt</span><span class="o">();</span>
+                <span class="n">leader</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre>
+</div>
+
+<p>takeLeadership() is the callback called by LeaderSelector when the instance is leader. It should only return when the instance wants to give up leadership. In our case, we never do so we wait on the current object until we’re interrupted. To signal to the rest of the program that we are leader we set a volatile boolean called leader to true. This is unset after we are interrupted.</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code>    <span class="kt">void</span> <span class="nf">playDice</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+        <span class="k">while</span> <span class="o">(</span><span class="kc">true</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">while</span> <span class="o">(</span><span class="n">leader</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">Thread</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">1000</span><span class="o">);</span>
+                <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Value = "</span> <span class="o">+</span> <span class="o">(</span><span class="n">r</span><span class="o">.</span><span class="na">nextInt</span><span class="o">(</span><span class="mi">6</span><span class="o">)</span> <span class="o">+</span> <span class="mi">1</span><span class="o">)</span>
+                                   <span class="o">+</span> <span class="s">", isLeader = "</span> <span class="o">+</span> <span class="n">leader</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre>
+</div>
+
+<p>Finally, we modify the <code class="highlighter-rouge">playDice</code> function to only generate random numbers when it is the leader.</p>
+
+<p>Run two instances of the program in two different terminals. You’ll see that one becomes leader and prints numbers and the other just sits there.</p>
+
+<p>Now stop the leader using Control-Z. This will pause the process, but it won’t kill it. You will be dropped back to the shell in that terminal. After a couple of seconds, the session timeout, you will see that the other instance has become the leader. Zookeeper will guarantee that only one instance is selected as leader at any time.</p>
+
+<p>Now go back to the shell that the original leader was on and wake up the process using fg. You’ll see something like the following:</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code>...
+...
+Value <span class="o">=</span> 4, isLeader <span class="o">=</span> <span class="nb">true
+</span>Value <span class="o">=</span> 4, isLeader <span class="o">=</span> <span class="nb">true</span>
+^Z
+<span class="o">[</span>1]+  Stopped                 mvn <span class="nb">exec</span>:java -Dexec.mainClass<span class="o">=</span>org.apache.bookkeeper.Dice
+<span class="gp">$ </span><span class="nb">fg
+</span>mvn <span class="nb">exec</span>:java -Dexec.mainClass<span class="o">=</span>org.apache.bookkeeper.Dice
+Value <span class="o">=</span> 3, isLeader <span class="o">=</span> <span class="nb">true
+</span>Value <span class="o">=</span> 1, isLeader <span class="o">=</span> <span class="nb">false</span>
+</code></pre>
+</div>
+
+        </section>
+
+        
+      </div>
+    </div>
+
+    <div class="column is-2 is-hidden-mobile">
+      
+      
+<div class="toc">
+  <h2 class="title">The Ledger API</h2>
+  <ul class="section-nav">
+<li class="toc-entry toc-h2"><a href="#the-java-ledger-api-client">The Java ledger API client</a></li>
+<li class="toc-entry toc-h2"><a href="#installation">Installation</a></li>
+<li class="toc-entry toc-h3"><a href="#maven">Maven</a></li>
+<li class="toc-entry toc-h3"><a href="#gradle">Gradle</a></li>
+<li class="toc-entry toc-h2"><a href="#connection-string">Connection string</a></li>
+<li class="toc-entry toc-h2"><a href="#creating-a-new-client">Creating a new client</a></li>
+<li class="toc-entry toc-h2"><a href="#creating-ledgers">Creating ledgers</a></li>
+<li class="toc-entry toc-h3"><a href="#create-ledgers-asynchronously">Create ledgers asynchronously</a></li>
+<li class="toc-entry toc-h2"><a href="#adding-entries-to-ledgers">Adding entries to ledgers</a></li>
+<li class="toc-entry toc-h3"><a href="#add-entries-asynchronously">Add entries asynchronously</a></li>
+<li class="toc-entry toc-h2"><a href="#reading-entries-from-ledgers">Reading entries from ledgers</a></li>
+<li class="toc-entry toc-h2"><a href="#deleting-ledgers">Deleting ledgers</a></li>
+<li class="toc-entry toc-h3"><a href="#delete-entries-asynchronously">Delete entries asynchronously</a></li>
+<li class="toc-entry toc-h2"><a href="#simple-example">Simple example</a></li>
+<li class="toc-entry toc-h2"><a href="#example-application">Example application</a></li>
+<li class="toc-entry toc-h3"><a href="#setup">Setup</a></li>
+<li class="toc-entry toc-h3"><a href="#goal">Goal</a></li>
+<li class="toc-entry toc-h3"><a href="#the-base-application">The base application</a></li>
+<li class="toc-entry toc-h3"><a href="#leaders-and-followers-and-a-bit-of-background">Leaders and followers (and a bit of background)</a></li>
+<li class="toc-entry toc-h3"><a href="#why-not-just-use-zookeeper">Why not just use ZooKeeper?</a></li>
+<li class="toc-entry toc-h3"><a href="#electing-a-leader">Electing a leader</a></li>
+</ul>
+</div>
+
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+<div id="entry-popover-html" class="popover-template">
+  <p>An entry is a sequence of bytes (plus some metadata) written to a BookKeeper ledger. Entries are also known as records.</p>
+
+</div>
+
+<div id="ledger-popover-html" class="popover-template">
+  <p>A ledger is a sequence of entries written to BookKeeper. Entries are written sequentially to ledgers and at most once, giving ledgers append-only semantics.</p>
+
+</div>
+
+<div id="bookie-popover-html" class="popover-template">
+  <p>A bookie is an individial BookKeeper storage server.</p>
+
+<p>Bookies store the content of ledgers and act as a distributed ensemble.</p>
+
+</div>
+
+<div id="rereplication-popover-html" class="popover-template">
+  <p>A subsystem that runs in the background on bookies to ensure that ledgers are fully replicated even if one bookie from the ensemble is down.</p>
+
+</div>
+
+<div id="striping-popover-html" class="popover-template">
+  <p>Striping is the process of distributing BookKeeper ledgers to sub-groups of bookies rather than to all bookies in a BookKeeper ensemble.</p>
+
+<p>Striping is essential to ensuring fast performance.</p>
+
+</div>
+
+<div id="journal-popover-html" class="popover-template">
+  <p>A journal file stores BookKeeper transaction logs.</p>
+
+</div>
+
+<div id="fencing-popover-html" class="popover-template">
+  <p>When a reader forces a ledger to close, preventing any further entries from being written to the ledger.</p>
+
+</div>
+
+<div id="record-popover-html" class="popover-template">
+  <p>A record is a sequence of bytes (plus some metadata) written to a BookKeeper ledger. Records are also known as entries.</p>
+
+</div>
+
+
+<script type="text/javascript">
+
+tippy('#entry-popover', {
+  html: '#entry-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#ledger-popover', {
+  html: '#ledger-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#bookie-popover', {
+  html: '#bookie-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#rereplication-popover', {
+  html: '#rereplication-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#striping-popover', {
+  html: '#striping-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#journal-popover', {
+  html: '#journal-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#fencing-popover', {
+  html: '#fencing-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#record-popover', {
+  html: '#record-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+</script>
+
+    </main>
+
+    <footer class="footer">
+  <div class="container">
+    <div class="content has-text-centered">
+      <p>
+        Copyright &copy; 2016 - 2017 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
+      </p>
+    </div>
+  </div>
+</footer>
+
+  </body>
+
+  <script src="/js/app.js"></script>
+
+</html>

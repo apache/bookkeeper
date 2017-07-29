@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Apache BookKeeper - BookKeeper configuration</title>
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet" href="/css/normalize.css">
+<link rel="stylesheet" href="/css/tippy.css">
+<link rel="stylesheet" href="/css/style.css">
+
+<link rel="shortcut icon" href="/img/favicon.ico">
+
+<script src="/js/tippy.min.js"></script>
+
+<script type="text/javascript">
+  var shiftWindow = function() { scrollBy(0, -108); };
+  window.addEventListener("hashchange", shiftWindow);
+  window.addEventListener("pageshow", shiftWindow);
+  function load() { if (window.location.hash) shiftWindow(); }
+</script>
+
+  </head>
+  <body class="body">
+    <main class="main">
+      
+<div class="bk-topnav">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item bk-brand" href="/">
+        Apache BookKeeper
+      </a>
+
+      <!--
+      <a class="navbar-item is-hidden-desktop bk-github" href="https://github.com/apache/bookkeeper" target="_blank">
+        <span class="icon">
+          <i class="fa fa-github"></i>
+        </span>
+      </a>
+
+      <a class="navbar-item is-hidden-desktop bk-twitter" href="https://twitter.com/jgthms" target="_blank">
+        <span class="icon">
+          <i class="fa fa-twitter"></i>
+        </span>
+      </a>
+      -->
+
+      <div class="navbar-burger" data-target="bkNav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+
+    <div id="bkNav" class="navbar-menu">
+      <div class="navbar-start">
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Documentation</a>
+          <div class="navbar-dropdown is-boxed">
+            
+            <a class="navbar-item" href="/docs/getting-started/installation">
+              Version 4.5.0
+              <span class="tag is-success">LATEST</span>
+            </a>
+            
+            <hr class="dropdown-divider">
+            <a class="navbar-item" href="/javadoc">
+              <span class="icon bk-javadoc-icon">
+                <img src="/img/java-icon.svg">
+              </span>
+              Javadoc
+            </a>
+          </div>
+        </div>
+
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Community</a>
+          <div class="navbar-dropdown is-boxed">
+            <a class="navbar-item" href="/community/mailing-lists">Mailing lists</a>
+            <a class="navbar-item" href="/community/irc">IRC</a>
+            <a class="navbar-item" href="/community/contributing">Contributing</a>
+            <a class="navbar-item" href="https://issues.apache.org/jira/projects/BOOKKEEPER">JIRA Issue Tracker</a>
+          </div>
+        </div>
+        
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Project</a>
+          <div class="navbar-dropdown is-boxed">
+            <a class="navbar-item" href="/project/who">Who are we?</a>
+            <a class="navbar-item" href="/project/bylaws">Bylaws</a>
+            <a class="navbar-item" href="http://www.apache.org/licenses/">License</a>
+            <hr class="dropdown-divider">
+            <a class="navbar-item" href="/project/privacy">Privacy policy</a>
+            <a class="navbar-item" href="http://www.apache.org/foundation/sponsorship.html">Sponsorship</a>
+            <a class="navbar-item" href="http://www.apache.org/foundation/thanks.html">Thanks</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="navbar-end">
+        <div class="navbar-item">
+          <div class="field is-grouped">
+            <p class="control">
+              <a class="button bk-twitter" href="https://twitter.com/asfbookkeeper">
+                <span class="icon">
+                  <i class="fa fa-twitter"></i>
+                </span>
+                <span>Twitter</span>
+              </a>
+            </p>
+            <p class="control">
+              <a class="button" href="https://github.com/apache/bookkeeper">
+                <span class="icon">
+                  <i class="fa fa-github"></i>
+                </span>
+                <span>GitHub</span>
+              </a>
+            </p>
+            <p class="control">
+              <a class="button is-primary" href="/docs/getting-started/installation#download">
+                <span class="icon">
+                  <i class="fa fa-download"></i>
+                </span>
+                <span>Download</span>
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</div>
+
+      <div class="bk-docs-container">
+  <div class="columns is-gapless">
+    <div class="column is-2 is-hidden-mobile">
+      <div class="container">
+        
+<aside class="sidebar">
+  
+  <p>
+    Getting started
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/getting-started/installation">
+      Installation
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/getting-started/run-locally">
+      Run bookies locally
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/getting-started/concepts">
+      Concepts and architecture
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Deployment
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/deployment/manual">
+      Manual deployment
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/deployment/dcos">
+      BookKeeper on DC/OS
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Administration
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/admin/bookies">
+      BookKeeper administration
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/admin/autorecovery">
+      AutoRecovery
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/admin/metrics">
+      Metric collection
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    API
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/api/overview">
+      Overview
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/api/ledger-api">
+      Ledger API
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/api/distributedlog-api">
+      DistributedLog
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Development
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/development/protocol">
+      BookKeeper protocol
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Reference
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li class="active">
+      <a href="/docs/reference/config">
+      Configuration
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/reference/cli">
+      Command-line tools
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/reference/metrics">
+      Metrics
+      </a>
+    </li>
+    
+  </ul>
+  
+  <hr />
+  <a class="button is-info">
+    Latest version: 4.5.0
+  </a>
+</aside>
+
+      </div>
+    </div>
+
+    <div class="column is-8 bk-docs-block">
+      <header class="docs-title">
+        <nav class="level bk-level">
+          <div class="level-left">
+            <div class="level-item">
+              <h1 class="title">BookKeeper configuration</h1>
+            </div>
+          </div>
+          
+        </nav>
+
+        <h2 class="subtitle">A reference guide to all of BookKeeper's configurable parameters</h2>
+      </header>
+
+      <hr />
+
+      <div class="content">
+        <section class="bk-main-content">
+          <p>The table below lists parameters that you can set to configure <span class="pop" id="bookie-popover">bookies</span>. All configuration takes place in the <code class="highlighter-rouge">bk_server.conf</code> file in the <code class="highlighter-rouge">bookkeeper-server/conf</code> directory of your <a href="../../getting-started/installing">BookKeeper installation</a>.</p>
+
+<h2 id="server-parameters">Server parameters</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr id="bookiePort">
+      <td><code>bookiePort</code></td>
+      <td><p>The port that the bookie server listens on.</p>
+</td>
+      <td><code>3181</code></td>
+    </tr>
+    
+    <tr id="journalDirectory">
+      <td><code>journalDirectory</code></td>
+      <td><p>The directory to which Bookkeeper outputs its write-ahead log (WAL).</p>
+</td>
+      <td><code>/tmp/bk-txn</code></td>
+    </tr>
+    
+    <tr id="indexDirectories">
+      <td><code>indexDirectories</code></td>
+      <td><p>The directories in which index files are stored. If not specified, the value of <a href="#ledgerDirectories"><code class="highlighter-rouge">ledgerDirectories</code></a> will be used.</p>
+</td>
+      <td><code>/tmp/bk-data</code></td>
+    </tr>
+    
+    <tr id="listeningInterface">
+      <td><code>listeningInterface</code></td>
+      <td><p>The network interface that the bookie should listen on. If not set, the bookie will listen on all interfaces.</p>
+</td>
+      <td><code>eth0</code></td>
+    </tr>
+    
+    <tr id="allowLoopback">
+      <td><code>allowLoopback</code></td>
+      <td><p>Whether the bookie is allowed to use a loopback interface as its primary
+interface (the interface it uses to establish its identity). By default, loopback interfaces are <em>not</em> allowed as the primary interface.</p>
+
+<p>Using a loopback interface as the primary interface usually indicates a configuration error. It’s fairly common in some VPS setups, for example, to not configure a hostname or to have the hostname resolve to 127.0.0.1. If this is the case, then all bookies in the cluster will establish their identities as 127.0.0.1:3181, and only one will be able to join the cluster. For VPSs configured like this, you should explicitly set the listening interface.</p>
+</td>
+      <td><code>false</code></td>
+    </tr>
+    
+    <tr id="bookieDeathWatchInterval">
+      <td><code>bookieDeathWatchInterval</code></td>
+      <td><p>Interval to watch whether bookie is dead or not, in milliseconds.</p>
+</td>
+      <td><code>1000</code></td>
+    </tr>
+    
+    <tr id="flushInterval">
+      <td><code>flushInterval</code></td>
+      <td><p>How long the interval to flush ledger index pages to disk, in milliseconds. Flushing index files will introduce much random disk I/O. If separating journal dir and ledger dirs each on different devices, flushing would not affect performance. But if putting journal dir and ledger dirs on same device, performance degrade significantly on too frequent flushing. You can consider increment flush interval to get better performance, but you need to pay more time on bookie server restart after failure.</p>
+</td>
+      <td><code>100</code></td>
+    </tr>
+    
+    <tr id="allowStorageExpansion">
+      <td><code>allowStorageExpansion</code></td>
+      <td><p>Allow the expansion of bookie storage capacity. Newly added ledger and index directories must be empty.</p>
+</td>
+      <td><code>false</code></td>
+    </tr>
+    
+    <tr id="useHostNameAsBookieID">
+      <td><code>useHostNameAsBookieID</code></td>
+      <td><p>Whether the bookie should use its hostname to register with the ZooKeeper coordination service. When <code class="highlighter-rouge">false</code>, the bookie will use its IP address for the registration.</p>
+</td>
+      <td><code>false</code></td>
+    </tr>
+    
+    <tr id="explicitLacInterval">
+      <td><code>explicitLacInterval</code></td>
+      <td><p>Interval between sending an explicit LAC in seconds</p>
+</td>
+      <td><code>1</code></td>
+    </tr>
+    
+    <tr id="lostBookieRecoveryDelay">
+      <td><code>lostBookieRecoveryDelay</code></td>
+      <td><p>How long to wait, in seconds, before starting autorecovery of a lost bookie.</p>
+</td>
+      <td><code>0</code></td>
+    </tr>
+     <!-- for param in group.params -->
+  </tbody>
+</table>
+
+<h2 id="garbage-collection-settings">Garbage collection settings</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr id="gcWaitTime">
+      <td><code>gcWaitTime</code></td>
+      <td><p>How long the interval to trigger next garbage collection, in milliseconds. Since garbage collection is running in background, too frequent gc will heart performance. It is better to give a higher number of gc interval if there is enough disk capacity.</p>
+</td>
+      <td><code>1000</code></td>
+    </tr>
+    
+    <tr id="gcOverreplicatedLedgerWaitTime">
+      <td><code>gcOverreplicatedLedgerWaitTime</code></td>
+      <td><p>How long the interval to trigger next garbage collection of overreplicated ledgers, in milliseconds. This should not be run very frequently since we read the metadata for all the ledgers on the bookie from zk.</p>
+</td>
+      <td><code>86400000</code></td>
+    </tr>
+    
+    <tr id="numAddWorkerThreads">
+      <td><code>numAddWorkerThreads</code></td>
+      <td><p>The number of threads that handle write requests. if zero, writes are handled by <a href="http://netty.io/wiki/thread-model.html">Netty threads</a> directly.</p>
+</td>
+      <td><code>1</code></td>
+    </tr>
+    
+    <tr id="numReadWorkerThreads">
+      <td><code>numReadWorkerThreads</code></td>
+      <td><p>The umber of threads that handle read requests. If 0, reads are handled by <a href="http://netty.io/wiki/thread-model.html">Netty threads</a> directly.</p>
+</td>
+      <td><code>1</code></td>
+    </tr>
+     <!-- for param in group.params -->
+  </tbody>
+</table>
+
+<h2 id="autorecovery-settings">AutoRecovery settings</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr id="auditorPeriodicBookieCheckInterval">
+      <td><code>auditorPeriodicBookieCheckInterval</code></td>
+      <td><p>The time interval between auditor bookie checks, in seconds. The auditor bookie check checks ledger metadata to see which bookies should contain entries for each ledger. If a bookie that should contain entries is unavailable, then the ledger containing that entry is marked for recovery. Setting this to 0 disables the periodic check. Bookie checks will still run when a bookie fails. The default is once per day.</p>
+</td>
+      <td><code>86400</code></td>
+    </tr>
+    
+    <tr id="rereplicationEntryBatchSize">
+      <td><code>rereplicationEntryBatchSize</code></td>
+      <td><p>The number of entries that a replication will rereplicate in parallel.</p>
+</td>
+      <td><code>10</code></td>
+    </tr>
+    
+    <tr id="openLedgerRereplicationGracePeriod">
+      <td><code>openLedgerRereplicationGracePeriod</code></td>
+      <td><p>The grace period, in seconds, that the replication worker waits before fencing and replicating a ledger fragment that’s still being written to upon bookie failure.</p>
+</td>
+      <td><code>30</code></td>
+    </tr>
+     <!-- for param in group.params -->
+  </tbody>
+</table>
+
+<h2 id="netty-server-settings">Netty server settings</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr id="serverTcpNoDelay">
+      <td><code>serverTcpNoDelay</code></td>
+      <td><p>This settings is used to enabled/disabled Nagle’s algorithm, which is a means of improving the efficiency of TCP/IP networks by reducing the number of packets that need to be sent over the network.</p>
+
+<p>If you are sending many small messages, such that more than one can fit in a single IP packet, setting server.tcpnodelay to false to enable Nagle algorithm can provide better performance.</p>
+</td>
+      <td><code>true</code></td>
+    </tr>
+     <!-- for param in group.params -->
+  </tbody>
+</table>
+
+<h2 id="journal-settings">Journal settings</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr id="journalMaxSizeMB">
+      <td><code>journalMaxSizeMB</code></td>
+      <td><p>Max file size of journal file, in mega bytes. A new journal file will be created when the old one reaches the file size limitation.</p>
+</td>
+      <td><code>2048</code></td>
+    </tr>
+    
+    <tr id="journalMaxBackups">
+      <td><code>journalMaxBackups</code></td>
+      <td><p>Max number of old journal file to kept. Keep a number of old journal files would help data recovery in specia case.</p>
+</td>
+      <td><code>5</code></td>
+    </tr>
+    
+    <tr id="journalPreAllocSizeMB">
+      <td><code>journalPreAllocSizeMB</code></td>
+      <td><p>How much space should we pre-allocate at a time in the journal.</p>
+</td>
+      <td><code>16</code></td>
+    </tr>
+    
+    <tr id="journalWriteBufferSizeKB">
+      <td><code>journalWriteBufferSizeKB</code></td>
+      <td><p>Size of the write buffers used for the journal.</p>
+</td>
+      <td><code>64</code></td>
+    </tr>
+    
+    <tr id="journalRemoveFromPageCache">
+      <td><code>journalRemoveFromPageCache</code></td>
+      <td><p>Should we remove pages from page cache after force write</p>
+</td>
+      <td><code>false</code></td>
+    </tr>
+    
+    <tr id="journalAdaptiveGroupWrites">
+      <td><code>journalAdaptiveGroupWrites</code></td>
+      <td><p>Should we group journal force writes, which optimize group commit for higher throughput.</p>
+</td>
+      <td><code>true</code></td>
+    </tr>
+    
+    <tr id="journalMaxGroupWaitMSec">
+      <td><code>journalMaxGroupWaitMSec</code></td>
+      <td><p>Maximum latency to impose on a journal write to achieve grouping.</p>
+</td>
+      <td><code>200</code></td>
+    </tr>
+    
+    <tr id="journalBufferedWritesThreshold">
+      <td><code>journalBufferedWritesThreshold</code></td>
+      <td><p>Maximum writes to buffer to achieve grouping.</p>
+</td>
+      <td><code>524288</code></td>
+    </tr>
+    
+    <tr id="journalFlushWhenQueueEmpty">
+      <td><code>journalFlushWhenQueueEmpty</code></td>
+      <td><p>If we should flush the journal when journal queue is empty.</p>
+</td>
+      <td><code>false</code></td>
+    </tr>
+    
+    <tr id="numJournalCallbackThreads">
+      <td><code>numJournalCallbackThreads</code></td>
+      <td><p>The number of threads that should handle journal callbacks.</p>
+</td>
+      <td><code>1</code></td>
+    </tr>
+     <!-- for param in group.params -->
+  </tbody>
+</table>
+
+<h2 id="ledger-storage-settings">Ledger storage settings</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr id="ledgerStorageClass">
+      <td><code>ledgerStorageClass</code></td>
+      <td><p>Ledger storage implementation class</p>
+</td>
+      <td><code>org.apache.bookkeeper.bookie.SortedLedgerStorage</code></td>
+    </tr>
+    
+    <tr id="ledgerDirectories">
+      <td><code>ledgerDirectories</code></td>
+      <td><p>The directory to which Bookkeeper outputs ledger snapshots. You can define multiple directories to store snapshots separated by a comma, for example <code class="highlighter-rouge">/tmp/data-dir1,/tmp/data-dir2</code>.</p>
+</td>
+      <td><code>/tmp/bk1-data,/tmp/bk2-data</code></td>
+    </tr>
+    
+    <tr id="auditorPeriodicCheckInterval">
+      <td><code>auditorPeriodicCheckInterval</code></td>
+      <td><p>The time interval, in seconds, at which the auditor will check all ledgers in the cluster. By default this runs once a week.</p>
+
+<p>Set this to 0 to disable the periodic check completely. Note that periodic checking will put extra load on the cluster, so it should not be run more frequently than once a day.</p>
+</td>
+      <td><code>604800</code></td>
+    </tr>
+     <!-- for param in group.params -->
+  </tbody>
+</table>
+
+<h2 id="ledger-cache-settings">Ledger cache settings</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr id="openFileLimit">
+      <td><code>openFileLimit</code></td>
+      <td><p>Max number of ledger index files could be opened in bookie server. If number of ledger index files reaches this limitation, bookie server started to swap some ledgers from memory to disk. Too frequent swap will affect performance. You can tune this number to gain performance according your requirements.</p>
+</td>
+      <td><code>900</code></td>
+    </tr>
+    
+    <tr id="pageSize">
+      <td><code>pageSize</code></td>
+      <td><p>Size of a index page in ledger cache, in bytes. A larger index page can improve performance writing page to disk, which is efficent when you have small number of ledgers and these ledgers have similar number of entries. If you have large number of ledgers and each ledger has fewer entries, smaller index page would improve memory usage.</p>
+</td>
+      <td><code>8192</code></td>
+    </tr>
+    
+    <tr id="pageLimit">
+      <td><code>pageLimit</code></td>
+      <td><p>How many index pages provided in ledger cache. If number of index pages reaches this limitation, bookie server starts to swap some ledgers from memory to disk. You can increment this value when you found swap became more frequent. But make sure pageLimit*pageSize should not more than JVM max memory limitation, otherwise you would got OutOfMemoryException. In general, incrementing pageLimit, using smaller index page would gain bettern performance in lager number of ledgers with fewer entries case. If pageLimit is -1, bookie server will use 1/3 of JVM memory to compute the limitation of number of index pages.</p>
+</td>
+      <td><code>1</code></td>
+    </tr>
+     <!-- for param in group.params -->
+  </tbody>
+</table>
+
+<h2 id="ledger-manager-settings">Ledger manager settings</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr id="ledgerManagerType">
+      <td><code>ledgerManagerType</code></td>
+      <td><p>The ledger manager type, which defines how ledgers are stored, managed, and garbage collected. See the <a href="../../getting-started/concepts#ledger-manager">Ledger Manager</a> guide for more details.</p>
+</td>
+      <td><code>flat</code></td>
+    </tr>
+    
+    <tr id="zkLedgersRootPath">
+      <td><code>zkLedgersRootPath</code></td>
+      <td><p>Root zookeeper path to store ledger metadata. This parameter is used by zookeeper-based ledger manager as a root znode to store all ledgers.</p>
+</td>
+      <td><code>/ledgers</code></td>
+    </tr>
+     <!-- for param in group.params -->
+  </tbody>
+</table>
+
+<h2 id="entry-log-settings">Entry log settings</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr id="logSizeLimit">
+      <td><code>logSizeLimit</code></td>
+      <td><p>Max file size of entry logger, in bytes. A new entry log file will be created when the old one reaches the file size limitation.</p>
+</td>
+      <td><code>2147483648</code></td>
+    </tr>
+    
+    <tr id="entryLogFilePreallocationEnabled">
+      <td><code>entryLogFilePreallocationEnabled</code></td>
+      <td><p>Enable/Disable entry logger preallocation</p>
+</td>
+      <td><code>true</code></td>
+    </tr>
+    
+    <tr id="flushEntrylogBytes">
+      <td><code>flushEntrylogBytes</code></td>
+      <td><p>Entry log flush interval, in bytes. Setting this to 0 or less disables this feature and makes flush happen on log rotation. Flushing in smaller chunks but more frequently reduces spikes in disk I/O. Flushing too frequently may negatively affect performance.</p>
+</td>
+      <td><code>0</code></td>
+    </tr>
+    
+    <tr id="readBufferSizeBytes">
+      <td><code>readBufferSizeBytes</code></td>
+      <td><p>The capacity allocated for <a href="/api/org/apache/bookkeeper/bookie/BufferedReadChannel"><code class="highlighter-rouge">BufferedReadChannel</code></a>s, in bytes.</p>
+</td>
+      <td><code>512</code></td>
+    </tr>
+    
+    <tr id="writeBufferSizeBytes">
+      <td><code>writeBufferSizeBytes</code></td>
+      <td><p>The number of bytes used as capacity for the write buffer.</p>
+</td>
+      <td><code>65536</code></td>
+    </tr>
+     <!-- for param in group.params -->
+  </tbody>
+</table>
+
+<h2 id="entry-log-compaction-settings">Entry log compaction settings</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr id="compactionRate">
+      <td><code>compactionRate</code></td>
+      <td><p>The rate at which compaction will read entries. The unit is adds per second.</p>
+</td>
+      <td><code>1000</code></td>
+    </tr>
+    
+    <tr id="minorCompactionThreshold">
+      <td><code>minorCompactionThreshold</code></td>
+      <td><p>Threshold of minor compaction. For those entry log files whose remaining size percentage reaches below this threshold will be compacted in a minor compaction. If it is set to less than zero, the minor compaction is disabled.</p>
+</td>
+      <td><code>0.2</code></td>
+    </tr>
+    
+    <tr id="minorCompactionInterval">
+      <td><code>minorCompactionInterval</code></td>
+      <td><p>Interval to run minor compaction, in seconds. If it is set to less than zero, the minor compaction is disabled.</p>
+</td>
+      <td></td>
+    </tr>
+    
+    <tr id="compactionMaxOutstandingRequests">
+      <td><code>compactionMaxOutstandingRequests</code></td>
+      <td><p>Set the maximum number of entries which can be compacted without flushing. When compacting, the entries are written to the entrylog and the new offsets are cached in memory. Once the entrylog is flushed the index is updated with the new offsets. This parameter controls the number of entries added to the entrylog before a flush is forced. A higher value for this parameter means  more memory will be used for offsets. Each offset consists of 3 longs. This parameter should <em>not</em> be modified unless you know what you’re doing.</p>
+</td>
+      <td><code>100000</code></td>
+    </tr>
+    
+    <tr id="majorCompactionThreshold">
+      <td><code>majorCompactionThreshold</code></td>
+      <td><p>Threshold of major compaction. For those entry log files whose remaining size percentage reaches below  this threshold will be compacted in a major compaction.  Those entry log files whose remaining size percentage is still higher than the threshold will never be compacted. If it is set to less than zero, the minor compaction is disabled.</p>
+</td>
+      <td><code>0.8</code></td>
+    </tr>
+    
+    <tr id="majorCompactionInterval">
+      <td><code>majorCompactionInterval</code></td>
+      <td><p>Interval to run major compaction, in seconds. If it is set to less than zero, the major compaction is disabled.</p>
+</td>
+      <td><code>86400</code></td>
+    </tr>
+    
+    <tr id="isThrottleByBytes">
+      <td><code>isThrottleByBytes</code></td>
+      <td><p>Throttle compaction by bytes or by entries.</p>
+</td>
+      <td><code>false</code></td>
+    </tr>
+    
+    <tr id="compactionRateByEntries">
+      <td><code>compactionRateByEntries</code></td>
+      <td><p>Set the rate at which compaction will read entries. The unit is adds per second.</p>
+</td>
+      <td><code>1000</code></td>
+    </tr>
+    
+    <tr id="compactionRateByBytes">
+      <td><code>compactionRateByBytes</code></td>
+      <td><p>Set the rate at which compaction will read entries. The unit is bytes added per second.</p>
+</td>
+      <td><code>1000000</code></td>
+    </tr>
+     <!-- for param in group.params -->
+  </tbody>
+</table>
+
+<h2 id="statistics">Statistics</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr id="enableStatistics">
+      <td><code>enableStatistics</code></td>
+      <td><p>Whether statistics are enabled for the bookie.</p>
+</td>
+      <td><code>true</code></td>
+    </tr>
+    
+    <tr id="statsProviderClass">
+      <td><code>statsProviderClass</code></td>
+      <td><p>Stats provider class.</p>
+</td>
+      <td><code>org.apache.bookkeeper.stats.CodahaleMetricsProvider</code></td>
+    </tr>
+     <!-- for param in group.params -->
+  </tbody>
+</table>
+
+<h2 id="read-only-mode-support">Read-only mode support</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr id="readOnlyModeEnabled">
+      <td><code>readOnlyModeEnabled</code></td>
+      <td><p>If all ledger directories configured are full, then support only read requests for clients. If “readOnlyModeEnabled=true” then on all ledger disks full, bookie will be converted to read-only mode and serve only read requests. Otherwise the bookie will be shutdown. By default this will be disabled.</p>
+</td>
+      <td><code>false</code></td>
+    </tr>
+     <!-- for param in group.params -->
+  </tbody>
+</table>
+
+<h2 id="disk-utilization">Disk utilization</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr id="diskUsageThreshold">
+      <td><code>diskUsageThreshold</code></td>
+      <td><p>For each ledger dir, maximum disk space which can be used. Default is 0.95f. i.e. 95% of disk can be used at most after which nothing will be written to that partition. If all ledger dir partions are full, then bookie will turn to readonly mode if ‘readOnlyModeEnabled=true’ is set, else it will shutdown. Valid values should be in between 0 and 1 (exclusive).</p>
+</td>
+      <td><code>0.95</code></td>
+    </tr>
+    
+    <tr id="diskUsageLwmThreshold">
+      <td><code>diskUsageLwmThreshold</code></td>
+      <td><p>Set the disk free space low water mark threshold. Disk is considered full when usage threshold is exceeded. Disk returns back to non-full state when usage is  below low water mark threshold. This prevents it from going back and forth between these states frequently when concurrent writes and compaction are happening. This also prevent bookie from switching frequently between read-only and read-writes states in the same cases.</p>
+</td>
+      <td><code>0.9</code></td>
+    </tr>
+    
+    <tr id="diskCheckInterval">
+      <td><code>diskCheckInterval</code></td>
+      <td><p>Disk check interval in milliseconds. Interval to check the ledger dirs usage.</p>
+</td>
+      <td><code>10000</code></td>
+    </tr>
+     <!-- for param in group.params -->
+  </tbody>
+</table>
+
+<h2 id="zookeeper-parameters">ZooKeeper parameters</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr id="zkServers">
+      <td><code>zkServers</code></td>
+      <td><p>A list of one of more servers on which zookeeper is running. The server list can be comma separated values, for example <code class="highlighter-rouge">zkServers=zk1:2181,zk2:2181,zk3:2181</code>.</p>
+</td>
+      <td><code>localhost:2181</code></td>
+    </tr>
+    
+    <tr id="zkTimeout">
+      <td><code>zkTimeout</code></td>
+      <td><p>ZooKeeper client session timeout in milliseconds. Bookie server will exit if it received SESSION_EXPIRED because it was partitioned off from ZooKeeper for more than the session timeout  JVM garbage collection, disk I/O will cause SESSION_EXPIRED. Increment this value could help avoiding this issue.</p>
+</td>
+      <td><code>10</code></td>
+    </tr>
+     <!-- for param in group.params -->
+  </tbody>
+</table>
+<p><!-- for group in configs.groups --></p>
+
+        </section>
+
+        
+      </div>
+    </div>
+
+    <div class="column is-2 is-hidden-mobile">
+      
+      
+<div class="toc">
+  <h2 class="title">BookKeeper configuration</h2>
+  <ul class="section-nav">
+<li class="toc-entry toc-h2"><a href="#server-parameters">Server parameters</a></li>
+<li class="toc-entry toc-h2"><a href="#garbage-collection-settings">Garbage collection settings</a></li>
+<li class="toc-entry toc-h2"><a href="#autorecovery-settings">AutoRecovery settings</a></li>
+<li class="toc-entry toc-h2"><a href="#netty-server-settings">Netty server settings</a></li>
+<li class="toc-entry toc-h2"><a href="#journal-settings">Journal settings</a></li>
+<li class="toc-entry toc-h2"><a href="#ledger-storage-settings">Ledger storage settings</a></li>
+<li class="toc-entry toc-h2"><a href="#ledger-cache-settings">Ledger cache settings</a></li>
+<li class="toc-entry toc-h2"><a href="#ledger-manager-settings">Ledger manager settings</a></li>
+<li class="toc-entry toc-h2"><a href="#entry-log-settings">Entry log settings</a></li>
+<li class="toc-entry toc-h2"><a href="#entry-log-compaction-settings">Entry log compaction settings</a></li>
+<li class="toc-entry toc-h2"><a href="#statistics">Statistics</a></li>
+<li class="toc-entry toc-h2"><a href="#read-only-mode-support">Read-only mode support</a></li>
+<li class="toc-entry toc-h2"><a href="#disk-utilization">Disk utilization</a></li>
+<li class="toc-entry toc-h2"><a href="#zookeeper-parameters">ZooKeeper parameters</a></li>
+</ul>
+</div>
+
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+<div id="entry-popover-html" class="popover-template">
+  <p>An entry is a sequence of bytes (plus some metadata) written to a BookKeeper ledger. Entries are also known as records.</p>
+
+</div>
+
+<div id="ledger-popover-html" class="popover-template">
+  <p>A ledger is a sequence of entries written to BookKeeper. Entries are written sequentially to ledgers and at most once, giving ledgers append-only semantics.</p>
+
+</div>
+
+<div id="bookie-popover-html" class="popover-template">
+  <p>A bookie is an individial BookKeeper storage server.</p>
+
+<p>Bookies store the content of ledgers and act as a distributed ensemble.</p>
+
+</div>
+
+<div id="rereplication-popover-html" class="popover-template">
+  <p>A subsystem that runs in the background on bookies to ensure that ledgers are fully replicated even if one bookie from the ensemble is down.</p>
+
+</div>
+
+<div id="striping-popover-html" class="popover-template">
+  <p>Striping is the process of distributing BookKeeper ledgers to sub-groups of bookies rather than to all bookies in a BookKeeper ensemble.</p>
+
+<p>Striping is essential to ensuring fast performance.</p>
+
+</div>
+
+<div id="journal-popover-html" class="popover-template">
+  <p>A journal file stores BookKeeper transaction logs.</p>
+
+</div>
+
+<div id="fencing-popover-html" class="popover-template">
+  <p>When a reader forces a ledger to close, preventing any further entries from being written to the ledger.</p>
+
+</div>
+
+<div id="record-popover-html" class="popover-template">
+  <p>A record is a sequence of bytes (plus some metadata) written to a BookKeeper ledger. Records are also known as entries.</p>
+
+</div>
+
+
+<script type="text/javascript">
+
+tippy('#entry-popover', {
+  html: '#entry-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#ledger-popover', {
+  html: '#ledger-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#bookie-popover', {
+  html: '#bookie-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#rereplication-popover', {
+  html: '#rereplication-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#striping-popover', {
+  html: '#striping-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#journal-popover', {
+  html: '#journal-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#fencing-popover', {
+  html: '#fencing-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#record-popover', {
+  html: '#record-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+</script>
+
+    </main>
+
+    <footer class="footer">
+  <div class="container">
+    <div class="content has-text-centered">
+      <p>
+        Copyright &copy; 2016 - 2017 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
+      </p>
+    </div>
+  </div>
+</footer>
+
+  </body>
+
+  <script src="/js/app.js"></script>
+
+</html>

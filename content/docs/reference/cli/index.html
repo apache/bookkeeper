@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Apache BookKeeper - BookKeeper CLI tool reference</title>
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet" href="/css/normalize.css">
+<link rel="stylesheet" href="/css/tippy.css">
+<link rel="stylesheet" href="/css/style.css">
+
+<link rel="shortcut icon" href="/img/favicon.ico">
+
+<script src="/js/tippy.min.js"></script>
+
+<script type="text/javascript">
+  var shiftWindow = function() { scrollBy(0, -108); };
+  window.addEventListener("hashchange", shiftWindow);
+  window.addEventListener("pageshow", shiftWindow);
+  function load() { if (window.location.hash) shiftWindow(); }
+</script>
+
+  </head>
+  <body class="body">
+    <main class="main">
+      
+<div class="bk-topnav">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item bk-brand" href="/">
+        Apache BookKeeper
+      </a>
+
+      <!--
+      <a class="navbar-item is-hidden-desktop bk-github" href="https://github.com/apache/bookkeeper" target="_blank">
+        <span class="icon">
+          <i class="fa fa-github"></i>
+        </span>
+      </a>
+
+      <a class="navbar-item is-hidden-desktop bk-twitter" href="https://twitter.com/jgthms" target="_blank">
+        <span class="icon">
+          <i class="fa fa-twitter"></i>
+        </span>
+      </a>
+      -->
+
+      <div class="navbar-burger" data-target="bkNav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+
+    <div id="bkNav" class="navbar-menu">
+      <div class="navbar-start">
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Documentation</a>
+          <div class="navbar-dropdown is-boxed">
+            
+            <a class="navbar-item" href="/docs/getting-started/installation">
+              Version 4.5.0
+              <span class="tag is-success">LATEST</span>
+            </a>
+            
+            <hr class="dropdown-divider">
+            <a class="navbar-item" href="/javadoc">
+              <span class="icon bk-javadoc-icon">
+                <img src="/img/java-icon.svg">
+              </span>
+              Javadoc
+            </a>
+          </div>
+        </div>
+
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Community</a>
+          <div class="navbar-dropdown is-boxed">
+            <a class="navbar-item" href="/community/mailing-lists">Mailing lists</a>
+            <a class="navbar-item" href="/community/irc">IRC</a>
+            <a class="navbar-item" href="/community/contributing">Contributing</a>
+            <a class="navbar-item" href="https://issues.apache.org/jira/projects/BOOKKEEPER">JIRA Issue Tracker</a>
+          </div>
+        </div>
+        
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Project</a>
+          <div class="navbar-dropdown is-boxed">
+            <a class="navbar-item" href="/project/who">Who are we?</a>
+            <a class="navbar-item" href="/project/bylaws">Bylaws</a>
+            <a class="navbar-item" href="http://www.apache.org/licenses/">License</a>
+            <hr class="dropdown-divider">
+            <a class="navbar-item" href="/project/privacy">Privacy policy</a>
+            <a class="navbar-item" href="http://www.apache.org/foundation/sponsorship.html">Sponsorship</a>
+            <a class="navbar-item" href="http://www.apache.org/foundation/thanks.html">Thanks</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="navbar-end">
+        <div class="navbar-item">
+          <div class="field is-grouped">
+            <p class="control">
+              <a class="button bk-twitter" href="https://twitter.com/asfbookkeeper">
+                <span class="icon">
+                  <i class="fa fa-twitter"></i>
+                </span>
+                <span>Twitter</span>
+              </a>
+            </p>
+            <p class="control">
+              <a class="button" href="https://github.com/apache/bookkeeper">
+                <span class="icon">
+                  <i class="fa fa-github"></i>
+                </span>
+                <span>GitHub</span>
+              </a>
+            </p>
+            <p class="control">
+              <a class="button is-primary" href="/docs/getting-started/installation#download">
+                <span class="icon">
+                  <i class="fa fa-download"></i>
+                </span>
+                <span>Download</span>
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</div>
+
+      <div class="bk-docs-container">
+  <div class="columns is-gapless">
+    <div class="column is-2 is-hidden-mobile">
+      <div class="container">
+        
+<aside class="sidebar">
+  
+  <p>
+    Getting started
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/getting-started/installation">
+      Installation
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/getting-started/run-locally">
+      Run bookies locally
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/getting-started/concepts">
+      Concepts and architecture
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Deployment
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/deployment/manual">
+      Manual deployment
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/deployment/dcos">
+      BookKeeper on DC/OS
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Administration
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/admin/bookies">
+      BookKeeper administration
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/admin/autorecovery">
+      AutoRecovery
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/admin/metrics">
+      Metric collection
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    API
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/api/overview">
+      Overview
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/api/ledger-api">
+      Ledger API
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/api/distributedlog-api">
+      DistributedLog
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Development
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/development/protocol">
+      BookKeeper protocol
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Reference
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/reference/config">
+      Configuration
+      </a>
+    </li>
+    
+    
+    <li class="active">
+      <a href="/docs/reference/cli">
+      Command-line tools
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/reference/metrics">
+      Metrics
+      </a>
+    </li>
+    
+  </ul>
+  
+  <hr />
+  <a class="button is-info">
+    Latest version: 4.5.0
+  </a>
+</aside>
+
+      </div>
+    </div>
+
+    <div class="column is-8 bk-docs-block">
+      <header class="docs-title">
+        <nav class="level bk-level">
+          <div class="level-left">
+            <div class="level-item">
+              <h1 class="title">BookKeeper CLI tool reference</h1>
+            </div>
+          </div>
+          
+        </nav>
+
+        <h2 class="subtitle">A reference guide to the command-line tools that you can use to administer BookKeeper</h2>
+      </header>
+
+      <hr />
+
+      <div class="content">
+        <section class="bk-main-content">
+          
+<h2 id="bookkeeper">bookkeeper</h2>
+
+<p>Manages bookies.</p>
+
+<h4>Environment variables</h4>
+
+<table>
+  <thead>
+    <tr>
+      <th>Environment variable</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr>
+      <td><code>BOOKIE_LOG_CONF</code></td>
+      <td><p>The Log4j configuration file.</p>
+</td>
+      <td><code>${bookkeeperHome}/bookkeeper-server/conf/log4j.properties</code></td>
+    </tr>
+    
+    <tr>
+      <td><code>BOOKIE_CONF</code></td>
+      <td><p>The configuration file for the bookie.</p>
+</td>
+      <td><code>${bookkeeperHome}/bookkeeper-server/conf/bk_server.conf</code></td>
+    </tr>
+    
+    <tr>
+      <td><code>BOOKIE_EXTRA_CLASSPATH</code></td>
+      <td><p>Extra paths to add to BookKeeper’s <a href="https://en.wikipedia.org/wiki/Classpath_(Java)">classpath</a>.</p>
+</td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>ENTRY_FORMATTER_CLASS</code></td>
+      <td><p>The entry formatter class used to format entries.</p>
+</td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>BOOKIE_PID_DIR</code></td>
+      <td><p>The directory where the bookie server PID file is stored.</p>
+</td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>BOOKIE_STOP_TIMEOUT</code></td>
+      <td><p>The wait time before forcefully killing the bookie server instance if stopping it is not successful.</p>
+</td>
+      <td></td>
+    </tr>
+    
+  </tbody>
+</table>
+
+<h4>Commands</h4>
+
+<h3 id="bookkeeper-bookie">bookie</h3>
+
+<p>Starts up a bookie.</p>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper bookie 
+</code></pre>
+</div>
+<hr />
+
+<h3 id="bookkeeper-localbookie">localbookie</h3>
+
+<p>Starts up an ensemble of N bookies in a single JVM process. Typically used for local experimentation and development.</p>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper localbookie N
+</code></pre>
+</div>
+<hr />
+
+<h3 id="bookkeeper-autorecovery">autorecovery</h3>
+
+<p>Runs the autorecovery service daemon.</p>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper autorecovery 
+</code></pre>
+</div>
+<hr />
+
+<h3 id="bookkeeper-upgrade">upgrade</h3>
+
+<p>Upgrades the bookie’s filesystem.</p>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper upgrade 
+</code></pre>
+</div>
+<hr />
+
+<h3 id="bookkeeper-shell">shell</h3>
+
+<p>Runs the bookie’s shell for admin commands.</p>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell 
+</code></pre>
+</div>
+<hr />
+
+<h3 id="bookkeeper-help">help</h3>
+
+<p>Displays the help message for the <code class="highlighter-rouge">bookkeeper</code> tool.</p>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper <span class="nb">help</span> 
+</code></pre>
+</div>
+
+<h2 id="the-bookkeeper-shell">The BookKeeper shell</h2>
+
+<h3 id="bookkeeper-shell-autorecovery">autorecovery</h3>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell autorecovery <span class="se">\</span>
+  &lt;options&gt;
+</code></pre>
+</div>
+
+<h5>Options</h5>
+
+<table>
+  <thead>
+    <tr>
+      <th>Flag</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr>
+      <td><code>-enable</code></td>
+      <td>Enables autorecovery</td>
+    </tr>
+    
+    <tr>
+      <td><code>-disable</code></td>
+      <td>Disables autorecovery</td>
+    </tr>
+    
+  </tbody>
+</table>
+<p><!-- if command.options --></p>
+<hr />
+
+<h3 id="bookkeeper-shell-bookieFormat">bookieFormat</h3>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell bookieFormat <span class="se">\</span>
+  &lt;options&gt;
+</code></pre>
+</div>
+
+<h5>Options</h5>
+
+<table>
+  <thead>
+    <tr>
+      <th>Flag</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr>
+      <td><code>-nonInteractive</code></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>-force</code></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>-deleteCookie</code></td>
+      <td></td>
+    </tr>
+    
+  </tbody>
+</table>
+<p><!-- if command.options --></p>
+<hr />
+
+<h3 id="bookkeeper-shell-bookiesanity">bookiesanity</h3>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell bookiesanity <span class="se">\</span>
+  &lt;options&gt;
+</code></pre>
+</div>
+
+<h5>Options</h5>
+
+<table>
+  <thead>
+    <tr>
+      <th>Flag</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr>
+      <td><code>-entries N</code></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>-timeout N</code></td>
+      <td></td>
+    </tr>
+    
+  </tbody>
+</table>
+<p><!-- if command.options --></p>
+<hr />
+
+<h3 id="bookkeeper-shell-help">help</h3>
+
+<p>Displays the help message.</p>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell <span class="nb">help</span>
+</code></pre>
+</div>
+
+<p><!-- if command.options --></p>
+<hr />
+
+<h3 id="bookkeeper-shell-lastmark">lastmark</h3>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell lastmark
+</code></pre>
+</div>
+
+<p><!-- if command.options --></p>
+<hr />
+
+<h3 id="bookkeeper-shell-ledger">ledger</h3>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell ledger <span class="se">\</span>
+  &lt;options&gt;
+</code></pre>
+</div>
+
+<h5>Options</h5>
+
+<table>
+  <thead>
+    <tr>
+      <th>Flag</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr>
+      <td><code>-m LEDGER_ID</code></td>
+      <td></td>
+    </tr>
+    
+  </tbody>
+</table>
+<p><!-- if command.options --></p>
+<hr />
+
+<h3 id="bookkeeper-shell-ledgermetadata">ledgermetadata</h3>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell ledgermetadata <span class="se">\</span>
+  &lt;options&gt;
+</code></pre>
+</div>
+
+<h5>Options</h5>
+
+<table>
+  <thead>
+    <tr>
+      <th>Flag</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr>
+      <td><code>-ledgerid LEDGER_ID</code></td>
+      <td></td>
+    </tr>
+    
+  </tbody>
+</table>
+<p><!-- if command.options --></p>
+<hr />
+
+<h3 id="bookkeeper-shell-listbookies">listbookies</h3>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell listbookies <span class="se">\</span>
+  &lt;options&gt;
+</code></pre>
+</div>
+
+<h5>Options</h5>
+
+<table>
+  <thead>
+    <tr>
+      <th>Flag</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr>
+      <td><code>-readwrite</code></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>-readonly</code></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>-hostnames</code></td>
+      <td></td>
+    </tr>
+    
+  </tbody>
+</table>
+<p><!-- if command.options --></p>
+<hr />
+
+<h3 id="bookkeeper-shell-listledgers">listledgers</h3>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell listledgers <span class="se">\</span>
+  &lt;options&gt;
+</code></pre>
+</div>
+
+<h5>Options</h5>
+
+<table>
+  <thead>
+    <tr>
+      <th>Flag</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr>
+      <td><code>-meta</code></td>
+      <td></td>
+    </tr>
+    
+  </tbody>
+</table>
+<p><!-- if command.options --></p>
+<hr />
+
+<h3 id="bookkeeper-shell-listunderreplicated">listunderreplicated</h3>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell listunderreplicated
+</code></pre>
+</div>
+
+<p><!-- if command.options --></p>
+<hr />
+
+<h3 id="bookkeeper-shell-metaformat">metaformat</h3>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell metaformat <span class="se">\</span>
+  &lt;options&gt;
+</code></pre>
+</div>
+
+<h5>Options</h5>
+
+<table>
+  <thead>
+    <tr>
+      <th>Flag</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr>
+      <td><code>-nonInteractive</code></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>-force</code></td>
+      <td></td>
+    </tr>
+    
+  </tbody>
+</table>
+<p><!-- if command.options --></p>
+<hr />
+
+<h3 id="bookkeeper-shell-readjournal">readjournal</h3>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell readjournal <span class="se">\</span>
+  &lt;options&gt;
+</code></pre>
+</div>
+
+<h5>Options</h5>
+
+<table>
+  <thead>
+    <tr>
+      <th>Flag</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr>
+      <td><code>-msg JOURNAL_ID|JOURNAL_FILENAME</code></td>
+      <td></td>
+    </tr>
+    
+  </tbody>
+</table>
+<p><!-- if command.options --></p>
+<hr />
+
+<h3 id="bookkeeper-shell-readledger">readledger</h3>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell readledger <span class="se">\</span>
+  &lt;ledger_id&gt; <span class="o">[</span>&lt;start_entry_id&gt; <span class="o">[</span>&lt;end_entry_id&gt;]]
+</code></pre>
+</div>
+
+<p><!-- if command.options --></p>
+<hr />
+
+<h3 id="bookkeeper-shell-readlog">readlog</h3>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell readlog <span class="se">\</span>
+  &lt;entry_log_id | entry_log_file_name&gt; <span class="se">\</span>
+  &lt;options&gt;
+</code></pre>
+</div>
+
+<h5>Options</h5>
+
+<table>
+  <thead>
+    <tr>
+      <th>Flag</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr>
+      <td><code>-msg</code></td>
+      <td></td>
+    </tr>
+    
+  </tbody>
+</table>
+<p><!-- if command.options --></p>
+<hr />
+
+<h3 id="bookkeeper-shell-recover">recover</h3>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell recover <span class="se">\</span>
+  &lt;bookieSrc&gt; <span class="o">[</span>bookieDest] <span class="se">\</span>
+  &lt;options&gt;
+</code></pre>
+</div>
+
+<h5>Options</h5>
+
+<table>
+  <thead>
+    <tr>
+      <th>Flag</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr>
+      <td><code>-deleteCookie</code></td>
+      <td></td>
+    </tr>
+    
+  </tbody>
+</table>
+<p><!-- if command.options --></p>
+<hr />
+
+<h3 id="bookkeeper-shell-simpletest">simpletest</h3>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell simpletest <span class="se">\</span>
+  &lt;options&gt;
+</code></pre>
+</div>
+
+<h5>Options</h5>
+
+<table>
+  <thead>
+    <tr>
+      <th>Flag</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr>
+      <td><code>-ensemble N</code></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>-writeQuorum N</code></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>ackQuorum N</code></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>-numEntries N</code></td>
+      <td></td>
+    </tr>
+    
+  </tbody>
+</table>
+<p><!-- if command.options --></p>
+<hr />
+
+<h3 id="bookkeeper-shell-updatecookie">updatecookie</h3>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell updatecookie <span class="se">\</span>
+  &lt;options&gt;
+</code></pre>
+</div>
+
+<h5>Options</h5>
+
+<table>
+  <thead>
+    <tr>
+      <th>Flag</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr>
+      <td><code>-bookieId &lt;hostname|ip&gt;</code></td>
+      <td></td>
+    </tr>
+    
+  </tbody>
+</table>
+<p><!-- if command.options --></p>
+<hr />
+
+<h3 id="bookkeeper-shell-updateledger">updateledger</h3>
+
+<h5>Usage</h5>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell updateledger <span class="se">\</span>
+  &lt;options&gt;
+</code></pre>
+</div>
+
+<h5>Options</h5>
+
+<table>
+  <thead>
+    <tr>
+      <th>Flag</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    
+    <tr>
+      <td><code>-bookieId &lt;hostname|ip&gt;</code></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>-updatespersec N</code></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>-limit N</code></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>-verbose</code></td>
+      <td></td>
+    </tr>
+    
+    <tr>
+      <td><code>-printprogress N</code></td>
+      <td></td>
+    </tr>
+    
+  </tbody>
+</table>
+<p><!-- if command.options --></p>
+
+<p><!-- for command in commands --></p>
+
+
+        </section>
+
+        
+      </div>
+    </div>
+
+    <div class="column is-2 is-hidden-mobile">
+      
+      
+<div class="toc">
+  <h2 class="title">BookKeeper CLI tool reference</h2>
+  <ul class="section-nav">
+<li class="toc-entry toc-h2"><a href="#bookkeeper">bookkeeper</a></li>
+<li class="toc-entry toc-h4"><a href="#environment-variables">Environment variables</a></li>
+<li class="toc-entry toc-h4"><a href="#commands">Commands</a></li>
+<li class="toc-entry toc-h3"><a href="#bookie">bookie</a></li>
+<li class="toc-entry toc-h5"><a href="#usage">Usage</a></li>
+<li class="toc-entry toc-h3"><a href="#localbookie">localbookie</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-1">Usage</a></li>
+<li class="toc-entry toc-h3"><a href="#autorecovery">autorecovery</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-2">Usage</a></li>
+<li class="toc-entry toc-h3"><a href="#upgrade">upgrade</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-3">Usage</a></li>
+<li class="toc-entry toc-h3"><a href="#shell">shell</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-4">Usage</a></li>
+<li class="toc-entry toc-h3"><a href="#help">help</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-5">Usage</a></li>
+<li class="toc-entry toc-h2"><a href="#the-bookkeeper-shell">The BookKeeper shell</a></li>
+<li class="toc-entry toc-h3"><a href="#autorecovery-1">autorecovery</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-6">Usage</a></li>
+<li class="toc-entry toc-h5"><a href="#options">Options</a></li>
+<li class="toc-entry toc-h3"><a href="#bookieformat">bookieFormat</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-7">Usage</a></li>
+<li class="toc-entry toc-h5"><a href="#options-1">Options</a></li>
+<li class="toc-entry toc-h3"><a href="#bookiesanity">bookiesanity</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-8">Usage</a></li>
+<li class="toc-entry toc-h5"><a href="#options-2">Options</a></li>
+<li class="toc-entry toc-h3"><a href="#help-1">help</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-9">Usage</a></li>
+<li class="toc-entry toc-h3"><a href="#lastmark">lastmark</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-10">Usage</a></li>
+<li class="toc-entry toc-h3"><a href="#ledger">ledger</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-11">Usage</a></li>
+<li class="toc-entry toc-h5"><a href="#options-3">Options</a></li>
+<li class="toc-entry toc-h3"><a href="#ledgermetadata">ledgermetadata</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-12">Usage</a></li>
+<li class="toc-entry toc-h5"><a href="#options-4">Options</a></li>
+<li class="toc-entry toc-h3"><a href="#listbookies">listbookies</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-13">Usage</a></li>
+<li class="toc-entry toc-h5"><a href="#options-5">Options</a></li>
+<li class="toc-entry toc-h3"><a href="#listledgers">listledgers</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-14">Usage</a></li>
+<li class="toc-entry toc-h5"><a href="#options-6">Options</a></li>
+<li class="toc-entry toc-h3"><a href="#listunderreplicated">listunderreplicated</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-15">Usage</a></li>
+<li class="toc-entry toc-h3"><a href="#metaformat">metaformat</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-16">Usage</a></li>
+<li class="toc-entry toc-h5"><a href="#options-7">Options</a></li>
+<li class="toc-entry toc-h3"><a href="#readjournal">readjournal</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-17">Usage</a></li>
+<li class="toc-entry toc-h5"><a href="#options-8">Options</a></li>
+<li class="toc-entry toc-h3"><a href="#readledger">readledger</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-18">Usage</a></li>
+<li class="toc-entry toc-h3"><a href="#readlog">readlog</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-19">Usage</a></li>
+<li class="toc-entry toc-h5"><a href="#options-9">Options</a></li>
+<li class="toc-entry toc-h3"><a href="#recover">recover</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-20">Usage</a></li>
+<li class="toc-entry toc-h5"><a href="#options-10">Options</a></li>
+<li class="toc-entry toc-h3"><a href="#simpletest">simpletest</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-21">Usage</a></li>
+<li class="toc-entry toc-h5"><a href="#options-11">Options</a></li>
+<li class="toc-entry toc-h3"><a href="#updatecookie">updatecookie</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-22">Usage</a></li>
+<li class="toc-entry toc-h5"><a href="#options-12">Options</a></li>
+<li class="toc-entry toc-h3"><a href="#updateledger">updateledger</a></li>
+<li class="toc-entry toc-h5"><a href="#usage-23">Usage</a></li>
+<li class="toc-entry toc-h5"><a href="#options-13">Options</a></li>
+</ul>
+</div>
+
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+<div id="entry-popover-html" class="popover-template">
+  <p>An entry is a sequence of bytes (plus some metadata) written to a BookKeeper ledger. Entries are also known as records.</p>
+
+</div>
+
+<div id="ledger-popover-html" class="popover-template">
+  <p>A ledger is a sequence of entries written to BookKeeper. Entries are written sequentially to ledgers and at most once, giving ledgers append-only semantics.</p>
+
+</div>
+
+<div id="bookie-popover-html" class="popover-template">
+  <p>A bookie is an individial BookKeeper storage server.</p>
+
+<p>Bookies store the content of ledgers and act as a distributed ensemble.</p>
+
+</div>
+
+<div id="rereplication-popover-html" class="popover-template">
+  <p>A subsystem that runs in the background on bookies to ensure that ledgers are fully replicated even if one bookie from the ensemble is down.</p>
+
+</div>
+
+<div id="striping-popover-html" class="popover-template">
+  <p>Striping is the process of distributing BookKeeper ledgers to sub-groups of bookies rather than to all bookies in a BookKeeper ensemble.</p>
+
+<p>Striping is essential to ensuring fast performance.</p>
+
+</div>
+
+<div id="journal-popover-html" class="popover-template">
+  <p>A journal file stores BookKeeper transaction logs.</p>
+
+</div>
+
+<div id="fencing-popover-html" class="popover-template">
+  <p>When a reader forces a ledger to close, preventing any further entries from being written to the ledger.</p>
+
+</div>
+
+<div id="record-popover-html" class="popover-template">
+  <p>A record is a sequence of bytes (plus some metadata) written to a BookKeeper ledger. Records are also known as entries.</p>
+
+</div>
+
+
+<script type="text/javascript">
+
+tippy('#entry-popover', {
+  html: '#entry-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#ledger-popover', {
+  html: '#ledger-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#bookie-popover', {
+  html: '#bookie-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#rereplication-popover', {
+  html: '#rereplication-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#striping-popover', {
+  html: '#striping-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#journal-popover', {
+  html: '#journal-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#fencing-popover', {
+  html: '#fencing-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#record-popover', {
+  html: '#record-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+</script>
+
+    </main>
+
+    <footer class="footer">
+  <div class="container">
+    <div class="content has-text-centered">
+      <p>
+        Copyright &copy; 2016 - 2017 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
+      </p>
+    </div>
+  </div>
+</footer>
+
+  </body>
+
+  <script src="/js/app.js"></script>
+
+</html>

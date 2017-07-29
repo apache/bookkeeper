@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Apache BookKeeper - BookKeeper concepts and architecture</title>
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet" href="/css/normalize.css">
+<link rel="stylesheet" href="/css/tippy.css">
+<link rel="stylesheet" href="/css/style.css">
+
+<link rel="shortcut icon" href="/img/favicon.ico">
+
+<script src="/js/tippy.min.js"></script>
+
+<script type="text/javascript">
+  var shiftWindow = function() { scrollBy(0, -108); };
+  window.addEventListener("hashchange", shiftWindow);
+  window.addEventListener("pageshow", shiftWindow);
+  function load() { if (window.location.hash) shiftWindow(); }
+</script>
+
+  </head>
+  <body class="body">
+    <main class="main">
+      
+<div class="bk-topnav">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item bk-brand" href="/">
+        Apache BookKeeper
+      </a>
+
+      <!--
+      <a class="navbar-item is-hidden-desktop bk-github" href="https://github.com/apache/bookkeeper" target="_blank">
+        <span class="icon">
+          <i class="fa fa-github"></i>
+        </span>
+      </a>
+
+      <a class="navbar-item is-hidden-desktop bk-twitter" href="https://twitter.com/jgthms" target="_blank">
+        <span class="icon">
+          <i class="fa fa-twitter"></i>
+        </span>
+      </a>
+      -->
+
+      <div class="navbar-burger" data-target="bkNav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+
+    <div id="bkNav" class="navbar-menu">
+      <div class="navbar-start">
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Documentation</a>
+          <div class="navbar-dropdown is-boxed">
+            
+            <a class="navbar-item" href="/docs/getting-started/installation">
+              Version 4.5.0
+              <span class="tag is-success">LATEST</span>
+            </a>
+            
+            <hr class="dropdown-divider">
+            <a class="navbar-item" href="/javadoc">
+              <span class="icon bk-javadoc-icon">
+                <img src="/img/java-icon.svg">
+              </span>
+              Javadoc
+            </a>
+          </div>
+        </div>
+
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Community</a>
+          <div class="navbar-dropdown is-boxed">
+            <a class="navbar-item" href="/community/mailing-lists">Mailing lists</a>
+            <a class="navbar-item" href="/community/irc">IRC</a>
+            <a class="navbar-item" href="/community/contributing">Contributing</a>
+            <a class="navbar-item" href="https://issues.apache.org/jira/projects/BOOKKEEPER">JIRA Issue Tracker</a>
+          </div>
+        </div>
+        
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Project</a>
+          <div class="navbar-dropdown is-boxed">
+            <a class="navbar-item" href="/project/who">Who are we?</a>
+            <a class="navbar-item" href="/project/bylaws">Bylaws</a>
+            <a class="navbar-item" href="http://www.apache.org/licenses/">License</a>
+            <hr class="dropdown-divider">
+            <a class="navbar-item" href="/project/privacy">Privacy policy</a>
+            <a class="navbar-item" href="http://www.apache.org/foundation/sponsorship.html">Sponsorship</a>
+            <a class="navbar-item" href="http://www.apache.org/foundation/thanks.html">Thanks</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="navbar-end">
+        <div class="navbar-item">
+          <div class="field is-grouped">
+            <p class="control">
+              <a class="button bk-twitter" href="https://twitter.com/asfbookkeeper">
+                <span class="icon">
+                  <i class="fa fa-twitter"></i>
+                </span>
+                <span>Twitter</span>
+              </a>
+            </p>
+            <p class="control">
+              <a class="button" href="https://github.com/apache/bookkeeper">
+                <span class="icon">
+                  <i class="fa fa-github"></i>
+                </span>
+                <span>GitHub</span>
+              </a>
+            </p>
+            <p class="control">
+              <a class="button is-primary" href="/docs/getting-started/installation#download">
+                <span class="icon">
+                  <i class="fa fa-download"></i>
+                </span>
+                <span>Download</span>
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</div>
+
+      <div class="bk-docs-container">
+  <div class="columns is-gapless">
+    <div class="column is-2 is-hidden-mobile">
+      <div class="container">
+        
+<aside class="sidebar">
+  
+  <p>
+    Getting started
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/getting-started/installation">
+      Installation
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/getting-started/run-locally">
+      Run bookies locally
+      </a>
+    </li>
+    
+    
+    <li class="active">
+      <a href="/docs/getting-started/concepts">
+      Concepts and architecture
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Deployment
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/deployment/manual">
+      Manual deployment
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/deployment/dcos">
+      BookKeeper on DC/OS
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Administration
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/admin/bookies">
+      BookKeeper administration
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/admin/autorecovery">
+      AutoRecovery
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/admin/metrics">
+      Metric collection
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    API
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/api/overview">
+      Overview
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/api/ledger-api">
+      Ledger API
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/api/distributedlog-api">
+      DistributedLog
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Development
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/development/protocol">
+      BookKeeper protocol
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Reference
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/reference/config">
+      Configuration
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/reference/cli">
+      Command-line tools
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/reference/metrics">
+      Metrics
+      </a>
+    </li>
+    
+  </ul>
+  
+  <hr />
+  <a class="button is-info">
+    Latest version: 4.5.0
+  </a>
+</aside>
+
+      </div>
+    </div>
+
+    <div class="column is-8 bk-docs-block">
+      <header class="docs-title">
+        <nav class="level bk-level">
+          <div class="level-left">
+            <div class="level-item">
+              <h1 class="title">BookKeeper concepts and architecture</h1>
+            </div>
+          </div>
+          
+        </nav>
+
+        <h2 class="subtitle">The core components and how they work</h2>
+      </header>
+
+      <hr />
+
+      <div class="content">
+        <section class="bk-main-content">
+          <p>BookKeeper is a service that provides persistent storage of streams of log <a href="#entries">entries</a>—aka <em>records</em>—in sequences called <a href="#ledgers">ledgers</a>. BookKeeper replicates stored entries across multiple servers.</p>
+
+<h2 id="basic-terms">Basic terms</h2>
+
+<p>In BookKeeper:</p>
+
+<ul>
+  <li>each unit of a log is an <a href="#entries"><em>entry</em></a> (aka record)</li>
+  <li>streams of log entries are called <a href="#ledgers"><em>ledgers</em></a></li>
+  <li>individual servers storing ledgers of entries are called <a href="#bookies"><em>bookies</em></a></li>
+</ul>
+
+<p>BookKeeper is designed to be reliable and resilient to a wide variety of failures. Bookies can crash, corrupt data, or discard data, but as long as there are enough bookies behaving correctly in the ensemble the service as a whole will behave correctly.</p>
+
+<h2 id="entries">Entries</h2>
+
+<blockquote>
+  <p><strong>Entries</strong> contain the actual data written to ledgers, along with some important metadata.</p>
+</blockquote>
+
+<p>BookKeeper entries are sequences of bytes that are written to <a href="#ledgers">ledgers</a>. Each entry has the following fields:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Field</th>
+      <th style="text-align: left">Java type</th>
+      <th style="text-align: left">Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left">Ledger number</td>
+      <td style="text-align: left"><code class="highlighter-rouge">long</code></td>
+      <td style="text-align: left">The ID of the ledger to which the entry has been written</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">Entry number</td>
+      <td style="text-align: left"><code class="highlighter-rouge">long</code></td>
+      <td style="text-align: left">The unique ID of the entry</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">Last confirmed (LC)</td>
+      <td style="text-align: left"><code class="highlighter-rouge">long</code></td>
+      <td style="text-align: left">The ID of the last recorded entry</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">Data</td>
+      <td style="text-align: left"><code class="highlighter-rouge">byte[]</code></td>
+      <td style="text-align: left">The entry’s data (written by the client application)</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">Authentication code</td>
+      <td style="text-align: left"><code class="highlighter-rouge">byte[]</code></td>
+      <td style="text-align: left">The message auth code, which includes <em>all</em> other fields in the entry</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="ledgers">Ledgers</h2>
+
+<blockquote>
+  <p><strong>Ledgers</strong> are the basic unit of storage in BookKeeper.</p>
+</blockquote>
+
+<p>Ledgers are sequences of entries, while each entry is a sequence of bytes. Entries are written to a ledger:</p>
+
+<ul>
+  <li>sequentially, and</li>
+  <li>at most once.</li>
+</ul>
+
+<p>This means that ledgers have <em>append-only</em> semantics. Entries cannot be modified once they’ve been written to a ledger. Determining the proper write order is the responsbility of <a href="#clients">client applications</a>.</p>
+
+<h2 id="clients-and-apis">Clients and APIs</h2>
+
+<blockquote>
+  <p>BookKeeper clients have two main roles: they create and delete ledgers, and they read entries from and write entries to ledgers.</p>
+
+  <p>BookKeeper provides both a lower-level and a higher-level API for ledger interaction.</p>
+</blockquote>
+
+<p>There are currently two APIs that can be used for interacting with BookKeeper:</p>
+
+<ul>
+  <li>The <a href="../../api/ledger-api">ledger API</a> is a lower-level API that enables you to interact with <span class="pop" id="ledger-popover">ledgers</span> directly.</li>
+  <li>The <a href="../../api/distributedlog-api">DistributedLog API</a> is a higher-level API that enables you to use BookKeeper without directly interacting with ledgers.</li>
+</ul>
+
+<p>In general, you should choose the API based on how much granular control you need over ledger semantics. The two APIs can also both be used within a single application.</p>
+
+<h2 id="bookies">Bookies</h2>
+
+<blockquote>
+  <p><strong>Bookies</strong> are individual BookKeeper servers that handle ledgers (more specifically, fragments of ledgers). Bookies function as part of an ensemble.</p>
+</blockquote>
+
+<p>A bookie is an individual BookKeeper storage server. Individual bookies store fragments of ledgers, not entire ledgers (for the sake of performance). For any given ledger <strong>L</strong>, an <em>ensemble</em> is the group of bookies storing the entries in <strong>L</strong>.</p>
+
+<p>Whenever entries are written to a ledger, those entries are <span class="pop" id="striped-popover">striped</span> across the ensemble (written to a sub-group of bookies rather than to all bookies).</p>
+
+<h3 id="motivation">Motivation</h3>
+
+<blockquote>
+  <p>BookKeeper was initially inspired by the NameNode server in HDFS but its uses now extend far beyond this.</p>
+</blockquote>
+
+<p>The initial motivation for BookKeeper comes from the <a href="http://hadoop.apache.org/">Hadoop</a> ecosystem. In the <a href="https://wiki.apache.org/hadoop/HDFS">Hadoop Distributed File System</a> (HDFS), a special node called the <a href="https://wiki.apache.org/hadoop/NameNode">NameNode</a> logs all operations in a reliable fashion, which ensures that recovery is possible in case of crashes.</p>
+
+<p>The NameNode, however, served only as initial inspiration for BookKeeper. The applications for BookKeeper extend far beyond this and include essentially any application that requires an append-based storage system. BookKeeper provides a number of advantages for such applications:</p>
+
+<ul>
+  <li>Highly efficient writes</li>
+  <li>High fault tolerance via replication of messages within ensembles of bookies</li>
+  <li>High throughput for write operations via <span class="pop" id="striping-popover">striping</span> (across as many bookies as you wish)</li>
+</ul>
+
+<h2 id="metadata-storage">Metadata storage</h2>
+
+<p>BookKeeper requires a metadata storage service to store information related to <a href="#ledgers">ledgers</a> and available bookies. BookKeeper currently uses <a href="https://zookeeper.apache.org">ZooKeeper</a> for this and other tasks.</p>
+
+<h2 id="data-management-in-bookies">Data management in bookies</h2>
+
+<p>Bookies manage data in a <a href="https://en.wikipedia.org/wiki/Log-structured_file_system">log-structured</a> way, which is implemented using three types of files:</p>
+
+<ul>
+  <li><a href="#journals">journals</a></li>
+  <li><a href="#entry-logs">entry logs</a></li>
+  <li><a href="#index-files">index files</a></li>
+</ul>
+
+<h3 id="journals">Journals</h3>
+
+<p>A journal file contains BookKeeper transaction logs. Before any update to a ledger takes place, the bookie ensures that a transaction describing the update is written to non-volatile storage. A new journal file is created once the bookie starts or the older journal file reaches the journal file size threshold.</p>
+
+<h3 id="entry-logs">Entry logs</h3>
+
+<p>An entry log file manages the written entries received from BookKeeper clients. Entries from different ledgers are aggregated and written sequentially, while their offsets are kept as pointers in a <a href="#ledger-cache">ledger cache</a> for fast lookup.</p>
+
+<p>A new entry log file is created once the bookie starts or the older entry log file reaches the entry log size threshold. Old entry log files are removed by the Garbage Collector Thread once they are not associated with any active ledger.</p>
+
+<h3 id="index-files">Index files</h3>
+
+<p>An index file is created for each ledger, which comprises a header and several fixed-length index pages that record the offsets of data stored in entry log files.</p>
+
+<p>Since updating index files would introduce random disk I/O index files are updated lazily by a sync thread running in the background. This ensures speedy performance for updates. Before index pages are persisted to disk, they are gathered in a ledger cache for lookup.</p>
+
+<h3 id="ledger-cache">Ledger cache</h3>
+
+<p>Ledger indexes pages are cached in a memory pool, which allows for more efficient management of disk head scheduling.</p>
+
+<h3 id="adding-entries">Adding entries</h3>
+
+<p>When a client instructs a <span class="pop" id="bookie-popover">bookie</span> to write an entry to a ledger, the entry will go through the following steps to be persisted on disk:</p>
+
+<ol>
+  <li>The entry is appended to an <a href="#entry-logs">entry log</a></li>
+  <li>The index of the entry is updated in the <a href="#ledger-cache">ledger cache</a></li>
+  <li>A transaction corresponding to this entry update is appended to the <a href="#journals">journal</a></li>
+  <li>A response is sent to the BookKeeper client</li>
+</ol>
+
+<blockquote>
+  <p>For performance reasons, the entry log buffers entries in memory and commits them in batches, while the ledger cache holds index pages in memory and flushes them lazily. This process is described in more detail in the <a href="#data-flush">Data flush</a> section below.</p>
+</blockquote>
+
+<h3 id="data-flush">Data flush</h3>
+
+<p>Ledger index pages are flushed to index files in the following two cases:</p>
+
+<ul>
+  <li>The ledger cache memory limit is reached. There is no more space available to hold newer index pages. Dirty index pages will be evicted from the ledger cache and persisted to index files.</li>
+  <li>A background thread synchronous thread is responsible for flushing index pages from the ledger cache to index files periodically.</li>
+</ul>
+
+<p>Besides flushing index pages, the sync thread is responsible for rolling journal files in case that journal files use too much disk space. The data flush flow in the sync thread is as follows:</p>
+
+<ul>
+  <li>A <code class="highlighter-rouge">LastLogMark</code> is recorded in memory. The <code class="highlighter-rouge">LastLogMark</code> indicates that those entries before it have been persisted (to both index and entry log files) and contains two parts:
+    <ol>
+      <li>A <code class="highlighter-rouge">txnLogId</code> (the file ID of a journal)</li>
+      <li>A <code class="highlighter-rouge">txnLogPos</code> (offset in a journal)</li>
+    </ol>
+  </li>
+  <li>
+    <p>Dirty index pages are flushed from the ledger cache to the index file, and entry log files are flushed to ensure that all buffered entries in entry log files are persisted to disk.</p>
+
+    <p>Ideally, a bookie only needs to flush index pages and entry log files that contain entries before <code class="highlighter-rouge">LastLogMark</code>. There is, however, no such information in the ledger and entry log mapping to journal files. Consequently, the thread flushes the ledger cache and entry log entirely here, and may flush entries after the <code class="highlighter-rouge">LastLogMark</code>. Flushing more is not a problem, though, just redundant.</p>
+  </li>
+  <li>The <code class="highlighter-rouge">LastLogMark</code> is persisted to disk, which means that entries added before <code class="highlighter-rouge">LastLogMark</code> whose entry data and index page were also persisted to disk. It is now time to safely remove journal files created earlier than <code class="highlighter-rouge">txnLogId</code>.</li>
+</ul>
+
+<p>If the bookie has crashed before persisting <code class="highlighter-rouge">LastLogMark</code> to disk, it still has journal files containing entries for which index pages may not have been persisted. Consequently, when this bookie restarts, it inspects journal files to restore those entries and data isn’t lost.</p>
+
+<p>Using the above data flush mechanism, it is safe for the sync thread to skip data flushing when the bookie shuts down. However, in the entry logger it uses a buffered channel to write entries in batches and there might be data buffered in the buffered channel upon a shut down. The bookie needs to ensure that the entry log flushes its buffered data during shutdown. Otherwise, entry log files become corrupted with partial entries.</p>
+
+<h3 id="data-compaction">Data compaction</h3>
+
+<p>On bookies, entries of different ledgers are interleaved in entry log files. A bookie runs a garbage collector thread to delete un-associated entry log files to reclaim disk space. If a given entry log file contains entries from a ledger that has not been deleted, then the entry log file would never be removed and the occupied disk space never reclaimed. In order to avoid such a case, a bookie server compacts entry log files in a garbage collector thread to reclaim disk space.</p>
+
+<p>There are two kinds of compaction running with different frequency: minor compaction and major compaction. The differences between minor compaction and major compaction lies in their threshold value and compaction interval.</p>
+
+<ul>
+  <li>The garbage collection threshold is the size percentage of an entry log file occupied by those undeleted ledgers. The default minor compaction threshold is 0.2, while the major compaction threshold is 0.8.</li>
+  <li>The garbage collection interval is how frequently to run the compaction. The default minor compaction interval is 1 hour, while the major compaction threshold is 1 day.</li>
+</ul>
+
+<blockquote>
+  <p>If either the threshold or interval is set to less than or equal to zero, compaction is disabled.</p>
+</blockquote>
+
+<p>The data compaction flow in the garbage collector thread is as follows:</p>
+
+<ul>
+  <li>The thread scans entry log files to get their entry log metadata, which records a list of ledgers comprising an entry log and their corresponding percentages.</li>
+  <li>With the normal garbage collection flow, once the bookie determines that a ledger has been deleted, the ledger will be removed from the entry log metadata and the size of the entry log reduced.</li>
+  <li>If the remaining size of an entry log file reaches a specified threshold, the entries of active ledgers in the entry log will be copied to a new entry log file.</li>
+  <li>Once all valid entries have been copied, the old entry log file is deleted.</li>
+</ul>
+
+<h2 id="zookeeper-metadata">ZooKeeper metadata</h2>
+
+<p>BookKeeper requires a ZooKeeper installation for storing <a href="#ledger">ledger</a> metadata. Whenever you construct a <a href="/javadoc/org/apache/bookkeeper/client/BookKeeper"><code class="highlighter-rouge">BookKeeper</code></a> client object, you need to pass a list of ZooKeeper servers as a parameter to the constructor, like this:</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">String</span> <span class="n">zkConnectionString</span> <span class="o">=</span> <span class="s">"127.0.0.1:2181"</span><span class="o">;</span>
+<span class="n">BookKeeper</span> <span class="n">bkClient</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BookKeeper</span><span class="o">(</span><span class="n">zkConnectionString</span><span class="o">);</span>
+</code></pre>
+</div>
+
+<blockquote>
+  <p>For more info on using the BookKeeper Java client, see <a href="../../api/ledger-api#the-java-ledger-api-client">this guide</a>.</p>
+</blockquote>
+
+<h2 id="ledger-manager">Ledger manager</h2>
+
+<p>A <em>ledger manager</em> handles ledgers’ metadata (which is stored in ZooKeeper). BookKeeper offers two types of ledger managers: the <a href="#flat-ledger-manager">flat ledger manager</a> and the <a href="#hierarchical-ledger-manager">hierarchical ledger manager</a>. Both ledger managers extend the <a href="/javadoc/org/apache/bookkeeper/meta/AbstractZkLedgerManager"><code class="highlighter-rouge">AbstractZkLedgerManager</code></a> abstract class.</p>
+
+<blockquote>
+  <h4 id="use-the-flat-ledger-manager-in-most-cases">Use the flat ledger manager in most cases</h4>
+  <p>The flat ledger manager is the default and is recommended for nearly all use cases. The hierarchical ledger manager is better suited only for managing very large numbers of BookKeeper ledgers (&gt; 50,000).</p>
+</blockquote>
+
+<h3 id="flat-ledger-manager">Flat ledger manager</h3>
+
+<p>The <em>flat ledger manager</em>, implemented in the <a href="/javadoc/org/apache/bookkeeper/meta/FlatLedgerManager.html"><code class="highlighter-rouge">FlatLedgerManager</code></a> class, stores all ledgers’ metadata in child nodes of a single ZooKeeper path. The flat ledger manager creates <a href="https://zookeeper.apache.org/doc/trunk/zookeeperProgrammers.html#Sequence+Nodes+--+Unique+Naming">sequential nodes</a> to ensure the uniqueness of the ledger ID and prefixes all nodes with <code class="highlighter-rouge">L</code>. Bookie servers manage their own active ledgers in a hash map so that it’s easy to find which ledgers have been deleted from ZooKeeper and then garbage collect them.</p>
+
+<p>The flat ledger manager’s garbage collection follow proceeds as follows:</p>
+
+<ul>
+  <li>All existing ledgers are fetched from ZooKeeper (<code class="highlighter-rouge">zkActiveLedgers</code>)</li>
+  <li>All ledgers currently active within the bookie are fetched (<code class="highlighter-rouge">bkActiveLedgers</code>)</li>
+  <li>The currently actively ledgers are looped through to determine which ledgers don’t currently exist in ZooKeeper. Those are then garbage collected.</li>
+  <li>The <em>hierarchical ledger manager</em> stores ledgers’ metadata in two-level <a href="https://zookeeper.apache.org/doc/current/zookeeperOver.html#Nodes+and+ephemeral+nodes">znodes</a>.</li>
+</ul>
+
+<h3 id="hierarchical-ledger-manager">Hierarchical ledger manager</h3>
+
+<p>The <em>hierarchical ledger manager</em>, implemented in the <a href="/javadoc/org/apache/bookkeeper/meta/HierarchicalLedgerManager"><code class="highlighter-rouge">HierarchicalLedgerManager</code></a> class, first obtains a global unique ID from ZooKeeper using an <a href="https://zookeeper.apache.org/doc/current/api/org/apache/zookeeper/CreateMode.html#EPHEMERAL_SEQUENTIAL"><code class="highlighter-rouge">EPHEMERAL_SEQUENTIAL</code></a> znode. Since ZooKeeper’s sequence counter has a format of <code class="highlighter-rouge">%10d</code> (10 digits with 0 padding, for example <code class="highlighter-rouge">&lt;path&gt;0000000001</code>), the hierarchical ledger manager splits the generated ID into 3 parts:</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="o">{</span>level1 <span class="o">(</span>2 digits<span class="o">)}{</span>level2 <span class="o">(</span>4 digits<span class="o">)}{</span>level3 <span class="o">(</span>4 digits<span class="o">)}</span>
+</code></pre>
+</div>
+
+<p>These three parts are used to form the actual ledger node path to store ledger metadata:</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="o">{</span>ledgers_root_path<span class="o">}</span>/<span class="o">{</span>level1<span class="o">}</span>/<span class="o">{</span>level2<span class="o">}</span>/L<span class="o">{</span>level3<span class="o">}</span>
+</code></pre>
+</div>
+
+<p>For example, ledger 0000000001 is split into three parts, 00, 0000, and 00001, and stored in znode <code class="highlighter-rouge">/{ledgers_root_path}/00/0000/L0001</code>. Each znode could have as many 10,000 ledgers, which avoids the problem of the child list being larger than the maximum ZooKeeper packet size (which is the <a href="https://issues.apache.org/jira/browse/BOOKKEEPER-39">limitation</a> that initially prompted the creation of the hierarchical ledger manager).</p>
+
+        </section>
+
+        
+        <nav class="pagination is-centered">
+          
+          <a class="pagination-previous" href="/docs/getting-started/run-locally">Previous</a>
+          
+          
+          <a class="pagination-next" href="/docs/applications/java-client">Next</a>
+          
+          <ul class="pagination-list"></ul>
+        </nav>
+        
+      </div>
+    </div>
+
+    <div class="column is-2 is-hidden-mobile">
+      
+      
+<div class="toc">
+  <h2 class="title">BookKeeper concepts and architecture</h2>
+  <ul class="section-nav">
+<li class="toc-entry toc-h2"><a href="#basic-terms">Basic terms</a></li>
+<li class="toc-entry toc-h2"><a href="#entries">Entries</a></li>
+<li class="toc-entry toc-h2"><a href="#ledgers">Ledgers</a></li>
+<li class="toc-entry toc-h2"><a href="#clients-and-apis">Clients and APIs</a></li>
+<li class="toc-entry toc-h2"><a href="#bookies">Bookies</a></li>
+<li class="toc-entry toc-h3"><a href="#motivation">Motivation</a></li>
+<li class="toc-entry toc-h2"><a href="#metadata-storage">Metadata storage</a></li>
+<li class="toc-entry toc-h2"><a href="#data-management-in-bookies">Data management in bookies</a></li>
+<li class="toc-entry toc-h3"><a href="#journals">Journals</a></li>
+<li class="toc-entry toc-h3"><a href="#entry-logs">Entry logs</a></li>
+<li class="toc-entry toc-h3"><a href="#index-files">Index files</a></li>
+<li class="toc-entry toc-h3"><a href="#ledger-cache">Ledger cache</a></li>
+<li class="toc-entry toc-h3"><a href="#adding-entries">Adding entries</a></li>
+<li class="toc-entry toc-h3"><a href="#data-flush">Data flush</a></li>
+<li class="toc-entry toc-h3"><a href="#data-compaction">Data compaction</a></li>
+<li class="toc-entry toc-h2"><a href="#zookeeper-metadata">ZooKeeper metadata</a></li>
+<li class="toc-entry toc-h2"><a href="#ledger-manager">Ledger manager</a></li>
+<li class="toc-entry toc-h4"><a href="#use-the-flat-ledger-manager-in-most-cases">Use the flat ledger manager in most cases</a></li>
+<li class="toc-entry toc-h3"><a href="#flat-ledger-manager">Flat ledger manager</a></li>
+<li class="toc-entry toc-h3"><a href="#hierarchical-ledger-manager">Hierarchical ledger manager</a></li>
+</ul>
+</div>
+
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+<div id="entry-popover-html" class="popover-template">
+  <p>An entry is a sequence of bytes (plus some metadata) written to a BookKeeper ledger. Entries are also known as records.</p>
+
+</div>
+
+<div id="ledger-popover-html" class="popover-template">
+  <p>A ledger is a sequence of entries written to BookKeeper. Entries are written sequentially to ledgers and at most once, giving ledgers append-only semantics.</p>
+
+</div>
+
+<div id="bookie-popover-html" class="popover-template">
+  <p>A bookie is an individial BookKeeper storage server.</p>
+
+<p>Bookies store the content of ledgers and act as a distributed ensemble.</p>
+
+</div>
+
+<div id="rereplication-popover-html" class="popover-template">
+  <p>A subsystem that runs in the background on bookies to ensure that ledgers are fully replicated even if one bookie from the ensemble is down.</p>
+
+</div>
+
+<div id="striping-popover-html" class="popover-template">
+  <p>Striping is the process of distributing BookKeeper ledgers to sub-groups of bookies rather than to all bookies in a BookKeeper ensemble.</p>
+
+<p>Striping is essential to ensuring fast performance.</p>
+
+</div>
+
+<div id="journal-popover-html" class="popover-template">
+  <p>A journal file stores BookKeeper transaction logs.</p>
+
+</div>
+
+<div id="fencing-popover-html" class="popover-template">
+  <p>When a reader forces a ledger to close, preventing any further entries from being written to the ledger.</p>
+
+</div>
+
+<div id="record-popover-html" class="popover-template">
+  <p>A record is a sequence of bytes (plus some metadata) written to a BookKeeper ledger. Records are also known as entries.</p>
+
+</div>
+
+
+<script type="text/javascript">
+
+tippy('#entry-popover', {
+  html: '#entry-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#ledger-popover', {
+  html: '#ledger-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#bookie-popover', {
+  html: '#bookie-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#rereplication-popover', {
+  html: '#rereplication-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#striping-popover', {
+  html: '#striping-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#journal-popover', {
+  html: '#journal-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#fencing-popover', {
+  html: '#fencing-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#record-popover', {
+  html: '#record-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+</script>
+
+    </main>
+
+    <footer class="footer">
+  <div class="container">
+    <div class="content has-text-centered">
+      <p>
+        Copyright &copy; 2016 - 2017 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
+      </p>
+    </div>
+  </div>
+</footer>
+
+  </body>
+
+  <script src="/js/app.js"></script>
+
+</html>

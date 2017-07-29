@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Apache BookKeeper - The BookKeeper protocol</title>
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet" href="/css/normalize.css">
+<link rel="stylesheet" href="/css/tippy.css">
+<link rel="stylesheet" href="/css/style.css">
+
+<link rel="shortcut icon" href="/img/favicon.ico">
+
+<script src="/js/tippy.min.js"></script>
+
+<script type="text/javascript">
+  var shiftWindow = function() { scrollBy(0, -108); };
+  window.addEventListener("hashchange", shiftWindow);
+  window.addEventListener("pageshow", shiftWindow);
+  function load() { if (window.location.hash) shiftWindow(); }
+</script>
+
+  </head>
+  <body class="body">
+    <main class="main">
+      
+<div class="bk-topnav">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item bk-brand" href="/">
+        Apache BookKeeper
+      </a>
+
+      <!--
+      <a class="navbar-item is-hidden-desktop bk-github" href="https://github.com/apache/bookkeeper" target="_blank">
+        <span class="icon">
+          <i class="fa fa-github"></i>
+        </span>
+      </a>
+
+      <a class="navbar-item is-hidden-desktop bk-twitter" href="https://twitter.com/jgthms" target="_blank">
+        <span class="icon">
+          <i class="fa fa-twitter"></i>
+        </span>
+      </a>
+      -->
+
+      <div class="navbar-burger" data-target="bkNav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+
+    <div id="bkNav" class="navbar-menu">
+      <div class="navbar-start">
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Documentation</a>
+          <div class="navbar-dropdown is-boxed">
+            
+            <a class="navbar-item" href="/docs/getting-started/installation">
+              Version 4.5.0
+              <span class="tag is-success">LATEST</span>
+            </a>
+            
+            <hr class="dropdown-divider">
+            <a class="navbar-item" href="/javadoc">
+              <span class="icon bk-javadoc-icon">
+                <img src="/img/java-icon.svg">
+              </span>
+              Javadoc
+            </a>
+          </div>
+        </div>
+
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Community</a>
+          <div class="navbar-dropdown is-boxed">
+            <a class="navbar-item" href="/community/mailing-lists">Mailing lists</a>
+            <a class="navbar-item" href="/community/irc">IRC</a>
+            <a class="navbar-item" href="/community/contributing">Contributing</a>
+            <a class="navbar-item" href="https://issues.apache.org/jira/projects/BOOKKEEPER">JIRA Issue Tracker</a>
+          </div>
+        </div>
+        
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Project</a>
+          <div class="navbar-dropdown is-boxed">
+            <a class="navbar-item" href="/project/who">Who are we?</a>
+            <a class="navbar-item" href="/project/bylaws">Bylaws</a>
+            <a class="navbar-item" href="http://www.apache.org/licenses/">License</a>
+            <hr class="dropdown-divider">
+            <a class="navbar-item" href="/project/privacy">Privacy policy</a>
+            <a class="navbar-item" href="http://www.apache.org/foundation/sponsorship.html">Sponsorship</a>
+            <a class="navbar-item" href="http://www.apache.org/foundation/thanks.html">Thanks</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="navbar-end">
+        <div class="navbar-item">
+          <div class="field is-grouped">
+            <p class="control">
+              <a class="button bk-twitter" href="https://twitter.com/asfbookkeeper">
+                <span class="icon">
+                  <i class="fa fa-twitter"></i>
+                </span>
+                <span>Twitter</span>
+              </a>
+            </p>
+            <p class="control">
+              <a class="button" href="https://github.com/apache/bookkeeper">
+                <span class="icon">
+                  <i class="fa fa-github"></i>
+                </span>
+                <span>GitHub</span>
+              </a>
+            </p>
+            <p class="control">
+              <a class="button is-primary" href="/docs/getting-started/installation#download">
+                <span class="icon">
+                  <i class="fa fa-download"></i>
+                </span>
+                <span>Download</span>
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</div>
+
+      <div class="bk-docs-container">
+  <div class="columns is-gapless">
+    <div class="column is-2 is-hidden-mobile">
+      <div class="container">
+        
+<aside class="sidebar">
+  
+  <p>
+    Getting started
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/getting-started/installation">
+      Installation
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/getting-started/run-locally">
+      Run bookies locally
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/getting-started/concepts">
+      Concepts and architecture
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Deployment
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/deployment/manual">
+      Manual deployment
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/deployment/dcos">
+      BookKeeper on DC/OS
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Administration
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/admin/bookies">
+      BookKeeper administration
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/admin/autorecovery">
+      AutoRecovery
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/admin/metrics">
+      Metric collection
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    API
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/api/overview">
+      Overview
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/api/ledger-api">
+      Ledger API
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/api/distributedlog-api">
+      DistributedLog
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Development
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li class="active">
+      <a href="/docs/development/protocol">
+      BookKeeper protocol
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Reference
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/reference/config">
+      Configuration
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/reference/cli">
+      Command-line tools
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/reference/metrics">
+      Metrics
+      </a>
+    </li>
+    
+  </ul>
+  
+  <hr />
+  <a class="button is-info">
+    Latest version: 4.5.0
+  </a>
+</aside>
+
+      </div>
+    </div>
+
+    <div class="column is-8 bk-docs-block">
+      <header class="docs-title">
+        <nav class="level bk-level">
+          <div class="level-left">
+            <div class="level-item">
+              <h1 class="title">The BookKeeper protocol</h1>
+            </div>
+          </div>
+          
+        </nav>
+
+        
+      </header>
+
+      <hr />
+
+      <div class="content">
+        <section class="bk-main-content">
+          <p>BookKeeper uses a special replication protocol for guaranteeing persistent storage of entries in an ensemble of bookies.</p>
+
+<blockquote>
+  <p>This document assumes that you have some knowledge of leader election and log replication and how these can be used in a distributed system. If not, we recommend reading the <a href="../../api/ledger-api#example-application">example application</a> documentation first.</p>
+</blockquote>
+
+<h2 id="ledgers">Ledgers</h2>
+
+<p><span class="pop" id="ledger-popover">Ledgers</span> are the basic building block of BookKeeper and the level at which BookKeeper makes its persistent storage guarantees. A replicated log consists of an ordered list of ledgers. See <a href="#ledgers-to-logs">Ledgers to logs</a> for info on building a replicated log from ledgers.</p>
+
+<p>Ledgers are composed of metadata and <span class="pop" id="entry-popover">entries</span>. The metadata is stored in ZooKeeper, which provides a <em>compare-and-swap</em> (CAS) operation. Entries are stored on storage nodes known as <span class="pop" id="bookie-popover">bookies</span>.</p>
+
+<p>A ledger has a single writer and multiple readers (SWMR).</p>
+
+<h3 id="ledger-metadata">Ledger metadata</h3>
+
+<p>A ledger’s metadata contains the following:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Parameter</th>
+      <th style="text-align: left">Name</th>
+      <th style="text-align: left">Meaning</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left">Identifer</td>
+      <td style="text-align: left"> </td>
+      <td style="text-align: left">A 64-bit integer, unique within the system</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">Ensemble size</td>
+      <td style="text-align: left"><strong>E</strong></td>
+      <td style="text-align: left">The number of nodes the ledger is stored on</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">Write quorum size</td>
+      <td style="text-align: left"><strong>Q<sub>w</sub></strong></td>
+      <td style="text-align: left">The number of nodes each entry is written to. In effect, the max replication for the entry.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">Ack quorum size</td>
+      <td style="text-align: left"><strong>Q<sub>a</sub></strong></td>
+      <td style="text-align: left">The number of nodes an entry must be acknowledged on. In effect, the minimum replication for the entry.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">Current state</td>
+      <td style="text-align: left"> </td>
+      <td style="text-align: left">The current status of the ledger. One of <code class="highlighter-rouge">OPEN</code>, <code class="highlighter-rouge">CLOSED</code>, or <code class="highlighter-rouge">IN_RECOVERY</code>.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">Last entry</td>
+      <td style="text-align: left"> </td>
+      <td style="text-align: left">The last entry in the ledger or <code class="highlighter-rouge">NULL</code> is the current state is not <code class="highlighter-rouge">CLOSED</code>.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>In addition, each ledger’s metadata consists of one or more <em>fragments</em>. Each fragment is either</p>
+
+<ul>
+  <li>the first entry of a fragment or</li>
+  <li>a list of bookies for the fragment.</li>
+</ul>
+
+<p>When creating a ledger, the following invariant must hold:</p>
+
+<p><strong>E &gt;= Q<sub>w</sub> &gt;= Qa</strong></p>
+
+<p>Thus, the ensemble size (<strong>E</strong>) must be larger than the write quorum size (<strong>Q<sub>w</sub></strong>), which must in turn be larger than the ack quorum size (<strong>Q<sub>a</sub></strong>). If that condition does not hold, then the ledger creation operation will fail.</p>
+
+<h3 id="ensembles">Ensembles</h3>
+
+<p>When a ledger is created, <strong>E</strong> bookies are chosen for the entries of that ledger. The bookies are the initial ensemble of the ledger. A ledger can have multiple ensembles, but an entry has only one ensemble. Changes in the ensemble involve a new fragment being added to the ledger.</p>
+
+<p>Take the following example. In this ledger, with ensemble size of 3, there are two fragments and thus two ensembles, one starting at entry 0, the second at entry 12. The second ensemble differs from the first only by its first element. This could be because bookie1 has failed and therefore had to be replaced.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">First entry</th>
+      <th style="text-align: left">Bookies</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left">0</td>
+      <td style="text-align: left">B1, B2, B3</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">12</td>
+      <td style="text-align: left">B4, B2, B3</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="write-quorums">Write quorums</h3>
+
+<p>Each entry in the log is written to <strong>Q<sub>w</sub></strong> nodes. This is considered the write quorum for that entry. The write quorum is the subsequence of the ensemble, <strong>Q<sub>w</sub></strong> in length, and starting at the bookie at index (entryid % <strong>E</strong>).</p>
+
+<p>For example, in a ledger of <strong>E</strong> = 4, <strong>Q<sub>w</sub></strong>, and <strong>Q<sub>a</sub></strong> = 2, with an ensemble consisting of B1, B2, B3, and B4, the write quorums for the first 6 entries will be:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Entry</th>
+      <th style="text-align: left">Write quorum</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left">0</td>
+      <td style="text-align: left">B1, B2, B3</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">1</td>
+      <td style="text-align: left">B2, B3, B4</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">2</td>
+      <td style="text-align: left">B3, B4, B1</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">3</td>
+      <td style="text-align: left">B4, B1, B2</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">4</td>
+      <td style="text-align: left">B1, B2, B3</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">5</td>
+      <td style="text-align: left">B2, B3, B4</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>There are only <strong>E</strong> distinct write quorums in any ensemble. If <strong>Q<sub>w</sub></strong> = <strong>Q<sub>a</sub></strong>, then there is only one, as no striping occurs.</p>
+
+<h3 id="ack-quorums">Ack quorums</h3>
+
+<p>The ack quorum for an entry is any subset of the write quorum of size <strong>Q<sub>a</sub></strong>. If <strong>Q<sub>a</sub></strong> bookies acknowledge an entry, it means it has been fully replicated.</p>
+
+<h3 id="guarantees">Guarantees</h3>
+
+<p>The system can tolerate <strong>Q<sub>a</sub></strong> – 1 failures without data loss.</p>
+
+<p>Bookkeeper guarantees that:</p>
+
+<ol>
+  <li>All updates to a ledger will be read in the same order as they were written.</li>
+  <li>All clients will read the same sequence of updates from the ledger.</li>
+</ol>
+
+<h2 id="writing-to-ledgers">Writing to ledgers</h2>
+
+<p>writer, ensuring that entry ids are sequential is trivial. A bookie acknowledges a write once it has been persisted to disk and is therefore durable. Once <strong>Q<sub>a</sub></strong> bookies from the write quorum acknowledge the write, the write is acknowledged to the client, but only if all entries with lower entry ids in the ledger have already been acknowledged to the client.</p>
+
+<p>The entry written contains the ledger id, the entry id, the last add confirmed and the payload. The last add confirmed is the last entry which had been acknowledged to the client when this entry was written. Sending this with the entry speeds up recovery of the ledger in the case that the writer crashes.</p>
+
+<p>Another client can also read entries in the ledger up as far as the last add confirmed, as we guarantee that all entries thus far have been replicated on Qa nodes, and therefore all future readers will be able to also read it. However, to read like this, the ledger should be opened with a non-fencing open. Otherwise, it would kill the writer.</p>
+
+<p>If a node fails to acknowledge a write, the writer will create a new ensemble by replacing the failed node in the current ensemble. It creates a new fragment with this ensemble, starting from the first message that has not been acknowledged to the client. Creating the new fragment involves making a CAS write to the metadata. If the CAS write fails, someone else has modified something in the ledger metadata. This concurrent modification could have been caused by recovery or <span class="pop" id="rereplication-popover">rereplication</span>. We reread the metadata. If the state of the ledger is no longer <code class="highlighter-rouge">OPEN</code>, we send an error to the client for any outstanding writes. Otherwise, we try to replace the failed node again.</p>
+
+<h3 id="closing-a-ledger-as-a-writer">Closing a ledger as a writer</h3>
+
+<p>Closing a ledger is straightforward for a writer. The writer makes a CAS write to the metadata, changing the state to <code class="highlighter-rouge">CLOSED</code> and setting the last entry of the ledger to the last entry which we have acknowledged to the client.</p>
+
+<p>If the CAS write fails, it means someone else has modified the metadata. We reread the metadata, and retry closing as long as the state of the ledger is still <code class="highlighter-rouge">OPEN</code>. If the state is <code class="highlighter-rouge">IN_RECOVERY</code> we send an error to the client. If the state is <code class="highlighter-rouge">CLOSED</code> and the last entry is the same as the last entry we have acknowledged to the client, we complete the close operation successfully. If the last entry is different from what we have acknowledged to the client, we send an error to the client.</p>
+
+<h3 id="closing-a-ledger-as-a-reader">Closing a ledger as a reader</h3>
+
+<p>A reader can also force a ledger to close. Forcing the ledger to close will prevent any writer from adding new entries to the ledger. This is called <span class="pop" id="fencing-popover">fencing</span>. This can occur when a writer has crashed or become unavailable, and a new writer wants to take over writing to the log. The new writer must ensure that it has seen all updates from the previous writer, and prevent the previous writer from making any new updates before making any updates of its own.</p>
+
+<p>To recover a ledger, we first update the state in the metadata to IN_RECOVERY. We then send a fence message to all the bookies in the last fragment of the ledger. When a bookie receives a fence message for a ledger, the fenced state of the ledger is persisted to disk. Once we receive a response from at least (<strong>Q<sub>w</sub></strong> - <strong>Q<sub>a</sub></strong>)+1 bookies from each write quorum in the ensemble, the ledger is fenced.</p>
+
+<p>By ensuring we have received a response from at last (<strong>Q<sub>w</sub></strong> - <strong>Q<sub>a</sub></strong>) + 1 bookies in each write quorum, we ensure that, if the old writer is alive and tries to add a new entry there will be no write quorum in which Qa bookies will accept the write. If the old writer tries to update the ensemble, it will fail on the CAS metadata write, and then see that the ledger is in IN_RECOVERY state, and that it therefore shouldn’t try to write to it.</p>
+
+<p>The old writer will be able to write entries to individual bookies (we can’t guarantee that the fence message reaches all bookies), but as it will not be able reach ack quorum, it will not be able to send a success response to its client. The client will get a LedgerFenced error instead.</p>
+
+<p>It is important to note that when you get a ledger fenced message for an entry, it doesn’t mean that the entry has not been written. It means that the entry may or may not have been written, and this can only be determined after the ledger is recovered. In effect, LedgerFenced should be treated like a timeout.</p>
+
+<p>Once the ledger is fenced, recovery can begin. Recovery means finding the last entry of the ledger and closing the ledger. To find the last entry of the ledger, the client asks all bookies for the highest last add confirmed value they have seen. It waits until it has received a response at least (<strong>Q<sub>w</sub></strong> - <strong>Q<sub>a</sub></strong>) + 1 bookies from each write quorum, and takes the highest response as the entry id to start reading forward from. It then starts reading forward in the ledger, one entry at a time, replicating all entries it sees to the entire write quorum for that entry. Once it can no longer read any more entries, it updates the state in the metadata to <code class="highlighter-rouge">CLOSED</code>, and sets the last entry of the ledger to the last entry it wrote. Multiple readers can try to recovery a ledger at the same time, but as the metadata write is CAS they will all converge on the same last entry of the ledger.</p>
+
+<h2 id="ledgers-to-logs">Ledgers to logs</h2>
+
+<p>In BookKeeper, <span class="pop" id="ledger-popover">ledgers</span> can be used to build a replicated log for your system. All guarantees provided by BookKeeper are at the ledger level. Guarantees on the whole log can be built using the ledger guarantees and any consistent datastore with a compare-and-swap (CAS) primitive. BookKeeper uses ZooKeeper as the datastore but others could theoretically be used.</p>
+
+<p>A log in BookKeeper is built from some number of ledgers, with a fixed order. A ledger represents a single segment of the log. A ledger could be the whole period that one node was the leader, or there could be multiple ledgers for a single period of leadership. However, there can only ever be one leader that adds entries to a single ledger. Ledgers cannot be reopened for writing once they have been closed/recovered.</p>
+
+<blockquote>
+  <p>BookKeeper does <em>not</em> provide leader election. You must use a system like ZooKeeper for this.</p>
+</blockquote>
+
+<p>In many cases, leader election is really leader suggestion. Multiple nodes could think that they are leader at any one time. It is the job of the log to guarantee that only one can write changes to the system.</p>
+
+<h3 id="opening-a-log">Opening a log</h3>
+
+<p>Once a node thinks it is leader for a particular log, it must take the following steps:</p>
+
+<ol>
+  <li>Read the list of ledgers for the log</li>
+  <li><span class="pop" id="fencing-popover">Fence</span> the last two ledgers in the list. Two ledgers are fenced because because the writer may be writing to the second-to-last ledger while adding the last ledger to the list.</li>
+  <li>Create a new ledger</li>
+  <li>Add the new ledger to the ledger list</li>
+  <li>Write the new ledger back to the datastore using a CAS operation</li>
+</ol>
+
+<p>The fencing in step 2 and the CAS operation in step 5 prevent two nodes from thinking that they have leadership at any one time.</p>
+
+<p>The CAS operation will fail if the list of ledgers has changed between reading it and writing back the new list. When the CAS operation fails, the leader must start at step 1 again. Even better, they should check that they are in fact still the leader with the system that is providing leader election. The protocol will work correctly without this step, though it will be able to make very little progress if two nodes think they are leader and are duelling for the log.</p>
+
+<p>The node must not serve any writes until step 5 completes successfully.</p>
+
+<h3 id="rolling-ledgers">Rolling ledgers</h3>
+
+<p>The leader may wish to close the current ledger and open a new one every so often. Ledgers can only be deleted as a whole. If you don’t roll the log, you won’t be able to clean up old entries in the log without a leader change. By closing the current ledger and adding a new one, the leader allows the log to be truncated whenever that data is no longer needed. The steps for rolling the log is similar to those for creating a new ledger.</p>
+
+<ol>
+  <li>Create a new ledger</li>
+  <li>Add the new ledger to the ledger list</li>
+  <li>Write the new ledger list to the datastore using CAS</li>
+  <li>Close the previous ledger</li>
+</ol>
+
+<p>By deferring the closing of the previous ledger until step 4, we can continue writing to the log while we perform metadata update operations to add the new ledger. This is safe as long as you fence the last 2 ledgers when acquiring leadership.</p>
+
+
+        </section>
+
+        
+      </div>
+    </div>
+
+    <div class="column is-2 is-hidden-mobile">
+      
+      
+<div class="toc">
+  <h2 class="title">The BookKeeper protocol</h2>
+  <ul class="section-nav">
+<li class="toc-entry toc-h2"><a href="#ledgers">Ledgers</a></li>
+<li class="toc-entry toc-h3"><a href="#ledger-metadata">Ledger metadata</a></li>
+<li class="toc-entry toc-h3"><a href="#ensembles">Ensembles</a></li>
+<li class="toc-entry toc-h3"><a href="#write-quorums">Write quorums</a></li>
+<li class="toc-entry toc-h3"><a href="#ack-quorums">Ack quorums</a></li>
+<li class="toc-entry toc-h3"><a href="#guarantees">Guarantees</a></li>
+<li class="toc-entry toc-h2"><a href="#writing-to-ledgers">Writing to ledgers</a></li>
+<li class="toc-entry toc-h3"><a href="#closing-a-ledger-as-a-writer">Closing a ledger as a writer</a></li>
+<li class="toc-entry toc-h3"><a href="#closing-a-ledger-as-a-reader">Closing a ledger as a reader</a></li>
+<li class="toc-entry toc-h2"><a href="#ledgers-to-logs">Ledgers to logs</a></li>
+<li class="toc-entry toc-h3"><a href="#opening-a-log">Opening a log</a></li>
+<li class="toc-entry toc-h3"><a href="#rolling-ledgers">Rolling ledgers</a></li>
+</ul>
+</div>
+
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+<div id="entry-popover-html" class="popover-template">
+  <p>An entry is a sequence of bytes (plus some metadata) written to a BookKeeper ledger. Entries are also known as records.</p>
+
+</div>
+
+<div id="ledger-popover-html" class="popover-template">
+  <p>A ledger is a sequence of entries written to BookKeeper. Entries are written sequentially to ledgers and at most once, giving ledgers append-only semantics.</p>
+
+</div>
+
+<div id="bookie-popover-html" class="popover-template">
+  <p>A bookie is an individial BookKeeper storage server.</p>
+
+<p>Bookies store the content of ledgers and act as a distributed ensemble.</p>
+
+</div>
+
+<div id="rereplication-popover-html" class="popover-template">
+  <p>A subsystem that runs in the background on bookies to ensure that ledgers are fully replicated even if one bookie from the ensemble is down.</p>
+
+</div>
+
+<div id="striping-popover-html" class="popover-template">
+  <p>Striping is the process of distributing BookKeeper ledgers to sub-groups of bookies rather than to all bookies in a BookKeeper ensemble.</p>
+
+<p>Striping is essential to ensuring fast performance.</p>
+
+</div>
+
+<div id="journal-popover-html" class="popover-template">
+  <p>A journal file stores BookKeeper transaction logs.</p>
+
+</div>
+
+<div id="fencing-popover-html" class="popover-template">
+  <p>When a reader forces a ledger to close, preventing any further entries from being written to the ledger.</p>
+
+</div>
+
+<div id="record-popover-html" class="popover-template">
+  <p>A record is a sequence of bytes (plus some metadata) written to a BookKeeper ledger. Records are also known as entries.</p>
+
+</div>
+
+
+<script type="text/javascript">
+
+tippy('#entry-popover', {
+  html: '#entry-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#ledger-popover', {
+  html: '#ledger-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#bookie-popover', {
+  html: '#bookie-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#rereplication-popover', {
+  html: '#rereplication-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#striping-popover', {
+  html: '#striping-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#journal-popover', {
+  html: '#journal-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#fencing-popover', {
+  html: '#fencing-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#record-popover', {
+  html: '#record-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+</script>
+
+    </main>
+
+    <footer class="footer">
+  <div class="container">
+    <div class="content has-text-centered">
+      <p>
+        Copyright &copy; 2016 - 2017 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
+      </p>
+    </div>
+  </div>
+</footer>
+
+  </body>
+
+  <script src="/js/app.js"></script>
+
+</html>

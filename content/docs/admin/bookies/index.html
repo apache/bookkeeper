@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Apache BookKeeper - BookKeeper administration</title>
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet" href="/css/normalize.css">
+<link rel="stylesheet" href="/css/tippy.css">
+<link rel="stylesheet" href="/css/style.css">
+
+<link rel="shortcut icon" href="/img/favicon.ico">
+
+<script src="/js/tippy.min.js"></script>
+
+<script type="text/javascript">
+  var shiftWindow = function() { scrollBy(0, -108); };
+  window.addEventListener("hashchange", shiftWindow);
+  window.addEventListener("pageshow", shiftWindow);
+  function load() { if (window.location.hash) shiftWindow(); }
+</script>
+
+  </head>
+  <body class="body">
+    <main class="main">
+      
+<div class="bk-topnav">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item bk-brand" href="/">
+        Apache BookKeeper
+      </a>
+
+      <!--
+      <a class="navbar-item is-hidden-desktop bk-github" href="https://github.com/apache/bookkeeper" target="_blank">
+        <span class="icon">
+          <i class="fa fa-github"></i>
+        </span>
+      </a>
+
+      <a class="navbar-item is-hidden-desktop bk-twitter" href="https://twitter.com/jgthms" target="_blank">
+        <span class="icon">
+          <i class="fa fa-twitter"></i>
+        </span>
+      </a>
+      -->
+
+      <div class="navbar-burger" data-target="bkNav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+
+    <div id="bkNav" class="navbar-menu">
+      <div class="navbar-start">
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Documentation</a>
+          <div class="navbar-dropdown is-boxed">
+            
+            <a class="navbar-item" href="/docs/getting-started/installation">
+              Version 4.5.0
+              <span class="tag is-success">LATEST</span>
+            </a>
+            
+            <hr class="dropdown-divider">
+            <a class="navbar-item" href="/javadoc">
+              <span class="icon bk-javadoc-icon">
+                <img src="/img/java-icon.svg">
+              </span>
+              Javadoc
+            </a>
+          </div>
+        </div>
+
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Community</a>
+          <div class="navbar-dropdown is-boxed">
+            <a class="navbar-item" href="/community/mailing-lists">Mailing lists</a>
+            <a class="navbar-item" href="/community/irc">IRC</a>
+            <a class="navbar-item" href="/community/contributing">Contributing</a>
+            <a class="navbar-item" href="https://issues.apache.org/jira/projects/BOOKKEEPER">JIRA Issue Tracker</a>
+          </div>
+        </div>
+        
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Project</a>
+          <div class="navbar-dropdown is-boxed">
+            <a class="navbar-item" href="/project/who">Who are we?</a>
+            <a class="navbar-item" href="/project/bylaws">Bylaws</a>
+            <a class="navbar-item" href="http://www.apache.org/licenses/">License</a>
+            <hr class="dropdown-divider">
+            <a class="navbar-item" href="/project/privacy">Privacy policy</a>
+            <a class="navbar-item" href="http://www.apache.org/foundation/sponsorship.html">Sponsorship</a>
+            <a class="navbar-item" href="http://www.apache.org/foundation/thanks.html">Thanks</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="navbar-end">
+        <div class="navbar-item">
+          <div class="field is-grouped">
+            <p class="control">
+              <a class="button bk-twitter" href="https://twitter.com/asfbookkeeper">
+                <span class="icon">
+                  <i class="fa fa-twitter"></i>
+                </span>
+                <span>Twitter</span>
+              </a>
+            </p>
+            <p class="control">
+              <a class="button" href="https://github.com/apache/bookkeeper">
+                <span class="icon">
+                  <i class="fa fa-github"></i>
+                </span>
+                <span>GitHub</span>
+              </a>
+            </p>
+            <p class="control">
+              <a class="button is-primary" href="/docs/getting-started/installation#download">
+                <span class="icon">
+                  <i class="fa fa-download"></i>
+                </span>
+                <span>Download</span>
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</div>
+
+      <div class="bk-docs-container">
+  <div class="columns is-gapless">
+    <div class="column is-2 is-hidden-mobile">
+      <div class="container">
+        
+<aside class="sidebar">
+  
+  <p>
+    Getting started
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/getting-started/installation">
+      Installation
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/getting-started/run-locally">
+      Run bookies locally
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/getting-started/concepts">
+      Concepts and architecture
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Deployment
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/deployment/manual">
+      Manual deployment
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/deployment/dcos">
+      BookKeeper on DC/OS
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Administration
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li class="active">
+      <a href="/docs/admin/bookies">
+      BookKeeper administration
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/admin/autorecovery">
+      AutoRecovery
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/admin/metrics">
+      Metric collection
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    API
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/api/overview">
+      Overview
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/api/ledger-api">
+      Ledger API
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/api/distributedlog-api">
+      DistributedLog
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Development
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/development/protocol">
+      BookKeeper protocol
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Reference
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/reference/config">
+      Configuration
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/reference/cli">
+      Command-line tools
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/reference/metrics">
+      Metrics
+      </a>
+    </li>
+    
+  </ul>
+  
+  <hr />
+  <a class="button is-info">
+    Latest version: 4.5.0
+  </a>
+</aside>
+
+      </div>
+    </div>
+
+    <div class="column is-8 bk-docs-block">
+      <header class="docs-title">
+        <nav class="level bk-level">
+          <div class="level-left">
+            <div class="level-item">
+              <h1 class="title">BookKeeper administration</h1>
+            </div>
+          </div>
+          
+        </nav>
+
+        <h2 class="subtitle">A guide to deploying and administering BookKeeper</h2>
+      </header>
+
+      <hr />
+
+      <div class="content">
+        <section class="bk-main-content">
+          <p>This document is a guide to deploying, administering, and maintaining BookKeeper. It also discusses <a href="#best-practices">best practices</a> and <a href="#common-problems">common problems</a>.</p>
+
+<h2 id="requirements">Requirements</h2>
+
+<p>A typical BookKeeper installation consists of an ensemble of <span class="pop" id="bookie-popover">bookies</span> and a ZooKeeper quorum. The exact number of bookies depends on the quorum mode that you choose, desired throughput, and the number of clients using the installation simultaneously.</p>
+
+<p>The minimum number of bookies depends on the type of installation:</p>
+
+<ul>
+  <li>For <em>self-verifying</em> entries you should run at least three bookies. In this mode, clients store a message authentication code along with each <span class="pop" id="entry-popover">entry</span>.</li>
+  <li>For <em>generic</em> entries you should run at least four</li>
+</ul>
+
+<p>There is no upper limit on the number of bookies that you can run in a single ensemble.</p>
+
+<h3 id="performance">Performance</h3>
+
+<p>To achieve optimal performance, BookKeeper requires each server to have at least two disks. It’s possible to run a bookie with a single disk but performance will be significantly degraded.</p>
+
+<h3 id="zookeeper">ZooKeeper</h3>
+
+<p>There is no constraint on the number of ZooKeeper nodes you can run with BookKeeper. A single machine running ZooKeeper in <a href="https://zookeeper.apache.org/doc/current/zookeeperStarted.html#sc_InstallingSingleMode">standalone mode</a> is sufficient for BookKeeper, although for the sake of higher resilience we recommend running ZooKeeper in <a href="https://zookeeper.apache.org/doc/current/zookeeperStarted.html#sc_RunningReplicatedZooKeeper">quorum mode</a> with multiple servers.</p>
+
+<h2 id="starting-and-stopping-bookies">Starting and stopping bookies</h2>
+
+<p>You can run bookies either in the foreground or in the background, using <a href="https://en.wikipedia.org/wiki/Nohup">nohup</a>. You can also run <a href="#local-bookie">local bookies</a> for development purposes.</p>
+
+<p>To start a bookie in the foreground, use the <a href="../../reference/cli#bookkeeper-bookie"><code class="highlighter-rouge">bookie</code></a> command of the <a href="../../reference/cli#bookkeeper"><code class="highlighter-rouge">bookkeeper</code></a> CLI tool:</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper bookie
+</code></pre>
+</div>
+
+<p>To start a bookie in the background, use the <a href="../../reference/cli#bookkeeper-daemon.sh"><code class="highlighter-rouge">bookkeeper-daemon.sh</code></a> script and run <code class="highlighter-rouge">start bookie</code>:</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper-daemon.sh start bookie
+</code></pre>
+</div>
+
+<h3 id="local-bookies">Local bookies</h3>
+
+<p>The instructions above showed you how to run bookies intended for production use. If you’d like to experiment with ensembles of bookies locally, you can use the <a href="../../reference/cli#bookkeeper-localbookie"><code class="highlighter-rouge">localbookie</code></a> command of the <code class="highlighter-rouge">bookkeeper</code> CLI tool and specify the number of bookies you’d like to run.</p>
+
+<p>This would spin up a local ensemble of 6 bookies:</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper localbookie 6
+</code></pre>
+</div>
+
+<blockquote>
+  <p>When you run a local bookie ensemble, all bookies run in a single JVM process.</p>
+</blockquote>
+
+<h2 id="configuring-bookies">Configuring bookies</h2>
+
+<p>There’s a wide variety of parameters that you can set in the bookie configuration file in <code class="highlighter-rouge">bookkeeper-server/conf/bk_server.conf</code> of your <a href="../../reference/config">BookKeeper installation</a>. A full listing can be found in <a href="../../reference/config">Bookie configuration</a>.</p>
+
+<p>Some of the more important parameters to be aware of:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Parameter</th>
+      <th style="text-align: left">Description</th>
+      <th style="text-align: left">Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left"><code class="highlighter-rouge">bookiePort</code></td>
+      <td style="text-align: left">The TCP port that the bookie listens on</td>
+      <td style="text-align: left"><code class="highlighter-rouge">3181</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code class="highlighter-rouge">zkServers</code></td>
+      <td style="text-align: left">A comma-separated list of ZooKeeper servers in <code class="highlighter-rouge">hostname:port</code> format</td>
+      <td style="text-align: left"><code class="highlighter-rouge">localhost:2181</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code class="highlighter-rouge">journalDirectory</code></td>
+      <td style="text-align: left">The directory where the <a href="../../getting-started/concepts#log-device">log device</a> stores the bookie’s write-ahead log (WAL)</td>
+      <td style="text-align: left"><code class="highlighter-rouge">/tmp/bk-txn</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code class="highlighter-rouge">ledgerDirectories</code></td>
+      <td style="text-align: left">The directories where the <a href="../../getting-started/concepts#ledger-device">ledger device</a> stores the bookie’s ledger entries (as a comma-separated list)</td>
+      <td style="text-align: left"><code class="highlighter-rouge">/tmp/bk-data</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<blockquote>
+  <p>Ideally, the directories specified <code class="highlighter-rouge">journalDirectory</code> and <code class="highlighter-rouge">ledgerDirectories</code> should be on difference devices.</p>
+</blockquote>
+
+<h2 id="logging">Logging</h2>
+
+<p>BookKeeper uses <a href="http://www.slf4j.org/">slf4j</a> for logging, with <a href="https://logging.apache.org/log4j/2.x/">log4j</a> bindings enabled by default.</p>
+
+<p>To enable logging for a bookie, create a <code class="highlighter-rouge">log4j.properties</code> file and point the <code class="highlighter-rouge">BOOKIE_LOG_CONF</code> environment variable to the configuration file. Here’s an example:</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span><span class="nb">export </span><span class="nv">BOOKIE_LOG_CONF</span><span class="o">=</span>/some/path/log4j.properties
+<span class="gp">$ </span>bookkeeper-server/bin/bookkeeper bookie
+</code></pre>
+</div>
+
+<h2 id="upgrading">Upgrading</h2>
+
+<p>From time to time you may need to make changes to the filesystem layout of bookies—changes that are incompatible with previous versions of BookKeeper and require that directories used with previous versions are upgraded. If a filesystem upgrade is required when updating BookKeeper, the bookie will fail to start and return an error like this:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>2017-05-25 10:41:50,494 - ERROR - [main:Bookie@246] - Directory layout version is less than 3, upgrade needed
+</code></pre>
+</div>
+
+<p>BookKeeper provides a utility for upgrading the filesystem. You can perform an upgrade using the <a href="../../reference/cli#bookkeeper-upgrade"><code class="highlighter-rouge">upgrade</code></a> command of the <code class="highlighter-rouge">bookkeeper</code> CLI tool. When running <code class="highlighter-rouge">bookkeeper upgrade</code> you need to specify one of three flags:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Flag</th>
+      <th style="text-align: left">Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left"><code class="highlighter-rouge">--upgrade</code></td>
+      <td style="text-align: left">Performs an upgrade</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code class="highlighter-rouge">--rollback</code></td>
+      <td style="text-align: left">Performs a rollback to the initial filesystem version</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code class="highlighter-rouge">--finalize</code></td>
+      <td style="text-align: left">Marks the upgrade as complete</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="upgrade-pattern">Upgrade pattern</h3>
+
+<p>A standard upgrade pattern is to run an upgrade…</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper upgrade --upgrade
+</code></pre>
+</div>
+
+<p>…then check that everything is working normally, then kill the bookie. If everything is okay, finalize the upgrade…</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper upgrade --finalize
+</code></pre>
+</div>
+
+<p>…and then restart the server:</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper bookie
+</code></pre>
+</div>
+
+<p>If something has gone wrong, you can always perform a rollback:</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper upgrade --rollback
+</code></pre>
+</div>
+
+<h2 id="formatting">Formatting</h2>
+
+<p>You can format bookie metadata in ZooKeeper using the <a href="../../reference/cli#bookkeeper-shell-metaformat"><code class="highlighter-rouge">metaformat</code></a> command of the <a href="../../reference/cli#the-bookkeeper-shell">BookKeeper shell</a>.</p>
+
+<p>By default, formatting is done in interactive mode, which prompts you to confirm the format operation if old data exists. You can disable confirmation using the <code class="highlighter-rouge">-nonInteractive</code> flag. If old data does exist, the format operation will abort <em>unless</em> you set the <code class="highlighter-rouge">-force</code> flag. Here’s an example:</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell metaformat
+</code></pre>
+</div>
+
+<p>You can format the local filesystem data on a bookie using the <a href="../../reference/cli#bookkeeper-shell-bookieformat"><code class="highlighter-rouge">bookieformat</code></a> command on each bookie. Here’s an example:</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell bookieformat
+</code></pre>
+</div>
+
+<blockquote>
+  <p>The <code class="highlighter-rouge">-force</code> and <code class="highlighter-rouge">-nonInteractive</code> flags are also available for the <code class="highlighter-rouge">bookieformat</code> command.</p>
+</blockquote>
+
+<h2 id="autorecovery">AutoRecovery</h2>
+
+<p>For a guide to AutoRecovery in BookKeeper, see <a href="../autorecovery">this doc</a>.</p>
+
+<h2 id="missing-disks-or-directories">Missing disks or directories</h2>
+
+<p>Accidentally replacing disks or removing directories can cause a bookie to fail while trying to read a ledger fragment that, according to the ledger metadata, exists on the bookie. For this reason, when a bookie is started for the first time, its disk configuration is fixed for the lifetime of that bookie. Any change to its disk configuration, such as a crashed disk or an accidental configuration change, will result in the bookie being unable to start. That will throw an error like this:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>2017-05-29 18:19:13,790 - ERROR - [main:BookieServer314] – Exception running bookie server : @
+org.apache.bookkeeper.bookie.BookieException$InvalidCookieException
+.......at org.apache.bookkeeper.bookie.Cookie.verify(Cookie.java:82)
+.......at org.apache.bookkeeper.bookie.Bookie.checkEnvironment(Bookie.java:275)
+.......at org.apache.bookkeeper.bookie.Bookie.&lt;init&gt;(Bookie.java:351)
+</code></pre>
+</div>
+
+<p>If the change was the result of an accidental configuration change, the change can be reverted and the bookie can be restarted. However, if the change <em>cannot</em> be reverted, such as is the case when you want to add a new disk or replace a disk, the bookie must be wiped and then all its data re-replicated onto it.</p>
+
+<ol>
+  <li>Increment the <a href="../../reference/config#bookiePort"><code class="highlighter-rouge">bookiePort</code></a> parameter in the <a href="../../reference/config"><code class="highlighter-rouge">bk_server.conf</code></a></li>
+  <li>Ensure that all directories specified by <a href="../../reference/config#journalDirectory"><code class="highlighter-rouge">journalDirectory</code></a> and <a href="../../reference/config#ledgerDirectories"><code class="highlighter-rouge">ledgerDirectories</code></a> are empty.</li>
+  <li><a href="#starting-and-stopping-bookies">Start the bookie</a>.</li>
+  <li>
+    <p>Run the following command to re-replicate the data:</p>
+
+    <div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bin/bookkeeper org.apache.bookkeeper.tools.BookKeeperTools <span class="se">\</span>
+  &lt;zkserver&gt; <span class="se">\</span>
+  &lt;oldbookie&gt; <span class="se">\</span>
+  &lt;newbookie&gt;
+</code></pre>
+    </div>
+
+    <p>The ZooKeeper server, old bookie, and new bookie, are all identified by their external IP and <code class="highlighter-rouge">bookiePort</code> (3181 by default). Here’s an example:</p>
+
+    <div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bin/bookkeeper org.apache.bookkeeper.tools.BookKeeperTools <span class="se">\</span>
+  zk1.example.com <span class="se">\</span>
+  192.168.1.10:3181 <span class="se">\</span>
+  192.168.1.10:3181
+</code></pre>
+    </div>
+
+    <p>See the <a href="../autorecovery">AutoRecovery</a> documentation for more info on the re-replication process.</p>
+  </li>
+</ol>
+
+        </section>
+
+        
+      </div>
+    </div>
+
+    <div class="column is-2 is-hidden-mobile">
+      
+      
+<div class="toc">
+  <h2 class="title">BookKeeper administration</h2>
+  <ul class="section-nav">
+<li class="toc-entry toc-h2"><a href="#requirements">Requirements</a></li>
+<li class="toc-entry toc-h3"><a href="#performance">Performance</a></li>
+<li class="toc-entry toc-h3"><a href="#zookeeper">ZooKeeper</a></li>
+<li class="toc-entry toc-h2"><a href="#starting-and-stopping-bookies">Starting and stopping bookies</a></li>
+<li class="toc-entry toc-h3"><a href="#local-bookies">Local bookies</a></li>
+<li class="toc-entry toc-h2"><a href="#configuring-bookies">Configuring bookies</a></li>
+<li class="toc-entry toc-h2"><a href="#logging">Logging</a></li>
+<li class="toc-entry toc-h2"><a href="#upgrading">Upgrading</a></li>
+<li class="toc-entry toc-h3"><a href="#upgrade-pattern">Upgrade pattern</a></li>
+<li class="toc-entry toc-h2"><a href="#formatting">Formatting</a></li>
+<li class="toc-entry toc-h2"><a href="#autorecovery">AutoRecovery</a></li>
+<li class="toc-entry toc-h2"><a href="#missing-disks-or-directories">Missing disks or directories</a></li>
+</ul>
+</div>
+
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+<div id="entry-popover-html" class="popover-template">
+  <p>An entry is a sequence of bytes (plus some metadata) written to a BookKeeper ledger. Entries are also known as records.</p>
+
+</div>
+
+<div id="ledger-popover-html" class="popover-template">
+  <p>A ledger is a sequence of entries written to BookKeeper. Entries are written sequentially to ledgers and at most once, giving ledgers append-only semantics.</p>
+
+</div>
+
+<div id="bookie-popover-html" class="popover-template">
+  <p>A bookie is an individial BookKeeper storage server.</p>
+
+<p>Bookies store the content of ledgers and act as a distributed ensemble.</p>
+
+</div>
+
+<div id="rereplication-popover-html" class="popover-template">
+  <p>A subsystem that runs in the background on bookies to ensure that ledgers are fully replicated even if one bookie from the ensemble is down.</p>
+
+</div>
+
+<div id="striping-popover-html" class="popover-template">
+  <p>Striping is the process of distributing BookKeeper ledgers to sub-groups of bookies rather than to all bookies in a BookKeeper ensemble.</p>
+
+<p>Striping is essential to ensuring fast performance.</p>
+
+</div>
+
+<div id="journal-popover-html" class="popover-template">
+  <p>A journal file stores BookKeeper transaction logs.</p>
+
+</div>
+
+<div id="fencing-popover-html" class="popover-template">
+  <p>When a reader forces a ledger to close, preventing any further entries from being written to the ledger.</p>
+
+</div>
+
+<div id="record-popover-html" class="popover-template">
+  <p>A record is a sequence of bytes (plus some metadata) written to a BookKeeper ledger. Records are also known as entries.</p>
+
+</div>
+
+
+<script type="text/javascript">
+
+tippy('#entry-popover', {
+  html: '#entry-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#ledger-popover', {
+  html: '#ledger-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#bookie-popover', {
+  html: '#bookie-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#rereplication-popover', {
+  html: '#rereplication-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#striping-popover', {
+  html: '#striping-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#journal-popover', {
+  html: '#journal-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#fencing-popover', {
+  html: '#fencing-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#record-popover', {
+  html: '#record-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+</script>
+
+    </main>
+
+    <footer class="footer">
+  <div class="container">
+    <div class="content has-text-centered">
+      <p>
+        Copyright &copy; 2016 - 2017 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
+      </p>
+    </div>
+  </div>
+</footer>
+
+  </body>
+
+  <script src="/js/app.js"></script>
+
+</html>

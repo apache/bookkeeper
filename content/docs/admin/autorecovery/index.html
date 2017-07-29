@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Apache BookKeeper - Using AutoRecovery</title>
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet" href="/css/normalize.css">
+<link rel="stylesheet" href="/css/tippy.css">
+<link rel="stylesheet" href="/css/style.css">
+
+<link rel="shortcut icon" href="/img/favicon.ico">
+
+<script src="/js/tippy.min.js"></script>
+
+<script type="text/javascript">
+  var shiftWindow = function() { scrollBy(0, -108); };
+  window.addEventListener("hashchange", shiftWindow);
+  window.addEventListener("pageshow", shiftWindow);
+  function load() { if (window.location.hash) shiftWindow(); }
+</script>
+
+  </head>
+  <body class="body">
+    <main class="main">
+      
+<div class="bk-topnav">
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <a class="navbar-item bk-brand" href="/">
+        Apache BookKeeper
+      </a>
+
+      <!--
+      <a class="navbar-item is-hidden-desktop bk-github" href="https://github.com/apache/bookkeeper" target="_blank">
+        <span class="icon">
+          <i class="fa fa-github"></i>
+        </span>
+      </a>
+
+      <a class="navbar-item is-hidden-desktop bk-twitter" href="https://twitter.com/jgthms" target="_blank">
+        <span class="icon">
+          <i class="fa fa-twitter"></i>
+        </span>
+      </a>
+      -->
+
+      <div class="navbar-burger" data-target="bkNav">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+
+    <div id="bkNav" class="navbar-menu">
+      <div class="navbar-start">
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Documentation</a>
+          <div class="navbar-dropdown is-boxed">
+            
+            <a class="navbar-item" href="/docs/getting-started/installation">
+              Version 4.5.0
+              <span class="tag is-success">LATEST</span>
+            </a>
+            
+            <hr class="dropdown-divider">
+            <a class="navbar-item" href="/javadoc">
+              <span class="icon bk-javadoc-icon">
+                <img src="/img/java-icon.svg">
+              </span>
+              Javadoc
+            </a>
+          </div>
+        </div>
+
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Community</a>
+          <div class="navbar-dropdown is-boxed">
+            <a class="navbar-item" href="/community/mailing-lists">Mailing lists</a>
+            <a class="navbar-item" href="/community/irc">IRC</a>
+            <a class="navbar-item" href="/community/contributing">Contributing</a>
+            <a class="navbar-item" href="https://issues.apache.org/jira/projects/BOOKKEEPER">JIRA Issue Tracker</a>
+          </div>
+        </div>
+        
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link">Project</a>
+          <div class="navbar-dropdown is-boxed">
+            <a class="navbar-item" href="/project/who">Who are we?</a>
+            <a class="navbar-item" href="/project/bylaws">Bylaws</a>
+            <a class="navbar-item" href="http://www.apache.org/licenses/">License</a>
+            <hr class="dropdown-divider">
+            <a class="navbar-item" href="/project/privacy">Privacy policy</a>
+            <a class="navbar-item" href="http://www.apache.org/foundation/sponsorship.html">Sponsorship</a>
+            <a class="navbar-item" href="http://www.apache.org/foundation/thanks.html">Thanks</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="navbar-end">
+        <div class="navbar-item">
+          <div class="field is-grouped">
+            <p class="control">
+              <a class="button bk-twitter" href="https://twitter.com/asfbookkeeper">
+                <span class="icon">
+                  <i class="fa fa-twitter"></i>
+                </span>
+                <span>Twitter</span>
+              </a>
+            </p>
+            <p class="control">
+              <a class="button" href="https://github.com/apache/bookkeeper">
+                <span class="icon">
+                  <i class="fa fa-github"></i>
+                </span>
+                <span>GitHub</span>
+              </a>
+            </p>
+            <p class="control">
+              <a class="button is-primary" href="/docs/getting-started/installation#download">
+                <span class="icon">
+                  <i class="fa fa-download"></i>
+                </span>
+                <span>Download</span>
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</div>
+
+      <div class="bk-docs-container">
+  <div class="columns is-gapless">
+    <div class="column is-2 is-hidden-mobile">
+      <div class="container">
+        
+<aside class="sidebar">
+  
+  <p>
+    Getting started
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/getting-started/installation">
+      Installation
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/getting-started/run-locally">
+      Run bookies locally
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/getting-started/concepts">
+      Concepts and architecture
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Deployment
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/deployment/manual">
+      Manual deployment
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/deployment/dcos">
+      BookKeeper on DC/OS
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Administration
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/admin/bookies">
+      BookKeeper administration
+      </a>
+    </li>
+    
+    
+    <li class="active">
+      <a href="/docs/admin/autorecovery">
+      AutoRecovery
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/admin/metrics">
+      Metric collection
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    API
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/api/overview">
+      Overview
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/api/ledger-api">
+      Ledger API
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/api/distributedlog-api">
+      DistributedLog
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Development
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/development/protocol">
+      BookKeeper protocol
+      </a>
+    </li>
+    
+  </ul>
+  
+  <p>
+    Reference
+  </p>
+  <ul class="sidebar-items">
+    
+    
+    <li>
+      <a href="/docs/reference/config">
+      Configuration
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/reference/cli">
+      Command-line tools
+      </a>
+    </li>
+    
+    
+    <li>
+      <a href="/docs/reference/metrics">
+      Metrics
+      </a>
+    </li>
+    
+  </ul>
+  
+  <hr />
+  <a class="button is-info">
+    Latest version: 4.5.0
+  </a>
+</aside>
+
+      </div>
+    </div>
+
+    <div class="column is-8 bk-docs-block">
+      <header class="docs-title">
+        <nav class="level bk-level">
+          <div class="level-left">
+            <div class="level-item">
+              <h1 class="title">Using AutoRecovery</h1>
+            </div>
+          </div>
+          
+        </nav>
+
+        
+      </header>
+
+      <hr />
+
+      <div class="content">
+        <section class="bk-main-content">
+          <p>When a <span class="pop" id="bookie-popover">bookie</span> crashes, all <span class="pop" id="ledger-popover">ledgers</span> on that bookie become under-replicated. In order to bring all ledgers in your BookKeeper cluster back to full replication, you’ll need to <em>recover</em> the data from any offline bookies. There are two ways to recover bookies’ data:</p>
+
+<ol>
+  <li>Using <a href="#manual-recovery">manual recovery</a></li>
+  <li>Automatically, using <a href="#autorecovery"><em>AutoRecovery</em></a></li>
+</ol>
+
+<h2 id="manual-recovery">Manual recovery</h2>
+
+<p>You can manually recover failed bookies using the <a href="../../reference/cli"><code class="highlighter-rouge">bookkeeper</code></a> command-line tool. You need to specify:</p>
+
+<ul>
+  <li>that the <code class="highlighter-rouge">org.apache.bookkeeper.tools.BookKeeperTools</code> class needs to be run</li>
+  <li>an IP and port for your BookKeeper cluster’s ZooKeeper ensemble</li>
+  <li>the IP and port for the failed bookie</li>
+</ul>
+
+<p>Here’s an example:</p>
+
+<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper org.apache.bookkeeper.tools.BookKeeperTools <span class="se">\</span>
+  zk1.example.com:2181 <span class="se">\ </span><span class="c"># IP and port for ZooKeeper</span>
+  192.168.1.10:3181      <span class="c"># IP and port for the failed bookie</span>
+</code></pre>
+</div>
+
+<p>If you wish, you can also specify which bookie you’d like to rereplicate to. Here’s an example:</p>
+
+<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper org.apache.bookkeeper.tools.BookKeeperTools <span class="se">\</span>
+  zk1.example.com:2181 <span class="se">\ </span><span class="c"># IP and port for ZooKeeper</span>
+  192.168.1.10:3181 <span class="se">\ </span>   <span class="c"># IP and port for the failed bookie</span>
+  192.168.1.11:3181      <span class="c"># IP and port for the bookie to rereplicate to</span>
+</code></pre>
+</div>
+
+<h3 id="the-manual-recovery-process">The manual recovery process</h3>
+
+<p>When you initiate a manual recovery process, the following happens:</p>
+
+<ol>
+  <li>The client (the process running ) reads the metadata of active ledgers from ZooKeeper.</li>
+  <li>The ledgers that contain segments from the failed bookie in their ensemble are selected.</li>
+  <li>A recovery process is initiated for each ledger in this list and the rereplication process is run for each ledger.</li>
+  <li>Once all the ledgers are marked as fully replicated, bookie recovery is finished.</li>
+</ol>
+
+<h2 id="autorecovery">AutoRecovery</h2>
+
+<p>AutoRecovery is a process that:</p>
+
+<ul>
+  <li>automatically detects when a <span class="pop" id="bookie-popover">bookie</span> in your BookKeeper cluster has become unavailable and then</li>
+  <li>rereplicates all the <span class="pop" id="ledger-popover">ledgers</span> that were stored on that bookie.</li>
+</ul>
+
+<p>AutoRecovery can be run in two ways:</p>
+
+<ol>
+  <li>On dedicated nodes in your BookKeeper cluster</li>
+  <li>On the same machines on which your bookies are running</li>
+</ol>
+
+<h2 id="running-autorecovery">Running AutoRecovery</h2>
+
+<p>You can start up AutoRecovery using the <a href="../../reference/cli#bookkeeper-autorecovery"><code class="highlighter-rouge">autorecovery</code></a> command of the <a href="../../reference/cli"><code class="highlighter-rouge">bookkeeper</code></a> CLI tool.</p>
+
+<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper autorecovery
+</code></pre>
+</div>
+
+<blockquote>
+  <p>The most important thing to ensure when starting up AutoRecovery is that the ZooKeeper connection string specified by the <a href="../../reference/config#zkServers"><code class="highlighter-rouge">zkServers</code></a> parameter points to the right ZooKeeper cluster.</p>
+</blockquote>
+
+<p>If you start up AutoRecovery on a machine that is already running a bookie, then the AutoRecovery process will run alongside the bookie on a separate thread.</p>
+
+<p>You can also start up AutoRecovery on a fresh machine if you’d like to create a dedicated cluster of AutoRecovery nodes.</p>
+
+<h2 id="configuration">Configuration</h2>
+
+<p>There are a handful of AutoRecovery-related configs in the <a href="../../reference/config"><code class="highlighter-rouge">bk_server.conf</code></a> configuration file. For a listing of those configs, see <a href="../../reference/config#autorecovery-settings">AutoRecovery settings</a>.</p>
+
+<h2 id="disable-autorecovery">Disable AutoRecovery</h2>
+
+<p>You can disable AutoRecovery at any time, for example during maintenance. Disabling AutoRecovery ensures that bookies’ data isn’t unnecessarily rereplicated when the bookie is only taken down for a short period of time, for example when the bookie is being updated or the configuration if being changed.</p>
+
+<p>You can disable AutoRecover using the <a href="../../reference/cli#bookkeeper-shell-autorecovery"><code class="highlighter-rouge">bookkeeper</code></a> CLI tool:</p>
+
+<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell autorecovery -disable
+</code></pre>
+</div>
+
+<p>Once disabled, you can reenable AutoRecovery using the <a href="../../reference/cli#bookkeeper-shell-autorecovery"><code class="highlighter-rouge">enable</code></a> shell command:</p>
+
+<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell autorecovery -enable
+</code></pre>
+</div>
+
+<h2 id="autorecovery-architecture">AutoRecovery architecture</h2>
+
+<p>AutoRecovery has two components:</p>
+
+<ol>
+  <li>The <a href="#auditor"><strong>auditor</strong></a> (see the <a href="/javadoc/org/apache/bookkeeper/replication/Auditor.html"><code class="highlighter-rouge">Auditor</code></a> class) is a singleton node that watches bookies to see if they fail and creates rereplication tasks for the ledgers on failed bookies.</li>
+  <li>The <a href="#replication-worker"><strong>replication worker</strong></a> (see the <a href="/javadoc/org/apache/bookkeeper/replication/ReplicationWorker.html"><code class="highlighter-rouge">ReplicationWorker</code></a> class) runs on each bookie and executes rereplication tasks provided by the auditor.</li>
+</ol>
+
+<p>Both of these components run as threads in the <a href="/javadoc/org/apache/bookkeeper/replication/AutoRecoveryMain"><code class="highlighter-rouge">AutoRecoveryMain</code></a> process, which runs on each bookie in the cluster. All recovery nodes participate in leader election—using ZooKeeper—to decide which node becomes the auditor. Nodes that fail to become the auditor watch the elected auditor and run an election process again if they see that the auditor node has failed.</p>
+
+<h3 id="auditor">Auditor</h3>
+
+<p>The auditor watches all bookies in the cluster that are registered with ZooKeeper. Bookies register with ZooKeeper at startup. If the bookie crashes or is killed, the bookie’s registration in ZooKeeper disappears and the auditor is notified of the change in the list of registered bookies.</p>
+
+<p>When the auditor sees that a bookie has disappeared, it immediately scans the complete <span class="pop" id="ledger-popover">ledger</span> list to find ledgers that have data stored on the failed bookie. Once it has a list of ledgers for that bookie, the auditor will publish a rereplication task for each ledger under the <code class="highlighter-rouge">/underreplicated/</code> <a href="https://zookeeper.apache.org/doc/current/zookeeperOver.html">znode</a> in ZooKeeper.</p>
+
+<h3 id="replication-worker">Replication Worker</h3>
+
+<p>Each replication worker watches for tasks being published by the auditor on the <code class="highlighter-rouge">/underreplicated/</code> znode in ZooKeeper. When a new task appears, the replication worker will try to get a lock on it. If it cannot acquire the lock, it will try the next entry. The locks are implemented using ZooKeeper ephemeral znodes.</p>
+
+<p>The replication worker will scan through the rereplication task’s ledger for segments of which its local bookie is not a member. When it finds segments matching this criterion, it will replicate the entries of that segment to the local bookie. If, after this process, the ledger is fully replicated, the ledgers entry under /underreplicated/ is deleted, and the lock is released. If there is a problem replicating, or there are still segments in the ledger which are still underreplicated (due to the local bookie already being part of the ensemble for the segment), then the lock is simply released.</p>
+
+<p>If the replication worker finds a segment which needs rereplication, but does not have a defined endpoint (i.e. the final segment of a ledger currently being written to), it will wait for a grace period before attempting rereplication. If the segment needing rereplication still does not have a defined endpoint, the ledger is fenced and rereplication then takes place.</p>
+
+<p>This avoids the situation in which a client is writing to a ledger and one of the bookies goes down, but the client has not written an entry to that bookie before rereplication takes place. The client could continue writing to the old segment, even though the ensemble for the segment had changed. This could lead to data loss. Fencing prevents this scenario from happening. In the normal case, the client will try to write to the failed bookie within the grace period, and will have started a new segment before rereplication starts.</p>
+
+<p>You can configure this grace period using the <a href="../../reference/config#openLedgerRereplicationGracePeriod"><code class="highlighter-rouge">openLedgerRereplicationGracePeriod</code></a> parameter.</p>
+
+<h3 id="the-rereplication-process">The rereplication process</h3>
+
+<p>The ledger rereplication process happens in these steps:</p>
+
+<ol>
+  <li>The client goes through all ledger segments in the ledger, selecting those that contain the failed bookie.</li>
+  <li>A recovery process is initiated for each ledger segment in this list.
+    <ol>
+      <li>The client selects a bookie to which all entries in the ledger segment will be replicated; In the case of autorecovery, this will always be the local bookie.</li>
+      <li>The client reads entries that belong to the ledger segment from other bookies in the ensemble and writes them to the selected bookie.</li>
+      <li>Once all entries have been replicated, the zookeeper metadata for the segment is updated to reflect the new ensemble.</li>
+      <li>The segment is marked as fully replicated in the recovery tool.</li>
+    </ol>
+  </li>
+  <li>Once all ledger segments are marked as fully replicated, the ledger is marked as fully replicated.</li>
+</ol>
+
+
+        </section>
+
+        
+      </div>
+    </div>
+
+    <div class="column is-2 is-hidden-mobile">
+      
+      
+<div class="toc">
+  <h2 class="title">Using AutoRecovery</h2>
+  <ul class="section-nav">
+<li class="toc-entry toc-h2"><a href="#manual-recovery">Manual recovery</a></li>
+<li class="toc-entry toc-h3"><a href="#the-manual-recovery-process">The manual recovery process</a></li>
+<li class="toc-entry toc-h2"><a href="#autorecovery">AutoRecovery</a></li>
+<li class="toc-entry toc-h2"><a href="#running-autorecovery">Running AutoRecovery</a></li>
+<li class="toc-entry toc-h2"><a href="#configuration">Configuration</a></li>
+<li class="toc-entry toc-h2"><a href="#disable-autorecovery">Disable AutoRecovery</a></li>
+<li class="toc-entry toc-h2"><a href="#autorecovery-architecture">AutoRecovery architecture</a></li>
+<li class="toc-entry toc-h3"><a href="#auditor">Auditor</a></li>
+<li class="toc-entry toc-h3"><a href="#replication-worker">Replication Worker</a></li>
+<li class="toc-entry toc-h3"><a href="#the-rereplication-process">The rereplication process</a></li>
+</ul>
+</div>
+
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+<div id="entry-popover-html" class="popover-template">
+  <p>An entry is a sequence of bytes (plus some metadata) written to a BookKeeper ledger. Entries are also known as records.</p>
+
+</div>
+
+<div id="ledger-popover-html" class="popover-template">
+  <p>A ledger is a sequence of entries written to BookKeeper. Entries are written sequentially to ledgers and at most once, giving ledgers append-only semantics.</p>
+
+</div>
+
+<div id="bookie-popover-html" class="popover-template">
+  <p>A bookie is an individial BookKeeper storage server.</p>
+
+<p>Bookies store the content of ledgers and act as a distributed ensemble.</p>
+
+</div>
+
+<div id="rereplication-popover-html" class="popover-template">
+  <p>A subsystem that runs in the background on bookies to ensure that ledgers are fully replicated even if one bookie from the ensemble is down.</p>
+
+</div>
+
+<div id="striping-popover-html" class="popover-template">
+  <p>Striping is the process of distributing BookKeeper ledgers to sub-groups of bookies rather than to all bookies in a BookKeeper ensemble.</p>
+
+<p>Striping is essential to ensuring fast performance.</p>
+
+</div>
+
+<div id="journal-popover-html" class="popover-template">
+  <p>A journal file stores BookKeeper transaction logs.</p>
+
+</div>
+
+<div id="fencing-popover-html" class="popover-template">
+  <p>When a reader forces a ledger to close, preventing any further entries from being written to the ledger.</p>
+
+</div>
+
+<div id="record-popover-html" class="popover-template">
+  <p>A record is a sequence of bytes (plus some metadata) written to a BookKeeper ledger. Records are also known as entries.</p>
+
+</div>
+
+
+<script type="text/javascript">
+
+tippy('#entry-popover', {
+  html: '#entry-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#ledger-popover', {
+  html: '#ledger-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#bookie-popover', {
+  html: '#bookie-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#rereplication-popover', {
+  html: '#rereplication-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#striping-popover', {
+  html: '#striping-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#journal-popover', {
+  html: '#journal-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#fencing-popover', {
+  html: '#fencing-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+tippy('#record-popover', {
+  html: '#record-popover-html',
+  arrow: true,
+  animation: 'fade'
+});
+
+</script>
+
+    </main>
+
+    <footer class="footer">
+  <div class="container">
+    <div class="content has-text-centered">
+      <p>
+        Copyright &copy; 2016 - 2017 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
+      </p>
+    </div>
+  </div>
+</footer>
+
+  </body>
+
+  <script src="/js/app.js"></script>
+
+</html>
