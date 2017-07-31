@@ -21,14 +21,14 @@
 
 package org.apache.bookkeeper.bookie;
 
+import static org.apache.bookkeeper.bookie.Bookie.METAENTRY_ID_FENCE_KEY;
+
 import com.google.common.util.concurrent.SettableFuture;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.IOException;
 import java.util.Observable;
 import java.util.Observer;
-
-import static org.apache.bookkeeper.bookie.Bookie.METAENTRY_ID_FENCE_KEY;
 
 /**
  * Implements a ledger inside a bookie. In particular, it implements operations
@@ -70,7 +70,7 @@ public abstract class LedgerDescriptor {
      * When we fence a ledger, we need to first set ledger to fenced state in memory and
      * then log the fence entry in Journal so that we can rebuild the state.
      *
-     * We should satisfy the future only after we complete logging fence entry in Journal
+     * <p>We should satisfy the future only after we complete logging fence entry in Journal
      */
     abstract SettableFuture<Boolean> fenceAndLogInJournal(Journal journal) throws IOException;
 

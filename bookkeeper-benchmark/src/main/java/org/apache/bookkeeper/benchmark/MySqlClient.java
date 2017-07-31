@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.benchmark;
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -17,6 +15,9 @@ package org.apache.bookkeeper.benchmark;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.bookkeeper.benchmark;
+
+import static com.google.common.base.Charsets.UTF_8;
 
 import java.io.FileOutputStream;
 import java.sql.Connection;
@@ -24,15 +25,11 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
-
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.google.common.base.Charsets.UTF_8;
-
-import org.apache.zookeeper.KeeperException;
 
 /**
  * A mysql client performing writes and reads that used for benchmark comparison with BookKeeper.

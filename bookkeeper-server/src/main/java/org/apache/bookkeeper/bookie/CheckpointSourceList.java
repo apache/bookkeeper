@@ -19,11 +19,10 @@ package org.apache.bookkeeper.bookie;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import java.io.IOException;
-import java.util.List;
-
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
+import java.io.IOException;
+import java.util.List;
 
 /**
  * A {@code CheckpointSourceList} manages a list of {@link CheckpointSource}s.
