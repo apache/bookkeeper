@@ -34,12 +34,12 @@ import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.processor.RequestProcessor;
-import org.apache.bookkeeper.ssl.SecurityException;
-import org.apache.bookkeeper.ssl.SecurityHandlerFactory;
-import org.apache.bookkeeper.ssl.SecurityHandlerFactory.NodeType;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.tls.SecurityException;
+import org.apache.bookkeeper.tls.SecurityHandlerFactory;
+import org.apache.bookkeeper.tls.SecurityHandlerFactory.NodeType;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,7 +92,7 @@ public class BookieRequestProcessor implements RequestProcessor {
     private final OrderedSafeExecutor writeThreadPool;
 
     /**
-     * SSL management
+     * TLS management
      */
     private final SecurityHandlerFactory shFactory;
 
@@ -329,13 +329,13 @@ public class BookieRequestProcessor implements RequestProcessor {
         header.setTxnId(r.getHeader().getTxnId());
         response.setHeader(header.build());
         if (shFactory == null) {
-            LOG.error("Got StartTLS request but SSL not configured");
+            LOG.error("Got StartTLS request but TLS not configured");
             response.setStatus(BookkeeperProtocol.StatusCode.EBADREQ);
             c.writeAndFlush(response.build());
         } else {
             // there is no need to execute in a different thread as this operation is light
-            SslHandler sslHandler = shFactory.newSslHandler();
-            c.pipeline().addFirst("ssl", sslHandler);
+            SslHandler sslHandler = shFactory.newTLSHandler();
+            c.pipeline().addFirst("tls", sslHandler);
 
             response.setStatus(BookkeeperProtocol.StatusCode.EOK);
             BookkeeperProtocol.StartTLSResponse.Builder builder = BookkeeperProtocol.StartTLSResponse.newBuilder();
@@ -350,7 +350,7 @@ public class BookieRequestProcessor implements RequestProcessor {
                     if (future.isSuccess()) {
                         LOG.info("Session is protected by: {}", sslHandler.engine().getSession().getCipherSuite());
                     } else {
-                        LOG.error("SSL Handshake failure: {}", future.cause());
+                        LOG.error("TLS Handshake failure: {}", future.cause());
                         BookkeeperProtocol.Response.Builder errResponse = BookkeeperProtocol.Response.newBuilder()
                                 .setHeader(r.getHeader()).setStatus(BookkeeperProtocol.StatusCode.EIO);
                         c.writeAndFlush(errResponse.build());

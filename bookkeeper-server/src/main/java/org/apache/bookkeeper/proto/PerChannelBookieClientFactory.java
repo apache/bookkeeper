@@ -21,8 +21,8 @@
 package org.apache.bookkeeper.proto;
 
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.ssl.SecurityException;
-import org.apache.bookkeeper.ssl.SecurityHandlerFactory;
+import org.apache.bookkeeper.tls.SecurityException;
+import org.apache.bookkeeper.tls.SecurityHandlerFactory;
 
 /**
  * Factory to create {@link org.apache.bookkeeper.proto.PerChannelBookieClient}.

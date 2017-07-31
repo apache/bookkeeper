@@ -249,7 +249,7 @@ class BookieNettyServer {
                     if (c == null) {
                         return false;
                     } else {
-                        return c.pipeline().get("ssl") != null;
+                        return c.pipeline().get("tls") != null;
                     }
                 }
             };

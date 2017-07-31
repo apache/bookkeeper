@@ -95,12 +95,12 @@ import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.WriteLacRequest;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.WriteLacResponse;
-import org.apache.bookkeeper.ssl.SecurityException;
-import org.apache.bookkeeper.ssl.SecurityHandlerFactory;
-import org.apache.bookkeeper.ssl.SecurityHandlerFactory.NodeType;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.tls.SecurityException;
+import org.apache.bookkeeper.tls.SecurityHandlerFactory;
+import org.apache.bookkeeper.tls.SecurityHandlerFactory.NodeType;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.util.SafeRunnable;
@@ -979,7 +979,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     }
 
     void errorStartTLS(int rc) {
-        failSSL(rc);
+        failTLS(rc);
     }
 
     void errorOutReadKey(final CompletionKey key) {
@@ -1463,14 +1463,14 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         if (state != ConnectionState.START_TLS) {
             LOG.error("Connection state changed before TLS response received");
-            failSSL(BKException.Code.BookieHandleNotAvailableException);
+            failTLS(BKException.Code.BookieHandleNotAvailableException);
         } else if (status != StatusCode.EOK) {
             LOG.error("Client received error {} during TLS negotiation", status);
-            failSSL(BKException.Code.SecurityException);
+            failTLS(BKException.Code.SecurityException);
         } else {
-            // create SSL handler
+            // create TLS handler
             PerChannelBookieClient parentObj = PerChannelBookieClient.this;
-            SslHandler handler = parentObj.shFactory.newSslHandler();
+            SslHandler handler = parentObj.shFactory.newTLSHandler();
             channel.pipeline().addFirst(parentObj.shFactory.getHandlerName(), handler);
             handler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
                 @Override
@@ -1489,7 +1489,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                             }
                         } else if (future.isSuccess() && state == ConnectionState.START_TLS) {
                             rc = BKException.Code.OK;
-                            LOG.info("Successfully connected to bookie using SSL: " + addr);
+                            LOG.info("Successfully connected to bookie using TLS: " + addr);
 
                             state = ConnectionState.CONNECTED;
                             AuthHandler.ClientSideHandler authHandler = future.get().pipeline()
@@ -2060,7 +2060,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     rc = BKException.Code.OK;
                     channel = future.channel();
                     if (shFactory != null) {
-                        initiateSSL();
+                        initiateTLS();
                         return;
                     } else {
                         LOG.info("Successfully connected to bookie: " + addr);
@@ -2068,7 +2068,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     }
                 } else if (future.isSuccess() && state == ConnectionState.START_TLS) {
                     rc = BKException.Code.OK;
-                    LOG.info("Successfully connected to bookie using SSL: " + addr);
+                    LOG.info("Successfully connected to bookie using TLS: " + addr);
 
                     state = ConnectionState.CONNECTED;
                     AuthHandler.ClientSideHandler authHandler = future.channel().pipeline()
@@ -2111,8 +2111,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
     }
 
-    private void initiateSSL() {
-        LOG.info("Initializing SSL to {}",channel);
+    private void initiateTLS() {
+        LOG.info("Initializing TLS to {}",channel);
         assert state == ConnectionState.CONNECTING;
         final long txnId = getTxnId();
         final CompletionKey completionKey = new V3CompletionKey(txnId, OperationType.START_TLS);
@@ -2131,13 +2131,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             public void operationComplete(ChannelFuture future) throws Exception {
                 if (!future.isSuccess()) {
                     LOG.error("Failed to send START_TLS request");
-                    failSSL(BKException.Code.SecurityException);
+                    failTLS(BKException.Code.SecurityException);
                 }
             }
         });
     }
-    private void failSSL(int rc) {
-        LOG.error("SSL failure on: {}, rc: {}", channel, rc);
+    private void failTLS(int rc) {
+        LOG.error("TLS failure on: {}, rc: {}", channel, rc);
         Queue<GenericCallback<PerChannelBookieClient>> oldPendingOps;
         synchronized(this) {
             disconnect();

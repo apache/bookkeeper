@@ -69,27 +69,27 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     protected final static String METASTORE_IMPL_CLASS = "metastoreImplClass";
     protected final static String METASTORE_MAX_ENTRIES_PER_SCAN = "metastoreMaxEntriesPerScan";
 
-    // Common SSL configuration
-    // SSL Provider (JDK or OpenSSL)
-    protected final static String SSL_PROVIDER = "sslProvider";
+    // Common TLS configuration
+    // TLS Provider (JDK or OpenSSL)
+    protected final static String TLS_PROVIDER = "tlsProvider";
 
-    // SSL provider factory class name
-    protected final static String SSL_PROVIDER_FACTORY_CLASS = "sslProviderFactoryClass";
+    // TLS provider factory class name
+    protected final static String TLS_PROVIDER_FACTORY_CLASS = "tlsProviderFactoryClass";
 
     // Enable authentication of the other connection end point (mutual authentication)
-    protected final static String SSL_CLIENT_AUTHENTICATION = "sslClientAuthentication";
+    protected final static String TLS_CLIENT_AUTHENTICATION = "tlsClientAuthentication";
 
     /**
      * This list will be passed to {@link SSLEngine#setEnabledCipherSuites(java.lang.String[]) }.
      * Please refer to official JDK JavaDocs
     */
-    protected final static String SSL_ENABLED_CIPHER_SUITES = "sslEnabledCipherSuites";
+    protected final static String TLS_ENABLED_CIPHER_SUITES = "tlsEnabledCipherSuites";
 
     /**
      * This list will be passed to {@link SSLEngine#setEnabledProtocols(java.lang.String[]) }.
      * Please refer to official JDK JavaDocs
     */
-    protected final static String SSL_ENABLED_PROTOCOLS = "sslEnabledProtocols";
+    protected final static String TLS_ENABLED_PROTOCOLS = "tlsEnabledProtocols";
 
     //Netty configuration
     protected final static String NETTY_MAX_FRAME_SIZE = "nettyMaxFrameSizeBytes";
@@ -381,8 +381,8 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      *
      * @return the security provider factory class name or null.
      */
-    public String getSSLProviderFactoryClass() {
-        return getString(SSL_PROVIDER_FACTORY_CLASS, null);
+    public String getTLSProviderFactoryClass() {
+        return getString(TLS_PROVIDER_FACTORY_CLASS, null);
     }
 
     /**
@@ -392,101 +392,101 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      *            the client security provider factory class name
      * @return client configuration
      */
-    public AbstractConfiguration setSSLProviderFactoryClass(String factoryClass) {
-        setProperty(SSL_PROVIDER_FACTORY_CLASS, factoryClass);
+    public AbstractConfiguration setTLSProviderFactoryClass(String factoryClass) {
+        setProperty(TLS_PROVIDER_FACTORY_CLASS, factoryClass);
         return this;
     }
 
     /**
-     * Get SSL Provider (JDK or OpenSSL)
+     * Get TLS Provider (JDK or OpenSSL)
      * 
-     * @return the SSL provider to use in creating SSL Context
+     * @return the TLS provider to use in creating TLS Context
      */
-    public String getSSLProvider() {
-        return getString(SSL_PROVIDER, "OpenSSL");
+    public String getTLSProvider() {
+        return getString(TLS_PROVIDER, "OpenSSL");
     }
 
     /**
-     * Set SSL Provider (JDK or OpenSSL)
+     * Set TLS Provider (JDK or OpenSSL)
      * 
      * @param provider
-     *            SSL Provider type
+     *            TLS Provider type
      * @return Client Configuration
      */
-    public AbstractConfiguration setSSLProvider(String provider) {
-        setProperty(SSL_PROVIDER, provider);
+    public AbstractConfiguration setTLSProvider(String provider) {
+        setProperty(TLS_PROVIDER, provider);
         return this;
     }
 
     /**
-     * Whether the client will send an SSL certificate on TLS-handshake
+     * Whether the client will send an TLS certificate on TLS-handshake
      * 
-     * @see #setSSLAuthentication(boolean)
-     * @return whether SSL is enabled on the bookie or not.
+     * @see #setTLSAuthentication(boolean)
+     * @return whether TLS is enabled on the bookie or not.
      */
-    public boolean getSSLClientAuthentication() {
-        return getBoolean(SSL_CLIENT_AUTHENTICATION, false);
+    public boolean getTLSClientAuthentication() {
+        return getBoolean(TLS_CLIENT_AUTHENTICATION, false);
     }
 
     /**
-     * Specify whether the client will send an SSL certificate on TLS-handshake
+     * Specify whether the client will send an TLS certificate on TLS-handshake
      * 
      * @param enabled
      *            Whether to send a certificate or not
      * @return client configuration
      */
-    public AbstractConfiguration setSSLClientAuthentication(boolean enabled) {
-        setProperty(SSL_CLIENT_AUTHENTICATION, enabled);
+    public AbstractConfiguration setTLSClientAuthentication(boolean enabled) {
+        setProperty(TLS_CLIENT_AUTHENTICATION, enabled);
         return this;
     }
 
     /**
-     * Set the list of enabled SSL cipher suites. Leave null not to override default JDK list. This list will be passed
+     * Set the list of enabled TLS cipher suites. Leave null not to override default JDK list. This list will be passed
      * to {@link SSLEngine#setEnabledCipherSuites(java.lang.String[]) }. Please refer to official JDK JavaDocs
      *
      * @param list
-     *            comma separated list of enabled SSL cipher suites
+     *            comma separated list of enabled TLS cipher suites
      * @return current configuration
      */
-    public AbstractConfiguration setSslEnabledCipherSuites(
+    public AbstractConfiguration setTLSEnabledCipherSuites(
             String list) {
-        setProperty(SSL_ENABLED_CIPHER_SUITES, list);
+        setProperty(TLS_ENABLED_CIPHER_SUITES, list);
         return this;
     }
 
     /**
-     * Get the list of enabled SSL cipher suites
+     * Get the list of enabled TLS cipher suites
      *
-     * @return this list of enabled SSL cipher suites
+     * @return this list of enabled TLS cipher suites
      *
-     * @see #setSslEnabledCipherSuites(java.lang.String)
+     * @see #setTLSEnabledCipherSuites(java.lang.String)
      */
-    public String getSslEnabledCipherSuites() {
-        return getString(SSL_ENABLED_CIPHER_SUITES, null);
+    public String getTLSEnabledCipherSuites() {
+        return getString(TLS_ENABLED_CIPHER_SUITES, null);
     }
 
     /**
-     * Set the list of enabled SSL protocols. Leave null not to override default JDK list. This list will be passed to
+     * Set the list of enabled TLS protocols. Leave null not to override default JDK list. This list will be passed to
      * {@link SSLEngine#setEnabledProtocols(java.lang.String[]) }. Please refer to official JDK JavaDocs
      *
      * @param list
-     *            comma separated list of enabled SSL cipher suites
+     *            comma separated list of enabled TLS cipher suites
      * @return current configuration
      */
-    public AbstractConfiguration setSslEnabledProtocols(
+    public AbstractConfiguration setTLSEnabledProtocols(
             String list) {
-        setProperty(SSL_ENABLED_PROTOCOLS, list);
+        setProperty(TLS_ENABLED_PROTOCOLS, list);
         return this;
     }
 
     /**
-     * Get the list of enabled SSL protocols
+     * Get the list of enabled TLS protocols
      *
-     * @return the list of enabled SSL protocols.
+     * @return the list of enabled TLS protocols.
      *
-     * @see #setSslEnabledProtocols(java.lang.String)
+     * @see #setTLSEnabledProtocols(java.lang.String)
      */
-    public String getSslEnabledProtocols() {
-        return getString(SSL_ENABLED_PROTOCOLS, null);
+    public String getTLSEnabledProtocols() {
+        return getString(TLS_ENABLED_PROTOCOLS, null);
     }
 }

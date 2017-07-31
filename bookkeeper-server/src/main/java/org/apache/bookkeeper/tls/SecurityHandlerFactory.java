@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.bookkeeper.ssl;
+package org.apache.bookkeeper.tls;
 
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 
@@ -31,5 +31,5 @@ public interface SecurityHandlerFactory {
     public abstract String getHandlerName();
 
     public abstract void init(NodeType type, AbstractConfiguration conf) throws SecurityException;
-    public SslHandler newSslHandler();
+    public SslHandler newTLSHandler();
 }

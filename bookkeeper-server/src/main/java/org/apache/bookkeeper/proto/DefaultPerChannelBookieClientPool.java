@@ -25,9 +25,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.bookkeeper.ssl.SecurityException;
-import org.apache.bookkeeper.ssl.SecurityHandlerFactory;
-import org.apache.bookkeeper.ssl.SecurityProviderFactoryFactory;
+import org.apache.bookkeeper.tls.SecurityException;
+import org.apache.bookkeeper.tls.SecurityHandlerFactory;
+import org.apache.bookkeeper.tls.SecurityProviderFactoryFactory;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,7 +65,7 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
         this.conf = conf;
 
         this.shFactory = SecurityProviderFactoryFactory
-                .getSecurityProviderFactory(conf.getSSLProviderFactoryClass());
+                .getSecurityProviderFactory(conf.getTLSProviderFactoryClass());
 
         this.clients = new PerChannelBookieClient[coreSize];
         for (int i = 0; i < coreSize; i++) {

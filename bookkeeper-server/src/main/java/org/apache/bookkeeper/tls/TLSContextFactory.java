@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.bookkeeper.ssl;
+package org.apache.bookkeeper.tls;
 
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -46,9 +46,9 @@ import java.security.cert.CertificateException;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
 
-public class SSLContextFactory implements SecurityHandlerFactory {
-    private final static Logger LOG = LoggerFactory.getLogger(SSLContextFactory.class);
-    private final static String SSLCONTEXT_HANDLER_NAME = "ssl";
+public class TLSContextFactory implements SecurityHandlerFactory {
+    private final static Logger LOG = LoggerFactory.getLogger(TLSContextFactory.class);
+    private final static String TLSCONTEXT_HANDLER_NAME = "tls";
     private String[] protocols;
     private String[] ciphers;
     private SslContext sslContext;
@@ -81,7 +81,7 @@ public class SSLContextFactory implements SecurityHandlerFactory {
     }
 
     public String getHandlerName() {
-        return SSLCONTEXT_HANDLER_NAME;
+        return TLSCONTEXT_HANDLER_NAME;
     }
 
     private KeyManagerFactory initKeyManagerFactory(String keyStoreType, String keyStoreLocation,
@@ -130,7 +130,7 @@ public class SSLContextFactory implements SecurityHandlerFactory {
         return tmf;
     }
 
-    private SslProvider getSslProvider(String sslProvider) {
+    private SslProvider getTLSProvider(String sslProvider) {
         if (sslProvider.trim().equalsIgnoreCase("OpenSSL")) {
             if (OpenSsl.isAvailable()) {
                 LOG.info("Security provider - OpenSSL");
@@ -138,7 +138,7 @@ public class SSLContextFactory implements SecurityHandlerFactory {
             }
 
             Throwable causeUnavailable = OpenSsl.unavailabilityCause();
-            LOG.warn("Openssl Unavailable: ", causeUnavailable);
+            LOG.warn("OpenSSL Unavailable: ", causeUnavailable);
 
             LOG.info("Security provider - JDK");
             return SslProvider.JDK;
@@ -164,15 +164,15 @@ public class SSLContextFactory implements SecurityHandlerFactory {
         }
 
         clientConf = (ClientConfiguration) conf;
-        provider = getSslProvider(clientConf.getSSLProvider());
-        Authentication = clientConf.getSSLClientAuthentication();
+        provider = getTLSProvider(clientConf.getTLSProvider());
+        Authentication = clientConf.getTLSClientAuthentication();
 
-        tmf = initTrustManagerFactory(clientConf.getSSLTrustStoreType(), clientConf.getSSLTrustStore(),
-                clientConf.getSSLTrustStorePasswordPath());
+        tmf = initTrustManagerFactory(clientConf.getTLSTrustStoreType(), clientConf.getTLSTrustStore(),
+                clientConf.getTLSTrustStorePasswordPath());
 
         if (Authentication) {
-            kmf = initKeyManagerFactory(clientConf.getSSLKeyStoreType(), clientConf.getSSLKeyStore(),
-                    clientConf.getSSLKeyStorePasswordPath());
+            kmf = initKeyManagerFactory(clientConf.getTLSKeyStoreType(), clientConf.getTLSKeyStore(),
+                    clientConf.getTLSKeyStorePasswordPath());
         }
 
         // Build Ssl context
@@ -208,15 +208,15 @@ public class SSLContextFactory implements SecurityHandlerFactory {
         }
 
         serverConf = (ServerConfiguration) conf;
-        provider = getSslProvider(serverConf.getSSLProvider());
-        Authentication = serverConf.getSSLClientAuthentication();
+        provider = getTLSProvider(serverConf.getTLSProvider());
+        Authentication = serverConf.getTLSClientAuthentication();
 
-        kmf = initKeyManagerFactory(serverConf.getSSLKeyStoreType(), serverConf.getSSLKeyStore(),
-                serverConf.getSSLKeyStorePasswordPath());
+        kmf = initKeyManagerFactory(serverConf.getTLSKeyStoreType(), serverConf.getTLSKeyStore(),
+                serverConf.getTLSKeyStorePasswordPath());
 
         if (Authentication) {
-            tmf = initTrustManagerFactory(serverConf.getSSLTrustStoreType(), serverConf.getSSLTrustStore(),
-                    serverConf.getSSLTrustStorePasswordPath());
+            tmf = initTrustManagerFactory(serverConf.getTLSTrustStoreType(), serverConf.getTLSTrustStore(),
+                    serverConf.getTLSTrustStorePasswordPath());
         }
 
         // Build Ssl context
@@ -241,8 +241,8 @@ public class SSLContextFactory implements SecurityHandlerFactory {
         final String enabledProtocols;
         final String enabledCiphers;
 
-        enabledCiphers = conf.getSslEnabledCipherSuites();
-        enabledProtocols = conf.getSslEnabledProtocols();
+        enabledCiphers = conf.getTLSEnabledCipherSuites();
+        enabledProtocols = conf.getTLSEnabledProtocols();
 
         try {
             switch (type) {
@@ -270,14 +270,14 @@ public class SSLContextFactory implements SecurityHandlerFactory {
         } catch (CertificateException e) {
             throw new SecurityException("Unable to load keystore", e);
         } catch (IOException e) {
-            throw new SecurityException("Error initializing SSLContext", e);
+            throw new SecurityException("Error initializing TLSContext", e);
         } catch (UnrecoverableKeyException e) {
             throw new SecurityException("Unable to load key manager, possibly wrong password given", e);
         }
     }
 
     @Override
-    public SslHandler newSslHandler() {
+    public SslHandler newTLSHandler() {
         SslHandler sslHandler = sslContext.newHandler(PooledByteBufAllocator.DEFAULT);
 
         if (protocols != null && protocols.length != 0) {

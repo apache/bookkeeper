@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.bookkeeper.ssl;
+package org.apache.bookkeeper.tls;
 
 public class SecurityException extends Exception {
     public SecurityException() {}

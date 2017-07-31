@@ -139,13 +139,13 @@ public class ClientConfiguration extends AbstractConfiguration {
     // Client auth provider factory class name. It must be configured on Bookies to for the Auditor
     protected final static String CLIENT_AUTH_PROVIDER_FACTORY_CLASS = "clientAuthProviderFactoryClass";
 
-    // Client SSL
-    protected final static String SSL_KEYSTORE_TYPE = "clientKeyStoreType";
-    protected final static String SSL_KEYSTORE = "clientKeyStore";
-    protected final static String SSL_KEYSTORE_PASSWORD_PATH = "clientKeyStorePasswordPath";
-    protected final static String SSL_TRUSTSTORE_TYPE = "clientTrustStoreType";
-    protected final static String SSL_TRUSTSTORE = "clientTrustStore";
-    protected final static String SSL_TRUSTSTORE_PASSWORD_PATH = "clientTrustStorePasswordPath";
+    // Client TLS
+    protected final static String TLS_KEYSTORE_TYPE = "clientKeyStoreType";
+    protected final static String TLS_KEYSTORE = "clientKeyStore";
+    protected final static String TLS_KEYSTORE_PASSWORD_PATH = "clientKeyStorePasswordPath";
+    protected final static String TLS_TRUSTSTORE_TYPE = "clientTrustStoreType";
+    protected final static String TLS_TRUSTSTORE = "clientTrustStore";
+    protected final static String TLS_TRUSTSTORE_PASSWORD_PATH = "clientTrustStorePasswordPath";
 
     /**
      * Construct a default client-side configuration
@@ -1372,8 +1372,8 @@ public class ClientConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    public String getSSLKeyStoreType() {
-        return getString(SSL_KEYSTORE_TYPE, "JKS");
+    public String getTLSKeyStoreType() {
+        return getString(TLS_KEYSTORE_TYPE, "JKS");
     }
 
 
@@ -1382,8 +1382,8 @@ public class ClientConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    public ClientConfiguration setSSLKeyStoreType(String arg) {
-        setProperty(SSL_KEYSTORE_TYPE, arg);
+    public ClientConfiguration setTLSKeyStoreType(String arg) {
+        setProperty(TLS_KEYSTORE_TYPE, arg);
         return this;
     }
 
@@ -1392,8 +1392,8 @@ public class ClientConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    public String getSSLKeyStore() {
-        return getString(SSL_KEYSTORE, null);
+    public String getTLSKeyStore() {
+        return getString(TLS_KEYSTORE, null);
     }
 
     /**
@@ -1401,8 +1401,8 @@ public class ClientConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    public ClientConfiguration setSSLKeyStore(String arg) {
-        setProperty(SSL_KEYSTORE, arg);
+    public ClientConfiguration setTLSKeyStore(String arg) {
+        setProperty(TLS_KEYSTORE, arg);
         return this;
     }
 
@@ -1411,8 +1411,8 @@ public class ClientConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    public String getSSLKeyStorePasswordPath() {
-        return getString(SSL_KEYSTORE_PASSWORD_PATH, null);
+    public String getTLSKeyStorePasswordPath() {
+        return getString(TLS_KEYSTORE_PASSWORD_PATH, null);
     }
 
     /**
@@ -1420,8 +1420,8 @@ public class ClientConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    public ClientConfiguration setSSLKeyStorePasswordPath(String arg) {
-        setProperty(SSL_KEYSTORE_PASSWORD_PATH, arg);
+    public ClientConfiguration setTLSKeyStorePasswordPath(String arg) {
+        setProperty(TLS_KEYSTORE_PASSWORD_PATH, arg);
         return this;
     }
 
@@ -1430,8 +1430,8 @@ public class ClientConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    public String getSSLTrustStoreType() {
-        return getString(SSL_TRUSTSTORE_TYPE, "JKS");
+    public String getTLSTrustStoreType() {
+        return getString(TLS_TRUSTSTORE_TYPE, "JKS");
     }
 
     /**
@@ -1439,8 +1439,8 @@ public class ClientConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    public ClientConfiguration setSSLTrustStoreType(String arg) {
-        setProperty(SSL_TRUSTSTORE_TYPE, arg);
+    public ClientConfiguration setTLSTrustStoreType(String arg) {
+        setProperty(TLS_TRUSTSTORE_TYPE, arg);
         return this;
     }
 
@@ -1449,8 +1449,8 @@ public class ClientConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    public String getSSLTrustStore() {
-        return getString(SSL_TRUSTSTORE, null);
+    public String getTLSTrustStore() {
+        return getString(TLS_TRUSTSTORE, null);
     }
 
     /**
@@ -1458,8 +1458,8 @@ public class ClientConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    public ClientConfiguration setSSLTrustStore(String arg) {
-        setProperty(SSL_TRUSTSTORE, arg);
+    public ClientConfiguration setTLSTrustStore(String arg) {
+        setProperty(TLS_TRUSTSTORE, arg);
         return this;
     }
 
@@ -1469,8 +1469,8 @@ public class ClientConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    public String getSSLTrustStorePasswordPath() {
-        return getString(SSL_TRUSTSTORE_PASSWORD_PATH, null);
+    public String getTLSTrustStorePasswordPath() {
+        return getString(TLS_TRUSTSTORE_PASSWORD_PATH, null);
     }
 
     /**
@@ -1478,8 +1478,8 @@ public class ClientConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    public ClientConfiguration setSSLTrustStorePasswordPath(String arg) {
-        setProperty(SSL_TRUSTSTORE_PASSWORD_PATH, arg);
+    public ClientConfiguration setTLSTrustStorePasswordPath(String arg) {
+        setProperty(TLS_TRUSTSTORE_PASSWORD_PATH, arg);
         return this;
     }
 

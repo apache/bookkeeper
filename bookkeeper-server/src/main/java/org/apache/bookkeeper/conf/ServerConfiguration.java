@@ -153,13 +153,13 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     protected final static String ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION = "allowMultipleDirsUnderSameDiskPartition";
 
-    protected final static String SSL_CLIENT_AUTHENTICATION = "sslClientAuthentication";
-    protected final static String SSL_KEYSTORE_TYPE = "sslKeyStoreType";
-    protected final static String SSL_KEYSTORE = "sslKeyStore";
-    protected final static String SSL_KEYSTORE_PASSWORD_PATH = "sslKeyStorePasswordPath";
-    protected final static String SSL_TRUSTSTORE_TYPE = "sslTrustStoreType";
-    protected final static String SSL_TRUSTSTORE = "sslTrustStore";
-    protected final static String SSL_TRUSTSTORE_PASSWORD_PATH = "sslTrustStorePasswordPath";
+    protected final static String TLS_CLIENT_AUTHENTICATION = "tlsClientAuthentication";
+    protected final static String TLS_KEYSTORE_TYPE = "tlsKeyStoreType";
+    protected final static String TLS_KEYSTORE = "tlsKeyStore";
+    protected final static String TLS_KEYSTORE_PASSWORD_PATH = "tlsKeyStorePasswordPath";
+    protected final static String TLS_TRUSTSTORE_TYPE = "tlsTrustStoreType";
+    protected final static String TLS_TRUSTSTORE = "tlsTrustStore";
+    protected final static String TLS_TRUSTSTORE_PASSWORD_PATH = "tlsTrustStorePasswordPath";
 
     /**
      * Construct a default configuration object
@@ -2035,8 +2035,8 @@ public class ServerConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    public String getSSLTrustStoreType() {
-        return getString(SSL_TRUSTSTORE_TYPE, "JKS");
+    public String getTLSTrustStoreType() {
+        return getString(TLS_TRUSTSTORE_TYPE, "JKS");
     }
 
     /**
@@ -2044,8 +2044,8 @@ public class ServerConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    public ServerConfiguration setSSLKeyStoreType(String arg) {
-        setProperty(SSL_KEYSTORE_TYPE, arg);
+    public ServerConfiguration setTLSKeyStoreType(String arg) {
+        setProperty(TLS_KEYSTORE_TYPE, arg);
         return this;
     }
 
@@ -2054,8 +2054,8 @@ public class ServerConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    public String getSSLKeyStore() {
-        return getString(SSL_KEYSTORE, null);
+    public String getTLSKeyStore() {
+        return getString(TLS_KEYSTORE, null);
     }
 
     /**
@@ -2063,8 +2063,8 @@ public class ServerConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    public ServerConfiguration setSSLKeyStore(String arg) {
-        setProperty(SSL_KEYSTORE, arg);
+    public ServerConfiguration setTLSKeyStore(String arg) {
+        setProperty(TLS_KEYSTORE, arg);
         return this;
     }
 
@@ -2073,8 +2073,8 @@ public class ServerConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    public String getSSLKeyStorePasswordPath() {
-        return getString(SSL_KEYSTORE_PASSWORD_PATH, null);
+    public String getTLSKeyStorePasswordPath() {
+        return getString(TLS_KEYSTORE_PASSWORD_PATH, null);
     }
 
     /**
@@ -2082,8 +2082,8 @@ public class ServerConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    public ServerConfiguration setSSLKeyStorePasswordPath(String arg) {
-        setProperty(SSL_KEYSTORE_PASSWORD_PATH, arg);
+    public ServerConfiguration setTLSKeyStorePasswordPath(String arg) {
+        setProperty(TLS_KEYSTORE_PASSWORD_PATH, arg);
         return this;
     }
 
@@ -2092,8 +2092,8 @@ public class ServerConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    public String getSSLKeyStoreType() {
-        return getString(SSL_KEYSTORE_TYPE, "JKS");
+    public String getTLSKeyStoreType() {
+        return getString(TLS_KEYSTORE_TYPE, "JKS");
     }
 
     /**
@@ -2101,8 +2101,8 @@ public class ServerConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    public ServerConfiguration setSSLTrustStoreType(String arg) {
-        setProperty(SSL_TRUSTSTORE_TYPE, arg);
+    public ServerConfiguration setTLSTrustStoreType(String arg) {
+        setProperty(TLS_TRUSTSTORE_TYPE, arg);
         return this;
     }
 
@@ -2111,8 +2111,8 @@ public class ServerConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    public String getSSLTrustStore() {
-        return getString(SSL_TRUSTSTORE, null);
+    public String getTLSTrustStore() {
+        return getString(TLS_TRUSTSTORE, null);
     }
 
     /**
@@ -2120,8 +2120,8 @@ public class ServerConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    public ServerConfiguration setSSLTrustStore(String arg) {
-        setProperty(SSL_TRUSTSTORE, arg);
+    public ServerConfiguration setTLSTrustStore(String arg) {
+        setProperty(TLS_TRUSTSTORE, arg);
         return this;
     }
 
@@ -2131,8 +2131,8 @@ public class ServerConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    public String getSSLTrustStorePasswordPath() {
-        return getString(SSL_TRUSTSTORE_PASSWORD_PATH, null);
+    public String getTLSTrustStorePasswordPath() {
+        return getString(TLS_TRUSTSTORE_PASSWORD_PATH, null);
     }
 
     /**
@@ -2140,8 +2140,8 @@ public class ServerConfiguration extends AbstractConfiguration {
      * 
      * @return
      */
-    public ServerConfiguration setSSLTrustStorePasswordPath(String arg) {
-        setProperty(SSL_TRUSTSTORE_PASSWORD_PATH, arg);
+    public ServerConfiguration setTLSTrustStorePasswordPath(String arg) {
+        setProperty(TLS_TRUSTSTORE_PASSWORD_PATH, arg);
         return this;
     }
 

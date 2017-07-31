@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.bookkeeper.ssl;
+package org.apache.bookkeeper.tls;
 
 import org.junit.*;
 
@@ -28,7 +28,8 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.util.MathUtils;
+import org.apache.bookkeeper.tls.SecurityException;
+import org.apache.bookkeeper.tls.TLSContextFactory;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -51,8 +52,6 @@ import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.ClientConnectionPeer;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.proto.TestPerChannelBookieClient;
-import org.apache.bookkeeper.ssl.SSLContextFactory;
-import org.apache.bookkeeper.ssl.SecurityException;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -64,9 +63,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Tests with SSL enabled.
+ * Tests with TLS enabled.
  */
-public class TestSSL extends BookKeeperClusterTestCase {
+public class TestTLS extends BookKeeperClusterTestCase {
 
     static Logger LOG = LoggerFactory.getLogger(TestPerChannelBookieClient.class);
 
@@ -77,7 +76,7 @@ public class TestSSL extends BookKeeperClusterTestCase {
     private static Collection<Object> secureBookieSideChannelPrincipals = null;
 
 
-    public TestSSL() {
+    public TestTLS() {
         super(3);
     }
 
@@ -85,27 +84,27 @@ public class TestSSL extends BookKeeperClusterTestCase {
     @Override
     public void setUp() throws Exception {
         /* client configuration */
-        baseClientConf.setSSLProviderFactoryClass(SSLContextFactory.class.getName());
-        baseClientConf.setSSLClientAuthentication(true);
-        baseClientConf.setSSLKeyStoreType("JKS");
-        baseClientConf.setSSLKeyStore(this.getClass().getClassLoader().getResource("client.jks").getPath());
-        baseClientConf.setSSLKeyStorePasswordPath(
+        baseClientConf.setTLSProviderFactoryClass(TLSContextFactory.class.getName());
+        baseClientConf.setTLSClientAuthentication(true);
+        baseClientConf.setTLSKeyStoreType("JKS");
+        baseClientConf.setTLSKeyStore(this.getClass().getClassLoader().getResource("client.jks").getPath());
+        baseClientConf.setTLSKeyStorePasswordPath(
                 this.getClass().getClassLoader().getResource("keyStoreClientPassword.txt").getPath());
-        baseClientConf.setSSLTrustStoreType("JKS");
-        baseClientConf.setSSLTrustStore(this.getClass().getClassLoader().getResource("cacerts").getPath());
-        baseClientConf.setSSLTrustStorePasswordPath(
+        baseClientConf.setTLSTrustStoreType("JKS");
+        baseClientConf.setTLSTrustStore(this.getClass().getClassLoader().getResource("cacerts").getPath());
+        baseClientConf.setTLSTrustStorePasswordPath(
                 this.getClass().getClassLoader().getResource("trustStorePassword.txt").getPath());
 
         /* server configuration */
-        baseConf.setSSLProviderFactoryClass(SSLContextFactory.class.getName());
-        baseConf.setSSLClientAuthentication(true);
-        baseConf.setSSLKeyStoreType("JKS");
-        baseConf.setSSLKeyStore(this.getClass().getClassLoader().getResource("server.jks").getPath());
-        baseConf.setSSLKeyStorePasswordPath(
+        baseConf.setTLSProviderFactoryClass(TLSContextFactory.class.getName());
+        baseConf.setTLSClientAuthentication(true);
+        baseConf.setTLSKeyStoreType("JKS");
+        baseConf.setTLSKeyStore(this.getClass().getClassLoader().getResource("server.jks").getPath());
+        baseConf.setTLSKeyStorePasswordPath(
                 this.getClass().getClassLoader().getResource("keyStoreServerPassword.txt").getPath());
-        baseConf.setSSLTrustStoreType("JKS");
-        baseConf.setSSLTrustStore(this.getClass().getClassLoader().getResource("cacerts").getPath());
-        baseConf.setSSLTrustStorePasswordPath(
+        baseConf.setTLSTrustStoreType("JKS");
+        baseConf.setTLSTrustStore(this.getClass().getClassLoader().getResource("cacerts").getPath());
+        baseConf.setTLSTrustStorePasswordPath(
                 this.getClass().getClassLoader().getResource("trustStorePassword.txt").getPath());
 
         super.setUp();
@@ -118,11 +117,11 @@ public class TestSSL extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Verify that a server will not start if ssl is enabled but no cert is specified
+     * Verify that a server will not start if tls is enabled but no cert is specified
      */
     @Test(timeout = 60000)
-    public void testStartSSLServerNoKeyStore() throws Exception {
-        ServerConfiguration bookieConf = newServerConfiguration().setSSLKeyStore(null);
+    public void testStartTLSServerNoKeyStore() throws Exception {
+        ServerConfiguration bookieConf = newServerConfiguration().setTLSKeyStore(null);
 
         try {
             bs.add(startBookie(bookieConf));
@@ -133,11 +132,11 @@ public class TestSSL extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Verify that a server will not start if ssl is enabled but the cert password is incorrect
+     * Verify that a server will not start if tls is enabled but the cert password is incorrect
      */
     @Test(timeout = 60000)
-    public void testStartSSLServerBadPassword() throws Exception {
-        ServerConfiguration bookieConf = newServerConfiguration().setSSLKeyStorePasswordPath("badpassword");
+    public void testStartTLSServerBadPassword() throws Exception {
+        ServerConfiguration bookieConf = newServerConfiguration().setTLSKeyStorePasswordPath("badpassword");
         try {
             bs.add(startBookie(bookieConf));
             fail("Shouldn't have been able to start");
@@ -171,35 +170,35 @@ public class TestSSL extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Verify the basic use of SSL. SSL client, SSL servers
+     * Verify the basic use of TLS. TLS client, TLS servers
      */
     @Test(timeout = 60000)
-    public void testConnectToSSLClusterSSLClient() throws Exception {
+    public void testConnectToTLSClusterTLSClient() throws Exception {
         ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
         testClient(clientConf, numBookies);
     }
 
 
     /**
-     * Multiple clients, some with SSL, and some without SSL
+     * Multiple clients, some with TLS, and some without TLS
      */
     @Test(timeout = 60000)
-    public void testConnectToSSLClusterMixedClient() throws Exception {
-        ClientConfiguration confWithSSL = new ClientConfiguration(baseClientConf);
-        testClient(confWithSSL, numBookies);
+    public void testConnectToTLSClusterMixedClient() throws Exception {
+        ClientConfiguration confWithTLS = new ClientConfiguration(baseClientConf);
+        testClient(confWithTLS, numBookies);
 
-        ClientConfiguration confNoSSL = new ClientConfiguration(baseClientConf);
-        confNoSSL.setSSLProviderFactoryClass(null);
-        testClient(confNoSSL, numBookies);
+        ClientConfiguration confNoTLS = new ClientConfiguration(baseClientConf);
+        confNoTLS.setTLSProviderFactoryClass(null);
+        testClient(confNoTLS, numBookies);
     }
 
     /**
-     * Verify the basic use of SSL. SSL client, SSL servers. No Mutual Authentication.
+     * Verify the basic use of TLS. TLS client, TLS servers. No Mutual Authentication.
      */
     @Test(timeout = 60000)
-    public void testConnectToSSLClusterSSLClientWithSSLNoAuthentication() throws Exception {
+    public void testConnectToTLSClusterTLSClientWithTLSNoAuthentication() throws Exception {
         ServerConfiguration serverConf = new ServerConfiguration(baseConf);
-        serverConf.setSSLClientAuthentication(false);
+        serverConf.setTLSClientAuthentication(false);
         restartBookies(serverConf);
 
         ClientConfiguration conf = new ClientConfiguration(baseClientConf);
@@ -207,10 +206,10 @@ public class TestSSL extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Verify the basic use of SSL. SSL client, SSL servers with mutual Auth.
+     * Verify the basic use of TLS. TLS client, TLS servers with mutual Auth.
      */
     @Test(timeout = 60000)
-    public void testConnectToSSLClusterSSLClientWithAuthentication() throws Exception {
+    public void testConnectToTLSClusterTLSClientWithAuthentication() throws Exception {
         ClientConfiguration conf = new ClientConfiguration(baseClientConf);
         try {
             testClient(conf, numBookies);
@@ -220,26 +219,26 @@ public class TestSSL extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Verify that a client without ssl enabled can connect to a cluster with SSL
+     * Verify that a client without tls enabled can connect to a cluster with TLS
      */
     @Test(timeout = 60000)
-    public void testConnectToSSLClusterNonSSLClient() throws Exception {
+    public void testConnectToTLSClusterNonTLSClient() throws Exception {
         ClientConfiguration conf = new ClientConfiguration(baseClientConf);
-        conf.setSSLProviderFactoryClass(null);
+        conf.setTLSProviderFactoryClass(null);
         try {
             testClient(conf, numBookies);
         } catch (BKException.BKNotEnoughBookiesException nnbe) {
-            fail("non ssl client should be able to connect to ssl enabled bookies");
+            fail("non tls client should be able to connect to tls enabled bookies");
         }
     }
 
     /**
-     * Verify that a client will fail to connect to a server if it has asked for SSL, but it is not available.
+     * Verify that a client will fail to connect to a server if it has asked for TLS, but it is not available.
      */
     @Test(timeout = 60000)
-    public void testClientWantsSSLNoServersHaveIt() throws Exception {
+    public void testClientWantsTLSNoServersHaveIt() throws Exception {
         ServerConfiguration serverConf = new ServerConfiguration(baseConf);
-        serverConf.setSSLProviderFactoryClass(null);
+        serverConf.setTLSProviderFactoryClass(null);
         restartBookies(serverConf);
 
         ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
@@ -252,22 +251,22 @@ public class TestSSL extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Verify that a client will be able to connect to a bookie cluster if it has asked for SSL, and there are enough
-     * bookies with SSL enabled in the cluster, although few bookies do not have SSL enabled.
+     * Verify that a client will be able to connect to a bookie cluster if it has asked for TLS, and there are enough
+     * bookies with TLS enabled in the cluster, although few bookies do not have TLS enabled.
      */
     @Test(timeout = 60000)
-    public void testSSLClientButOnlyFewSSLServers() throws Exception {
-        // disable SSL on initial set of bookies
+    public void testTLSClientButOnlyFewTLSServers() throws Exception {
+        // disable TLS on initial set of bookies
         ServerConfiguration serverConf = new ServerConfiguration(baseConf);
-        serverConf.setSSLProviderFactoryClass(null);
+        serverConf.setTLSProviderFactoryClass(null);
         restartBookies(serverConf);
 
-        // add two bookies which support SSL
-        baseConf.setSSLProviderFactoryClass(SSLContextFactory.class.getName());
+        // add two bookies which support TLS
+        baseConf.setTLSProviderFactoryClass(TLSContextFactory.class.getName());
 
-        Set<Integer> sslBookiePorts = new HashSet<>();
-        sslBookiePorts.add(startNewBookie());
-        sslBookiePorts.add(startNewBookie());
+        Set<Integer> tlsBookiePorts = new HashSet<>();
+        tlsBookiePorts.add(startNewBookie());
+        tlsBookiePorts.add(startNewBookie());
 
         ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
         LedgerMetadata metadata = testClient(clientConf, 2);
@@ -276,7 +275,7 @@ public class TestSSL extends BookKeeperClusterTestCase {
         for (ArrayList<BookieSocketAddress> bookies : ensembles) {
             for (BookieSocketAddress bookieAddress : bookies) {
                 int port = bookieAddress.getPort();
-                assertTrue(sslBookiePorts.contains(port));
+                assertTrue(tlsBookiePorts.contains(port));
             }
         }
     }
@@ -305,7 +304,7 @@ public class TestSSL extends BookKeeperClusterTestCase {
      * Verify that a bookie-side Auth plugin can access server certificates
      */
     @Test(timeout = 60000)
-    public void testBookieAuthPluginRequireClientSSLAuthentication() throws Exception {
+    public void testBookieAuthPluginRequireClientTLSAuthentication() throws Exception {
         ServerConfiguration serverConf = new ServerConfiguration(baseConf);
         serverConf.setBookieAuthProviderFactoryClass(AllowOnlyClientsWithX509Certificates.class.getName());
         restartBookies(serverConf);
@@ -327,16 +326,16 @@ public class TestSSL extends BookKeeperClusterTestCase {
      * Verify that a bookie-side Auth plugin can access server certificates
      */
     @Test(timeout = 60000)
-    public void testBookieAuthPluginDenyAccesstoClientWithoutSSLAuthentication() throws Exception {
+    public void testBookieAuthPluginDenyAccesstoClientWithoutTLSAuthentication() throws Exception {
         ServerConfiguration serverConf = new ServerConfiguration(baseConf);
-        serverConf.setSSLClientAuthentication(false);
+        serverConf.setTLSClientAuthentication(false);
         serverConf.setBookieAuthProviderFactoryClass(AllowOnlyClientsWithX509Certificates.class.getName());
         restartBookies(serverConf);
 
         secureBookieSideChannel = false;
         secureBookieSideChannelPrincipals = null;
         ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
-        clientConf.setSSLClientAuthentication(false);
+        clientConf.setTLSClientAuthentication(false);
 
         try {
             testClient(clientConf, numBookies);
@@ -353,7 +352,7 @@ public class TestSSL extends BookKeeperClusterTestCase {
      * Verify that a bookie-side Auth plugin can access server certificates
      */
     @Test(timeout = 60000)
-    public void testBookieAuthPluginDenyAccessToClientWithoutSSL() throws Exception {
+    public void testBookieAuthPluginDenyAccessToClientWithoutTLS() throws Exception {
         ServerConfiguration serverConf = new ServerConfiguration(baseConf);
         serverConf.setBookieAuthProviderFactoryClass(AllowOnlyClientsWithX509Certificates.class.getName());
         restartBookies(serverConf);
@@ -361,7 +360,7 @@ public class TestSSL extends BookKeeperClusterTestCase {
         secureBookieSideChannel = false;
         secureBookieSideChannelPrincipals = null;
         ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
-        clientConf.setSSLProviderFactoryClass("");
+        clientConf.setTLSProviderFactoryClass("");
 
         try {
             testClient(clientConf, numBookies);
@@ -377,7 +376,7 @@ public class TestSSL extends BookKeeperClusterTestCase {
 
         @Override
         public String getPluginName() {
-            return "ssl";
+            return "tls";
         }
 
         @Override
@@ -421,7 +420,7 @@ public class TestSSL extends BookKeeperClusterTestCase {
 
         @Override
         public String getPluginName() {
-            return "ssl";
+            return "tls";
         }
 
         @Override
@@ -456,8 +455,8 @@ public class TestSSL extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Verify that a client will fail to connect to a server if it has asked for SSL, but it is not available. Verify
-     * that if there are enough SSL servers to fill the ensemble, it will eventually use those rather than the non-SSL
+     * Verify that a client will fail to connect to a server if it has asked for TLS, but it is not available. Verify
+     * that if there are enough TLS servers to fill the ensemble, it will eventually use those rather than the non-TLS
      */
     @Test(timeout = 60000)
     public void testMixedCluster() throws Exception {
@@ -466,7 +465,7 @@ public class TestSSL extends BookKeeperClusterTestCase {
 
         ServerConfiguration bookieConf = newServerConfiguration();
         /*
-        bookieConf.setSSLProviderFactoryClass(null);
+        bookieConf.setTLSProviderFactoryClass(null);
         bs.add(startBookie(bookieConf));
         try {
             testClient(clientConf, origNumBookies + 1);
@@ -477,13 +476,13 @@ public class TestSSL extends BookKeeperClusterTestCase {
 
         bookieConf = newServerConfiguration();
         */
-        bookieConf.setSSLProviderFactoryClass(SSLContextFactory.class.getName());
+        bookieConf.setTLSProviderFactoryClass(TLSContextFactory.class.getName());
         bs.add(startBookie(bookieConf));
         testClient(clientConf, origNumBookies + 1);
     }
 
     /**
-     * Verify that if the server hangs while an SSL client is trying to connect, the client can continue.
+     * Verify that if the server hangs while an TLS client is trying to connect, the client can continue.
      */
     @Test(timeout = 60000)
     public void testHungServer() throws Exception {

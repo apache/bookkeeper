@@ -62,7 +62,7 @@ public interface ConnectionPeer {
     public void setAuthorizedId(BookKeeperPrincipal principal);
 
     /**
-     * This flag returns true if a 'secure' channel in use, like SSL
+     * This flag returns true if a 'secure' channel in use, like TLS
      * @return true if the channel is 'secure'
      */
     public boolean isSecure();
