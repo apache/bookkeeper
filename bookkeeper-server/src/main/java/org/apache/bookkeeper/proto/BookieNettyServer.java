@@ -74,7 +74,6 @@ import java.util.Arrays;
 import java.util.List;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import org.apache.bookkeeper.auth.BookKeeperPrincipal;
-import org.apache.bookkeeper.bookie.BookieConnectionPeer;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 
@@ -89,7 +88,7 @@ class BookieNettyServer {
     final ServerConfiguration conf;
     final EventLoopGroup eventLoopGroup;
     final EventLoopGroup jvmEventLoopGroup;
-    final RequestProcessor requestProcessor;
+    RequestProcessor requestProcessor;
     final AtomicBoolean isRunning = new AtomicBoolean(false);
     final AtomicBoolean isClosed = new AtomicBoolean(false);
     final Object suspensionLock = new Object();
@@ -143,6 +142,11 @@ class BookieNettyServer {
         } else {
             bindAddress = bookieAddress.getSocketAddress();
         }
+    }
+
+    public BookieNettyServer setRequestProcessor(RequestProcessor processor) {
+        this.requestProcessor = processor;
+        return this;
     }
 
     boolean isRunning() {
@@ -310,7 +314,12 @@ class BookieNettyServer {
             });
 
             // Bind and start to accept incoming connections
-            bootstrap.bind(address.getAddress(), address.getPort()).sync();
+            Channel listen = bootstrap.bind(address.getAddress(), address.getPort()).sync().channel();
+            if (listen.localAddress() instanceof InetSocketAddress) {
+                if (conf.getBookiePort() == 0) {
+                    conf.setBookiePort(((InetSocketAddress) listen.localAddress()).getPort());
+                }
+            }
         }
 
         if (conf.isEnableLocalTransport()) {

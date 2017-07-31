@@ -27,7 +27,7 @@
   <modelVersion>4.0.0</modelVersion>
   <artifactId>bookkeeper-stats-providers</artifactId>
   <packaging>pom</packaging>
-  <name>bookkeeper-stats-providers</name>
+  <name>Apache BookKeeper :: Stats Providers</name>
   <modules>
     <module>twitter-finagle-provider</module>
     <module>twitter-science-provider</module>

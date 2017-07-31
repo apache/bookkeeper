@@ -25,11 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import com.google.common.base.Optional;
-
 import io.netty.util.HashedWheelTimer;
-
+import java.util.Optional;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.WeightedRandomSelection.WeightedObject;
@@ -43,7 +40,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Default Ensemble Placement Policy, which picks bookies randomly
+ * Default Ensemble Placement Policy, which picks bookies randomly.
+ *
+ * @see EnsemblePlacementPolicy
  */
 public class DefaultEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
     static final Logger LOG = LoggerFactory.getLogger(DefaultEnsemblePlacementPolicy.class);

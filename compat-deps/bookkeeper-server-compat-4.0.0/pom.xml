@@ -25,8 +25,7 @@
   </parent>
   <groupId>org.apache.bookkeeper</groupId>
   <artifactId>bookkeeper-server-compat400</artifactId>
-  <name>bookkeeper-server-compat400</name>
-  <url>http://maven.apache.org</url>
+  <name>Apache BookKeeper :: Compability Dependencies :: 4.0.0</name>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>

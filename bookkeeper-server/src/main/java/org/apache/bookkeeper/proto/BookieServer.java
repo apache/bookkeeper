@@ -97,6 +97,7 @@ public class BookieServer {
             BookieException, UnavailableException, CompatibilityException, SecurityException {
         this.conf = conf;
         this.statsLogger = statsLogger;
+        this.nettyServer = new BookieNettyServer(this.conf, null);
         this.bookie = newBookie(conf);
         final SecurityHandlerFactory shFactory;
 

@@ -27,11 +27,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import com.google.common.base.Optional;
-
 import io.netty.util.HashedWheelTimer;
-
+import java.util.Optional;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.FeatureProvider;
@@ -46,6 +43,11 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * A placement policy use region information in the network topology for placing ensembles.
+ *
+ * @see EnsemblePlacementPolicy
+ */
 public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlacementPolicy {
     static final Logger LOG = LoggerFactory.getLogger(RegionAwareEnsemblePlacementPolicy.class);
 

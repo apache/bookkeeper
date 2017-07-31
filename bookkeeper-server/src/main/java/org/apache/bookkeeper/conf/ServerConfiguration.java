@@ -82,6 +82,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String BOOKIE_PORT = "bookiePort";
     protected final static String LISTENING_INTERFACE = "listeningInterface";
     protected final static String ALLOW_LOOPBACK = "allowLoopback";
+    protected final static String ALLOW_EPHEMERAL_PORTS = "allowEphemeralPorts";
 
     protected final static String JOURNAL_DIR = "journalDirectory";
     protected final static String JOURNAL_DIRS = "journalDirectories";
@@ -574,6 +575,31 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public ServerConfiguration setAllowLoopback(boolean allow) {
         this.setProperty(ALLOW_LOOPBACK, allow);
+        return this;
+    }
+
+    /**
+     * Is the bookie allowed to use an ephemeral port (port 0) as its server port.
+     *
+     * <p>By default, an ephemeral port is not allowed. Using an ephemeral port
+     * as the service port usually indicates a configuration error. However, in unit
+     * tests, using ephemeral port will address port conflicts problem and allow
+     * running tests in parallel.
+     *
+     * @return whether is allowed to use an ephemeral port.
+     */
+    public boolean getAllowEphemeralPorts() {
+        return this.getBoolean(ALLOW_EPHEMERAL_PORTS, false);
+    }
+
+    /**
+     * Configure the bookie to allow using an ephemeral port.
+     *
+     * @param allow whether to allow using an ephemeral port.
+     * @return server configuration
+     */
+    public ServerConfiguration setAllowEphemeralPorts(boolean allow) {
+        this.setProperty(ALLOW_EPHEMERAL_PORTS, allow);
         return this;
     }
 
@@ -1939,6 +1965,9 @@ public class ServerConfiguration extends AbstractConfiguration {
         if (getEntryLogSizeLimit() > BookKeeperConstants.MAX_LOG_SIZE_LIMIT) {
             throw new ConfigurationException("Entry log file size should not be larger than "
                     + BookKeeperConstants.MAX_LOG_SIZE_LIMIT);
+        }
+        if (0 == getBookiePort() && !getAllowEphemeralPorts()) {
+            throw new ConfigurationException("Invalid port specified, using ephemeral ports accidentally?");
         }
     }
 

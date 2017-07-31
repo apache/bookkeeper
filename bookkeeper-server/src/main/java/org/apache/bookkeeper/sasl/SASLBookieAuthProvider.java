@@ -28,7 +28,7 @@ import javax.security.sasl.SaslException;
 import org.apache.bookkeeper.auth.AuthCallbacks;
 import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.auth.BookieAuthProvider;
-import org.apache.bookkeeper.bookie.BookieConnectionPeer;
+import org.apache.bookkeeper.proto.BookieConnectionPeer;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.slf4j.Logger;

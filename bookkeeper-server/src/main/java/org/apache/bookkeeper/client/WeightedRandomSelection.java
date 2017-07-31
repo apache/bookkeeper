@@ -31,7 +31,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class WeightedRandomSelection<T> {
+class WeightedRandomSelection<T> {
     static final Logger LOG = LoggerFactory.getLogger(WeightedRandomSelection.class);
 
     interface WeightedObject {

@@ -26,7 +26,7 @@
   </parent>
   <groupId>org.apache.bookkeeper.stats</groupId>
   <artifactId>twitter-ostrich-provider</artifactId>
-  <name>Stats provider for twitter-ostrich package</name>
+  <name>Apache BookKeeper :: Stats Providers :: Twitter Ostrich Stats</name>
   <url>http://maven.apache.org</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
