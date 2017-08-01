@@ -16,10 +16,9 @@
  */
 package org.apache.bookkeeper.stats;
 
-import org.apache.commons.configuration.Configuration;
-
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.apache.commons.configuration.Configuration;
 
 /**
  * A {@code CachingStatsProvider} adds the caching functionality to an existing {@code StatsProvider}.

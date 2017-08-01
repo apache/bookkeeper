@@ -18,12 +18,11 @@ package org.apache.bookkeeper.stats.twitter.science;
 
 import com.twitter.common.stats.RequestStats;
 import com.twitter.common.stats.Stat;
-import org.apache.bookkeeper.stats.OpStatsData;
-import org.apache.bookkeeper.stats.OpStatsLogger;
-
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import org.apache.bookkeeper.stats.OpStatsData;
+import org.apache.bookkeeper.stats.OpStatsLogger;
 
 /**
  * An implementation of the OpStatsLogger interface that handles per operation type stats.

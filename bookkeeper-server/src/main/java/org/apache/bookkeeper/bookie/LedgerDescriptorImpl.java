@@ -88,7 +88,7 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
 
     synchronized SettableFuture<Boolean> fenceAndLogInJournal(Journal journal) throws IOException {
         boolean success = this.setFenced();
-        if(success) {
+        if (success) {
             // fenced for first time, we should add the key to journal ensure we can rebuild.
             return logFenceEntryInJournal(journal);
         } else {
@@ -96,7 +96,7 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
             // However, writing the fence log entry to the journal might still be in progress. This can happen
             // when a bookie receives two fence requests almost at the same time. The subsequent logic is used
             // to check the fencing progress.
-            if(logFenceResult == null || fenceEntryPersisted.get()){
+            if (logFenceResult == null || fenceEntryPersisted.get()){
                 // Either ledger's fenced state is recovered from Journal
                 // Or Log fence entry in Journal succeed
                 SettableFuture<Boolean> result = SettableFuture.create();

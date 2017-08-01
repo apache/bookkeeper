@@ -87,22 +87,15 @@ page at http://checkstyle.sourceforge.net/config.html -->
                      value="Redundant import {0}."/>
         </module>
 
-        <!-- TODO: disable checkstyle for sort imports for repacking. re-enable it after the packages are renamed.
-             {@link https://issues.apache.org/jira/browse/DL-168}
         <module name="ImportOrder">
-          --><!-- Checks for out of order import statements. -->
-        <!--
-        <property name="severity" value="error"/>
-        -->
-        <!-- This ensures that static imports go first. -->
-        <!--
-        <property name="option" value="top"/>
-        <property name="sortStaticImportsAlphabetically" value="true"/>
-        <property name="tokens" value="STATIC_IMPORT, IMPORT"/>
-        <message key="import.ordering"
-                 value="Import {0} appears after other imports that it should precede"/>
-      </module>
-      -->
+            <property name="severity" value="error"/>
+            <!-- This ensures that static imports go first. -->
+            <property name="option" value="top"/>
+            <property name="sortStaticImportsAlphabetically" value="true"/>
+            <property name="tokens" value="STATIC_IMPORT, IMPORT"/>
+            <message key="import.ordering"
+                     value="Import {0} appears after other imports that it should precede"/>
+        </module>
 
         <module name="AvoidStarImport">
             <property name="severity" value="error"/>

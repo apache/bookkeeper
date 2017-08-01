@@ -22,6 +22,7 @@ package org.apache.bookkeeper.bookie;
 
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_WRITABLE_DIRS;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,7 +31,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -38,8 +38,6 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.annotations.VisibleForTesting;
 
 /**
  * This class manages ledger directories used by the bookie.
@@ -115,6 +113,7 @@ public class LedgerDirsManager {
 
     /**
      * Get all dir listeners.
+     *
      * @return list of listeners
      */
     public List<LedgerDirsListener> getListeners() {
@@ -125,7 +124,7 @@ public class LedgerDirsManager {
      * Calculate the total amount of free space available in all of the ledger directories put together.
      *
      * @return totalDiskSpace in bytes
-     * @throws IOException 
+     * @throws IOException
      */
     public long getTotalFreeSpace(List<File> dirs) throws IOException {
         return diskChecker.getTotalFreeSpace(dirs);
@@ -135,14 +134,15 @@ public class LedgerDirsManager {
      * Calculate the total amount of free space available in all of the ledger directories put together.
      *
      * @return freeDiskSpace in bytes
-     * @throws IOException 
+     * @throws IOException
      */
     public long getTotalDiskSpace(List<File> dirs) throws IOException {
         return diskChecker.getTotalDiskSpace(dirs);
     }
-    
+
     /**
      * Get disk usages map.
+     *
      * @return disk usages map
      */
     public ConcurrentMap<File, Float> getDiskUsages() {
