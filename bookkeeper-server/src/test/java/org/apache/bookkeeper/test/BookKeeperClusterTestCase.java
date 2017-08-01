@@ -506,9 +506,12 @@ public abstract class BookKeeperClusterTestCase {
         Thread.sleep(1000);
         // restart them to ensure we can't
         for (ServerConfiguration conf : bsConfs) {
+            // ensure the bookie port is loaded correctly
+            int port = conf.getBookiePort();
             if (null != newConf) {
                 conf.loadConf(newConf);
             }
+            conf.setBookiePort(port);
             bs.add(startBookie(conf));
         }
     }
