@@ -1,5 +1,6 @@
 ---
 title: Apache BookKeeper Releases
+layout: community
 ---
 
 ## Download
