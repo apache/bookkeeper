@@ -557,7 +557,8 @@ public abstract class BookKeeperClusterTestCase {
         }
         
         while (conf.isForceReadOnlyBookie()
-            && bkc.getZkHandle().exists("/ledgers/available/readonly/" + host + ":" + port, false) == null) {
+            && bkc.getZkHandle().exists(conf.getZkLedgersRootPath() +"/available/readonly/" + host + ":" + port,
+            false) == null) {
             Thread.sleep(100);
         }
 
@@ -594,7 +595,7 @@ public abstract class BookKeeperClusterTestCase {
             host = InetAddress.getLocalHost().getCanonicalHostName();
         }
         while (bkc.getZkHandle().exists(
-                "/ledgers/available/" + host + ":" + port, false) == null) {
+                conf.getZkLedgersRootPath() + "/available/" + host + ":" + port, false) == null) {
             Thread.sleep(500);
         }
 
