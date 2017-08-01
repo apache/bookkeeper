@@ -31,6 +31,10 @@ defaults:
     path: project
   values:
     layout: community
+- scope:
+    path: releases
+  values:
+    layout: community
 
 gems:
 - jekyll-toc
