@@ -576,7 +576,12 @@ public class Bookie extends BookieCriticalThread {
         if (iface == null) {
             iface = "default";
         }
-        InetSocketAddress inetAddr = new InetSocketAddress(DNS.getDefaultHost(iface), conf.getBookiePort());
+        String hostName = DNS.getDefaultHost(iface);
+        InetSocketAddress inetAddr = new InetSocketAddress(hostName, conf.getBookiePort());
+        if (inetAddr.isUnresolved()) {
+            throw new UnknownHostException("Unable to resolve default hostname: "
+                    + hostName + " for interface: " + iface);
+        }
         String hostAddress = inetAddr.getAddress().getHostAddress();
         if (conf.getUseHostNameAsBookieID()) {
             hostAddress = inetAddr.getAddress().getCanonicalHostName();

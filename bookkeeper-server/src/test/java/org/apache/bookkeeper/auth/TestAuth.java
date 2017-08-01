@@ -488,7 +488,6 @@ public class TestAuth extends BookKeeperClusterTestCase {
         @Override
         public BookieAuthProvider newProvider(BookieConnectionPeer connection, AuthCallbacks.GenericCallback<Void> completeCb) {
             return new BookieAuthProvider() {
-
                 {
                     completeCb.operationComplete(BKException.Code.OK, null);
                     initCountersOnConnections.incrementAndGet();
@@ -496,7 +495,6 @@ public class TestAuth extends BookKeeperClusterTestCase {
 
                 @Override
                 public void process(AuthToken m, AuthCallbacks.GenericCallback<AuthToken> cb) {
-
                 }
 
                 @Override

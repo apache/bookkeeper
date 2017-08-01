@@ -154,6 +154,14 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     protected final static String ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION = "allowMultipleDirsUnderSameDiskPartition";
 
+    protected final static String TLS_CLIENT_AUTHENTICATION = "tlsClientAuthentication";
+    protected final static String TLS_KEYSTORE_TYPE = "tlsKeyStoreType";
+    protected final static String TLS_KEYSTORE = "tlsKeyStore";
+    protected final static String TLS_KEYSTORE_PASSWORD_PATH = "tlsKeyStorePasswordPath";
+    protected final static String TLS_TRUSTSTORE_TYPE = "tlsTrustStoreType";
+    protected final static String TLS_TRUSTSTORE = "tlsTrustStore";
+    protected final static String TLS_TRUSTSTORE_PASSWORD_PATH = "tlsTrustStorePasswordPath";
+
     /**
      * Construct a default configuration object
      */
@@ -2048,6 +2056,121 @@ public class ServerConfiguration extends AbstractConfiguration {
     @Override
     public ServerConfiguration setNettyMaxFrameSizeBytes(int maxSize) {
         super.setNettyMaxFrameSizeBytes(maxSize);
+        return this;
+    }
+
+    /**
+     * Get the truststore type for client. Default is JKS.
+     * 
+     * @return
+     */
+    public String getTLSTrustStoreType() {
+        return getString(TLS_TRUSTSTORE_TYPE, "JKS");
+    }
+
+    /**
+     * Set the keystore type for client.
+     * 
+     * @return
+     */
+    public ServerConfiguration setTLSKeyStoreType(String arg) {
+        setProperty(TLS_KEYSTORE_TYPE, arg);
+        return this;
+    }
+
+    /**
+     * Get the keystore path for the client.
+     * 
+     * @return
+     */
+    public String getTLSKeyStore() {
+        return getString(TLS_KEYSTORE, null);
+    }
+
+    /**
+     * Set the keystore path for the client.
+     * 
+     * @return
+     */
+    public ServerConfiguration setTLSKeyStore(String arg) {
+        setProperty(TLS_KEYSTORE, arg);
+        return this;
+    }
+
+    /**
+     * Get the path to file containing keystore password if the client keystore is password protected. Default is null.
+     * 
+     * @return
+     */
+    public String getTLSKeyStorePasswordPath() {
+        return getString(TLS_KEYSTORE_PASSWORD_PATH, null);
+    }
+
+    /**
+     * Set the path to file containing keystore password, if the client keystore is password protected.
+     * 
+     * @return
+     */
+    public ServerConfiguration setTLSKeyStorePasswordPath(String arg) {
+        setProperty(TLS_KEYSTORE_PASSWORD_PATH, arg);
+        return this;
+    }
+
+    /**
+     * Get the keystore type for client. Default is JKS.
+     * 
+     * @return
+     */
+    public String getTLSKeyStoreType() {
+        return getString(TLS_KEYSTORE_TYPE, "JKS");
+    }
+
+    /**
+     * Set the truststore type for client.
+     * 
+     * @return
+     */
+    public ServerConfiguration setTLSTrustStoreType(String arg) {
+        setProperty(TLS_TRUSTSTORE_TYPE, arg);
+        return this;
+    }
+
+    /**
+     * Get the truststore path for the client.
+     * 
+     * @return
+     */
+    public String getTLSTrustStore() {
+        return getString(TLS_TRUSTSTORE, null);
+    }
+
+    /**
+     * Set the truststore path for the client.
+     * 
+     * @return
+     */
+    public ServerConfiguration setTLSTrustStore(String arg) {
+        setProperty(TLS_TRUSTSTORE, arg);
+        return this;
+    }
+
+    /**
+     * Get the path to file containing truststore password if the client truststore is password protected. Default is
+     * null.
+     * 
+     * @return
+     */
+    public String getTLSTrustStorePasswordPath() {
+        return getString(TLS_TRUSTSTORE_PASSWORD_PATH, null);
+    }
+
+    /**
+     * Set the path to file containing truststore password, if the client truststore is password protected.
+     * 
+     * @return
+     */
+    public ServerConfiguration setTLSTrustStorePasswordPath(String arg) {
+        setProperty(TLS_TRUSTSTORE_PASSWORD_PATH, arg);
         return this;
     }
 
