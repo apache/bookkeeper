@@ -1,0 +1,7 @@
+# please keep sections in alpha order
+
+# documentation for old releases
+
+# in the new website, the old releases' documentation is /archives/rx.y.z . The should be redirected
+# to the documentation hosted in Apache CMS https://bookkeeper.apache.org/docs/rx.y.z 
+Redirect Permanent /archives https://bookkeeper.apache.org/docs
