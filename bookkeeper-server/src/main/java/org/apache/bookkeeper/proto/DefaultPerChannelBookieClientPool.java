@@ -22,8 +22,12 @@ package org.apache.bookkeeper.proto;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.tls.SecurityException;
+import org.apache.bookkeeper.tls.SecurityHandlerFactory;
+import org.apache.bookkeeper.tls.SecurityProviderFactoryFactory;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,23 +43,33 @@ import com.google.common.base.Preconditions;
 class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
         GenericCallback<PerChannelBookieClient> {
 
-    static final Logger logger = LoggerFactory.getLogger(DefaultPerChannelBookieClientPool.class);
+    static final Logger LOG = LoggerFactory.getLogger(DefaultPerChannelBookieClientPool.class);
 
     final PerChannelBookieClientFactory factory;
     final BookieSocketAddress address;
+
     final PerChannelBookieClient[] clients;
+
+    final ClientConfiguration conf;
+    SecurityHandlerFactory shFactory;
+
     final AtomicInteger counter = new AtomicInteger(0);
     final AtomicLong errorCounter = new AtomicLong(0);
 
-    DefaultPerChannelBookieClientPool(PerChannelBookieClientFactory factory,
+    DefaultPerChannelBookieClientPool(ClientConfiguration conf, PerChannelBookieClientFactory factory,
                                       BookieSocketAddress address,
-                                      int coreSize) {
+                                      int coreSize) throws SecurityException {
         Preconditions.checkArgument(coreSize > 0);
         this.factory = factory;
         this.address = address;
+        this.conf = conf;
+
+        this.shFactory = SecurityProviderFactoryFactory
+                .getSecurityProviderFactory(conf.getTLSProviderFactoryClass());
+
         this.clients = new PerChannelBookieClient[coreSize];
         for (int i = 0; i < coreSize; i++) {
-            this.clients[i] = factory.create(address, this);
+            this.clients[i] = factory.create(address, this, shFactory);
         }
     }
 

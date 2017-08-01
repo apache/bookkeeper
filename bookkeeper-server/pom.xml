@@ -221,6 +221,11 @@
         <version>2.7.3</version>
         <scope>test</scope>
     </dependency>          
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-tcnative-boringssl-static</artifactId>
+      <version>${netty-boringssl.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -334,6 +339,12 @@
             <exclude>**/.gitignore</exclude>
             <exclude>**/.project</exclude>
             <exclude>**/.settings/*</exclude>
+            <exclude>certs/keyStoreClientPassword.txt</exclude>
+            <exclude>certs/keyStoreServerPassword.txt</exclude>
+            <exclude>certs/trustStorePassword.txt</exclude>
+            <exclude>src/test/resources/keyStoreClientPassword.txt</exclude>
+            <exclude>src/test/resources/keyStoreServerPassword.txt</exclude>
+            <exclude>src/test/resources/trustStorePassword.txt</exclude>
           </excludes>
         </configuration>
       </plugin>
