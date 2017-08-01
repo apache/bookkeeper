@@ -21,18 +21,20 @@ package org.apache.bookkeeper.client;
 import static com.google.common.base.Charsets.UTF_8;
 
 import io.netty.buffer.ByteBuf;
-
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
-
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * A {@code SHA-1} based digest manager.
+ *
+ * <p>NOTE: This class is tended to be used by this project only. External users should not rely on it directly.
+ */
 public class MacDigestManager extends DigestManager {
     private final static Logger LOG = LoggerFactory.getLogger(MacDigestManager.class);
 

@@ -21,6 +21,7 @@ import com.twitter.ostrich.admin.RuntimeEnvironment;
 import com.twitter.ostrich.admin.ServiceTracker;
 import com.twitter.ostrich.admin.StatsFactory;
 import com.twitter.util.Duration;
+import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.stats.CachingStatsProvider;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.StatsProvider;
@@ -33,10 +34,8 @@ import scala.collection.immutable.Map;
 import scala.collection.immutable.Map$;
 import scala.util.matching.Regex;
 
-import java.util.concurrent.TimeUnit;
-
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * A <i>Twitter Ostrich</i> library based {@link StatsProvider} implementation.
  */
 public class OstrichProvider implements StatsProvider {
 

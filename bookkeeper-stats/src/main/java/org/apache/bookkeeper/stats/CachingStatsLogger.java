@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * A {@code StatsLogger} that caches the stats objects created by other {@code StatsLogger}.
  */
 public class CachingStatsLogger implements StatsLogger {
 

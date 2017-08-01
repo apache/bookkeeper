@@ -21,7 +21,8 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * A {@code BufferedChannelBase} adds functionlity to an existing file channel, the ability
+ * to buffer the input and output data. This class is a base class for wrapping the {@link FileChannel}.
  */
 public abstract class BufferedChannelBase {
     protected final FileChannel fileChannel;

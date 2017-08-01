@@ -21,20 +21,19 @@
 
 package org.apache.bookkeeper.bookie;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 import java.io.Closeable;
 import java.io.File;
-import java.io.RandomAccessFile;
 import java.io.IOException;
-import java.nio.channels.FileChannel;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.Arrays;
-
 import org.apache.bookkeeper.util.NativeIO;
 import org.apache.bookkeeper.util.ZeroBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.google.common.base.Charsets.UTF_8;
 
 /**
  * Simple wrapper around FileChannel to add versioning

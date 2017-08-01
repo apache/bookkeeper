@@ -38,7 +38,7 @@ import javax.security.sasl.AuthorizeCallback;
 import javax.security.sasl.RealmCallback;
 import javax.security.sasl.SaslException;
 import org.apache.bookkeeper.auth.AuthCallbacks;
-import org.apache.bookkeeper.bookie.BookieConnectionPeer;
+import org.apache.bookkeeper.proto.BookieConnectionPeer;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.slf4j.Logger;

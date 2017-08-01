@@ -21,8 +21,11 @@
 
 package org.apache.bookkeeper.bookie;
 
-import com.google.common.collect.Lists;
 
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_ENTRY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_OFFSET;
+
+import com.google.common.collect.Lists;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.File;
@@ -48,12 +51,10 @@ import org.apache.bookkeeper.util.SnapshotMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_ENTRY;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_OFFSET;
-
 /**
- * Interleave ledger storage
- * This ledger storage implementation stores all entries in a single
+ * Interleave ledger storage.
+ *
+ * <p>This ledger storage implementation stores all entries in a single
  * file and maintains an index file for each ledger.
  */
 public class InterleavedLedgerStorage implements CompactableLedgerStorage, EntryLogListener {
@@ -202,13 +203,16 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         // shut down gc thread, which depends on zookeeper client
         // also compaction will write entries again to entry log file
         LOG.info("Shutting down InterleavedLedgerStorage");
+        LOG.info("Shutting down GC thread");
         gcThread.shutdown();
+        LOG.info("Shutting down entry logger");
         entryLogger.shutdown();
         try {
             ledgerCache.close();
         } catch (IOException e) {
             LOG.error("Error while closing the ledger cache", e);
         }
+        LOG.info("Complete shutting down Ledger Storage");
     }
 
     @Override
@@ -460,7 +464,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         // in ledger storage and ready to be synced to disk.
         // TODO: we could consider remove checkpointSource and checkpointSouce#newCheckpoint
         // later if we provide kind of LSN (Log/Journal Squeuence Number)
-        // mechanism when adding entry.
+        // mechanism when adding entry. {@link https://github.com/apache/bookkeeper/issues/279}
         checkpointHolder.setNextCheckpoint(checkpointSource.newCheckpoint());
     }
 }

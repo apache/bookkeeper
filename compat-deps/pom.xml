@@ -29,7 +29,7 @@
   <version>4.5.0-SNAPSHOT</version>
   <artifactId>compat-deps</artifactId>
   <packaging>pom</packaging>
-  <name>compability dependencies</name>
+  <name>Apache BookKeeper :: Compability Dependencies</name>
   <modules>
     <module>bookkeeper-server-compat-4.0.0</module>
     <module>bookkeeper-server-compat-4.1.0</module>

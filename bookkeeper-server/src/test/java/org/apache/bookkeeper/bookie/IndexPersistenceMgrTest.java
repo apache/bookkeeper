@@ -74,7 +74,6 @@ public class IndexPersistenceMgrTest {
 
     @After
     public void tearDown() throws Exception {
-        //TODO: it is being shut down but never started. why?
         ledgerMonitor.shutdown();
         FileUtils.deleteDirectory(journalDir);
         FileUtils.deleteDirectory(ledgerDir);

@@ -21,19 +21,19 @@
 package org.apache.bookkeeper.auth;
 
 import java.io.IOException;
-
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.bookkeeper.bookie.BookieConnectionPeer;
+import org.apache.bookkeeper.proto.BookieConnectionPeer;
+
 
 /**
  * Bookie authentication provider interface.
- * This must be implemented by any party wishing to implement
+ *
+ * <p>This must be implemented by any party wishing to implement
  * an authentication mechanism for bookkeeper connections.
  */
 public interface BookieAuthProvider {
     /**
-     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+     * A factory to create the bookie authentication provider.
      */
     interface Factory {
         /**

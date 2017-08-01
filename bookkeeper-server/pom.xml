@@ -24,8 +24,7 @@
     <version>4.5.0-SNAPSHOT</version>
   </parent>
   <artifactId>bookkeeper-server</artifactId>
-  <name>bookkeeper-server</name>
-  <url>http://maven.apache.org</url>
+  <name>Apache BookKeeper :: Server</name>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.libdir>${basedir}/lib</project.libdir>
@@ -374,6 +373,30 @@
             </fileset>
           </filesets>
 	</configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>${maven-javadoc-plugin.version}</version>
+        <configuration>
+          <!-- Avoid for missing javadoc comments to be marked as errors -->
+          <additionalparam>-Xdoclint:none</additionalparam>
+          <subpackages>org.apache.bookkeeper.client:org.apache.bookkeeper.common.annotation:org.apache.bookkeeper.conf:org.apache.bookkeeper.feature:org.apache.bookkeeper.stats</subpackages>
+          <groups>
+            <group>
+              <title>Bookkeeper</title>
+              <packages>org.apache.bookkeeper*</packages>
+            </group>
+          </groups>
+        </configuration>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

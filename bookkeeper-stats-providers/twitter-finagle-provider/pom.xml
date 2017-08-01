@@ -26,7 +26,7 @@
   </parent>
   <groupId>org.apache.bookkeeper.stats</groupId>
   <artifactId>twitter-finagle-provider</artifactId>
-  <name>Stats provider for Finagle stats</name>
+  <name>Apache BookKeeper :: Stats Providers :: Twitter Finagle Stats</name>
   <url>http://maven.apache.org</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

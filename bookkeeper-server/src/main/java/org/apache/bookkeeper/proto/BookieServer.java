@@ -94,10 +94,11 @@ public class BookieServer {
             BookieException, UnavailableException, CompatibilityException {
         this.conf = conf;
         this.statsLogger = statsLogger;
+        this.nettyServer = new BookieNettyServer(this.conf, null);
         this.bookie = newBookie(conf);
         this.requestProcessor = new BookieRequestProcessor(conf, bookie,
                 statsLogger.scope(SERVER_SCOPE));
-        this.nettyServer = new BookieNettyServer(this.conf, requestProcessor);
+        this.nettyServer.setRequestProcessor(this.requestProcessor);
         isAutoRecoveryDaemonEnabled = conf.isAutoRecoveryDaemonEnabled();
         if (isAutoRecoveryDaemonEnabled) {
             this.autoRecoveryMain = new AutoRecoveryMain(conf, statsLogger.scope(REPLICATION_SCOPE));

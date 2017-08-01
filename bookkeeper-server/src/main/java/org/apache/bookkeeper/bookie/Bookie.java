@@ -27,6 +27,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_ADD_ENTR
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_READ_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_READ_ENTRY_BYTES;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_RECOVERY_ADD_ENTRY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_INDEX_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_LEDGER_SCOPE;
@@ -34,6 +35,13 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_BYTES;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SERVER_STATUS;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_BYTES;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.SettableFuture;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
@@ -61,7 +69,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-
 import org.apache.bookkeeper.bookie.BookieException.DiskPartitionDuplicationException;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
@@ -102,18 +109,8 @@ import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.SettableFuture;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-
 /**
  * Implements a bookie.
- *
  */
 public class Bookie extends BookieCriticalThread {
 
@@ -168,6 +165,7 @@ public class Bookie extends BookieCriticalThread {
             new ThreadFactoryBuilder().setNameFormat("BookieStateService-%d").build());
 
     // Expose Stats
+    private final StatsLogger statsLogger;
     private final Counter writeBytes;
     private final Counter readBytes;
     // Bookie Operation Latency Stats
@@ -179,7 +177,7 @@ public class Bookie extends BookieCriticalThread {
     private final OpStatsLogger readBytesStats;
 
     /**
-     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+     * Exception is thrown when no such a ledger is found in this bookie.
      */
     public static class NoLedgerException extends IOException {
         private static final long serialVersionUID = 1L;
@@ -194,7 +192,7 @@ public class Bookie extends BookieCriticalThread {
     }
 
     /**
-     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+     * Exception is thrown when no such an entry is found in this bookie.
      */
     public static class NoEntryException extends IOException {
         private static final long serialVersionUID = 1L;
@@ -652,6 +650,7 @@ public class Bookie extends BookieCriticalThread {
     public Bookie(ServerConfiguration conf, StatsLogger statsLogger)
             throws IOException, KeeperException, InterruptedException, BookieException {
         super("Bookie-" + conf.getBookiePort());
+        this.statsLogger = statsLogger;
         this.zkAcls = ZkUtils.getACLs(conf);
         this.bookieRegistrationPath = conf.getZkAvailableBookiesPath() + "/";
         this.bookieReadonlyRegistrationPath =
@@ -1247,6 +1246,8 @@ public class Bookie extends BookieCriticalThread {
                 .watchers(watchers)
                 .operationRetryPolicy(new BoundExponentialBackoffRetryPolicy(conf.getZkRetryBackoffStartMs(),
                         conf.getZkRetryBackoffMaxMs(), Integer.MAX_VALUE))
+                .requestRateLimit(conf.getZkRequestRateLimit())
+                .statsLogger(this.statsLogger.scope(BOOKIE_SCOPE))
                 .build();
     }
 
@@ -1321,15 +1322,18 @@ public class Bookie extends BookieCriticalThread {
                 // mark bookie as in shutting down progress
                 shuttingdown = true;
 
-                // Shutdown the state service
-                stateService.shutdown();
+                // turn bookie to read only during shutting down process
+                LOG.info("Turning bookie to read only during shut down");
+                this.forceReadOnly.set(true);
+
+                // Shutdown Sync thread
+                syncThread.shutdown();
 
                 // Shutdown journals
                 for (Journal journal : journals) {
                     journal.shutdown();
                 }
                 this.join();
-                syncThread.shutdown();
 
                 // Shutdown the EntryLogger which has the GarbageCollector Thread running
                 ledgerStorage.shutdown();
@@ -1347,6 +1351,9 @@ public class Bookie extends BookieCriticalThread {
                 if (indexDirsManager != ledgerDirsManager) {
                     idxMonitor.shutdown();
                 }
+
+                // Shutdown the state service
+                stateService.shutdown();
             }
             // Shutdown the ZK client
             if (zk != null) {

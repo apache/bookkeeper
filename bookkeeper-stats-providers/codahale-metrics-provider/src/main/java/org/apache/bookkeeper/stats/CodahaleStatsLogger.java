@@ -16,12 +16,13 @@
  */
 package org.apache.bookkeeper.stats;
 
-import com.codahale.metrics.Timer;
-import com.codahale.metrics.MetricRegistry;
 import static com.codahale.metrics.MetricRegistry.name;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
+
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * A {@link StatsLogger} implemented based on <i>Codahale</i> metrics library.
  */
 public class CodahaleStatsLogger implements StatsLogger {
     protected final String basename;

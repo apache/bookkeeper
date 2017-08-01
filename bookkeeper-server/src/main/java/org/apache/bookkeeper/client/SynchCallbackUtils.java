@@ -24,7 +24,7 @@ import java.util.concurrent.ExecutionException;
  * Utility for callbacks
  * 
  */
-public class SynchCallbackUtils {
+class SynchCallbackUtils {
 
     /**
      * Wait for a result. This is convenience method to implement callbacks

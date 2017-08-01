@@ -379,7 +379,7 @@ public class LedgerHandle implements AutoCloseable {
                 List<PendingAddOp> pendingAdds;
 
                 if (isClosed()) {
-                    // TODO: make ledger metadata immutable
+                    // TODO: make ledger metadata immutable {@link https://github.com/apache/bookkeeper/issues/281}
                     // Although the metadata is already closed, we don't need to proceed zookeeper metadata update, but
                     // we still need to error out the pending add ops.
                     //
@@ -720,8 +720,7 @@ public class LedgerHandle implements AutoCloseable {
      * @param ctx
      *            some control object
      */
-    public void asyncAddEntry(final long entryId, final byte[] data, final AddCallback cb, final Object ctx)
-            throws BKException {
+    public void asyncAddEntry(final long entryId, final byte[] data, final AddCallback cb, final Object ctx) {
         LOG.error("To use this feature Ledger must be created with createLedgerAdv() interface.");
         cb.addComplete(BKException.Code.IllegalOpException, LedgerHandle.this, entryId, ctx);
     }

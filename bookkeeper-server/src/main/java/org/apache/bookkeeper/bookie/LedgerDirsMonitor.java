@@ -133,7 +133,8 @@ class LedgerDirsMonitor extends BookieThread {
                     }
                 } else {
                     LOG.debug(
-                            "Current TotalDiskUsage: {} is greater than LWMThreshold: {}. So not adding any filledDir to WritableDirsList",
+                            "Current TotalDiskUsage: {} is greater than LWMThreshold: {}."
+                                + " So not adding any filledDir to WritableDirsList",
                             totalDiskUsage, conf.getDiskLowWaterMarkUsageThreshold());
                 }
             } catch (IOException ioe) {

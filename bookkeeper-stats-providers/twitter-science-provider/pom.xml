@@ -26,8 +26,7 @@
   </parent>
   <groupId>org.apache.bookkeeper.stats</groupId>
   <artifactId>twitter-science-provider</artifactId>
-  <name>Stats provider for twitter-stats package</name>
-  <url>http://maven.apache.org</url>
+  <name>Apache BookKeeper :: Stats Providers :: Twitter Science Stats</name>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.libdir>${basedir}/lib</project.libdir>

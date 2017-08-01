@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.client;
 
+import io.netty.buffer.Unpooled;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -31,6 +32,8 @@ import java.util.Random;
 import java.util.Map;
 import java.util.UUID;
 import java.util.HashMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -175,6 +178,76 @@ public class BookieWriteLedgerTest extends
         }
 
         readEntries(lh, entries1);
+        lh.close();
+    }
+
+    /**
+     * Verify that LedgerHandleAdv cannnot handle addEntry without the entryId
+     *
+     * @throws Exception
+     */
+    @Test(timeout = 60000)
+    public void testNoAddEntryLedgerCreateAdv() throws Exception {
+
+        ByteBuffer entry = ByteBuffer.allocate(4);
+        entry.putInt(rng.nextInt(maxInt));
+        entry.position(0);
+
+        lh = bkc.createLedgerAdv(5, 3, 2, digestType, ledgerPassword);
+        assertTrue(lh instanceof LedgerHandleAdv);
+
+        try {
+            lh.addEntry(entry.array());
+            fail("using LedgerHandleAdv addEntry without entryId is forbidden");
+        } catch (BKException e) {
+            assertEquals(e.getCode(), BKException.Code.IllegalOpException);
+        }
+
+        try {
+            lh.addEntry(entry.array(), 0, 4);
+            fail("using LedgerHandleAdv addEntry without entryId is forbidden");
+        } catch (BKException e) {
+            assertEquals(e.getCode(), BKException.Code.IllegalOpException);
+        }
+
+        try {
+            CompletableFuture<Object> done = new CompletableFuture<>();
+            lh.asyncAddEntry(Unpooled.wrappedBuffer(entry.array()),
+                (int rc, LedgerHandle lh1, long entryId, Object ctx) -> {
+                SynchCallbackUtils.finish(rc, null, done);
+            }, null);
+            done.get();
+        } catch (ExecutionException ee) {
+            assertTrue(ee.getCause() instanceof BKException);
+            BKException e = (BKException) ee.getCause();
+            assertEquals(e.getCode(), BKException.Code.IllegalOpException);
+        }
+
+        try {
+            CompletableFuture<Object> done = new CompletableFuture<>();
+            lh.asyncAddEntry(entry.array(),
+                (int rc, LedgerHandle lh1, long entryId, Object ctx) -> {
+                SynchCallbackUtils.finish(rc, null, done);
+            }, null);
+            done.get();
+        } catch (ExecutionException ee) {
+            assertTrue(ee.getCause() instanceof BKException);
+            BKException e = (BKException) ee.getCause();
+            assertEquals(e.getCode(), BKException.Code.IllegalOpException);
+        }
+
+        try {
+            CompletableFuture<Object> done = new CompletableFuture<>();
+            lh.asyncAddEntry(entry.array(),0, 4,
+                (int rc, LedgerHandle lh1, long entryId, Object ctx) -> {
+                SynchCallbackUtils.finish(rc, null, done);
+            }, null);
+            done.get();
+        } catch (ExecutionException ee) {
+            assertTrue(ee.getCause() instanceof BKException);
+            BKException e = (BKException) ee.getCause();
+            assertEquals(e.getCode(), BKException.Code.IllegalOpException);
+        }
         lh.close();
     }
 
