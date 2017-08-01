@@ -21,14 +21,12 @@
 package org.apache.bookkeeper.client;
 
 import io.netty.buffer.ByteBuf;
-
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
@@ -39,7 +37,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
-import org.apache.bookkeeper.test.BaseTestCase;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,14 +47,15 @@ import static org.junit.Assert.*;
 /**
  * This unit test tests ledger recovery.
  */
-public class LedgerRecoveryTest extends BaseTestCase {
+public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
     private final static Logger LOG = LoggerFactory.getLogger(LedgerRecoveryTest.class);
 
-    DigestType digestType;
+    private final DigestType digestType;
 
-    public LedgerRecoveryTest(DigestType digestType) {
+    public LedgerRecoveryTest() {
         super(3);
-        this.digestType = digestType;
+        this.digestType = DigestType.CRC32;
+        this.baseConf.setAllowEphemeralPorts(false);
     }
 
     private void testInternal(int numEntries) throws Exception {

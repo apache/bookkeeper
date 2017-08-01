@@ -20,13 +20,13 @@
  */
 package org.apache.bookkeeper.proto;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.IOException;
+import java.lang.Integer;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
-import java.lang.Integer;
 import java.util.Arrays;
-
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.ReadOnlyBookie;
 import org.apache.bookkeeper.bookie.BookieCriticalThread;
@@ -52,8 +52,6 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.annotations.VisibleForTesting;
 
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SERVER_SCOPE;
@@ -95,7 +93,13 @@ public class BookieServer {
         this.conf = conf;
         this.statsLogger = statsLogger;
         this.nettyServer = new BookieNettyServer(this.conf, null);
-        this.bookie = newBookie(conf);
+        try {
+            this.bookie = newBookie(conf);
+        } catch (IOException | KeeperException | InterruptedException | BookieException e) {
+            // interrupted on constructing a bookie
+            this.nettyServer.shutdown();
+            throw e;
+        }
         this.requestProcessor = new BookieRequestProcessor(conf, bookie,
                 statsLogger.scope(SERVER_SCOPE));
         this.nettyServer.setRequestProcessor(this.requestProcessor);

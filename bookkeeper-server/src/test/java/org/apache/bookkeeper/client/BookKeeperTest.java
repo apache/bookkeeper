@@ -1,46 +1,40 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
 package org.apache.bookkeeper.client;
 
 import io.netty.util.IllegalReferenceCountException;
 import java.util.Collections;
 import java.util.Enumeration;
-
-/*
-*
-* Licensed to the Apache Software Foundation (ASF) under one
-* or more contributor license agreements.  See the NOTICE file
-* distributed with this work for additional information
-* regarding copyright ownership.  The ASF licenses this file
-* to you under the Apache License, Version 2.0 (the
-* "License"); you may not use this file except in compliance
-* with the License.  You may obtain a copy of the License at
-*
-*   http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing,
-* software distributed under the License is distributed on an
-* "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-* KIND, either express or implied.  See the License for the
-* specific language governing permissions and limitations
-* under the License.
-*
-*/
-
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BKException.BKBookieHandleNotAvailableException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.test.BaseTestCase;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.KeeperException;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -51,15 +45,14 @@ import static org.junit.Assert.*;
 /**
  * Tests of the main BookKeeper client
  */
-public class BookKeeperTest extends BaseTestCase {
+public class BookKeeperTest extends BookKeeperClusterTestCase {
     private final static Logger LOG = LoggerFactory.getLogger(BookKeeperTest.class);
 
-    DigestType digestType;
+    private final DigestType digestType;
 
-    public BookKeeperTest(DigestType digestType) {
+    public BookKeeperTest() {
         super(4);
-
-        this.digestType = digestType;
+        this.digestType = DigestType.CRC32;
     }
 
     @Test
@@ -69,7 +62,7 @@ public class BookKeeperTest extends BaseTestCase {
             .setZkTimeout(20000);
 
         CountDownLatch l = new CountDownLatch(1);
-        zkUtil.sleepServer(5, l);
+        zkUtil.sleepServer(200, TimeUnit.MILLISECONDS, l);
         l.await();
 
         BookKeeper bkc = new BookKeeper(conf);
@@ -84,15 +77,13 @@ public class BookKeeperTest extends BaseTestCase {
             .setZkTimeout(20000);
 
         CountDownLatch l = new CountDownLatch(1);
-        zkUtil.sleepServer(5, l);
+        zkUtil.sleepServer(200, TimeUnit.MILLISECONDS, l);
         l.await();
 
-        ZooKeeper zk = new ZooKeeper(zkUtil.getZooKeeperConnectString(), 10000,
-                            new Watcher() {
-                                @Override
-                                public void process(WatchedEvent event) {
-                                }
-                            });
+        ZooKeeper zk = new ZooKeeper(
+            zkUtil.getZooKeeperConnectString(),
+            50,
+            event -> {});
         assertFalse("ZK shouldn't have connected yet", zk.getState().isConnected());
         try {
             BookKeeper bkc = new BookKeeper(conf, zk);
@@ -728,11 +719,10 @@ public class BookKeeperTest extends BaseTestCase {
                     LedgerEntry entry = readEntries.nextElement();
                     assertTrue(entry.data.getClass().getName(),
                         entry.data.getClass().getName().contains("PooledNonRetainedSlicedByteBuf"));
-                    assertTrue(entry.data.release());
                     try {
                         entry.data.release();
-                        fail("ByteBuf already released");
                     } catch (IllegalReferenceCountException ok) {
+                        fail("ByteBuf already released");
                     }
                 }
             }
@@ -749,14 +739,12 @@ public class BookKeeperTest extends BaseTestCase {
                 for (Enumeration<LedgerEntry> readEntries = lh.readEntries(0, numEntries - 1);
                     readEntries.hasMoreElements();) {
                     LedgerEntry entry = readEntries.nextElement();
-                    // ButeBufs no reference counter
-                    assertTrue(entry.data.release());
                     assertTrue(entry.data.getClass().getName(),
                         entry.data.getClass().getName().contains("UnpooledSlicedByteBuf"));
                     try {
                         entry.data.release();
+                    } catch (IllegalReferenceCountException e) {
                         fail("ByteBuf already released");
-                    } catch (IllegalReferenceCountException ok) {
                     }
                 }
             }
@@ -773,12 +761,12 @@ public class BookKeeperTest extends BaseTestCase {
                 for (Enumeration<LedgerEntry> readEntries = lh.readEntries(0, numEntries - 1);
                     readEntries.hasMoreElements();) {
                     LedgerEntry entry = readEntries.nextElement();
-                    // ButeBufs not reference counter
                     assertTrue(entry.data.getClass().getName(),
                         entry.data.getClass().getName().contains("UnpooledSlicedByteBuf"));
-                    assertTrue(entry.data.release());
+                    assertTrue("Can't release entry " + entry.getEntryId() + ": ref = " + entry.data.refCnt(),
+                        entry.data.release());
                     try {
-                        entry.data.release();
+                        assertFalse(entry.data.release());
                         fail("ByteBuf already released");
                     } catch (IllegalReferenceCountException ok) {
                     }
@@ -801,12 +789,14 @@ public class BookKeeperTest extends BaseTestCase {
                     // ButeBufs not reference counter
                     assertTrue(entry.data.getClass().getName(),
                         entry.data.getClass().getName().contains("UnpooledSlicedByteBuf"));
-                    assertTrue(entry.data.release());
+                    assertTrue("Can't release entry " + entry.getEntryId() + ": ref = " + entry.data.refCnt(),
+                        entry.data.release());
                     try {
-                        entry.data.release();
+                        assertFalse(entry.data.release());
                         fail("ByteBuf already released");
                     } catch (IllegalReferenceCountException ok) {
-                    }                }
+                    }
+                }
             }
         }
 

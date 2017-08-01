@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Map.Entry;
 import java.util.Set;
-
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.ClientUtil;
@@ -41,7 +40,7 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.bookkeeper.test.MultiLedgerManagerTestCase;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.ZooKeeper;
@@ -53,7 +52,7 @@ import org.slf4j.LoggerFactory;
  * Test the ReplicationWroker, where it has to replicate the fragments from
  * failed Bookies to given target Bookie.
  */
-public class TestReplicationWorker extends MultiLedgerManagerTestCase {
+public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
     private static final byte[] TESTPASSWD = "testpasswd".getBytes();
     private static final Logger LOG = LoggerFactory
@@ -64,7 +63,11 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
     private LedgerUnderreplicationManager underReplicationManager;
     private static byte[] data = "TestReplicationWorker".getBytes();
 
-    public TestReplicationWorker(String ledgerManagerFactory) {
+    public TestReplicationWorker() {
+        this("org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory");
+    }
+
+    TestReplicationWorker(String ledgerManagerFactory) {
         super(3);
         LOG.info("Running test case using ledger manager : "
                 + ledgerManagerFactory);
