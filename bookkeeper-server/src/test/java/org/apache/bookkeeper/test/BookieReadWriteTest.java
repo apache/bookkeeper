@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.test;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,6 +18,7 @@ package org.apache.bookkeeper.test;
  * under the License.
  *
  */
+package org.apache.bookkeeper.test;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,7 +30,6 @@ import java.util.Random;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
@@ -57,8 +55,7 @@ import static org.junit.Assert.*;
  * and three BookKeepers.
  *
  */
-
-public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
+public class BookieReadWriteTest extends BookKeeperClusterTestCase
     implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
 
     // Depending on the taste, select the amount of logging
@@ -77,11 +74,12 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
     ArrayList<byte[]> entries; // generated entries
     ArrayList<Integer> entriesSize;
 
-    DigestType digestType;
+    private final DigestType digestType;
 
-    public BookieReadWriteTest(String ledgerManagerFactory, DigestType digestType) {
+    public BookieReadWriteTest() {
         super(3);
-        this.digestType = digestType;
+        this.digestType = DigestType.CRC32;
+        String ledgerManagerFactory = "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory";
         // set ledger manager
         baseConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
         baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);

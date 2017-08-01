@@ -51,6 +51,7 @@ public class TestReadLastConfirmedAndEntry extends BookKeeperClusterTestCase {
     public TestReadLastConfirmedAndEntry() {
         super(3);
         this.digestType = BookKeeper.DigestType.CRC32;
+        this.baseConf.setAllowEphemeralPorts(false);
     }
 
     static class FakeBookie extends Bookie {
