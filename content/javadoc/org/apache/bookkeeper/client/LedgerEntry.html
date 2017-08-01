@@ -338,6 +338,8 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the content of the entry</dd>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/IllegalStateException.html?is-external=true" title="class or interface in java.lang">IllegalStateException</a></code> - if this method is called twice</dd>
 </dl>
 </li>
 </ul>
@@ -355,6 +357,8 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>an InputStream which gives access to the content of the entry</dd>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/IllegalStateException.html?is-external=true" title="class or interface in java.lang">IllegalStateException</a></code> - if this method is called twice</dd>
 </dl>
 </li>
 </ul>
@@ -371,6 +375,9 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>a ByteBuf which contains the data</dd>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/IllegalStateException.html?is-external=true" title="class or interface in java.lang">IllegalStateException</a></code> - if the entry has been retrieved by <a href="../../../../org/apache/bookkeeper/client/LedgerEntry.html#getEntry--"><code>getEntry()</code></a>
+ or <a href="../../../../org/apache/bookkeeper/client/LedgerEntry.html#getEntryInputStream--"><code>getEntryInputStream()</code></a>.</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../../org/apache/bookkeeper/conf/ClientConfiguration.html#setNettyUsePooledBuffers-boolean-"><code>ClientConfiguration.setNettyUsePooledBuffers(boolean)</code></a></dd>
 </dl>

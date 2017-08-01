@@ -138,6 +138,13 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <div class="block">A class represents the information (e.g.</div>
 </td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static class&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieInfoReader.State.html" title="enum in org.apache.bookkeeper.client">BookieInfoReader.State</a></span></code>
+<div class="block">Tracks whether there is an execution in progress as well as whether
+ another is pending.</div>
+</td>
+</tr>
 </table>
 </li>
 </ul>
@@ -174,27 +181,32 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieInfoReader.html#availableBookiesChanged-java.util.Set-">availableBookiesChanged</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;newBookies)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieInfoReader.html#availableBookiesChanged-java.util.Set-">availableBookiesChanged</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;updatedBookiesList)</code>&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>(package private) <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress,<a href="../../../../org/apache/bookkeeper/client/BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieInfoReader.html#getBookieInfo--">getBookieInfo</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
-<td class="colFirst"><code>(package private) void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieInfoReader.html#getReadWriteBookieInfo-java.util.Collection-">getReadWriteBookieInfo</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;newBookiesList)</code>&nbsp;</td>
+<td class="colFirst"><code>(package private) <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieInfoReader.html#getFreeDiskSpace-org.apache.bookkeeper.net.BookieSocketAddress-">getFreeDiskSpace</a></span>(org.apache.bookkeeper.net.BookieSocketAddress&nbsp;bookie)</code>
+<div class="block">Method to allow tests to block until bookie info is available</div>
+</td>
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieInfoReader.html#onExit--">onExit</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieInfoReader.html#getReadWriteBookieInfo--">getReadWriteBookieInfo</a></span>()</code>
+<div class="block">Performs scan described by instanceState using the cached bookie information
+ in bookieInfoMap.</div>
+</td>
 </tr>
 <tr id="i4" class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieInfoReader.html#start--">start</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieInfoReader.html#onExit--">onExit</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i5" class="rowColor">
-<td class="colFirst"><code>(package private) void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieInfoReader.html#submitTask-java.util.Collection-">submitTask</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;newBookies)</code>&nbsp;</td>
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieInfoReader.html#start--">start</a></span>()</code>&nbsp;</td>
 </tr>
 </table>
 <ul class="blockList">
@@ -243,16 +255,7 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <ul class="blockList">
 <li class="blockList">
 <h4>start</h4>
-<pre>void&nbsp;start()</pre>
-</li>
-</ul>
-<a name="submitTask-java.util.Collection-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>submitTask</h4>
-<pre>void&nbsp;submitTask(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;newBookies)</pre>
+<pre>public&nbsp;void&nbsp;start()</pre>
 </li>
 </ul>
 <a name="availableBookiesChanged-java.util.Set-">
@@ -261,16 +264,34 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <ul class="blockList">
 <li class="blockList">
 <h4>availableBookiesChanged</h4>
-<pre>void&nbsp;availableBookiesChanged(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;newBookies)</pre>
+<pre>void&nbsp;availableBookiesChanged(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;updatedBookiesList)</pre>
 </li>
 </ul>
-<a name="getReadWriteBookieInfo-java.util.Collection-">
+<a name="getFreeDiskSpace-org.apache.bookkeeper.net.BookieSocketAddress-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getFreeDiskSpace</h4>
+<pre><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Optional.html?is-external=true" title="class or interface in java.util">Optional</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;getFreeDiskSpace(org.apache.bookkeeper.net.BookieSocketAddress&nbsp;bookie)</pre>
+<div class="block">Method to allow tests to block until bookie info is available</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>bookie</code> - to lookup</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>None if absent, free disk space if present</dd>
+</dl>
+</li>
+</ul>
+<a name="getReadWriteBookieInfo--">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>getReadWriteBookieInfo</h4>
-<pre>void&nbsp;getReadWriteBookieInfo(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;newBookiesList)</pre>
+<pre>void&nbsp;getReadWriteBookieInfo()</pre>
+<div class="block">Performs scan described by instanceState using the cached bookie information
+ in bookieInfoMap.</div>
 </li>
 </ul>
 <a name="onExit--">

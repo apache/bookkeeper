@@ -622,6 +622,11 @@
 <dd>
 <div class="block">A class represents the information (e.g.</div>
 </dd>
+<dt><a href="org/apache/bookkeeper/client/BookieInfoReader.State.html" title="enum in org.apache.bookkeeper.client"><span class="typeNameLink">BookieInfoReader.State</span></a> - Enum in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
+<dd>
+<div class="block">Tracks whether there is an execution in progress as well as whether
+ another is pending.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#bookieInfoScheduler">bookieInfoScheduler</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html#BookieNode-org.apache.bookkeeper.net.BookieSocketAddress-java.lang.String-">BookieNode(BookieSocketAddress, String)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a></dt>
@@ -1485,6 +1490,8 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#GET_BOOKIE_INFO_OP">GET_BOOKIE_INFO_OP</a></span> - Static variable in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#GET_BOOKIE_INFO_RETRY_INTERVAL_SECONDS">GET_BOOKIE_INFO_RETRY_INTERVAL_SECONDS</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#GET_BOOKIE_INFO_TIMEOUT_SECS">GET_BOOKIE_INFO_TIMEOUT_SECS</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#getAckQuorumSize--">getAckQuorumSize()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
@@ -1834,6 +1841,10 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookieInfoReader.BookieInfo.html#getFreeDiskSpace--">getFreeDiskSpace()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookieInfoReader.BookieInfo.html" title="class in org.apache.bookkeeper.client">BookieInfoReader.BookieInfo</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookieInfoReader.html#getFreeDiskSpace-org.apache.bookkeeper.net.BookieSocketAddress-">getFreeDiskSpace(BookieSocketAddress)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookieInfoReader.html" title="class in org.apache.bookkeeper.client">BookieInfoReader</a></dt>
+<dd>
+<div class="block">Method to allow tests to block until bookie info is available</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getGcOverreplicatedLedgerWaitTimeMillis--">getGcOverreplicatedLedgerWaitTimeMillis()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Get wait time in millis for garbage collection of overreplicated ledgers</div>
@@ -1845,6 +1856,10 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#getGetBookieInfoIntervalSeconds--">getGetBookieInfoIntervalSeconds()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
 <div class="block">Get the time interval between successive calls for bookie get info.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#getGetBookieInfoRetryIntervalSeconds--">getGetBookieInfoRetryIntervalSeconds()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
+<dd>
+<div class="block">Get the time interval between retries on unsuccessful bookie info request.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#getId--">getId()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>
@@ -2234,8 +2249,11 @@
 <div class="block"><span class="deprecationComment">use <a href="org/apache/bookkeeper/conf/ClientConfiguration.html#getReadEntryTimeout--"><code>ClientConfiguration.getReadEntryTimeout()</code></a> or <a href="org/apache/bookkeeper/conf/ClientConfiguration.html#getAddEntryTimeout--"><code>ClientConfiguration.getAddEntryTimeout()</code></a> instead</span></div>
 </div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookieInfoReader.html#getReadWriteBookieInfo-java.util.Collection-">getReadWriteBookieInfo(Collection&lt;BookieSocketAddress&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookieInfoReader.html" title="class in org.apache.bookkeeper.client">BookieInfoReader</a></dt>
-<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookieInfoReader.html#getReadWriteBookieInfo--">getReadWriteBookieInfo()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookieInfoReader.html" title="class in org.apache.bookkeeper.client">BookieInfoReader</a></dt>
+<dd>
+<div class="block">Performs scan described by instanceState using the cached bookie information
+ in bookieInfoMap.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#getRecoverAddCountLogger--">getRecoverAddCountLogger()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#getRecoverOpLogger--">getRecoverOpLogger()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
@@ -4688,6 +4706,10 @@
 <dd>
 <div class="block">Set the time interval between successive polls for bookie get info.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#setGetBookieInfoRetryIntervalSeconds-int-java.util.concurrent.TimeUnit-">setGetBookieInfoRetryIntervalSeconds(int, TimeUnit)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
+<dd>
+<div class="block">Set the time interval between retries on unsuccessful GetInfo requests</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#setGetBookieInfoTimeout-int-">setGetBookieInfoTimeout(int)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
 <div class="block">Set the timeout value in secs for the GET_BOOKIE_INFO request</div>
@@ -5248,8 +5270,6 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingReadOp.html#submitCallback-int-">submitCallback(int)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingReadOp.html" title="class in org.apache.bookkeeper.client">PendingReadOp</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookieInfoReader.html#submitTask-java.util.Collection-">submitTask(Collection&lt;BookieSocketAddress&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookieInfoReader.html" title="class in org.apache.bookkeeper.client">BookieInfoReader</a></dt>
-<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html#success">success</a></span> - Variable in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleOpStatsLogger</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerOpenOp.html#suggestedDigestType">suggestedDigestType</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerOpenOp.html" title="class in org.apache.bookkeeper.client">LedgerOpenOp</a></dt>
@@ -5547,9 +5567,18 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.SyncObject.html#value">value</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.SyncObject.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin.SyncObject</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookieInfoReader.State.html#valueOf-java.lang.String-">valueOf(String)</a></span> - Static method in enum org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookieInfoReader.State.html" title="enum in org.apache.bookkeeper.client">BookieInfoReader.State</a></dt>
+<dd>
+<div class="block">Returns the enum constant of this type with the specified name.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.DigestType.html#valueOf-java.lang.String-">valueOf(String)</a></span> - Static method in enum org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a></dt>
 <dd>
 <div class="block">Returns the enum constant of this type with the specified name.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookieInfoReader.State.html#values--">values()</a></span> - Static method in enum org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookieInfoReader.State.html" title="enum in org.apache.bookkeeper.client">BookieInfoReader.State</a></dt>
+<dd>
+<div class="block">Returns an array containing the constants of this enum type, in
+the order they are declared.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.DigestType.html#values--">values()</a></span> - Static method in enum org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a></dt>
 <dd>
