@@ -29,7 +29,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.InetAddress;
-
 import org.apache.bookkeeper.bookie.BookieException.DiskPartitionDuplicationException;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -51,7 +50,9 @@ import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,8 +63,20 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
     private static final Logger LOG = LoggerFactory
             .getLogger(BookieInitializationTest.class);
 
+    @Rule
+    public final TestName runtime = new TestName();
+
     public BookieInitializationTest() {
         super(0);
+        String ledgersPath = "/" + runtime.getMethodName();
+        baseClientConf.setZkLedgersRootPath(ledgersPath);
+        baseConf.setZkLedgersRootPath(ledgersPath);
+    }
+
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+        zkUtil.createBKEnsemble("/" + runtime.getMethodName());
     }
 
     private static class MockBookie extends Bookie {
