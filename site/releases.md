@@ -6,7 +6,7 @@ title: Apache BookKeeper Releases
 
 {{ site.stable_release }} is latest release. The current stable version is {{ site.stable_release }}.
 
-Releases are available to download from Apache mirrors: [Download](http://archive.apache.org/dist/bookkeeper/)
+Releases are available to download from Apache mirrors: [Download](http://www.apache.org/dyn/closer.cgi/bookkeeper)
 
 You can verify your download by following these [procedures](http://www.apache.org/info/verification.html) and using these [KEYS](https://dist.apache.org/repos/dist/release/bookkeeper/KEYS).
 
@@ -26,7 +26,7 @@ Client Guide | API docs
 
 ## News
 
-###. 16 May, 2016: release 4.4.0 available
+### 16 May, 2016: release 4.4.0 available
 
 This is the fourth release of BookKeeper as an Apache Top Level Project!
 
