@@ -1,6 +1,6 @@
 ---
 title: BookKeeper Security
-next: ../tls.html
+next: ./tls.html
 ---
 
 In the 4.5.0 release, the BookKeeper community added a number of features that can be used, together or separately, to secure a BookKeeper cluster.
@@ -16,6 +16,6 @@ NOTE: currenlty `authorization` is not yet available in `4.5.0`. The Apache Book
 
 ## Next Steps
 
-- [Encryption and Authentication using TLS](../tls)
-- [Authentication using SASL](../sasl)
-- [ZooKeeper Authentication](../zookeeper)
+- [Encryption and Authentication using TLS](./tls)
+- [Authentication using SASL](./sasl)
+- [ZooKeeper Authentication](./zookeeper)

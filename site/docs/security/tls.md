@@ -1,7 +1,7 @@
 ---
 title: Encryption and Authentication using TLS
 prev: ../index.html
-next: ../sasl.html
+next: ../sasl
 ---
 
 Apache BookKeeper allows clients and autorecovery daemons to communicate over TLS, although this is not enabled by default.
