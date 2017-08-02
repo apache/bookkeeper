@@ -1,6 +1,7 @@
 ---
 title: Encryption and Authentication using TLS
-next: ./sasl.html
+prev: ../index.html
+next: ../sasl.html
 ---
 
 Apache BookKeeper allows clients and autorecovery daemons to communicate over TLS, although this is not enabled by default.
@@ -62,7 +63,7 @@ The next step is to add the generated CA to the clients' truststore so that the 
     keytool -keystore bookie.truststore.jks -alias CARoot -import -file ca-cert
 
 NOTE: If you configure the bookies to require client authentication by setting `sslClientAuthentication` to `true` on the
-[bookie config](../reference/config), then you must also provide a truststore for the bookies and it should have all the CA
+[bookie config](../../reference/config), then you must also provide a truststore for the bookies and it should have all the CA
 certificates that clients keys were signed by.
 
     keytool -keystore client.truststore.jks -alias CARoot -import -file ca-cert
@@ -122,12 +123,12 @@ NOTE: it is important to restrict access to the store files and corresponding pa
 
 Optional settings that are worth considering:
 
-    1. tlsClientAuthentication=false: Enable/Disable using TLS for authentication.
-    2. tlsEnabledCipherSuites= A cipher suite is a named combination of authentication, encryption, MAC and key exchange
-        algorithm used to negotiate the security settings for a network connection using TLS network protocol. By default,
-        it is null.
-    3. tlsEnabledProtocols = TLSv1.2,TLSv1.1,TLSv1 (list out the TLS protocols that you are going to accept from clients).
-        By default, it is not set.
+1. tlsClientAuthentication=false: Enable/Disable using TLS for authentication.
+2. tlsEnabledCipherSuites= A cipher suite is a named combination of authentication, encryption, MAC and key exchange
+    algorithm used to negotiate the security settings for a network connection using TLS network protocol. By default,
+    it is null.
+3. tlsEnabledProtocols = TLSv1.2,TLSv1.1,TLSv1 (list out the TLS protocols that you are going to accept from clients).
+    By default, it is not set.
 
 To verify the bookie's keystore and truststore are setup correctly you can run the following command:
 

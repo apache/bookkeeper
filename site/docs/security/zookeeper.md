@@ -1,5 +1,6 @@
 ---
 title: ZooKeeper Authentication
+prev: ../sasl
 ---
 
 ## New Clusters

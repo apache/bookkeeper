@@ -1,5 +1,7 @@
 ---
 title: Authentication using SASL
+prev: ../tls
+next: ../zookeeper
 ---
 
 Bookies support client authentication via SASL. Currently we only support GSSAPI (Kerberos). We will start
@@ -12,16 +14,22 @@ by mechanism-specific details and wrap up with some operational details.
 2. Add a `JAAS` config file for the selected mechanisms as described in the examples for setting up [GSSAPI (Kerberos)](#kerberos).
 3. Pass the `JAAS` config file location as JVM parameter to each Bookie. For example:
 
-    -Djava.security.auth.login.config=/etc/bookkeeper/bookie_jaas.conf 
+
+        -Djava.security.auth.login.config=/etc/bookkeeper/bookie_jaas.conf 
+
 
 4. Enable SASL auth plugin in bookies, by setting `bookieAuthProviderFactoryClass` to `org.apache.bookkeeper.sasl.SASLBookieAuthProviderFactory`.
 
-    bookieAuthProviderFactoryClass=org.apache.bookkeeper.sasl.SASLBookieAuthProviderFactory
+
+        bookieAuthProviderFactoryClass=org.apache.bookkeeper.sasl.SASLBookieAuthProviderFactory
+
 
 5. If you are running `autorecovery` along with bookies, then you want to enable SASL auth plugin for `autorecovery`, by setting
     `clientAuthProviderFactoryClass` to `org.apache.bookkeeper.sasl.SASLClientProviderFactory`.
 
-    clientAuthProviderFactoryClass=org.apache.bookkeeper.sasl.SASLClientProviderFactory
+
+        clientAuthProviderFactoryClass=org.apache.bookkeeper.sasl.SASLClientProviderFactory
+
 
 6. Follow the steps in [GSSAPI (Kerberos)](#kerberos) to configure SASL.
 
@@ -47,12 +55,14 @@ To configure `SASL` authentication on the clients:
     setting up [GSSAPI (Kerberos)](#kerberos).
 2. Pass the `JAAS` config file location as JVM parameter to each client JVM. For example:
 
-    -Djava.security.auth.login.config=/etc/bookkeeper/bookkeeper_jaas.conf 
+
+        -Djava.security.auth.login.config=/etc/bookkeeper/bookkeeper_jaas.conf 
 
 
 3. Configure the following properties in bookkeeper `ClientConfiguration`:
 
-    clientAuthProviderFactoryClass=org.apache.bookkeeper.sasl.SASLClientProviderFactory
+
+        clientAuthProviderFactoryClass=org.apache.bookkeeper.sasl.SASLClientProviderFactory
 
 
 Follow the steps in [GSSAPI (Kerberos)](#kerberos) to configure SASL for the selected mechanism.
@@ -118,18 +128,19 @@ for this example (note that each bookie should have its own keytab):
 
 
 
-The `Bookie` section in the JAAS file tells the bookie which principal to use and the location of the keytab where this principal is stored.
-It allows the bookie to login using the keytab specified in this section. See [notes](#notes) for more details on Zookeeper’s SASL configuration.
+    The `Bookie` section in the JAAS file tells the bookie which principal to use and the location of the keytab where this principal is stored.
+    It allows the bookie to login using the keytab specified in this section. See [notes](#notes) for more details on Zookeeper’s SASL configuration.
 
 2. Pass the name of the JAAS file as a JVM parameter to each Bookie:
 
-    -Djava.security.auth.login.config=/etc/bookkeeper/bookie_jaas.conf
+        -Djava.security.auth.login.config=/etc/bookkeeper/bookie_jaas.conf
 
 
-You may also wish to specify the path to the `krb5.conf` file
-(see [JDK’s Kerberos Requirements](https://docs.oracle.com/javase/8/docs/technotes/guides/security/jgss/tutorials/KerberosReq.html) for more details):
+    You may also wish to specify the path to the `krb5.conf` file
+    (see [JDK’s Kerberos Requirements](https://docs.oracle.com/javase/8/docs/technotes/guides/security/jgss/tutorials/KerberosReq.html) for more details):
 
-    -Djava.security.krb5.conf=/etc/bookkeeper/krb5.conf
+
+        -Djava.security.krb5.conf=/etc/bookkeeper/krb5.conf
 
 
 3. Make sure the keytabs configured in the JAAS file are readable by the operating system user who is starting the Bookies.
@@ -137,9 +148,9 @@ You may also wish to specify the path to the `krb5.conf` file
 4. Enable SASL authentication plugin in the bookies by setting following parameters.
 
 
-    bookieAuthProviderFactoryClass=org.apache.bookkeeper.sasl.SASLBookieAuthProviderFactory
-    # if you run `autorecovery` along with bookies
-    clientAuthProviderFactoryClass=org.apache.bookkeeper.sasl.SASLClientProviderFactory
+        bookieAuthProviderFactoryClass=org.apache.bookkeeper.sasl.SASLBookieAuthProviderFactory
+        # if you run `autorecovery` along with bookies
+        clientAuthProviderFactoryClass=org.apache.bookkeeper.sasl.SASLClientProviderFactory
 
 
 ### Configuring Clients
@@ -163,20 +174,21 @@ To configure SASL authentication on the clients:
 
 2. Pass the name of the JAAS file as a JVM parameter to the client JVM:
 
-    -Djava.security.auth.login.config=/etc/bookkeeper/bookkeeper_jaas.conf
+        -Djava.security.auth.login.config=/etc/bookkeeper/bookkeeper_jaas.conf
 
 
-You may also wish to specify the path to the `krb5.conf` file (see
-[JDK’s Kerberos Requirements](https://docs.oracle.com/javase/8/docs/technotes/guides/security/jgss/tutorials/KerberosReq.html) for more details).
+    You may also wish to specify the path to the `krb5.conf` file (see
+    [JDK’s Kerberos Requirements](https://docs.oracle.com/javase/8/docs/technotes/guides/security/jgss/tutorials/KerberosReq.html) for more details).
 
-    -Djava.security.krb5.conf=/etc/bookkeeper/krb5.conf
+
+        -Djava.security.krb5.conf=/etc/bookkeeper/krb5.conf
 
 
 3. Make sure the keytabs configured in the `bookkeeper_jaas.conf` are readable by the operating system user who is starting bookkeeper client.
 
 4. Enable SASL authentication plugin in the client by setting following parameters.
 
-    clientAuthProviderFactoryClass=org.apache.bookkeeper.sasl.SASLClientProviderFactory
+        clientAuthProviderFactoryClass=org.apache.bookkeeper.sasl.SASLClientProviderFactory
 
 
 ## Enabling Logging for SASL
