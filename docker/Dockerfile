@@ -29,5 +29,6 @@ WORKDIR /opt/bookkeeper
 COPY scripts/apply-config-from-env.py scripts/entrypoint.sh scripts/healthcheck.sh /opt/bookkeeper/
 
 ENTRYPOINT [ "/bin/bash", "/opt/bookkeeper/entrypoint.sh" ]
+CMD ["bookkeeper", "bookie"]
 
 HEALTHCHECK --interval=10s --timeout=60s CMD /bin/bash /opt/bookkeeper/healthcheck.sh

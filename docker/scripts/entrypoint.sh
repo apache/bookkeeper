@@ -20,30 +20,29 @@
 # * limitations under the License.
 # */
 
-export PATH=$PATH:${BK_DIR}/bin
+export PATH=$PATH:/opt/bookkeeper/bin
 export JAVA_HOME=/usr
 
-PORT0=${PORT0:-$BOOKIE_PORT}
+# env var used often
+PORT0=${PORT0:-$BK_PORT}
 PORT0=${PORT0:-3181}
 ZK_URL=${ZK_URL:-127.0.0.1:2181}
-BK_DIR=${BK_DIR:-"/bk"}
+BK_DATA_DIR=${BK_DATA_DIR:-"/bkdata"}
 BK_CLUSTER_NAME=${BK_CLUSTER_NAME:-"bookkeeper"}
-
-# bk : zk:/bookkeeper/ledgers
-BK_LEDGERS_PATH="/${BK_CLUSTER_NAME}/ledgers"
+BK_LEDGERS_PATH=${BK_LEDGERS_PATH:-"/${BK_CLUSTER_NAME}/ledgers"}
 
 echo "bookie service port0 is $PORT0 "
 echo "ZK_URL is $ZK_URL"
-echo "BK_DIR is $BK_DIR"
+echo "BK_DATA_DIR is $BK_DATA_DIR"
 echo "BK_LEDGERS_PATH is $BK_LEDGERS_PATH"
 
 # env vars to replace values in config files
 export bookiePort=${bookiePort:-${PORT0}}
 export zkServers=${zkServers:-${ZK_URL}}
 export zkLedgersRootPath=${zkLedgersRootPath:-${BK_LEDGERS_PATH}}
-export journalDirectory=${journalDirectory:-${BK_DIR}/journal}
-export ledgerDirectories=${ledgerDirectories:-${BK_DIR}/ledgers}
-export indexDirectories=${indexDirectories:-${BK_DIR}/index}
+export journalDirectory=${journalDirectory:-${BK_DATA_DIR}/journal}
+export ledgerDirectories=${ledgerDirectories:-${BK_DATA_DIR}/ledgers}
+export indexDirectories=${indexDirectories:-${BK_DATA_DIR}/index}
 
 python apply-config-from-env.py /opt/bookkeeper/conf
 
@@ -54,10 +53,11 @@ echo "create the zk root"
 /opt/zk/bin/zkCli.sh -server $ZK_URL create /${BK_CLUSTER_NAME}
 
 echo "format zk metadata"
+echo "please ignore the failure, if it has already been formatted, "
 export BOOKIE_CONF=/opt/bookkeeper/conf/bk_server.conf
 export SERVICE_PORT=$PORT0
 /opt/bookkeeper/bin/bookkeeper shell metaformat -n
 
-echo "start a new bookie"
-/opt/bookkeeper/bin/bookkeeper bookie
+echo "run command by exec"
+exec "$@"
 
