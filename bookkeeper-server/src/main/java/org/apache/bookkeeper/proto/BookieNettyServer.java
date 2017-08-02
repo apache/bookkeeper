@@ -142,6 +142,7 @@ class BookieNettyServer {
         } else {
             bindAddress = bookieAddress.getSocketAddress();
         }
+        listenOn(bindAddress, bookieAddress);
     }
 
     public BookieNettyServer setRequestProcessor(RequestProcessor processor) {
@@ -374,7 +375,6 @@ class BookieNettyServer {
     }
 
     void start() throws InterruptedException {
-        listenOn(bindAddress, bookieAddress);
         isRunning.set(true);
     }
 
