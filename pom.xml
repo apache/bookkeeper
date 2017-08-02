@@ -238,7 +238,6 @@
             <exclude>**/.project</exclude>
             <exclude>**/.settings/*</exclude>
             <exclude>site/**</exclude>
-            <exclude>**/cacerts</exclude>
           </excludes>
         </configuration>
       </plugin>
