@@ -21,6 +21,12 @@
 
 package org.apache.bookkeeper.http.twitter;
 
+import com.twitter.finagle.Http;
+import com.twitter.finagle.ListeningServer;
+import com.twitter.finagle.http.HttpMuxer;
+import com.twitter.finagle.http.HttpMuxer$;
+import com.twitter.server.AbstractTwitterServer;
+
 import java.net.InetSocketAddress;
 
 import org.apache.bookkeeper.http.HttpRouter;
@@ -28,12 +34,6 @@ import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.ServiceProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.twitter.finagle.Http;
-import com.twitter.finagle.ListeningServer;
-import com.twitter.finagle.http.HttpMuxer;
-import com.twitter.finagle.http.HttpMuxer$;
-import com.twitter.server.AbstractTwitterServer;
 
 /**
  * TwitterServer implementation of Http Server.

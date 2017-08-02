@@ -16,35 +16,29 @@
  */
 package org.apache.bookkeeper.stats;
 
-import java.net.InetSocketAddress;
-
 import com.codahale.metrics.CsvReporter;
+import com.codahale.metrics.JmxReporter;
 import com.codahale.metrics.MetricFilter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ScheduledReporter;
 import com.codahale.metrics.Slf4jReporter;
-import com.codahale.metrics.JmxReporter;
-import com.google.common.base.Strings;
-import com.google.common.net.HostAndPort;
 import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.graphite.GraphiteReporter;
-
 import com.codahale.metrics.jvm.GarbageCollectorMetricSet;
 import com.codahale.metrics.jvm.MemoryUsageGaugeSet;
-
-import org.apache.commons.configuration.Configuration;
-
-import java.util.List;
-import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
-
+import com.google.common.base.Strings;
+import com.google.common.net.HostAndPort;
 import java.io.File;
-
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import org.apache.commons.configuration.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * A {@link StatsProvider} implemented based on <i>Codahale</i> metrics library.
  */
 @SuppressWarnings("deprecation")
 public class CodahaleMetricsProvider implements StatsProvider {

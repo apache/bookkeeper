@@ -60,6 +60,7 @@ enum OperationType {
     WRITE_LAC = 6;
     READ_LAC = 7;
     GET_BOOKIE_INFO = 8;
+    START_TLS = 9;
 }
 
 /**
@@ -80,6 +81,7 @@ message Request {
     optional WriteLacRequest writeLacRequest = 103;
     optional ReadLacRequest readLacRequest = 104;
     optional GetBookieInfoRequest getBookieInfoRequest = 105;
+    optional StartTLSRequest startTLSRequest = 106;
 }
 
 message ReadRequest {
@@ -108,6 +110,9 @@ message AddRequest {
     required int64 entryId = 2;
     required bytes masterKey = 3;
     required bytes body = 4;
+}
+
+message StartTLSRequest {
 }
 
 message WriteLacRequest {
@@ -143,6 +148,7 @@ message Response {
     optional WriteLacResponse writeLacResponse = 103;
     optional ReadLacResponse readLacResponse = 104;
     optional GetBookieInfoResponse getBookieInfoResponse = 105;
+    optional StartTLSResponse startTLSResponse = 106;
 }
 
 message ReadResponse {
@@ -182,4 +188,7 @@ message GetBookieInfoResponse {
     required StatusCode status = 1;
     optional int64 totalDiskCapacity = 2;
     optional int64 freeDiskSpace = 3;
+}
+
+message StartTLSResponse {
 }

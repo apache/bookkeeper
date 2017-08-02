@@ -21,7 +21,7 @@
 package org.apache.bookkeeper.bookie;
 
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * A utility class used for managing the <i>stats constants</i> used in server side.
  */
 public interface BookKeeperServerStats {
 
@@ -89,9 +89,9 @@ public interface BookKeeperServerStats {
     // Ledger Storage Stats
     String STORAGE_GET_OFFSET = "STORAGE_GET_OFFSET";
     String STORAGE_GET_ENTRY = "STORAGE_GET_ENTRY";
-    /** Ledger Cache Stats **/
+    // Ledger Cache Stats
     String LEDGER_CACHE_READ_PAGE = "LEDGER_CACHE_READ_PAGE";
-    /** SkipList Stats **/
+    // SkipList Stats
     String SKIP_LIST_GET_ENTRY = "SKIP_LIST_GET_ENTRY";
     String SKIP_LIST_PUT_ENTRY = "SKIP_LIST_PUT_ENTRY";
     String SKIP_LIST_SNAPSHOT = "SKIP_LIST_SNAPSHOT";
@@ -101,13 +101,13 @@ public interface BookKeeperServerStats {
     String JOURNAL_QUEUE_SIZE = "JOURNAL_QUEUE_SIZE";
     String READ_BYTES = "READ_BYTES";
     String WRITE_BYTES = "WRITE_BYTES";
-    /** Ledger Cache Counters **/
+    // Ledger Cache Counters
     String LEDGER_CACHE_HIT = "LEDGER_CACHE_HIT";
     String LEDGER_CACHE_MISS = "LEDGER_CACHE_MISS";
-    /** Compaction/Garbage Collection Related Counters **/
+    // Compaction/Garbage Collection Related Counters
     String NUM_MINOR_COMP = "NUM_MINOR_COMP";
     String NUM_MAJOR_COMP = "NUM_MAJOR_COMP";
-    /** Index Related Counters **/
+    // Index Related Counters
     String INDEX_INMEM_ILLEGAL_STATE_RESET = "INDEX_INMEM_ILLEGAL_STATE_RESET";
     String INDEX_INMEM_ILLEGAL_STATE_DELETE = "INDEX_INMEM_ILLEGAL_STATE_DELETE";
     String JOURNAL_FORCE_WRITE_QUEUE_SIZE = "JOURNAL_FORCE_WRITE_QUEUE_SIZE";

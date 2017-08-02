@@ -133,8 +133,8 @@ public class ReplicationWorker implements Runnable {
         this.underreplicationManager = mFactory
                 .newLedgerUnderreplicationManager();
         this.bkc = BookKeeper.forConfig(new ClientConfiguration(conf))
-                .setZookeeper(zkc)
-                .setStatsLogger(statsLogger.scope(BK_CLIENT_SCOPE))
+                .zk(zkc)
+                .statsLogger(statsLogger.scope(BK_CLIENT_SCOPE))
                 .build();
         this.admin = new BookKeeperAdmin(bkc, statsLogger);
         this.ledgerChecker = new LedgerChecker(bkc);

@@ -27,7 +27,7 @@
     <groupId>org.apache.bookkeeper.http</groupId>
     <artifactId>bookkeeper-http</artifactId>
     <packaging>pom</packaging>
-    <name>bookkeeper-http</name>
+    <name>Apache BookKeeper :: Bookkeeper-Http</name>
     <modules>
         <module>http-server</module>
         <module>twitter-http-server</module>

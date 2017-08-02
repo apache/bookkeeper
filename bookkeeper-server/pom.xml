@@ -24,8 +24,7 @@
     <version>4.5.0-SNAPSHOT</version>
   </parent>
   <artifactId>bookkeeper-server</artifactId>
-  <name>bookkeeper-server</name>
-  <url>http://maven.apache.org</url>
+  <name>Apache BookKeeper :: Server</name>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.libdir>${basedir}/lib</project.libdir>
@@ -223,6 +222,11 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-tcnative-boringssl-static</artifactId>
+      <version>${netty-boringssl.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.bookkeeper.http</groupId>
       <artifactId>http-server</artifactId>
       <version>${project.version}</version>
@@ -340,6 +344,12 @@
             <exclude>**/.gitignore</exclude>
             <exclude>**/.project</exclude>
             <exclude>**/.settings/*</exclude>
+            <exclude>certs/keyStoreClientPassword.txt</exclude>
+            <exclude>certs/keyStoreServerPassword.txt</exclude>
+            <exclude>certs/trustStorePassword.txt</exclude>
+            <exclude>src/test/resources/keyStoreClientPassword.txt</exclude>
+            <exclude>src/test/resources/keyStoreServerPassword.txt</exclude>
+            <exclude>src/test/resources/trustStorePassword.txt</exclude>
           </excludes>
         </configuration>
       </plugin>
@@ -379,6 +389,30 @@
             </fileset>
           </filesets>
 	</configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>${maven-javadoc-plugin.version}</version>
+        <configuration>
+          <!-- Avoid for missing javadoc comments to be marked as errors -->
+          <additionalparam>-Xdoclint:none</additionalparam>
+          <subpackages>org.apache.bookkeeper.client:org.apache.bookkeeper.common.annotation:org.apache.bookkeeper.conf:org.apache.bookkeeper.feature:org.apache.bookkeeper.stats</subpackages>
+          <groups>
+            <group>
+              <title>Bookkeeper</title>
+              <packages>org.apache.bookkeeper*</packages>
+            </group>
+          </groups>
+        </configuration>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

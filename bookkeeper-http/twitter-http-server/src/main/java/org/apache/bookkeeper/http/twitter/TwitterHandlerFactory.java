@@ -20,12 +20,14 @@
  */
 package org.apache.bookkeeper.http.twitter;
 
-import org.apache.bookkeeper.http.AbstractHandlerFactory;
-import org.apache.bookkeeper.http.ServiceProvider;
-
 import com.twitter.finagle.http.Request;
 import com.twitter.finagle.http.Response;
 import com.twitter.util.Future;
+
+import org.apache.bookkeeper.http.AbstractHandlerFactory;
+import org.apache.bookkeeper.http.ServiceProvider;
+
+
 
 /**
  * Factory which provide http handlers for TwitterServer based Http Server.

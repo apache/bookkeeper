@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.client;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -28,18 +29,20 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import com.google.common.base.Optional;
-import com.google.common.util.concurrent.ListenableFuture;
-
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
+import org.apache.bookkeeper.proto.ReadLastConfirmedAndEntryContext;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEntryCallback, SpeculativeRequestExecutor {
+/**
+ * Long poll read operation.
+ */
+class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEntryCallback,
+                                             SpeculativeRequestExecutor {
+
     static final Logger LOG = LoggerFactory.getLogger(ReadLastConfirmedAndEntryOp.class);
 
     final private ScheduledExecutorService scheduler;
@@ -485,38 +488,6 @@ public class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.
         public void readLastConfirmedAndEntryComplete(int rc, long lastAddConfirmed, LedgerEntry entry);
     }
 
-    public static class ReadLastConfirmedAndEntryContext implements BookkeeperInternalCallbacks.ReadEntryCallbackCtx {
-        final int bookieIndex;
-        final BookieSocketAddress bookie;
-        long lac = LedgerHandle.INVALID_ENTRY_ID;
-        Optional<Long> lacUpdateTimestamp = Optional.absent();
-
-        ReadLastConfirmedAndEntryContext(int bookieIndex, BookieSocketAddress bookie) {
-            this.bookieIndex = bookieIndex;
-            this.bookie = bookie;
-        }
-
-        @Override
-        public void setLastAddConfirmed(long lac) {
-            this.lac = lac;
-        }
-
-        @Override
-        public long getLastAddConfirmed() {
-            return lac;
-        }
-
-        public Optional<Long> getLacUpdateTimestamp() {
-            return lacUpdateTimestamp;
-        }
-
-        public void setLacUpdateTimestamp(long lacUpdateTimestamp) {
-            this.lacUpdateTimestamp = Optional.of(lacUpdateTimestamp);
-        }
-
-
-    }
-
     private void submitCallback(int rc, long lastAddConfirmed, LedgerEntry entry) {
         long latencyMicros = MathUtils.elapsedMicroSec(requestTimeNano);
         if (BKException.Code.OK != rc) {
@@ -536,7 +507,7 @@ public class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.
                 new Object[] { getClass().getName(), ledgerId, entryId, rc });
         }
         ReadLastConfirmedAndEntryContext rCtx = (ReadLastConfirmedAndEntryContext) ctx;
-        BookieSocketAddress bookie = rCtx.bookie;
+        BookieSocketAddress bookie = rCtx.getBookieAddress();
         numResponsesPending--;
         if (BKException.Code.OK == rc) {
             if (LOG.isTraceEnabled()) {
@@ -552,7 +523,7 @@ public class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.
             hasValidResponse = true;
 
             if (entryId != BookieProtocol.LAST_ADD_CONFIRMED) {
-                if (request.complete(rCtx.bookieIndex, bookie, buffer, entryId)) {
+                if (request.complete(rCtx.getBookieIndex(), bookie, buffer, entryId)) {
                     // callback immediately
                     if (rCtx.getLacUpdateTimestamp().isPresent()) {
                         long elapsedMicros = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis() - rCtx.getLacUpdateTimestamp().get());
@@ -563,10 +534,10 @@ public class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.
 
                     submitCallback(BKException.Code.OK, lastAddConfirmed, request);
                     requestComplete.set(true);
-                    heardFromHostsBitSet.set(rCtx.bookieIndex, true);
+                    heardFromHostsBitSet.set(rCtx.getBookieIndex(), true);
                 }
             } else {
-                emptyResponsesFromHostsBitSet.set(rCtx.bookieIndex, true);
+                emptyResponsesFromHostsBitSet.set(rCtx.getBookieIndex(), true);
                 if (lastAddConfirmed > prevEntryId) {
                     // received advanced lac
                     completeRequest();
@@ -580,10 +551,10 @@ public class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Received empty response for readLACAndEntry(lid = {}, previousEntryId = {}) from" +
                                         " bookie {} @ {}, reattempting reading next bookie : lac = {}",
-                                new Object[]{ledgerId, prevEntryId, rCtx.bookieIndex,
-                                        rCtx.bookie, lastAddConfirmed});
+                                new Object[]{ledgerId, prevEntryId, rCtx.getBookieAddress(),
+                                        rCtx.getBookieAddress(), lastAddConfirmed});
                     }
-                    request.logErrorAndReattemptRead(rCtx.bookieIndex, bookie, "Empty Response", rc);
+                    request.logErrorAndReattemptRead(rCtx.getBookieIndex(), bookie, "Empty Response", rc);
                 }
                 return;
             }
@@ -591,7 +562,7 @@ public class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.
             submitCallback(rc, lastAddConfirmed, null);
             requestComplete.set(true);
         } else {
-            request.logErrorAndReattemptRead(rCtx.bookieIndex, bookie, "Error: " + BKException.getMessage(rc), rc);
+            request.logErrorAndReattemptRead(rCtx.getBookieIndex(), bookie, "Error: " + BKException.getMessage(rc), rc);
             return;
         }
 

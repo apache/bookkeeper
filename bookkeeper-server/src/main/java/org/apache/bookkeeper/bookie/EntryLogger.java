@@ -24,6 +24,7 @@ package org.apache.bookkeeper.bookie;
 import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.util.BookKeeperConstants.MAX_LOG_SIZE_LIMIT;
 
+import com.google.common.collect.MapMaker;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -48,21 +49,17 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.MapMaker;
 
 /**
  * This class manages the writing of the bookkeeper entries. All the new
@@ -724,8 +721,24 @@ public class EntryLogger {
         if (null == channels) {
             return;
         }
-        for (BufferedLogChannel channel : channels) {
-            channel.flush(true);
+        Iterator<BufferedLogChannel> chIter = channels.iterator();
+        while (chIter.hasNext()) {
+            BufferedLogChannel channel = chIter.next();
+            try {
+                channel.flush(true);
+            } catch (IOException ioe) {
+                // rescue from flush exception, add unflushed channels back
+                synchronized (this) {
+                    if (null == logChannelsToFlush) {
+                        logChannelsToFlush = channels;
+                    } else {
+                        logChannelsToFlush.addAll(0, channels);
+                    }
+                }
+                throw ioe;
+            }
+            // remove the channel from the list after it is successfully flushed
+            chIter.remove();
             // since this channel is only used for writing, after flushing the channel,
             // we had to close the underlying file channel. Otherwise, we might end up
             // leaking fds which cause the disk spaces could not be reclaimed.

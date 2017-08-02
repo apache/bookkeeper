@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -27,7 +29,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.InetAddress;
-
 import org.apache.bookkeeper.bookie.BookieException.DiskPartitionDuplicationException;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -44,12 +45,15 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.PortManager;
+import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,8 +64,20 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
     private static final Logger LOG = LoggerFactory
             .getLogger(BookieInitializationTest.class);
 
+    @Rule
+    public final TestName runtime = new TestName();
+
     public BookieInitializationTest() {
         super(0);
+        String ledgersPath = "/" + runtime.getMethodName();
+        baseClientConf.setZkLedgersRootPath(ledgersPath);
+        baseConf.setZkLedgersRootPath(ledgersPath);
+    }
+
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+        zkUtil.createBKEnsemble("/" + runtime.getMethodName());
     }
 
     private static class MockBookie extends Bookie {
@@ -280,6 +296,38 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
     }
 
     /**
+     * Verify bookie server starts up on ephemeral ports.
+     */
+    @Test(timeout = 20000)
+    public void testBookieServerStartupOnEphemeralPorts() throws Exception {
+        File tmpDir = createTempDir("bookie", "test");
+
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setZkServers(null)
+            .setBookiePort(0)
+            .setJournalDirName(tmpDir.getPath())
+            .setLedgerDirNames(
+                new String[] { tmpDir.getPath() });
+        assertEquals(0, conf.getBookiePort());
+
+        ServerConfiguration conf1 = new ServerConfiguration();
+        conf1.addConfiguration(conf);
+        BookieServer bs1 = new BookieServer(conf1);
+        bs1.start();
+        assertFalse(0 == conf1.getBookiePort());
+
+        // starting bk server with same conf
+        ServerConfiguration conf2 = new ServerConfiguration();
+        conf2.addConfiguration(conf);
+        BookieServer bs2 = new BookieServer(conf2);
+        bs2.start();
+        assertFalse(0 == conf2.getBookiePort());
+
+        // these two bookies are listening on different ports eventually
+        assertFalse(conf1.getBookiePort() == conf2.getBookiePort());
+    }
+
+    /**
      * Verify bookie start behaviour when ZK Server is not running.
      */
     @Test(timeout = 20000)
@@ -409,7 +457,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         ServerConfiguration conf;
 
         public MockBookieServer(ServerConfiguration conf) throws IOException, KeeperException, InterruptedException,
-                BookieException, UnavailableException, CompatibilityException {
+                BookieException, UnavailableException, CompatibilityException, SecurityException {
             super(conf);
             this.conf = conf;
         }
@@ -468,7 +516,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
         long usableSpace = tmpDir.getUsableSpace();
         long totalSpace = tmpDir.getTotalSpace();
-        conf.setDiskUsageThreshold((1.0f - ((float) usableSpace / (float) totalSpace)) * 0.999f)
+        conf.setDiskUsageThreshold(0.001f)
                 .setDiskUsageWarnThreshold(0.0f).setReadOnlyModeEnabled(true).setIsForceGCAllowWhenNoSpace(true)
                 .setMinUsableSizeForIndexFileCreation(Long.MAX_VALUE);
         server = new BookieServer(conf);
@@ -478,7 +526,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         // minUsableSizeForIndexFileCreation to very high value, it wouldn't. be
         // able to find any index dir when all discs are full
         server.start();
-        Assert.assertFalse("Bookie should be Shutdown", server.getBookie().isRunning());
+        assertFalse("Bookie should be Shutdown", server.getBookie().isRunning());
         server.shutdown();
 
         // Here we are setting MinUsableSizeForIndexFileCreation to very low

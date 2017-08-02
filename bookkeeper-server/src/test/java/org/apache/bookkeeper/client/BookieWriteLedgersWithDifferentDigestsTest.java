@@ -22,14 +22,17 @@ package org.apache.bookkeeper.client;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Random;
-
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.test.MultiLedgerManagerMultiDigestTestCase;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,8 +43,9 @@ import static org.junit.Assert.*;
  * This can happen as result of clients using different settings
  * yet reading each other data or configuration change roll out.
  */
+@RunWith(Parameterized.class)
 public class BookieWriteLedgersWithDifferentDigestsTest extends
-        MultiLedgerManagerMultiDigestTestCase implements AddCallback {
+    BookKeeperClusterTestCase implements AddCallback {
 
     private final static Logger LOG = LoggerFactory
             .getLogger(BookieWriteLedgersWithDifferentDigestsTest.class);
@@ -57,7 +61,7 @@ public class BookieWriteLedgersWithDifferentDigestsTest extends
     ArrayList<byte[]> entries1; // generated entries
     ArrayList<byte[]> entries2; // generated entries
 
-    DigestType digestType;
+    private final DigestType digestType;
 
     private static class SyncObj {
         volatile int counter;
@@ -66,6 +70,11 @@ public class BookieWriteLedgersWithDifferentDigestsTest extends
         public SyncObj() {
             counter = 0;
         }
+    }
+
+    @Parameterized.Parameters
+    public static Collection<Object[]> configs() {
+        return Arrays.asList(new Object[][] { {DigestType.MAC }, {DigestType.CRC32}});
     }
 
     @Override
@@ -78,10 +87,10 @@ public class BookieWriteLedgersWithDifferentDigestsTest extends
         entries2 = new ArrayList<byte[]>(); // initialize the entries list
     }
 
-    public BookieWriteLedgersWithDifferentDigestsTest(String ledgerManagerFactory,
-            DigestType digestType) {
+    public BookieWriteLedgersWithDifferentDigestsTest(DigestType digestType) {
         super(3);
         this.digestType = digestType;
+        String ledgerManagerFactory = "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory";
         // set ledger manager
         baseConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
         baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);

@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.test;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,11 +18,11 @@ package org.apache.bookkeeper.test;
  * under the License.
  *
  */
+package org.apache.bookkeeper.test;
 
 import java.io.File;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.CountDownLatch;
-
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -42,11 +40,15 @@ import static org.junit.Assert.*;
  * This class tests the ledger delete functionality both from the BookKeeper
  * client and the server side.
  */
-public class LedgerDeleteTest extends MultiLedgerManagerTestCase {
+public class LedgerDeleteTest extends BookKeeperClusterTestCase {
     private final static Logger LOG = LoggerFactory.getLogger(LedgerDeleteTest.class);
     DigestType digestType;
 
-    public LedgerDeleteTest(String ledgerManagerFactory) {
+    public LedgerDeleteTest() {
+        this("org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory");
+    }
+
+    LedgerDeleteTest(String ledgerManagerFactory) {
         super(1);
         LOG.info("Running test case using ledger manager : " + ledgerManagerFactory);
         this.digestType = DigestType.CRC32;

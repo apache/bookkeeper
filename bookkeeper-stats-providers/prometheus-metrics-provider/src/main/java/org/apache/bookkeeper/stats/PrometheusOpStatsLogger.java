@@ -16,13 +16,12 @@
  */
 package org.apache.bookkeeper.stats;
 
-import java.util.concurrent.TimeUnit;
-
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Summary;
+import java.util.concurrent.TimeUnit;
 
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * A {@code Prometheus} based {@link OpStatsLogger} implementation.
  */
 public class PrometheusOpStatsLogger implements OpStatsLogger {
 

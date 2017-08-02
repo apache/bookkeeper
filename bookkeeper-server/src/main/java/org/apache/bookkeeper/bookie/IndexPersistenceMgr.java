@@ -20,6 +20,9 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LEDGER_CACHE_NUM_EVICTED_LEDGERS;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.NUM_OPEN_LEDGERS;
+
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
 import java.io.File;
@@ -44,11 +47,8 @@ import org.apache.bookkeeper.util.SnapshotMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LEDGER_CACHE_NUM_EVICTED_LEDGERS;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.NUM_OPEN_LEDGERS;
-
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * A {@code IndexPersistenceMgr} is responsible for managing the persistence state for the index in a bookie.
  */
 public class IndexPersistenceMgr {
     private static final Logger LOG = LoggerFactory.getLogger(IndexPersistenceMgr.class);
@@ -602,7 +602,7 @@ public class IndexPersistenceMgr {
     }
 
     /**
-     * Update the ledger entry page
+     * Update the ledger entry page.
      *
      * @param lep
      *          ledger entry page

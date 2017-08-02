@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.test;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,6 +18,8 @@ package org.apache.bookkeeper.test;
  * under the License.
  *
  */
+package org.apache.bookkeeper.test;
+
 import java.io.File;
 import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
@@ -47,11 +47,12 @@ import static org.junit.Assert.*;
 public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
     private final static Logger LOG = LoggerFactory.getLogger(BookieJournalRollingTest.class);
 
-    DigestType digestType;
+    private final DigestType digestType;
 
     public BookieJournalRollingTest() {
         super(1);
         this.digestType = DigestType.CRC32;
+        this.baseConf.setAllowEphemeralPorts(false);
     }
 
     @Before
@@ -217,6 +218,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
         // set flush interval to a large value
         ServerConfiguration newConf = TestBKConfiguration.newServerConfiguration();
         newConf.setFlushInterval(999999999);
+        newConf.setAllowEphemeralPorts(false);
         // restart bookies
         restartBookies(newConf);
 
@@ -255,6 +257,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
         // restart bookies with flush interval set to a large value
         ServerConfiguration newConf = TestBKConfiguration.newServerConfiguration();
         newConf.setFlushInterval(999999999);
+        newConf.setAllowEphemeralPorts(false);
         // restart bookies
         restartBookies(newConf);
 

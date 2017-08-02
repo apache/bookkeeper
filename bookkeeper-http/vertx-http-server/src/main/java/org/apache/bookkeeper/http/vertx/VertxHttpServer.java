@@ -20,6 +20,11 @@
  */
 package org.apache.bookkeeper.http.vertx;
 
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Vertx;
+import io.vertx.ext.web.Router;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -29,11 +34,6 @@ import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.ServiceProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import io.vertx.core.AbstractVerticle;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Vertx;
-import io.vertx.ext.web.Router;
 
 /**
  * Vertx.io implementation of Http Server.

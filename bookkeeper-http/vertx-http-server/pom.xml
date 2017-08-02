@@ -27,7 +27,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.apache.bookkeeper.http</groupId>
     <artifactId>vertx-http-server</artifactId>
-    <name>Vertx based Http Server</name>
+    <name>Apache BookKeeper :: Bookkeeper Http :: Vertx Http Server</name>
     <url>http://maven.apache.org</url>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

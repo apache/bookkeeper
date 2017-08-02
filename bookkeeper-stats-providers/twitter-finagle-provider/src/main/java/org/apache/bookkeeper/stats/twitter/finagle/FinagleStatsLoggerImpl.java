@@ -19,18 +19,17 @@ package org.apache.bookkeeper.stats.twitter.finagle;
 
 import com.twitter.finagle.stats.StatsReceiver;
 import com.twitter.util.Function0;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import scala.collection.Seq;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * A <i>Finagle Stats</i> library based {@link StatsLogger} implementation.
  */
 public class FinagleStatsLoggerImpl implements StatsLogger {
     private final StatsReceiver stats;

@@ -21,32 +21,22 @@
 
 package org.apache.bookkeeper.test;
 
-import org.apache.bookkeeper.client.BookKeeper;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.bookkeeper.proto.LocalBookiesRegistry;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
+import org.apache.bookkeeper.proto.BookieServer;
+import org.apache.bookkeeper.proto.LocalBookiesRegistry;
 import org.junit.Test;
 
 /**
  * Test the correctness and the availability outside of its package of LocalBookiesRegistryTest
  */
-public class LocalBookiesRegistryTest extends BaseTestCase {
+public class LocalBookiesRegistryTest extends BookKeeperClusterTestCase {
     
-    @Override
-    protected ServerConfiguration newServerConfiguration() throws Exception {
-        return super
-                .newServerConfiguration()
-                .setDisableServerSocketBind(true)
-                .setEnableLocalTransport(true);
-    }
-        
-    BookKeeper.DigestType digestType;
-    
-    public LocalBookiesRegistryTest(BookKeeper.DigestType digestType) {
+    public LocalBookiesRegistryTest() {
         super(3);
-        this.digestType = digestType;
+        baseConf.setDisableServerSocketBind(true);
+        baseConf.setEnableLocalTransport(true);
     }
 
     @Test

@@ -42,8 +42,8 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
-import org.apache.bookkeeper.client.ClientConnectionPeer;
-import org.apache.bookkeeper.bookie.BookieConnectionPeer;
+import org.apache.bookkeeper.proto.ClientConnectionPeer;
+import org.apache.bookkeeper.proto.BookieConnectionPeer;
 
 
 public class TestAuth extends BookKeeperClusterTestCase {
@@ -488,7 +488,6 @@ public class TestAuth extends BookKeeperClusterTestCase {
         @Override
         public BookieAuthProvider newProvider(BookieConnectionPeer connection, AuthCallbacks.GenericCallback<Void> completeCb) {
             return new BookieAuthProvider() {
-
                 {
                     completeCb.operationComplete(BKException.Code.OK, null);
                     initCountersOnConnections.incrementAndGet();
@@ -496,7 +495,6 @@ public class TestAuth extends BookKeeperClusterTestCase {
 
                 @Override
                 public void process(AuthToken m, AuthCallbacks.GenericCallback<AuthToken> cb) {
-
                 }
 
                 @Override

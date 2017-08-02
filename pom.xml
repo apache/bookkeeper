@@ -29,8 +29,29 @@
   <version>4.5.0-SNAPSHOT</version>
   <artifactId>bookkeeper</artifactId>
   <packaging>pom</packaging>
-  <name>bookkeeper</name>
+  <name>Apache BookKeeper :: Parent</name>
+  <url>http://bookkeeeper.apache.org</url>
   <inceptionYear>2011</inceptionYear>
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <scm>
+    <connection>scm:git:https://github.com/apache/bookkeeper.git</connection>
+    <developerConnection>scm:git:https://github.com/apache/bookkeeper.git</developerConnection>
+    <url>https://github.com/apache/bookkeeper</url>
+  </scm>
+  <issueManagement>
+    <system>JIRA</system>
+    <url>https://issues.apache.org/jira/browse/BOOKKEEPER</url>
+  </issueManagement>
+  <ciManagement>
+    <system>Jenkins</system>
+    <url>https://builds.apache.org/job/bookkeeper-master</url>
+  </ciManagement>
   <modules>
     <module>buildtools</module>
     <module>compat-deps</module>
@@ -40,20 +61,54 @@
     <module>bookkeeper-stats-providers</module>
     <module>bookkeeper-http</module>
   </modules>
+  <mailingLists>
+    <mailingList>
+      <name>BookKeeper User</name>
+      <subscribe>user-subscribe@bookkeeper.apache.org</subscribe>
+      <unsubscribe>user-unsubscribe@bookkeeper.apache.org</unsubscribe>
+      <post>user@bookkeeper.apache.org</post>
+      <archive>http://www.mail-archive.com/user@bookkeeper.apache.org</archive>
+    </mailingList>
+    <mailingList>
+      <name>BookKeeper Dev</name>
+      <subscribe>dev-subscribe@bookkeeper.apache.org</subscribe>
+      <unsubscribe>dev-unsubscribe@bookkeeper.apache.org</unsubscribe>
+      <post>dev@bookkeeper.apache.org</post>
+      <archive>http://www.mail-archive.com/dev@bookkeeper.apache.org</archive>
+    </mailingList>
+    <mailingList>
+      <name>BookKeeper Commits</name>
+      <subscribe>commits-subscribe@bookkeeper.apache.org</subscribe>
+      <unsubscribe>commits-unsubscribe@bookkeeper.apache.org</unsubscribe>
+      <post>commits@bookkeeper.apache.org</post>
+      <archive>http://www.mail-archive.com/commits@bookkeeper.apache.org</archive>
+    </mailingList>
+  </mailingLists>
+  <developers>
+    <developer>
+      <name>The Apache BookKeeper Team</name>
+      <email>dev@bookkeeper.apache.org</email>
+      <url>http://bookkeeper.apache.org</url>
+      <organization>Apache Software Foundation</organization>
+      <organizationUrl>http://www.apache.org</organizationUrl>
+    </developer>
+  </developers>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <guava.version>20.0</guava.version>
-    <netty.version>4.1.10.Final</netty.version>
     <protobuf.version>2.6.1</protobuf.version>
+    <netty.version>4.1.12.Final</netty.version>
+    <netty-boringssl.version>2.0.3.Final</netty-boringssl.version>
     <slf4j.version>1.7.25</slf4j.version>
     <zookeeper.version>3.5.3-beta</zookeeper.version>
     <!-- plugin dependencies -->
     <findbugs-maven-plugin.version>3.0.3</findbugs-maven-plugin.version>
     <puppycrawl.checkstyle.version>6.19</puppycrawl.checkstyle.version>
     <maven-checkstyle-plugin.version>2.17</maven-checkstyle-plugin.version>
+    <maven-javadoc-plugin.version>2.10.4</maven-javadoc-plugin.version>
+    <maven-source-plugin.version>2.2.1</maven-source-plugin.version>
   </properties>
-  <url>http://bookkeeper.apache.org</url>
   <build>
     <plugins>
       <plugin>
@@ -87,9 +142,9 @@
           <source>1.8</source>
           <target>1.8</target>
           <compilerArguments>
-	    <Werror />
-	    <Xlint:deprecation />
-	    <Xlint:unchecked />
+            <Werror />
+            <Xlint:deprecation />
+            <Xlint:unchecked />
 	  </compilerArguments>
         </configuration>
       </plugin>
@@ -107,17 +162,30 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>2.10.3</version>
+        <version>${maven-javadoc-plugin.version}</version>
         <configuration>
-          <!-- Avoid for missing javadoc comments to be marked as errors -->
-          <additionalparam>-Xdoclint:none</additionalparam>
-          <subpackages>org.apache.bookkeeper.client:org.apache.bookkeeper.conf</subpackages>
+          <!-- Prevent missing javadoc comments from being marked as errors -->
+          <additionalparam>-Xdoclint:none -notimestamp</additionalparam>
+          <subpackages>org.apache.bookkeeper.client:org.apache.bookkeeper.common.annotation:org.apache.bookkeeper.conf:org.apache.bookkeeper.feature:org.apache.bookkeeper.stats</subpackages>
           <groups>
             <group>
-              <title>Bookkeeper</title>
-              <packages>org.apache.bookkeeper*</packages>
+              <title>Bookkeeper Client</title>
+              <packages>org.apache.bookkeeper.client:org.apache.bookkeeper.common.annotation:org.apache.bookkeeper.conf:org.apache.bookkeeper.feature</packages>
+            </group>
+            <group>
+              <title>Bookkeeper Stats API</title>
+              <!-- currently codahale and prometheus are placed under `stats` package unfortunately.
+                   we might consider rename them to their own packages in future. -->
+              <packages>org.apache.bookkeeper.stats</packages>
+            </group>
+            <group>
+              <title>Bookkeeper Stats Providers</title>
+              <packages>org.apache.bookkeeper.stats.twitter.finagle:org.apache.bookkeeper.stats.twitter.ostrich:org.apache.bookkeeper.stats.twitter.science</packages>
             </group>
           </groups>
+          <doctitle>BookKeeper Java API (version ${project.version})</doctitle>
+          <overview>site/_site/overview/index.html</overview>
+          <show>package</show>
         </configuration>
         <executions>
           <execution>
@@ -126,6 +194,19 @@
               <goal>aggregate</goal>
             </goals>
             <phase>site</phase>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>${maven-source-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
           </execution>
         </executions>
       </plugin>
@@ -157,6 +238,7 @@
             <exclude>**/.gitignore</exclude>
             <exclude>**/.project</exclude>
             <exclude>**/.settings/*</exclude>
+            <exclude>site/**</exclude>
           </excludes>
         </configuration>
       </plugin>
@@ -223,7 +305,7 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
             <configuration>
-	      <redirectTestOutputToFile>false</redirectTestOutputToFile>
+	      <redirectTestOutputToFile>true</redirectTestOutputToFile>
             </configuration>
 	  </plugin>
 	</plugins>

@@ -27,7 +27,7 @@
   </parent>
   <groupId>org.apache.bookkeeper.stats</groupId>
   <artifactId>prometheus-metrics-provider</artifactId>
-  <name>Stats provider for Prometheus</name>
+  <name>Apache BookKeeper :: Stats Providers :: Prometheus</name>
 
   <properties>
     <prometheus.version>0.0.21</prometheus.version>

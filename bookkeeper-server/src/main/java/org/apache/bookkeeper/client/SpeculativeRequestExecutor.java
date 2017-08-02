@@ -22,6 +22,14 @@ package org.apache.bookkeeper.client;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+/**
+ * Define an executor for issuing speculative requests.
+ *
+ * <p>If the implementation can issue a speculative read, it should return true
+ * to indicate a speculative request should be issued. Otherwise, return false.
+ *
+ * @since 4.5
+ */
 public interface SpeculativeRequestExecutor {
 
     /**

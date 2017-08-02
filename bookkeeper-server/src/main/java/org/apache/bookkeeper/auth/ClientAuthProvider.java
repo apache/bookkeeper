@@ -21,9 +21,8 @@
 package org.apache.bookkeeper.auth;
 
 import java.io.IOException;
-
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.client.ClientConnectionPeer;
+import org.apache.bookkeeper.proto.ClientConnectionPeer;
 
 /**
  * Client authentication provider interface.
@@ -32,7 +31,7 @@ import org.apache.bookkeeper.client.ClientConnectionPeer;
  */
 public interface ClientAuthProvider {
     /**
-     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+     * A factory to create the authentication providers for bookkeeper clients.
      */
     interface Factory {
         /**
@@ -81,6 +80,13 @@ public interface ClientAuthProvider {
      * this case, completeCb should be called.
      */
     void init(AuthCallbacks.GenericCallback<AuthToken> cb);
+
+    /**
+     * Callback to let the provider know that the underlying protocol is changed.
+     * For instance this will happen when a START_TLS operation succeeds
+     */
+    default void onProtocolUpgrade() {
+    }
 
     /**
      * Process a response from the server. cb will receive the next

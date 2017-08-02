@@ -35,6 +35,13 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_BYTES;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SERVER_STATUS;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_BYTES;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.SettableFuture;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
@@ -61,7 +68,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-
 import org.apache.bookkeeper.bookie.BookieException.DiskPartitionDuplicationException;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
@@ -102,18 +108,8 @@ import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.SettableFuture;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-
 /**
  * Implements a bookie.
- *
  */
 public class Bookie extends BookieCriticalThread {
 
@@ -178,7 +174,7 @@ public class Bookie extends BookieCriticalThread {
     private final OpStatsLogger readBytesStats;
 
     /**
-     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+     * Exception is thrown when no such a ledger is found in this bookie.
      */
     public static class NoLedgerException extends IOException {
         private static final long serialVersionUID = 1L;
@@ -193,7 +189,7 @@ public class Bookie extends BookieCriticalThread {
     }
 
     /**
-     * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+     * Exception is thrown when no such an entry is found in this bookie.
      */
     public static class NoEntryException extends IOException {
         private static final long serialVersionUID = 1L;
@@ -580,7 +576,12 @@ public class Bookie extends BookieCriticalThread {
         if (iface == null) {
             iface = "default";
         }
-        InetSocketAddress inetAddr = new InetSocketAddress(DNS.getDefaultHost(iface), conf.getBookiePort());
+        String hostName = DNS.getDefaultHost(iface);
+        InetSocketAddress inetAddr = new InetSocketAddress(hostName, conf.getBookiePort());
+        if (inetAddr.isUnresolved()) {
+            throw new UnknownHostException("Unable to resolve default hostname: "
+                    + hostName + " for interface: " + iface);
+        }
         String hostAddress = inetAddr.getAddress().getHostAddress();
         if (conf.getUseHostNameAsBookieID()) {
             hostAddress = inetAddr.getAddress().getCanonicalHostName();
@@ -1313,7 +1314,7 @@ public class Bookie extends BookieCriticalThread {
                 if (indexDirsManager != ledgerDirsManager) {
                     idxMonitor.shutdown();
                 }
-                
+
                 // Shutdown the state service
                 stateService.shutdown();
             }

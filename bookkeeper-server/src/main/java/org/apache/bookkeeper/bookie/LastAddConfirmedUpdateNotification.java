@@ -21,7 +21,9 @@
 package org.apache.bookkeeper.bookie;
 
 /**
- * @TODO: Write JavaDoc comment {@link https://github.com/apache/bookkepeer/issues/247}
+ * A signal object is used for notifying the observers when the {@code LastAddConfirmed} is advanced.
+ *
+ * <p>The signal object contains the latest {@code LastAddConfirmed} and when the {@code LastAddConfirmed} is advanced.
  */
 public class LastAddConfirmedUpdateNotification {
     public long lastAddConfirmed;

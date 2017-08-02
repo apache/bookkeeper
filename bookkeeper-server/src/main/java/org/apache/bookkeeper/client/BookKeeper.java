@@ -28,7 +28,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.HashedWheelTimer;
-
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +38,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
@@ -74,16 +72,15 @@ import org.slf4j.LoggerFactory;
 
 
 /**
- * BookKeeper client. We assume there is one single writer to a ledger at any
- * time.
+ * BookKeeper client.
  *
- * There are four possible operations: start a new ledger, write to a ledger,
+ * <p>We assume there is one single writer to a ledger at any time.
+ *
+ * <p>There are four possible operations: start a new ledger, write to a ledger,
  * read from a ledger and delete a ledger.
  *
- * The exceptions resulting from synchronous calls and error code resulting from
+ * <p>The exceptions resulting from synchronous calls and error code resulting from
  * asynchronous calls can be found in the class {@link BKException}.
- *
- *
  */
 public class BookKeeper implements AutoCloseable {
 
@@ -148,6 +145,9 @@ public class BookKeeper implements AutoCloseable {
     boolean closed = false;
     final ReentrantReadWriteLock closeLock = new ReentrantReadWriteLock();
 
+    /**
+     * BookKeeper Client Builder to build client instances.
+     */
     public static class Builder {
         final ClientConfiguration conf;
 
@@ -162,32 +162,116 @@ public class BookKeeper implements AutoCloseable {
             this.conf = conf;
         }
 
+        /**
+         * Configure the bookkeeper client with a provided {@link EventLoopGroup}.
+         *
+         * @param f an external {@link EventLoopGroup} to use by the bookkeeper client.
+         * @return client builder.
+         * @deprecated since 4.5, use {@link #eventLoopGroup(EventLoopGroup)}
+         * @see #eventLoopGroup(EventLoopGroup)
+         */
+        @Deprecated
         public Builder setEventLoopGroup(EventLoopGroup f) {
             eventLoopGroup = f;
             return this;
         }
 
+        /**
+         * Configure the bookkeeper client with a provided {@link ZooKeeper} client.
+         *
+         * @param zk an external {@link ZooKeeper} client to use by the bookkeeper client.
+         * @return client builder.
+         * @deprecated since 4.5, use {@link #zk(ZooKeeper)}
+         * @see #zk(ZooKeeper)
+         */
+        @Deprecated
         public Builder setZookeeper(ZooKeeper zk) {
             this.zk = zk;
             return this;
         }
 
+        /**
+         * Configure the bookkeeper client with a provided {@link StatsLogger}.
+         *
+         * @param statsLogger an {@link StatsLogger} to use by the bookkeeper client to collect stats generated
+         *                    by the client.
+         * @return client builder.
+         * @deprecated since 4.5, use {@link #statsLogger(StatsLogger)}
+         * @see #statsLogger(StatsLogger)
+         */
+        @Deprecated
         public Builder setStatsLogger(StatsLogger statsLogger) {
             this.statsLogger = statsLogger;
             return this;
         }
 
+        /**
+         * Configure the bookkeeper client with a provided {@link EventLoopGroup}.
+         *
+         * @param f an external {@link EventLoopGroup} to use by the bookkeeper client.
+         * @return client builder.
+         * @since 4.5
+         */
+        public Builder eventLoopGroup(EventLoopGroup f) {
+            eventLoopGroup = f;
+            return this;
+        }
 
+        /**
+         * Configure the bookkeeper client with a provided {@link ZooKeeper} client.
+         *
+         * @param zk an external {@link ZooKeeper} client to use by the bookkeeper client.
+         * @return client builder.
+         * @since 4.5
+         */
+        public Builder zk(ZooKeeper zk) {
+            this.zk = zk;
+            return this;
+        }
+
+        /**
+         * Configure the bookkeeper client with a provided {@link StatsLogger}.
+         *
+         * @param statsLogger an {@link StatsLogger} to use by the bookkeeper client to collect stats generated
+         *                    by the client.
+         * @return client builder.
+         * @since 4.5
+         */
+        public Builder statsLogger(StatsLogger statsLogger) {
+            this.statsLogger = statsLogger;
+            return this;
+        }
+
+        /**
+         * Configure the bookkeeper client to use the provided dns resolver {@link DNSToSwitchMapping}.
+         *
+         * @param dnsResolver dns resolver for placement policy to use for resolving network locations.
+         * @return client builder
+         * @since 4.5
+         */
         public Builder dnsResolver(DNSToSwitchMapping dnsResolver) {
             this.dnsResolver = dnsResolver;
             return this;
         }
 
+        /**
+         * Configure the bookkeeper client to use a provided {@link HashedWheelTimer}.
+         *
+         * @param requestTimer request timer for client to manage timer related tasks.
+         * @return client builder
+         * @since 4.5
+         */
         public Builder requestTimer(HashedWheelTimer requestTimer) {
             this.requestTimer = requestTimer;
             return this;
         }
 
+        /**
+         * Feature Provider
+         *
+         * @param featureProvider
+         * @return
+         */
         public Builder featureProvider(FeatureProvider featureProvider) {
             this.featureProvider = featureProvider;
             return this;
@@ -439,7 +523,7 @@ public class BookKeeper implements AutoCloseable {
         throws IOException {
         try {
             Class<? extends EnsemblePlacementPolicy> policyCls = conf.getEnsemblePlacementPolicy();
-            return ReflectionUtils.newInstance(policyCls).initialize(conf, Optional.fromNullable(dnsResolver),
+            return ReflectionUtils.newInstance(policyCls).initialize(conf, java.util.Optional.ofNullable(dnsResolver),
                     timer, featureProvider, statsLogger);
         } catch (ConfigurationException e) {
             throw new IOException("Failed to initialize ensemble placement policy : ", e);

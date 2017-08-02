@@ -76,8 +76,8 @@ public class LedgerMetadataCreationTest extends LedgerManagerTestCase {
                     long ledgerId = -1;
                     try {
                         if (randomLedgerId) {
-                            ledgerId = Math.abs(rand.nextLong());
                             do {
+                                ledgerId = Math.abs(rand.nextLong());
                                 if (!baseClientConf.getLedgerManagerFactoryClass()
                                         .equals(LongHierarchicalLedgerManagerFactory.class)) {
                                     /*

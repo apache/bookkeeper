@@ -20,6 +20,11 @@
  */
 package org.apache.bookkeeper.http.twitter;
 
+import com.twitter.finagle.Service;
+import com.twitter.finagle.http.Request;
+import com.twitter.finagle.http.Response;
+import com.twitter.util.Future;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,11 +32,6 @@ import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.ErrorService;
 import org.apache.bookkeeper.http.service.ServiceRequest;
 import org.apache.bookkeeper.http.service.ServiceResponse;
-
-import com.twitter.finagle.Service;
-import com.twitter.finagle.http.Request;
-import com.twitter.finagle.http.Response;
-import com.twitter.util.Future;
 
 /**
  * Http handler for TwitterServer.

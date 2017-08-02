@@ -21,6 +21,9 @@
 
 package org.apache.bookkeeper.client;
 
+/**
+ * List of constants for defining client stats names.
+ */
 public interface BookKeeperClientStats {
     public final static String CLIENT_SCOPE = "bookkeeper_client";
 
@@ -59,4 +62,5 @@ public interface BookKeeperClientStats {
     public final static String CHANNEL_READ_LAC_OP = "READ_LAC";
     public final static String CHANNEL_TIMEOUT_READ_LAC = "TIMEOUT_READ_LAC";
     public final static String TIMEOUT_GET_BOOKIE_INFO = "TIMEOUT_GET_BOOKIE_INFO";
+    public final static String CHANNEL_START_TLS_OP = "START_TLS";
 }

@@ -26,7 +26,7 @@
   </parent>
   <groupId>org.apache.bookkeeper.stats</groupId>
   <artifactId>codahale-metrics-provider</artifactId>
-  <name>Stats provider for codahale metrics</name>
+  <name>Apache BookKeeper :: Stats Providers :: Codahale Metrics</name>
   <url>http://maven.apache.org</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

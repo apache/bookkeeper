@@ -1,0 +1,48 @@
+---
+layout: default
+---
+
+<div class="bk-community-container">
+  <div class="columns">
+    <div class="column is-12">
+      <header class="docs-title">
+        <nav class="level">
+          <div class="level-left">
+            <div class="level-item">
+              <h1 class="title">{{ page.title }}</h1>
+            </div>
+          </div>
+          {% if page.logo %}
+          <div class="level-right">
+            <div class="level-item">
+              <img class="logo" src="{{ site.baseurl }}{{ page.logo }}">
+            </div>
+          </div>
+          {% endif %}
+        </nav>
+
+        {% if page.subtitle %}<h2 class="subtitle">{{ page.subtitle }}</h2>{% endif %}
+      </header>
+
+      <hr />
+
+      <div class="content is-medium">
+        <section class="bk-community-content">
+          {{ content }}
+        </section>
+
+        {% if page.next or page.prev %}
+        <nav class="pagination is-centered">
+          {% if page.prev %}
+          <a class="pagination-previous" href="{{ page.prev }}">Previous</a>
+          {% endif %}
+          {% if page.next %}
+          <a class="pagination-next" href="{{ page.next }}">Next</a>
+          {% endif %}
+          <ul class="pagination-list"></ul>
+        </nav>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>

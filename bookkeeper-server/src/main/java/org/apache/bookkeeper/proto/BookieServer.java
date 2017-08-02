@@ -20,14 +20,13 @@
  */
 package org.apache.bookkeeper.proto;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.IOException;
+import java.lang.Integer;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.Arrays;
-
-import com.google.common.annotations.VisibleForTesting;
-
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieCriticalThread;
 import org.apache.bookkeeper.bookie.BookieException;
@@ -45,6 +44,9 @@ import org.apache.bookkeeper.replication.ReplicationException.UnavailableExcepti
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.StatsProvider;
+import org.apache.bookkeeper.tls.SecurityException;
+import org.apache.bookkeeper.tls.SecurityHandlerFactory;
+import org.apache.bookkeeper.tls.SecurityProviderFactoryFactory;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
@@ -88,19 +90,31 @@ public class BookieServer {
 
     public BookieServer(ServerConfiguration conf) throws IOException,
             KeeperException, InterruptedException, BookieException,
-            UnavailableException, CompatibilityException {
+            UnavailableException, CompatibilityException, SecurityException {
         this(conf, NullStatsLogger.INSTANCE);
     }
 
     public BookieServer(ServerConfiguration conf, StatsLogger statsLogger)
             throws IOException, KeeperException, InterruptedException,
-            BookieException, UnavailableException, CompatibilityException {
+            BookieException, UnavailableException, CompatibilityException, SecurityException {
         this.conf = conf;
         this.statsLogger = statsLogger;
-        this.bookie = newBookie(conf);
+        this.nettyServer = new BookieNettyServer(this.conf, null);
+        try {
+            this.bookie = newBookie(conf);
+        } catch (IOException | KeeperException | InterruptedException | BookieException e) {
+            // interrupted on constructing a bookie
+            this.nettyServer.shutdown();
+            throw e;
+        }
+        final SecurityHandlerFactory shFactory;
+
+        shFactory = SecurityProviderFactoryFactory
+                .getSecurityProviderFactory(conf.getTLSProviderFactoryClass());
         this.requestProcessor = new BookieRequestProcessor(conf, bookie,
-                statsLogger.scope(SERVER_SCOPE));
-        this.nettyServer = new BookieNettyServer(this.conf, requestProcessor);
+                statsLogger.scope(SERVER_SCOPE), shFactory);
+        this.nettyServer.setRequestProcessor(this.requestProcessor);
+
         isAutoRecoveryDaemonEnabled = conf.isAutoRecoveryDaemonEnabled();
         if (isAutoRecoveryDaemonEnabled) {
             this.autoRecoveryMain = new AutoRecoveryMain(conf, statsLogger.scope(REPLICATION_SCOPE));
@@ -114,7 +128,7 @@ public class BookieServer {
                 new Bookie(conf, statsLogger.scope(BOOKIE_SCOPE));
     }
 
-    public void start() throws IOException, UnavailableException {
+    public void start() throws IOException, UnavailableException, InterruptedException {
         this.bookie.start();
         // fail fast, when bookie startup is not successful
         if (!this.bookie.isRunning()) {

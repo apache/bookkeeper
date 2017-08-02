@@ -41,7 +41,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -57,7 +56,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
-import org.apache.bookkeeper.test.MultiLedgerManagerTestCase;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -72,7 +71,7 @@ import org.slf4j.LoggerFactory;
  * Tests publishing of under replicated ledgers by the Auditor bookie node when
  * corresponding bookies identifes as not running
  */
-public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
+public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
 
     // Depending on the taste, select the amount of logging
     // by decommenting one of the two lines below
@@ -95,7 +94,13 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
 
     private List<Long> ledgerList;
 
-    public AuditorLedgerCheckerTest(String ledgerManagerFactoryClass)
+    public AuditorLedgerCheckerTest()
+        throws IOException, KeeperException, InterruptedException,
+        CompatibilityException {
+        this("org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory");
+    }
+
+    AuditorLedgerCheckerTest(String ledgerManagerFactoryClass)
             throws IOException, KeeperException, InterruptedException,
             CompatibilityException {
         super(3);

@@ -21,10 +21,10 @@
 
 package org.apache.bookkeeper.http.vertx;
 
+import io.vertx.ext.web.RoutingContext;
+
 import org.apache.bookkeeper.http.AbstractHandlerFactory;
 import org.apache.bookkeeper.http.ServiceProvider;
-
-import io.vertx.ext.web.RoutingContext;
 
 /**
  * Factory which provide http handlers for Vertx based Http Server.

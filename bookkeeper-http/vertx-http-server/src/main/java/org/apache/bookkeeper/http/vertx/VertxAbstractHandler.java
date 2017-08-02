@@ -20,6 +20,11 @@
  */
 package org.apache.bookkeeper.http.vertx;
 
+import io.vertx.core.Handler;
+import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerResponse;
+import io.vertx.ext.web.RoutingContext;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -29,11 +34,6 @@ import org.apache.bookkeeper.http.service.ErrorService;
 import org.apache.bookkeeper.http.service.Service;
 import org.apache.bookkeeper.http.service.ServiceRequest;
 import org.apache.bookkeeper.http.service.ServiceResponse;
-
-import io.vertx.core.Handler;
-import io.vertx.core.http.HttpServerRequest;
-import io.vertx.core.http.HttpServerResponse;
-import io.vertx.ext.web.RoutingContext;
 
 /**
  * Http Handler for Vertx based Http Server.

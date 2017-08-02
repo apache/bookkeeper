@@ -24,7 +24,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.apache.bookkeeper.util.DiskChecker.DiskErrorException;
 import org.apache.bookkeeper.util.DiskChecker.DiskOutOfSpaceException;
 import org.apache.bookkeeper.util.DiskChecker.DiskWarnThresholdException;
@@ -42,10 +41,11 @@ public class TestDiskChecker {
     DiskChecker diskChecker;
 
     final List<File> tempDirs = new ArrayList<File>();
+    private static final float THRESHOLD = 0.99f;
 
     @Before
     public void setup() throws IOException {
-        diskChecker = new DiskChecker(0.95f, 0.95f);
+        diskChecker = new DiskChecker(THRESHOLD, THRESHOLD);
 
         // Create at least one file so that target disk will never be empty
         File placeHolderDir = IOUtils.createTempDir("DiskCheck", "test-placeholder");
@@ -78,7 +78,7 @@ public class TestDiskChecker {
         File file = createTempDir("DiskCheck", "test");
         long usableSpace = file.getUsableSpace();
         long totalSpace = file.getTotalSpace();
-        float threshold = minMaxThreshold((1f - ((float) usableSpace / (float) totalSpace)) - 0.05f);
+        float threshold = minMaxThreshold((1f - ((float) usableSpace / (float) totalSpace)) - (1.0f - THRESHOLD));
 
         diskChecker.setDiskSpaceThreshold(threshold, threshold);
         diskChecker.checkDiskFull(file);

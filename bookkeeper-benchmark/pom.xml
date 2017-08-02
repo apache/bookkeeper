@@ -26,8 +26,7 @@
   </parent>
   <groupId>org.apache.bookkeeper</groupId>
   <artifactId>bookkeeper-benchmark</artifactId>
-  <name>bookkeeper-benchmark</name>
-  <url>http://maven.apache.org</url>
+  <name>Apache BookKeeper :: Benchmark</name>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
