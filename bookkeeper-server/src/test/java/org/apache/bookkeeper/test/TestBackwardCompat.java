@@ -31,11 +31,9 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
-import org.apache.bookkeeper.bookie.FileSystemUpgrade;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -81,103 +79,6 @@ public class TestBackwardCompat {
             FileUtils.deleteDirectory(dir);
         }
         tempDirs.clear();
-    }
-
-    /**
-     * Version 4.0.0 classes
-     */
-    static class Server400 {
-        org.apache.bk_v4_0_0.bookkeeper.conf.ServerConfiguration conf;
-        org.apache.bk_v4_0_0.bookkeeper.proto.BookieServer server = null;
-
-        Server400(File journalDir, File ledgerDir, int port) throws Exception {
-            conf = new org.apache.bk_v4_0_0.bookkeeper.conf.ServerConfiguration();
-            conf.setBookiePort(port);
-            conf.setZkServers(zkUtil.getZooKeeperConnectString());
-            conf.setJournalDirName(journalDir.getPath());
-            conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });
-        }
-
-        void start() throws Exception {
-            server = new org.apache.bk_v4_0_0.bookkeeper.proto.BookieServer(conf);
-            server.start();
-            waitUp(conf.getBookiePort());
-        }
-
-        org.apache.bk_v4_0_0.bookkeeper.conf.ServerConfiguration getConf() {
-            return conf;
-        }
-
-        void stop() throws Exception {
-            if (server != null) {
-                server.shutdown();
-            }
-        }
-    }
-
-    static class Ledger400 {
-        org.apache.bk_v4_0_0.bookkeeper.client.BookKeeper bk;
-        org.apache.bk_v4_0_0.bookkeeper.client.LedgerHandle lh;
-
-        private Ledger400(org.apache.bk_v4_0_0.bookkeeper.client.BookKeeper bk,
-                          org.apache.bk_v4_0_0.bookkeeper.client.LedgerHandle lh) {
-            this.bk = bk;
-            this.lh = lh;
-        }
-
-        static Ledger400 newLedger() throws Exception {
-            org.apache.bk_v4_0_0.bookkeeper.client.BookKeeper newbk
-                = new org.apache.bk_v4_0_0.bookkeeper.client.BookKeeper(zkUtil.getZooKeeperConnectString());
-            org.apache.bk_v4_0_0.bookkeeper.client.LedgerHandle newlh
-                = newbk.createLedger(1, 1,
-                                  org.apache.bk_v4_0_0.bookkeeper.client.BookKeeper.DigestType.CRC32,
-                                  "foobar".getBytes());
-            return new Ledger400(newbk, newlh);
-        }
-
-        static Ledger400 openLedger(long id) throws Exception {
-            org.apache.bk_v4_0_0.bookkeeper.client.BookKeeper newbk
-                = new org.apache.bk_v4_0_0.bookkeeper.client.BookKeeper(zkUtil.getZooKeeperConnectString());
-            org.apache.bk_v4_0_0.bookkeeper.client.LedgerHandle newlh
-                = newbk.openLedger(id,
-                                org.apache.bk_v4_0_0.bookkeeper.client.BookKeeper.DigestType.CRC32,
-                                "foobar".getBytes());
-            return new Ledger400(newbk, newlh);
-        }
-
-        long getId() {
-            return lh.getId();
-        }
-
-        void write100() throws Exception {
-            for (int i = 0; i < 100; i++) {
-                lh.addEntry(ENTRY_DATA);
-            }
-        }
-
-        long readAll() throws Exception {
-            long count = 0;
-            Enumeration<org.apache.bk_v4_0_0.bookkeeper.client.LedgerEntry> entries
-                = lh.readEntries(0, lh.getLastAddConfirmed());
-            while (entries.hasMoreElements()) {
-                assertTrue("entry data doesn't match",
-                           Arrays.equals(entries.nextElement().getEntry(), ENTRY_DATA));
-                count++;
-            }
-            return count;
-        }
-
-        void close() throws Exception {
-            try {
-                if (lh != null) {
-                    lh.close();
-                }
-            } finally {
-                if (bk != null) {
-                    bk.close();
-                }
-            }
-        }
     }
 
     /**
@@ -290,6 +191,7 @@ public class TestBackwardCompat {
             conf.setZkServers(zkUtil.getZooKeeperConnectString());
             conf.setJournalDirName(journalDir.getPath());
             conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });
+            conf.setDiskUsageThreshold(0.999f);
         }
 
         void start() throws Exception {
@@ -384,6 +286,7 @@ public class TestBackwardCompat {
         ServerCurrent(File journalDir, File ledgerDir, int port,
                 boolean useHostNameAsBookieID) throws Exception {
             conf = TestBKConfiguration.newServerConfiguration();
+            conf.setAllowEphemeralPorts(false);
             conf.setBookiePort(port);
             conf.setZkServers(zkUtil.getZooKeeperConnectString());
             conf.setJournalDirName(journalDir.getPath());
@@ -532,91 +435,6 @@ public class TestBackwardCompat {
                 currentServer.stop();
             }
         }
-    }
-
-    /**
-     * Test compatability between version 4.0.0 and the current version.
-     * Incompatabilities are:
-     *  - Current client will not be able to talk to 4.0.0 server.
-     *  - 4.0.0 client will not be able to fence ledgers on current server.
-     *  - Current server won't start with 4.0.0 server directories without upgrade.
-     */
-    @Test(timeout=60000)
-    public void testCompat400() throws Exception {
-        File journalDir = createTempDir("bookie", "journal");
-        File ledgerDir = createTempDir("bookie", "ledger");
-
-        int port = PortManager.nextFreePort();
-        // start server, upgrade
-        Server400 s400 = new Server400(journalDir, ledgerDir, port);
-        s400.start();
-
-        Ledger400 l400 = Ledger400.newLedger();
-        l400.write100();
-        long oldLedgerId = l400.getId();
-        l400.close();
-
-        // Check that current client isn't able to write to old server
-        LedgerCurrent lcur = LedgerCurrent.newLedger();
-        try {
-            lcur.write100();
-            fail("Current shouldn't be able to write to 4.0.0 server");
-        } catch (Exception e) {
-        }
-        lcur.close();
-
-        s400.stop();
-
-        // Start the current server, will require a filesystem upgrade
-        ServerCurrent scur = new ServerCurrent(journalDir, ledgerDir, port, false);
-        try {
-            scur.start();
-            fail("Shouldn't be able to start without directory upgrade");
-        } catch (Exception e) {
-        }
-        FileSystemUpgrade.upgrade(scur.getConf());
-
-        scur.start();
-
-        // check that old client can read its old ledgers on new server
-        l400 = Ledger400.openLedger(oldLedgerId);
-        assertEquals(100, l400.readAll());
-        l400.close();
-
-        // check that old client can create ledgers on new server
-        l400 = Ledger400.newLedger();
-        l400.write100();
-        l400.close();
-
-        // check that current client can read old ledger
-        lcur = LedgerCurrent.openLedger(oldLedgerId);
-        assertEquals(100, lcur.readAll());
-        lcur.close();
-
-        // check that old client can read current client's ledgers
-        lcur = LedgerCurrent.openLedger(oldLedgerId);
-        assertEquals(100, lcur.readAll());
-        lcur.close();
-
-        // check that old client can not fence a current client
-        // due to lack of password
-        lcur = LedgerCurrent.newLedger();
-        lcur.write100();
-        long fenceLedgerId = lcur.getId();
-        try {
-            l400 = Ledger400.openLedger(fenceLedgerId);
-            fail("Shouldn't be able to open ledger");
-        } catch (Exception e) {
-            // correct behaviour
-        }
-        lcur.write100();
-        lcur.close();
-
-        lcur = LedgerCurrent.openLedger(fenceLedgerId);
-        assertEquals(200, lcur.readAll());
-        lcur.close();
-
-        scur.stop();
     }
 
     /**

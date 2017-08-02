@@ -34,7 +34,7 @@
           <div class="navbar-dropdown is-boxed">
             {% for version in site.versions %}
             <a class="navbar-item" href="{{ site.baseurl }}docs/getting-started/installation">
-              Version {{version}}
+              Release {{version}}
               {% if version == site.latest %}<span class="tag is-success">LATEST</span>{% endif %}
             </a>
             {% endfor %}
@@ -45,6 +45,13 @@
               </span>
               Javadoc
             </a>
+            <hr class="dropdown-divider">
+            {% for version in site.archived_versions %}
+            <a class="navbar-item" href="{{ site.archived_releases_url }}{{version}}">
+              Release {{version}}
+              {% if version == site.stable_release %}<span class="tag is-success">Stable</span>{% endif %}
+            </a>
+            {% endfor %}
           </div>
         </div>
 
@@ -52,7 +59,7 @@
           <a class="navbar-link">Community</a>
           <div class="navbar-dropdown is-boxed">
             <a class="navbar-item" href="{{ site.baseurl }}community/mailing-lists">Mailing lists</a>
-            <a class="navbar-item" href="{{ site.baseurl }}community/irc">IRC</a>
+            <a class="navbar-item" href="{{ site.baseurl }}community/slack">Slack</a>
             <a class="navbar-item" href="{{ site.baseurl }}community/contributing">Contributing</a>
             <a class="navbar-item" href="https://issues.apache.org/jira/projects/BOOKKEEPER">JIRA Issue Tracker</a>
           </div>
@@ -92,7 +99,7 @@
               </a>
             </p>
             <p class="control">
-              <a class="button is-primary" href="{{ site.baseurl }}docs/getting-started/installation#download">
+              <a class="button is-primary" href="{{ site.baseurl }}releases">
                 <span class="icon">
                   <i class="fa fa-download"></i>
                 </span>

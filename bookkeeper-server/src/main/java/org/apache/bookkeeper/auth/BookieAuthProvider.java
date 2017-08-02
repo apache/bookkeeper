@@ -78,6 +78,13 @@ public interface BookieAuthProvider {
     }
 
     /**
+     * Callback to let the provider know that the underlying protocol is changed.
+     * For instance this will happen when a START_TLS operation succeeds
+     */
+    default void onProtocolUpgrade() {
+    }
+
+    /**
      * Process a request from the client. cb will receive the next
      * message to be sent to the client. If there are no more messages
      * to send to the client, cb should not be called, and completeCb

@@ -61,9 +61,10 @@ public class LedgerEntry {
      * the internal ByteBuf
      * 
      * @return the content of the entry
+     * @throws IllegalStateException if this method is called twice
      */
     public byte[] getEntry() {
-        Preconditions.checkNotNull(data, "entry content can be accessed only once");
+        Preconditions.checkState(null != data, "entry content can be accessed only once");
         byte[] entry = new byte[data.readableBytes()];
         data.readBytes(entry);
         data.release();
@@ -78,9 +79,10 @@ public class LedgerEntry {
      * method of the returned InputStream
      *
      * @return an InputStream which gives access to the content of the entry
+     * @throws IllegalStateException if this method is called twice
      */
     public InputStream getEntryInputStream() {
-        Preconditions.checkNotNull(data, "entry content can be accessed only once");
+        Preconditions.checkState(null != data, "entry content can be accessed only once");
         ByteBufInputStream res = new ByteBufInputStream(data);
         data = null;
         return res;
@@ -94,8 +96,12 @@ public class LedgerEntry {
      * @return a ByteBuf which contains the data
      *
      * @see ClientConfiguration#setNettyUsePooledBuffers(boolean)
+     * @throws IllegalStateException if the entry has been retrieved by {@link #getEntry()}
+     * or {@link #getEntryInputStream()}.
      */
     public ByteBuf getEntryBuffer() {
+        Preconditions.checkState(null != data, "entry content has been retrieved" +
+            " by #getEntry or #getEntryInputStream");
         return data;
     }
 }

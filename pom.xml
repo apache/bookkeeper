@@ -96,8 +96,9 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <guava.version>20.0</guava.version>
-    <netty.version>4.1.10.Final</netty.version>
     <protobuf.version>2.6.1</protobuf.version>
+    <netty.version>4.1.12.Final</netty.version>
+    <netty-boringssl.version>2.0.3.Final</netty-boringssl.version>
     <slf4j.version>1.7.25</slf4j.version>
     <zookeeper.version>3.5.3-beta</zookeeper.version>
     <!-- plugin dependencies -->
@@ -237,6 +238,7 @@
             <exclude>**/.project</exclude>
             <exclude>**/.settings/*</exclude>
             <exclude>site/**</exclude>
+            <exclude>**/cacerts</exclude>
           </excludes>
         </configuration>
       </plugin>
@@ -303,7 +305,7 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
             <configuration>
-	      <redirectTestOutputToFile>false</redirectTestOutputToFile>
+	      <redirectTestOutputToFile>true</redirectTestOutputToFile>
             </configuration>
 	  </plugin>
 	</plugins>

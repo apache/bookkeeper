@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.test;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,6 +18,7 @@ package org.apache.bookkeeper.test;
  * under the License.
  *
  */
+package org.apache.bookkeeper.test;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -27,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Random;
 import java.util.Set;
-
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
@@ -50,16 +48,17 @@ import static org.junit.Assert.*;
  * and three BookKeepers.
  *
  */
-public class AsyncLedgerOpsTest extends MultiLedgerManagerMultiDigestTestCase
+public class AsyncLedgerOpsTest extends BookKeeperClusterTestCase
     implements AddCallback, ReadCallback, CreateCallback,
     CloseCallback, OpenCallback {
     private final static Logger LOG = LoggerFactory.getLogger(AsyncLedgerOpsTest.class);
 
-    DigestType digestType;
+    private final DigestType digestType;
 
-    public AsyncLedgerOpsTest(String ledgerManagerFactory, DigestType digestType) {
+    public AsyncLedgerOpsTest() {
         super(3);
-        this.digestType = digestType;
+        this.digestType = DigestType.CRC32;
+        String ledgerManagerFactory = "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory";
         // set ledger manager type
         baseConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
         baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);

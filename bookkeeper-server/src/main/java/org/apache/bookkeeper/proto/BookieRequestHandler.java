@@ -48,7 +48,8 @@ class BookieRequestHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        LOG.info("Channel connected: {}", ctx.channel());
+        LOG.info("Channel connected  {}", ctx.channel());
+        super.channelActive(ctx);
     }
 
     @Override
