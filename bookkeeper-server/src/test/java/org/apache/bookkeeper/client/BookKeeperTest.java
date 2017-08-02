@@ -813,12 +813,12 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                     try {
                         entry.getEntry();
                         fail("entry data accessed twice");
-                    } catch (IllegalStateException ok){
+                    } catch (NullPointerException ok){
                     }
                     try {
                         entry.getEntryInputStream();
                         fail("entry data accessed twice");
-                    } catch (IllegalStateException ok){
+                    } catch (NullPointerException ok){
                     }
                 }
             }
