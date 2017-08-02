@@ -24,6 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 
+import org.apache.bookkeeper.http.HttpRouter;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.ServiceProvider;
 import org.slf4j.Logger;
@@ -55,38 +56,42 @@ public class VertxHttpServer implements HttpServer {
     }
 
     @Override
-    public void startServer(int port) {
+    public boolean startServer(int port) {
         CompletableFuture<AsyncResult> future = new CompletableFuture<>();
         VertxHandlerFactory handlerFactory = new VertxHandlerFactory(serviceProvider);
         Router router = Router.router(vertx);
-        router.get(HEARTBEAT).handler(handlerFactory.newHeartbeatHandler());
-        router.get(SERVER_CONFIG).handler(handlerFactory.newConfigurationHandler());
+        HttpRouter<VertxAbstractHandler> requestRouter = new HttpRouter<VertxAbstractHandler>(handlerFactory) {
+            @Override
+            public void bindHandler(String endpoint, VertxAbstractHandler handler) {
+                router.get(endpoint).handler(handler);
+            }
+        };
+        requestRouter.bindAll();
         vertx.deployVerticle(new AbstractVerticle() {
             @Override
             public void start() throws Exception {
                 LOG.info("Starting Vertx HTTP server on port {}", port);
-                vertx.createHttpServer().requestHandler(router::accept).listen(port, asyncResult -> {
-                    isRunning = true;
-                    future.complete(asyncResult);
-                });
+                vertx.createHttpServer().requestHandler(router::accept).listen(port, future::complete);
             }
         });
         try {
             AsyncResult asyncResult = future.get();
             if (asyncResult.succeeded()) {
                 LOG.info("Vertx Http server started successfully");
+                isRunning = true;
+                return true;
             } else {
                 LOG.error("Failed to start org.apache.bookkeeper.http server on port {}", port, asyncResult.cause());
             }
         } catch (InterruptedException | ExecutionException e) {
             LOG.error("Failed to start org.apache.bookkeeper.http server on port {}", port, e);
         }
+        return false;
     }
 
     @Override
     public void stopServer() {
         CountDownLatch shutdownLatch = new CountDownLatch(1);
-        Vertx vertx = Vertx.vertx();
         vertx.close(asyncResult -> {
             isRunning = false;
             shutdownLatch.countDown();

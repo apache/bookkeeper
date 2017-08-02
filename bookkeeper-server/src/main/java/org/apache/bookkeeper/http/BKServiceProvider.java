@@ -22,6 +22,7 @@ package org.apache.bookkeeper.http;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.http.service.ErrorService;
 import org.apache.bookkeeper.http.service.HeartbeatService;
 import org.apache.bookkeeper.http.service.Service;
 import org.apache.bookkeeper.proto.BookieServer;
@@ -56,7 +57,7 @@ public class BKServiceProvider implements ServiceProvider {
     public Service provideConfigurationService() {
         ServerConfiguration configuration = getServerConf();
         if (configuration == null) {
-            return NullServiceProvider.NULL_SERVICE;
+            return new ErrorService();
         }
         return new ConfigurationService(configuration);
     }

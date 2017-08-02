@@ -27,9 +27,6 @@ package org.apache.bookkeeper.http;
  */
 public interface HttpServer {
 
-    String HEARTBEAT             = "/heartbeat";
-    String SERVER_CONFIG         = "/api/config/serverConfig";
-
     /**
      * Http Status Code.
      */
@@ -68,7 +65,7 @@ public interface HttpServer {
     /**
      * Start the HTTP server on given port.
      */
-    void startServer(int port);
+    boolean startServer(int port);
 
     /**
      * Stop the HTTP server.

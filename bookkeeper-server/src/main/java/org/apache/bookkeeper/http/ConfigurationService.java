@@ -31,6 +31,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.service.Service;
 import org.apache.bookkeeper.http.service.ServiceRequest;
 import org.apache.bookkeeper.http.service.ServiceResponse;
+import org.apache.bookkeeper.util.JsonUtil;
 
 /**
  * Service that handle Bookkeeper Configuration related http request.
@@ -58,9 +59,9 @@ public class ConfigurationService implements Service {
         Iterator iterator = conf.getKeys();
         while (iterator.hasNext()) {
             String key = iterator.next().toString();
-            List values = conf.getList(key);
-            if (values.size() > 0) {
-                configMap.put(key, values.get(0));
+            Object property = conf.getProperty(key);
+            if (property != null) {
+                configMap.put(key, property.toString());
             }
         }
         return configMap;

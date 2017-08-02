@@ -2027,10 +2027,10 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Sets that whether the http server can start along with auto-recovery service
+     * Set whether to start the http server or not
      *
      * @param enabled
-     *            - true if need to start http server with auto-recovery
+     *            - true if we should start http server
      * @return ServerConfiguration
      */
     public ServerConfiguration setHttpServerEnabled(boolean enabled) {
@@ -2039,9 +2039,9 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get whether the http server start with auto-recovery service or not
+     * Get whether to start the http server or not
      *
-     * @return true - if http server should start with auto-recovery service
+     * @return true - if http server should start
      */
     public boolean isHttpServerEnabled() {
         return getBoolean(HTTP_SERVER_ENABLED, false);

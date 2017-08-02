@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.http;
 
+import org.apache.bookkeeper.http.service.HeartbeatService;
 import org.apache.bookkeeper.http.service.NullService;
 import org.apache.bookkeeper.http.service.Service;
 
@@ -34,7 +35,7 @@ public class NullServiceProvider implements ServiceProvider {
 
     @Override
     public Service provideHeartbeatService() {
-        return NULL_SERVICE;
+        return new HeartbeatService();
     }
 
     @Override

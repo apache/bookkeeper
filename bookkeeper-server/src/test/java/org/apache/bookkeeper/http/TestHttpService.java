@@ -25,6 +25,7 @@ import java.util.Map;
 import org.apache.bookkeeper.http.service.Service;
 import org.apache.bookkeeper.http.service.ServiceResponse;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.util.JsonUtil;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
