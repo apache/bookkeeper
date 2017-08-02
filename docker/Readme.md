@@ -63,13 +63,14 @@ docker run -it\
 And so on for "bookie2" and "bookie3". We have now our fully functional ensemble, ready to accept clients.
 
 In order to play with our freshly created ensemble, you can use the simple application taken from [Bookkeeper Tutorial](http://bookkeeper.apache.org/docs/master/bookkeeperTutorial.html) and packaged in a [docker image](https://github.com/caiok/bookkeeper-tutorial) for convenience.
+
 This application check if it can be leader, if yes start to roll a dice and book this rolls on bookkeeper, otherwise it will start to follow the leader rolls. If leader stops, follower will try to become leader and so on.
 
 Start a dice application (you can run it several times to view the behavior in a concurrent environment):
 ```
 docker run -it --rm \
     --network "my-bookkeeper-network" \
-    --env ZOOKEEPER_SERVERS=my-zookkeeper:2181 \
+    --env ZK_URL=my-zookkeeper:2181 \
     caiok/bookkeeper-tutorial
 ```
 
@@ -78,6 +79,7 @@ docker run -it --rm \
 Bookkeeper configuration is located in `/opt/bookkeeper/conf` in the docker container, it is a copy of [these files](https://github.com/apache/bookkeeper/tree/master/bookkeeper-server/conf) in bookkeeper repo.
 
 There are 2 ways to set bookkeeper configuration:
+
 1, Apply setted (e.g. docker -e kk=vv) environment variables into configuration files.
 
 2, If you are able to handle your local volumes, use `docker --volume` command to bind-mount your local configure volumes to `/opt/bookkeeper/conf`.
@@ -94,22 +96,26 @@ $ docker run --name bookie1 -d \
 ```
 
 ### Override rules for bookkeeper configuration
-If you have applied several ways to set the same config target, e.g. the environment variable names with ALL_CAPITAL_CHAR, environment variable names contained in [these files](https://github.com/apache/bookkeeper/tree/master/bookkeeper-server/conf) and conf_file in /opt/bookkeeper/conf/,
-then the override rules is as this:
+If you have applied several ways to set the same config target, e.g. the environment variable names with ALL_CAPITAL_CHAR, environment variable names contained in [these files](https://github.com/apache/bookkeeper/tree/master/bookkeeper-server/conf) and conf_file in /opt/bookkeeper/conf/.
+
+Then the override rules is as this:
 
 Environment variable names contained in [these files](https://github.com/apache/bookkeeper/tree/master/bookkeeper-server/conf), e.g. `zkServers`
 
-    *Override*
+    Override
 
 Environment variable names with ALL_CAPITAL_CHAR, e.g. `ZK_URL`
 
-    *Override*
+    Override
 
 Values in /opt/bookkeeper/conf/conf_files.
 
 Take above example, if in docker instance you have bind-mount your config file as /opt/bookkeeper/conf/bk_server.conf, and in it contains key-value pair: `zkServers=zk-server4:2181`, then the value that take effect finally is `zkServers=zk-server3:2181`
+
 Here is how this comes:
+
 `-e zkServers=zk-server3:2181` will first override `-e ZK_URL=zk-server1:2181,zk-server2:2181 \`,
+
 and then override key-value pair: `zkServers=zk-server4:2181`, which contained in /opt/bookkeeper/conf/bk_server.conf.
 
 
