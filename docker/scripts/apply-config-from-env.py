@@ -36,10 +36,12 @@ def mylistdir(dir):
     return [os.path.join(dir, filename) for filename in os.listdir(dir)]
 
 # Always apply env config to all the files under conf
-conf_dir=sys.argv[1]
+conf_dir = sys.argv[1]
 conf_files = mylistdir(conf_dir)
 print 'conf files: '
 print conf_files
+
+bk_env_prefix = 'BK_'
 
 for conf_filename in conf_files:
     lines = []  # List of config file lines
@@ -67,10 +69,11 @@ for conf_filename in conf_files:
     # Update values from Env
     for k in sorted(os.environ.keys()):
         v = os.environ[k]
-        if k in keys:
-            print '[%s] Applying config %s = %s' % (conf_filename, k, v)
-            idx = keys[k]
-            lines[idx] = '%s=%s\n' % (k, v)
+        search_key = k.lstrip(bk_env_prefix)
+        if search_key in keys:
+            print '[%s] Applying config %s = %s' % (conf_filename, search_key, v)
+            idx = keys[search_key]
+            lines[idx] = '%s=%s\n' % (search_key, v)
 
     # Store back the updated config in the same file
     f = open(conf_filename, 'w')

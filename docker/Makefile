@@ -33,7 +33,7 @@ DOCKER_HOSTNAME = $(shell hostname)
 BK_LOCAL_DATA_DIR = /tmp/test_bk
 BK_LOCAL_CONTAINER_DATA_DIR = $(BK_LOCAL_DATA_DIR)/$(CONTAINER_NAME)
 BK_DIR = /data
-BK_LEDGERS_PATH = /ledgers
+BK_zkLedgersRootPath = /ledgers
 
 ZK_CONTAINER_NAME=test_zookeeper
 ZK_LOCAL_DATA_DIR=$(BK_LOCAL_DATA_DIR)/zookkeeper
@@ -80,8 +80,8 @@ run-bk:
 	    --volume $(BK_LOCAL_CONTAINER_DATA_DIR)/index:$(BK_DIR)/index \
 	    --name "$(CONTAINER_NAME)" \
 	    --hostname "$(CONTAINER_NAME)" \
-	    --env ZK_URL=$(ZK_CONTAINER_NAME):2181 \
-	    --env BK_LEDGERS_PATH=$(BK_LEDGERS_PATH) \
+	    --env BK_zkServers=$(ZK_CONTAINER_NAME):2181 \
+	    --env BK_zkLedgersRootPath=$(BK_zkLedgersRootPath) \
 	    $(IMAGE)
 
 # -------------------------------- #
@@ -92,7 +92,7 @@ run-bk:
 run-format:
 	docker run -it --rm \
 		--network $(DOCKER_NETWORK) \
-		--env ZK_URL=$(ZK_CONTAINER_NAME):2181 \
+		--env BK_zkServers=$(ZK_CONTAINER_NAME):2181 \
 		$(IMAGE) \
 		bookkeeper shell metaformat $(FORMAT_OPTS)
 

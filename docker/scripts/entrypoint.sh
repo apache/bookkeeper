@@ -24,39 +24,48 @@ export PATH=$PATH:/opt/bookkeeper/bin
 export JAVA_HOME=/usr
 
 # env var used often
-PORT0=${PORT0:-$BK_PORT}
+PORT0=${PORT0:-${BOOKIE_PORT}}
 PORT0=${PORT0:-3181}
-ZK_URL=${ZK_URL:-127.0.0.1:2181}
 BK_DATA_DIR=${BK_DATA_DIR:-"/bkdata"}
 BK_CLUSTER_NAME=${BK_CLUSTER_NAME:-"bookkeeper"}
-BK_LEDGERS_PATH=${BK_LEDGERS_PATH:-"/${BK_CLUSTER_NAME}/ledgers"}
-
-echo "bookie service port0 is $PORT0 "
-echo "ZK_URL is $ZK_URL"
-echo "BK_DATA_DIR is $BK_DATA_DIR"
-echo "BK_LEDGERS_PATH is $BK_LEDGERS_PATH"
 
 # env vars to replace values in config files
-export bookiePort=${bookiePort:-${PORT0}}
-export zkServers=${zkServers:-${ZK_URL}}
-export zkLedgersRootPath=${zkLedgersRootPath:-${BK_LEDGERS_PATH}}
-export journalDirectory=${journalDirectory:-${BK_DATA_DIR}/journal}
-export ledgerDirectories=${ledgerDirectories:-${BK_DATA_DIR}/ledgers}
-export indexDirectories=${indexDirectories:-${BK_DATA_DIR}/index}
+export BK_bookiePort=${BK_bookiePort:-${PORT0}}
+export BK_zkServers=${BK_zkServers:-127.0.0.1:2181}
+export BK_zkLedgersRootPath=${BK_zkLedgersRootPath:-"/${BK_CLUSTER_NAME}/ledgers"}
+export BK_journalDirectory=${BK_journalDirectory:-${BK_DATA_DIR}/journal}
+export BK_ledgerDirectories=${BK_ledgerDirectories:-${BK_DATA_DIR}/ledgers}
+export BK_indexDirectories=${BK_indexDirectories:-${BK_DATA_DIR}/index}
+
+echo "BK_bookiePort bookie service port is $BK_bookiePort"
+echo "BK_zkServers is $BK_zkServers"
+echo "BK_DATA_DIR is $BK_DATA_DIR"
+echo "BK_CLUSTER_NAME is $BK_CLUSTER_NAME"
+
+
+mkdir -p "${BK_journalDirectory}" "${BK_ledgerDirectories}" "${BK_indexDirectories}"
+# -------------- #
+# Allow the container to be started with `--user`
+if [ "$1" = 'bookkeeper' -a "$(id -u)" = '0' ]; then
+    chown -R "$BK_USER:$BK_USER" "/opt/bookkeeper/" "${BK_journalDirectory}" "${BK_ledgerDirectories}" "${BK_indexDirectories}"
+    sudo -s -E -u "$BK_USER" /bin/bash "$0" "$@"
+    exit
+fi
+# -------------- #
 
 python apply-config-from-env.py /opt/bookkeeper/conf
 
 echo "wait for zookeeper"
-until /opt/zk/bin/zkCli.sh -server $ZK_URL ls /; do sleep 2; done
+until /opt/zk/bin/zkCli.sh -server ${BK_zkServers} ls /; do sleep 2; done
 
 echo "create the zk root"
-/opt/zk/bin/zkCli.sh -server $ZK_URL create /${BK_CLUSTER_NAME}
+/opt/zk/bin/zkCli.sh -server ${BK_zkServers} create /${BK_CLUSTER_NAME}
 
 echo "format zk metadata"
 echo "please ignore the failure, if it has already been formatted, "
 export BOOKIE_CONF=/opt/bookkeeper/conf/bk_server.conf
 export SERVICE_PORT=$PORT0
-/opt/bookkeeper/bin/bookkeeper shell metaformat -n
+/opt/bookkeeper/bin/bookkeeper shell metaformat -n || true
 
 echo "run command by exec"
 exec "$@"
