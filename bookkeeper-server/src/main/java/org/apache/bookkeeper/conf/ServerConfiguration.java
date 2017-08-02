@@ -2066,7 +2066,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Get the truststore type for client. Default is JKS.
-     * 
+     *
      * @return
      */
     public String getTLSTrustStoreType() {
