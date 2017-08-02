@@ -23,6 +23,7 @@ package org.apache.bookkeeper.http.twitter;
 
 import java.net.InetSocketAddress;
 
+import org.apache.bookkeeper.http.HttpRouter;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.ServiceProvider;
 import org.slf4j.Logger;
@@ -31,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import com.twitter.finagle.Http;
 import com.twitter.finagle.ListeningServer;
 import com.twitter.finagle.http.HttpMuxer;
+import com.twitter.finagle.http.HttpMuxer$;
 import com.twitter.server.AbstractTwitterServer;
 
 /**
@@ -51,14 +53,17 @@ public class TwitterHttpServer extends AbstractTwitterServer implements HttpServ
     }
 
     @Override
-    public void startServer(int port) {
+    public boolean startServer(int port) {
         try {
             this.port = port;
             this.main();
+            isRunning = true;
             LOG.info("Twitter HTTP server started successfully");
+            return true;
         } catch (Throwable throwable) {
             LOG.error("Failed to start Twitter Http Server", throwable);
         }
+        return false;
     }
 
     @Override
@@ -78,12 +83,15 @@ public class TwitterHttpServer extends AbstractTwitterServer implements HttpServ
     public void main() throws Throwable {
         LOG.info("Starting Twitter HTTP server on port {}", port);
         TwitterHandlerFactory handlerFactory = new TwitterHandlerFactory(serviceProvider);
-        HttpMuxer muxer = new HttpMuxer()
-            .withHandler(HEARTBEAT, handlerFactory.newHeartbeatHandler())
-            .withHandler(SERVER_CONFIG, handlerFactory.newConfigurationHandler());
+        HttpRouter<TwitterAbstractHandler> requestRouter = new HttpRouter<TwitterAbstractHandler>(handlerFactory) {
+            @Override
+            public void bindHandler(String endpoint, TwitterAbstractHandler handler) {
+                HttpMuxer.addHandler(endpoint, handler);
+            }
+        };
+        requestRouter.bindAll();
         InetSocketAddress addr = new InetSocketAddress(port);
-        server = Http.server().serve(addr, muxer);
-        isRunning = true;
+        server = Http.server().serve(addr, HttpMuxer$.MODULE$);
     }
 
     @Override

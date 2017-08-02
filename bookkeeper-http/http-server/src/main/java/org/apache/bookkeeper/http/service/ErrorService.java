@@ -26,8 +26,17 @@ import org.apache.bookkeeper.http.HttpServer;
  * Service that return internal server error.
  */
 public class ErrorService implements Service {
+
+    private HttpServer.StatusCode statusCode = HttpServer.StatusCode.INTERNAL_ERROR;
+
+    public ErrorService() {}
+
+    public ErrorService(HttpServer.StatusCode statusCode) {
+        this.statusCode = statusCode;
+    }
+
     @Override
     public ServiceResponse handle(ServiceRequest request) {
-        return new ServiceResponse().setCode(HttpServer.StatusCode.INTERNAL_ERROR);
+        return new ServiceResponse().setCode(statusCode);
     }
 }

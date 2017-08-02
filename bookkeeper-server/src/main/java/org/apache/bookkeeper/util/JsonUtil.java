@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.bookkeeper.http;
+package org.apache.bookkeeper.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -27,8 +27,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public class JsonUtil {
 
+    private static ObjectMapper mapper = new ObjectMapper();
+
     public static String toJson(Object object) throws ParseJsonException {
-        ObjectMapper mapper = new ObjectMapper();
         try {
             return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(object);
         } catch (Exception e) {
@@ -37,11 +38,10 @@ public class JsonUtil {
     }
 
     public static <T> T fromJson(String jsonStr, Class<T> valueType) throws ParseJsonException {
-        ObjectMapper mapper = new ObjectMapper();
         try {
             return mapper.readValue(jsonStr, valueType);
         }  catch (Exception e) {
-            throw new ParseJsonException("Failed to deserialize Object from Json String");
+            throw new ParseJsonException("Failed to deserialize Object from Json string");
         }
     }
 

@@ -26,8 +26,11 @@ import org.apache.bookkeeper.http.HttpServer;
  * Service that serve heartbeat request.
  */
 public class HeartbeatService implements Service {
+
+    public static final String HEARTBEAT = "OK\n";
+
     @Override
     public ServiceResponse handle(ServiceRequest request) {
-        return new ServiceResponse("OK\n", HttpServer.StatusCode.OK);
+        return new ServiceResponse(HEARTBEAT, HttpServer.StatusCode.OK);
     }
 }
