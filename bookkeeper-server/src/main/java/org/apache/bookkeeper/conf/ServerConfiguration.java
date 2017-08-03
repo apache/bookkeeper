@@ -149,7 +149,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     // Bookie auth provider factory class name
     protected final static String BOOKIE_AUTH_PROVIDER_FACTORY_CLASS = "bookieAuthProviderFactoryClass";
-    
+
     protected final static String MIN_USABLESIZE_FOR_INDEXFILE_CREATION = "minUsableSizeForIndexFileCreation";
 
     protected final static String ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION = "allowMultipleDirsUnderSameDiskPartition";
@@ -1345,7 +1345,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set the number of bytes w used as chunk allocation for
+     * Set the number of bytes we used as chunk allocation for
      * org.apache.bookkeeper.bookie.SkipListArena
      *
      * @param size chunk size.
