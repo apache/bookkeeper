@@ -134,8 +134,6 @@ run-demo:
 	$(eval WAIT_CMD := read -p 'Press Enter to close...')
 	$(TERMINAL_EMULATOR) -e "bash -l -c \"make run-zk ; $(WAIT_CMD)"\"
 	sleep 3
-	#$(TERMINAL_EMULATOR) -e "bash -c \"make run-format FORMAT_OPTS=-nonInteractive ; make run-bk BOOKIE=1 ; $(WAIT_CMD)\""
-	#sleep 3
 	$(TERMINAL_EMULATOR) -e "bash -l -c \"make run-bk BOOKIE=1 TRY_METAFORMAT=true; $(WAIT_CMD)\""
 	$(TERMINAL_EMULATOR) -e "bash -l -c \"make run-bk BOOKIE=2 TRY_METAFORMAT=true; $(WAIT_CMD)\""
 	$(TERMINAL_EMULATOR) -e "bash -l -c \"make run-bk BOOKIE=3 TRY_METAFORMAT=true; $(WAIT_CMD)\""
@@ -188,7 +186,6 @@ info ip:
 # -------------------------------- #
 
 clean-files:
-	
 
 clean:
 	-docker stop $(CONTAINER_NAME)

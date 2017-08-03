@@ -26,7 +26,7 @@ export JAVA_HOME=/usr
 # env var used often
 PORT0=${PORT0:-${BOOKIE_PORT}}
 PORT0=${PORT0:-3181}
-BK_DATA_DIR=${BK_DATA_DIR:-"/bkdata"}
+BK_DATA_DIR=${BK_DATA_DIR:-"/data/bookkeeper"}
 BK_CLUSTER_NAME=${BK_CLUSTER_NAME:-"bookkeeper"}
 
 # env vars to replace values in config files
@@ -56,7 +56,7 @@ fi
 python apply-config-from-env.py /opt/bookkeeper/conf
 
 echo "wait for zookeeper"
-until /opt/zk/bin/zkCli.sh -server ${BK_zkServers} ls /; do sleep 2; done
+until /opt/bookkeeper/bin/bookkeeper org.apache.zookeeper.ZooKeeperMain -server ${BK_zkServers} ls /; do sleep 2; done
 
 echo "create the zk root"
 /opt/zk/bin/zkCli.sh -server ${BK_zkServers} create /${BK_CLUSTER_NAME}

@@ -22,7 +22,7 @@ MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
 ARG BK_VERSION=4.4.0
 ARG DISTRO_NAME=bookkeeper-server-${BK_VERSION}-bin
-ARG ZK_VERSION=3.5.2-alpha
+ARG GPG_KEY=B3D56514
 
 ENV BOOKIE_PORT=3181
 EXPOSE $BOOKIE_PORT
@@ -31,20 +31,20 @@ ENV BK_USER=bookkeeper
 # Download Apache Bookkeeper and zookeeper, untar and clean up
 RUN set -x \
     && adduser "${BK_USER}" \
-    && yum install -y java-1.8.0-openjdk-headless wget bash python md5sum \
+    && yum install -y java-1.8.0-openjdk-headless wget bash python md5sum sha1sum \
     && mkdir -pv /opt \
     && cd /opt \
     && wget -q "https://archive.apache.org/dist/bookkeeper/bookkeeper-${BK_VERSION}/${DISTRO_NAME}.tar.gz" \
+    && wget -q "https://archive.apache.org/dist/bookkeeper/bookkeeper-${BK_VERSION}/${DISTRO_NAME}.tar.gz.asc" \
     && wget -q "https://archive.apache.org/dist/bookkeeper/bookkeeper-${BK_VERSION}/${DISTRO_NAME}.tar.gz.md5" \
+    && wget -q "https://archive.apache.org/dist/bookkeeper/bookkeeper-${BK_VERSION}/${DISTRO_NAME}.tar.gz.sha1" \
     && md5sum -c ${DISTRO_NAME}.tar.gz.md5 \
+    && sha1sum -c ${DISTRO_NAME}.tar.gz.sha1 \
+    && gpg --keyserver ha.pool.sks-keyservers.net --recv-key "$GPG_KEY" \
+    && gpg --batch --verify "$DISTRO_NAME.tar.gz.asc" "$DISTRO_NAME.tar.gz" \
     && tar -xzf "$DISTRO_NAME.tar.gz" \
     && mv bookkeeper-server-${BK_VERSION}/ /opt/bookkeeper/ \
-    && wget -q http://www.apache.org/dist/zookeeper/zookeeper-${ZK_VERSION}/zookeeper-${ZK_VERSION}.tar.gz \
-    && wget -q http://www.apache.org/dist/zookeeper/zookeeper-${ZK_VERSION}/zookeeper-${ZK_VERSION}.tar.gz.md5 \
-    && md5sum -c zookeeper-${ZK_VERSION}.tar.gz.md5 \
-    && tar -xzf  zookeeper-${ZK_VERSION}.tar.gz \
-    && mv zookeeper-${ZK_VERSION}/ /opt/zk/ \
-    && rm -rf "$DISTRO_NAME.tar.gz" "zookeeper-${ZK_VERSION}.tar.gz" \
+    && rm -rf "$DISTRO_NAME.tar.gz" "$DISTRO_NAME.tar.gz.asc" "$DISTRO_NAME.tar.gz.md5" "$DISTRO_NAME.tar.gz.sha1" \
     && yum remove -y wget \
     && yum clean all
 

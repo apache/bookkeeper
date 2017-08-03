@@ -69,11 +69,12 @@ for conf_filename in conf_files:
     # Update values from Env
     for k in sorted(os.environ.keys()):
         v = os.environ[k]
-        search_key = k.lstrip(bk_env_prefix)
-        if search_key in keys:
-            print '[%s] Applying config %s = %s' % (conf_filename, search_key, v)
-            idx = keys[search_key]
-            lines[idx] = '%s=%s\n' % (search_key, v)
+        if k.startswith(bk_env_prefix):
+            search_key = k[len(bk_env_prefix):]
+            if search_key in keys:
+                print '[%s] Applying config %s = %s' % (conf_filename, search_key, v)
+                idx = keys[search_key]
+                lines[idx] = '%s=%s\n' % (search_key, v)
 
     # Store back the updated config in the same file
     f = open(conf_filename, 'w')
