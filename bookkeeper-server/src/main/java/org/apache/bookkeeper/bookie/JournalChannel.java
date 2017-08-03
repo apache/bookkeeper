@@ -216,6 +216,8 @@ class JournalChannel implements Closeable {
         }
         if (fRemoveFromPageCache) {
             this.fd = NativeIO.getSysFileDescriptor(randomAccessFile.getFD());
+        } else {
+            this.fd = -1;
         }
     }
 
