@@ -582,6 +582,10 @@ public class ServerConfiguration extends AbstractConfiguration {
     /**
      * Get the configured advertised address for the bookie.
      *
+     * If present, this setting will take precedence over the
+     * {@link #setListeningInterface(String)} and
+     * {@link #setUseHostNameAsBookieID(boolean)}.
+     *
      * @see #setAdvertisedAddress(String)
      * @return the configure address to be advertised
      */
@@ -597,6 +601,10 @@ public class ServerConfiguration extends AbstractConfiguration {
      *
      * When the advertised is set to a non-empty string, the bookie will
      * register and advertise using this address.
+     *
+     * If present, this setting will take precedence over the
+     * {@link #setListeningInterface(String)} and
+     * {@link #setUseHostNameAsBookieID(boolean)}.
      *
      * @see #getAdvertisedAddress()
      * @param allow
