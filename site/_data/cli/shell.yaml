@@ -3,14 +3,14 @@ commands:
   description: Enable or disable autorecovery in the cluster.
   options:
   - flag: -enable
-    description: Enable auto recovery of underreplicated ledgers
+    description: Enable autorecovery of underreplicated ledgers
   - flag: -disable
-    description: Disable auto recovery of underreplicated ledgers
+    description: Disable autorecovery of underreplicated ledgers
 - name: bookieFormat
   description: Format the current server contents.
   options:
   - flag: -nonInteractive
-    description: Whether to confirm if old data exists..?
+    description: Whether to confirm if old data exists.
   - flag: -force
     description: If [nonInteractive] is specified, then whether to force delete the old data without prompt..?
   - flag: -deleteCookie
@@ -18,7 +18,7 @@ commands:
 - name: bookieinfo
   description: Retrieve bookie info such as free and total disk space.
 - name: bookiesanity
-  description: Sanity test for local bookie. Create ledger and write/reads entries on local bookie.
+  description: Sanity test for local bookie. Create ledger and write/read entries on the local bookie.
   options:
   - flag: -entries N
     description: Total entries to be added for the test (default 10)
@@ -62,25 +62,25 @@ commands:
   description: List the files in JournalDirectory/LedgerDirectories/IndexDirectories.
   options:
   - flag: -journal
-    description: Print list of Journal Files
+    description: Print list of journal files
   - flag: -entrylog
-    description: Print list of EntryLog Files
+    description: Print list of entryLog files
   - flag: -index
-    description: Print list of Index files
+    description: Print list of index files
 - name: listledgers
-  description: List all ledgers on the cluster (this may take a long time).
+  description: List all ledgers in the cluster (this may take a long time).
   options:
   - flag: -meta
     description: Print metadata
 - name: listunderreplicated
-  description: List ledgers marked as underreplicated, with optional options to specify missingreplica (BookieId) and to exclude missingreplica.
+  description: List ledgers marked as underreplicated, with optional options to specify missing replica (BookieId) and to exclude missing replica.
   options:
   - flag: -missingreplica N
     description: Bookie Id of missing replica
   - flag: -excludingmissingreplica N
     description: Bookie Id of missing replica to ignore
 - name: metaformat
-  description: Format bookkeeper metadata in zookeeper.
+  description: Format Bookkeeper metadata in Zookeeper.
   options:
   - flag: -nonInteractive
     description: Whether to confirm if old data exists..?
