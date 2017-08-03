@@ -82,6 +82,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String BOOKIE_PORT = "bookiePort";
     protected final static String LISTENING_INTERFACE = "listeningInterface";
     protected final static String ALLOW_LOOPBACK = "allowLoopback";
+    protected final static String ADVERTISED_ADDRESS = "advertisedAddress";
     protected final static String ALLOW_EPHEMERAL_PORTS = "allowEphemeralPorts";
 
     protected final static String JOURNAL_DIR = "journalDirectory";
@@ -575,6 +576,43 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public ServerConfiguration setAllowLoopback(boolean allow) {
         this.setProperty(ALLOW_LOOPBACK, allow);
+        return this;
+    }
+
+    /**
+     * Get the configured advertised address for the bookie.
+     *
+     * If present, this setting will take precedence over the
+     * {@link #setListeningInterface(String)} and
+     * {@link #setUseHostNameAsBookieID(boolean)}.
+     *
+     * @see #setAdvertisedAddress(String)
+     * @return the configure address to be advertised
+     */
+    public String getAdvertisedAddress() {
+        return this.getString(ADVERTISED_ADDRESS, null);
+    }
+
+    /**
+     * Configure the bookie to advertise a specific address.
+     *
+     * By default, a bookie will advertise either its own IP or hostname,
+     * depending on the {@link getUseHostNameAsBookieID()} setting.
+     *
+     * When the advertised is set to a non-empty string, the bookie will
+     * register and advertise using this address.
+     *
+     * If present, this setting will take precedence over the
+     * {@link #setListeningInterface(String)} and
+     * {@link #setUseHostNameAsBookieID(boolean)}.
+     *
+     * @see #getAdvertisedAddress()
+     * @param allow
+     *            whether to allow loopback interfaces
+     * @return server configuration
+     */
+    public ServerConfiguration setAdvertisedAddress(String advertisedAddress) {
+        this.setProperty(ADVERTISED_ADDRESS, advertisedAddress);
         return this;
     }
 

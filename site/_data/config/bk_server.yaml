@@ -26,6 +26,12 @@ groups:
   - param: listeningInterface
     description: The network interface that the bookie should listen on. If not set, the bookie will listen on all interfaces.
     default: eth0
+  - param: advertisedAddress
+    description: |
+      Configure a specific hostname or IP address that the bookie should use to advertise itself to
+      clients. If not set, bookie will advertised its own IP address or hostname, depending on the
+      `listeningInterface` and `useHostNameAsBookieID` settings.
+    default: eth0
   - param: allowLoopback
     description: |
       Whether the bookie is allowed to use a loopback interface as its primary
