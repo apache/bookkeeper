@@ -45,8 +45,8 @@ public class PrometheusStatsLogger implements StatsLogger {
 
     @Override
     public <T extends Number> void registerGauge(String name, Gauge<T> gauge) {
-        io.prometheus.client.Gauge.build().name(completeName(name)).help("-").create()
-                .setChild(new io.prometheus.client.Gauge.Child() {
+        PrometheusUtil.safeRegister(registry, io.prometheus.client.Gauge.build().name(completeName(name)).help("-")
+                .create().setChild(new io.prometheus.client.Gauge.Child() {
                     @Override
                     public double get() {
                         Number value = null;
@@ -61,7 +61,7 @@ public class PrometheusStatsLogger implements StatsLogger {
                         }
                         return value.doubleValue();
                     }
-                }).register(registry);
+                }));
     }
 
     @Override
