@@ -152,6 +152,24 @@ while (entries.hasNextElement()) {
 }
 ```
 
+### Reading entries after the LastAddConfirmed range
+
+`readUnconfirmedEntries` allowing to read after the LastAddConfirmed range.
+It lets the client read without checking the local value of LastAddConfirmed, so that it is possible to read entries for which the writer has not received the acknowledge yet
+For entries which are within the range 0..LastAddConfirmed BookKeeper guarantees that the writer has successfully received the acknowledge.
+For entries outside that range it is possible that the writer never received the acknowledge and so there is the risk that the reader is seeing entries before the writer and this could result in a consistency issue in some cases.
+With this method you can even read entries before the LastAddConfirmed and entries after it with one call, the expected consistency will be as described above.
+
+```java
+Enumerator<LedgerEntry> entries =
+  handle.readUnconfirmedEntries(0, lastEntryIdExpectedToRead);
+
+while (entries.hasNextElement()) {
+    LedgerEntry entry = entries.nextElement();
+    System.out.println("Successfully read entry " + entry.getId());
+}
+```
+
 ## Deleting ledgers
 
 {% pop Ledgers %} can also be deleted synchronously or asynchronously.
