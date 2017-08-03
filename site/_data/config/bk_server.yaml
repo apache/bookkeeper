@@ -4,12 +4,25 @@ groups:
   - param: bookiePort
     description: The port that the bookie server listens on.
     default: 3181
+  - param: journalDirectories
+    description: |
+      The directories to which Bookkeeper outputs its write-ahead log (WAL).  Could define multi directories to store write head logs, separated by ','.
+      For example:
+        journalDirectories=/tmp/bk-journal1,/tmp/bk-journal2
+      If journalDirectories is set, bookies will skip journalDirectory and use this setting directory.
+    default: /tmp/bk-journal
   - param: journalDirectory
     description: The directory to which Bookkeeper outputs its write-ahead log (WAL).
     default: /tmp/bk-txn
+  - param: allowMultipleDirsUnderSameDiskPartition
+    description: Configure the bookie to allow/disallow multiple ledger/index/journal directories in the same filesystem disk partition
+    default: false
   - param: indexDirectories
     description: The directories in which index files are stored. If not specified, the value of [`ledgerDirectories`](#ledgerDirectories) will be used.
     default: /tmp/bk-data
+  - param: minUsableSizeForIndexFileCreation
+    description: Minimum safe usable size to be available in index directory for bookie to create index file while replaying journal at the time of bookie start in readonly mode (in bytes)
+    default: 1073741824
   - param: listeningInterface
     description: The network interface that the bookie should listen on. If not set, the bookie will listen on all interfaces.
     default: eth0
@@ -35,9 +48,24 @@ groups:
   - param: explicitLacInterval
     description: Interval between sending an explicit LAC in seconds
     default: 1
-  - param: lostBookieRecoveryDelay
-    description: How long to wait, in seconds, before starting autorecovery of a lost bookie.
-    default: 0
+  - param: allowEphemeralPorts
+    description: Whether the bookie is allowed to use an ephemeral port (port 0) as its server port. By default, an ephemeral port is not allowed. Using an ephemeral port as the service port usually indicates a configuration error. However, in unit tests, using an ephemeral port will address port conflict problems and allow running tests in parallel.
+    default: 'false'
+  - param: enableLocalTransport
+    description: Whether allow the bookie to listen for BookKeeper clients executed on the local JVM.
+    default: 'false'
+  - param: disableServerSocketBind
+    description: Whether allow the bookie to disable bind on network interfaces, this bookie will be available only to BookKeeper clients executed on the local JVM.
+    default: 'false'
+  - param: skipListArenaChunkSize
+    description: The number of bytes we should use as chunk allocation for org.apache.bookkeeper.bookie.SkipListArena
+    default: 4194304
+  - param: skipListArenaMaxAllocSize
+    description: The max size we should allocate from the skiplist arena. Allocations larger than this should be allocated directly by the VM to avoid fragmentation.
+    default: 131072
+  - param: bookieAuthProviderFactoryClass
+    description: The bookie authentication provider factory class name. If this is null, no authentication will take place.
+    default: null
 
 - name: Garbage collection settings
   params:
@@ -53,6 +81,56 @@ groups:
   - param: numReadWorkerThreads
     description: The umber of threads that handle read requests. If 0, reads are handled by [Netty threads](http://netty.io/wiki/thread-model.html) directly.
     default: 1
+  - param: isForceGCAllowWhenNoSpace
+    description: Whether force compaction is allowed when the disk is full or almost full. Forcing GC may get some space back, but may also fill up disk space more quickly. This is because new log files are created before GC, while old garbage log files are deleted after GC.
+    default: 'false'
+
+- name: TSL settings
+  params:
+  - param: tslProvider
+    description: TSL Provider (JDK or OpenSSL)
+    default: OpenSSL
+  - param: tslProviderFactoryClass
+    description: The path to the class that provides security.
+    default: org.apache.bookkeeper.security.SSLContextFactory
+  - param: tslClientAuthentication
+    description: Type of security used by server.
+    default: 'true'
+  - param: tslKeyStoreType
+    description: Bookie Keystore type.
+    default: JKS
+  - param: tslKeyStore
+    description: Bookie Keystore location (path).
+    default: null
+  - param: tslKeyStore
+    description: Bookie Keystore location (path).
+    default: null
+  - param: tslKeyStorePasswordPath
+    description: Bookie Keystore password path, if the keystore is protected by a password.
+    default: null
+  - param: tslTrustStoreType
+    description: Bookie Truststore type.
+    default: null
+  - param: tslTrustStore
+    description: Bookie Truststore location (path).
+    default: null
+  - param: tslTrustStorePasswordPath
+    description: Bookie Truststore password path, if the truststore is protected by a password.
+    default: null
+
+
+- name: Long poll request parameter settings
+  params:
+  - param: numLongPollWorkerThreads
+    description: The number of threads that should handle long poll requests.
+    default: 10
+  - param: requestTimerTickDurationMs
+    description: The tick duration in milliseconds for long poll requests.
+    default: 10
+  - param: requestTimerNumTicks
+    description: The number of ticks per wheel for the long poll request timer.
+    default: 1024
+
 
 - name: AutoRecovery settings
   params:
@@ -65,6 +143,12 @@ groups:
   - param: openLedgerRereplicationGracePeriod
     description: The grace period, in seconds, that the replication worker waits before fencing and replicating a ledger fragment that's still being written to upon bookie failure.
     default: 30
+  - param: autoRecoveryDaemonEnabled
+    description: Whether the bookie itself can start auto-recovery service also or not.
+    default: false
+  - param: lostBookieRecoveryDelay
+    description: How long to wait, in seconds, before starting autorecovery of a lost bookie.
+    default: 0
 
 - name: Netty server settings
   params:
@@ -74,9 +158,37 @@ groups:
 
       If you are sending many small messages, such that more than one can fit in a single IP packet, setting server.tcpnodelay to false to enable Nagle algorithm can provide better performance.
     default: 'true'
+  - param: serverSockKeepalive
+    description: This setting is used to send keep-alive messages on connection-oriented sockets.
+    default: 'true'
+  - param: serverTcpLinger
+    description: The socket linger timeout on close. When enabled, a close or shutdown will not return until all queued messages for the socket have been successfully sent or the linger timeout has been reached. Otherwise, the call returns immediately and the closing is done in the background.
+    default: 0
+  - param: byteBufAllocatorSizeInitial
+    description: The Recv ByteBuf allocator initial buf size.
+    default: 65536
+  - param: byteBufAllocatorSizeMin
+    description: The Recv ByteBuf allocator min buf size.
+    default: 65536
+  - param: byteBufAllocatorSizeMax
+    description: The Recv ByteBuf allocator max buf size.
+    default: 1048576
 
 - name: Journal settings
   params:
+  - param: journalFormatVersionToWrite
+    description: |
+      The journal format version to write.
+      Available formats are 1-5:
+       1: no header
+       2: a header section was added
+       3: ledger key was introduced
+       4: fencing key was introduced
+       5: expanding header to 512 and padding writes to align sector size configured by `journalAlignmentSize`
+
+      By default, it is `4`. If you'd like to enable `padding-writes` feature, you can set journal version to `5`.
+      You can disable `padding-writes` by setting journal version back to `4`. This feature is available in 4.5.0 and onward versions.
+    default: 4
   - param: journalMaxSizeMB
     description: Max file size of journal file, in mega bytes. A new journal file will be created when the old one reaches the file size limitation.
     default: 2048
@@ -107,6 +219,15 @@ groups:
   - param: numJournalCallbackThreads
     description: The number of threads that should handle journal callbacks.
     default: 1
+  - param: journalAlignmentSize
+    description: All the journal writes and commits should be aligned to given size. If not, zeros will be padded to align to given size.
+    default: 512
+  - param: journalBufferedEntriesThreshold
+    description: Maximum entries to buffer to impose on a journal write to achieve grouping.
+    default: 0
+  - param: journalFlushWhenQueueEmpty
+    description: If we should flush the journal when journal queue is empty.
+    default: 'false'
 
 - name: Ledger storage settings
   params:
@@ -122,6 +243,12 @@ groups:
 
       Set this to 0 to disable the periodic check completely. Note that periodic checking will put extra load on the cluster, so it should not be run more frequently than once a day.
     default: 604800
+  - param: sortedLedgerStorageEnabled
+    description: Whether sorted-ledger storage enabled (default true)
+    default: 'true'
+  - param: skipListSizeLimit
+    description: The skip list data size limitation (default 64MB) in EntryMemTable
+    default: 67108864L
 
 - name: Ledger cache settings
   params:
@@ -144,7 +271,7 @@ groups:
     description: The ledger manager type, which defines how ledgers are stored, managed, and garbage collected. See the [Ledger Manager](../../getting-started/concepts#ledger-manager) guide for more details.
     default: flat
   - param: zkLedgersRootPath
-    description: Root zookeeper path to store ledger metadata. This parameter is used by zookeeper-based ledger manager as a root znode to store all ledgers.
+    description: Root Zookeeper path to store ledger metadata. This parameter is used by zookeeper-based ledger manager as a root znode to store all ledgers.
     default: /ledgers
 
 - name: Entry log settings
@@ -209,6 +336,10 @@ groups:
   - param: readOnlyModeEnabled
     description: If all ledger directories configured are full, then support only read requests for clients. If "readOnlyModeEnabled=true" then on all ledger disks full, bookie will be converted to read-only mode and serve only read requests. Otherwise the bookie will be shutdown. By default this will be disabled.
     default: 'false'
+  - param: forceReadOnlyBookie
+    description: Whether the bookie is force started in read only mode or not.
+    default: 'false'
+
 
 - name: Disk utilization
   params:
@@ -220,6 +351,9 @@ groups:
     description: |
       Set the disk free space low water mark threshold. Disk is considered full when usage threshold is exceeded. Disk returns back to non-full state when usage is  below low water mark threshold. This prevents it from going back and forth between these states frequently when concurrent writes and compaction are happening. This also prevent bookie from switching frequently between read-only and read-writes states in the same cases.
     default: 0.90
+  - param: diskUsageWarnThreshold
+    description: The disk free space low water mark threshold. Disk is considered full when usage threshold is exceeded. Disk returns back to non-full state when usage is below low water mark threshold. This prevents it from going back and forth between these states frequently when concurrent writes and compaction are happening. This also prevent bookie from switching frequently between read-only and read-writes states in the same cases.
+    default: 0.95
   - param: diskCheckInterval
     description: Disk check interval in milliseconds. Interval to check the ledger dirs usage.
     default: 10000
@@ -228,8 +362,17 @@ groups:
   params:
   - param: zkServers
     description: |
-      A list of one of more servers on which zookeeper is running. The server list can be comma separated values, for example `zkServers=zk1:2181,zk2:2181,zk3:2181`.
+      A list of one of more servers on which Zookeeper is running. The server list can be comma separated values, for example `zkServers=zk1:2181,zk2:2181,zk3:2181`.
     default: "localhost:2181"
   - param: zkTimeout
     description: ZooKeeper client session timeout in milliseconds. Bookie server will exit if it received SESSION_EXPIRED because it was partitioned off from ZooKeeper for more than the session timeout  JVM garbage collection, disk I/O will cause SESSION_EXPIRED. Increment this value could help avoiding this issue.
     default: 10
+  - param: zkRetryBackoffStartMs
+    description: The Zookeeper client backoff retry start time in millis.
+    default: 1000
+  - param: zkRetryBackoffMaxMs
+    description: The Zookeeper client backoff retry max time in millis.
+    default: 10000
+  - param: zkEnableSecurity
+    description: Set ACLs on every node written on ZooKeeper, this way only allowed users will be able to read and write BookKeeper metadata stored on ZooKeeper. In order to make ACLs work you need to setup ZooKeeper JAAS authentication all the bookies and Client need to share the same user, and this is usually done using Kerberos authentication. See ZooKeeper documentation
+    default: 'false'
