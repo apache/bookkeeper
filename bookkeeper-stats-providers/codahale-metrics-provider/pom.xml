@@ -75,7 +75,6 @@
       <artifactId>bookkeeper-stats-api</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
-
     <!-- https://mvnrepository.com/artifact/io.dropwizard.metrics/metrics-core -->
     <dependency>
       <groupId>io.dropwizard.metrics</groupId>
@@ -98,12 +97,6 @@
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
       <version>${guava.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.8.1</version>
-      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>
