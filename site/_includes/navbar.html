@@ -46,7 +46,7 @@
           </a>
           <hr class="dropdown-divider">
           {% for version in site.archived_versions %}
-          <a class="navbar-item" href="{{ site.archived_releases_url }}{{version}}">
+          <a class="navbar-item" href="{{ site.baseurl }}archives/docs/r{{version}}">
             Release {{version}}
             {% if version == site.stable_release %}<span class="tag is-success">Stable</span>{% endif %}
           </a>
