@@ -140,11 +140,11 @@
         <configuration>
           <source>1.8</source>
           <target>1.8</target>
-          <compilerArguments>
-            <Werror />
-            <Xlint:deprecation />
-            <Xlint:unchecked />
-	  </compilerArguments>
+          <compilerArgs>
+            <compilerArg>-Werror</compilerArg>
+            <compilerArg>-Xlint:deprecation</compilerArg>
+            <compilerArg>-Xlint:unchecked</compilerArg>
+	  </compilerArgs>
         </configuration>
       </plugin>
       <plugin>
