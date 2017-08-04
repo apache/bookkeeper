@@ -189,6 +189,8 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerCreateOp.html#adv">adv</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerCreateOp.html" title="class in org.apache.bookkeeper.client">LedgerCreateOp</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#ADVERTISED_ADDRESS">ADVERTISED_ADDRESS</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/AlertStatsLogger.html#alertStatName">alertStatName</a></span> - Variable in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/AlertStatsLogger.html" title="class in org.apache.bookkeeper.stats">AlertStatsLogger</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/stats/AlertStatsLogger.html" title="class in org.apache.bookkeeper.stats"><span class="typeNameLink">AlertStatsLogger</span></a> - Class in <a href="org/apache/bookkeeper/stats/package-summary.html">org.apache.bookkeeper.stats</a></dt>
@@ -1523,6 +1525,10 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerFragment.html#getAddress--">getAddress()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a></dt>
 <dd>
 <div class="block">Gets the failedBookie address</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getAdvertisedAddress--">getAdvertisedAddress()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">Get the configured advertised address for the bookie.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getAllowEphemeralPorts--">getAllowEphemeralPorts()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
@@ -3874,6 +3880,12 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/PrometheusStatsLogger.html#PrometheusStatsLogger-io.prometheus.client.CollectorRegistry-java.lang.String-">PrometheusStatsLogger(CollectorRegistry, String)</a></span> - Constructor for class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/PrometheusStatsLogger.html" title="class in org.apache.bookkeeper.stats">PrometheusStatsLogger</a></dt>
 <dd>&nbsp;</dd>
+<dt><a href="org/apache/bookkeeper/stats/PrometheusUtil.html" title="class in org.apache.bookkeeper.stats"><span class="typeNameLink">PrometheusUtil</span></a> - Class in <a href="org/apache/bookkeeper/stats/package-summary.html">org.apache.bookkeeper.stats</a></dt>
+<dd>
+<div class="block">Container for Prometheus utility methods.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/PrometheusUtil.html#PrometheusUtil--">PrometheusUtil()</a></span> - Constructor for class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/PrometheusUtil.html" title="class in org.apache.bookkeeper.stats">PrometheusUtil</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BKException.Code.html#ProtocolVersionException">ProtocolVersionException</a></span> - Static variable in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BKException.Code.html" title="interface in org.apache.bookkeeper.client">BKException.Code</a></dt>
 <dd>
 <div class="block">Protocol version is wrong (operations are absolutely not executed)</div>
@@ -4411,6 +4423,8 @@
 <dd>
 <div class="block">Implements Delete Callback.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/PrometheusUtil.html#safeRegister-io.prometheus.client.CollectorRegistry-T-">safeRegister(CollectorRegistry, T)</a></span> - Static method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/PrometheusUtil.html" title="class in org.apache.bookkeeper.stats">PrometheusUtil</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.MetadataUpdater.html#safeRun--">safeRun()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ReadOnlyLedgerHandle.MetadataUpdater.html" title="class in org.apache.bookkeeper.client">ReadOnlyLedgerHandle.MetadataUpdater</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#scheduleBookieHealthCheckIfEnabled--">scheduleBookieHealthCheckIfEnabled()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
@@ -4538,6 +4552,10 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#setAddEntryTimeout-int-">setAddEntryTimeout(int)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
 <div class="block">Set timeout for add entry request.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setAdvertisedAddress-java.lang.String-">setAdvertisedAddress(String)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">Configure the bookie to advertise a specific address.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setAllowEphemeralPorts-boolean-">setAllowEphemeralPorts(boolean)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
@@ -5080,7 +5098,7 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setSkipListArenaChunkSize-int-">setSkipListArenaChunkSize(int)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
-<div class="block">Set the number of bytes w used as chunk allocation for
+<div class="block">Set the number of bytes we used as chunk allocation for
  org.apache.bookkeeper.bookie.SkipListArena</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setSkipListSizeLimit-int-">setSkipListSizeLimit(int)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
