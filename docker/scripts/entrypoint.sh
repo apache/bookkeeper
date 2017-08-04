@@ -27,12 +27,12 @@ export JAVA_HOME=/usr
 PORT0=${PORT0:-${BOOKIE_PORT}}
 PORT0=${PORT0:-3181}
 BK_DATA_DIR=${BK_DATA_DIR:-"/data/bookkeeper"}
-BK_CLUSTER_NAME=${BK_CLUSTER_NAME:-" "}
+BK_CLUSTER_ROOT_PATH=${BK_CLUSTER_ROOT_PATH:-" "}
 
 # env vars to replace values in config files
 export BK_bookiePort=${BK_bookiePort:-${PORT0}}
 export BK_zkServers=${BK_zkServers}
-export BK_zkLedgersRootPath=${BK_zkLedgersRootPath:-"${BK_CLUSTER_NAME}/ledgers"}
+export BK_zkLedgersRootPath=${BK_zkLedgersRootPath:-"${BK_CLUSTER_ROOT_PATH}/ledgers"}
 export BK_journalDirectory=${BK_journalDirectory:-${BK_DATA_DIR}/journal}
 export BK_ledgerDirectories=${BK_ledgerDirectories:-${BK_DATA_DIR}/ledgers}
 export BK_indexDirectories=${BK_indexDirectories:-${BK_DATA_DIR}/index}
@@ -40,7 +40,7 @@ export BK_indexDirectories=${BK_indexDirectories:-${BK_DATA_DIR}/index}
 echo "BK_bookiePort bookie service port is $BK_bookiePort"
 echo "BK_zkServers is $BK_zkServers"
 echo "BK_DATA_DIR is $BK_DATA_DIR"
-echo "BK_CLUSTER_NAME is $BK_CLUSTER_NAME"
+echo "BK_CLUSTER_ROOT_PATH is $BK_CLUSTER_ROOT_PATH"
 
 
 mkdir -p "${BK_journalDirectory}" "${BK_ledgerDirectories}" "${BK_indexDirectories}"
@@ -59,7 +59,7 @@ echo "wait for zookeeper"
 until /opt/bookkeeper/bin/bookkeeper org.apache.zookeeper.ZooKeeperMain -server ${BK_zkServers} ls /; do sleep 5; done
 
 echo "create the zk root dir for bookkeeper"
-/opt/zk/bin/zkCli.sh -server ${BK_zkServers} create ${BK_CLUSTER_NAME}
+/opt/zk/bin/zkCli.sh -server ${BK_zkServers} create ${BK_CLUSTER_ROOT_PATH}
 
 echo "format zk metadata"
 echo "please ignore the failure, if it has already been formatted, "

@@ -138,7 +138,7 @@ This will override `zkLedgersRootPath ` in [bk_server.conf](https://github.com/a
 
 Default value is "/bookkeeper/ledgers"
 
-#### `BK_CLUSTER_NAME`
+#### `BK_CLUSTER_ROOT_PATH`
 
 This variable allows you to specify the root directory bookkeeper will use on Zookeeper.
 
