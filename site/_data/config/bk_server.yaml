@@ -51,9 +51,6 @@ groups:
   - param: useHostNameAsBookieID
     description: Whether the bookie should use its hostname to register with the ZooKeeper coordination service. When `false`, the bookie will use its IP address for the registration.
     default: 'false'
-  - param: explicitLacInterval
-    description: Interval between sending an explicit LAC in seconds
-    default: 1
   - param: allowEphemeralPorts
     description: Whether the bookie is allowed to use an ephemeral port (port 0) as its server port. By default, an ephemeral port is not allowed. Using an ephemeral port as the service port usually indicates a configuration error. However, in unit tests, using an ephemeral port will address port conflict problems and allow running tests in parallel.
     default: 'false'
