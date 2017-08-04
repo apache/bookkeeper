@@ -53,11 +53,11 @@ commands:
   description: List the bookies, which are running as either readwrite or readonly mode.
   options:
   - flag: -readwrite
-  description: Print readwrite bookies
+    description: Print readwrite bookies
   - flag: -readonly
-  description: Print readonly bookies
+    description: Print readonly bookies
   - flag: -hostnames
-  description: Also print hostname of the bookie
+    description: Also print hostname of the bookie
 - name: listfilesondisc
   description: List the files in JournalDirectory/LedgerDirectories/IndexDirectories.
   options:
@@ -119,13 +119,12 @@ commands:
     description: End Position
 - name: recover
   description: Recover the ledger data for failed bookie.
-  argument: [-deleteCookie] <bookieSrc> [bookieDest]
+  argument: <bookieSrc> [<bookieDest>]
   options:
   - flag: -deleteCookie
     description: Delete cookie node for the bookie.
 - name: simpletest
   description: Simple test to create a ledger and write entries to it.
-  argument: [-ensemble N] [-writeQuorum N] [-ackQuorum N] [-numEntries N]
   options:
   - flag: -ensemble N
     description: Ensemble size (default 3)
@@ -148,10 +147,10 @@ commands:
   - flag: -bookieId <hostname|ip>
     description: Bookie Id
   - flag: -updatespersec N
-    description: Number of ledgers updating per second (default: 5 per sec)
+    description: Number of ledgers updating per second (default 5 per sec)
   - flag: -limit N
-    description: Maximum number of ledgers to update (default: no limit)
+    description: Maximum number of ledgers to update (default no limit)
   - flag: -verbose
-    description: Print status of the ledger updation (default: false)
+    description: Print status of the ledger updation (default false)
   - flag: -printprogress N
-    description: Print messages on every configured seconds if verbose turned on (default: 10 secs)
+    description: Print messages on every configured seconds if verbose turned on (default 10 secs)
