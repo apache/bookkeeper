@@ -214,7 +214,11 @@ class JournalChannel implements Closeable {
                 LOG.error("Bookie journal file can seek to position :", e);
             }
         }
-        this.fd = NativeIO.getSysFileDescriptor(randomAccessFile.getFD());
+        if (fRemoveFromPageCache) {
+            this.fd = NativeIO.getSysFileDescriptor(randomAccessFile.getFD());
+        } else {
+            this.fd = -1;
+        }
     }
 
     int getFormatVersion() {
