@@ -238,6 +238,7 @@
             <exclude>**/.project</exclude>
             <exclude>**/.settings/*</exclude>
             <exclude>site/**</exclude>
+            <exclude>.repository/**</exclude>
           </excludes>
           <consoleOutput>true</consoleOutput>
         </configuration>
