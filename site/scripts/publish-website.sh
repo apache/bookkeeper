@@ -29,17 +29,20 @@ echo "ORIGIN_REPO: $ORIGIN_REPO"
 (
   cd $APACHE_GENERATED_DIR
 
-  git init
+  rm -rf $TMP_DIR
+  mkdir -p $TMP_DIR
+  cd $TMP_DIR
+
+  # clone the remote repo
+  git clone "https://$ORIGIN_REPO" .
   git config user.name "Apache BookKeeper Site Updater"
   git config user.email "dev@bookkeeper.apache.org"
-
-  git remote add upstream "https://$ORIGIN_REPO"
-  git fetch upstream
-  git reset upstream/asf-site
-
-  touch .
+  # copy the apache generated dir
+  cp -r $APACHE_GENERATED_DIR/* $TMP_DIR/content
 
   git add -A .
   git commit -m "Updated site at revision $REVISION"
-  git push -q upstream HEAD:asf-site
+  git push -q origin HEAD:asf-site
+
+  rm -rf $TMP_DIR
 )

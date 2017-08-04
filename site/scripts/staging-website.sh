@@ -35,7 +35,7 @@ echo "GENERATE SITE DIR: $LOCAL_GENERATED_DIR"
   # clone the remote repo
   git clone "https://$STAGING_REPO" .
   # copy the local generated dir
-  cp -r $LOCAL_GENERATED_DIR/* $TMP_DIR/docs/*
+  cp -r $LOCAL_GENERATED_DIR/* $TMP_DIR/docs/
 
   git add -A .
   git commit -m "Updated site at revision $REVISION"
