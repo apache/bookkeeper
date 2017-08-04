@@ -27,12 +27,12 @@ export JAVA_HOME=/usr
 PORT0=${PORT0:-${BOOKIE_PORT}}
 PORT0=${PORT0:-3181}
 BK_DATA_DIR=${BK_DATA_DIR:-"/data/bookkeeper"}
-BK_CLUSTER_NAME=${BK_CLUSTER_NAME:-"bookkeeper"}
+BK_CLUSTER_NAME=${BK_CLUSTER_NAME:-" "}
 
 # env vars to replace values in config files
 export BK_bookiePort=${BK_bookiePort:-${PORT0}}
-export BK_zkServers=${BK_zkServers:-127.0.0.1:2181}
-export BK_zkLedgersRootPath=${BK_zkLedgersRootPath:-"/${BK_CLUSTER_NAME}/ledgers"}
+export BK_zkServers=${BK_zkServers}
+export BK_zkLedgersRootPath=${BK_zkLedgersRootPath:-"${BK_CLUSTER_NAME}/ledgers"}
 export BK_journalDirectory=${BK_journalDirectory:-${BK_DATA_DIR}/journal}
 export BK_ledgerDirectories=${BK_ledgerDirectories:-${BK_DATA_DIR}/ledgers}
 export BK_indexDirectories=${BK_indexDirectories:-${BK_DATA_DIR}/index}
@@ -56,10 +56,10 @@ fi
 python apply-config-from-env.py /opt/bookkeeper/conf
 
 echo "wait for zookeeper"
-until /opt/bookkeeper/bin/bookkeeper org.apache.zookeeper.ZooKeeperMain -server ${BK_zkServers} ls /; do sleep 2; done
+until /opt/bookkeeper/bin/bookkeeper org.apache.zookeeper.ZooKeeperMain -server ${BK_zkServers} ls /; do sleep 5; done
 
-echo "create the zk root"
-/opt/zk/bin/zkCli.sh -server ${BK_zkServers} create /${BK_CLUSTER_NAME}
+echo "create the zk root dir for bookkeeper"
+/opt/zk/bin/zkCli.sh -server ${BK_zkServers} create ${BK_CLUSTER_NAME}
 
 echo "format zk metadata"
 echo "please ignore the failure, if it has already been formatted, "

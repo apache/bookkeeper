@@ -109,7 +109,7 @@ Take above example, if in docker instance you have bind-mount your config file a
 
 Because
 
-`-e zkServers=zk-server1:2181,zk-server2:2181` will override key-value pair: `zkServers=zk-server3:2181`, which contained in /opt/bookkeeper/conf/bk_server.conf.
+`-e BK_zkServers=zk-server1:2181,zk-server2:2181` will override key-value pair: `zkServers=zk-server3:2181`, which contained in /opt/bookkeeper/conf/bk_server.conf.
 
 
 ### Environment variable names that mostly used for your configuration.
@@ -142,7 +142,7 @@ Default value is "/bookkeeper/ledgers"
 
 This variable allows you to specify the root directory bookkeeper will use on Zookeeper.
 
-Default value is "/bookkeeper"
+Default value is empty - " ". so ledgers dir in zookeeper will be at "/ledgers" by default. You could set it as that you want, e.g. "/bookkeeper"
 
 #### `BK_DATA_DIR`
 This variable allows you to specify where to store data in docker instance.
