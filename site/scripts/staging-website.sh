@@ -29,20 +29,17 @@ echo "GENERATE SITE DIR: $LOCAL_GENERATED_DIR"
 (
   rm -rf $TMP_DIR
   mkdir -p $TMP_DIR
-  cp -r $LOCAL_GENERATED_DIR $TMP_DIR/docs
+
   cd $TMP_DIR
 
-  git init
-
-  git remote add upstream "https://$STAGING_REPO"
-  git fetch upstream
-  git reset upstream/master
-
-  touch .
+  # clone the remote repo
+  git clone "https://$STAGING_REPO" .
+  # copy the local generated dir
+  cp -r $LOCAL_GENERATED_DIR/* $TMP_DIR/docs/*
 
   git add -A .
   git commit -m "Updated site at revision $REVISION"
-  git push -q upstream HEAD:master
+  git push -q origin HEAD:master
 
   rm -rf $TMP_DIR
 )
