@@ -206,20 +206,25 @@ public class LedgerHandleAdv extends LedgerHandle {
             return;
         }
 
+        ByteBuf toSend = null;
         try {
+            toSend = macManager.computeDigestAndPackageForSending(op.getEntryId(), lastAddConfirmed,
+                            currentLength, data);
+            final ByteBuf _toSend = toSend;
             bk.mainWorkerPool.submit(new SafeRunnable() {
                 @Override
                 public void safeRun() {
-                    ByteBuf toSend = macManager.computeDigestAndPackageForSending(op.getEntryId(), lastAddConfirmed,
-                            currentLength, data);
                     try {
-                        op.initiate(toSend, toSend.readableBytes());
+                        op.initiate(_toSend, _toSend.readableBytes());
                     } finally {
-                        toSend.release();
+                        _toSend.release();
                     }
                 }
             });
         } catch (RejectedExecutionException e) {
+            if (toSend != null) {
+                toSend.release();
+            }
             cb.addComplete(bk.getReturnRc(BKException.Code.InterruptedException),
                     LedgerHandleAdv.this, op.getEntryId(), ctx);
         }
