@@ -28,7 +28,7 @@ ENV BOOKIE_PORT=3181
 EXPOSE $BOOKIE_PORT
 ENV BK_USER=bookkeeper
 
-# Download Apache Bookkeeper and zookeeper, untar and clean up
+# Download Apache Bookkeeper, untar and clean up
 RUN set -x \
     && adduser "${BK_USER}" \
     && yum install -y java-1.8.0-openjdk-headless wget bash python md5sum sha1sum \
