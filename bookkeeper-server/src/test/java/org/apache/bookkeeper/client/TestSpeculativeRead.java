@@ -25,13 +25,11 @@ import java.util.BitSet;
 import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.test.BaseTestCase;
-
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,15 +40,15 @@ import static org.junit.Assert.*;
  * This unit test tests ledger fencing;
  *
  */
-public class TestSpeculativeRead extends BaseTestCase {
+public class TestSpeculativeRead extends BookKeeperClusterTestCase {
     private final static Logger LOG = LoggerFactory.getLogger(TestSpeculativeRead.class);
 
-    DigestType digestType;
+    private final DigestType digestType;
     byte[] passwd = "specPW".getBytes();
 
-    public TestSpeculativeRead(DigestType digestType) {
+    public TestSpeculativeRead() {
         super(10);
-        this.digestType = digestType;
+        this.digestType = DigestType.CRC32;
     }
 
     long getLedgerToRead(int ensemble, int quorum) throws Exception {

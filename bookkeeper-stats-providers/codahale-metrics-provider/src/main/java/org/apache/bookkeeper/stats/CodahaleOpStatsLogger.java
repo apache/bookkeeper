@@ -16,9 +16,8 @@
  */
 package org.apache.bookkeeper.stats;
 
-import com.codahale.metrics.Timer;
 import com.codahale.metrics.Snapshot;
-
+import com.codahale.metrics.Timer;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 

@@ -20,17 +20,14 @@
  */
 package org.apache.bookkeeper.bookie;
 
-import com.google.common.base.Stopwatch;
-import java.util.concurrent.TimeUnit;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.stats.Counter;
-import org.apache.bookkeeper.stats.Gauge;
-import org.apache.bookkeeper.stats.OpStatsLogger;
-import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.util.DirectMemoryUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.INDEX_INMEM_ILLEGAL_STATE_DELETE;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.INDEX_INMEM_ILLEGAL_STATE_RESET;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LEDGER_CACHE_HIT;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LEDGER_CACHE_MISS;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LEDGER_CACHE_READ_PAGE;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.NUM_INDEX_PAGES;
 
+import com.google.common.base.Stopwatch;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,14 +41,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.INDEX_INMEM_ILLEGAL_STATE_DELETE;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.INDEX_INMEM_ILLEGAL_STATE_RESET;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LEDGER_CACHE_HIT;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LEDGER_CACHE_MISS;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LEDGER_CACHE_READ_PAGE;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.NUM_INDEX_PAGES;
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.Gauge;
+import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.util.DirectMemoryUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class IndexInMemPageMgr {
     private static final Logger LOG = LoggerFactory.getLogger(IndexInMemPageMgr.class);
@@ -69,7 +68,7 @@ class IndexInMemPageMgr {
         final Counter illegalStateDeleteCounter;
 
         public InMemPageCollection(StatsLogger statsLogger) {
-            pages = new ConcurrentHashMap<Long, ConcurrentMap<Long,LedgerEntryPage>>();
+            pages = new ConcurrentHashMap<>();
             lruCleanPageMap =
                     Collections.synchronizedMap(new LinkedHashMap<EntryKey, LedgerEntryPage>(16, 0.75f, true));
             listOfFreePages = new ConcurrentLinkedQueue<LedgerEntryPage>();

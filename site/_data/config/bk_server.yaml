@@ -1,0 +1,381 @@
+groups:
+- name: Server parameters
+  params:
+  - param: bookiePort
+    description: The port that the bookie server listens on.
+    default: 3181
+  - param: journalDirectories
+    description: |
+      The directories to which Bookkeeper outputs its write-ahead log (WAL).  Could define multi directories to store write head logs, separated by ','.
+      For example:
+        journalDirectories=/tmp/bk-journal1,/tmp/bk-journal2
+      If journalDirectories is set, bookies will skip journalDirectory and use this setting directory.
+    default: /tmp/bk-journal
+  - param: journalDirectory
+    description: The directory to which Bookkeeper outputs its write-ahead log (WAL).
+    default: /tmp/bk-txn
+  - param: allowMultipleDirsUnderSameDiskPartition
+    description: Configure the bookie to allow/disallow multiple ledger/index/journal directories in the same filesystem disk partition
+    default: false
+  - param: indexDirectories
+    description: The directories in which index files are stored. If not specified, the value of [`ledgerDirectories`](#ledgerDirectories) will be used.
+    default: /tmp/bk-data
+  - param: minUsableSizeForIndexFileCreation
+    description: Minimum safe usable size to be available in index directory for bookie to create index file while replaying journal at the time of bookie start in readonly mode (in bytes)
+    default: 1073741824
+  - param: listeningInterface
+    description: The network interface that the bookie should listen on. If not set, the bookie will listen on all interfaces.
+    default: eth0
+  - param: advertisedAddress
+    description: |
+      Configure a specific hostname or IP address that the bookie should use to advertise itself to
+      clients. If not set, bookie will advertised its own IP address or hostname, depending on the
+      `listeningInterface` and `useHostNameAsBookieID` settings.
+    default: eth0
+  - param: allowLoopback
+    description: |
+      Whether the bookie is allowed to use a loopback interface as its primary
+      interface (the interface it uses to establish its identity). By default, loopback interfaces are *not* allowed as the primary interface.
+
+      Using a loopback interface as the primary interface usually indicates a configuration error. It's fairly common in some VPS setups, for example, to not configure a hostname or to have the hostname resolve to 127.0.0.1. If this is the case, then all bookies in the cluster will establish their identities as 127.0.0.1:3181, and only one will be able to join the cluster. For VPSs configured like this, you should explicitly set the listening interface.
+    default: 'false'
+  - param: bookieDeathWatchInterval
+    description: Interval to watch whether bookie is dead or not, in milliseconds.
+    default: 1000
+  - param: flushInterval
+    description: How long the interval to flush ledger index pages to disk, in milliseconds. Flushing index files will introduce much random disk I/O. If separating journal dir and ledger dirs each on different devices, flushing would not affect performance. But if putting journal dir and ledger dirs on same device, performance degrade significantly on too frequent flushing. You can consider increment flush interval to get better performance, but you need to pay more time on bookie server restart after failure.
+    default: 100
+  - param: allowStorageExpansion
+    description: Allow the expansion of bookie storage capacity. Newly added ledger and index directories must be empty.
+    default: 'false'
+  - param: useHostNameAsBookieID
+    description: Whether the bookie should use its hostname to register with the ZooKeeper coordination service. When `false`, the bookie will use its IP address for the registration.
+    default: 'false'
+  - param: allowEphemeralPorts
+    description: Whether the bookie is allowed to use an ephemeral port (port 0) as its server port. By default, an ephemeral port is not allowed. Using an ephemeral port as the service port usually indicates a configuration error. However, in unit tests, using an ephemeral port will address port conflict problems and allow running tests in parallel.
+    default: 'false'
+  - param: enableLocalTransport
+    description: Whether allow the bookie to listen for BookKeeper clients executed on the local JVM.
+    default: 'false'
+  - param: disableServerSocketBind
+    description: Whether allow the bookie to disable bind on network interfaces, this bookie will be available only to BookKeeper clients executed on the local JVM.
+    default: 'false'
+  - param: skipListArenaChunkSize
+    description: The number of bytes we should use as chunk allocation for org.apache.bookkeeper.bookie.SkipListArena
+    default: 4194304
+  - param: skipListArenaMaxAllocSize
+    description: The max size we should allocate from the skiplist arena. Allocations larger than this should be allocated directly by the VM to avoid fragmentation.
+    default: 131072
+  - param: bookieAuthProviderFactoryClass
+    description: The bookie authentication provider factory class name. If this is null, no authentication will take place.
+    default: null
+
+- name: Garbage collection settings
+  params:
+  - param: gcWaitTime
+    description: How long the interval to trigger next garbage collection, in milliseconds. Since garbage collection is running in background, too frequent gc will heart performance. It is better to give a higher number of gc interval if there is enough disk capacity.
+    default: 1000
+  - param: gcOverreplicatedLedgerWaitTime
+    description: How long the interval to trigger next garbage collection of overreplicated ledgers, in milliseconds. This should not be run very frequently since we read the metadata for all the ledgers on the bookie from zk.
+    default: 86400000
+  - param: numAddWorkerThreads
+    description: The number of threads that handle write requests. if zero, writes are handled by [Netty threads](http://netty.io/wiki/thread-model.html) directly.
+    default: 1
+  - param: numReadWorkerThreads
+    description: The umber of threads that handle read requests. If 0, reads are handled by [Netty threads](http://netty.io/wiki/thread-model.html) directly.
+    default: 1
+  - param: isForceGCAllowWhenNoSpace
+    description: Whether force compaction is allowed when the disk is full or almost full. Forcing GC may get some space back, but may also fill up disk space more quickly. This is because new log files are created before GC, while old garbage log files are deleted after GC.
+    default: 'false'
+
+- name: TSL settings
+  params:
+  - param: tslProvider
+    description: TSL Provider (JDK or OpenSSL)
+    default: OpenSSL
+  - param: tslProviderFactoryClass
+    description: The path to the class that provides security.
+    default: org.apache.bookkeeper.security.SSLContextFactory
+  - param: tslClientAuthentication
+    description: Type of security used by server.
+    default: 'true'
+  - param: tslKeyStoreType
+    description: Bookie Keystore type.
+    default: JKS
+  - param: tslKeyStore
+    description: Bookie Keystore location (path).
+    default: null
+  - param: tslKeyStore
+    description: Bookie Keystore location (path).
+    default: null
+  - param: tslKeyStorePasswordPath
+    description: Bookie Keystore password path, if the keystore is protected by a password.
+    default: null
+  - param: tslTrustStoreType
+    description: Bookie Truststore type.
+    default: null
+  - param: tslTrustStore
+    description: Bookie Truststore location (path).
+    default: null
+  - param: tslTrustStorePasswordPath
+    description: Bookie Truststore password path, if the truststore is protected by a password.
+    default: null
+
+
+- name: Long poll request parameter settings
+  params:
+  - param: numLongPollWorkerThreads
+    description: The number of threads that should handle long poll requests.
+    default: 10
+  - param: requestTimerTickDurationMs
+    description: The tick duration in milliseconds for long poll requests.
+    default: 10
+  - param: requestTimerNumTicks
+    description: The number of ticks per wheel for the long poll request timer.
+    default: 1024
+
+
+- name: AutoRecovery settings
+  params:
+  - param: auditorPeriodicBookieCheckInterval
+    description: The time interval between auditor bookie checks, in seconds. The auditor bookie check checks ledger metadata to see which bookies should contain entries for each ledger. If a bookie that should contain entries is unavailable, then the ledger containing that entry is marked for recovery. Setting this to 0 disables the periodic check. Bookie checks will still run when a bookie fails. The default is once per day.
+    default: 86400
+  - param: rereplicationEntryBatchSize
+    description: The number of entries that a replication will rereplicate in parallel.
+    default: 10
+  - param: openLedgerRereplicationGracePeriod
+    description: The grace period, in seconds, that the replication worker waits before fencing and replicating a ledger fragment that's still being written to upon bookie failure.
+    default: 30
+  - param: autoRecoveryDaemonEnabled
+    description: Whether the bookie itself can start auto-recovery service also or not.
+    default: false
+  - param: lostBookieRecoveryDelay
+    description: How long to wait, in seconds, before starting autorecovery of a lost bookie.
+    default: 0
+
+- name: Netty server settings
+  params:
+  - param: serverTcpNoDelay
+    description: |
+      This settings is used to enabled/disabled Nagle's algorithm, which is a means of improving the efficiency of TCP/IP networks by reducing the number of packets that need to be sent over the network.
+
+      If you are sending many small messages, such that more than one can fit in a single IP packet, setting server.tcpnodelay to false to enable Nagle algorithm can provide better performance.
+    default: 'true'
+  - param: serverSockKeepalive
+    description: This setting is used to send keep-alive messages on connection-oriented sockets.
+    default: 'true'
+  - param: serverTcpLinger
+    description: The socket linger timeout on close. When enabled, a close or shutdown will not return until all queued messages for the socket have been successfully sent or the linger timeout has been reached. Otherwise, the call returns immediately and the closing is done in the background.
+    default: 0
+  - param: byteBufAllocatorSizeInitial
+    description: The Recv ByteBuf allocator initial buf size.
+    default: 65536
+  - param: byteBufAllocatorSizeMin
+    description: The Recv ByteBuf allocator min buf size.
+    default: 65536
+  - param: byteBufAllocatorSizeMax
+    description: The Recv ByteBuf allocator max buf size.
+    default: 1048576
+
+- name: Journal settings
+  params:
+  - param: journalFormatVersionToWrite
+    description: |
+      The journal format version to write.
+      Available formats are 1-5:
+       1: no header
+       2: a header section was added
+       3: ledger key was introduced
+       4: fencing key was introduced
+       5: expanding header to 512 and padding writes to align sector size configured by `journalAlignmentSize`
+
+      By default, it is `4`. If you'd like to enable `padding-writes` feature, you can set journal version to `5`.
+      You can disable `padding-writes` by setting journal version back to `4`. This feature is available in 4.5.0 and onward versions.
+    default: 4
+  - param: journalMaxSizeMB
+    description: Max file size of journal file, in mega bytes. A new journal file will be created when the old one reaches the file size limitation.
+    default: 2048
+  - param: journalMaxBackups
+    description: Max number of old journal file to kept. Keep a number of old journal files would help data recovery in specia case.
+    default: 5
+  - param: journalPreAllocSizeMB
+    description: How much space should we pre-allocate at a time in the journal.
+    default: 16
+  - param: journalWriteBufferSizeKB
+    description: Size of the write buffers used for the journal.
+    default: 64
+  - param: journalRemoveFromPageCache
+    description:  Should we remove pages from page cache after force write
+    default: 'false'
+  - param: journalAdaptiveGroupWrites
+    description: Should we group journal force writes, which optimize group commit for higher throughput.
+    default: 'true'
+  - param: journalMaxGroupWaitMSec
+    description: Maximum latency to impose on a journal write to achieve grouping.
+    default: 200
+  - param: journalBufferedWritesThreshold
+    description: Maximum writes to buffer to achieve grouping.
+    default: 524288
+  - param: journalFlushWhenQueueEmpty
+    description: If we should flush the journal when journal queue is empty.
+    default: 'false'
+  - param: numJournalCallbackThreads
+    description: The number of threads that should handle journal callbacks.
+    default: 1
+  - param: journalAlignmentSize
+    description: All the journal writes and commits should be aligned to given size. If not, zeros will be padded to align to given size.
+    default: 512
+  - param: journalBufferedEntriesThreshold
+    description: Maximum entries to buffer to impose on a journal write to achieve grouping.
+    default: 0
+  - param: journalFlushWhenQueueEmpty
+    description: If we should flush the journal when journal queue is empty.
+    default: 'false'
+
+- name: Ledger storage settings
+  params:
+  - param: ledgerStorageClass
+    description: Ledger storage implementation class
+    default: org.apache.bookkeeper.bookie.SortedLedgerStorage
+  - param: ledgerDirectories
+    description: The directory to which Bookkeeper outputs ledger snapshots. You can define multiple directories to store snapshots separated by a comma, for example `/tmp/data-dir1,/tmp/data-dir2`.
+    default: /tmp/bk1-data,/tmp/bk2-data
+  - param: auditorPeriodicCheckInterval
+    description: |
+      The time interval, in seconds, at which the auditor will check all ledgers in the cluster. By default this runs once a week.
+
+      Set this to 0 to disable the periodic check completely. Note that periodic checking will put extra load on the cluster, so it should not be run more frequently than once a day.
+    default: 604800
+  - param: sortedLedgerStorageEnabled
+    description: Whether sorted-ledger storage enabled (default true)
+    default: 'true'
+  - param: skipListSizeLimit
+    description: The skip list data size limitation (default 64MB) in EntryMemTable
+    default: 67108864L
+
+- name: Ledger cache settings
+  params:
+  - param: openFileLimit
+    description: |
+      Max number of ledger index files could be opened in bookie server. If number of ledger index files reaches this limitation, bookie server started to swap some ledgers from memory to disk. Too frequent swap will affect performance. You can tune this number to gain performance according your requirements.
+    default: 900
+  - param: pageSize
+    description: |
+      Size of a index page in ledger cache, in bytes. A larger index page can improve performance writing page to disk, which is efficent when you have small number of ledgers and these ledgers have similar number of entries. If you have large number of ledgers and each ledger has fewer entries, smaller index page would improve memory usage.
+    default: 8192
+  - param: pageLimit
+    description: |
+      How many index pages provided in ledger cache. If number of index pages reaches this limitation, bookie server starts to swap some ledgers from memory to disk. You can increment this value when you found swap became more frequent. But make sure pageLimit*pageSize should not more than JVM max memory limitation, otherwise you would got OutOfMemoryException. In general, incrementing pageLimit, using smaller index page would gain bettern performance in lager number of ledgers with fewer entries case. If pageLimit is -1, bookie server will use 1/3 of JVM memory to compute the limitation of number of index pages.
+    default: 1
+
+- name: Ledger manager settings
+  params:
+  - param: ledgerManagerType
+    description: The ledger manager type, which defines how ledgers are stored, managed, and garbage collected. See the [Ledger Manager](../../getting-started/concepts#ledger-manager) guide for more details.
+    default: flat
+  - param: zkLedgersRootPath
+    description: Root Zookeeper path to store ledger metadata. This parameter is used by zookeeper-based ledger manager as a root znode to store all ledgers.
+    default: /ledgers
+
+- name: Entry log settings
+  params:
+  - param: logSizeLimit
+    description: Max file size of entry logger, in bytes. A new entry log file will be created when the old one reaches the file size limitation.
+    default: 2147483648
+  - param: entryLogFilePreallocationEnabled
+    description: Enable/Disable entry logger preallocation
+    default: true
+  - param: flushEntrylogBytes
+    description: Entry log flush interval, in bytes. Setting this to 0 or less disables this feature and makes flush happen on log rotation. Flushing in smaller chunks but more frequently reduces spikes in disk I/O. Flushing too frequently may negatively affect performance.
+    default: 0
+  - param: readBufferSizeBytes
+    description: The capacity allocated for [`BufferedReadChannel`](/api/org/apache/bookkeeper/bookie/BufferedReadChannel)s, in bytes.
+    default: 512
+  - param: writeBufferSizeBytes
+    description: The number of bytes used as capacity for the write buffer.
+    default: 65536
+
+- name: Entry log compaction settings
+  params:
+  - param: compactionRate
+    description: The rate at which compaction will read entries. The unit is adds per second.
+    default: 1000
+  - param: minorCompactionThreshold
+    description: Threshold of minor compaction. For those entry log files whose remaining size percentage reaches below this threshold will be compacted in a minor compaction. If it is set to less than zero, the minor compaction is disabled.
+    default: 0.2
+  - param: minorCompactionInterval
+    description: Interval to run minor compaction, in seconds. If it is set to less than zero, the minor compaction is disabled.
+    defauit: 3600
+  - param: compactionMaxOutstandingRequests
+    description: Set the maximum number of entries which can be compacted without flushing. When compacting, the entries are written to the entrylog and the new offsets are cached in memory. Once the entrylog is flushed the index is updated with the new offsets. This parameter controls the number of entries added to the entrylog before a flush is forced. A higher value for this parameter means  more memory will be used for offsets. Each offset consists of 3 longs. This parameter should *not* be modified unless you know what you're doing.
+    default: 100000
+  - param: majorCompactionThreshold
+    description: Threshold of major compaction. For those entry log files whose remaining size percentage reaches below  this threshold will be compacted in a major compaction.  Those entry log files whose remaining size percentage is still higher than the threshold will never be compacted. If it is set to less than zero, the minor compaction is disabled.
+    default: 0.8
+  - param: majorCompactionInterval
+    description: Interval to run major compaction, in seconds. If it is set to less than zero, the major compaction is disabled.
+    default: 86400
+  - param: isThrottleByBytes
+    description: Throttle compaction by bytes or by entries.
+    default: 'false'
+  - param: compactionRateByEntries
+    description: Set the rate at which compaction will read entries. The unit is adds per second.
+    default: 1000
+  - param: compactionRateByBytes
+    description: Set the rate at which compaction will read entries. The unit is bytes added per second.
+    default: 1000000
+
+- name: Statistics
+  params:
+  - param: enableStatistics
+    description: Whether statistics are enabled for the bookie.
+    default: true
+  - param: statsProviderClass
+    description: Stats provider class.
+    default: org.apache.bookkeeper.stats.CodahaleMetricsProvider
+
+- name: Read-only mode support
+  params:
+  - param: readOnlyModeEnabled
+    description: If all ledger directories configured are full, then support only read requests for clients. If "readOnlyModeEnabled=true" then on all ledger disks full, bookie will be converted to read-only mode and serve only read requests. Otherwise the bookie will be shutdown. By default this will be disabled.
+    default: 'false'
+  - param: forceReadOnlyBookie
+    description: Whether the bookie is force started in read only mode or not.
+    default: 'false'
+
+
+- name: Disk utilization
+  params:
+  - param: diskUsageThreshold
+    description: |
+      For each ledger dir, maximum disk space which can be used. Default is 0.95f. i.e. 95% of disk can be used at most after which nothing will be written to that partition. If all ledger dir partions are full, then bookie will turn to readonly mode if 'readOnlyModeEnabled=true' is set, else it will shutdown. Valid values should be in between 0 and 1 (exclusive).
+    default: 0.95
+  - param: diskUsageLwmThreshold
+    description: |
+      Set the disk free space low water mark threshold. Disk is considered full when usage threshold is exceeded. Disk returns back to non-full state when usage is  below low water mark threshold. This prevents it from going back and forth between these states frequently when concurrent writes and compaction are happening. This also prevent bookie from switching frequently between read-only and read-writes states in the same cases.
+    default: 0.90
+  - param: diskUsageWarnThreshold
+    description: The disk free space low water mark threshold. Disk is considered full when usage threshold is exceeded. Disk returns back to non-full state when usage is below low water mark threshold. This prevents it from going back and forth between these states frequently when concurrent writes and compaction are happening. This also prevent bookie from switching frequently between read-only and read-writes states in the same cases.
+    default: 0.95
+  - param: diskCheckInterval
+    description: Disk check interval in milliseconds. Interval to check the ledger dirs usage.
+    default: 10000
+
+- name: ZooKeeper parameters
+  params:
+  - param: zkServers
+    description: |
+      A list of one of more servers on which Zookeeper is running. The server list can be comma separated values, for example `zkServers=zk1:2181,zk2:2181,zk3:2181`.
+    default: "localhost:2181"
+  - param: zkTimeout
+    description: ZooKeeper client session timeout in milliseconds. Bookie server will exit if it received SESSION_EXPIRED because it was partitioned off from ZooKeeper for more than the session timeout  JVM garbage collection, disk I/O will cause SESSION_EXPIRED. Increment this value could help avoiding this issue.
+    default: 10
+  - param: zkRetryBackoffStartMs
+    description: The Zookeeper client backoff retry start time in millis.
+    default: 1000
+  - param: zkRetryBackoffMaxMs
+    description: The Zookeeper client backoff retry max time in millis.
+    default: 10000
+  - param: zkEnableSecurity
+    description: Set ACLs on every node written on ZooKeeper, this way only allowed users will be able to read and write BookKeeper metadata stored on ZooKeeper. In order to make ACLs work you need to setup ZooKeeper JAAS authentication all the bookies and Client need to share the same user, and this is usually done using Kerberos authentication. See ZooKeeper documentation
+    default: 'false'

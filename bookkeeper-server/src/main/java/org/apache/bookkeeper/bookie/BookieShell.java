@@ -20,6 +20,8 @@ package org.apache.bookkeeper.bookie;
 
 import static com.google.common.base.Charsets.UTF_8;
 
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.AbstractFuture;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -45,7 +47,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
-
 import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
@@ -68,9 +69,6 @@ import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.replication.AuditorElector;
-import org.apache.bookkeeper.replication.BookieLedgerIndexer;
-import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
-import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.IOUtils;
@@ -95,9 +93,6 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.AbstractFuture;
 
 /**
  * Bookie Shell is to provide utilities for users to administer a bookkeeper cluster.
@@ -207,7 +202,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getDescription() {
-            return "Format bookkeeper metadata in zookeeper";
+            return "Format bookkeeper metadata in zookeeper.";
         }
 
         @Override
@@ -250,7 +245,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getDescription() {
-            return "Format the current server contents";
+            return "Format the current server contents.";
         }
 
         @Override
@@ -303,7 +298,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getDescription() {
-            return "Recover the ledger data for failed bookie";
+            return "Recover the ledger data for failed bookie.";
         }
 
         @Override
@@ -438,7 +433,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getDescription() {
-            return "Read a range of entries from a ledger";
+            return "Read a range of entries from a ledger.";
         }
 
         @Override
@@ -516,12 +511,14 @@ public class BookieShell implements Tool {
 
         @Override
         String getDescription() {
-            return "List ledgers marked as underreplicated, with optional options to specify missingreplica (BookieId) and to exclude missingreplica";
+            return "List ledgers marked as underreplicated, with optional options to specify missingreplica"
+                + " (BookieId) and to exclude missingreplica.";
         }
 
         @Override
         String getUsage() {
-            return "listunderreplicated [[-missingreplica <bookieaddress>] [-excludingmissingreplica <bookieaddress>]]";
+            return "listunderreplicated [[-missingreplica <bookieaddress>]"
+                + " [-excludingmissingreplica <bookieaddress>]]";
         }
 
         @Override
@@ -635,7 +632,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getDescription() {
-            return "List all ledgers on the cluster (this may take a long time)";
+            return "List all ledgers on the cluster (this may take a long time).";
         }
 
         @Override
@@ -727,7 +724,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getDescription() {
-            return "Print the metadata for a ledger";
+            return "Print the metadata for a ledger.";
         }
 
         @Override
@@ -789,7 +786,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getDescription() {
-            return "Simple test to create a ledger and write entries to it";
+            return "Simple test to create a ledger and write entries to it.";
         }
 
         @Override
@@ -901,7 +898,7 @@ public class BookieShell implements Tool {
             super(CMD_READLOG);
             rlOpts.addOption("m", "msg", false, "Print message body");
             rlOpts.addOption("l", "ledgerid", true, "Ledger ID");
-            rlOpts.addOption("e", "entryid", true, "EntryID");
+            rlOpts.addOption("e", "entryid", true, "Entry ID");
             rlOpts.addOption("sp", "startpos", true, "Start Position");
             rlOpts.addOption("ep", "endpos", true, "End Position");
         }
@@ -1216,7 +1213,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getDescription() {
-            return "List the files in JournalDirectory/LedgerDirectories/IndexDirectories";
+            return "List the files in JournalDirectory/LedgerDirectories/IndexDirectories.";
         }
 
         @Override
@@ -1349,7 +1346,7 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Setter and Getter for LostBookieRecoveryDelay value (in seconds) in Zookeeper
+     * Setter and Getter for LostBookieRecoveryDelay value (in seconds) in Zookeeper.
      */
     class LostBookieRecoveryDelayCmd extends MyCommand {
         Options opts = new Options();
@@ -1367,7 +1364,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getDescription() {
-            return "Setter and Getter for LostBookieRecoveryDelay value (in seconds) in Zookeeper";
+            return "Setter and Getter for LostBookieRecoveryDelay value (in seconds) in Zookeeper.";
         }
 
         @Override
@@ -1424,7 +1421,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getDescription() {
-            return "Print the node which holds the auditor lock";
+            return "Print the node which holds the auditor lock.";
         }
 
         @Override
@@ -1478,7 +1475,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getDescription() {
-            return "Update bookie id in cookie";
+            return "Update bookie id in cookie.";
         }
 
         @Override
@@ -1683,7 +1680,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getDescription() {
-            return "Update bookie id in ledgers (this may take a long time)";
+            return "Update bookie id in ledgers (this may take a long time).";
         }
 
         @Override
@@ -1824,7 +1821,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getDescription() {
-            return "Delete a ledger";
+            return "Delete a ledger.";
         }
 
         @Override
@@ -1851,7 +1848,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getDescription() {
-            return "Retrieve bookie info such as free and total disk space";
+            return "Retrieve bookie info such as free and total disk space.";
         }
 
         @Override
@@ -1908,7 +1905,7 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Command to trigger AuditTask by resetting lostBookieRecoveryDelay to its current value
+     * Command to trigger AuditTask by resetting lostBookieRecoveryDelay to its current value.
      */
     class TriggerAuditCmd extends MyCommand {
         Options opts = new Options();
@@ -1919,7 +1916,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getDescription() {
-            return "Force trigger the Audit by resetting the lostBookieRecoveryDelay";
+            return "Force trigger the Audit by resetting the lostBookieRecoveryDelay.";
         }
 
         @Override
@@ -1960,7 +1957,8 @@ public class BookieShell implements Tool {
 
         @Override
         String getDescription() {
-            return "Force trigger the Audittask and make sure all the ledgers stored in the decommissioning bookie are replicated";
+            return "Force trigger the Audittask and make sure all the ledgers stored in the decommissioning bookie"
+                + " are replicated.";
         }
 
         @Override

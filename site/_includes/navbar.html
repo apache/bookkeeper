@@ -1,0 +1,112 @@
+{% capture docs_url %}{{ site.baseurl }}docs/{% endcapture %}
+<nav class="navbar bk-topnav">
+  <div class="navbar-brand">
+    <a class="navbar-item bk-brand" href="{{ site.baseurl }}">
+      {{ site.title }}
+    </a>
+
+    <!--
+    <a class="navbar-item is-hidden-desktop bk-github" href="{{ site.github_repo }}" target="_blank">
+      <span class="icon">
+        <i class="fa fa-github"></i>
+      </span>
+    </a>
+
+    <a class="navbar-item is-hidden-desktop bk-twitter" href="https://twitter.com/jgthms" target="_blank">
+      <span class="icon">
+        <i class="fa fa-twitter"></i>
+      </span>
+    </a>
+    -->
+
+    <div class="navbar-burger" data-target="bkNav">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+  </div>
+
+  <div id="bkNav" class="navbar-menu">
+    <div class="navbar-start">
+      <div class="navbar-item has-dropdown is-hoverable">
+        <a class="navbar-link">Documentation</a>
+        <div class="navbar-dropdown is-boxed">
+          {% for version in site.versions %}
+          <a class="navbar-item" href="{{ site.baseurl }}docs/getting-started/installation">
+            Release {{version}}
+            {% if version == site.latest %}<span class="tag is-success">LATEST</span>{% endif %}
+          </a>
+          {% endfor %}
+          <hr class="dropdown-divider">
+          <a class="navbar-item" href="{{ site.baseurl }}javadoc">
+            <span class="icon bk-javadoc-icon">
+              <img src="{{ site.baseurl }}img/java-icon.svg">
+            </span>
+            Javadoc
+          </a>
+          <hr class="dropdown-divider">
+          {% for version in site.archived_versions %}
+          <a class="navbar-item" href="{{ site.baseurl }}archives/docs/r{{version}}">
+            Release {{version}}
+            {% if version == site.stable_release %}<span class="tag is-success">Stable</span>{% endif %}
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="navbar-item has-dropdown is-hoverable">
+        <a class="navbar-link">Community</a>
+        <div class="navbar-dropdown is-boxed">
+          <a class="navbar-item" href="{{ site.baseurl }}community/mailing-lists">Mailing lists</a>
+          <a class="navbar-item" href="{{ site.baseurl }}community/slack">Slack</a>
+          <a class="navbar-item" href="{{ site.baseurl }}community/contributing">Contributing</a>
+          <a class="navbar-item" href="https://issues.apache.org/jira/projects/BOOKKEEPER">JIRA Issue Tracker</a>
+        </div>
+      </div>
+
+      <div class="navbar-item has-dropdown is-hoverable">
+        <a class="navbar-link">Project</a>
+        <div class="navbar-dropdown is-boxed">
+          <a class="navbar-item" href="{{ site.baseurl }}project/who">Who are we?</a>
+          <a class="navbar-item" href="{{ site.baseurl }}project/bylaws">Bylaws</a>
+          <a class="navbar-item" href="http://www.apache.org/licenses/">License</a>
+          <hr class="dropdown-divider">
+          <a class="navbar-item" href="{{ site.baseurl }}project/privacy">Privacy policy</a>
+          <a class="navbar-item" href="http://www.apache.org/foundation/sponsorship.html">Sponsorship</a>
+          <a class="navbar-item" href="http://www.apache.org/foundation/thanks.html">Thanks</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="navbar-end">
+      <div class="navbar-item">
+        <div class="field is-grouped">
+          <p class="control">
+            <a class="button bk-twitter" href="{{ site.twitter_url }}">
+              <span class="icon">
+                <i class="fa fa-twitter"></i>
+              </span>
+              <span>Twitter</span>
+            </a>
+          </p>
+          <p class="control">
+            <a class="button" href="{{ site.github_repo }}">
+              <span class="icon">
+                <i class="fa fa-github"></i>
+              </span>
+              <span>GitHub</span>
+            </a>
+          </p>
+          <p class="control">
+            <a class="button is-primary" href="{{ site.baseurl }}releases">
+              <span class="icon">
+                <i class="fa fa-download"></i>
+              </span>
+              <span>Download</span>
+            </a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>

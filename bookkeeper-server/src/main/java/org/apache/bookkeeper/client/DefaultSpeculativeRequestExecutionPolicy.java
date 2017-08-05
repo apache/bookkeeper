@@ -31,6 +31,12 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * A default implementation of {@link SpeculativeRequestExecutionPolicy}.
+ *
+ * <p>The policy issues speculative requests in a backoff way. The time between two speculative requests
+ * are between {@code firstSpeculativeRequestTimeout} and {@code maxSpeculativeRequestTimeout}.
+ */
 public class DefaultSpeculativeRequestExecutionPolicy implements SpeculativeRequestExecutionPolicy {
     private static final Logger LOG = LoggerFactory.getLogger(PendingReadOp.class);
     final int firstSpeculativeRequestTimeout;

@@ -35,6 +35,13 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_BYTES;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SERVER_STATUS;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_BYTES;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.SettableFuture;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
@@ -61,7 +68,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-
 import org.apache.bookkeeper.bookie.BookieException.DiskPartitionDuplicationException;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
@@ -102,18 +108,8 @@ import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.SettableFuture;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-
 /**
  * Implements a bookie.
- *
  */
 public class Bookie extends BookieCriticalThread {
 
@@ -576,15 +572,28 @@ public class Bookie extends BookieCriticalThread {
      */
     public static BookieSocketAddress getBookieAddress(ServerConfiguration conf)
             throws UnknownHostException {
+        // Advertised address takes precedence over the listening interface and the
+        // useHostNameAsBookieID settings
+        if (conf.getAdvertisedAddress() != null && conf.getAdvertisedAddress().trim().length() > 0) {
+            String hostAddress = conf.getAdvertisedAddress().trim();
+            return new BookieSocketAddress(hostAddress, conf.getBookiePort());
+        }
+
         String iface = conf.getListeningInterface();
         if (iface == null) {
             iface = "default";
         }
-        InetSocketAddress inetAddr = new InetSocketAddress(DNS.getDefaultHost(iface), conf.getBookiePort());
+        String hostName = DNS.getDefaultHost(iface);
+        InetSocketAddress inetAddr = new InetSocketAddress(hostName, conf.getBookiePort());
+        if (inetAddr.isUnresolved()) {
+            throw new UnknownHostException("Unable to resolve default hostname: "
+                    + hostName + " for interface: " + iface);
+        }
         String hostAddress = inetAddr.getAddress().getHostAddress();
         if (conf.getUseHostNameAsBookieID()) {
             hostAddress = inetAddr.getAddress().getCanonicalHostName();
         }
+
         BookieSocketAddress addr =
                 new BookieSocketAddress(hostAddress, conf.getBookiePort());
         if (addr.getSocketAddress().getAddress().isLoopbackAddress()
@@ -1313,7 +1322,7 @@ public class Bookie extends BookieCriticalThread {
                 if (indexDirsManager != ledgerDirsManager) {
                     idxMonitor.shutdown();
                 }
-                
+
                 // Shutdown the state service
                 stateService.shutdown();
             }

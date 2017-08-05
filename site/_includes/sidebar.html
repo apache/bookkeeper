@@ -1,0 +1,23 @@
+{% unless page.no_sidebar %}
+<aside class="sidebar">
+  {% for group in site.data.sidebar.groups %}{% assign docs = group.docs %}
+  <p>
+    {{ group.name }}
+  </p>
+  <ul class="sidebar-items">
+    {% for doc in docs %}
+    {% capture doc_url %}{{ site.baseurl }}docs/{{ group.dir }}/{{ doc.endpoint }}/{% endcapture %}
+    <li{% if doc_url == page.url %} class="active"{% endif %}>
+      <a href="{{ site.baseurl }}docs/{{ group.dir }}/{{ doc.endpoint }}">
+      {{ doc.name }}
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% endfor %}
+  <hr />
+  <a class="button is-info">
+    Latest version: {{ site.latest }}
+  </a>
+</aside>
+{% endunless %}

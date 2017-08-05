@@ -17,10 +17,8 @@
 package org.apache.bookkeeper.stats.twitter.ostrich;
 
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.stats.OpStatsData;
 import org.apache.bookkeeper.stats.OpStatsLogger;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

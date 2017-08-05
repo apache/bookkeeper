@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.conf;
 
 import static com.google.common.base.Charsets.UTF_8;
+import io.netty.buffer.ByteBuf;
 import static org.apache.bookkeeper.util.BookKeeperConstants.FEATURE_DISABLE_ENSEMBLE_CHANGE;
 
 import java.util.ArrayList;
@@ -27,11 +28,13 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy;
+import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicy;
 import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang.StringUtils;
+
 
 /**
  * Configuration settings for client side
@@ -62,6 +65,8 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String CLIENT_CONNECT_TIMEOUT_MILLIS = "clientConnectTimeoutMillis";
     protected final static String NUM_CHANNELS_PER_BOOKIE = "numChannelsPerBookie";
     protected final static String USE_V2_WIRE_PROTOCOL = "useV2WireProtocol";
+    protected final static String NETTY_USE_POOLED_BUFFERS = "nettyUsePooledBuffers";
+
     // Read Parameters
     protected final static String READ_TIMEOUT = "readTimeout";
     protected final static String SPECULATIVE_READ_TIMEOUT = "speculativeReadTimeout";
@@ -96,8 +101,10 @@ public class ClientConfiguration extends AbstractConfiguration {
     // Bookie info poll interval
     protected final static String DISK_WEIGHT_BASED_PLACEMENT_ENABLED = "diskWeightBasedPlacementEnabled";
     protected final static String GET_BOOKIE_INFO_INTERVAL_SECONDS = "getBookieInfoIntervalSeconds";
+    protected final static String GET_BOOKIE_INFO_RETRY_INTERVAL_SECONDS = "getBookieInfoRetryIntervalSeconds";
     protected final static String BOOKIE_MAX_MULTIPLE_FOR_WEIGHTED_PLACEMENT = "bookieMaxMultipleForWeightBasedPlacement";
     protected final static String GET_BOOKIE_INFO_TIMEOUT_SECS = "getBookieInfoTimeoutSecs";
+    protected final static String START_TLS_TIMEOUT_SECS = "startTLSTimeoutSecs";
 
     // Number Woker Threads
     protected final static String NUM_WORKER_THREADS = "numWorkerThreads";
@@ -129,6 +136,17 @@ public class ClientConfiguration extends AbstractConfiguration {
      * This client will act as a system client, like the {@link Auditor}
      */
     public final static String CLIENT_ROLE_SYSTEM = "system";
+
+    // Client auth provider factory class name. It must be configured on Bookies to for the Auditor
+    protected final static String CLIENT_AUTH_PROVIDER_FACTORY_CLASS = "clientAuthProviderFactoryClass";
+
+    // Client TLS
+    protected final static String TLS_KEYSTORE_TYPE = "clientKeyStoreType";
+    protected final static String TLS_KEYSTORE = "clientKeyStore";
+    protected final static String TLS_KEYSTORE_PASSWORD_PATH = "clientKeyStorePasswordPath";
+    protected final static String TLS_TRUSTSTORE_TYPE = "clientTrustStoreType";
+    protected final static String TLS_TRUSTSTORE = "clientTrustStore";
+    protected final static String TLS_TRUSTSTORE_PASSWORD_PATH = "clientTrustStorePasswordPath";
 
     /**
      * Construct a default client-side configuration
@@ -1236,6 +1254,16 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Get the time interval between retries on unsuccessful bookie info request.  Default is
+     * 60s.
+     *
+     * @return
+     */
+    public int getGetBookieInfoRetryIntervalSeconds() {
+        return getInt(GET_BOOKIE_INFO_RETRY_INTERVAL_SECONDS, 60);
+    }
+
+    /**
      * Return whether disk weight based placement policy is enabled
      * @return
      */
@@ -1257,6 +1285,14 @@ public class ClientConfiguration extends AbstractConfiguration {
      */
     public int getBookieInfoTimeout() {
         return getInteger(GET_BOOKIE_INFO_TIMEOUT_SECS, 5);
+    }
+
+    /**
+     * Return the timeout value for startTLS request
+     * @return
+     */
+    public int getStartTLSTimeout() {
+        return getInteger(START_TLS_TIMEOUT_SECS, 10);
     }
 
     /**
@@ -1283,6 +1319,19 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Set the time interval between retries on unsuccessful GetInfo requests
+     *
+     *
+     * @param interval
+     * @param unit
+     * @return client configuration
+     */
+    public ClientConfiguration setGetBookieInfoRetryIntervalSeconds(int interval, TimeUnit unit) {
+        setProperty(GET_BOOKIE_INFO_RETRY_INTERVAL_SECONDS, unit.toSeconds(interval));
+        return this;
+    }
+
+    /**
      * Set the max multiple to use for nodes with very high weight
      * @param multiple
      * @return client configuration
@@ -1299,6 +1348,16 @@ public class ClientConfiguration extends AbstractConfiguration {
      */
     public ClientConfiguration setGetBookieInfoTimeout(int timeoutSecs) {
         setProperty(GET_BOOKIE_INFO_TIMEOUT_SECS, timeoutSecs);
+        return this;
+    }
+
+    /**
+     * Set the timeout value in secs for the START_TLS request
+     * @param timeout
+     * @return client configuration
+     */
+    public ClientConfiguration setStartTLSTimeout(int timeoutSecs) {
+        setProperty(START_TLS_TIMEOUT_SECS, timeoutSecs);
         return this;
     }
 
@@ -1330,6 +1389,122 @@ public class ClientConfiguration extends AbstractConfiguration {
      */
     public String getClientRole() {
         return getString(CLIENT_ROLE, CLIENT_ROLE_STANDARD);
+    }
+
+    /**
+     * Get the keystore type for client. Default is JKS.
+     * 
+     * @return
+     */
+    public String getTLSKeyStoreType() {
+        return getString(TLS_KEYSTORE_TYPE, "JKS");
+    }
+
+
+    /**
+     * Set the keystore type for client.
+     * 
+     * @return
+     */
+    public ClientConfiguration setTLSKeyStoreType(String arg) {
+        setProperty(TLS_KEYSTORE_TYPE, arg);
+        return this;
+    }
+
+    /**
+     * Get the keystore path for the client.
+     * 
+     * @return
+     */
+    public String getTLSKeyStore() {
+        return getString(TLS_KEYSTORE, null);
+    }
+
+    /**
+     * Set the keystore path for the client.
+     * 
+     * @return
+     */
+    public ClientConfiguration setTLSKeyStore(String arg) {
+        setProperty(TLS_KEYSTORE, arg);
+        return this;
+    }
+
+    /**
+     * Get the path to file containing keystore password, if the client keystore is password protected. Default is null.
+     * 
+     * @return
+     */
+    public String getTLSKeyStorePasswordPath() {
+        return getString(TLS_KEYSTORE_PASSWORD_PATH, null);
+    }
+
+    /**
+     * Set the path to file containing keystore password, if the client keystore is password protected.
+     * 
+     * @return
+     */
+    public ClientConfiguration setTLSKeyStorePasswordPath(String arg) {
+        setProperty(TLS_KEYSTORE_PASSWORD_PATH, arg);
+        return this;
+    }
+
+    /**
+     * Get the truststore type for client. Default is JKS.
+     * 
+     * @return
+     */
+    public String getTLSTrustStoreType() {
+        return getString(TLS_TRUSTSTORE_TYPE, "JKS");
+    }
+
+    /**
+     * Set the truststore type for client.
+     * 
+     * @return
+     */
+    public ClientConfiguration setTLSTrustStoreType(String arg) {
+        setProperty(TLS_TRUSTSTORE_TYPE, arg);
+        return this;
+    }
+
+    /**
+     * Get the truststore path for the client.
+     * 
+     * @return
+     */
+    public String getTLSTrustStore() {
+        return getString(TLS_TRUSTSTORE, null);
+    }
+
+    /**
+     * Set the truststore path for the client.
+     * 
+     * @return
+     */
+    public ClientConfiguration setTLSTrustStore(String arg) {
+        setProperty(TLS_TRUSTSTORE, arg);
+        return this;
+    }
+
+    /**
+     * Get the path to file containing truststore password, if the client truststore is password protected. Default is
+     * null.
+     * 
+     * @return
+     */
+    public String getTLSTrustStorePasswordPath() {
+        return getString(TLS_TRUSTSTORE_PASSWORD_PATH, null);
+    }
+
+    /**
+     * Set the path to file containing truststore password, if the client truststore is password protected.
+     * 
+     * @return
+     */
+    public ClientConfiguration setTLSTrustStorePasswordPath(String arg) {
+        setProperty(TLS_TRUSTSTORE_PASSWORD_PATH, arg);
+        return this;
     }
 
     /**
@@ -1418,6 +1593,32 @@ public class ClientConfiguration extends AbstractConfiguration {
      */
     public ClientConfiguration setDisableEnsembleChangeFeatureName(String disableEnsembleChangeFeatureName) {
         setProperty(DISABLE_ENSEMBLE_CHANGE_FEATURE_NAME, disableEnsembleChangeFeatureName);
+        return this;
+    }
+
+
+    /**
+     * Option to use Netty Pooled ByteBufs
+     *
+     * @return the value of the option
+     */
+    public boolean isNettyUsePooledBuffers() {
+        return getBoolean(NETTY_USE_POOLED_BUFFERS, true);
+    }
+
+    /**
+     * Enable/Disable the usage of Pooled Netty buffers. While using v2 wire protocol the application will be
+     * responsible for releasing ByteBufs returned by BookKeeper
+     *
+     * @param enabled
+     *          if enabled BookKeeper will use default Pooled Netty Buffer allocator
+     *
+     * @see #setUseV2WireProtocol(boolean)
+     * @see ByteBuf#release()
+     * @see LedgerHandle#readEntries(long, long)
+     */
+    public ClientConfiguration setNettyUsePooledBuffers(boolean enabled) {
+        setProperty(NETTY_USE_POOLED_BUFFERS, enabled);
         return this;
     }
 }

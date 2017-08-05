@@ -41,9 +41,11 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCall
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadLacCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback;
-import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.tls.SecurityException;
+import org.apache.bookkeeper.tls.SecurityHandlerFactory;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.slf4j.Logger;
@@ -139,9 +141,10 @@ public class BookieClient implements PerChannelBookieClientFactory {
     }
 
     @Override
-    public PerChannelBookieClient create(BookieSocketAddress address, PerChannelBookieClientPool pcbcPool) {
+    public PerChannelBookieClient create(BookieSocketAddress address, PerChannelBookieClientPool pcbcPool,
+            SecurityHandlerFactory shFactory) throws SecurityException {
         return new PerChannelBookieClient(conf, executor, eventLoopGroup, address, requestTimer, statsLogger,
-                authProviderFactory, registry, pcbcPool);
+                authProviderFactory, registry, pcbcPool, shFactory);
     }
 
     private PerChannelBookieClientPool lookupClient(BookieSocketAddress addr, Object key) {
@@ -153,7 +156,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                     return null;
                 }
                 PerChannelBookieClientPool newClientPool =
-                    new DefaultPerChannelBookieClientPool(this, addr, numConnectionsPerBookie);
+                    new DefaultPerChannelBookieClientPool(conf, this, addr, numConnectionsPerBookie);
                 PerChannelBookieClientPool oldClientPool = channels.putIfAbsent(addr, newClientPool);
                 if (null == oldClientPool) {
                     clientPool = newClientPool;
@@ -163,6 +166,9 @@ public class BookieClient implements PerChannelBookieClientFactory {
                     clientPool = oldClientPool;
                     newClientPool.close(false);
                 }
+            } catch (SecurityException e) {
+                LOG.error("Security Exception in creating new default PCBC pool: ", e);
+                return null;
             } finally {
                 closeLock.readLock().unlock();
             }

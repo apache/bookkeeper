@@ -21,10 +21,9 @@
 package org.apache.bookkeeper.auth;
 
 import java.io.IOException;
-
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.bookkeeper.bookie.BookieConnectionPeer;
+import org.apache.bookkeeper.proto.BookieConnectionPeer;
+
 
 /**
  * Bookie authentication provider interface.
@@ -76,6 +75,13 @@ public interface BookieAuthProvider {
         * Release resources.
         */
         default void close() {}
+    }
+
+    /**
+     * Callback to let the provider know that the underlying protocol is changed.
+     * For instance this will happen when a START_TLS operation succeeds
+     */
+    default void onProtocolUpgrade() {
     }
 
     /**

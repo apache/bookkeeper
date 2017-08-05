@@ -22,6 +22,9 @@ package org.apache.bookkeeper.bookie;
 
 import static com.google.common.base.Charsets.UTF_8;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.Sets;
+import com.google.protobuf.TextFormat;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.EOFException;
@@ -34,15 +37,15 @@ import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.List;
 import java.util.Set;
-
-import com.google.common.base.Joiner;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.ZkVersion;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.DataFormats.CookieFormat;
 import org.apache.bookkeeper.util.BookKeeperConstants;
+import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.CreateMode;
@@ -52,11 +55,6 @@ import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.Sets;
-import com.google.protobuf.TextFormat;
-import java.util.List;
-import org.apache.bookkeeper.util.ZkUtils;
 
 /**
  * When a bookie starts for the first time it generates  a cookie, and stores

@@ -29,6 +29,11 @@ import org.apache.bookkeeper.stats.StatsLogger;
 
 import io.netty.util.HashedWheelTimer;
 
+/**
+ * A placement policy implementation use rack information for placing ensembles.
+ *
+ * @see EnsemblePlacementPolicy
+ */
 public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacementPolicyImpl
         implements ITopologyAwareEnsemblePlacementPolicy<TopologyAwareEnsemblePlacementPolicy.BookieNode> {
     RackawareEnsemblePlacementPolicyImpl slave = null;

@@ -16,10 +16,9 @@
  */
 package org.apache.bookkeeper.stats;
 
-import java.util.concurrent.TimeUnit;
-
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Summary;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A {@code Prometheus} based {@link OpStatsLogger} implementation.
@@ -31,17 +30,18 @@ public class PrometheusOpStatsLogger implements OpStatsLogger {
     private final Summary.Child fail;
 
     public PrometheusOpStatsLogger(CollectorRegistry registry, String name) {
-        this.summary = Summary.build().name(name).help("-") //
-                .quantile(0.50, 0.01) //
-                .quantile(0.75, 0.01) //
-                .quantile(0.95, 0.01) //
-                .quantile(0.99, 0.01) //
-                .quantile(0.999, 0.01) //
-                .quantile(0.9999, 0.01) //
-                .quantile(1.0, 0.01) //
-                .maxAgeSeconds(60) //
-                .labelNames("success") //
-                .create().register(registry);
+        this.summary = PrometheusUtil.safeRegister(registry,
+                Summary.build().name(name).help("-") //
+                        .quantile(0.50, 0.01) //
+                        .quantile(0.75, 0.01) //
+                        .quantile(0.95, 0.01) //
+                        .quantile(0.99, 0.01) //
+                        .quantile(0.999, 0.01) //
+                        .quantile(0.9999, 0.01) //
+                        .quantile(1.0, 0.01) //
+                        .maxAgeSeconds(60) //
+                        .labelNames("success") //
+                        .create());
 
         this.success = summary.labels("true");
         this.fail = summary.labels("false");

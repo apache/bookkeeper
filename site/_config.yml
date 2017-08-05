@@ -1,0 +1,63 @@
+title: Apache BookKeeper
+subtitle: A replicated log service
+github_repo: https://github.com/apache/bookkeeper
+github_master: https://github.com/apache/bookkeeper/tree/master
+permalink: pretty
+bk_version: "4.5.0"
+baseurl: /
+destination: local-generated
+twitter_url: https://twitter.com/asfbookkeeper
+
+livereload: true
+
+versions:
+- "4.5.0"
+archived_versions:
+- "4.4.0"
+- "4.3.2"
+- "4.3.1"
+- "4.3.0"
+- "4.2.4"
+- "4.2.3"
+- "4.2.2"
+- "4.2.1"
+- "4.2.0"
+- "4.1.0"
+- "4.0.0"
+latest: "4.5.0"
+latest_release: "4.4.0"
+stable_release: "4.4.0"
+distributedlog_version: "2.1.0-0.4.0"
+
+defaults:
+- scope:
+    path: docs
+  values:
+    layout: docs
+    toc: true
+- scope:
+    path: community
+  values:
+    layout: community
+- scope:
+    path: project
+  values:
+    layout: community
+- scope:
+    path: releases
+  values:
+    layout: community
+
+gems:
+- jekyll-toc
+
+exclude:
+- Gemfile
+- Gemfile.lock
+- Makefile
+- vendor/bundle
+- local-generated
+- generated_site
+- scripts
+- overview
+- README.md

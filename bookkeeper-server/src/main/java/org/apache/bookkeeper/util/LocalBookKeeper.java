@@ -36,6 +36,9 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.stats.StatsProvider;
+import org.apache.bookkeeper.tls.SecurityException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.CreateMode;
@@ -129,7 +132,7 @@ public class LocalBookKeeper {
 
     private List<File> runBookies(ServerConfiguration baseConf, String dirSuffix)
             throws IOException, KeeperException, InterruptedException, BookieException,
-            UnavailableException, CompatibilityException {
+            UnavailableException, CompatibilityException, SecurityException {
         List<File> tempDirs = new ArrayList<File>();
         try {
             runBookies(baseConf, tempDirs, dirSuffix);
@@ -157,8 +160,8 @@ public class LocalBookKeeper {
 
     @SuppressWarnings("deprecation")
     private void runBookies(ServerConfiguration baseConf, List<File> tempDirs, String dirSuffix)
-            throws IOException, KeeperException, InterruptedException, BookieException,
-            UnavailableException, CompatibilityException {
+            throws IOException, KeeperException, InterruptedException, BookieException, UnavailableException,
+            CompatibilityException, SecurityException {
         LOG.info("Starting Bookie(s)");
         // Create Bookie Servers (B1, B2, B3)
 
@@ -300,6 +303,7 @@ public class LocalBookKeeper {
         } catch (Exception e) {
             LOG.error("Failed to run {} bookies : zk ensemble = '{}:{}'",
                 new Object[] { numBookies, zkHost, zkPort, e });
+            throw e;
         } finally {
             if (stopOnExit) {
                 cleanupDirectories(bkTmpDirs);
@@ -310,7 +314,7 @@ public class LocalBookKeeper {
         }
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception, SecurityException {
         if(args.length < 1) {
             usage();
             System.exit(-1);
