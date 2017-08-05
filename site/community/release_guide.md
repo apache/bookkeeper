@@ -250,11 +250,11 @@ Use Maven release plugin to build the release artifacts, as follows:
         -DreleaseVersion=${VERSION} \
         -Dtag=${TAG} \
         -DupdateWorkingCopyVersions=false \
-        [-DdryRun]
+        [-DdryRun] [-DskipTests]
 
 Use Maven release plugin to stage these artifacts on the Apache Nexus repository, as follows:
 
-    mvn release:perform [-DdryRun]
+    mvn release:perform [-DdryRun] [-DskipTests]
 
 Review all staged artifacts. They should contain all relevant parts for each module, including `pom.xml`, jar, test jar, source, test source, javadoc, etc. Artifact names should follow [the existing format](https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22org.apache.bookkeeper%22) in which artifact name mirrors directory structure, e.g., `bookkeeper-server`. Carefully review any new artifacts.
 
