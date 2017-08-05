@@ -17,20 +17,17 @@
  */
 package org.apache.bookkeeper.util;
 
+import com.google.common.base.Charsets;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import com.google.common.base.Charsets;
 
 /**
  * A base class for running a Unix command.
@@ -43,265 +40,13 @@ abstract public class Shell {
 
     public static final Log LOG = LogFactory.getLog(Shell.class);
 
-    private static boolean IS_JAVA7_OR_ABOVE =
-        System.getProperty("java.version").substring(0, 3).compareTo("1.7") >= 0;
-
-    public static boolean isJava7OrAbove() {
-        return IS_JAVA7_OR_ABOVE;
-    }
-
-    /** a Unix command to get the current user's name */
-    public final static String USER_NAME_COMMAND = "whoami";
-
-    /** Windows CreateProcess synchronization object */
-    public static final Object WindowsProcessLaunchLock = new Object();
-
-    /** a Unix command to get the current user's groups list */
-    public static String[] getGroupsCommand() {
-        return (WINDOWS) ? new String[] { "cmd", "/c", "groups" } : new String[] { "bash", "-c", "groups" };
-    }
-
-    /** a Unix command to get a given user's groups list */
-    public static String[] getGroupsForUserCommand(final String user) {
-        //'groups username' command return is non-consistent across different unixes
-        return (WINDOWS) ? new String[] { WINUTILS, "groups", "-F", "\"" + user + "\"" } : new String[] { "bash", "-c",
-                "id -Gn " + user };
-    }
-
-    /** a Unix command to get a given netgroup's user list */
-    public static String[] getUsersForNetgroupCommand(final String netgroup) {
-        //'groups username' command return is non-consistent across different unixes
-        return (WINDOWS) ? new String[] { "cmd", "/c", "getent netgroup " + netgroup } : new String[] { "bash", "-c",
-                "getent netgroup " + netgroup };
-    }
-
-    /** Return a command to get permission information. */
-    public static String[] getGetPermissionCommand() {
-        return (WINDOWS) ? new String[] { WINUTILS, "ls", "-F" } : new String[] { "/bin/ls", "-ld" };
-    }
-
-    /** Return a command to set permission */
-    public static String[] getSetPermissionCommand(String perm, boolean recursive) {
-        if (recursive) {
-            return (WINDOWS) ? new String[] { WINUTILS, "chmod", "-R", perm } : new String[] { "chmod", "-R", perm };
-        } else {
-            return (WINDOWS) ? new String[] { WINUTILS, "chmod", perm } : new String[] { "chmod", perm };
-        }
-    }
-
-    /**
-     * Return a command to set permission for specific file.
-     *
-     * @param perm String permission to set
-     * @param recursive boolean true to apply to all sub-directories recursively
-     * @param file String file to set
-     * @return String[] containing command and arguments
-     */
-    public static String[] getSetPermissionCommand(String perm, boolean recursive, String file) {
-        String[] baseCmd = getSetPermissionCommand(perm, recursive);
-        String[] cmdWithFile = Arrays.copyOf(baseCmd, baseCmd.length + 1);
-        cmdWithFile[cmdWithFile.length - 1] = file;
-        return cmdWithFile;
-    }
-
-    /** Return a command to set owner */
-    public static String[] getSetOwnerCommand(String owner) {
-        return (WINDOWS) ? new String[] { WINUTILS, "chown", "\"" + owner + "\"" } : new String[] { "chown", owner };
-    }
-
-    /** Return a command to create symbolic links */
-    public static String[] getSymlinkCommand(String target, String link) {
-        return WINDOWS ? new String[] { WINUTILS, "symlink", link, target } : new String[] { "ln", "-s", target, link };
-    }
-
-    /** Return a command for determining if process with specified pid is alive. */
-    public static String[] getCheckProcessIsAliveCommand(String pid) {
-        return Shell.WINDOWS ? new String[] { Shell.WINUTILS, "task", "isAlive", pid } : new String[] { "kill", "-0",
-                isSetsidAvailable ? "-" + pid : pid };
-    }
-
-    /** Return a command to send a signal to a given pid */
-    public static String[] getSignalKillCommand(int code, String pid) {
-        return Shell.WINDOWS ? new String[] { Shell.WINUTILS, "task", "kill", pid } : new String[] { "kill",
-                "-" + code, isSetsidAvailable ? "-" + pid : pid };
-    }
-
-    /**
-     * Returns a File referencing a script with the given basename, inside the
-     * given parent directory.  The file extension is inferred by platform: ".cmd"
-     * on Windows, or ".sh" otherwise.
-     *
-     * @param parent File parent directory
-     * @param basename String script file basename
-     * @return File referencing the script in the directory
-     */
-    public static File appendScriptExtension(File parent, String basename) {
-        return new File(parent, appendScriptExtension(basename));
-    }
-
-    /**
-     * Returns a script file name with the given basename.  The file extension is
-     * inferred by platform: ".cmd" on Windows, or ".sh" otherwise.
-     *
-     * @param basename String script file basename
-     * @return String script file name
-     */
-    public static String appendScriptExtension(String basename) {
-        return basename + (WINDOWS ? ".cmd" : ".sh");
-    }
-
-    /**
-     * Returns a command to run the given script.  The script interpreter is
-     * inferred by platform: cmd on Windows or bash otherwise.
-     *
-     * @param script File script to run
-     * @return String[] command to run the script
-     */
-    public static String[] getRunScriptCommand(File script) {
-        String absolutePath = script.getAbsolutePath();
-        return WINDOWS ? new String[] { "cmd", "/c", absolutePath } : new String[] { "/bin/bash", absolutePath };
-    }
-
-    /** a Unix command to set permission */
-    public static final String SET_PERMISSION_COMMAND = "chmod";
-    /** a Unix command to set owner */
-    public static final String SET_OWNER_COMMAND = "chown";
-
-    /** a Unix command to set the change user's groups list */
-    public static final String SET_GROUP_COMMAND = "chgrp";
-    /** a Unix command to create a link */
-    public static final String LINK_COMMAND = "ln";
-    /** a Unix command to get a link target */
-    public static final String READ_LINK_COMMAND = "readlink";
-
-    /**Time after which the executing script would be timedout*/
     protected long timeOutInterval = 0L;
     /** If or not script timed out*/
     private AtomicBoolean timedOut;
 
-    /** Centralized logic to discover and validate the sanity of the Hadoop
-     *  home directory. Returns either NULL or a directory that exists and
-     *  was specified via either -Dhadoop.home.dir or the HADOOP_HOME ENV
-     *  variable.  This does a lot of work so it should only be called
-     *  privately for initialization once per process.
-     **/
-    private static String checkHadoopHome() {
-
-        // first check the Dflag hadoop.home.dir with JVM scope
-        String home = System.getProperty("hadoop.home.dir");
-
-        // fall back to the system/user-global env variable
-        if (home == null) {
-            home = System.getenv("HADOOP_HOME");
-        }
-
-        try {
-            // couldn't find either setting for hadoop's home directory
-            if (home == null) {
-                throw new IOException("HADOOP_HOME or hadoop.home.dir are not set.");
-            }
-
-            if (home.startsWith("\"") && home.endsWith("\"")) {
-                home = home.substring(1, home.length() - 1);
-            }
-
-            // check that the home setting is actually a directory that exists
-            File homedir = new File(home);
-            if (!homedir.isAbsolute() || !homedir.exists() || !homedir.isDirectory()) {
-                throw new IOException("Hadoop home directory " + homedir
-                        + " does not exist, is not a directory, or is not an absolute path.");
-            }
-
-            home = homedir.getCanonicalPath();
-
-        } catch (IOException ioe) {
-            LOG.error("Failed to detect a valid hadoop home directory", ioe);
-            home = null;
-        }
-
-        return home;
-    }
-
-    private static String HADOOP_HOME_DIR = checkHadoopHome();
-
-    // Public getter, throws an exception if HADOOP_HOME failed validation
-    // checks and is being referenced downstream.
-    public static final String getHadoopHome() throws IOException {
-        if (HADOOP_HOME_DIR == null) {
-            throw new IOException("Misconfigured HADOOP_HOME cannot be referenced.");
-        }
-
-        return HADOOP_HOME_DIR;
-    }
-
-    /** fully qualify the path to a binary that should be in a known hadoop
-     *  bin location. This is primarily useful for disambiguating call-outs
-     *  to executable sub-components of Hadoop to avoid clashes with other
-     *  executables that may be in the path.  Caveat:  this call doesn't
-     *  just format the path to the bin directory.  It also checks for file
-     *  existence of the composed path. The output of this call should be
-     *  cached by callers.
-     * */
-    public static final String getQualifiedBinPath(String executable) throws IOException {
-        // construct hadoop bin path to the specified executable
-        String fullExeName = HADOOP_HOME_DIR + File.separator + "bin" + File.separator + executable;
-
-        File exeFile = new File(fullExeName);
-        if (!exeFile.exists()) {
-            throw new IOException("Could not locate executable " + fullExeName + " in the Hadoop binaries.");
-        }
-
-        return exeFile.getCanonicalPath();
-    }
-
     /** Set to true on Windows platforms */
     public static final boolean WINDOWS /* borrowed from Path.WINDOWS */
     = System.getProperty("os.name").startsWith("Windows");
-
-    public static final boolean LINUX = System.getProperty("os.name").startsWith("Linux");
-
-    /** a Windows utility to emulate Unix commands */
-    public static final String WINUTILS = getWinUtilsPath();
-
-    public static final String getWinUtilsPath() {
-        String winUtilsPath = null;
-
-        try {
-            if (WINDOWS) {
-                winUtilsPath = getQualifiedBinPath("winutils.exe");
-            }
-        } catch (IOException ioe) {
-            LOG.error("Failed to locate the winutils binary in the hadoop binary path", ioe);
-        }
-
-        return winUtilsPath;
-    }
-
-    public static final boolean isSetsidAvailable = isSetsidSupported();
-
-    private static boolean isSetsidSupported() {
-        if (Shell.WINDOWS) {
-            return false;
-        }
-        ShellCommandExecutor shexec = null;
-        boolean setsidSupported = true;
-        try {
-            String[] args = { "setsid", "bash", "-c", "echo $$" };
-            shexec = new ShellCommandExecutor(args);
-            shexec.execute();
-        } catch (IOException ioe) {
-            LOG.warn("setsid is not available on this machine. So not using it.");
-            setsidSupported = false;
-        } finally { // handle the exit code
-            if (null != shexec) {
-                LOG.info("setsid exited with exit code " + shexec.getExitCode());
-            }
-        }
-        return setsidSupported;
-    }
-
-    /** Token separator regex used to parse Shell tool outputs */
-    public static final String TOKEN_SEPARATOR_REGEX = WINDOWS ? "[|\n\r]" : "[ \t\n\r\f]";
 
     private long interval; // refresh interval in msec
     private long lastTime; // last time the command was performed
@@ -364,14 +109,7 @@ abstract public class Shell {
         }
 
         if (Shell.WINDOWS) {
-            synchronized (WindowsProcessLaunchLock) {
-                // To workaround the race condition issue with child processes
-                // inheriting unintended handles during process launch that can
-                // lead to hangs on reading output and error streams, we
-                // serialize process creation. More info available at:
-                // http://support.microsoft.com/kb/315939
-                process = builder.start();
-            }
+            throw new IOException("Windows is not supported.");
         } else {
             process = builder.start();
         }
