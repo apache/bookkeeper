@@ -32,7 +32,7 @@
         <a class="navbar-link">Documentation</a>
         <div class="navbar-dropdown is-boxed">
           {% for version in site.versions %}
-          <a class="navbar-item" href="{{ site.baseurl }}docs/getting-started/installation">
+          <a class="navbar-item" href="{{ site.baseurl }}docs/latest/getting-started/installation">
             Release {{version}}
             {% if version == site.latest %}<span class="tag is-success">LATEST</span>{% endif %}
           </a>
