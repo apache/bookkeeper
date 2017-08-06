@@ -1,7 +1,7 @@
 ---
 title: BookKeeper installation
 subtitle: Download or clone BookKeeper and build it locally
-next: /docs/getting-started/run-locally
+next: ../run-locally
 ---
 
 {% capture download_url %}http://apache.claz.org/bookkeeper/bookkeeper-{{ site.bk_version }}/bookkeeper-{{ site.bk_version }}-src.tar.gz{% endcapture %}

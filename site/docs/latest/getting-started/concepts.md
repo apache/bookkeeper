@@ -1,8 +1,7 @@
 ---
 title: BookKeeper concepts and architecture
 subtitle: The core components and how they work
-prev: /docs/getting-started/run-locally
-next: /docs/applications/java-client
+prev: ../run-locally
 ---
 
 BookKeeper is a service that provides persistent storage of streams of log [entries](#entries)---aka *records*---in sequences called [ledgers](#ledgers). BookKeeper replicates stored entries across multiple servers.
