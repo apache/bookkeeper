@@ -65,6 +65,8 @@ for conf_filename in conf_files:
         # Only replace first appearance
         if k not in keys:
             keys[k] = len(lines) - 1
+        else:
+           lines.pop()
 
     # Update values from Env
     for k in sorted(os.environ.keys()):
