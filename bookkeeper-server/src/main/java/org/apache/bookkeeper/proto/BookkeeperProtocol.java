@@ -316,6 +316,10 @@ public final class BookkeeperProtocol {
      * <code>GET_BOOKIE_INFO = 8;</code>
      */
     GET_BOOKIE_INFO(7, 8),
+    /**
+     * <code>START_TLS = 9;</code>
+     */
+    START_TLS(8, 9),
     ;
 
     /**
@@ -354,6 +358,10 @@ public final class BookkeeperProtocol {
      * <code>GET_BOOKIE_INFO = 8;</code>
      */
     public static final int GET_BOOKIE_INFO_VALUE = 8;
+    /**
+     * <code>START_TLS = 9;</code>
+     */
+    public static final int START_TLS_VALUE = 9;
 
 
     public final int getNumber() { return value; }
@@ -368,6 +376,7 @@ public final class BookkeeperProtocol {
         case 6: return WRITE_LAC;
         case 7: return READ_LAC;
         case 8: return GET_BOOKIE_INFO;
+        case 9: return START_TLS;
         default: return null;
       }
     }
@@ -1130,6 +1139,19 @@ public final class BookkeeperProtocol {
      * <code>optional .GetBookieInfoRequest getBookieInfoRequest = 105;</code>
      */
     org.apache.bookkeeper.proto.BookkeeperProtocol.GetBookieInfoRequestOrBuilder getGetBookieInfoRequestOrBuilder();
+
+    /**
+     * <code>optional .StartTLSRequest startTLSRequest = 106;</code>
+     */
+    boolean hasStartTLSRequest();
+    /**
+     * <code>optional .StartTLSRequest startTLSRequest = 106;</code>
+     */
+    org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest getStartTLSRequest();
+    /**
+     * <code>optional .StartTLSRequest startTLSRequest = 106;</code>
+     */
+    org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequestOrBuilder getStartTLSRequestOrBuilder();
   }
   /**
    * Protobuf type {@code Request}
@@ -1272,6 +1294,19 @@ public final class BookkeeperProtocol {
                 getBookieInfoRequest_ = subBuilder.buildPartial();
               }
               bitField0_ |= 0x00000040;
+              break;
+            }
+            case 850: {
+              org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest.Builder subBuilder = null;
+              if (((bitField0_ & 0x00000080) == 0x00000080)) {
+                subBuilder = startTLSRequest_.toBuilder();
+              }
+              startTLSRequest_ = input.readMessage(org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest.PARSER, extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(startTLSRequest_);
+                startTLSRequest_ = subBuilder.buildPartial();
+              }
+              bitField0_ |= 0x00000080;
               break;
             }
           }
@@ -1473,6 +1508,27 @@ public final class BookkeeperProtocol {
       return getBookieInfoRequest_;
     }
 
+    public static final int STARTTLSREQUEST_FIELD_NUMBER = 106;
+    private org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest startTLSRequest_;
+    /**
+     * <code>optional .StartTLSRequest startTLSRequest = 106;</code>
+     */
+    public boolean hasStartTLSRequest() {
+      return ((bitField0_ & 0x00000080) == 0x00000080);
+    }
+    /**
+     * <code>optional .StartTLSRequest startTLSRequest = 106;</code>
+     */
+    public org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest getStartTLSRequest() {
+      return startTLSRequest_;
+    }
+    /**
+     * <code>optional .StartTLSRequest startTLSRequest = 106;</code>
+     */
+    public org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequestOrBuilder getStartTLSRequestOrBuilder() {
+      return startTLSRequest_;
+    }
+
     private void initFields() {
       header_ = org.apache.bookkeeper.proto.BookkeeperProtocol.BKPacketHeader.getDefaultInstance();
       readRequest_ = org.apache.bookkeeper.proto.BookkeeperProtocol.ReadRequest.getDefaultInstance();
@@ -1481,6 +1537,7 @@ public final class BookkeeperProtocol {
       writeLacRequest_ = org.apache.bookkeeper.proto.BookkeeperProtocol.WriteLacRequest.getDefaultInstance();
       readLacRequest_ = org.apache.bookkeeper.proto.BookkeeperProtocol.ReadLacRequest.getDefaultInstance();
       getBookieInfoRequest_ = org.apache.bookkeeper.proto.BookkeeperProtocol.GetBookieInfoRequest.getDefaultInstance();
+      startTLSRequest_ = org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest.getDefaultInstance();
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -1554,6 +1611,9 @@ public final class BookkeeperProtocol {
       if (((bitField0_ & 0x00000040) == 0x00000040)) {
         output.writeMessage(105, getBookieInfoRequest_);
       }
+      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+        output.writeMessage(106, startTLSRequest_);
+      }
       getUnknownFields().writeTo(output);
     }
 
@@ -1590,6 +1650,10 @@ public final class BookkeeperProtocol {
       if (((bitField0_ & 0x00000040) == 0x00000040)) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(105, getBookieInfoRequest_);
+      }
+      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(106, startTLSRequest_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -1707,6 +1771,7 @@ public final class BookkeeperProtocol {
           getWriteLacRequestFieldBuilder();
           getReadLacRequestFieldBuilder();
           getGetBookieInfoRequestFieldBuilder();
+          getStartTLSRequestFieldBuilder();
         }
       }
       private static Builder create() {
@@ -1757,6 +1822,12 @@ public final class BookkeeperProtocol {
           getBookieInfoRequestBuilder_.clear();
         }
         bitField0_ = (bitField0_ & ~0x00000040);
+        if (startTLSRequestBuilder_ == null) {
+          startTLSRequest_ = org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest.getDefaultInstance();
+        } else {
+          startTLSRequestBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000080);
         return this;
       }
 
@@ -1841,6 +1912,14 @@ public final class BookkeeperProtocol {
         } else {
           result.getBookieInfoRequest_ = getBookieInfoRequestBuilder_.build();
         }
+        if (((from_bitField0_ & 0x00000080) == 0x00000080)) {
+          to_bitField0_ |= 0x00000080;
+        }
+        if (startTLSRequestBuilder_ == null) {
+          result.startTLSRequest_ = startTLSRequest_;
+        } else {
+          result.startTLSRequest_ = startTLSRequestBuilder_.build();
+        }
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1877,6 +1956,9 @@ public final class BookkeeperProtocol {
         }
         if (other.hasGetBookieInfoRequest()) {
           mergeGetBookieInfoRequest(other.getGetBookieInfoRequest());
+        }
+        if (other.hasStartTLSRequest()) {
+          mergeStartTLSRequest(other.getStartTLSRequest());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -2791,6 +2873,122 @@ public final class BookkeeperProtocol {
         return getBookieInfoRequestBuilder_;
       }
 
+      private org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest startTLSRequest_ = org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest, org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest.Builder, org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequestOrBuilder> startTLSRequestBuilder_;
+      /**
+       * <code>optional .StartTLSRequest startTLSRequest = 106;</code>
+       */
+      public boolean hasStartTLSRequest() {
+        return ((bitField0_ & 0x00000080) == 0x00000080);
+      }
+      /**
+       * <code>optional .StartTLSRequest startTLSRequest = 106;</code>
+       */
+      public org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest getStartTLSRequest() {
+        if (startTLSRequestBuilder_ == null) {
+          return startTLSRequest_;
+        } else {
+          return startTLSRequestBuilder_.getMessage();
+        }
+      }
+      /**
+       * <code>optional .StartTLSRequest startTLSRequest = 106;</code>
+       */
+      public Builder setStartTLSRequest(org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest value) {
+        if (startTLSRequestBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          startTLSRequest_ = value;
+          onChanged();
+        } else {
+          startTLSRequestBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000080;
+        return this;
+      }
+      /**
+       * <code>optional .StartTLSRequest startTLSRequest = 106;</code>
+       */
+      public Builder setStartTLSRequest(
+          org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest.Builder builderForValue) {
+        if (startTLSRequestBuilder_ == null) {
+          startTLSRequest_ = builderForValue.build();
+          onChanged();
+        } else {
+          startTLSRequestBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000080;
+        return this;
+      }
+      /**
+       * <code>optional .StartTLSRequest startTLSRequest = 106;</code>
+       */
+      public Builder mergeStartTLSRequest(org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest value) {
+        if (startTLSRequestBuilder_ == null) {
+          if (((bitField0_ & 0x00000080) == 0x00000080) &&
+              startTLSRequest_ != org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest.getDefaultInstance()) {
+            startTLSRequest_ =
+              org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest.newBuilder(startTLSRequest_).mergeFrom(value).buildPartial();
+          } else {
+            startTLSRequest_ = value;
+          }
+          onChanged();
+        } else {
+          startTLSRequestBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00000080;
+        return this;
+      }
+      /**
+       * <code>optional .StartTLSRequest startTLSRequest = 106;</code>
+       */
+      public Builder clearStartTLSRequest() {
+        if (startTLSRequestBuilder_ == null) {
+          startTLSRequest_ = org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest.getDefaultInstance();
+          onChanged();
+        } else {
+          startTLSRequestBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000080);
+        return this;
+      }
+      /**
+       * <code>optional .StartTLSRequest startTLSRequest = 106;</code>
+       */
+      public org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest.Builder getStartTLSRequestBuilder() {
+        bitField0_ |= 0x00000080;
+        onChanged();
+        return getStartTLSRequestFieldBuilder().getBuilder();
+      }
+      /**
+       * <code>optional .StartTLSRequest startTLSRequest = 106;</code>
+       */
+      public org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequestOrBuilder getStartTLSRequestOrBuilder() {
+        if (startTLSRequestBuilder_ != null) {
+          return startTLSRequestBuilder_.getMessageOrBuilder();
+        } else {
+          return startTLSRequest_;
+        }
+      }
+      /**
+       * <code>optional .StartTLSRequest startTLSRequest = 106;</code>
+       */
+      private com.google.protobuf.SingleFieldBuilder<
+          org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest, org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest.Builder, org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequestOrBuilder> 
+          getStartTLSRequestFieldBuilder() {
+        if (startTLSRequestBuilder_ == null) {
+          startTLSRequestBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest, org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest.Builder, org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequestOrBuilder>(
+                  getStartTLSRequest(),
+                  getParentForChildren(),
+                  isClean());
+          startTLSRequest_ = null;
+        }
+        return startTLSRequestBuilder_;
+      }
+
       // @@protoc_insertion_point(builder_scope:Request)
     }
 
@@ -2879,7 +3077,7 @@ public final class BookkeeperProtocol {
      * <code>optional int64 timeOut = 5;</code>
      *
      * <pre>
-     * Used as a timeout for the long polling request
+     * Used as a timeout (in milliseconds) for the long polling request
      * </pre>
      */
     boolean hasTimeOut();
@@ -2887,7 +3085,7 @@ public final class BookkeeperProtocol {
      * <code>optional int64 timeOut = 5;</code>
      *
      * <pre>
-     * Used as a timeout for the long polling request
+     * Used as a timeout (in milliseconds) for the long polling request
      * </pre>
      */
     long getTimeOut();
@@ -3207,7 +3405,7 @@ public final class BookkeeperProtocol {
      * <code>optional int64 timeOut = 5;</code>
      *
      * <pre>
-     * Used as a timeout for the long polling request
+     * Used as a timeout (in milliseconds) for the long polling request
      * </pre>
      */
     public boolean hasTimeOut() {
@@ -3217,7 +3415,7 @@ public final class BookkeeperProtocol {
      * <code>optional int64 timeOut = 5;</code>
      *
      * <pre>
-     * Used as a timeout for the long polling request
+     * Used as a timeout (in milliseconds) for the long polling request
      * </pre>
      */
     public long getTimeOut() {
@@ -3773,7 +3971,7 @@ public final class BookkeeperProtocol {
        * <code>optional int64 timeOut = 5;</code>
        *
        * <pre>
-       * Used as a timeout for the long polling request
+       * Used as a timeout (in milliseconds) for the long polling request
        * </pre>
        */
       public boolean hasTimeOut() {
@@ -3783,7 +3981,7 @@ public final class BookkeeperProtocol {
        * <code>optional int64 timeOut = 5;</code>
        *
        * <pre>
-       * Used as a timeout for the long polling request
+       * Used as a timeout (in milliseconds) for the long polling request
        * </pre>
        */
       public long getTimeOut() {
@@ -3793,7 +3991,7 @@ public final class BookkeeperProtocol {
        * <code>optional int64 timeOut = 5;</code>
        *
        * <pre>
-       * Used as a timeout for the long polling request
+       * Used as a timeout (in milliseconds) for the long polling request
        * </pre>
        */
       public Builder setTimeOut(long value) {
@@ -3806,7 +4004,7 @@ public final class BookkeeperProtocol {
        * <code>optional int64 timeOut = 5;</code>
        *
        * <pre>
-       * Used as a timeout for the long polling request
+       * Used as a timeout (in milliseconds) for the long polling request
        * </pre>
        */
       public Builder clearTimeOut() {
@@ -4654,6 +4852,319 @@ public final class BookkeeperProtocol {
     }
 
     // @@protoc_insertion_point(class_scope:AddRequest)
+  }
+
+  public interface StartTLSRequestOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:StartTLSRequest)
+      com.google.protobuf.MessageOrBuilder {
+  }
+  /**
+   * Protobuf type {@code StartTLSRequest}
+   */
+  public static final class StartTLSRequest extends
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:StartTLSRequest)
+      StartTLSRequestOrBuilder {
+    // Use StartTLSRequest.newBuilder() to construct.
+    private StartTLSRequest(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
+    }
+    private StartTLSRequest(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
+    private static final StartTLSRequest defaultInstance;
+    public static StartTLSRequest getDefaultInstance() {
+      return defaultInstance;
+    }
+
+    public StartTLSRequest getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private StartTLSRequest(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.apache.bookkeeper.proto.BookkeeperProtocol.internal_static_StartTLSRequest_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.apache.bookkeeper.proto.BookkeeperProtocol.internal_static_StartTLSRequest_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest.class, org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest.Builder.class);
+    }
+
+    public static com.google.protobuf.Parser<StartTLSRequest> PARSER =
+        new com.google.protobuf.AbstractParser<StartTLSRequest>() {
+      public StartTLSRequest parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new StartTLSRequest(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<StartTLSRequest> getParserForType() {
+      return PARSER;
+    }
+
+    private void initFields() {
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      getUnknownFields().writeTo(output);
+    }
+
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input);
+    }
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+    }
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code StartTLSRequest}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:StartTLSRequest)
+        org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.apache.bookkeeper.proto.BookkeeperProtocol.internal_static_StartTLSRequest_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.apache.bookkeeper.proto.BookkeeperProtocol.internal_static_StartTLSRequest_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest.class, org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest.Builder.class);
+      }
+
+      // Construct using org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        return this;
+      }
+
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.apache.bookkeeper.proto.BookkeeperProtocol.internal_static_StartTLSRequest_descriptor;
+      }
+
+      public org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest getDefaultInstanceForType() {
+        return org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest.getDefaultInstance();
+      }
+
+      public org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest build() {
+        org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest buildPartial() {
+        org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest result = new org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest(this);
+        onBuilt();
+        return result;
+      }
+
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest) {
+          return mergeFrom((org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest other) {
+        if (other == org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest.getDefaultInstance()) return this;
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSRequest) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:StartTLSRequest)
+    }
+
+    static {
+      defaultInstance = new StartTLSRequest(true);
+      defaultInstance.initFields();
+    }
+
+    // @@protoc_insertion_point(class_scope:StartTLSRequest)
   }
 
   public interface WriteLacRequestOrBuilder extends
@@ -6366,6 +6877,19 @@ public final class BookkeeperProtocol {
      * <code>optional .GetBookieInfoResponse getBookieInfoResponse = 105;</code>
      */
     org.apache.bookkeeper.proto.BookkeeperProtocol.GetBookieInfoResponseOrBuilder getGetBookieInfoResponseOrBuilder();
+
+    /**
+     * <code>optional .StartTLSResponse startTLSResponse = 106;</code>
+     */
+    boolean hasStartTLSResponse();
+    /**
+     * <code>optional .StartTLSResponse startTLSResponse = 106;</code>
+     */
+    org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse getStartTLSResponse();
+    /**
+     * <code>optional .StartTLSResponse startTLSResponse = 106;</code>
+     */
+    org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponseOrBuilder getStartTLSResponseOrBuilder();
   }
   /**
    * Protobuf type {@code Response}
@@ -6519,6 +7043,19 @@ public final class BookkeeperProtocol {
                 getBookieInfoResponse_ = subBuilder.buildPartial();
               }
               bitField0_ |= 0x00000080;
+              break;
+            }
+            case 850: {
+              org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse.Builder subBuilder = null;
+              if (((bitField0_ & 0x00000100) == 0x00000100)) {
+                subBuilder = startTLSResponse_.toBuilder();
+              }
+              startTLSResponse_ = input.readMessage(org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse.PARSER, extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(startTLSResponse_);
+                startTLSResponse_ = subBuilder.buildPartial();
+              }
+              bitField0_ |= 0x00000100;
               break;
             }
           }
@@ -6745,6 +7282,27 @@ public final class BookkeeperProtocol {
       return getBookieInfoResponse_;
     }
 
+    public static final int STARTTLSRESPONSE_FIELD_NUMBER = 106;
+    private org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse startTLSResponse_;
+    /**
+     * <code>optional .StartTLSResponse startTLSResponse = 106;</code>
+     */
+    public boolean hasStartTLSResponse() {
+      return ((bitField0_ & 0x00000100) == 0x00000100);
+    }
+    /**
+     * <code>optional .StartTLSResponse startTLSResponse = 106;</code>
+     */
+    public org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse getStartTLSResponse() {
+      return startTLSResponse_;
+    }
+    /**
+     * <code>optional .StartTLSResponse startTLSResponse = 106;</code>
+     */
+    public org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponseOrBuilder getStartTLSResponseOrBuilder() {
+      return startTLSResponse_;
+    }
+
     private void initFields() {
       header_ = org.apache.bookkeeper.proto.BookkeeperProtocol.BKPacketHeader.getDefaultInstance();
       status_ = org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode.EOK;
@@ -6754,6 +7312,7 @@ public final class BookkeeperProtocol {
       writeLacResponse_ = org.apache.bookkeeper.proto.BookkeeperProtocol.WriteLacResponse.getDefaultInstance();
       readLacResponse_ = org.apache.bookkeeper.proto.BookkeeperProtocol.ReadLacResponse.getDefaultInstance();
       getBookieInfoResponse_ = org.apache.bookkeeper.proto.BookkeeperProtocol.GetBookieInfoResponse.getDefaultInstance();
+      startTLSResponse_ = org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse.getDefaultInstance();
     }
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
@@ -6840,6 +7399,9 @@ public final class BookkeeperProtocol {
       if (((bitField0_ & 0x00000080) == 0x00000080)) {
         output.writeMessage(105, getBookieInfoResponse_);
       }
+      if (((bitField0_ & 0x00000100) == 0x00000100)) {
+        output.writeMessage(106, startTLSResponse_);
+      }
       getUnknownFields().writeTo(output);
     }
 
@@ -6880,6 +7442,10 @@ public final class BookkeeperProtocol {
       if (((bitField0_ & 0x00000080) == 0x00000080)) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(105, getBookieInfoResponse_);
+      }
+      if (((bitField0_ & 0x00000100) == 0x00000100)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(106, startTLSResponse_);
       }
       size += getUnknownFields().getSerializedSize();
       memoizedSerializedSize = size;
@@ -6997,6 +7563,7 @@ public final class BookkeeperProtocol {
           getWriteLacResponseFieldBuilder();
           getReadLacResponseFieldBuilder();
           getGetBookieInfoResponseFieldBuilder();
+          getStartTLSResponseFieldBuilder();
         }
       }
       private static Builder create() {
@@ -7049,6 +7616,12 @@ public final class BookkeeperProtocol {
           getBookieInfoResponseBuilder_.clear();
         }
         bitField0_ = (bitField0_ & ~0x00000080);
+        if (startTLSResponseBuilder_ == null) {
+          startTLSResponse_ = org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse.getDefaultInstance();
+        } else {
+          startTLSResponseBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000100);
         return this;
       }
 
@@ -7137,6 +7710,14 @@ public final class BookkeeperProtocol {
         } else {
           result.getBookieInfoResponse_ = getBookieInfoResponseBuilder_.build();
         }
+        if (((from_bitField0_ & 0x00000100) == 0x00000100)) {
+          to_bitField0_ |= 0x00000100;
+        }
+        if (startTLSResponseBuilder_ == null) {
+          result.startTLSResponse_ = startTLSResponse_;
+        } else {
+          result.startTLSResponse_ = startTLSResponseBuilder_.build();
+        }
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -7176,6 +7757,9 @@ public final class BookkeeperProtocol {
         }
         if (other.hasGetBookieInfoResponse()) {
           mergeGetBookieInfoResponse(other.getGetBookieInfoResponse());
+        }
+        if (other.hasStartTLSResponse()) {
+          mergeStartTLSResponse(other.getStartTLSResponse());
         }
         this.mergeUnknownFields(other.getUnknownFields());
         return this;
@@ -8153,6 +8737,122 @@ public final class BookkeeperProtocol {
           getBookieInfoResponse_ = null;
         }
         return getBookieInfoResponseBuilder_;
+      }
+
+      private org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse startTLSResponse_ = org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse.getDefaultInstance();
+      private com.google.protobuf.SingleFieldBuilder<
+          org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse, org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse.Builder, org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponseOrBuilder> startTLSResponseBuilder_;
+      /**
+       * <code>optional .StartTLSResponse startTLSResponse = 106;</code>
+       */
+      public boolean hasStartTLSResponse() {
+        return ((bitField0_ & 0x00000100) == 0x00000100);
+      }
+      /**
+       * <code>optional .StartTLSResponse startTLSResponse = 106;</code>
+       */
+      public org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse getStartTLSResponse() {
+        if (startTLSResponseBuilder_ == null) {
+          return startTLSResponse_;
+        } else {
+          return startTLSResponseBuilder_.getMessage();
+        }
+      }
+      /**
+       * <code>optional .StartTLSResponse startTLSResponse = 106;</code>
+       */
+      public Builder setStartTLSResponse(org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse value) {
+        if (startTLSResponseBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          startTLSResponse_ = value;
+          onChanged();
+        } else {
+          startTLSResponseBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00000100;
+        return this;
+      }
+      /**
+       * <code>optional .StartTLSResponse startTLSResponse = 106;</code>
+       */
+      public Builder setStartTLSResponse(
+          org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse.Builder builderForValue) {
+        if (startTLSResponseBuilder_ == null) {
+          startTLSResponse_ = builderForValue.build();
+          onChanged();
+        } else {
+          startTLSResponseBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00000100;
+        return this;
+      }
+      /**
+       * <code>optional .StartTLSResponse startTLSResponse = 106;</code>
+       */
+      public Builder mergeStartTLSResponse(org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse value) {
+        if (startTLSResponseBuilder_ == null) {
+          if (((bitField0_ & 0x00000100) == 0x00000100) &&
+              startTLSResponse_ != org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse.getDefaultInstance()) {
+            startTLSResponse_ =
+              org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse.newBuilder(startTLSResponse_).mergeFrom(value).buildPartial();
+          } else {
+            startTLSResponse_ = value;
+          }
+          onChanged();
+        } else {
+          startTLSResponseBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00000100;
+        return this;
+      }
+      /**
+       * <code>optional .StartTLSResponse startTLSResponse = 106;</code>
+       */
+      public Builder clearStartTLSResponse() {
+        if (startTLSResponseBuilder_ == null) {
+          startTLSResponse_ = org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse.getDefaultInstance();
+          onChanged();
+        } else {
+          startTLSResponseBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00000100);
+        return this;
+      }
+      /**
+       * <code>optional .StartTLSResponse startTLSResponse = 106;</code>
+       */
+      public org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse.Builder getStartTLSResponseBuilder() {
+        bitField0_ |= 0x00000100;
+        onChanged();
+        return getStartTLSResponseFieldBuilder().getBuilder();
+      }
+      /**
+       * <code>optional .StartTLSResponse startTLSResponse = 106;</code>
+       */
+      public org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponseOrBuilder getStartTLSResponseOrBuilder() {
+        if (startTLSResponseBuilder_ != null) {
+          return startTLSResponseBuilder_.getMessageOrBuilder();
+        } else {
+          return startTLSResponse_;
+        }
+      }
+      /**
+       * <code>optional .StartTLSResponse startTLSResponse = 106;</code>
+       */
+      private com.google.protobuf.SingleFieldBuilder<
+          org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse, org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse.Builder, org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponseOrBuilder> 
+          getStartTLSResponseFieldBuilder() {
+        if (startTLSResponseBuilder_ == null) {
+          startTLSResponseBuilder_ = new com.google.protobuf.SingleFieldBuilder<
+              org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse, org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse.Builder, org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponseOrBuilder>(
+                  getStartTLSResponse(),
+                  getParentForChildren(),
+                  isClean());
+          startTLSResponse_ = null;
+        }
+        return startTLSResponseBuilder_;
       }
 
       // @@protoc_insertion_point(builder_scope:Response)
@@ -11976,6 +12676,319 @@ public final class BookkeeperProtocol {
     // @@protoc_insertion_point(class_scope:GetBookieInfoResponse)
   }
 
+  public interface StartTLSResponseOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:StartTLSResponse)
+      com.google.protobuf.MessageOrBuilder {
+  }
+  /**
+   * Protobuf type {@code StartTLSResponse}
+   */
+  public static final class StartTLSResponse extends
+      com.google.protobuf.GeneratedMessage implements
+      // @@protoc_insertion_point(message_implements:StartTLSResponse)
+      StartTLSResponseOrBuilder {
+    // Use StartTLSResponse.newBuilder() to construct.
+    private StartTLSResponse(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
+    }
+    private StartTLSResponse(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
+    private static final StartTLSResponse defaultInstance;
+    public static StartTLSResponse getDefaultInstance() {
+      return defaultInstance;
+    }
+
+    public StartTLSResponse getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private StartTLSResponse(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return org.apache.bookkeeper.proto.BookkeeperProtocol.internal_static_StartTLSResponse_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return org.apache.bookkeeper.proto.BookkeeperProtocol.internal_static_StartTLSResponse_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse.class, org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse.Builder.class);
+    }
+
+    public static com.google.protobuf.Parser<StartTLSResponse> PARSER =
+        new com.google.protobuf.AbstractParser<StartTLSResponse>() {
+      public StartTLSResponse parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new StartTLSResponse(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<StartTLSResponse> getParserForType() {
+      return PARSER;
+    }
+
+    private void initFields() {
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      getUnknownFields().writeTo(output);
+    }
+
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input);
+    }
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+    }
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code StartTLSResponse}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:StartTLSResponse)
+        org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponseOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return org.apache.bookkeeper.proto.BookkeeperProtocol.internal_static_StartTLSResponse_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return org.apache.bookkeeper.proto.BookkeeperProtocol.internal_static_StartTLSResponse_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse.class, org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse.Builder.class);
+      }
+
+      // Construct using org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        return this;
+      }
+
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return org.apache.bookkeeper.proto.BookkeeperProtocol.internal_static_StartTLSResponse_descriptor;
+      }
+
+      public org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse getDefaultInstanceForType() {
+        return org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse.getDefaultInstance();
+      }
+
+      public org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse build() {
+        org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse buildPartial() {
+        org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse result = new org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse(this);
+        onBuilt();
+        return result;
+      }
+
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse) {
+          return mergeFrom((org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse other) {
+        if (other == org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse.getDefaultInstance()) return this;
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (org.apache.bookkeeper.proto.BookkeeperProtocol.StartTLSResponse) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:StartTLSResponse)
+    }
+
+    static {
+      defaultInstance = new StartTLSResponse(true);
+      defaultInstance.initFields();
+    }
+
+    // @@protoc_insertion_point(class_scope:StartTLSResponse)
+  }
+
   private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_BKPacketHeader_descriptor;
   private static
@@ -11996,6 +13009,11 @@ public final class BookkeeperProtocol {
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_AddRequest_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_StartTLSRequest_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_StartTLSRequest_fieldAccessorTable;
   private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_WriteLacRequest_descriptor;
   private static
@@ -12046,6 +13064,11 @@ public final class BookkeeperProtocol {
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_GetBookieInfoResponse_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_StartTLSResponse_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_StartTLSResponse_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -12058,60 +13081,63 @@ public final class BookkeeperProtocol {
       "\n\'src/main/proto/BookkeeperProtocol.prot" +
       "o\"e\n\016BKPacketHeader\022!\n\007version\030\001 \002(\0162\020.P" +
       "rotocolVersion\022!\n\toperation\030\002 \002(\0162\016.Oper" +
-      "ationType\022\r\n\005txnId\030\003 \002(\004\"\232\002\n\007Request\022\037\n\006" +
+      "ationType\022\r\n\005txnId\030\003 \002(\004\"\305\002\n\007Request\022\037\n\006" +
       "header\030\001 \002(\0132\017.BKPacketHeader\022!\n\013readReq" +
       "uest\030d \001(\0132\014.ReadRequest\022\037\n\naddRequest\030e" +
       " \001(\0132\013.AddRequest\022!\n\013authRequest\030f \001(\0132\014" +
       ".AuthMessage\022)\n\017writeLacRequest\030g \001(\0132\020." +
       "WriteLacRequest\022\'\n\016readLacRequest\030h \001(\0132" +
       "\017.ReadLacRequest\0223\n\024getBookieInfoRequest",
-      "\030i \001(\0132\025.GetBookieInfoRequest\"\271\001\n\013ReadRe" +
-      "quest\022\037\n\004flag\030d \001(\0162\021.ReadRequest.Flag\022\020" +
-      "\n\010ledgerId\030\001 \002(\003\022\017\n\007entryId\030\002 \002(\003\022\021\n\tmas" +
-      "terKey\030\003 \001(\014\022\023\n\013previousLAC\030\004 \001(\003\022\017\n\007tim" +
-      "eOut\030\005 \001(\003\"-\n\004Flag\022\020\n\014FENCE_LEDGER\020\001\022\023\n\017" +
-      "ENTRY_PIGGYBACK\020\002\"\212\001\n\nAddRequest\022\036\n\004flag" +
-      "\030d \001(\0162\020.AddRequest.Flag\022\020\n\010ledgerId\030\001 \002" +
-      "(\003\022\017\n\007entryId\030\002 \002(\003\022\021\n\tmasterKey\030\003 \002(\014\022\014" +
-      "\n\004body\030\004 \002(\014\"\030\n\004Flag\022\020\n\014RECOVERY_ADD\020\001\"Q" +
-      "\n\017WriteLacRequest\022\020\n\010ledgerId\030\001 \002(\003\022\013\n\003l",
-      "ac\030\002 \002(\003\022\021\n\tmasterKey\030\003 \002(\014\022\014\n\004body\030\004 \002(" +
-      "\014\"\"\n\016ReadLacRequest\022\020\n\010ledgerId\030\001 \002(\003\"`\n" +
-      "\024GetBookieInfoRequest\022\021\n\trequested\030\001 \001(\003" +
-      "\"5\n\005Flags\022\027\n\023TOTAL_DISK_CAPACITY\020\001\022\023\n\017FR" +
-      "EE_DISK_SPACE\020\002\"\303\002\n\010Response\022\037\n\006header\030\001" +
-      " \002(\0132\017.BKPacketHeader\022\033\n\006status\030\002 \002(\0162\013." +
-      "StatusCode\022#\n\014readResponse\030d \001(\0132\r.ReadR" +
-      "esponse\022!\n\013addResponse\030e \001(\0132\014.AddRespon" +
-      "se\022\"\n\014authResponse\030f \001(\0132\014.AuthMessage\022+" +
-      "\n\020writeLacResponse\030g \001(\0132\021.WriteLacRespo",
-      "nse\022)\n\017readLacResponse\030h \001(\0132\020.ReadLacRe" +
-      "sponse\0225\n\025getBookieInfoResponse\030i \001(\0132\026." +
-      "GetBookieInfoResponse\"\210\001\n\014ReadResponse\022\033" +
-      "\n\006status\030\001 \002(\0162\013.StatusCode\022\020\n\010ledgerId\030" +
-      "\002 \002(\003\022\017\n\007entryId\030\003 \002(\003\022\014\n\004body\030\004 \001(\014\022\016\n\006" +
-      "maxLAC\030\005 \001(\003\022\032\n\022lacUpdateTimestamp\030\006 \001(\003" +
-      "\"M\n\013AddResponse\022\033\n\006status\030\001 \002(\0162\013.Status" +
-      "Code\022\020\n\010ledgerId\030\002 \002(\003\022\017\n\007entryId\030\003 \002(\003\"" +
-      "6\n\013AuthMessage\022\026\n\016authPluginName\030\001 \002(\t\022\017" +
-      "\n\007payload\030\002 \002(\014\"A\n\020WriteLacResponse\022\033\n\006s",
-      "tatus\030\001 \002(\0162\013.StatusCode\022\020\n\010ledgerId\030\002 \002" +
-      "(\003\"h\n\017ReadLacResponse\022\033\n\006status\030\001 \002(\0162\013." +
-      "StatusCode\022\020\n\010ledgerId\030\002 \002(\003\022\017\n\007lacBody\030" +
-      "\003 \001(\014\022\025\n\rlastEntryBody\030\004 \001(\014\"f\n\025GetBooki" +
-      "eInfoResponse\022\033\n\006status\030\001 \002(\0162\013.StatusCo" +
-      "de\022\031\n\021totalDiskCapacity\030\002 \001(\003\022\025\n\rfreeDis" +
-      "kSpace\030\003 \001(\003*F\n\017ProtocolVersion\022\017\n\013VERSI" +
-      "ON_ONE\020\001\022\017\n\013VERSION_TWO\020\002\022\021\n\rVERSION_THR" +
-      "EE\020\003*\206\001\n\nStatusCode\022\007\n\003EOK\020\000\022\016\n\tENOLEDGE" +
-      "R\020\222\003\022\r\n\010ENOENTRY\020\223\003\022\014\n\007EBADREQ\020\224\003\022\010\n\003EIO",
-      "\020\365\003\022\010\n\003EUA\020\366\003\022\020\n\013EBADVERSION\020\367\003\022\014\n\007EFENC" +
-      "ED\020\370\003\022\016\n\tEREADONLY\020\371\003*\225\001\n\rOperationType\022" +
-      "\016\n\nREAD_ENTRY\020\001\022\r\n\tADD_ENTRY\020\002\022\024\n\020RANGE_" +
-      "READ_ENTRY\020\003\022\023\n\017RANGE_ADD_ENTRY\020\004\022\010\n\004AUT" +
-      "H\020\005\022\r\n\tWRITE_LAC\020\006\022\014\n\010READ_LAC\020\007\022\023\n\017GET_" +
-      "BOOKIE_INFO\020\010B\037\n\033org.apache.bookkeeper.p" +
-      "rotoH\001"
+      "\030i \001(\0132\025.GetBookieInfoRequest\022)\n\017startTL" +
+      "SRequest\030j \001(\0132\020.StartTLSRequest\"\271\001\n\013Rea" +
+      "dRequest\022\037\n\004flag\030d \001(\0162\021.ReadRequest.Fla" +
+      "g\022\020\n\010ledgerId\030\001 \002(\003\022\017\n\007entryId\030\002 \002(\003\022\021\n\t" +
+      "masterKey\030\003 \001(\014\022\023\n\013previousLAC\030\004 \001(\003\022\017\n\007" +
+      "timeOut\030\005 \001(\003\"-\n\004Flag\022\020\n\014FENCE_LEDGER\020\001\022" +
+      "\023\n\017ENTRY_PIGGYBACK\020\002\"\212\001\n\nAddRequest\022\036\n\004f" +
+      "lag\030d \001(\0162\020.AddRequest.Flag\022\020\n\010ledgerId\030" +
+      "\001 \002(\003\022\017\n\007entryId\030\002 \002(\003\022\021\n\tmasterKey\030\003 \002(" +
+      "\014\022\014\n\004body\030\004 \002(\014\"\030\n\004Flag\022\020\n\014RECOVERY_ADD\020",
+      "\001\"\021\n\017StartTLSRequest\"Q\n\017WriteLacRequest\022" +
+      "\020\n\010ledgerId\030\001 \002(\003\022\013\n\003lac\030\002 \002(\003\022\021\n\tmaster" +
+      "Key\030\003 \002(\014\022\014\n\004body\030\004 \002(\014\"\"\n\016ReadLacReques" +
+      "t\022\020\n\010ledgerId\030\001 \002(\003\"`\n\024GetBookieInfoRequ" +
+      "est\022\021\n\trequested\030\001 \001(\003\"5\n\005Flags\022\027\n\023TOTAL" +
+      "_DISK_CAPACITY\020\001\022\023\n\017FREE_DISK_SPACE\020\002\"\360\002" +
+      "\n\010Response\022\037\n\006header\030\001 \002(\0132\017.BKPacketHea" +
+      "der\022\033\n\006status\030\002 \002(\0162\013.StatusCode\022#\n\014read" +
+      "Response\030d \001(\0132\r.ReadResponse\022!\n\013addResp" +
+      "onse\030e \001(\0132\014.AddResponse\022\"\n\014authResponse",
+      "\030f \001(\0132\014.AuthMessage\022+\n\020writeLacResponse" +
+      "\030g \001(\0132\021.WriteLacResponse\022)\n\017readLacResp" +
+      "onse\030h \001(\0132\020.ReadLacResponse\0225\n\025getBooki" +
+      "eInfoResponse\030i \001(\0132\026.GetBookieInfoRespo" +
+      "nse\022+\n\020startTLSResponse\030j \001(\0132\021.StartTLS" +
+      "Response\"\210\001\n\014ReadResponse\022\033\n\006status\030\001 \002(" +
+      "\0162\013.StatusCode\022\020\n\010ledgerId\030\002 \002(\003\022\017\n\007entr" +
+      "yId\030\003 \002(\003\022\014\n\004body\030\004 \001(\014\022\016\n\006maxLAC\030\005 \001(\003\022" +
+      "\032\n\022lacUpdateTimestamp\030\006 \001(\003\"M\n\013AddRespon" +
+      "se\022\033\n\006status\030\001 \002(\0162\013.StatusCode\022\020\n\010ledge",
+      "rId\030\002 \002(\003\022\017\n\007entryId\030\003 \002(\003\"6\n\013AuthMessag" +
+      "e\022\026\n\016authPluginName\030\001 \002(\t\022\017\n\007payload\030\002 \002" +
+      "(\014\"A\n\020WriteLacResponse\022\033\n\006status\030\001 \002(\0162\013" +
+      ".StatusCode\022\020\n\010ledgerId\030\002 \002(\003\"h\n\017ReadLac" +
+      "Response\022\033\n\006status\030\001 \002(\0162\013.StatusCode\022\020\n" +
+      "\010ledgerId\030\002 \002(\003\022\017\n\007lacBody\030\003 \001(\014\022\025\n\rlast" +
+      "EntryBody\030\004 \001(\014\"f\n\025GetBookieInfoResponse" +
+      "\022\033\n\006status\030\001 \002(\0162\013.StatusCode\022\031\n\021totalDi" +
+      "skCapacity\030\002 \001(\003\022\025\n\rfreeDiskSpace\030\003 \001(\003\"" +
+      "\022\n\020StartTLSResponse*F\n\017ProtocolVersion\022\017",
+      "\n\013VERSION_ONE\020\001\022\017\n\013VERSION_TWO\020\002\022\021\n\rVERS" +
+      "ION_THREE\020\003*\206\001\n\nStatusCode\022\007\n\003EOK\020\000\022\016\n\tE" +
+      "NOLEDGER\020\222\003\022\r\n\010ENOENTRY\020\223\003\022\014\n\007EBADREQ\020\224\003" +
+      "\022\010\n\003EIO\020\365\003\022\010\n\003EUA\020\366\003\022\020\n\013EBADVERSION\020\367\003\022\014" +
+      "\n\007EFENCED\020\370\003\022\016\n\tEREADONLY\020\371\003*\244\001\n\rOperati" +
+      "onType\022\016\n\nREAD_ENTRY\020\001\022\r\n\tADD_ENTRY\020\002\022\024\n" +
+      "\020RANGE_READ_ENTRY\020\003\022\023\n\017RANGE_ADD_ENTRY\020\004" +
+      "\022\010\n\004AUTH\020\005\022\r\n\tWRITE_LAC\020\006\022\014\n\010READ_LAC\020\007\022" +
+      "\023\n\017GET_BOOKIE_INFO\020\010\022\r\n\tSTART_TLS\020\tB\037\n\033o" +
+      "rg.apache.bookkeeper.protoH\001"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -12136,7 +13162,7 @@ public final class BookkeeperProtocol {
     internal_static_Request_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_Request_descriptor,
-        new java.lang.String[] { "Header", "ReadRequest", "AddRequest", "AuthRequest", "WriteLacRequest", "ReadLacRequest", "GetBookieInfoRequest", });
+        new java.lang.String[] { "Header", "ReadRequest", "AddRequest", "AuthRequest", "WriteLacRequest", "ReadLacRequest", "GetBookieInfoRequest", "StartTLSRequest", });
     internal_static_ReadRequest_descriptor =
       getDescriptor().getMessageTypes().get(2);
     internal_static_ReadRequest_fieldAccessorTable = new
@@ -12149,66 +13175,78 @@ public final class BookkeeperProtocol {
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_AddRequest_descriptor,
         new java.lang.String[] { "Flag", "LedgerId", "EntryId", "MasterKey", "Body", });
-    internal_static_WriteLacRequest_descriptor =
+    internal_static_StartTLSRequest_descriptor =
       getDescriptor().getMessageTypes().get(4);
+    internal_static_StartTLSRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_StartTLSRequest_descriptor,
+        new java.lang.String[] { });
+    internal_static_WriteLacRequest_descriptor =
+      getDescriptor().getMessageTypes().get(5);
     internal_static_WriteLacRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_WriteLacRequest_descriptor,
         new java.lang.String[] { "LedgerId", "Lac", "MasterKey", "Body", });
     internal_static_ReadLacRequest_descriptor =
-      getDescriptor().getMessageTypes().get(5);
+      getDescriptor().getMessageTypes().get(6);
     internal_static_ReadLacRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_ReadLacRequest_descriptor,
         new java.lang.String[] { "LedgerId", });
     internal_static_GetBookieInfoRequest_descriptor =
-      getDescriptor().getMessageTypes().get(6);
+      getDescriptor().getMessageTypes().get(7);
     internal_static_GetBookieInfoRequest_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_GetBookieInfoRequest_descriptor,
         new java.lang.String[] { "Requested", });
     internal_static_Response_descriptor =
-      getDescriptor().getMessageTypes().get(7);
+      getDescriptor().getMessageTypes().get(8);
     internal_static_Response_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_Response_descriptor,
-        new java.lang.String[] { "Header", "Status", "ReadResponse", "AddResponse", "AuthResponse", "WriteLacResponse", "ReadLacResponse", "GetBookieInfoResponse", });
+        new java.lang.String[] { "Header", "Status", "ReadResponse", "AddResponse", "AuthResponse", "WriteLacResponse", "ReadLacResponse", "GetBookieInfoResponse", "StartTLSResponse", });
     internal_static_ReadResponse_descriptor =
-      getDescriptor().getMessageTypes().get(8);
+      getDescriptor().getMessageTypes().get(9);
     internal_static_ReadResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_ReadResponse_descriptor,
         new java.lang.String[] { "Status", "LedgerId", "EntryId", "Body", "MaxLAC", "LacUpdateTimestamp", });
     internal_static_AddResponse_descriptor =
-      getDescriptor().getMessageTypes().get(9);
+      getDescriptor().getMessageTypes().get(10);
     internal_static_AddResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_AddResponse_descriptor,
         new java.lang.String[] { "Status", "LedgerId", "EntryId", });
     internal_static_AuthMessage_descriptor =
-      getDescriptor().getMessageTypes().get(10);
+      getDescriptor().getMessageTypes().get(11);
     internal_static_AuthMessage_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_AuthMessage_descriptor,
         new java.lang.String[] { "AuthPluginName", "Payload", });
     internal_static_WriteLacResponse_descriptor =
-      getDescriptor().getMessageTypes().get(11);
+      getDescriptor().getMessageTypes().get(12);
     internal_static_WriteLacResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_WriteLacResponse_descriptor,
         new java.lang.String[] { "Status", "LedgerId", });
     internal_static_ReadLacResponse_descriptor =
-      getDescriptor().getMessageTypes().get(12);
+      getDescriptor().getMessageTypes().get(13);
     internal_static_ReadLacResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_ReadLacResponse_descriptor,
         new java.lang.String[] { "Status", "LedgerId", "LacBody", "LastEntryBody", });
     internal_static_GetBookieInfoResponse_descriptor =
-      getDescriptor().getMessageTypes().get(13);
+      getDescriptor().getMessageTypes().get(14);
     internal_static_GetBookieInfoResponse_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_GetBookieInfoResponse_descriptor,
         new java.lang.String[] { "Status", "TotalDiskCapacity", "FreeDiskSpace", });
+    internal_static_StartTLSResponse_descriptor =
+      getDescriptor().getMessageTypes().get(15);
+    internal_static_StartTLSResponse_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+        internal_static_StartTLSResponse_descriptor,
+        new java.lang.String[] { });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

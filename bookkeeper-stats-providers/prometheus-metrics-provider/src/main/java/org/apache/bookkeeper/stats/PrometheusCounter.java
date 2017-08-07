@@ -28,7 +28,8 @@ public class PrometheusCounter implements Counter {
     private final Gauge gauge;
 
     public PrometheusCounter(CollectorRegistry registry, String name) {
-        this.gauge = Gauge.build().name(Collector.sanitizeMetricName(name)).help("-").create().register(registry);
+        this.gauge = PrometheusUtil.safeRegister(registry,
+                Gauge.build().name(Collector.sanitizeMetricName(name)).help("-").create());
     }
 
     @Override

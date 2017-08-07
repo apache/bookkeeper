@@ -15,13 +15,12 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 -->
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <artifactId>bookkeeper</artifactId>
     <groupId>org.apache.bookkeeper</groupId>
-    <version>4.5.0-SNAPSHOT</version>
+    <version>4.6.0-SNAPSHOT</version>
   </parent>
   <artifactId>bookkeeper-server</artifactId>
   <name>Apache BookKeeper :: Server</name>
@@ -45,12 +44,6 @@
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
       <version>${guava.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.12</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -221,6 +214,11 @@
         <version>2.7.3</version>
         <scope>test</scope>
     </dependency>          
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-tcnative-boringssl-static</artifactId>
+      <version>${netty-boringssl.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -334,6 +332,13 @@
             <exclude>**/.gitignore</exclude>
             <exclude>**/.project</exclude>
             <exclude>**/.settings/*</exclude>
+            <exclude>certs/keyStoreClientPassword.txt</exclude>
+            <exclude>certs/keyStoreServerPassword.txt</exclude>
+            <exclude>certs/trustStorePassword.txt</exclude>
+            <exclude>src/test/resources/cacerts</exclude>
+            <exclude>src/test/resources/keyStoreClientPassword.txt</exclude>
+            <exclude>src/test/resources/keyStoreServerPassword.txt</exclude>
+            <exclude>src/test/resources/trustStorePassword.txt</exclude>
           </excludes>
         </configuration>
       </plugin>

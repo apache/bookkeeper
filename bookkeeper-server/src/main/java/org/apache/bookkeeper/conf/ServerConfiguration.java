@@ -82,6 +82,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String BOOKIE_PORT = "bookiePort";
     protected final static String LISTENING_INTERFACE = "listeningInterface";
     protected final static String ALLOW_LOOPBACK = "allowLoopback";
+    protected final static String ADVERTISED_ADDRESS = "advertisedAddress";
     protected final static String ALLOW_EPHEMERAL_PORTS = "allowEphemeralPorts";
 
     protected final static String JOURNAL_DIR = "journalDirectory";
@@ -149,10 +150,18 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     // Bookie auth provider factory class name
     protected final static String BOOKIE_AUTH_PROVIDER_FACTORY_CLASS = "bookieAuthProviderFactoryClass";
-    
+
     protected final static String MIN_USABLESIZE_FOR_INDEXFILE_CREATION = "minUsableSizeForIndexFileCreation";
 
     protected final static String ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION = "allowMultipleDirsUnderSameDiskPartition";
+
+    protected final static String TLS_CLIENT_AUTHENTICATION = "tlsClientAuthentication";
+    protected final static String TLS_KEYSTORE_TYPE = "tlsKeyStoreType";
+    protected final static String TLS_KEYSTORE = "tlsKeyStore";
+    protected final static String TLS_KEYSTORE_PASSWORD_PATH = "tlsKeyStorePasswordPath";
+    protected final static String TLS_TRUSTSTORE_TYPE = "tlsTrustStoreType";
+    protected final static String TLS_TRUSTSTORE = "tlsTrustStore";
+    protected final static String TLS_TRUSTSTORE_PASSWORD_PATH = "tlsTrustStorePasswordPath";
 
     /**
      * Construct a default configuration object
@@ -567,6 +576,43 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public ServerConfiguration setAllowLoopback(boolean allow) {
         this.setProperty(ALLOW_LOOPBACK, allow);
+        return this;
+    }
+
+    /**
+     * Get the configured advertised address for the bookie.
+     *
+     * If present, this setting will take precedence over the
+     * {@link #setListeningInterface(String)} and
+     * {@link #setUseHostNameAsBookieID(boolean)}.
+     *
+     * @see #setAdvertisedAddress(String)
+     * @return the configure address to be advertised
+     */
+    public String getAdvertisedAddress() {
+        return this.getString(ADVERTISED_ADDRESS, null);
+    }
+
+    /**
+     * Configure the bookie to advertise a specific address.
+     *
+     * By default, a bookie will advertise either its own IP or hostname,
+     * depending on the {@link getUseHostNameAsBookieID()} setting.
+     *
+     * When the advertised is set to a non-empty string, the bookie will
+     * register and advertise using this address.
+     *
+     * If present, this setting will take precedence over the
+     * {@link #setListeningInterface(String)} and
+     * {@link #setUseHostNameAsBookieID(boolean)}.
+     *
+     * @see #getAdvertisedAddress()
+     * @param allow
+     *            whether to allow loopback interfaces
+     * @return server configuration
+     */
+    public ServerConfiguration setAdvertisedAddress(String advertisedAddress) {
+        this.setProperty(ADVERTISED_ADDRESS, advertisedAddress);
         return this;
     }
 
@@ -1337,7 +1383,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set the number of bytes w used as chunk allocation for
+     * Set the number of bytes we used as chunk allocation for
      * org.apache.bookkeeper.bookie.SkipListArena
      *
      * @param size chunk size.
@@ -2048,6 +2094,121 @@ public class ServerConfiguration extends AbstractConfiguration {
     @Override
     public ServerConfiguration setNettyMaxFrameSizeBytes(int maxSize) {
         super.setNettyMaxFrameSizeBytes(maxSize);
+        return this;
+    }
+
+    /**
+     * Get the truststore type for client. Default is JKS.
+     * 
+     * @return
+     */
+    public String getTLSTrustStoreType() {
+        return getString(TLS_TRUSTSTORE_TYPE, "JKS");
+    }
+
+    /**
+     * Set the keystore type for client.
+     * 
+     * @return
+     */
+    public ServerConfiguration setTLSKeyStoreType(String arg) {
+        setProperty(TLS_KEYSTORE_TYPE, arg);
+        return this;
+    }
+
+    /**
+     * Get the keystore path for the client.
+     * 
+     * @return
+     */
+    public String getTLSKeyStore() {
+        return getString(TLS_KEYSTORE, null);
+    }
+
+    /**
+     * Set the keystore path for the client.
+     * 
+     * @return
+     */
+    public ServerConfiguration setTLSKeyStore(String arg) {
+        setProperty(TLS_KEYSTORE, arg);
+        return this;
+    }
+
+    /**
+     * Get the path to file containing keystore password if the client keystore is password protected. Default is null.
+     * 
+     * @return
+     */
+    public String getTLSKeyStorePasswordPath() {
+        return getString(TLS_KEYSTORE_PASSWORD_PATH, null);
+    }
+
+    /**
+     * Set the path to file containing keystore password, if the client keystore is password protected.
+     * 
+     * @return
+     */
+    public ServerConfiguration setTLSKeyStorePasswordPath(String arg) {
+        setProperty(TLS_KEYSTORE_PASSWORD_PATH, arg);
+        return this;
+    }
+
+    /**
+     * Get the keystore type for client. Default is JKS.
+     * 
+     * @return
+     */
+    public String getTLSKeyStoreType() {
+        return getString(TLS_KEYSTORE_TYPE, "JKS");
+    }
+
+    /**
+     * Set the truststore type for client.
+     * 
+     * @return
+     */
+    public ServerConfiguration setTLSTrustStoreType(String arg) {
+        setProperty(TLS_TRUSTSTORE_TYPE, arg);
+        return this;
+    }
+
+    /**
+     * Get the truststore path for the client.
+     * 
+     * @return
+     */
+    public String getTLSTrustStore() {
+        return getString(TLS_TRUSTSTORE, null);
+    }
+
+    /**
+     * Set the truststore path for the client.
+     * 
+     * @return
+     */
+    public ServerConfiguration setTLSTrustStore(String arg) {
+        setProperty(TLS_TRUSTSTORE, arg);
+        return this;
+    }
+
+    /**
+     * Get the path to file containing truststore password if the client truststore is password protected. Default is
+     * null.
+     * 
+     * @return
+     */
+    public String getTLSTrustStorePasswordPath() {
+        return getString(TLS_TRUSTSTORE_PASSWORD_PATH, null);
+    }
+
+    /**
+     * Set the path to file containing truststore password, if the client truststore is password protected.
+     * 
+     * @return
+     */
+    public ServerConfiguration setTLSTrustStorePasswordPath(String arg) {
+        setProperty(TLS_TRUSTSTORE_PASSWORD_PATH, arg);
         return this;
     }
 
