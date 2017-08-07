@@ -1,11 +1,11 @@
 ---
-title: Apache BookKeeper 4.5.0-SNAPSHOT Release Notes
+title: Apache BookKeeper {{ site.latest_version }} Release Notes
 layout: community
 ---
 
-Apache BookKeeper 4.5.0-SNAPSHOT is still under developement.
+Apache BookKeeper {{ site.latest_version }} is still under developement.
 
-If you want to learn the progress of `4.5.0-SNAPSHOT`, you can do:
+If you want to learn the progress of `{{ site.latest_version }}`, you can do:
 
 - Track the progress by following the [issues](https://github.com/apache/bookkeeper/issues) on Github.
 - Or [subscribe](mailto:dev-subscribe@bookkeeper.apache.org) the [dev@bookkeeper.apache.org](mailto:dev@bookkeeper.apache.org)

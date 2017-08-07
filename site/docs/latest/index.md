@@ -1,5 +1,5 @@
 ---
-title: Apache BookKeeper 4.5.0-SNAPSHOT Documentation 
+title: Apache BookKeeper {{ site.latest_version}} Documentation 
 layout: community
 ---
 <!--
@@ -21,7 +21,7 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-This documentation is for Apache BookKeeper version `4.5.0-SNAPSHOT`.
+This documentation is for Apache BookKeeper version `{{ site.latest_version }}`.
 
 Apache BookKeeper is a scalable, fault tolerant and low latency storage service optimized for realtime workloads.
 It offers `durability`, `replication` and `strong consistency` as essentials for building reliable real-time applications.
@@ -35,7 +35,7 @@ It is suitable for being used in following scenerios:
 
 Learn more about Apache BookKeeper and what it can do for your organization:
 
-- [Apache BookKeeper 4.5.0-SNAPSHOT Release Notes](./releaseNotes)
+- [Apache BookKeeper {{ site.latest_version }} Release Notes](./releaseNotes)
 
 Or start using Apache BookKeeper today.
 
