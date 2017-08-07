@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Apache BookKeeper - The Advanced Ledger API</title>
+    <title>Apache BookKeeper - BookKeeper Security</title>
 
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -406,7 +406,7 @@
         <nav class="level bk-level">
           <div class="level-left">
             <div class="level-item">
-              <h1 class="title">The Advanced Ledger API</h1>
+              <h1 class="title">BookKeeper Security</h1>
             </div>
           </div>
           
@@ -419,93 +419,37 @@
 
       <div class="content">
         <section class="bk-main-content">
-          <p>In release <code class="highlighter-rouge">4.5.0</code>, Apache BookKeeper introduces a few advanced API for advanced usage.
-This sections covers these advanced APIs.</p>
+          <p>In the 4.5.0 release, the BookKeeper community added a number of features that can be used, together or separately, to secure a BookKeeper cluster.
+The following security measures are currently supported:</p>
 
-<blockquote>
-  <p>Before learn the advanced API, please read <a href="../ledger-api">Ledger API</a> first.</p>
-</blockquote>
+<ol>
+  <li>Authentication of connections to bookies from clients, using either <a href="../tls">TLS</a> or <a href="../sasl">SASL (Kerberos)</a>.</li>
+  <li>Authentication of connections from clients, bookies, autorecovery daemons to <a href="../zookeeper">ZooKeeper</a>, when using zookeeper based ledger managers.</li>
+  <li>Encryption of data transferred between bookies and clients, between bookies and autorecovery daemons using <a href="../tls">TLS</a>.</li>
+</ol>
 
-<h2 id="ledgerhandleadv">LedgerHandleAdv</h2>
+<p>It’s worth noting that security is optional - non-secured clusters are supported, as well as a mix of authenticated, unauthenticated, encrypted and non-encrypted clients.</p>
 
-<p><a href="../javadoc/org/apache/bookkeeper/client/LedgerHandleAdv"><code class="highlighter-rouge">LedgerHandleAdv</code></a> is an advanced extension of <a href="../javadoc/org/apache/bookkeeper/client/LedgerHandle"><code class="highlighter-rouge">LedgerHandle</code></a>.
-It allows user passing in an <code class="highlighter-rouge">entryId</code> when adding an entry.</p>
+<p>NOTE: currently <code class="highlighter-rouge">authorization</code> is not yet available in <code class="highlighter-rouge">4.5.0</code>. The Apache BookKeeper community is looking for adding this feature in subsequent releases.</p>
 
-<h3 id="creating-advanced-ledgers">Creating advanced ledgers</h3>
-
-<p>Here’s an exmaple:</p>
-
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kt">byte</span><span class="o">[]</span> <span class="n">passwd</span> <span class="o">=</span> <span class="s">"some-passwd"</span><span class="o">.</span><span class="na">getBytes</span><span class="o">();</span>
-<span class="n">LedgerHandleAdv</span> <span class="n">handle</span> <span class="o">=</span> <span class="n">bkClient</span><span class="o">.</span><span class="na">createLedgerAdv</span><span class="o">(</span>
-    <span class="mi">3</span><span class="o">,</span> <span class="mi">3</span><span class="o">,</span> <span class="mi">2</span><span class="o">,</span> <span class="c1">// replica settings</span>
-    <span class="n">DigestType</span><span class="o">.</span><span class="na">CRC32</span><span class="o">,</span>
-    <span class="n">passwd</span><span class="o">);</span>
-</code></pre>
-</div>
-
-<p>You can also create advanced ledgers asynchronously.</p>
-
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kd">class</span> <span class="nc">LedgerCreationCallback</span> <span class="kd">implements</span> <span class="n">AsyncCallback</span><span class="o">.</span><span class="na">CreateCallback</span> <span class="o">{</span>
-    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">createComplete</span><span class="o">(</span><span class="kt">int</span> <span class="n">returnCode</span><span class="o">,</span> <span class="n">LedgerHandle</span> <span class="n">handle</span><span class="o">,</span> <span class="n">Object</span> <span class="n">ctx</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Ledger successfully created"</span><span class="o">);</span>
-    <span class="o">}</span>
-<span class="o">}</span>
-<span class="n">client</span><span class="o">.</span><span class="na">asyncCreateLedgerAdv</span><span class="o">(</span>
-        <span class="mi">3</span><span class="o">,</span> <span class="c1">// ensemble size</span>
-        <span class="mi">3</span><span class="o">,</span> <span class="c1">// write quorum size</span>
-        <span class="mi">2</span><span class="o">,</span> <span class="c1">// ack quorum size</span>
-        <span class="n">BookKeeper</span><span class="o">.</span><span class="na">DigestType</span><span class="o">.</span><span class="na">CRC32</span><span class="o">,</span>
-        <span class="n">password</span><span class="o">,</span>
-        <span class="k">new</span> <span class="nf">LedgerCreationCallback</span><span class="o">(),</span>
-        <span class="s">"some context"</span>
-<span class="o">);</span>
-</code></pre>
-</div>
-
-<p>Besides the APIs above, BookKeeper allows users providing <code class="highlighter-rouge">ledger-id</code> when creating advanced ledgers.</p>
-
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kt">long</span> <span class="n">ledgerId</span> <span class="o">=</span> <span class="o">...;</span> <span class="c1">// the ledger id is generated externally.</span>
-
-<span class="kt">byte</span><span class="o">[]</span> <span class="n">passwd</span> <span class="o">=</span> <span class="s">"some-passwd"</span><span class="o">.</span><span class="na">getBytes</span><span class="o">();</span>
-<span class="n">LedgerHandleAdv</span> <span class="n">handle</span> <span class="o">=</span> <span class="n">bkClient</span><span class="o">.</span><span class="na">createLedgerAdv</span><span class="o">(</span>
-    <span class="n">ledgerId</span><span class="o">,</span> <span class="c1">// ledger id generated externally</span>
-    <span class="mi">3</span><span class="o">,</span> <span class="mi">3</span><span class="o">,</span> <span class="mi">2</span><span class="o">,</span> <span class="c1">// replica settings</span>
-    <span class="n">DigestType</span><span class="o">.</span><span class="na">CRC32</span><span class="o">,</span>
-    <span class="n">passwd</span><span class="o">);</span>
-</code></pre>
-</div>
-
-<blockquote>
-  <p>Please note, it is users’ responsibility to provide a unique ledger id when using the API above.
-If a ledger already exists when users try to create an advanced ledger with same ledger id,
-a <a href="../javadoc/org/apache/bookkeeper/client/BKException.BKLedgerExistException.html">LedgerExistsException</a> is thrown by the bookkeeper client.</p>
-</blockquote>
-
-<h3 id="add-entries">Add Entries</h3>
-
-<p>The normal <a href="ledger-api/#adding-entries-to-ledgers">add entries api</a> in advanced ledgers are disabled. Instead, when users want to add entries
-to advanced ledgers, an entry id is required to pass in along with the entry data when adding an entry.</p>
-
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kt">long</span> <span class="n">entryId</span> <span class="o">=</span> <span class="o">...;</span> <span class="c1">// entry id generated externally</span>
-
-<span class="n">ledger</span><span class="o">.</span><span class="na">addEntry</span><span class="o">(</span><span class="n">entryId</span><span class="o">,</span> <span class="s">"Some entry data"</span><span class="o">.</span><span class="na">getBytes</span><span class="o">());</span>
-</code></pre>
-</div>
-
-<p>A few notes when using this API:</p>
+<h2 id="next-steps">Next Steps</h2>
 
 <ul>
-  <li>The entry id has to be non-negative.</li>
-  <li>Clients are okay to add entries out of order.</li>
-  <li>However, the entries are only acknowledged in a monotonic order starting from 0.</li>
+  <li><a href="../tls">Encryption and Authentication using TLS</a></li>
+  <li><a href="../sasl">Authentication using SASL</a></li>
+  <li><a href="../zookeeper">ZooKeeper Authentication</a></li>
 </ul>
-
-<h3 id="read-entries">Read Entries</h3>
-
-<p>The read entries api in advanced ledgers remain same as <a href="../ledger-api/#reading-entries-from-ledgers">normal ledgers</a>.</p>
 
         </section>
 
+        
+        <nav class="pagination is-centered">
+          
+          
+          <a class="pagination-next" href="../tls">Next</a>
+          
+          <ul class="pagination-list"></ul>
+        </nav>
         
       </div>
     </div>
@@ -514,12 +458,9 @@ to advanced ledgers, an entry id is required to pass in along with the entry dat
       
       
 <div class="toc">
-  <h2 class="title">The Advanced Ledger API</h2>
+  <h2 class="title">BookKeeper Security</h2>
   <ul class="section-nav">
-<li class="toc-entry toc-h2"><a href="#ledgerhandleadv">LedgerHandleAdv</a></li>
-<li class="toc-entry toc-h3"><a href="#creating-advanced-ledgers">Creating advanced ledgers</a></li>
-<li class="toc-entry toc-h3"><a href="#add-entries">Add Entries</a></li>
-<li class="toc-entry toc-h3"><a href="#read-entries">Read Entries</a></li>
+<li class="toc-entry toc-h2"><a href="#next-steps">Next Steps</a></li>
 </ul>
 </div>
 
