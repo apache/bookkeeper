@@ -1,7 +1,7 @@
 ---
 title: Run bookies locally
-prev: /docs/getting-started/installation
-next: /docs/getting-started/concepts
+prev: ../installation
+next: ../concepts
 toc_disable: true
 ---
 
