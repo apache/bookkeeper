@@ -39,6 +39,8 @@ groups:
     endpoint: overview
   - name: Ledger API
     endpoint: ledger-api
+  - name: Advanced Ledger API
+    endpoint: ledger-adv-api
   - name: DistributedLog
     endpoint: distributedlog-api
 - name: Development
