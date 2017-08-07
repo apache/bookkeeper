@@ -1,6 +1,6 @@
 ---
 title: Encryption and Authentication using TLS
-prev: ../index.html
+prev: ../overview
 next: ../sasl
 ---
 
