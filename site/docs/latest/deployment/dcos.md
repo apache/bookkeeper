@@ -41,25 +41,25 @@ The bookie that is automatically started up uses the host mode of the network an
 
 To watch BookKeeper start up, click on the **Services** tab in the DC/OS [user interface](https://docs.mesosphere.com/latest/gui/) and you should see the `bookkeeper` package listed:
 
-![DC/OS services]({{ site.baseurl }}img/dcos/services.png)
+![DC/OS services](../../../img/dcos/services.png)
 
 ### Tasks
 
 To see which tasks have started, click on the `bookkeeper` service and you'll see an interface that looks like this;
 
-![DC/OS tasks]({{ site.baseurl }}img/dcos/tasks.png)
+![DC/OS tasks](../../../img/dcos/tasks.png)
 
 ## Scaling BookKeeper
 
 Once the first {% pop bookie %} has started up, you can click on the **Scale** tab to scale up your BookKeeper ensemble by adding more bookies (or scale down the ensemble by removing bookies).
 
-![DC/OS scale]({{ site.baseurl }}img/dcos/scale.png)
+![DC/OS scale](../../../img/dcos/scale.png)
 
 ## ZooKeeper Exhibitor
 
 ZooKeeper contains the information for all bookies in the ensemble. When deployed on DC/OS, BookKeeper uses a ZooKeeper instance provided by DC/OS. You can access a visual UI for ZooKeeper using [Exhibitor](https://github.com/soabase/exhibitor/wiki), which is available at [http://master.dcos/exhibitor](http://master.dcos/exhibitor).
 
-![ZooKeeper Exhibitor]({{ site.baseurl }}img/dcos/exhibitor.png)
+![ZooKeeper Exhibitor](../../../img/dcos/exhibitor.png)
 
 You should see a listing of IP/host information for all bookies under the `messaging/bookkeeper/ledgers/available` node.
 
@@ -137,6 +137,6 @@ You can shut down and uninstall the `bookkeeper` from DC/OS at any time using th
 
 ```shell
 $ dcos package uninstall bookkeeper
-Uninstalled package [bookkeeper] version [{{ site.bk_version }}]
+Uninstalled package [bookkeeper] version [{{ site.latest_version }}]
 Thank you for using bookkeeper.
 ```
