@@ -5,7 +5,7 @@ layout: community
 
 ## Download
 
-{{ site.stable_release }} is latest release. The current stable version is {{ site.stable_release }}.
+{{ site.latest_release }} is latest release. The current stable version is {{ site.stable_release }}.
 
 Releases are available to download from Apache mirrors: [Download](http://www.apache.org/dyn/closer.cgi/bookkeeper)
 

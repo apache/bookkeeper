@@ -24,6 +24,7 @@ BINDIR=`dirname "$0"`
 DOC_HOME=`cd $BINDIR/..;pwd`
 
 LATEST_VERSION=`grep latest_version _config.yml | sed 's/^latest_version: "\(.*\)"/\1/'`
+LATEST_RELEASE=`grep latest_release _config.yml | sed 's/^latest_release: "\(.*\)"/\1/'`
 
 if [[ $LATEST_VERSION =~ "*-SNAPSHOT" ]]; then
   echo "Latest version is not a SNAPSHOT version : $LATEST_VERSION"
@@ -73,6 +74,7 @@ patch_version=${versions_list[2]}
 next_minor_version=$((minor_version + 1))
 NEXT_VERSION="${major_version}.${next_minor_version}.0-SNAPSHOT"
 find _config.yml | xargs sed -i'.bak' "s/latest_version: \"${LATEST_VERSION}\"/latest_version: \"${NEXT_VERSION}\"/"
+find _config.yml | xargs sed -i'.bak' "s/latest_release: \"${LATEST_RELEASE}\"/latest_release: \"${RELEASE_VERSION}\"/"
 
 rm _config.yml.bak
 
