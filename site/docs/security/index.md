@@ -12,7 +12,7 @@ The following security measures are currently supported:
 
 It’s worth noting that security is optional - non-secured clusters are supported, as well as a mix of authenticated, unauthenticated, encrypted and non-encrypted clients.
 
-NOTE: currenlty `authorization` is not yet available in `4.5.0`. The Apache BookKeeper community is looking for adding this feature in subsequent releases.
+NOTE: currently `authorization` is not yet available in `4.5.0`. The Apache BookKeeper community is looking for adding this feature in subsequent releases.
 
 ## Next Steps
 

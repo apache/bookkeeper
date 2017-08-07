@@ -8,8 +8,8 @@ Apache BookKeeper allows clients and autorecovery daemons to communicate over TL
 
 ## Overview
 
-The bookies and clients need their own key and certificate in order to use TLS. The key is used for encryption, while the
-certificate is used for identification. Each bookie or client can also be configured with a truststore, which is used to
+The bookies need their own key and certificate in order to use TLS. Clients can optionally provide a key and a certificate
+for mutual authentication.  Each bookie or client can also be configured with a truststore, which is used to
 determine which certificates (bookie or client identities) to trust (authenticate).
 
 The truststore can be configured in many ways. To understand the truststore, consider the following two examples:
@@ -28,8 +28,9 @@ The first step of deploying TLS is to generate the key and the certificate for e
 You can use Java’s `keytool` utility to accomplish this task. We will generate the key into a temporary keystore
 initially so that we can export and sign it later with CA.
 
-    keytool -keystore bookie.keystore.jks -alias localhost -validity {validity} -genkey
-
+```shell
+keytool -keystore bookie.keystore.jks -alias localhost -validity {validity} -genkey
+```
 
 You need to specify two parameters in the above command:
 
@@ -54,19 +55,25 @@ to ensure the passport is authentic. Similarly, the CA signs the certificates, a
 certificate is computationally difficult to forge. Thus, as long as the CA is a genuine and trusted authority, the clients have
 high assurance that they are connecting to the authentic machines.
 
-    openssl req -new -x509 -keyout ca-key -out ca-cert -days 365
+```shell
+openssl req -new -x509 -keyout ca-key -out ca-cert -days 365
+```
 
 The generated CA is simply a *public-private* key pair and certificate, and it is intended to sign other certificates.
 
 The next step is to add the generated CA to the clients' truststore so that the clients can trust this CA:
 
-    keytool -keystore bookie.truststore.jks -alias CARoot -import -file ca-cert
+```shell
+keytool -keystore bookie.truststore.jks -alias CARoot -import -file ca-cert
+```
 
 NOTE: If you configure the bookies to require client authentication by setting `sslClientAuthentication` to `true` on the
 [bookie config](../../reference/config), then you must also provide a truststore for the bookies and it should have all the CA
 certificates that clients keys were signed by.
 
-    keytool -keystore client.truststore.jks -alias CARoot -import -file ca-cert
+```shell
+keytool -keystore client.truststore.jks -alias CARoot -import -file ca-cert
+```
 
 In contrast to the keystore, which stores each machine’s own identity, the truststore of a client stores all the certificates
 that the client should trust. Importing a certificate into one’s truststore also means trusting all certificates that are signed
@@ -79,16 +86,22 @@ That way all machines can authenticate all other machines.
 
 The next step is to sign all certificates in the keystore with the CA we generated. First, you need to export the certificate from the keystore:
 
-    keytool -keystore bookie.keystore.jks -alias localhost -certreq -file cert-file
+```shell
+keytool -keystore bookie.keystore.jks -alias localhost -certreq -file cert-file
+```
 
 Then sign it with the CA:
 
-    openssl x509 -req -CA ca-cert -CAkey ca-key -in cert-file -out cert-signed -days {validity} -CAcreateserial -passin pass:{ca-password}
+```shell
+openssl x509 -req -CA ca-cert -CAkey ca-key -in cert-file -out cert-signed -days {validity} -CAcreateserial -passin pass:{ca-password}
+```
 
 Finally, you need to import both the certificate of the CA and the signed certificate into the keystore:
 
-    keytool -keystore bookie.keystore.jks -alias CARoot -import -file ca-cert
-    keytool -keystore bookie.keystore.jks -alias localhost -import -file cert-signed
+```shell
+keytool -keystore bookie.keystore.jks -alias CARoot -import -file ca-cert
+keytool -keystore bookie.keystore.jks -alias localhost -import -file cert-signed
+```
 
 The definitions of the parameters are the following:
 
@@ -104,41 +117,55 @@ The definitions of the parameters are the following:
 ## Configuring Bookies
 
 Bookies support TLS for connections on the same service port. In order to enable TLS, you need to configure `tlsProvider` to be either
-`JDK` or `OpenSSL`. If `OpenSSL` is configured but the open ssl library is not found, it will automatically fall back to use default
-JDK based TLS provider.
+`JDK` or `OpenSSL`. If `OpenSSL` is configured, it will use `netty-tcnative-boringssl-static`, which loads a corresponding binding according
+to the platforms to run bookies.
+
+> Current `OpenSSL` implementation doesn't depend on the system installed OpenSSL library. If you want to leverage the OpenSSL installed on
+the system, you can check [this example](http://netty.io/wiki/forked-tomcat-native.html) on how to replaces the JARs on the classpath with
+netty bindings to leverage installed OpenSSL.
 
 The following TLS configs are needed on the bookie side:
 
-    tlsProvider=OpenSSL
-    # key store
-    tlsKeyStoreType=JKS
-    tlsKeyStore=/var/private/tls/bookie.keystore.jks
-    tlsKeyStorePasswordPath=/var/private/tls/bookie.keystore.passwd
-    # trust store
-    tlsTrustStoreType=JKS
-    tlsTrustStore=/var/private/tls/bookie.truststore.jks
-    tlsTrustStorePasswordPath=/var/private/tls/bookie.truststore.passwd
+```shell
+tlsProvider=OpenSSL
+# key store
+tlsKeyStoreType=JKS
+tlsKeyStore=/var/private/tls/bookie.keystore.jks
+tlsKeyStorePasswordPath=/var/private/tls/bookie.keystore.passwd
+# trust store
+tlsTrustStoreType=JKS
+tlsTrustStore=/var/private/tls/bookie.truststore.jks
+tlsTrustStorePasswordPath=/var/private/tls/bookie.truststore.passwd
+```
 
 NOTE: it is important to restrict access to the store files and corresponding password files via filesystem permissions.
 
 Optional settings that are worth considering:
 
-1. tlsClientAuthentication=false: Enable/Disable using TLS for authentication.
+1. tlsClientAuthentication=false: Enable/Disable using TLS for authentication. This config when enabled will authenticate the other end
+    of the communication channel. It should be enabled on both bookies and clients for mutual TLS.
 2. tlsEnabledCipherSuites= A cipher suite is a named combination of authentication, encryption, MAC and key exchange
     algorithm used to negotiate the security settings for a network connection using TLS network protocol. By default,
-    it is null.
+    it is null. [OpenSSL Ciphers](https://www.openssl.org/docs/man1.0.2/apps/ciphers.html)
+    [JDK Ciphers](http://docs.oracle.com/javase/8/docs/technotes/guides/security/StandardNames.html#ciphersuites)
 3. tlsEnabledProtocols = TLSv1.2,TLSv1.1,TLSv1 (list out the TLS protocols that you are going to accept from clients).
     By default, it is not set.
 
 To verify the bookie's keystore and truststore are setup correctly you can run the following command:
 
-    openssl s_client -debug -connect localhost:3181 -tls1
+```shell
+openssl s_client -debug -connect localhost:3181 -tls1
+```
 
 NOTE: TLSv1 should be listed under `tlsEnabledProtocols`.
 
 In the output of this command you should see the server's certificate:
 
-    (TBD)
+```shell
+-----BEGIN CERTIFICATE-----
+{variable sized random bytes}
+-----END CERTIFICATE-----
+```
 
 If the certificate does not show up or if there are any other error messages then your keystore is not setup correctly.
 
@@ -149,9 +176,11 @@ supported. The configs for TLS will be the same as bookies.
 
 If client authentication is not required by the bookies, the following is a minimal configuration example:
 
-    tlsProvider=OpenSSL
-    clientTrustStore=/var/private/tls/client.truststore.jks
-    clientTrustStorePasswordPath=/var/private/tls/client.truststore.passwd
+```shell
+tlsProvider=OpenSSL
+clientTrustStore=/var/private/tls/client.truststore.jks
+clientTrustStorePasswordPath=/var/private/tls/client.truststore.passwd
+```
 
 If client authentication is required, then a keystore must be created for each client, and the bookies' truststores must
 trust the certificate in the client's keystore. This may be done using commands that are similar to what we used for
@@ -159,8 +188,11 @@ the [bookie keystore](#bookie-keystore).
 
 And the following must also be configured:
 
-    clientKeyStore=/var/private/tls/client.keystore.jks
-    clientKeyStorePasswordPath=/var/private/tls/client.keystore.passwd
+```shell
+tlsClientAuthentication=true
+clientKeyStore=/var/private/tls/client.keystore.jks
+clientKeyStorePasswordPath=/var/private/tls/client.keystore.passwd
+```
 
 NOTE: it is important to restrict access to the store files and corresponding password files via filesystem permissions.
 
@@ -170,9 +202,9 @@ NOTE: it is important to restrict access to the store files and corresponding pa
 
 You can enable TLS debug logging at the JVM level by starting the bookies and/or clients with `javax.net.debug` system property. For example:
 
-    -Djavax.net.debug=all
+```shell
+-Djavax.net.debug=all
+```
 
 You can find more details on this in [Oracle documentation](http://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/ReadDebug.html) on
 [debugging SSL/TLS connections](http://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/ReadDebug.html).
-
-
