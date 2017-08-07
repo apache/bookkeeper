@@ -28,12 +28,14 @@ echo "GENERATE SITE DIR: $LOCAL_GENERATED_DIR"
 
 (
   rm -rf $TMP_DIR
-  mkdir -p $TMP_DIR/docs
+  mkdir $TMP_DIR
 
   cd $TMP_DIR
 
   # clone the remote repo
   git clone "https://$STAGING_REPO" .
+  # if the remote is empty, we should create the `docs` directory
+  mkdir -p $TMP_DIR/docs
   # copy the local generated dir
   cp -r $LOCAL_GENERATED_DIR/* $TMP_DIR/docs/
 
