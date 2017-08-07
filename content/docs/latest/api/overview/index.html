@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Apache BookKeeper - The ledger API vs. the DistributedLog API</title>
+    <title>Apache BookKeeper - BookKeeper API</title>
 
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -297,6 +297,13 @@
     
     
     <li>
+      <a href="/test/content/docs/latest/api/ledger-adv-api">
+      Advanced Ledger API
+      </a>
+    </li>
+    
+    
+    <li>
       <a href="/test/content/docs/latest/api/distributedlog-api">
       DistributedLog
       </a>
@@ -357,7 +364,7 @@
         <nav class="level bk-level">
           <div class="level-left">
             <div class="level-item">
-              <h1 class="title">The ledger API vs. the DistributedLog API</h1>
+              <h1 class="title">BookKeeper API</h1>
             </div>
           </div>
           
@@ -370,18 +377,21 @@
 
       <div class="content">
         <section class="bk-main-content">
-          <p>BookKeeper offers two APIs that applications can use to interact with it:</p>
+          <p>BookKeeper offers a few APIs that applications can use to interact with it:</p>
 
 <ul>
   <li>The <a href="../ledger-api">ledger API</a> is a lower-level API that enables you to interact with <span class="pop" id="ledger-popover">ledgers</span> directly</li>
+  <li>The [Ledger Advanced API)(../ledger-adv-api) is an advanced extension to <a href="../ledger-api">Ledger API</a> to provide more flexibilities to applications.</li>
   <li>The <a href="../distributedlog-api">DistributedLog API</a> is a higher-level API that provides convenient abstractions.</li>
 </ul>
 
 <h2 id="trade-offs">Trade-offs</h2>
 
-<p>The advantage of the ledger API is that it provides direct access to ledgers and thus enables you to use BookKeeper however you’d like. The disadvantage is that it requires you to manage things like leader election on your own.</p>
+<p>The <code class="highlighter-rouge">Ledger API</code> provides direct access to ledgers and thus enables you to use BookKeeper however you’d like.</p>
 
-<p>The advantage of the DistributedLog API is that it’s easier to use, with semantics resembling a simple key/value store from the standpoint of applications. The disadvantage is that</p>
+<p>However, in most of use cases, if you want a <code class="highlighter-rouge">log stream</code>-like abstraction, it requires you to manage things like tracking list of ledgers,
+managing rolling ledgers and data retention on your own. In such cases, you are recommended to use <a href="../distributedlog-api">DistributedLog API</a>,
+with semantics resembling continous log streams from the standpoint of applications.</p>
 
         </section>
 
@@ -393,7 +403,7 @@
       
       
 <div class="toc">
-  <h2 class="title">The ledger API vs. the DistributedLog API</h2>
+  <h2 class="title">BookKeeper API</h2>
   <ul class="section-nav">
 <li class="toc-entry toc-h2"><a href="#trade-offs">Trade-offs</a></li>
 </ul>
