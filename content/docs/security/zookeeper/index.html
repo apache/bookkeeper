@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Apache BookKeeper - BookKeeper metrics reference</title>
+    <title>Apache BookKeeper - ZooKeeper Authentication</title>
 
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -195,7 +195,7 @@
 <aside class="sidebar">
   
   <a class="button is-info">
-    Version : latest
+    Version : security
   </a>
   <hr />
   
@@ -206,21 +206,21 @@
     
     
     <li>
-      <a href="/test/content/docs/latest/getting-started/installation">
+      <a href="/test/content/docs/security/getting-started/installation">
       Installation
       </a>
     </li>
     
     
     <li>
-      <a href="/test/content/docs/latest/getting-started/run-locally">
+      <a href="/test/content/docs/security/getting-started/run-locally">
       Run bookies locally
       </a>
     </li>
     
     
     <li>
-      <a href="/test/content/docs/latest/getting-started/concepts">
+      <a href="/test/content/docs/security/getting-started/concepts">
       Concepts and architecture
       </a>
     </li>
@@ -234,14 +234,14 @@
     
     
     <li>
-      <a href="/test/content/docs/latest/deployment/manual">
+      <a href="/test/content/docs/security/deployment/manual">
       Manual deployment
       </a>
     </li>
     
     
     <li>
-      <a href="/test/content/docs/latest/deployment/dcos">
+      <a href="/test/content/docs/security/deployment/dcos">
       BookKeeper on DC/OS
       </a>
     </li>
@@ -255,28 +255,28 @@
     
     
     <li>
-      <a href="/test/content/docs/latest/admin/bookies">
+      <a href="/test/content/docs/security/admin/bookies">
       BookKeeper administration
       </a>
     </li>
     
     
     <li>
-      <a href="/test/content/docs/latest/admin/autorecovery">
+      <a href="/test/content/docs/security/admin/autorecovery">
       AutoRecovery
       </a>
     </li>
     
     
     <li>
-      <a href="/test/content/docs/latest/admin/metrics">
+      <a href="/test/content/docs/security/admin/metrics">
       Metric collection
       </a>
     </li>
     
     
     <li>
-      <a href="/test/content/docs/latest/admin/upgrade">
+      <a href="/test/content/docs/security/admin/upgrade">
       Upgrade
       </a>
     </li>
@@ -290,28 +290,28 @@
     
     
     <li>
-      <a href="/test/content/docs/latest/api/overview">
+      <a href="/test/content/docs/security/api/overview">
       Overview
       </a>
     </li>
     
     
     <li>
-      <a href="/test/content/docs/latest/api/ledger-api">
+      <a href="/test/content/docs/security/api/ledger-api">
       Ledger API
       </a>
     </li>
     
     
     <li>
-      <a href="/test/content/docs/latest/api/ledger-adv-api">
+      <a href="/test/content/docs/security/api/ledger-adv-api">
       Advanced Ledger API
       </a>
     </li>
     
     
     <li>
-      <a href="/test/content/docs/latest/api/distributedlog-api">
+      <a href="/test/content/docs/security/api/distributedlog-api">
       DistributedLog
       </a>
     </li>
@@ -325,7 +325,7 @@
     
     
     <li>
-      <a href="/test/content/docs/latest/development/protocol">
+      <a href="/test/content/docs/security/development/protocol">
       BookKeeper protocol
       </a>
     </li>
@@ -339,28 +339,28 @@
     
     
     <li>
-      <a href="/test/content/docs/latest/security/index">
+      <a href="/test/content/docs/security/security/index">
       Overview
       </a>
     </li>
     
     
     <li>
-      <a href="/test/content/docs/latest/security/tls">
+      <a href="/test/content/docs/security/security/tls">
       TLS Authentication
       </a>
     </li>
     
     
     <li>
-      <a href="/test/content/docs/latest/security/sasl">
+      <a href="/test/content/docs/security/security/sasl">
       SASL Authentication
       </a>
     </li>
     
     
     <li>
-      <a href="/test/content/docs/latest/security/zookeeper">
+      <a href="/test/content/docs/security/security/zookeeper">
       ZooKeeper Authentication
       </a>
     </li>
@@ -374,21 +374,21 @@
     
     
     <li>
-      <a href="/test/content/docs/latest/reference/config">
+      <a href="/test/content/docs/security/reference/config">
       Configuration
       </a>
     </li>
     
     
     <li>
-      <a href="/test/content/docs/latest/reference/cli">
+      <a href="/test/content/docs/security/reference/cli">
       Command-line tools
       </a>
     </li>
     
     
     <li>
-      <a href="/test/content/docs/latest/reference/metrics">
+      <a href="/test/content/docs/security/reference/metrics">
       Metrics
       </a>
     </li>
@@ -406,7 +406,7 @@
         <nav class="level bk-level">
           <div class="level-left">
             <div class="level-item">
-              <h1 class="title">BookKeeper metrics reference</h1>
+              <h1 class="title">ZooKeeper Authentication</h1>
             </div>
           </div>
           
@@ -419,10 +419,61 @@
 
       <div class="content">
         <section class="bk-main-content">
-          
+          <h2 id="new-clusters">New Clusters</h2>
+
+<p>To enable <code class="highlighter-rouge">ZooKeeper</code> authentication on Bookies or Clients, there are two necessary steps:</p>
+
+<ol>
+  <li>Create a <code class="highlighter-rouge">JAAS</code> login file and set the appropriate system property to point to it as described in <a href="../sasl#notes">GSSAPI (Kerberos)</a>.</li>
+  <li>Set the configuration property <code class="highlighter-rouge">zkEnableSecurity</code> in each bookie to <code class="highlighter-rouge">true</code>.</li>
+</ol>
+
+<p>The metadata stored in <code class="highlighter-rouge">ZooKeeper</code> is such that only certain clients will be able to modify and read the corresponding znodes.
+The rationale behind this decision is that the data stored in ZooKeeper is not sensitive, but inappropriate manipulation of znodes can cause cluster
+disruption.</p>
+
+<h2 id="migrating-clusters">Migrating Clusters</h2>
+
+<p>If you are running a version of BookKeeper that does not support security or simply with security disabled, and you want to make the cluster secure,
+then you need to execute the following steps to enable ZooKeeper authentication with minimal disruption to your operations.</p>
+
+<ol>
+  <li>Perform a rolling restart setting the <code class="highlighter-rouge">JAAS</code> login file, which enables bookie or clients to authenticate. At the end of the rolling restart,
+ bookies (or clients) are able to manipulate znodes with strict ACLs, but they will not create znodes with those ACLs.</li>
+  <li>Perform a second rolling restart of bookies, this time setting the configuration parameter <code class="highlighter-rouge">zkEnableSecurity</code> to true, which enables the use
+ of secure ACLs when creating znodes.</li>
+  <li>Currently we don’t have provide a tool to set acls on old znodes. You are recommended to set it manually using ZooKeeper tools.</li>
+</ol>
+
+<p>It is also possible to turn off authentication in a secured cluster. To do it, follow these steps:</p>
+
+<ol>
+  <li>Perform a rolling restart of bookies setting the <code class="highlighter-rouge">JAAS</code> login file, which enable bookies to authenticate, but setting <code class="highlighter-rouge">zkEnableSecurity</code> to <code class="highlighter-rouge">false</code>.
+ At the end of rolling restart, bookies stop creating znodes with secure ACLs, but are still able to authenticate and manipulate all znodes.</li>
+  <li>You can use ZooKeeper tools to manually reset all ACLs under the znode set in <code class="highlighter-rouge">zkLedgersRootPath</code>, which defaults to <code class="highlighter-rouge">/ledgers</code>.</li>
+  <li>Perform a second rolling restart of bookies, this time omitting the system property that sets the <code class="highlighter-rouge">JAAS</code> login file.</li>
+</ol>
+
+<h2 id="migrating-the-zookeeper-ensemble">Migrating the ZooKeeper ensemble</h2>
+
+<p>It is also necessary to enable authentication on the <code class="highlighter-rouge">ZooKeeper</code> ensemble. To do it, we need to perform a rolling restart of the ensemble and
+set a few properties. Please refer to the ZooKeeper documentation for more details.</p>
+
+<ol>
+  <li><a href="http://zookeeper.apache.org/doc/r3.4.6/zookeeperProgrammers.html#sc_ZooKeeperAccessControl">Apache ZooKeeper Documentation</a></li>
+  <li><a href="https://cwiki.apache.org/confluence/display/ZOOKEEPER/Zookeeper+and+SASL">Apache ZooKeeper Wiki</a></li>
+</ol>
 
         </section>
 
+        
+        <nav class="pagination is-centered">
+          
+          <a class="pagination-previous" href="../sasl">Previous</a>
+          
+          
+          <ul class="pagination-list"></ul>
+        </nav>
         
       </div>
     </div>
@@ -431,8 +482,11 @@
       
       
 <div class="toc">
-  <h2 class="title">BookKeeper metrics reference</h2>
+  <h2 class="title">ZooKeeper Authentication</h2>
   <ul class="section-nav">
+<li class="toc-entry toc-h2"><a href="#new-clusters">New Clusters</a></li>
+<li class="toc-entry toc-h2"><a href="#migrating-clusters">Migrating Clusters</a></li>
+<li class="toc-entry toc-h2"><a href="#migrating-the-zookeeper-ensemble">Migrating the ZooKeeper ensemble</a></li>
 </ul>
 </div>
 
