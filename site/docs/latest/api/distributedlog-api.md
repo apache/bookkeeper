@@ -13,7 +13,7 @@ DistributedLog (DL) maintains sequences of records in categories called *logs* (
 
 The diagram below illustrates how the DistributedLog API works with BookKeeper:
 
-![DistributedLog API]({{ site.baseurl }}img/distributedlog.png)
+![DistributedLog API](../../../img/distributedlog.png)
 
 ## Logs
 
@@ -21,7 +21,7 @@ A *log* in DistributedLog is an ordered, immutable sequence of *log records*.
 
 The diagram below illustrates the anatomy of a log stream:
 
-![DistributedLog log]({{ site.baseurl }}img/logs.png)
+![DistributedLog log](../../../img/logs.png)
 
 ### Log records
 
@@ -115,12 +115,12 @@ If you're using [Gradle](https://gradle.org/), add this to your [`build.gradle`]
 
 ```groovy
 dependencies {
-    compile group: 'org.apache.bookkeeper', name: 'bookkeeper-server', version: '{{ site.bk_version }}'
+    compile group: 'org.apache.bookkeeper', name: 'bookkeeper-server', version: '{{ site.latest_version }}'
 }
 
 // Alternatively:
 dependencies {
-    compile 'org.apache.bookkeeper:bookkeeper-server:{{ site.bk_version }}'
+    compile 'org.apache.bookkeeper:bookkeeper-server:{{ site.latest_version }}'
 }
 ```
 
