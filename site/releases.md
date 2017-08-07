@@ -22,7 +22,7 @@ If you need to connect to an existing BookKeeper cluster using an officially sup
 
 Client Guide | API docs
 :------------|:--------
-[The BookKeeper Client]({{ site.baseurl }}docs/latest/api/ledger-api) | [Javadoc]({{ site.baseurl }}javadoc)
+[The BookKeeper Client]({{ site.baseurl }}docs/latest/api/ledger-api) | [Javadoc]({{ site.baseurl }}docs/latest/api/javadoc)
 [The DistributedLog Library]({{ site.baseurl }}docs/latest/api/distributedlog-api) | [Javadoc](https://distributedlog.io/docs/latest/api/java)
 
 ## News
