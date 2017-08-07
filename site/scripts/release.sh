@@ -49,7 +49,6 @@ git add ${DOC_HOME}/docs/${RELEASE_VERSION}
 cd ${DOC_HOME}/docs/${RELEASE_VERSION}
 
 find . -name "*.md" | xargs sed -i'.bak' "s/{{ site\.latest_version }}/${RELEASE_VERSION}/"
-find . -name "*.md.bak" | xargs rm
 find . -name "*.md" | xargs sed -i'.bak' "s/${LATEST_VERSION}/${RELEASE_VERSION}/"
 find . -name "*.md.bak" | xargs rm
 cp releaseNotesTemplate.md releaseNotes.md
@@ -76,5 +75,12 @@ NEXT_VERSION="${major_version}.${next_minor_version}.0-SNAPSHOT"
 find _config.yml | xargs sed -i'.bak' "s/latest_version: \"${LATEST_VERSION}\"/latest_version: \"${NEXT_VERSION}\"/"
 
 rm _config.yml.bak
+
+# go to the latest doc home
+
+cd ${DOC_HOME}/docs/latest
+
+find . -name "*.md" | xargs sed -i'.bak' "s/${LATEST_VERSION}/${NEXT_VERSION}/"
+find . -name "*.md.bak" | xargs rm
 
 echo "Released version $RELEASE_VERSION."
