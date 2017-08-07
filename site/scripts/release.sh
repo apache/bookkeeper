@@ -41,12 +41,12 @@ if [[ -d ${DOC_HOME}/docs/${RELEASE_VERSION} ]]; then
   exit 1
 fi
 
-cp -r ${DOC_HOME}/latest ${DOC_HOME}/${RELEASE_VERSION}
+cp -r ${DOC_HOME}/docs/latest ${DOC_HOME}/docs/${RELEASE_VERSION}
 
 # add the release to git repo
-git add ${DOC_HOME}/${RELEASE_VERSION}
+git add ${DOC_HOME}/docs/${RELEASE_VERSION}
 
-cd ${DOC_HOME}/${RELEASE_VERSION}
+cd ${DOC_HOME}/docs/${RELEASE_VERSION}
 
 find . -name *.md | xargs sed -i'.bak' "s/{{ site\.latest_version }}/${RELEASE_VERSION}/"
 find . -name *.md.bak | xargs rm
