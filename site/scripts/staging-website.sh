@@ -28,7 +28,7 @@ echo "GENERATE SITE DIR: $LOCAL_GENERATED_DIR"
 
 (
   rm -rf $TMP_DIR
-  mkdir -p $TMP_DIR
+  mkdir -p $TMP_DIR/docs
 
   cd $TMP_DIR
 
