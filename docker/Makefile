@@ -38,6 +38,7 @@ BK_zkLedgersRootPath = /ledgers
 ZK_CONTAINER_NAME=test_zookeeper
 ZK_LOCAL_DATA_DIR=$(BK_LOCAL_DATA_DIR)/zookkeeper
 
+TERMINAL_EMULATOR=gnome-terminal
 
 CONTAINER_IP=$(shell docker inspect --format '{{ .NetworkSettings.IPAddress }}' $(CONTAINER_NAME))
 
@@ -78,6 +79,7 @@ run-bk:
 	    --volume $(BK_LOCAL_CONTAINER_DATA_DIR)/journal:$(BK_DIR)/journal \
 	    --volume $(BK_LOCAL_CONTAINER_DATA_DIR)/ledger:$(BK_DIR)/ledger \
 	    --volume $(BK_LOCAL_CONTAINER_DATA_DIR)/index:$(BK_DIR)/index \
+            --user "$(id -u)" \
 	    --name "$(CONTAINER_NAME)" \
 	    --hostname "$(CONTAINER_NAME)" \
 	    --env BK_zkServers=$(ZK_CONTAINER_NAME):2181 \

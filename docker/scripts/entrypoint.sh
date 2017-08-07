@@ -46,7 +46,7 @@ echo "BK_CLUSTER_ROOT_PATH is $BK_CLUSTER_ROOT_PATH"
 mkdir -p "${BK_journalDirectory}" "${BK_ledgerDirectories}" "${BK_indexDirectories}"
 # -------------- #
 # Allow the container to be started with `--user`
-if [ "$1" = 'bookkeeper' -a "$(id -u)" = '0' ]; then
+if [ "$1" = '/opt/bookkeeper/bin/bookkeeper' -a "$(id -u)" = '0' ]; then
     chown -R "$BK_USER:$BK_USER" "/opt/bookkeeper/" "${BK_journalDirectory}" "${BK_ledgerDirectories}" "${BK_indexDirectories}"
     sudo -s -E -u "$BK_USER" /bin/bash "$0" "$@"
     exit
