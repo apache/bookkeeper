@@ -155,7 +155,6 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     protected final static String ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION = "allowMultipleDirsUnderSameDiskPartition";
 
-    protected final static String TLS_CLIENT_AUTHENTICATION = "tlsClientAuthentication";
     protected final static String TLS_KEYSTORE_TYPE = "tlsKeyStoreType";
     protected final static String TLS_KEYSTORE = "tlsKeyStore";
     protected final static String TLS_KEYSTORE_PASSWORD_PATH = "tlsKeyStorePasswordPath";

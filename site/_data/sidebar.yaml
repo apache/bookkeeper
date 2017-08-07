@@ -52,6 +52,17 @@ groups:
     endpoint: protocol
   #- name: Codebase
   #  endpoint: codebase
+- name: Security
+  dir: security
+  docs:
+  - name: Overview
+    endpoint: index
+  - name: TLS Authentication
+    endpoint: tls
+  - name: SASL Authentication
+    endpoint: sasl
+  - name: ZooKeeper Authentication
+    endpoint: zookeeper
 - name: Reference
   dir: reference
   docs:
