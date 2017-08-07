@@ -2,7 +2,7 @@
 title: Upgrade
 ---
 
-> If you have questions about upgrades (or need help), please feel free to reach out to us by [mailing list](/community/mailing-lists) or [Slack Channel](/community/slack).
+> If you have questions about upgrades (or need help), please feel free to reach out to us by [mailing list]({{ site.baseurl }}community/mailing-lists) or [Slack Channel]({{ site.baseurl }}community/slack).
 
 ## Overview
 
