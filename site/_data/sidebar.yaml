@@ -26,6 +26,8 @@ groups:
     endpoint: autorecovery
   - name: Metric collection
     endpoint: metrics
+  - name: Upgrade
+    endpoint: upgrade
   #- name: Geo-replication
   #  endpoint: geo-replication
   #- name: Customized placement policies
