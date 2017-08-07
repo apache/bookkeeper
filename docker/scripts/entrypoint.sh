@@ -59,7 +59,7 @@ echo "wait for zookeeper"
 until /opt/bookkeeper/bin/bookkeeper org.apache.zookeeper.ZooKeeperMain -server ${BK_zkServers} ls /; do sleep 5; done
 
 echo "create the zk root dir for bookkeeper"
-/opt/zk/bin/zkCli.sh -server ${BK_zkServers} create ${BK_CLUSTER_ROOT_PATH}
+/opt/bookkeeper/bin/bookkeeper org.apache.zookeeper.ZooKeeperMain -server ${BK_zkServers} create ${BK_CLUSTER_ROOT_PATH}
 
 echo "format zk metadata"
 echo "please ignore the failure, if it has already been formatted, "
