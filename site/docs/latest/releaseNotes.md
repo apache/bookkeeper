@@ -101,7 +101,7 @@ batch recovery to improve ledger recovery speed.
 To enable this feature, please set `enableParallelRecoveryRead` to `true` on your clients. You can also set `recoveryReadBatchSize`
 to control the batch size of recovery read.
 
-#### multiple journals
+#### Multiple Journals
 
 Prior to 4.5.0, bookies are only allowed to configure one journal device. If you want to have high write bandwidth, you can raid multiple
 disks into one device and mount that device for jouranl directory. However because there is only one journal thread, this approach doesn't
@@ -144,8 +144,7 @@ is introduce in 4.5.0. It simplies the metric collection when running bookkeeper
 
 ### JIRA
 
-<h2>        Sub-task
-</h2>
+#### Sub-task
 <ul>
 <li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-552'>BOOKKEEPER-552</a>] -         64 Bits Ledger ID Generation
 </li>
@@ -181,8 +180,7 @@ is introduce in 4.5.0. It simplies the metric collection when running bookkeeper
 </li>
 </ul>
                             
-<h2>        Bug
-</h2>
+#### Bug
 <ul>
 <li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-852'>BOOKKEEPER-852</a>] -         Release LedgerDescriptor and master-key objects when not used anymore
 </li>
@@ -280,8 +278,7 @@ is introduce in 4.5.0. It simplies the metric collection when running bookkeeper
 </li>
 </ul>
                             
-<h2>        Improvement
-</h2>
+#### Improvement
 <ul>
 <li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-612'>BOOKKEEPER-612</a>] -         RegionAwarePlacement Policy
 </li>
@@ -383,8 +380,7 @@ is introduce in 4.5.0. It simplies the metric collection when running bookkeeper
 </li>
 </ul>
                 
-<h2>        New Feature
-</h2>
+#### New Feature
 <ul>
 <li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-390'>BOOKKEEPER-390</a>] -         Provide support for ZooKeeper authentication
 </li>
@@ -422,15 +418,13 @@ is introduce in 4.5.0. It simplies the metric collection when running bookkeeper
 </li>
 </ul>
                                             
-<h2>        Story
-</h2>
+#### Story
 <ul>
 <li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-932'>BOOKKEEPER-932</a>] -         Move to JDK 8
 </li>
 </ul>
                 
-<h2>        Task
-</h2>
+#### Task
 <ul>
 <li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-931'>BOOKKEEPER-931</a>] -         Update the committers list on website
 </li>
@@ -456,8 +450,7 @@ is introduce in 4.5.0. It simplies the metric collection when running bookkeeper
 </li>
 </ul>
             
-<h2>        Test
-</h2>
+#### Test
 <ul>
 <li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-967'>BOOKKEEPER-967</a>] -         Create new testsuite for testing RackAwareEnsemblePlacementPolicy using ScriptBasedMapping.
 </li>
@@ -471,8 +464,7 @@ is introduce in 4.5.0. It simplies the metric collection when running bookkeeper
 </li>
 </ul>
         
-<h2>        Wish
-</h2>
+#### Wish
 <ul>
 <li>[<a href='https://issues.apache.org/jira/browse/BOOKKEEPER-943'>BOOKKEEPER-943</a>] -         Reduce log level of AbstractZkLedgerManager for register/unregister ReadOnlyLedgerHandle
 </li>
