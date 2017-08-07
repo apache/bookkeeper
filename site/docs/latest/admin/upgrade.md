@@ -2,7 +2,7 @@
 title: Upgrade
 ---
 
-> If you have questions about upgrades (or need help), please feel free to reach out to us by [mailing list](/community/mailing-lists) or [Slack Channel](/community/slack).
+> If you have questions about upgrades (or need help), please feel free to reach out to us by [mailing list]({{ site.baseurl }}community/mailing-lists) or [Slack Channel]({{ site.baseurl }}community/slack).
 
 ## Overview
 
@@ -69,5 +69,5 @@ However, we list a list of things that you might want to know.
 2. `multi journals` is a non-rollbackable feature. If you configure a bookie to use multiple journals on 4.5.x you can not roll the bookie back to use 4.4.x. You have
     to take a bookie out and recover it if you want to rollback to 4.4.x.
 
-If you are planning to upgrade a non-secured cluster to a secured cluster enabling security features in 4.5.0, please read [BookKeeper Security](../../security) for more details.
+If you are planning to upgrade a non-secured cluster to a secured cluster enabling security features in 4.5.0, please read [BookKeeper Security](../../security/overview) for more details.
 
