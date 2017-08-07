@@ -48,22 +48,33 @@ git add ${DOC_HOME}/docs/${RELEASE_VERSION}
 
 cd ${DOC_HOME}/docs/${RELEASE_VERSION}
 
-find . -name *.md | xargs sed -i'.bak' "s/{{ site\.latest_version }}/${RELEASE_VERSION}/"
-find . -name *.md.bak | xargs rm
-find . -name *.md | xargs sed -i'.bak' "s/${LATEST_VERSION}/${RELEASE_VERSION}/"
-find . -name *.md.bak | xargs rm
+find . -name "*.md" | xargs sed -i'.bak' "s/{{ site\.latest_version }}/${RELEASE_VERSION}/"
+find . -name "*.md.bak" | xargs rm
+find . -name "*.md" | xargs sed -i'.bak' "s/${LATEST_VERSION}/${RELEASE_VERSION}/"
+find . -name "*.md.bak" | xargs rm
 cp releaseNotesTemplate.md releaseNotes.md
 
 # go to doc home
 
 cd ${DOC_HOME}
 
-REGEX="""s/## News/
-## News
+# insert release section
+find releases.md | xargs sed -i'.bak' "/## News/r _data/releaseNotesSummary.template"
+find releases.md | xargs sed -i'.bak' "s/{{ site\.latest_version }}/${RELEASE_VERSION}/"
+rm releases.md.bak
 
-### [date]: release ${RELEASE_VERSION} available/
+# bump the version in _config.yml
+echo "- \"${RELEASE_VERSION}\"" > /tmp/bk_release_version
+find _config.yml | xargs sed -i'.bak' "/^versions:/r /tmp/bk_release_version"
 
-[INERT SUMMARY]
+versions_list=(`echo $RELEASE_VERSION | tr '.' ' '`)
+major_version=${versions_list[0]}
+minor_version=${versions_list[1]}
+patch_version=${versions_list[2]}
+next_minor_version=$((minor_version + 1))
+NEXT_VERSION="${major_version}.${next_minor_version}.0-SNAPSHOT"
+find _config.yml | xargs sed -i'.bak' "s/latest_version: \"${LATEST_VERSION}\"/latest_version: \"${NEXT_VERSION}\"/"
 
-"""
-find releases.md | xargs sed -i'.bak' "$REGEX"
+rm _config.yml.bak
+
+echo "Released version $RELEASE_VERSION."
