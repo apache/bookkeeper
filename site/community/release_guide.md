@@ -1,4 +1,7 @@
-# Apache BookKeeper Release Guide
+---
+title: Apache BookKeeper Release Guide
+layout: community
+---
 
 * TOC
 {:toc}
