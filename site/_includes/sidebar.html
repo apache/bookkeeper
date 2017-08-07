@@ -11,9 +11,9 @@
   </p>
   <ul class="sidebar-items">
     {% for doc in docs %}
-    {% capture doc_url %}{{ site.baseurl }}docs/{{ doc_version }}/{{ group.dir }}/{{ doc.endpoint }}/{% endcapture %}
+    {% capture doc_url %}../../{{ group.dir }}/{{ doc.endpoint }}/{% endcapture %}
     <li{% if doc_url == page.url %} class="active"{% endif %}>
-      <a href="{{ site.baseurl }}docs/{{ doc_version }}/{{ group.dir }}/{{ doc.endpoint }}">
+      <a href="../../{{ group.dir }}/{{ doc.endpoint }}">
       {{ doc.name }}
       </a>
     </li>
