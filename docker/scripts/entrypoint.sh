@@ -46,7 +46,7 @@ echo "BK_CLUSTER_ROOT_PATH is $BK_CLUSTER_ROOT_PATH"
 mkdir -p "${BK_journalDirectory}" "${BK_ledgerDirectories}" "${BK_indexDirectories}"
 # -------------- #
 # Allow the container to be started with `--user`
-if [ "$1" = 'bookkeeper' -a "$(id -u)" = '0' ]; then
+if [ "$1" = '/opt/bookkeeper/bin/bookkeeper' -a "$(id -u)" = '0' ]; then
     chown -R "$BK_USER:$BK_USER" "/opt/bookkeeper/" "${BK_journalDirectory}" "${BK_ledgerDirectories}" "${BK_indexDirectories}"
     sudo -s -E -u "$BK_USER" /bin/bash "$0" "$@"
     exit
@@ -59,7 +59,7 @@ echo "wait for zookeeper"
 until /opt/bookkeeper/bin/bookkeeper org.apache.zookeeper.ZooKeeperMain -server ${BK_zkServers} ls /; do sleep 5; done
 
 echo "create the zk root dir for bookkeeper"
-/opt/zk/bin/zkCli.sh -server ${BK_zkServers} create ${BK_CLUSTER_ROOT_PATH}
+/opt/bookkeeper/bin/bookkeeper org.apache.zookeeper.ZooKeeperMain -server ${BK_zkServers} create ${BK_CLUSTER_ROOT_PATH}
 
 echo "format zk metadata"
 echo "please ignore the failure, if it has already been formatted, "

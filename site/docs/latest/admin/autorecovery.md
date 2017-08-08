@@ -91,10 +91,10 @@ $ bookkeeper-server/bin/bookkeeper shell autorecovery -enable
 
 AutoRecovery has two components:
 
-1. The [**auditor**](#auditor) (see the [`Auditor`]({{ site.baseurl }}javadoc/org/apache/bookkeeper/replication/Auditor.html) class) is a singleton node that watches bookies to see if they fail and creates rereplication tasks for the ledgers on failed bookies.
-1. The [**replication worker**](#replication-worker) (see the [`ReplicationWorker`]({{ site.baseurl }}javadoc/org/apache/bookkeeper/replication/ReplicationWorker.html) class) runs on each bookie and executes rereplication tasks provided by the auditor.
+1. The [**auditor**](#auditor) (see the [`Auditor`](../../api/javadoc/org/apache/bookkeeper/replication/Auditor.html) class) is a singleton node that watches bookies to see if they fail and creates rereplication tasks for the ledgers on failed bookies.
+1. The [**replication worker**](#replication-worker) (see the [`ReplicationWorker`](../../api/javadoc/org/apache/bookkeeper/replication/ReplicationWorker.html) class) runs on each bookie and executes rereplication tasks provided by the auditor.
 
-Both of these components run as threads in the [`AutoRecoveryMain`]({{ site.baseurl }}javadoc/org/apache/bookkeeper/replication/AutoRecoveryMain) process, which runs on each bookie in the cluster. All recovery nodes participate in leader election---using ZooKeeper---to decide which node becomes the auditor. Nodes that fail to become the auditor watch the elected auditor and run an election process again if they see that the auditor node has failed.
+Both of these components run as threads in the [`AutoRecoveryMain`](../../api/javadoc/org/apache/bookkeeper/replication/AutoRecoveryMain) process, which runs on each bookie in the cluster. All recovery nodes participate in leader election---using ZooKeeper---to decide which node becomes the auditor. Nodes that fail to become the auditor watch the elected auditor and run an election process again if they see that the auditor node has failed.
 
 ### Auditor
 
