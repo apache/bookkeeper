@@ -14,12 +14,25 @@ below.
 
 ## Highlights
 
-The main features in 4.5.0 cover are around four areas:
+The main features in 4.5.0 cover are around following areas:
 
+- Dependencies
 - Security
 - Public API
 - Performance
 - Operations
+
+### Dependencies
+
+Here is a list of dependencies upgraded in 4.5.0:
+
+- Moved the developement from Java 7 to Java 8.
+- Upgrade Protobuf to `2.6`.
+- Upgrade ZooKeeper from `3.4` to `3.5`.
+- Upgrade Netty to `4.1`.
+- Upgrade Guava to `20.0`.
+- Upgrade SLF4J to `1.7.25`.
+- Upgrade Codahale to `3.1.0`.
 
 ### Security
 
@@ -75,12 +88,22 @@ can be enabled by setting `explicitLacInterval` to a positive value.
 
 ### Performance
 
-There are a lot for performance related bug fixes and improvements in 4.5.0. The major performance improvement introduced in 4.5.0, is
-upgrading netty from 3.x to [4.x](http://netty.io/wiki/new-and-noteworthy-in-4.0.html).
+There are a lot for performance related bug fixes and improvements in 4.5.0. These changes includes:
+
+- Upgraded netty from 3.x to 4.x to leverage buffer pooling and reduce memory copies.
+- Moved developement from Java 7 to Java 8 to take advantage of Java 8 features.
+- A lot of improvements around scheduling and threading on `bookies`.
+- Delay ensemble change to improve tail latency.
+- Parallel ledger recovery to improve the recovery speed.
+- ...
+
+We outlined following four changes as below. For a complete list of performance improvements, please checkout the `full list of changes` at the end.
+
+#### Netty 4 Upgrade
+
+The major performance improvement introduced in 4.5.0, is upgrading netty from 3.x to [4.x](http://netty.io/wiki/new-and-noteworthy-in-4.0.html).
 
 For more details, please read [upgrade guide](../upgrade) about the netty related tips when upgrading bookkeeper from 4.4.0 to 4.5.0.
-
-Besides netty 4 upgrade, there are other performance related changes highlighted as below:
 
 #### Delay Ensemble Change
 
@@ -139,6 +162,13 @@ This customized ledger metadata can be later on used by user defined placement p
 
 A new [Prometheus](https://prometheus.io/) [stats provider](https://github.com/apache/bookkeeper/tree/master/bookkeeper-stats-providers/prometheus-metrics-provider)
 is introduce in 4.5.0. It simplies the metric collection when running bookkeeper on [kubernetes](https://kubernetes.io/).
+
+#### Add more tools in BookieShell
+
+`BookieShell` is the tool provided by Apache BooKeeper to operate clusters. There are multiple importants tools introduced in 4.5.0, for example, `decommissionbookie`,
+`expandstorage`, `lostbookierecoverydelay`, `triggeraudit`.
+
+For the complete list of commands in `BookieShell`, please read [BookKeeper CLI tool reference](../reference/cli).
 
 ## Full list of changes
 
