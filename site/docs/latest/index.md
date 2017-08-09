@@ -1,6 +1,5 @@
 ---
 title: Apache BookKeeper 4.5.0-SNAPSHOT Documentation 
-layout: community
 ---
 <!--
 Licensed to the Apache Software Foundation (ASF) under one

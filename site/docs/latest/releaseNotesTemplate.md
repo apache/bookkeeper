@@ -1,6 +1,5 @@
 ---
 title: Apache BookKeeper 4.5.0-SNAPSHOT Release Notes
-layout: community
 ---
 
 [provide a summary of this release]
