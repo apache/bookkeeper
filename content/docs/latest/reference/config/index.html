@@ -627,7 +627,7 @@ interface (the interface it uses to establish its identity). By default, loopbac
   </tbody>
 </table>
 
-<h2 id="tsl-settings">TSL settings</h2>
+<h2 id="tls-settings">TLS settings</h2>
 
 <table>
   <thead>
@@ -641,69 +641,69 @@ interface (the interface it uses to establish its identity). By default, loopbac
     
     <tr id="tslProvider">
       <td><code>tslProvider</code></td>
-      <td><p>TSL Provider (JDK or OpenSSL)</p>
+      <td><p>TLS Provider (JDK or OpenSSL)</p>
 </td>
       <td><code>OpenSSL</code></td>
     </tr>
     
-    <tr id="tslProviderFactoryClass">
-      <td><code>tslProviderFactoryClass</code></td>
+    <tr id="tlsProviderFactoryClass">
+      <td><code>tlsProviderFactoryClass</code></td>
       <td><p>The path to the class that provides security.</p>
 </td>
       <td><code>org.apache.bookkeeper.security.SSLContextFactory</code></td>
     </tr>
     
-    <tr id="tslClientAuthentication">
-      <td><code>tslClientAuthentication</code></td>
+    <tr id="tlsClientAuthentication">
+      <td><code>tlsClientAuthentication</code></td>
       <td><p>Type of security used by server.</p>
 </td>
       <td><code>true</code></td>
     </tr>
     
-    <tr id="tslKeyStoreType">
-      <td><code>tslKeyStoreType</code></td>
+    <tr id="tlsKeyStoreType">
+      <td><code>tlsKeyStoreType</code></td>
       <td><p>Bookie Keystore type.</p>
 </td>
       <td><code>JKS</code></td>
     </tr>
     
-    <tr id="tslKeyStore">
-      <td><code>tslKeyStore</code></td>
+    <tr id="tlsKeyStore">
+      <td><code>tlsKeyStore</code></td>
       <td><p>Bookie Keystore location (path).</p>
 </td>
       <td></td>
     </tr>
     
-    <tr id="tslKeyStore">
-      <td><code>tslKeyStore</code></td>
+    <tr id="tlsKeyStore">
+      <td><code>tlsKeyStore</code></td>
       <td><p>Bookie Keystore location (path).</p>
 </td>
       <td></td>
     </tr>
     
-    <tr id="tslKeyStorePasswordPath">
-      <td><code>tslKeyStorePasswordPath</code></td>
+    <tr id="tlsKeyStorePasswordPath">
+      <td><code>tlsKeyStorePasswordPath</code></td>
       <td><p>Bookie Keystore password path, if the keystore is protected by a password.</p>
 </td>
       <td></td>
     </tr>
     
-    <tr id="tslTrustStoreType">
-      <td><code>tslTrustStoreType</code></td>
+    <tr id="tlsTrustStoreType">
+      <td><code>tlsTrustStoreType</code></td>
       <td><p>Bookie Truststore type.</p>
 </td>
       <td></td>
     </tr>
     
-    <tr id="tslTrustStore">
-      <td><code>tslTrustStore</code></td>
+    <tr id="tlsTrustStore">
+      <td><code>tlsTrustStore</code></td>
       <td><p>Bookie Truststore location (path).</p>
 </td>
       <td></td>
     </tr>
     
-    <tr id="tslTrustStorePasswordPath">
-      <td><code>tslTrustStorePasswordPath</code></td>
+    <tr id="tlsTrustStorePasswordPath">
+      <td><code>tlsTrustStorePasswordPath</code></td>
       <td><p>Bookie Truststore password path, if the truststore is protected by a password.</p>
 </td>
       <td></td>
@@ -1390,7 +1390,7 @@ You can disable <code class="highlighter-rouge">padding-writes</code> by setting
   <ul class="section-nav">
 <li class="toc-entry toc-h2"><a href="#server-parameters">Server parameters</a></li>
 <li class="toc-entry toc-h2"><a href="#garbage-collection-settings">Garbage collection settings</a></li>
-<li class="toc-entry toc-h2"><a href="#tsl-settings">TSL settings</a></li>
+<li class="toc-entry toc-h2"><a href="#tls-settings">TLS settings</a></li>
 <li class="toc-entry toc-h2"><a href="#long-poll-request-parameter-settings">Long poll request parameter settings</a></li>
 <li class="toc-entry toc-h2"><a href="#autorecovery-settings">AutoRecovery settings</a></li>
 <li class="toc-entry toc-h2"><a href="#netty-server-settings">Netty server settings</a></li>
