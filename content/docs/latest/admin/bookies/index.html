@@ -16,12 +16,11 @@
 <script src="/js/tippy.min.js"></script>
 
 <script type="text/javascript">
-  var shiftWindow = function() { scrollBy(0, -108); };
+  var shiftWindow = function() { scrollBy(0, -25); };
   window.addEventListener("hashchange", shiftWindow);
   window.addEventListener("pageshow", shiftWindow);
   function load() { if (window.location.hash) shiftWindow(); }
 </script>
-
   </head>
   <body class="body">
     <main class="main">
@@ -46,7 +45,7 @@
     </a>
     -->
 
-    <div class="navbar-burger" data-target="bkNav">
+    <div class="navbar-burger burger" data-target="bkNav">
       <span></span>
       <span></span>
       <span></span>
@@ -195,7 +194,7 @@
 <aside class="sidebar">
   
   <a class="button is-info">
-    Version : latest
+    Version: latest
   </a>
   <hr />
   
@@ -695,7 +694,7 @@ org.apache.bookkeeper.bookie.BookieException$InvalidCookieException
 </div>
 
 <div id="bookie-popover-html" class="popover-template">
-  <p>A bookie is an individial BookKeeper storage server.</p>
+  <p>A bookie is an individual BookKeeper storage server.</p>
 
 <p>Bookies store the content of ledgers and act as a distributed ensemble.</p>
 

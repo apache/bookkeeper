@@ -16,12 +16,11 @@
 <script src="/js/tippy.min.js"></script>
 
 <script type="text/javascript">
-  var shiftWindow = function() { scrollBy(0, -108); };
+  var shiftWindow = function() { scrollBy(0, -25); };
   window.addEventListener("hashchange", shiftWindow);
   window.addEventListener("pageshow", shiftWindow);
   function load() { if (window.location.hash) shiftWindow(); }
 </script>
-
   </head>
   <body class="body">
     <main class="main">
@@ -48,7 +47,7 @@
     </a>
     -->
 
-    <div class="navbar-burger" data-target="bkNav">
+    <div class="navbar-burger burger" data-target="bkNav">
       <span></span>
       <span></span>
       <span></span>
@@ -198,7 +197,7 @@
                   Apache BookKeeper
                 </h1>
                 <h2 class="bk-subtitle">
-                  A scalable, fault-tolerant, and low-latency storage serivce optimized for real-time workloads
+                  A scalable, fault-tolerant, and low-latency storage service optimized for real-time workloads
                 </h2>
                 <nav class="level is-mobile">
                   <div class="level-left">
@@ -244,6 +243,8 @@
     </div>
   </div>
 </footer>
+
+    <script src="/js/app.js"></script>
 
   </body>
 </html>

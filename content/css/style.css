@@ -7508,11 +7508,12 @@ body {
   font-size: 1.25em; }
 
 h1.bk-title {
-  font-size: 2.8rem; }
+  font-size: 3.4rem;
+  margin-bottom: 1.5rem; }
 
 h2.bk-subtitle {
   font-size: 1.6rem;
-  margin-bottom: 1rem; }
+  margin-bottom: 1.5rem; }
 
 .bk-docs-container, .bk-community-container {
   margin: 3rem auto 6rem auto; }
