@@ -2,7 +2,7 @@
 <aside class="sidebar">
   {% assign doc_version = page.url | replace:'/',' ' | truncatewords: 2 | remove:'...' | replace:'docs','' | lstrip %}
   <a class="button is-info">
-    Version : {{ doc_version }}
+    Version: {{ doc_version }}
   </a>
   <hr />
   {% for group in site.data.sidebar.groups %}{% assign docs = group.docs %}
