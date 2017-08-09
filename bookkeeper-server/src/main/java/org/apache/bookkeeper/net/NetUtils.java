@@ -62,7 +62,11 @@ public class NetUtils {
         return hostNames;
     }
 
-    public static String resolveNetworkLocation(DNSToSwitchMapping dnsResolver, InetSocketAddress addr) {
+    //public static String resolveNetworkLocation(DNSToSwitchMapping dnsResolver, InetSocketAddress addr) {
+    //    return resolveNetworkLocation(dnsResolver, addr, NetworkTopology.DEFAULT_RACK);
+    //}
+
+    public static String resolveNetworkLocation(DNSToSwitchMapping dnsResolver, InetSocketAddress addr, String defaultRack) {
         List<String> names = new ArrayList<String>(1);
         if (dnsResolver instanceof CachedDNSToSwitchMapping) {
             names.add(addr.getAddress().getHostAddress());
@@ -70,12 +74,12 @@ public class NetUtils {
             names.add(addr.getHostName());
         }
         // resolve network addresses
-        List<String> rNames = dnsResolver.resolve(names);
+        List<String> rNames = dnsResolver.resolve(names, defaultRack);
         String netLoc;
         if (null == rNames) {
             logger.warn("Failed to resolve network location for {}, using default rack for them : {}.", names,
-                NetworkTopology.DEFAULT_RACK);
-            netLoc = NetworkTopology.DEFAULT_RACK;
+                    defaultRack);
+            netLoc = defaultRack;
         } else {
             netLoc = rNames.get(0);
         }

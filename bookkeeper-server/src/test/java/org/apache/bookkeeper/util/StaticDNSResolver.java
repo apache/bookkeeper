@@ -48,7 +48,7 @@ public class StaticDNSResolver extends AbstractDNSToSwitchMapping {
     public static String getRack(String name) {
         String rack = name2Racks.get(name);
         if (null == rack) {
-            rack = NetworkTopology.DEFAULT_RACK;
+            rack = NetworkTopology.DEFAULT_REGION_AND_RACK;
         }
         return rack;
     }
@@ -67,12 +67,12 @@ public class StaticDNSResolver extends AbstractDNSToSwitchMapping {
     }
 
     @Override
-    public List<String> resolve(List<String> names) {
+    public List<String> resolve(List<String> names, String defaultRack) {
         List<String> racks = new ArrayList<String>();
         for (String n : names) {
             String rack = name2Racks.get(n);
             if (null == rack) {
-                rack = NetworkTopology.DEFAULT_RACK;
+                rack = defaultRack;
             }
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Resolve name {} to rack {}.", n, rack);

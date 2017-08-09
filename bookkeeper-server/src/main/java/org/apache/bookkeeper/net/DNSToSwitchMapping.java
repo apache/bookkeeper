@@ -41,14 +41,14 @@ public interface DNSToSwitchMapping {
      * <p/>
      *
      * If a name cannot be resolved to a rack, the implementation
-     * should return {@link NetworkTopology#DEFAULT_RACK}. This
+     * should return {@link NetworkTopology#DEFAULT_REGION_AND_RACK}. This
      * is what the bundled implementations do, though it is not a formal requirement
      *
      * @param names the list of hosts to resolve (can be empty)
      * @return list of resolved network paths.
      * If <i>names</i> is empty, the returned list is also empty
      */
-    public List<String> resolve(List<String> names);
+    public List<String> resolve(List<String> names, String defaultRack);
 
     /**
      * Reload all of the cached mappings.

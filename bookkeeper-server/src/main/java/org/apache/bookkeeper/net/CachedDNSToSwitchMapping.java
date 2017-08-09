@@ -99,7 +99,7 @@ public class CachedDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
   }
 
   @Override
-  public List<String> resolve(List<String> names) {
+  public List<String> resolve(List<String> names, String defaultRack) {
     // normalize all input names to be in the form of IP addresses
     names = NetUtils.normalizeHostNames(names);
 
@@ -111,7 +111,7 @@ public class CachedDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
     List<String> uncachedHosts = getUncachedHosts(names);
 
     // Resolve the uncached hosts
-    List<String> resolvedHosts = rawMapping.resolve(uncachedHosts);
+    List<String> resolvedHosts = rawMapping.resolve(uncachedHosts, defaultRack);
     //cache them
     cacheResolvedHosts(uncachedHosts, resolvedHosts);
     //now look up the entire list in the cache

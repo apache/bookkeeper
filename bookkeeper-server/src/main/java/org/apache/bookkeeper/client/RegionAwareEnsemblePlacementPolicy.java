@@ -34,6 +34,7 @@ import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
+import org.apache.bookkeeper.net.NetUtils;
 import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.net.Node;
 import org.apache.bookkeeper.net.NodeBase;
@@ -83,8 +84,8 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
     protected String getRegion(BookieSocketAddress addr) {
         String region = address2Region.get(addr);
         if (null == region) {
-            String networkLocation = resolveNetworkLocation(addr);
-            if (NetworkTopology.DEFAULT_RACK.equals(networkLocation)) {
+            String networkLocation = resolveNetworkLocation(addr, NetworkTopology.DEFAULT_REGION_AND_RACK);
+            if (NetworkTopology.DEFAULT_REGION_AND_RACK.equals(networkLocation)) {
                 region = UNKNOWN_REGION;
             } else {
                 String[] parts = networkLocation.split(NodeBase.PATH_SEPARATOR_STR);
@@ -128,7 +129,8 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             if (null == perRegionPlacement.get(region)) {
                 perRegionPlacement.put(region, new RackawareEnsemblePlacementPolicy()
                         .initialize(dnsResolver, timer, this.reorderReadsRandom, this.stabilizePeriodSeconds, 
-                                this.isWeighted, this.maxWeightMultiple, statsLogger));
+                                this.isWeighted, this.maxWeightMultiple, statsLogger)
+                        .withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK));
             }
 
             Set<BookieSocketAddress> regionSet = perRegionClusterChange.get(region);
@@ -160,7 +162,8 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                                                          HashedWheelTimer timer,
                                                          FeatureProvider featureProvider,
                                                          StatsLogger statsLogger) {
-        super.initialize(conf, optionalDnsResolver, timer, featureProvider, statsLogger);
+        super.initialize(conf, optionalDnsResolver, timer, featureProvider, statsLogger)
+                .withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
         myRegion = getLocalRegion(localNode);
         enableValidation = conf.getBoolean(REPP_ENABLE_VALIDATION, true);
         // We have to statically provide regions we want the writes to go through and how many regions
@@ -174,7 +177,8 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             for (String region: regions) {
                 perRegionPlacement.put(region, new RackawareEnsemblePlacementPolicy(true)
                         .initialize(dnsResolver, timer, this.reorderReadsRandom, this.stabilizePeriodSeconds,
-                                this.isWeighted, this.maxWeightMultiple, statsLogger));
+                                this.isWeighted, this.maxWeightMultiple, statsLogger)
+                        .withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK));
             }
             minRegionsForDurability = conf.getInt(REPP_MINIMUM_REGIONS_FOR_DURABILITY, MINIMUM_REGIONS_FOR_DURABILITY_DEFAULT);
             if (minRegionsForDurability > 0) {

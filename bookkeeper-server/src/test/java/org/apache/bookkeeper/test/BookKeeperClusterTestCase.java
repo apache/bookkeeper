@@ -80,7 +80,7 @@ public abstract class BookKeeperClusterTestCase {
     protected int numBookies;
     protected BookKeeperTestClient bkc;
 
-    protected final ServerConfiguration baseConf = TestBKConfiguration.newServerConfiguration();
+    protected final ServerConfiguration baseConf;
     protected final ClientConfiguration baseClientConf = new ClientConfiguration();
 
     private final Map<BookieServer, AutoRecoveryMain> autoRecoveryProcesses = new HashMap<>();
@@ -88,28 +88,38 @@ public abstract class BookKeeperClusterTestCase {
     private boolean isAutoRecoveryEnabled;
 
     public BookKeeperClusterTestCase(int numBookies) {
+        baseConf = TestBKConfiguration.newServerConfiguration();
         this.numBookies = numBookies;
         baseConf.setAllowLoopback(true);
+        baseConf.getAllowLoopback();
     }
 
     @Before
     public void setUp() throws Exception {
         LOG.info("Setting up test {}", getClass());
+        baseConf.getAllowLoopback();
         InMemoryMetaStore.reset();
         setMetastoreImplClass(baseConf);
         setMetastoreImplClass(baseClientConf);
 
         Stopwatch sw = Stopwatch.createStarted();
         try {
+            baseConf.getAllowLoopback();
+
             // start zookeeper service
             startZKCluster();
+            baseConf.getAllowLoopback();
+
             // start bookkeeper service
             startBKCluster();
+            baseConf.getAllowLoopback();
+
             LOG.info("Setup testcase {} in {} ms.", runtime.getMethodName(), sw.elapsed(TimeUnit.MILLISECONDS));
         } catch (Exception e) {
             LOG.error("Error setting up", e);
             throw e;
         }
+        baseConf.getAllowLoopback();
     }
 
     @After
@@ -161,6 +171,7 @@ public abstract class BookKeeperClusterTestCase {
         if (numBookies > 0) {
             bkc = new BookKeeperTestClient(baseClientConf);
         }
+        baseConf.getAllowLoopback();
 
         // Create Bookie Servers (B1, B2, B3)
         for (int i = 0; i < numBookies; i++) {

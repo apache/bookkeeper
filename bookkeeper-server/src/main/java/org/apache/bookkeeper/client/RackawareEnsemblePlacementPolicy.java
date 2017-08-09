@@ -66,6 +66,17 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
         }
         return this;
     }
+    
+    public RackawareEnsemblePlacementPolicy withDefaultRack(String rack) {
+        if (rack == null) {
+            throw new IllegalArgumentException("Default rack cannot be null");
+        }
+        super.withDefaultRack(rack);
+        if (slave != null) {
+            slave.withDefaultRack(rack);
+        }
+        return this;
+    }
 
     @Override
     public void uninitalize() {
