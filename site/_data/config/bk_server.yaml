@@ -88,36 +88,36 @@ groups:
     description: Whether force compaction is allowed when the disk is full or almost full. Forcing GC may get some space back, but may also fill up disk space more quickly. This is because new log files are created before GC, while old garbage log files are deleted after GC.
     default: 'false'
 
-- name: TSL settings
+- name: TLS settings
   params:
   - param: tslProvider
-    description: TSL Provider (JDK or OpenSSL)
+    description: TLS Provider (JDK or OpenSSL)
     default: OpenSSL
-  - param: tslProviderFactoryClass
+  - param: tlsProviderFactoryClass
     description: The path to the class that provides security.
     default: org.apache.bookkeeper.security.SSLContextFactory
-  - param: tslClientAuthentication
+  - param: tlsClientAuthentication
     description: Type of security used by server.
     default: 'true'
-  - param: tslKeyStoreType
+  - param: tlsKeyStoreType
     description: Bookie Keystore type.
     default: JKS
-  - param: tslKeyStore
+  - param: tlsKeyStore
     description: Bookie Keystore location (path).
     default: null
-  - param: tslKeyStore
+  - param: tlsKeyStore
     description: Bookie Keystore location (path).
     default: null
-  - param: tslKeyStorePasswordPath
+  - param: tlsKeyStorePasswordPath
     description: Bookie Keystore password path, if the keystore is protected by a password.
     default: null
-  - param: tslTrustStoreType
+  - param: tlsTrustStoreType
     description: Bookie Truststore type.
     default: null
-  - param: tslTrustStore
+  - param: tlsTrustStore
     description: Bookie Truststore location (path).
     default: null
-  - param: tslTrustStorePasswordPath
+  - param: tlsTrustStorePasswordPath
     description: Bookie Truststore password path, if the truststore is protected by a password.
     default: null
 
