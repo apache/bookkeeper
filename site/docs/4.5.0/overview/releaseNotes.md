@@ -8,7 +8,7 @@ The 4.5.0 release incorporates hundreds of new fixes, improvements, and features
 which was released over a year ago. It is a big milestone in Apache BookKeeper community, converging from three
 main branches (Salesforce, Twitter and Yahoo).
 
-Apache BookKeeper users are encouraged to upgrade to `4.5.0`. The technical details of this release are summarized
+Apache BookKeeper users are encouraged to upgrade to 4.5.0. The technical details of this release are summarized
 below.
 
 ## Highlights
