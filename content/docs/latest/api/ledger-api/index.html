@@ -58,7 +58,7 @@
         <a class="navbar-link">Documentation</a>
         <div class="navbar-dropdown is-boxed">
           <a class="navbar-item" href="/docs/latest/overview/overview">
-            Version 4.5.0-SNAPSHOT
+            Version 4.6.0-SNAPSHOT
             <span class="tag is-warning">Development</span>
           </a>
           <a class="navbar-item" href="/docs/latest/api/javadoc">
@@ -68,6 +68,11 @@
             Javadoc
           </a>
           <hr class="dropdown-divider">
+          
+          <a class="navbar-item" href="/docs/4.5.0/overview/overview">
+            Release 4.5.0
+            
+          </a>
           
           
           <a class="navbar-item" href="/archives/docs/r4.4.0">
@@ -437,7 +442,7 @@
 <p>If you’re using <a href="https://maven.apache.org/">Maven</a>, add this to your <a href="https://maven.apache.org/guides/introduction/introduction-to-the-pom.html"><code class="highlighter-rouge">pom.xml</code></a> build configuration file:</p>
 
 <div class="language-xml highlighter-rouge"><pre class="highlight"><code><span class="c">&lt;!-- in your &lt;properties&gt; block --&gt;</span>
-<span class="nt">&lt;bookkeeper.version&gt;</span>4.5.0-SNAPSHOT<span class="nt">&lt;/bookkeeper.version&gt;</span>
+<span class="nt">&lt;bookkeeper.version&gt;</span>4.6.0-SNAPSHOT<span class="nt">&lt;/bookkeeper.version&gt;</span>
 
 <span class="c">&lt;!-- in your &lt;dependencies&gt; block --&gt;</span>
 <span class="nt">&lt;dependency&gt;</span>
@@ -453,12 +458,12 @@
 <p>If you’re using <a href="https://gradle.org/">Gradle</a>, add this to your <a href="https://spring.io/guides/gs/gradle/"><code class="highlighter-rouge">build.gradle</code></a> build configuration file:</p>
 
 <div class="language-groovy highlighter-rouge"><pre class="highlight"><code><span class="n">dependencies</span> <span class="o">{</span>
-    <span class="n">compile</span> <span class="nl">group:</span> <span class="s1">'org.apache.bookkeeper'</span><span class="o">,</span> <span class="nl">name:</span> <span class="s1">'bookkeeper-server'</span><span class="o">,</span> <span class="nl">version:</span> <span class="s1">'4.5.0-SNAPSHOT'</span>
+    <span class="n">compile</span> <span class="nl">group:</span> <span class="s1">'org.apache.bookkeeper'</span><span class="o">,</span> <span class="nl">name:</span> <span class="s1">'bookkeeper-server'</span><span class="o">,</span> <span class="nl">version:</span> <span class="s1">'4.6.0-SNAPSHOT'</span>
 <span class="o">}</span>
 
 <span class="c1">// Alternatively:</span>
 <span class="n">dependencies</span> <span class="o">{</span>
-    <span class="n">compile</span> <span class="s1">'org.apache.bookkeeper:bookkeeper-server:4.5.0-SNAPSHOT'</span>
+    <span class="n">compile</span> <span class="s1">'org.apache.bookkeeper:bookkeeper-server:4.6.0-SNAPSHOT'</span>
 <span class="o">}</span>
 </code></pre>
 </div>
