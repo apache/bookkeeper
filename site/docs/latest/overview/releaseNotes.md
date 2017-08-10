@@ -1,6 +1,5 @@
 ---
 title: Apache BookKeeper 4.5.0 Release Notes
-layout: community
 ---
 
 This is the fifth release of BookKeeper as an Apache Top Level Project!

@@ -1,5 +1,5 @@
 title: Apache BookKeeper
-subtitle: A scalable, fault-tolerant, and low-latency storage serivce optimized for real-time workloads
+subtitle: A scalable, fault-tolerant, and low-latency storage service optimized for real-time workloads
 github_repo: https://github.com/apache/bookkeeper
 github_master: https://github.com/apache/bookkeeper/tree/master
 permalink: pretty
