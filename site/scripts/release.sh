@@ -52,7 +52,7 @@ cd ${DOC_HOME}/docs/${RELEASE_VERSION}
 find . -name "*.md" | xargs sed -i'.bak' "s/{{ site\.latest_version }}/${RELEASE_VERSION}/"
 find . -name "*.md" | xargs sed -i'.bak' "s/${LATEST_VERSION}/${RELEASE_VERSION}/"
 find . -name "*.md.bak" | xargs rm
-cp releaseNotesTemplate.md releaseNotes.md
+cp overview/releaseNotesTemplate.md overview/releaseNotes.md
 
 # go to doc home
 
