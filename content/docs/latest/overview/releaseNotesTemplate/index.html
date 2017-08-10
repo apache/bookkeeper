@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Apache BookKeeper - BookKeeper installation</title>
+    <title>Apache BookKeeper - Apache BookKeeper 4.5.0-SNAPSHOT Release Notes</title>
 
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -405,156 +405,35 @@
         <nav class="level bk-level">
           <div class="level-left">
             <div class="level-item">
-              <h1 class="title">BookKeeper installation</h1>
+              <h1 class="title">Apache BookKeeper 4.5.0-SNAPSHOT Release Notes</h1>
             </div>
           </div>
           
         </nav>
 
-        <h2 class="subtitle">Download or clone BookKeeper and build it locally</h2>
+        
       </header>
 
       <hr />
 
       <div class="content">
         <section class="bk-main-content">
-          
-<p>You can install BookKeeper either by <a href="#download">downloading</a> a <a href="http://www.gzip.org/">GZipped</a> tarball package or <a href="#clone">cloning</a> the BookKeeper repository.</p>
+          <p>[provide a summary of this release]</p>
 
-<h2 id="requirements">Requirements</h2>
+<p>Apache BookKeeper users are encouraged to upgrade to 4.5.0-SNAPSHOT. The technical details of this release are summarized
+below.</p>
 
-<ul>
-  <li><a href="http://www.opengroup.org/unix">Unix environment</a></li>
-  <li><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html">Java Development Kit 1.6</a> or later</li>
-  <li><a href="https://maven.apache.org/install.html">Maven 3.0</a> or later</li>
-</ul>
+<h2 id="highlights">Highlights</h2>
 
-<h2 id="download">Download</h2>
+<p>[List the highlights]</p>
 
-<p>You can download Apache BookKeeper releases from one of many <a href="http://www.apache.org/dyn/closer.cgi/bookkeeper">Apache mirrors</a>. Here’s an example for the <a href="http://apache.claz.org/bookkeeper">apache.claz.org</a> mirror:</p>
+<h2 id="details">Details</h2>
 
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>curl -O http://apache.claz.org/bookkeeper/bookkeeper-4.4.0/bookkeeper-4.4.0-src.tar.gz
-<span class="gp">$ </span>tar xvf bookkeeper-4.4.0-src.tar.gz
-<span class="gp">$ </span><span class="nb">cd </span>bookkeeper-4.4.0
-</code></pre>
-</div>
+<p>[list to issues list]</p>
 
-<h2 id="clone">Clone</h2>
-
-<p>To build BookKeeper from source, clone the repository, either from the <a href="https://github.com/apache/bookkeeper">GitHub mirror</a> or from the <a href="http://git.apache.org/bookkeeper.git/">Apache repository</a>:</p>
-
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="c"># From the GitHub mirror</span>
-<span class="gp">$ </span>git clone https://github.com/apache/bookkeeper
-
-<span class="c"># From Apache directly</span>
-<span class="gp">$ </span>git clone git://git.apache.org/bookkeeper.git/
-</code></pre>
-</div>
-
-<h2 id="build-using-maven">Build using Maven</h2>
-
-<p>Once you have the BookKeeper on your local machine, either by <a href="#download">downloading</a> or <a href="#clone">cloning</a> it, you can then build BookKeeper from source using Maven:</p>
-
-<div class="language-shell highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>mvn package
-</code></pre>
-</div>
-
-<blockquote>
-  <p>You can skip tests by adding the <code class="highlighter-rouge">-DskipTests</code> flag when running <code class="highlighter-rouge">mvn package</code>.</p>
-</blockquote>
-
-<h3 id="useful-maven-commands">Useful Maven commands</h3>
-
-<p>Some other useful Maven commands beyond <code class="highlighter-rouge">mvn package</code>:</p>
-
-<table>
-  <thead>
-    <tr>
-      <th style="text-align: left">Command</th>
-      <th style="text-align: left">Action</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="text-align: left"><code class="highlighter-rouge">mvn clean</code></td>
-      <td style="text-align: left">Removes build artifacts</td>
-    </tr>
-    <tr>
-      <td style="text-align: left"><code class="highlighter-rouge">mvn compile</code></td>
-      <td style="text-align: left">Compiles JAR files from Java sources</td>
-    </tr>
-    <tr>
-      <td style="text-align: left"><code class="highlighter-rouge">mvn compile findbugs:findbugs</code></td>
-      <td style="text-align: left">Compile using the Maven <a href="http://gleclaire.github.io/findbugs-maven-plugin">FindBugs</a> plugin</td>
-    </tr>
-    <tr>
-      <td style="text-align: left"><code class="highlighter-rouge">mvn install</code></td>
-      <td style="text-align: left">Install the BookKeeper JAR locally in your local Maven cache (usually in the <code class="highlighter-rouge">~/.m2</code> directory)</td>
-    </tr>
-    <tr>
-      <td style="text-align: left"><code class="highlighter-rouge">mvn deploy</code></td>
-      <td style="text-align: left">Deploy the BookKeeper JAR to the Maven repo (if you have the proper credentials)</td>
-    </tr>
-    <tr>
-      <td style="text-align: left"><code class="highlighter-rouge">mvn verify</code></td>
-      <td style="text-align: left">Performs a wide variety of verification and validation tasks</td>
-    </tr>
-    <tr>
-      <td style="text-align: left"><code class="highlighter-rouge">mvn apache-rat:check</code></td>
-      <td style="text-align: left">Run Maven using the <a href="http://creadur.apache.org/rat/apache-rat-plugin/">Apache Rat</a> plugin</td>
-    </tr>
-    <tr>
-      <td style="text-align: left"><code class="highlighter-rouge">mvn compile javadoc:aggregate</code></td>
-      <td style="text-align: left">Build Javadocs locally</td>
-    </tr>
-    <tr>
-      <td style="text-align: left"><code class="highlighter-rouge">mvn package assembly:single</code></td>
-      <td style="text-align: left">Build a complete distribution using the Maven <a href="http://maven.apache.org/plugins/maven-assembly-plugin/">Assembly</a> plugin</td>
-    </tr>
-  </tbody>
-</table>
-
-<h2 id="package-directory">Package directory</h2>
-
-<p>The BookKeeper project contains several subfolders that you should be aware of:</p>
-
-<table>
-  <thead>
-    <tr>
-      <th style="text-align: left">Subfolder</th>
-      <th style="text-align: left">Contains</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td style="text-align: left"><a href="https://github.com/apache/bookkeeper/tree/master/bookkeeper-server"><code class="highlighter-rouge">bookkeeper-server</code></a></td>
-      <td style="text-align: left">The BookKeeper server and client</td>
-    </tr>
-    <tr>
-      <td style="text-align: left"><a href="https://github.com/apache/bookkeeper/tree/master/bookkeeper-benchmark"><code class="highlighter-rouge">bookkeeper-benchmark</code></a></td>
-      <td style="text-align: left">A benchmarking suite for measuring BookKeeper performance</td>
-    </tr>
-    <tr>
-      <td style="text-align: left"><a href="https://github.com/apache/bookkeeper/tree/master/bookkeeper-stats"><code class="highlighter-rouge">bookkeeper-stats</code></a></td>
-      <td style="text-align: left">A BookKeeper stats library</td>
-    </tr>
-    <tr>
-      <td style="text-align: left"><a href="https://github.com/apache/bookkeeper/tree/master/bookkeeper-stats-providers"><code class="highlighter-rouge">bookkeeper-stats-providers</code></a></td>
-      <td style="text-align: left">BookKeeper stats providers</td>
-    </tr>
-  </tbody>
-</table>
 
         </section>
 
-        
-        <nav class="pagination is-centered">
-          
-          
-          <a class="pagination-next" href="../run-locally">Next</a>
-          
-          <ul class="pagination-list"></ul>
-        </nav>
         
       </div>
     </div>
@@ -563,14 +442,10 @@
       
       
 <div class="toc">
-  <h2 class="title">BookKeeper installation</h2>
+  <h2 class="title">Apache BookKeeper 4.5.0-SNAPSHOT Release Notes</h2>
   <ul class="section-nav">
-<li class="toc-entry toc-h2"><a href="#requirements">Requirements</a></li>
-<li class="toc-entry toc-h2"><a href="#download">Download</a></li>
-<li class="toc-entry toc-h2"><a href="#clone">Clone</a></li>
-<li class="toc-entry toc-h2"><a href="#build-using-maven">Build using Maven</a></li>
-<li class="toc-entry toc-h3"><a href="#useful-maven-commands">Useful Maven commands</a></li>
-<li class="toc-entry toc-h2"><a href="#package-directory">Package directory</a></li>
+<li class="toc-entry toc-h2"><a href="#highlights">Highlights</a></li>
+<li class="toc-entry toc-h2"><a href="#details">Details</a></li>
 </ul>
 </div>
 
