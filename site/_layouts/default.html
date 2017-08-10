@@ -14,4 +14,7 @@
   </body>
 
   {% include javascript.html %}
+  {% if jekyll.environment == "production" %}
+  {% include google-analytics.html %}
+  {% endif %}
 </html>
