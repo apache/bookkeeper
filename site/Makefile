@@ -23,7 +23,7 @@ build: clean
 		--config _config.yml
 
 apache: clean
-	${JEKYLL} build \
+	JEKYLL_ENV=production ${JEKYLL} build \
 		--config _config.yml,_config.apache.yml
 
 javadoc:
