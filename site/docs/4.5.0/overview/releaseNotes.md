@@ -15,13 +15,13 @@ below.
 
 The main features in 4.5.0 cover are around following areas:
 
-- Dependencies
+- Dependencies Upgrade
 - Security
 - Public API
 - Performance
 - Operations
 
-### Dependencies
+### Dependencies Upgrade
 
 Here is a list of dependencies upgraded in 4.5.0:
 
@@ -50,7 +50,7 @@ The following security features are currently supported.
 It's worth noting that those security features are optional - non-secured clusters are supported, as well as a mix
 of authenticated, unauthenticated, encrypted and non-encrypted clients.
 
-For more details, have a look at [BookKeeper Security](../security).
+For more details, have a look at [BookKeeper Security](../../security/overview).
 
 ### Public API
 
@@ -63,16 +63,21 @@ It is simple but not flexible on ledger id or entry id generation. Apache BookKe
 as an extension of existing `LedgerHandle` for advanced usage. The new `LedgerHandleAdv` allows applications providing
 its own `ledger-id` and assigning `entry-id` on adding entries.
 
-See [Ledger Advanced API](../api/ledger-adv-api) for more details.
+See [Ledger Advanced API](../../api/ledger-adv-api) for more details.
 
 #### Long Poll
 
 `Long Poll` is a main feature that [DistributedLog](https://distributedlog.io) uses to achieve low-latency tailing.
-This big feature has been merged back in 4.5.0 and available to BookKeeper users. It allows tailing-reads without
-polling `LastAddConfirmed` everytime after the readers exhaust known entries.
+This big feature has been merged back in 4.5.0 and available to BookKeeper users.
 
-Although `Long Poll` brings great latency improvements on tailing reads, it is still a very low-level primitive.
-It is still recommended to use high level API (e.g. [DistributedLog API](../api/distributedlog-api)) for tailing and streaming use cases.
+This feature includes two main changes, one is `LastAddConfirmed` piggyback, while the other one is a new `long poll` read API.
+
+The first change piggyback the latest `LastAddConfirm` along with the read response, so your `LastAddConfirmed` will be automatically advanced
+when your read traffic continues. It significantly reduces the traffic to explicitly polling `LastAddConfirmed` and hence reduces the end-to-end latency.
+
+The second change provides a new `long poll` read API, allowing tailing-reads without polling `LastAddConfirmed` everytime after readers exhaust known entries.
+Although `long poll` API brings great latency improvements on tailing reads, it is still a very low-level primitive.
+It is still recommended to use high level API (e.g. [DistributedLog API](../../api/distributedlog-api)) for tailing and streaming use cases.
 
 See [Streaming Reads](https://distributedlog.incubator.apache.org/docs/latest/user_guide/design/main.html#streaming-reads) for more details.
 
@@ -102,7 +107,7 @@ We outlined following four changes as below. For a complete list of performance 
 
 The major performance improvement introduced in 4.5.0, is upgrading netty from 3.x to [4.x](http://netty.io/wiki/new-and-noteworthy-in-4.0.html).
 
-For more details, please read [upgrade guide](../upgrade) about the netty related tips when upgrading bookkeeper from 4.4.0 to 4.5.0.
+For more details, please read [upgrade guide](../../admin/upgrade) about the netty related tips when upgrading bookkeeper from 4.4.0 to 4.5.0.
 
 #### Delay Ensemble Change
 
@@ -143,7 +148,7 @@ limitation, which it assumes `ledger-id` is a 32-bits integer. It limits the num
 
 `LongHierarchicalLedgerManager` is introduced to overcome this limitation.
 
-See [Ledger Manager](../develop/ledger-manager) for more details and learn how to migrate `HierarchicalLedgerManager` to `LongHierarchicalLedgerManager`.
+See [Ledger Manager](../../getting-started/concepts/#ledger-manager) for more details.
 
 #### Weight-based placement policy
 
@@ -167,7 +172,7 @@ is introduce in 4.5.0. It simplies the metric collection when running bookkeeper
 `BookieShell` is the tool provided by Apache BooKeeper to operate clusters. There are multiple importants tools introduced in 4.5.0, for example, `decommissionbookie`,
 `expandstorage`, `lostbookierecoverydelay`, `triggeraudit`.
 
-For the complete list of commands in `BookieShell`, please read [BookKeeper CLI tool reference](../reference/cli).
+For the complete list of commands in `BookieShell`, please read [BookKeeper CLI tool reference](../../reference/cli).
 
 ## Full list of changes
 
