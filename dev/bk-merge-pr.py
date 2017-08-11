@@ -405,7 +405,6 @@ def standardize_jira_ref(text):
     pattern = re.compile(r'(%s[-\s]*([0-9]{3,6}))+' % GITHUB_ISSUES_NAME, re.IGNORECASE)
     for ref in pattern.findall(text):
         # Add brackets, replace spaces or a dash with ' #', & convert to uppercase
-        print ref
         github_issue_refs.append(re.sub(r'[-\s]+', ' #', ref[0].upper()))
         text = text.replace(ref[0], '')
         github_issue_ids.append(ref[1].upper())
@@ -665,6 +664,24 @@ def main():
         print commit_title
 
     body = pr["body"]
+    modified_body = ""
+    for line in body.split('\n'):
+        if line.startswith('>'):
+            continue
+        modified_body = modified_body + line + "\n"
+    if modified_body != body:
+        print "I've re-written the body as follows to match the standard formats:"
+        print "Original: "
+        print body
+        print "Modified: "
+        print modified_body
+        result = raw_input("Would you like to use the modified body? (y/n): ")
+        if result.lower() == "y":
+            body = modified_body
+            print "Using modified body."
+        else:
+            print "Using original body."
+
     target_ref = pr["base"]["ref"]
     user_login = pr["user"]["login"]
     base_ref = pr["head"]["ref"]
