@@ -45,6 +45,8 @@ groups:
     endpoint: ledger-adv-api
   - name: DistributedLog
     endpoint: distributedlog-api
+  - name: Java API Docs
+    endpoint: javadoc
 - name: Security
   dir: security
   docs:

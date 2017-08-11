@@ -35,6 +35,7 @@ It is suitable for being used in following scenerios:
 Learn more about Apache BookKeeper and what it can do for your organization:
 
 - [Apache BookKeeper 4.5.0 Release Notes](../releaseNotes)
+- [Java API docs](../../api/javadoc)
 
 Or start using Apache BookKeeper today.
 
