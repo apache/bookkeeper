@@ -84,7 +84,6 @@ import org.apache.commons.cli.MissingArgumentException;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
@@ -2028,7 +2027,7 @@ public class BookieShell implements Tool {
     }
 
     @Override
-    public void setConf(Configuration conf) throws Exception {
+    public void setConf(CompositeConfiguration conf) throws Exception {
         bkConf.loadConf(conf);
         journalDirectories = Bookie.getCurrentDirectories(bkConf.getJournalDirs());
         ledgerDirectories = Bookie.getCurrentDirectories(bkConf.getLedgerDirs());
