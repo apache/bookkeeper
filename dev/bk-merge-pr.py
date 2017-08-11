@@ -62,7 +62,6 @@ JIRA_PASSWORD = os.environ.get("JIRA_PASSWORD", "")
 GITHUB_OAUTH_KEY = os.environ.get("GITHUB_OAUTH_KEY")
 
 GITHUB_USER = os.environ.get("GITHUB_USER", "apache")
-GITHUB_ROOT = "https://github.com/%s/%s" % (GITHUB_USER, PROJECT_NAME)
 GITHUB_BASE = "https://github.com/%s/%s/pull" % (GITHUB_USER, PROJECT_NAME)
 GITHUB_API_URL  = "https://api.github.com"
 GITHUB_API_BASE = "%s/repos/%s/%s" % (GITHUB_API_URL, GITHUB_USER, PROJECT_NAME)
@@ -696,7 +695,7 @@ def main():
     add_assignees_to_github_issues(github_issue_ids, [ user_login ])
 
     #
-    # 4. Process the merge
+    # 5. Process the merge
     #
 
     # Merged pull requests don't appear as merged in the GitHub API;
