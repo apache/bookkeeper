@@ -20,9 +20,9 @@
 FROM centos:7
 MAINTAINER Apache BookKeeper <dev@bookkeeper.apache.org>
 
-ARG BK_VERSION=4.4.0
+ARG BK_VERSION=4.5.0
 ARG DISTRO_NAME=bookkeeper-server-${BK_VERSION}-bin
-ARG GPG_KEY=B3D56514
+ARG GPG_KEY=FD74402C
 
 ENV BOOKIE_PORT=3181
 EXPOSE $BOOKIE_PORT
@@ -31,7 +31,7 @@ ENV BK_USER=bookkeeper
 # Download Apache Bookkeeper, untar and clean up
 RUN set -x \
     && adduser "${BK_USER}" \
-    && yum install -y java-1.8.0-openjdk-headless wget bash python md5sum sha1sum sudo \
+    && yum install -y java-1.8.0-openjdk-headless wget bash python sudo \
     && mkdir -pv /opt \
     && cd /opt \
     && wget -q "https://archive.apache.org/dist/bookkeeper/bookkeeper-${BK_VERSION}/${DISTRO_NAME}.tar.gz" \
@@ -45,7 +45,7 @@ RUN set -x \
     && tar -xzf "$DISTRO_NAME.tar.gz" \
     && mv bookkeeper-server-${BK_VERSION}/ /opt/bookkeeper/ \
     && rm -rf "$DISTRO_NAME.tar.gz" "$DISTRO_NAME.tar.gz.asc" "$DISTRO_NAME.tar.gz.md5" "$DISTRO_NAME.tar.gz.sha1" \
-    && yum remove -y wget md5sum sha1sum \
+    && yum remove -y wget \
     && yum clean all
 
 WORKDIR /opt/bookkeeper
