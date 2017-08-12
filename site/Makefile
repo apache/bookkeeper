@@ -23,11 +23,14 @@ build: clean
 		--config _config.yml
 
 apache: clean
-	${JEKYLL} build \
+	JEKYLL_ENV=production ${JEKYLL} build \
 		--config _config.yml,_config.apache.yml
 
 javadoc:
-	scripts/javadoc-gen.sh
+	scripts/javadoc-gen.sh "all"
+
+latest_javadoc:
+	scripts/javadoc-gen.sh "latest"
 
 staging: clean
 	${JEKYLL} build --config _config.yml,_config.staging.yml

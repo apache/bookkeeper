@@ -27,6 +27,16 @@ Client Guide | API docs
 
 ## News
 
+### 10 August, 2017: Release 4.5.0 available
+
+This is the fifth release of BookKeeper as an Apache Top Level Project!
+
+The 4.5.0 release incorporates hundreds of new fixes, improvements, and features since previous major release, 4.4.0,
+which was released over a year ago. It is a big milestone in Apache BookKeeper community, converging from three
+main branches (Salesforce, Twitter and Yahoo).
+
+See [BookKeeper 4.5.0 Release Notes](../docs/4.5.0/overview/releaseNotes) for details.
+
 ### 16 May, 2016: release 4.4.0 available
 
 This is the fourth release of BookKeeper as an Apache Top Level Project!

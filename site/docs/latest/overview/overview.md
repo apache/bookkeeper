@@ -1,6 +1,5 @@
 ---
-title: Apache BookKeeper 4.5.0-SNAPSHOT Documentation 
-layout: community
+title: Apache BookKeeper 4.6.0-SNAPSHOT Documentation 
 ---
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
@@ -35,23 +34,24 @@ It is suitable for being used in following scenerios:
 
 Learn more about Apache BookKeeper and what it can do for your organization:
 
-- [Apache BookKeeper {{ site.latest_version }} Release Notes](./releaseNotes)
+- [Apache BookKeeper {{ site.latest_version }} Release Notes](../releaseNotes)
+- [Java API docs](../../api/javadoc)
 
 Or start using Apache BookKeeper today.
 
 ### Users 
 
-- **Concepts**: Start with [concepts](./getting-started/concepts). This will help you to fully understand
+- **Concepts**: Start with [concepts](../../getting-started/concepts). This will help you to fully understand
     the other parts of the documentation, including the setup, integration and operation guides.
-- **Getting Started**: Install [Apache BookKeeper](./getting-started/installation) and run bookies [locally](./getting-started/run-locally)
-- **API**: Read the [API](./api/overview) documentation to learn how to use Apache BookKeeper to build your applications.
-- **Deployment**: The [Deployment Guide](./deployment/manual) shows how to deploy Apache BookKeeper to production clusters.
+- **Getting Started**: Install [Apache BookKeeper](../../getting-started/installation) and run bookies [locally](../../getting-started/run-locally)
+- **API**: Read the [API](../../api/overview) documentation to learn how to use Apache BookKeeper to build your applications.
+- **Deployment**: The [Deployment Guide](../../deployment/manual) shows how to deploy Apache BookKeeper to production clusters.
 
 ### Administrators
 
-- **Operations**: The [Admin Guide](./admin) shows how to run Apache BookKeeper on production, what are the production
+- **Operations**: The [Admin Guide](../../admin/bookies) shows how to run Apache BookKeeper on production, what are the production
     considerations and best practices.
 
 ### Contributors
 
-- **Details**: Learn [design details](./development/protocol) to know more internals.
+- **Details**: Learn [design details](../../development/protocol) to know more internals.

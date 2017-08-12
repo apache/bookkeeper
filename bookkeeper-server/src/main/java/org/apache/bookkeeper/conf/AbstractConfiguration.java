@@ -117,8 +117,8 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      *          Configuration URL
      */
     public void loadConf(URL confURL) throws ConfigurationException {
-        Configuration loadedConf = new PropertiesConfiguration(confURL);
-        addConfiguration(loadedConf);
+        PropertiesConfiguration loadedConf = new PropertiesConfiguration(confURL);
+        addConfiguration((Configuration)loadedConf.clone());
     }
 
     /**
@@ -127,18 +127,8 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      * @param baseConf
      *          Other Configuration
      */
-    public void loadConf(AbstractConfiguration baseConf) {
-        addConfiguration(baseConf); 
-    }
-
-    /**
-     * Load configuration from other configuration object
-     *
-     * @param otherConf
-     *          Other configuration object
-     */
-    public void loadConf(Configuration otherConf) {
-        addConfiguration(otherConf);
+    public void loadConf(CompositeConfiguration baseConf) {
+        addConfiguration((CompositeConfiguration)baseConf.clone());
     }
 
     /**
