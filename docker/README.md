@@ -1,14 +1,14 @@
 
 # What is Apache Bookkeeper?
 
-Apache ZooKeeper is a software project of the Apache Software Foundation, providing a replicated log service which can be used to build replicated state machines. A log contains a sequence of events which can be applied to a state machine. BookKeeper guarantees that each replica state machine will see all the same entries, in the same order.
+Apache Bookkeeper is a software project of the Apache Software Foundation, providing a replicated log service which can be used to build replicated state machines. A log contains a sequence of events which can be applied to a state machine. BookKeeper guarantees that each replica state machine will see all the same entries, in the same order.
 
 > [Apache Bookkeeper](http://bookkeeper.apache.org/)
 
 
 # How to use this image
 
-Bookkeeper needs [Zookeeper](https://zookeeper.apache.org/) in order to preserve its state and publish its bookies (bookkepeer servers). The client only need to connect to a Zookkeeper server in the ensamble in order to obtain the list of Bookkeeper servers.
+Bookkeeper needs [Zookeeper](https://zookeeper.apache.org/) in order to preserve its state and publish its bookies (bookkeeper servers). The client only need to connect to a Zookeeper server in the ensamble in order to obtain the list of Bookkeeper servers.
 
 ## TL;DR
 
@@ -70,7 +70,7 @@ Start a dice application (you can run it several times to view the behavior in a
 ```
 docker run -it --rm \
     --network "my-bookkeeper-network" \
-    --env ZK_URL=my-zookkeeper:2181 \
+    --env ZK_URL=my-zookeeper:2181 \
     caiok/bookkeeper-tutorial
 ```
 
