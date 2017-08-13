@@ -29,7 +29,7 @@ import org.apache.bookkeeper.proto.BookieServer;
 public class Main {
 
     static void usage() {
-        System.err.println("USAGE: bookeeper client|bookie");
+        System.err.println("USAGE: bookkeeper client|bookie");
     }
 
     /**

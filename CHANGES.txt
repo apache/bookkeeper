@@ -1144,9 +1144,9 @@ Release 4.0.0 - 2011-11-30
 
         BOOKKEEPER-19: BookKeeper doesn't support more than 2Gig of memory (ivan via fpj)
 
-        BOOKEEPER-22: Exception in LedgerCache causes addEntry request to fail (fpj via fpj)
+        BOOKKEEPER-22: Exception in LedgerCache causes addEntry request to fail (fpj via fpj)
 
-        BOOKEEPER-5: Issue with Netty in BookKeeper (fpj and ivank via fpj)
+        BOOKKEEPER-5: Issue with Netty in BookKeeper (fpj and ivank via fpj)
 
         BOOKKEEPER-30: Test are too noisy (ivank via fpj)
 
