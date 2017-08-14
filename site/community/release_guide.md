@@ -447,7 +447,7 @@ Once the release candidate has been reviewed and approved by the community, the 
 
 Use the Apache Nexus repository to release the staged binary artifacts to the Maven Central repository. In the `Staging Repositories` section, find the relevant release candidate `orgapachebookkeeper-XXX` entry and click `Release`. Drop all other release candidates that are not being released.
 
-#### Deploy source release to dist.apache.org
+### Deploy source release to dist.apache.org
 
 Copy the source release from the `dev` repository to the `release` repository at `dist.apache.org` using Subversion.
 
