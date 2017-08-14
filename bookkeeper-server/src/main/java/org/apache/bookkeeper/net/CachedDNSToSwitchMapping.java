@@ -46,6 +46,12 @@ public class CachedDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
     this.rawMapping = rawMapping;
   }
 
+  // we'll use IP Address for these mappings.
+  @Override
+  public boolean useHostName() {
+    return false;
+  }
+
   /**
    * @param names a list of hostnames to probe for being cached
    * @return the hosts from 'names' that have not been cached previously
@@ -99,7 +105,7 @@ public class CachedDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
   }
 
   @Override
-  public List<String> resolve(List<String> names, String defaultRack) {
+  public List<String> resolve(List<String> names) {
     // normalize all input names to be in the form of IP addresses
     names = NetUtils.normalizeHostNames(names);
 
@@ -111,7 +117,7 @@ public class CachedDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
     List<String> uncachedHosts = getUncachedHosts(names);
 
     // Resolve the uncached hosts
-    List<String> resolvedHosts = rawMapping.resolve(uncachedHosts, defaultRack);
+    List<String> resolvedHosts = rawMapping.resolve(uncachedHosts);
     //cache them
     cacheResolvedHosts(uncachedHosts, resolvedHosts);
     //now look up the entire list in the cache

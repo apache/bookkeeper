@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import com.google.common.base.Preconditions;
 import org.apache.bookkeeper.bookie.BookKeeperServerStats;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
@@ -37,15 +38,7 @@ import org.apache.bookkeeper.client.WeightedRandomSelection.WeightedObject;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.Configurable;
 import org.apache.bookkeeper.feature.FeatureProvider;
-import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.net.DNSToSwitchMapping;
-import org.apache.bookkeeper.net.NetUtils;
-import org.apache.bookkeeper.net.NetworkTopology;
-import org.apache.bookkeeper.net.NetworkTopologyImpl;
-import org.apache.bookkeeper.net.Node;
-import org.apache.bookkeeper.net.NodeBase;
-import org.apache.bookkeeper.net.ScriptBasedMapping;
-import org.apache.bookkeeper.net.StabilizeNetworkTopology;
+import org.apache.bookkeeper.net.*;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.ReflectionUtils;
@@ -58,6 +51,7 @@ import com.google.common.collect.Sets;
 
 import io.netty.util.HashedWheelTimer;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * Simple rackware ensemble placement policy.
@@ -79,10 +73,24 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
 
     static class DefaultResolver implements DNSToSwitchMapping {
 
+        final Supplier<String> defaultRackSupplier;
+
+        // for backwards compat
+        public DefaultResolver() {
+            this(()->NetworkTopology.DEFAULT_REGION_AND_RACK);
+        }
+
+        public DefaultResolver(Supplier<String> defaultRackSupplier) {
+            Preconditions.checkNotNull(defaultRackSupplier, "defaultRackSupplier should not be null");
+            this.defaultRackSupplier = defaultRackSupplier;
+        }
+
         @Override
-        public List<String> resolve(List<String> names, String defaultRack) {
+        public List<String> resolve(List<String> names) {
             List<String> rNames = new ArrayList<String>(names.size());
             for (@SuppressWarnings("unused") String name : names) {
+                final String defaultRack = defaultRackSupplier.get();
+                Preconditions.checkNotNull(defaultRack, "defaultRack cannot be null");
                 rNames.add(defaultRack);
             }
             return rNames;
@@ -93,6 +101,62 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
             // nop
         }
 
+    }
+
+    /**
+     * Decorator for any existing dsn resolver.
+     * Backfills returned data with appropriate default rack info.
+     */
+    static class DNSResolverDecorator implements DNSToSwitchMapping {
+
+        final Supplier<String> defaultRackSupplier;
+        final DNSToSwitchMapping resolver;
+
+        DNSResolverDecorator(DNSToSwitchMapping resolver, Supplier<String> defaultRackSupplier) {
+            Preconditions.checkNotNull(resolver, "Resolver cannot be null");
+            Preconditions.checkNotNull(defaultRackSupplier, "defaultRackSupplier should not be null");
+            this.defaultRackSupplier = defaultRackSupplier;
+            this.resolver= resolver;
+        }
+
+        public List<String> resolve(List<String> names) {
+            if (names == null) {
+                return new ArrayList<>();
+            }
+            final String defaultRack = defaultRackSupplier.get();
+            Preconditions.checkNotNull(defaultRack, "Default rack cannot be null");
+
+            List<String> rNames = resolver.resolve(names);
+            if (rNames != null && rNames.size() == names.size()) {
+                for (int i = 0; i < rNames.size(); ++i) {
+                    if (rNames.get(i) == null) {
+                        LOG.warn("Failed to resolve network location for {}, using default rack for it : {}.",
+                                rNames.get(i), defaultRack);
+                        rNames.set(i, defaultRack);
+                    }
+                }
+                return rNames;
+            }
+
+            LOG.warn("Failed to resolve network location for {}, using default rack for them : {}.", names,
+                    defaultRack);
+            rNames = new ArrayList<>(names.size());
+
+            for (int i = 0; i < names.size(); ++i) {
+                rNames.add(defaultRack);
+            }
+            return rNames;
+        }
+
+        @Override
+        public boolean useHostName() {
+            return resolver.useHostName();
+        }
+
+        @Override
+        public void reloadCachedMappings() {
+            resolver.reloadCachedMappings();
+        }
     }
 
     // for now, we just maintain the writable bookies' topology
@@ -127,7 +191,7 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
     }
 
     protected BookieNode createBookieNode(BookieSocketAddress addr) {
-        return new BookieNode(addr, resolveNetworkLocation(addr, defaultRack));
+        return new BookieNode(addr, resolveNetworkLocation(addr));
     }
 
     /**
@@ -148,7 +212,7 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
         this.bookiesLeftCounter = statsLogger == null ? null : statsLogger.getOpStatsLogger(BookKeeperServerStats.BOOKIES_LEFT);
         this.reorderReadsRandom = reorderReadsRandom;
         this.stabilizePeriodSeconds = stabilizePeriodSeconds;
-        this.dnsResolver = dnsResolver;
+        this.dnsResolver = new DNSResolverDecorator(dnsResolver, () -> this.getDefaultRack());
         this.timer = timer;
 
         // create the network topology
@@ -187,11 +251,14 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
      * rack-aware policy needs /rack only since we cannot mix both styles 
      */
     public RackawareEnsemblePlacementPolicyImpl withDefaultRack(String rack) {
-        if (rack == null) {
-            throw new IllegalArgumentException("Default rack cannot be null");
-        }
+        Preconditions.checkNotNull(rack, "Default rack cannot be null");
+
         this.defaultRack = rack;
         return this;
+    }
+
+    public String getDefaultRack() {
+        return defaultRack;
     }
 
     @Override
@@ -212,7 +279,7 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
                 }
             } catch (RuntimeException re) {
                 LOG.info("Failed to initialize DNS Resolver {}, used default subnet resolver.", dnsResolverName, re);
-                dnsResolver = new DefaultResolver();
+                dnsResolver = new DefaultResolver(() -> this.getDefaultRack());
             }
         }
         return initialize(
@@ -230,8 +297,8 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
         // do nothing
     }
 
-    protected String resolveNetworkLocation(BookieSocketAddress addr, String defaultRack) {
-        return NetUtils.resolveNetworkLocation(dnsResolver, addr.getSocketAddress(), defaultRack);
+    protected String resolveNetworkLocation(BookieSocketAddress addr) {
+        return NetUtils.resolveNetworkLocation(dnsResolver, addr.getSocketAddress());
     }
 
     @Override

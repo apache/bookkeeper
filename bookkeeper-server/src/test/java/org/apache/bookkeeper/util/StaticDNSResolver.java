@@ -67,13 +67,10 @@ public class StaticDNSResolver extends AbstractDNSToSwitchMapping {
     }
 
     @Override
-    public List<String> resolve(List<String> names, String defaultRack) {
+    public List<String> resolve(List<String> names) {
         List<String> racks = new ArrayList<String>();
         for (String n : names) {
             String rack = name2Racks.get(n);
-            if (null == rack) {
-                rack = defaultRack;
-            }
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Resolve name {} to rack {}.", n, rack);
             }

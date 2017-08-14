@@ -155,7 +155,7 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
         }
 
         @Override
-        public List<String> resolve(List<String> names, String defaultRack) {
+        public List<String> resolve(List<String> names) {
             List<String> m = new ArrayList<String>(names.size());
 
             if (names.isEmpty()) {
@@ -163,10 +163,7 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
             }
 
             if (scriptName == null) {
-                for (int i = 0; i < names.size(); i++) {
-                    m.add(defaultRack);
-                }
-                return m;
+                return null;
             }
 
             String output = runResolveCommand(names);

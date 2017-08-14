@@ -84,7 +84,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
     protected String getRegion(BookieSocketAddress addr) {
         String region = address2Region.get(addr);
         if (null == region) {
-            String networkLocation = resolveNetworkLocation(addr, NetworkTopology.DEFAULT_REGION_AND_RACK);
+            String networkLocation = resolveNetworkLocation(addr);
             if (NetworkTopology.DEFAULT_REGION_AND_RACK.equals(networkLocation)) {
                 region = UNKNOWN_REGION;
             } else {

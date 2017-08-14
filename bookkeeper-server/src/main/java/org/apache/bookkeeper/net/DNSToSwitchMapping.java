@@ -48,7 +48,7 @@ public interface DNSToSwitchMapping {
      * @return list of resolved network paths.
      * If <i>names</i> is empty, the returned list is also empty
      */
-    public List<String> resolve(List<String> names, String defaultRack);
+    public List<String> resolve(List<String> names);
 
     /**
      * Reload all of the cached mappings.
@@ -57,4 +57,15 @@ public interface DNSToSwitchMapping {
      * will get a chance to see the new data.
      */
     public void reloadCachedMappings();
+
+    /**
+     * Hints what to use with implementation when InetSocketAddress is converted
+     * to String:
+     * hostname (addr.getHostName(), default)
+     * or IP address (addr.getAddress().getHostAddress())
+     * @return true if hostname, false if IP address. Default is true.
+      */
+    default boolean useHostName() {
+        return true;
+    }
 }
