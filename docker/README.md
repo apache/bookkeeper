@@ -1,14 +1,14 @@
 
 # What is Apache Bookkeeper?
 
-Apache ZooKeeper is a software project of the Apache Software Foundation, providing a replicated log service which can be used to build replicated state machines. A log contains a sequence of events which can be applied to a state machine. BookKeeper guarantees that each replica state machine will see all the same entries, in the same order.
+Apache Bookkeeper is a software project of the Apache Software Foundation, providing a replicated log service which can be used to build replicated state machines. A log contains a sequence of events which can be applied to a state machine. BookKeeper guarantees that each replica state machine will see all the same entries, in the same order.
 
 > [Apache Bookkeeper](http://bookkeeper.apache.org/)
 
 
 # How to use this image
 
-Bookkeeper needs [Zookeeper](https://zookeeper.apache.org/) in order to preserve its state and publish its bookies (bookkepeer servers). The client only need to connect to a Zookkeeper server in the ensamble in order to obtain the list of Bookkeeper servers.
+Bookkeeper needs [Zookeeper](https://zookeeper.apache.org/) in order to preserve its state and publish its bookies (Bookkeeper servers). The client only need to connect to a Zookeeper server in the ensamble in order to obtain the list of Bookkeeper servers.
 
 ## TL;DR
 
@@ -64,21 +64,21 @@ And so on for "bookie2" and "bookie3". We have now our fully functional ensemble
 
 In order to play with our freshly created ensemble, you can use the simple application taken from [Bookkeeper Tutorial](http://bookkeeper.apache.org/docs/master/bookkeeperTutorial.html) and packaged in a [docker image](https://github.com/caiok/bookkeeper-tutorial) for convenience.
 
-This application check if it can be leader, if yes start to roll a dice and book this rolls on bookkeeper, otherwise it will start to follow the leader rolls. If leader stops, follower will try to become leader and so on.
+This application check if it can be leader, if yes start to roll a dice and book this rolls on Bookkeeper, otherwise it will start to follow the leader rolls. If leader stops, follower will try to become leader and so on.
 
 Start a dice application (you can run it several times to view the behavior in a concurrent environment):
 ```
 docker run -it --rm \
     --network "my-bookkeeper-network" \
-    --env ZK_URL=my-zookkeeper:2181 \
+    --env ZK_URL=my-zookeeper:2181 \
     caiok/bookkeeper-tutorial
 ```
 
 ## Configuration
 
-Bookkeeper configuration is located in `/opt/bookkeeper/conf` in the docker container, it is a copy of [these files](https://github.com/apache/bookkeeper/tree/master/bookkeeper-server/conf) in bookkeeper repo.
+Bookkeeper configuration is located in `/opt/bookkeeper/conf` in the docker container, it is a copy of [these files](https://github.com/apache/bookkeeper/tree/master/bookkeeper-server/conf) in Bookkeeper repo.
 
-There are 2 ways to set bookkeeper configuration:
+There are 2 ways to set Bookkeeper configuration:
 
 1, Apply setted (e.g. docker -e kk=vv) environment variables into configuration files. Environment variable names is in format "BK_originalName", in which "originalName" is the key in config files.
 
@@ -94,7 +94,7 @@ $ docker run --name bookie1 -d \
     bookkeeper
 ```
 
-### Override rules for bookkeeper configuration
+### Override rules for Bookkeeper configuration
 If you have applied several ways to set the same config target, e.g. the environment variable names contained in [these files](https://github.com/apache/bookkeeper/tree/master/bookkeeper-server/conf) and conf_file in /opt/bookkeeper/conf/.
 
 Then the override rules is as this:
@@ -132,7 +132,7 @@ Default value is "127.0.0.1:2181"
 
 #### `BK_zkLedgersRootPath`
 
-This variable allows you to specify the root directory bookkeeper will use on Zookeeper to store ledgers metadata.
+This variable allows you to specify the root directory Bookkeeper will use on Zookeeper to store ledgers metadata.
 
 This will override `zkLedgersRootPath ` in [bk_server.conf](https://github.com/apache/bookkeeper/blob/master/bookkeeper-server/conf/bk_server.conf).
 
@@ -140,7 +140,7 @@ Default value is "/bookkeeper/ledgers"
 
 #### `BK_CLUSTER_ROOT_PATH`
 
-This variable allows you to specify the root directory bookkeeper will use on Zookeeper.
+This variable allows you to specify the root directory Bookkeeper will use on Zookeeper.
 
 Default value is empty - " ". so ledgers dir in zookeeper will be at "/ledgers" by default. You could set it as that you want, e.g. "/bookkeeper"
 
@@ -153,7 +153,7 @@ Default value is "/data/bookkeeper", which contains volumes `/data/bookkeeper/jo
 
 
 ### Configure files under /opt/bookkeeper/conf
-These files is originally un-tared from the bookkeeper building binary, such as [bookkeeper-server-4.4.0-bin.tar.tgz](https://archive.apache.org/dist/bookkeeper/bookkeeper-4.4.0/bookkeeper-4.4.0-src.tar.gz), and it comes from [these files](https://github.com/apache/bookkeeper/tree/master/bookkeeper-server/conf) in bookkeeper repo.
+These files is originally un-tared from the bookkeeper building binary, such as [bookkeeper-server-4.4.0-bin.tar.tgz](https://archive.apache.org/dist/bookkeeper/bookkeeper-4.4.0/bookkeeper-4.4.0-src.tar.gz), and it comes from [these files](https://github.com/apache/bookkeeper/tree/master/bookkeeper-server/conf) in Bookkeeper repo.
 
 Usually we could config files bk_server.conf, bkenv.sh, log4j.properties, and log4j.shell.properties. Please read and understand them before you do the configuration.
 

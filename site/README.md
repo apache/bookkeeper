@@ -50,7 +50,7 @@ When you submit a pull request for modifying website or documentation, you are r
 Here are a few steps to follow to stage your changes:
 
 1. You need to create a github repo called `bookkeeper-staging-site` under your github account. You can fork this [staging repo](https://github.com/sijie/bookkeeper-staging-site) as well.
-2. In your `bookeeper-staging-site` repo, go to `Settings > GitHub Pages`. Enable `GitHub Pages` on `master branch /docs folder`.
+2. In your `bookkeeper-staging-site` repo, go to `Settings > GitHub Pages`. Enable `GitHub Pages` on `master branch /docs folder`.
 3. Make changes to the website, follow the steps above to verify the changes locally.
 4. Once the changes are verified locally, you can run `make staging`. It will generate the files under `site/local-generated`.
 5. Run `scripts/staging-website.sh`. It would push the generated website to your `bookkeeper-staging-site`.
