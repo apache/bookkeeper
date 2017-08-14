@@ -458,10 +458,11 @@ Copy the source release from the `dev` repository to the `release` repository at
 1. Create the documentation for `${VERSION}`. Run the `release.sh` to generate the branch for `${VERSION}` and bump
     the versions for website documentation.
 
+    ```shell
     $ cd site
     $ ./site/release.sh
+    ```
 
-    
     Once run the `release.sh`, please send a pull request for it and get approval from any committers, then merge it.
     The CI job will automatically update the website in a few minutes. Please review the website to make sure the
     documentation for `${VERSION}` is live.
@@ -515,11 +516,11 @@ Once the release has been finalized, the last step of the process is to promote 
 
 ### Apache mailing lists
 
-Announce on the dev@ mailing list that the release has been finished.
+- Announce on the dev@ mailing list that the release has been finished.
+- Announce on the release on the user@ mailing list, listing major improvements and contributions.
+- Announce the release on the announce@apache.org mailing list.
 
-Announce on the release on the user@ mailing list, listing major improvements and contributions.
-
-(NOTE: Make sure sending the announce email using apache email, otherwise announce@apache.org will reject your email.)
+> NOTE: Make sure sending the announce email using apache email, otherwise announce@apache.org will reject your email.
 
 
     From: xxx@apache.org
