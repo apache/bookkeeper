@@ -40,7 +40,7 @@ import io.netty.buffer.Unpooled;
 
 /**
  * Ledger Advanced handle extends {@link LedgerHandle} to provide API to add entries with
- * user supplied entryIds. Through this interface Ledger Length may not be accurate wile the
+ * user supplied entryIds. Through this interface Ledger Length may not be accurate while the
  * ledger being written.
  */
 public class LedgerHandleAdv extends LedgerHandle {
