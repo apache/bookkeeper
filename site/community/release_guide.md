@@ -468,6 +468,30 @@ Copy the source release from the `dev` repository to the `release` repository at
 
 2. Merge the Release Notes pull request and make sure the Release Notes is updated.
 
+### Update Dockerfile
+
+1. Update the `BK_VERSION` and `GPG_KEY` in `docker/Dockerfile` (e.g. [Pull Request 436](https://github.com/apache/bookkeeper/pull/436) ),
+    send a pull request for review and get an approval from the community.
+
+2. Once the pull request is approved, merge this pull request into master and make sure it is cherry-picked into corresponding branch.
+
+3. After this pull request is merged, you need to cherry-pick the change to the release tag.
+
+    ```shell
+    // create a cherry-pick branch
+    $ git checkout ${TAG}
+    $ git checkout -b ${TAG}_cherrypick
+    $ git cherry-pick <GIT SHA>
+    // remove the release tag locally and remotely
+    $ git tag -d ${TAG}
+    $ git push apache :${TAG}
+    // re-tag based on the cherry-pick branch
+    $ git tag ${TAG}
+    $ git push apache ${TAG}
+    ```
+
+4. Verify the [docker hub](https://hub.docker.com/r/apache/bookkeeper/) to see if a new build for the given tag is build.
+
 ### Mark the version as released in JIRA and Github
 
 In JIRA, inside [version management](https://issues.apache.org/jira/plugins/servlet/project-config/BOOKKEEPER/versions), hover over the current release and a settings menu will appear. Click `Release`, and select today’s date.
@@ -479,6 +503,7 @@ In Github, inside [milestones](https://github.com/apache/bookkeeper/milestones),
 * Maven artifacts released and indexed in the [Maven Central Repository](https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22org.apache.bookkeeper%22)
 * Source and Binary distribution available in the release repository of [dist.apache.org](https://dist.apache.org/repos/dist/release/incubator/bookkeeper/)
 * Website is updated with new release
+* Docker image is built with new release
 * Release tagged in the source code repository
 * Release version finalized in JIRA and Github
 
@@ -503,10 +528,14 @@ Announce on the release on the user@ mailing list, listing major improvements an
      
     The Apache BookKeeper team is proud to announce Apache BookKeeper version
     x.y.z.
-     
+
+    Apache BookKeeper is a scalable, fault-tolerant, and low-latency storage service optimized for
+    real-time workloads. It has been used for a fundamental service to build reliable services.
+    It is also the log segment store for Apache DistributedLog and the message store for Apache Pulsar.
+
     This is the N release of the Apache BookKeeper.
 
-    [highlights the release]
+    [highlights the release and why users need to try the release]
      
     For BookKeeper release details and downloads, visit:
      
@@ -523,9 +552,9 @@ Announce on the release on the user@ mailing list, listing major improvements an
     The BookKeeper Team
 
 
-### ASF press release
+### Recordkeeping
 
-After incubation, use reporter.apache.org to promote the release.
+Use reporter.apache.org to seed the information about the release into future project reports.
 
 ### Social media
 
