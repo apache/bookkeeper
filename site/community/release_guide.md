@@ -57,9 +57,15 @@ To prepare for each release, you should audit the project status both in the JIR
 
 #### GPG Key
 
-You need to have a GPG key to sign the release artifacts. Please be aware of the ASF-wide [release signing guidelines](https://www.apache.org/dev/release-signing.html). If you don’t have a GPG key associated with your Apache account, please create one according to the guidelines.
+You need to have a GPG key to sign the release artifacts. Please be aware of the ASF-wide [release signing guidelines](https://www.apache.org/dev/release-signing.html).
+If you don’t have a GPG key associated with your Apache account, please create one according to the [guidelines](http://apache.org/dev/openpgp.html#generate-key) and [upload](https://www.apache.org/dev/release-signing.html#keyserver-upload) your key to a public key server.
 
-Determine your Apache GPG Key and Key ID, as follows:
+> It is important to [link](https://www.apache.org/dev/release-signing.html#apache-wot) your GPG key into the Apache web of trust.
+> You can reach out other committers in Apache BookKeeper community for signing your key.
+
+Once you have a GPG key associated with your Apache count, then:
+
+**First**, Determine your Apache GPG Key and Key ID, as follows:
 
     gpg --list-keys
 
@@ -72,9 +78,26 @@ This will list your GPG keys. One of these should reflect your Apache account, f
 
 Here, the key ID is the 8-digit hex string in the `pub` line: `845E6689`.
 
-Now, add your Apache GPG key to the BookKeeper’s `KEYS` file in [`dist`](https://svn.apache.org/repos/asf/bookkeeper/dist/KEYS). Follow the instructions listed at the top of these files.
+**Second**, add your Apache GPG key to the BookKeeper’s `KEYS` file in [`dist`](https://dist.apache.org/repos/dist/release/bookkeeper/KEYS).
 
-Configure `git` to use this key when signing code by giving it your key ID, as follows:
+```shell
+
+# checkout the svn folder that contains the KEYS file
+svn co https://dist.apache.org/repos/dist/release/bookkeeper bookkeeper_dist
+cd bookkeeper_dist
+
+# Export the key in ascii format and append it to the file
+( gpg --list-sigs $USER@apache.org
+  gpg --export --armor $USER@apache.org ) >> KEYS
+
+# Commit to svn
+svn ci -m "Added gpg key for $USER"
+
+```
+
+Once you committed, please verify if your GPG key shows up in the BookkKeeper's `KEYS` file in [`dist`](https://dist.apache.org/repos/dist/release/bookkeeper/KEYS).
+
+**Third**, configure `git` to use this key when signing code by giving it your key ID, as follows:
 
     git config --global user.signingkey 845E6689
 
@@ -110,10 +133,6 @@ Configure access to the [Apache Nexus repository](http://repository.apache.org/)
             </server>
           </servers>
         </settings>
-
-#### Website development setup
-
-[TBD]
 
 ### Create a new version in JIRA and Github
 
@@ -165,10 +184,16 @@ Adjust any of the above properties to the improve clarity and presentation of th
 
 #### Github
 
-Unlike JIRA, Github does not automatically generates Release Notes based on the `Milestone` field applied to issues.
-We can use [github-changelog-generator](https://github.com/skywinder/github-changelog-generator) to generate a ChangeLog for a milestone.
+> Unlike JIRA, Github does not automatically generates Release Notes based on the `Milestone` field applied to issues.
+> We can use [github-changelog-generator](https://github.com/skywinder/github-changelog-generator) to generate a ChangeLog for a milestone in future.
 
-(instructions to generate changelogs)
+For Github, we can use the milestone link in the Release Notes. E.g. [Release 4.5.0 milestone](https://github.com/apache/bookkeeper/milestone/1?closed=1).
+
+#### Prepare Release Notes
+
+After review the release notes on both JIRA and Github, you should write a `releaseNotes` under `site/docs/${release_version}/overview/releaseNotes.md` and then send out a pull request for review.
+
+[4.5.0 Release Notes](https://github.com/apache/bookkeeper/pull/402) is a good example to follow.
 
 ### Create a release branch
 
@@ -190,13 +215,24 @@ Set up a few environment variables to simplify Maven commands that follow. (We u
 Version represents the release currently underway, while next version specifies the anticipated next version to be released from that branch. Normally, 4.5.0 is followed by 4.6.0, while 4.5.0 is followed by 4.5.1.
 
 Use Maven release plugin to create the release branch and update the current branch to use the new development version. This command applies for the new major or minor version.
-(Warning: This command automatically check in and tag your code in the code repository configured in the SCM.) It is recommended to do a "dry run" before executing the command.
-To "dry run", you can provide "-DdryRun" at the end of this command. "dry run" will generate some temporary files in the project folder, you can remove them by running "mvn release:clean".
+
+> This command automatically check in and tag your code in the code repository configured in the SCM.
+> It is recommended to do a "dry run" before executing the command. To "dry run", you can provide "-DdryRun"
+> at the end of this command. "dry run" will generate some temporary files in the project folder, you can remove
+> them by running "mvn release:clean".
 
     mvn release:branch \
         -DbranchName=${BRANCH_NAME} \
         -DdevelopmentVersion=${DEVELOPMENT_VERSION} \
         [-DdryRun]
+
+> If you failed at the middle of running this command, please check if you have `push` permissions on `github.com`.
+> You need use [personal access token](https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/) rather than your own password, if you enabled `2 factor authentication`.
+>
+> On failures, you need to reset on failures:
+>
+> $ git reset --hard apache/<master branch OR release tag>
+> $ git branch -D ${BRANCH_NAME}
 
 However, if you are doing an incremental/hotfix release, please run the following command after checking out the release tag of the release being patched.
 
@@ -246,6 +282,8 @@ Set up a few environment variables to simplify Maven commands that follow. This 
     TAG="release-${VERSION}"
     RC_DIR="bookkeeper-${VERSION}-rc${RC_NUM}"
 
+> Please make sure `gpg` command is in your $PATH. The maven release plugin use `gpg` to sign generated jars and packages.
+
 Use Maven release plugin to build the release artifacts, as follows:
 
     mvn release:prepare \
@@ -253,11 +291,21 @@ Use Maven release plugin to build the release artifacts, as follows:
         -DreleaseVersion=${VERSION} \
         -Dtag=${TAG} \
         -DupdateWorkingCopyVersions=false \
-        [-DdryRun] [-DskipTests]
+        [-DdryRun] \
+        [-Darguments="-Dmaven.javadoc.skip=true -DskipTests=true"] \ // to skip javadoc and tests
+        [-Dresume=true] // resume prepare if it is interrupted in the middle
 
 Use Maven release plugin to stage these artifacts on the Apache Nexus repository, as follows:
 
-    mvn release:perform [-DdryRun] [-DskipTests]
+    mvn release:perform [-DdryRun] [-Darguments="-Dmaven.javadoc.skip=true -DskipTests=true"] [-Dresume=true]
+
+> If `release:perform` failed, 
+> delete the release tag: git tag -d ${VERSION} && git push apache :refs/tags/${VERSION}
+> 
+> Also, you need to check the git commits on the github and if needed you may have to
+> force push backed out local git branch to github again.
+>
+> After reset, run `release:prepare` again.
 
 Review all staged artifacts. They should contain all relevant parts for each module, including `pom.xml`, jar, test jar, source, test source, javadoc, etc. Artifact names should follow [the existing format](https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22org.apache.bookkeeper%22) in which artifact name mirrors directory structure, e.g., `bookkeeper-server`. Carefully review any new artifacts.
 
@@ -275,34 +323,33 @@ Copy the source release to the dev repository of `dist.apache.org`.
 
         mkdir bookkeeper/${RC_DIR}
 
-3. Copy and rename the BookKeeper source distribution, hashes, and GPG signature:
+3. Copy the BookKeeper source and binary distribution, and their GPG signatures:
 
         cp target/bookkeeper-${VERSION}-src.tar.gz bookkeeper/${RC_DIR}/bookkeeper-${VERSION}-src.tar.gz
         cp target/bookkeeper-${VERSION}-src.tar.gz.asc bookkeeper/${RC_DIR}/bookkeeper-${VERSION}-src.tar.gz.asc
-        cp target/bookkeeper-${VERSION}-src.tar.gz.md5 bookkeeper/${RC_DIR}/bookkeeper-${VERSION}-src.tar.gz.md5
-        cp target/bookkeeper-${VERSION}-src.tar.gz.sha1 bookkeeper/${RC_DIR}/bookkeeper-${VERSION}-src.tar.gz.sha1
         cp bookkeeper-server/target/bookkeeper-server-${VERSION}-bin.tar.gz bookkeeper/${RC_DIR}/bookkeeper-server-${VERSION}-bin.tar.gz
         cp bookkeeper-server/target/bookkeeper-server-${VERSION}-bin.tar.gz.asc bookkeeper/${RC_DIR}/bookkeeper-server-${VERSION}-bin.tar.gz.asc
-        cp bookkeeper-server/target/bookkeeper-server-${VERSION}-bin.tar.gz.md5 bookkeeper/${RC_DIR}/bookkeeper-server-${VERSION}-bin.tar.gz.md5
-        cp bookkeeper-server/target/bookkeeper-server-${VERSION}-bin.tar.gz.sha1 bookkeeper/${RC_DIR}/bookkeeper-server-${VERSION}-bin.tar.gz.sha1
 
-4. Add and commit all the files.
+4. Sign the BookKeeper source and binary distribution.
 
-        cd bookkeeper
+        cd bookkeeper/${RC_DIR}
+        md5sum bookkeeper-${VERSION}-src.tar.gz > bookkeeper-${VERSION}-src.tar.gz.md5
+        shasum bookkeeper-${VERSION}-src.tar.gz > bookkeeper-${VERSION}-src.tar.gz.sha1
+        md5sum bookkeeper-server-${VERSION}-bin.tar.gz > bookkeeper-server-${VERSION}-bin.tar.gz.md5
+        shasum bookkeeper-server-${VERSION}-bin.tar.gz > bookkeeper-server-${VERSION}-bin.tar.gz.sha1
+
+5. Go back to BookKeeper directory, add and commit all the files.
+
+        cd ..
         svn add ${RC_DIR}
         svn commit
 
-5. Verify that files are [present](https://dist.apache.org/repos/dist/dev/bookkeeper).
-
-### Build Javadoc and Website
-
-(TBD for new website)
+6. Verify that files are [present](https://dist.apache.org/repos/dist/dev/bookkeeper).
 
 ### Checklist to proceed to the next step
 
 1. Maven artifacts deployed to the staging repository of [repository.apache.org](https://repository.apache.org/content/repositories/)
 1. Source and Binary distribution deployed to the dev repository of [dist.apache.org](https://dist.apache.org/repos/dist/dev/incubator/bookkeeper/)
-1. (TODO: javadoc and website)
 
 **********
 
@@ -322,11 +369,23 @@ Start the review-and-vote thread on the dev@ mailing list. Here’s an email tem
     [ ] -1, Do not approve the release (please provide specific comments)
 
     The complete staging area is available for your review, which includes:
-    * JIRA release notes [1],
-    * the official Apache source release to be deployed to dist.apache.org [2],
-    * all artifacts to be deployed to the Maven Central Repository [3],
-    * source code tag "release-4.5.0" [4],
-    * website pull request listing the release and publishing the API reference manual [5].
+    * Release notes [1]
+    * The official Apache source and binary distributions to be deployed to dist.apache.org [2]
+    * All artifacts to be deployed to the Maven Central Repository [3]
+    * Source code tag "release-4.5.0" [4]
+
+    BookKeeper's KEY file contains PGP keys we use to sign this release:
+    https://dist.apache.org/repos/dist/release/bookkeeper/KEYS
+
+    Please down this packages and review this release candidate:
+
+    - Review release notes
+    - Download the source package (verify md5, shasum, and asc) and follow the
+    instructions to build and run the bookkeeper service.
+    - Download the binary package (verify md5, shasum, and asc) and follow the
+    instructions to run the bookkeeper service.
+    - Review maven repo, release tag, licenses, and any other things you think
+    it is important to a release.
 
     The vote will be open for at least 72 hours. It is adopted by majority approval, with at least 3 PMC affirmative votes.
 
@@ -341,7 +400,7 @@ Start the review-and-vote thread on the dev@ mailing list. Here’s an email tem
 
 If there are any issues found in the release candidate, reply on the vote thread to cancel the vote. There’s no need to wait 72 hours. Proceed to the `Fix Issues` step below and address the problem. However, some issues don’t require cancellation. For example, if an issue is found in the website pull request, just correct it on the spot and the vote can continue as-is.
 
-If there are no issues, reply on the vote thread to close the voting. Then, tally the votes in a separate email. Here’s an email template; please adjust as you see fit.
+If there are no issues, reply on the vote thread to close the voting. Then, tally the votes in a separate email. Here’s an email template; please adjust as you see fit. (NOTE: the approver list are binding approvers.)
 
     From: Release Manager
     To: dev@bookkeeper.incubator.apache.org
@@ -396,7 +455,18 @@ Copy the source release from the `dev` repository to the `release` repository at
 
 ### Update Website
 
-[TBD]
+1. Create the documentation for `${VERSION}`. Run the `release.sh` to generate the branch for `${VERSION}` and bump
+    the versions for website documentation.
+
+    $ cd site
+    $ ./site/release.sh
+
+    
+    Once run the `release.sh`, please send a pull request for it and get approval from any committers, then merge it.
+    The CI job will automatically update the website in a few minutes. Please review the website to make sure the
+    documentation for `${VERSION}` is live.
+
+2. Merge the Release Notes pull request and make sure the Release Notes is updated.
 
 ### Mark the version as released in JIRA and Github
 
