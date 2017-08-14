@@ -36,7 +36,7 @@ BK_DIR = /data
 BK_zkLedgersRootPath = /ledgers
 
 ZK_CONTAINER_NAME=test_zookeeper
-ZK_LOCAL_DATA_DIR=$(BK_LOCAL_DATA_DIR)/zookkeeper
+ZK_LOCAL_DATA_DIR=$(BK_LOCAL_DATA_DIR)/zookeeper
 
 TERMINAL_EMULATOR=gnome-terminal
 
@@ -62,7 +62,7 @@ build:
 
 # -------------------------------- #
 
-# Create and run a bookkeeper container with data persisted on local filesystem. It needs the zookkeeper container.
+# Create and run a bookkeeper container with data persisted on local filesystem. It needs the zookeeper container.
 # In order to launch several bookies, the command need the bookie number
 #   make run-bk BOOKIE=4
 
@@ -88,7 +88,7 @@ run-bk:
 
 # -------------------------------- #
 
-# Create run and destroy a container that will format zookkeeper metadata
+# Create run and destroy a container that will format zookeeper metadata
 #   make run-format
 
 run-format:
@@ -100,7 +100,7 @@ run-format:
 
 # -------------------------------- #
 
-# Create and run the zookkeeper container needed by the ensemble
+# Create and run the zookeeper container needed by the ensemble
 #   make run-zk
 
 run-zk:
@@ -129,7 +129,7 @@ run-dice:
 
 # -------------------------------- #
 
-# This is an example of a full bookkeeper ensemble of 3 bookies, a zookkeeper server and 2 client dice applications.
+# This is an example of a full bookkeeper ensemble of 3 bookies, a zookeeper server and 2 client dice applications.
 # On MacOS please run these command manually in several terminals
 #   make run-demo
 run-demo:
