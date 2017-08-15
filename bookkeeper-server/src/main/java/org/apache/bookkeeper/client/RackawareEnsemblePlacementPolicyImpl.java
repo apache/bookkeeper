@@ -77,7 +77,7 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
 
         // for backwards compat
         public DefaultResolver() {
-            this(()->NetworkTopology.DEFAULT_REGION_AND_RACK);
+            this(() -> NetworkTopology.DEFAULT_REGION_AND_RACK);
         }
 
         public DefaultResolver(Supplier<String> defaultRackSupplier) {
@@ -121,7 +121,7 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
 
         public List<String> resolve(List<String> names) {
             if (names == null) {
-                return new ArrayList<>();
+                return Collections.emptyList();
             }
             final String defaultRack = defaultRackSupplier.get();
             Preconditions.checkNotNull(defaultRack, "Default rack cannot be null");
@@ -207,9 +207,10 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
                                                               boolean isWeighted,
                                                               int maxWeightMultiple,
                                                               StatsLogger statsLogger) {
+        Preconditions.checkNotNull(statsLogger, "statsLogger should not be null, use NullStatsLogger instead.");
         this.statsLogger = statsLogger;
-        this.bookiesJoinedCounter = statsLogger == null ? null : statsLogger.getOpStatsLogger(BookKeeperServerStats.BOOKIES_JOINED);
-        this.bookiesLeftCounter = statsLogger == null ? null : statsLogger.getOpStatsLogger(BookKeeperServerStats.BOOKIES_LEFT);
+        this.bookiesJoinedCounter = statsLogger.getOpStatsLogger(BookKeeperServerStats.BOOKIES_JOINED);
+        this.bookiesLeftCounter = statsLogger.getOpStatsLogger(BookKeeperServerStats.BOOKIES_LEFT);
         this.reorderReadsRandom = reorderReadsRandom;
         this.stabilizePeriodSeconds = stabilizePeriodSeconds;
         this.dnsResolver = new DNSResolverDecorator(dnsResolver, () -> this.getDefaultRack());
@@ -314,11 +315,8 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
             joinedBookies = Sets.difference(writableBookies, oldBookieSet).immutableCopy();
             // dead bookies.
             deadBookies = Sets.difference(leftBookies, readOnlyBookies).immutableCopy();
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(
-                        "Cluster changed : left bookies are {}, joined bookies are {}, while dead bookies are {}.",
-                        new Object[] { leftBookies, joinedBookies, deadBookies });
-            }
+            LOG.debug("Cluster changed : left bookies are {}, joined bookies are {}, while dead bookies are {}.",
+                    leftBookies, joinedBookies, deadBookies);
             handleBookiesThatLeft(leftBookies);
             handleBookiesThatJoined(joinedBookies);
             if (this.isWeighted && (leftBookies.size() > 0 || joinedBookies.size() > 0)) {
@@ -344,10 +342,9 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
                     if (this.isWeighted) {
                         this.bookieInfoMap.remove(node);
                     }
-                    if (bookiesLeftCounter != null ) {
-                        bookiesLeftCounter.registerSuccessfulValue(1L);
-                    }
-                    
+
+                    bookiesLeftCounter.registerSuccessfulValue(1L);
+
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Cluster changed : bookie {} left from cluster.", addr);
                     }
@@ -374,18 +371,17 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
                 if (this.isWeighted) {
                     this.bookieInfoMap.putIfAbsent(node, new BookieInfo());
                 }
-                if (bookiesJoinedCounter != null ) {
-                    bookiesJoinedCounter.registerSuccessfulValue(1L);
-                }
+
+                bookiesJoinedCounter.registerSuccessfulValue(1L);
+
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Cluster changed : bookie {} joined the cluster.", addr);
                 }
             } catch (Throwable t) {
                 // topology.add() throws unchecked exception
                 LOG.error("Unexpected exception while handling joining bookie {}", addr, t);
-                if (bookiesJoinedCounter != null ) {
-                    bookiesJoinedCounter.registerFailedValue(1L);
-                }
+
+                bookiesJoinedCounter.registerFailedValue(1L);
                 // no need to re-throw; we want to process the rest of the bookies
                 // exception anyways will be caught/logged/suppressed in the ZK's event handler
             }
@@ -572,7 +568,6 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
             LOG.warn("Failed to choose a bookie from {} : "
                      + "excluded {}, fallback to choose bookie randomly from the cluster.",
                      networkLoc, excludeBookies);
-            LOG.warn("Predicate {}  Ensemble {}", predicate, ensemble);
             // randomly choose one from whole cluster, ignore the provided predicate.
             return selectRandom(1, excludeBookies, predicate, ensemble).get(0);
         }
