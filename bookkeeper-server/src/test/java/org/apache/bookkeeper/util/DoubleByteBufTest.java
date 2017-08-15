@@ -21,6 +21,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 
 import java.nio.ByteBuffer;
@@ -120,5 +121,29 @@ public class DoubleByteBufTest {
         ByteBuf b = DoubleByteBuf.get(b1, b2);
 
         assertEquals(ByteBuffer.wrap(new byte[] { 1, 2, 3, 4 }), b.nioBuffer());
+    }
+
+    /**
+     * Verify that readableBytes() returns writerIndex - readerIndex. In this case writerIndex is the end of the buffer
+     * and readerIndex is increased by 64.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testReadableBytes() throws Exception {
+        ByteBuf b1 = PooledByteBufAllocator.DEFAULT.heapBuffer(128, 128);
+        b1.writerIndex(b1.capacity());
+        ByteBuf b2 = PooledByteBufAllocator.DEFAULT.heapBuffer(128, 128);
+        b2.writerIndex(b2.capacity());
+        ByteBuf buf = DoubleByteBuf.get(b1, b2);
+
+        assertEquals(buf.readerIndex(), 0);
+        assertEquals(buf.writerIndex(), 256);
+        assertEquals(buf.readableBytes(), 256);
+
+        for (int i = 0; i < 4; ++i) {
+            buf.skipBytes(64);
+            assertEquals(buf.readableBytes(), 256 - 64 * (i + 1));
+        }
     }
 }

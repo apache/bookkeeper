@@ -121,11 +121,6 @@ public final class DoubleByteBuf extends AbstractReferenceCountedByteBuf {
     }
 
     @Override
-    public int readableBytes() {
-        return b1.readableBytes() + b2.readableBytes();
-    }
-
-    @Override
     public int writableBytes() {
         return 0;
     }
