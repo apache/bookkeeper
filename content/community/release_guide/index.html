@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Apache BookKeeper - Apache BookKeeper Release Guide</title>
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet" href="/css/normalize.css">
+<link rel="stylesheet" href="/css/tippy.css">
+<link rel="stylesheet" href="/css/style.css">
+
+<link rel="shortcut icon" href="/img/favicon.ico">
+
+<script src="/js/tippy.min.js"></script>
+
+<script type="text/javascript">
+  var shiftWindow = function() { scrollBy(0, -25); };
+  window.addEventListener("hashchange", shiftWindow);
+  window.addEventListener("pageshow", shiftWindow);
+  function load() { if (window.location.hash) shiftWindow(); }
+</script>
+  </head>
+  <body class="body">
+    <main class="main">
+      
+<nav class="navbar bk-topnav">
+  <div class="navbar-brand">
+    <a class="navbar-item bk-brand" href="/">
+      Apache BookKeeper
+    </a>
+
+    <!--
+    <a class="navbar-item is-hidden-desktop bk-github" href="https://github.com/apache/bookkeeper" target="_blank">
+      <span class="icon">
+        <i class="fa fa-github"></i>
+      </span>
+    </a>
+
+    <a class="navbar-item is-hidden-desktop bk-twitter" href="https://twitter.com/jgthms" target="_blank">
+      <span class="icon">
+        <i class="fa fa-twitter"></i>
+      </span>
+    </a>
+    -->
+
+    <div class="navbar-burger burger" data-target="bkNav">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+  </div>
+
+  <div id="bkNav" class="navbar-menu">
+    <div class="navbar-start">
+      <div class="navbar-item has-dropdown is-hoverable">
+        <a class="navbar-link">Documentation</a>
+        <div class="navbar-dropdown is-boxed">
+          <a class="navbar-item" href="/docs/latest/overview/overview">
+            Version 4.6.0-SNAPSHOT
+            <span class="tag is-warning">Development</span>
+          </a>
+          <a class="navbar-item" href="/docs/latest/api/javadoc">
+            <span class="icon bk-javadoc-icon">
+              <img src="/img/java-icon.svg">
+            </span>
+            Javadoc
+          </a>
+          <hr class="dropdown-divider">
+          
+          <a class="navbar-item" href="/docs/4.5.0/overview/overview">
+            Release 4.5.0
+            
+          </a>
+          
+          
+          <a class="navbar-item" href="/archives/docs/r4.4.0">
+            Release 4.4.0
+            <span class="tag is-success">Stable</span>
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.3.2">
+            Release 4.3.2
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.3.1">
+            Release 4.3.1
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.3.0">
+            Release 4.3.0
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.2.4">
+            Release 4.2.4
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.2.3">
+            Release 4.2.3
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.2.2">
+            Release 4.2.2
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.2.1">
+            Release 4.2.1
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.2.0">
+            Release 4.2.0
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.1.0">
+            Release 4.1.0
+            
+          </a>
+          
+          <a class="navbar-item" href="/archives/docs/r4.0.0">
+            Release 4.0.0
+            
+          </a>
+          
+        </div>
+      </div>
+
+      <div class="navbar-item has-dropdown is-hoverable">
+        <a class="navbar-link">Community</a>
+        <div class="navbar-dropdown is-boxed">
+          <a class="navbar-item" href="/community/mailing-lists">Mailing lists</a>
+          <a class="navbar-item" href="/community/slack">Slack</a>
+          <a class="navbar-item" href="https://github.com/apache/bookkeeper/issues">Github Issues</a>
+          <a class="navbar-item" href="/community/releases">Release Management</a>
+          <a class="navbar-item" href="/community/meeting">Community Meetings</a>
+          <hr class="dropdown-divider">
+          <a class="navbar-item" href="/community/contributing">Contribution Guide</a>
+          <a class="navbar-item" href="/community/coding_guide">Coding Guide</a>
+          <a class="navbar-item" href="/community/issue-report">Issue Report Guide</a>
+          <a class="navbar-item" href="/community/release_guide">Release Guide</a>
+          <hr class="dropdown-divider">
+          <a class="navbar-item" href="/community/presentations">Presentations</a>
+          <a class="navbar-item" href="https://cwiki.apache.org/confluence/display/BOOKKEEPER/BookKeeper+Proposals">BookKeeper Proposals</a>
+        </div>
+      </div>
+
+      <div class="navbar-item has-dropdown is-hoverable">
+        <a class="navbar-link">Project</a>
+        <div class="navbar-dropdown is-boxed">
+          <a class="navbar-item" href="/project/who">Who are we?</a>
+          <a class="navbar-item" href="/project/bylaws">Bylaws</a>
+          <a class="navbar-item" href="http://www.apache.org/licenses/">License</a>
+          <hr class="dropdown-divider">
+          <a class="navbar-item" href="/project/privacy">Privacy policy</a>
+          <a class="navbar-item" href="http://www.apache.org/foundation/sponsorship.html">Sponsorship</a>
+          <a class="navbar-item" href="http://www.apache.org/foundation/thanks.html">Thanks</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="navbar-end">
+      <div class="navbar-item">
+        <div class="field is-grouped">
+          <p class="control">
+            <a class="button bk-twitter" href="https://twitter.com/asfbookkeeper">
+              <span class="icon">
+                <i class="fa fa-twitter"></i>
+              </span>
+              <span>Twitter</span>
+            </a>
+          </p>
+          <p class="control">
+            <a class="button" href="https://github.com/apache/bookkeeper">
+              <span class="icon">
+                <i class="fa fa-github"></i>
+              </span>
+              <span>GitHub</span>
+            </a>
+          </p>
+          <p class="control">
+            <a class="button is-primary" href="/releases">
+              <span class="icon">
+                <i class="fa fa-download"></i>
+              </span>
+              <span>Download</span>
+            </a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+
+      <div class="bk-community-container">
+  <div class="columns">
+    <div class="column is-12">
+      <header class="docs-title">
+        <nav class="level">
+          <div class="level-left">
+            <div class="level-item">
+              <h1 class="title">Apache BookKeeper Release Guide</h1>
+            </div>
+          </div>
+          
+        </nav>
+
+        
+      </header>
+
+      <hr />
+
+      <div class="content is-medium">
+        <section class="bk-community-content">
+          <ul id="markdown-toc">
+  <li><a href="#introduction" id="markdown-toc-introduction">Introduction</a></li>
+  <li><a href="#overview" id="markdown-toc-overview">Overview</a></li>
+  <li><a href="#decide-to-release" id="markdown-toc-decide-to-release">Decide to release</a>    <ul>
+      <li><a href="#checklist-to-proceed-to-the-next-step" id="markdown-toc-checklist-to-proceed-to-the-next-step">Checklist to proceed to the next step</a></li>
+    </ul>
+  </li>
+  <li><a href="#prepare-for-the-release" id="markdown-toc-prepare-for-the-release">Prepare for the release</a>    <ul>
+      <li><a href="#one-time-setup-instructions" id="markdown-toc-one-time-setup-instructions">One-time setup instructions</a>        <ul>
+          <li><a href="#gpg-key" id="markdown-toc-gpg-key">GPG Key</a></li>
+          <li><a href="#access-to-apache-nexus-repository" id="markdown-toc-access-to-apache-nexus-repository">Access to Apache Nexus repository</a></li>
+        </ul>
+      </li>
+      <li><a href="#create-a-new-version-in-jira-and-github" id="markdown-toc-create-a-new-version-in-jira-and-github">Create a new version in JIRA and Github</a></li>
+      <li><a href="#triage-release-blocking-issues-in-jira-and-github" id="markdown-toc-triage-release-blocking-issues-in-jira-and-github">Triage release-blocking issues in JIRA and Github</a>        <ul>
+          <li><a href="#jira" id="markdown-toc-jira">JIRA</a></li>
+          <li><a href="#github" id="markdown-toc-github">Github</a></li>
+        </ul>
+      </li>
+      <li><a href="#review-release-notes-in-jira-and-github" id="markdown-toc-review-release-notes-in-jira-and-github">Review Release Notes in JIRA and Github</a>        <ul>
+          <li><a href="#jira-1" id="markdown-toc-jira-1">JIRA</a></li>
+          <li><a href="#github-1" id="markdown-toc-github-1">Github</a></li>
+          <li><a href="#prepare-release-notes" id="markdown-toc-prepare-release-notes">Prepare Release Notes</a></li>
+        </ul>
+      </li>
+      <li><a href="#create-a-release-branch" id="markdown-toc-create-a-release-branch">Create a release branch</a></li>
+      <li><a href="#checklist-to-proceed-to-the-next-step-1" id="markdown-toc-checklist-to-proceed-to-the-next-step-1">Checklist to proceed to the next step</a></li>
+    </ul>
+  </li>
+  <li><a href="#build-a-release-candidate" id="markdown-toc-build-a-release-candidate">Build a release candidate</a>    <ul>
+      <li><a href="#build-and-stage-java-artifacts-with-maven" id="markdown-toc-build-and-stage-java-artifacts-with-maven">Build and stage Java artifacts with Maven</a></li>
+      <li><a href="#stage-source-release-on-distapacheorg" id="markdown-toc-stage-source-release-on-distapacheorg">Stage source release on dist.apache.org</a></li>
+      <li><a href="#checklist-to-proceed-to-the-next-step-2" id="markdown-toc-checklist-to-proceed-to-the-next-step-2">Checklist to proceed to the next step</a></li>
+    </ul>
+  </li>
+  <li><a href="#vote-on-the-release-candidate" id="markdown-toc-vote-on-the-release-candidate">Vote on the release candidate</a>    <ul>
+      <li><a href="#checklist-to-proceed-to-the-finalization-step" id="markdown-toc-checklist-to-proceed-to-the-finalization-step">Checklist to proceed to the finalization step</a></li>
+    </ul>
+  </li>
+  <li><a href="#fix-any-issues" id="markdown-toc-fix-any-issues">Fix any issues</a>    <ul>
+      <li><a href="#checklist-to-proceed-to-the-next-step-3" id="markdown-toc-checklist-to-proceed-to-the-next-step-3">Checklist to proceed to the next step</a></li>
+    </ul>
+  </li>
+  <li><a href="#finalize-the-release" id="markdown-toc-finalize-the-release">Finalize the release</a>    <ul>
+      <li><a href="#deploy-artifacts-to-maven-central-repository" id="markdown-toc-deploy-artifacts-to-maven-central-repository">Deploy artifacts to Maven Central Repository</a></li>
+      <li><a href="#deploy-source-release-to-distapacheorg" id="markdown-toc-deploy-source-release-to-distapacheorg">Deploy source release to dist.apache.org</a></li>
+      <li><a href="#update-website" id="markdown-toc-update-website">Update Website</a></li>
+      <li><a href="#update-dockerfile" id="markdown-toc-update-dockerfile">Update Dockerfile</a></li>
+      <li><a href="#mark-the-version-as-released-in-jira-and-github" id="markdown-toc-mark-the-version-as-released-in-jira-and-github">Mark the version as released in JIRA and Github</a></li>
+      <li><a href="#checklist-to-proceed-to-the-next-step-4" id="markdown-toc-checklist-to-proceed-to-the-next-step-4">Checklist to proceed to the next step</a></li>
+    </ul>
+  </li>
+  <li><a href="#promote-the-release" id="markdown-toc-promote-the-release">Promote the release</a>    <ul>
+      <li><a href="#apache-mailing-lists" id="markdown-toc-apache-mailing-lists">Apache mailing lists</a></li>
+      <li><a href="#recordkeeping" id="markdown-toc-recordkeeping">Recordkeeping</a></li>
+      <li><a href="#social-media" id="markdown-toc-social-media">Social media</a></li>
+      <li><a href="#checklist-to-declare-the-process-completed" id="markdown-toc-checklist-to-declare-the-process-completed">Checklist to declare the process completed</a></li>
+    </ul>
+  </li>
+  <li><a href="#improve-the-process" id="markdown-toc-improve-the-process">Improve the process</a></li>
+</ul>
+
+<p>This page documents the procedure to make an Apache BookKeeper release.</p>
+
+<h2 id="introduction">Introduction</h2>
+
+<p>The Apache BookKeeper project periodically declares and publishes releases. A release is one or more packages of the project artifact(s) that are approved for general public distribution and use. They may come with various degrees of caveat regarding their perceived quality and potential for change, such as “alpha”, “beta”, “incubating”, “stable”, etc.</p>
+
+<p>The BookKeeper community treats releases with great importance. They are a public face of the project and most users interact with the project only through the releases. Releases are signed off by the entire BookKeeper community in a public vote.</p>
+
+<p>Each release is executed by a <em>Release Manager</em>, who is selected among the <a href="http://bookkeeper.apache.org/credits.html">BookKeeper committers</a>. This document describes the process that the Release Manager follows to perform a release. Any changes to this process should be discussed and adopted on the <a href="http://bookkeeper.apache.org/lists.html">dev@ mailing list</a>.</p>
+
+<p>Please remember that publishing software has legal consequences. This guide complements the foundation-wide <a href="http://www.apache.org/dev/release.html">Product Release Policy</a> and <a href="http://www.apache.org/dev/release-distribution">Release Distribution Policy</a>.</p>
+
+<h2 id="overview">Overview</h2>
+
+<p>The release process consists of several steps:</p>
+
+<ol>
+  <li>Decide to release</li>
+  <li>Prepare for the release</li>
+  <li>Build a release candidate</li>
+  <li>Vote on the release candidate</li>
+  <li>If necessary, fix any issues and go back to step 3.</li>
+  <li>Finalize the release</li>
+  <li>Promote the release</li>
+</ol>
+
+<hr />
+
+<h2 id="decide-to-release">Decide to release</h2>
+
+<p>Deciding to release and selecting a Release Manager is the first step of the release process. This is a consensus-based decision of the entire community.</p>
+
+<p>Anybody can propose a release on the dev@ mailing list, giving a solid argument and nominating a committer as the Release Manager (including themselves). There’s no formal process, no vote requirements, and no timing requirements. Any objections should be resolved by consensus before starting the release.</p>
+
+<p>In general, the community prefers to have a rotating set of 3-5 Release Managers. Keeping a small core set of managers allows enough people to build expertise in this area and improve processes over time, without Release Managers needing to re-learn the processes for each release. That said, if you are a committer interested in serving the community in this way, please reach out to the community on the dev@ mailing list.</p>
+
+<h3 id="checklist-to-proceed-to-the-next-step">Checklist to proceed to the next step</h3>
+
+<ol>
+  <li>Community agrees to release</li>
+  <li>Community selects a Release Manager</li>
+</ol>
+
+<hr />
+
+<h2 id="prepare-for-the-release">Prepare for the release</h2>
+
+<p>Before your first release, you should perform one-time configuration steps. This will set up your security keys for signing the release and access to various release repositories.</p>
+
+<p>To prepare for each release, you should audit the project status both in the JIRA issue tracker and the Github issue tracker, and do necessary bookkeeping. Finally, you should create a release branch from which individual release candidates will be built.</p>
+
+<h3 id="one-time-setup-instructions">One-time setup instructions</h3>
+
+<h4 id="gpg-key">GPG Key</h4>
+
+<p>You need to have a GPG key to sign the release artifacts. Please be aware of the ASF-wide <a href="https://www.apache.org/dev/release-signing.html">release signing guidelines</a>.
+If you don’t have a GPG key associated with your Apache account, please create one according to the <a href="http://apache.org/dev/openpgp.html#generate-key">guidelines</a> and <a href="https://www.apache.org/dev/release-signing.html#keyserver-upload">upload</a> your key to a public key server.</p>
+
+<blockquote>
+  <p>It is important to <a href="https://www.apache.org/dev/release-signing.html#apache-wot">link</a> your GPG key into the Apache web of trust.
+You can reach out other committers in Apache BookKeeper community for signing your key.</p>
+</blockquote>
+
+<p>Once you have a GPG key associated with your Apache count, then:</p>
+
+<p><strong>First</strong>, Determine your Apache GPG Key and Key ID, as follows:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>gpg --list-keys
+</code></pre>
+</div>
+
+<p>This will list your GPG keys. One of these should reflect your Apache account, for example:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>--------------------------------------------------
+pub   2048R/845E6689 2016-02-23
+uid                  Nomen Nescio &lt;anonymous@apache.org&gt;
+sub   2048R/BA4D50BE 2016-02-23
+</code></pre>
+</div>
+
+<p>Here, the key ID is the 8-digit hex string in the <code class="highlighter-rouge">pub</code> line: <code class="highlighter-rouge">845E6689</code>.</p>
+
+<p><strong>Second</strong>, add your Apache GPG key to the BookKeeper’s <code class="highlighter-rouge">KEYS</code> file in <a href="https://dist.apache.org/repos/dist/release/bookkeeper/KEYS"><code class="highlighter-rouge">dist</code></a>.</p>
+
+<div class="language-shell highlighter-rouge"><pre class="highlight"><code>
+<span class="c"># checkout the svn folder that contains the KEYS file</span>
+svn co https://dist.apache.org/repos/dist/release/bookkeeper bookkeeper_dist
+<span class="nb">cd </span>bookkeeper_dist
+
+<span class="c"># Export the key in ascii format and append it to the file</span>
+<span class="o">(</span> gpg --list-sigs <span class="nv">$USER</span>@apache.org
+  gpg --export --armor <span class="nv">$USER</span>@apache.org <span class="o">)</span> &gt;&gt; KEYS
+
+<span class="c"># Commit to svn</span>
+svn ci -m <span class="s2">"Added gpg key for </span><span class="nv">$USER</span><span class="s2">"</span>
+
+</code></pre>
+</div>
+
+<p>Once you committed, please verify if your GPG key shows up in the BookkKeeper’s <code class="highlighter-rouge">KEYS</code> file in <a href="https://dist.apache.org/repos/dist/release/bookkeeper/KEYS"><code class="highlighter-rouge">dist</code></a>.</p>
+
+<p><strong>Third</strong>, configure <code class="highlighter-rouge">git</code> to use this key when signing code by giving it your key ID, as follows:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>git config --global user.signingkey 845E6689
+</code></pre>
+</div>
+
+<p>You may drop the <code class="highlighter-rouge">--global</code> option if you’d prefer to use this key for the current repository only.</p>
+
+<p>You may wish to start <code class="highlighter-rouge">gpg-agent</code> to unlock your GPG key only once using your passphrase. Otherwise, you may need to enter this passphrase hundreds of times. The setup for <code class="highlighter-rouge">gpg-agent</code> varies based on operating system, but may be something like this:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>eval $(gpg-agent --daemon --no-grab --write-env-file $HOME/.gpg-agent-info)
+export GPG_TTY=$(tty)
+export GPG_AGENT_INFO
+</code></pre>
+</div>
+
+<h4 id="access-to-apache-nexus-repository">Access to Apache Nexus repository</h4>
+
+<p>Configure access to the <a href="http://repository.apache.org/">Apache Nexus repository</a>, which enables final deployment of releases to the Maven Central Repository.</p>
+
+<ol>
+  <li>You log in with your Apache account.</li>
+  <li>Confirm you have appropriate access by finding <code class="highlighter-rouge">org.apache.bookkeeper</code> under <code class="highlighter-rouge">Staging Profiles</code>.</li>
+  <li>Navigate to your <code class="highlighter-rouge">Profile</code> (top right dropdown menu of the page).</li>
+  <li>Choose <code class="highlighter-rouge">User Token</code> from the dropdown, then click <code class="highlighter-rouge">Access User Token</code>. Copy a snippet of the Maven XML configuration block.</li>
+  <li>
+    <p>Insert this snippet twice into your global Maven <code class="highlighter-rouge">settings.xml</code> file, typically <code class="highlighter-rouge">${HOME}/.m2/settings.xml</code>. The end result should look like this, where <code class="highlighter-rouge">TOKEN_NAME</code> and <code class="highlighter-rouge">TOKEN_PASSWORD</code> are your secret tokens:</p>
+
+    <div class="highlighter-rouge"><pre class="highlight"><code> &lt;settings&gt;
+   &lt;servers&gt;
+     &lt;server&gt;
+       &lt;id&gt;apache.releases.https&lt;/id&gt;
+       &lt;username&gt;TOKEN_NAME&lt;/username&gt;
+       &lt;password&gt;TOKEN_PASSWORD&lt;/password&gt;
+     &lt;/server&gt;
+     &lt;server&gt;
+       &lt;id&gt;apache.snapshots.https&lt;/id&gt;
+       &lt;username&gt;TOKEN_NAME&lt;/username&gt;
+       &lt;password&gt;TOKEN_PASSWORD&lt;/password&gt;
+     &lt;/server&gt;
+   &lt;/servers&gt;
+ &lt;/settings&gt;
+</code></pre>
+    </div>
+  </li>
+</ol>
+
+<h3 id="create-a-new-version-in-jira-and-github">Create a new version in JIRA and Github</h3>
+
+<p>When contributors resolve an issue in JIRA, they are tagging it with a release that will contain their changes. With the release currently underway, new issues should be resolved against a subsequent future release. Therefore, you should create a release item for this subsequent release, as follows:</p>
+
+<ol>
+  <li>In JIRA, navigate to the <a href="https://issues.apache.org/jira/plugins/servlet/project-config/BOOKKEEPER/versions"><code class="highlighter-rouge">BookKeeper &gt; Administration &gt; Versions</code></a>.</li>
+  <li>Add a new release: choose the next minor version number compared to the one currently underway, select today’s date as the <code class="highlighter-rouge">Start Date</code>, and choose <code class="highlighter-rouge">Add</code>.</li>
+  <li>In Github, navigate to the <a href="https://github.com/apache/bookkeeper/milestones"><code class="highlighter-rouge">Issues &gt; Milestones</code></a>.</li>
+  <li>Add a new milestone: choose the next minor version number compared to the one currently underway, select a day that is 3-months from now as the <code class="highlighter-rouge">Due Date</code>, write a description <code class="highlighter-rouge">Release x.y.z</code> and choose <code class="highlighter-rouge">Create milestone</code>.</li>
+</ol>
+
+<h3 id="triage-release-blocking-issues-in-jira-and-github">Triage release-blocking issues in JIRA and Github</h3>
+
+<h4 id="jira">JIRA</h4>
+
+<p>There could be outstanding release-blocking issues, which should be triaged before proceeding to build a release candidate. We track them by assigning a specific <code class="highlighter-rouge">Fix version</code> field even before the issue resolved.</p>
+
+<p>The list of release-blocking issues is available at the <a href="https://issues.apache.org/jira/browse/BOOKKEEPER/?selectedTab=com.atlassian.jira.jira-projects-plugin:versions-panel">version status page</a>. Triage each unresolved issue with one of the following resolutions:</p>
+
+<ul>
+  <li>If the issue has been resolved and JIRA was not updated, resolve it accordingly.</li>
+  <li>If the issue has not been resolved and it is acceptable to defer this until the next release, update the <code class="highlighter-rouge">Fix Version</code> field to the new version you just created. Please consider discussing this with stakeholders and the dev@ mailing list, as appropriate.</li>
+  <li>If the issue has not been resolved and it is not acceptable to release until it is fixed, the release cannot proceed. Instead, work with the BookKeeper community to resolve the issue.</li>
+</ul>
+
+<h4 id="github">Github</h4>
+
+<p>There could be outstanding release-blocking issues, which should be triaged before proceeding to build a release candidate. We track them by assigning a specific <code class="highlighter-rouge">Milestone</code> field even before the issue resolved.</p>
+
+<p>The list of release-blocking issues is available at the <a href="https://github.com/apache/bookkeeper/milestones">milestones page</a>. Triage each unresolved issue with one of the following resolutions:</p>
+
+<ul>
+  <li>If the issue has been resolved and was not updated, close it accordingly.</li>
+  <li>If the issue has not been resolved and it is acceptable to defer this until the next release, update the <code class="highlighter-rouge">Milestone</code> field to the new milestone you just created. Please consider discussing this with stakeholders and the dev@ mailing list, as appropriate.</li>
+  <li>If the issue has not been resolved and it is not acceptable to release until it is fixed, the release cannot proceed. Instead, work with the BookKeeper community to resolve the issue.</li>
+</ul>
+
+<h3 id="review-release-notes-in-jira-and-github">Review Release Notes in JIRA and Github</h3>
+
+<h4 id="jira-1">JIRA</h4>
+
+<p>JIRA automatically generates Release Notes based on the <code class="highlighter-rouge">Fix Version</code> field applied to issues. Release Notes are intended for BookKeeper users (not BookKeeper committers/contributors). You should ensure that Release Notes are informative and useful.</p>
+
+<p>Open the release notes from the <a href="https://issues.apache.org/jira/browse/BOOKKEEPER/?selectedTab=com.atlassian.jira.jira-projects-plugin:versions-panel">version status page</a> by choosing the release underway and clicking Release Notes.</p>
+
+<p>You should verify that the issues listed automatically by JIRA are appropriate to appear in the Release Notes. Specifically, issues should:</p>
+
+<ul>
+  <li>Be appropriately classified as <code class="highlighter-rouge">Bug</code>, <code class="highlighter-rouge">New Feature</code>, <code class="highlighter-rouge">Improvement</code>, etc.</li>
+  <li>Represent noteworthy user-facing changes, such as new functionality, backward-incompatible API changes, or performance improvements.</li>
+  <li>Have occurred since the previous release; an issue that was introduced and fixed between releases should not appear in the Release Notes.</li>
+  <li>Have an issue title that makes sense when read on its own.</li>
+</ul>
+
+<p>Adjust any of the above properties to the improve clarity and presentation of the Release Notes.</p>
+
+<h4 id="github-1">Github</h4>
+
+<blockquote>
+  <p>Unlike JIRA, Github does not automatically generates Release Notes based on the <code class="highlighter-rouge">Milestone</code> field applied to issues.
+We can use <a href="https://github.com/skywinder/github-changelog-generator">github-changelog-generator</a> to generate a ChangeLog for a milestone in future.</p>
+</blockquote>
+
+<p>For Github, we can use the milestone link in the Release Notes. E.g. <a href="https://github.com/apache/bookkeeper/milestone/1?closed=1">Release 4.5.0 milestone</a>.</p>
+
+<h4 id="prepare-release-notes">Prepare Release Notes</h4>
+
+<p>After review the release notes on both JIRA and Github, you should write a <code class="highlighter-rouge">releaseNotes</code> under <code class="highlighter-rouge">site/docs/${release_version}/overview/releaseNotes.md</code> and then send out a pull request for review.</p>
+
+<p><a href="https://github.com/apache/bookkeeper/pull/402">4.5.0 Release Notes</a> is a good example to follow.</p>
+
+<h3 id="create-a-release-branch">Create a release branch</h3>
+
+<p>Release candidates are built from a release branch. As a final step in preparation for the release, you should create the release branch, push it to the code repository, and update version information on the original branch.</p>
+
+<p>Check out the version of the codebase from which you start the release. For a new minor or major release, this may be <code class="highlighter-rouge">HEAD</code> of the <code class="highlighter-rouge">master</code> branch. To build a hotfix/incremental release, instead of the <code class="highlighter-rouge">master</code> branch, use the release tag of the release being patched. (Please make sure your cloned repository is up-to-date before starting.)</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>git checkout &lt;master branch OR release tag&gt;
+</code></pre>
+</div>
+
+<p>Set up a few environment variables to simplify Maven commands that follow. (We use <code class="highlighter-rouge">bash</code> Unix syntax in this guide.)</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>MAJOR_VERSION="4.5"
+VERSION="4.5.0"
+NEXT_VERSION="4.6.0"
+BRANCH_NAME="branch-${MAJOR_VERSION}"
+DEVELOPMENT_VERSION="${NEXT_VERSION}-SNAPSHOT"
+</code></pre>
+</div>
+
+<p>Version represents the release currently underway, while next version specifies the anticipated next version to be released from that branch. Normally, 4.5.0 is followed by 4.6.0, while 4.5.0 is followed by 4.5.1.</p>
+
+<p>Use Maven release plugin to create the release branch and update the current branch to use the new development version. This command applies for the new major or minor version.</p>
+
+<blockquote>
+  <p>This command automatically check in and tag your code in the code repository configured in the SCM.
+It is recommended to do a “dry run” before executing the command. To “dry run”, you can provide “-DdryRun”
+at the end of this command. “dry run” will generate some temporary files in the project folder, you can remove
+them by running “mvn release:clean”.</p>
+</blockquote>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>mvn release:branch \
+    -DbranchName=${BRANCH_NAME} \
+    -DdevelopmentVersion=${DEVELOPMENT_VERSION} \
+    [-DdryRun]
+</code></pre>
+</div>
+
+<blockquote>
+  <p>If you failed at the middle of running this command, please check if you have <code class="highlighter-rouge">push</code> permissions on <code class="highlighter-rouge">github.com</code>.
+You need use <a href="https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/">personal access token</a> rather than your own password, if you enabled <code class="highlighter-rouge">2 factor authentication</code>.</p>
+
+  <p>On failures, you need to reset on failures:</p>
+
+  <p>$ git reset –hard apache/<master branch="" OR="" release="" tag="">
+$ git branch -D ${BRANCH_NAME}</master></p>
+</blockquote>
+
+<p>However, if you are doing an incremental/hotfix release, please run the following command after checking out the release tag of the release being patched.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>mvn release:branch \
+    -DbranchName=${BRANCH_NAME} \
+    -DupdateWorkingCopyVersions=false \
+    -DupdateBranchVersions=true \
+    -DreleaseVersion="${VERSION}-SNAPSHOT" \
+    [-DdryRun]
+</code></pre>
+</div>
+
+<p>Check out the release branch.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>git checkout ${BRANCH_NAME}
+</code></pre>
+</div>
+
+<p>The rest of this guide assumes that commands are run in the root of a repository on <code class="highlighter-rouge">${BRANCH_NAME}</code> with the above environment variables set.</p>
+
+<h3 id="checklist-to-proceed-to-the-next-step-1">Checklist to proceed to the next step</h3>
+
+<ol>
+  <li>Release Manager’s GPG key is published to <code class="highlighter-rouge">dist.apache.org</code></li>
+  <li>Release Manager’s GPG key is configured in <code class="highlighter-rouge">git</code> configuration</li>
+  <li>Release Manager has <code class="highlighter-rouge">org.apache.bookkeeper</code> listed under <code class="highlighter-rouge">Staging Profiles</code> in Nexus</li>
+  <li>Release Manager’s Nexus User Token is configured in <code class="highlighter-rouge">settings.xml</code></li>
+  <li>JIRA release item for the subsequent release has been created</li>
+  <li>Github milestone item for the subsequet release has been created</li>
+  <li>There are no release blocking JIRA issues</li>
+  <li>There are no release blocking Github issues</li>
+  <li>Release Notes in JIRA have been audited and adjusted</li>
+  <li>Release Notes for Github Milestone is generated, audited and adjusted</li>
+  <li>Release branch has been created</li>
+  <li>Originating branch has the version information updated to the new version</li>
+</ol>
+
+<hr />
+
+<h2 id="build-a-release-candidate">Build a release candidate</h2>
+
+<p>The core of the release process is the build-vote-fix cycle. Each cycle produces one release candidate. The Release Manager repeats this cycle until the community approves one release candidate, which is then finalized.</p>
+
+<h3 id="build-and-stage-java-artifacts-with-maven">Build and stage Java artifacts with Maven</h3>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>TODO: Currently we have to build and stage maven artifacts manually, because it requires pushing the artifacts to apache staging. We should look for a solution to automate that.
+</code></pre>
+</div>
+
+<p>Set up a few environment variables to simplify Maven commands that follow. This identifies the release candidate being built. Start with <code class="highlighter-rouge">release candidate number</code> equal to <code class="highlighter-rouge">0</code> and increment it for each candidate.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>RC_NUM="0"
+TAG="release-${VERSION}"
+RC_DIR="bookkeeper-${VERSION}-rc${RC_NUM}"
+</code></pre>
+</div>
+
+<blockquote>
+  <p>Please make sure <code class="highlighter-rouge">gpg</code> command is in your $PATH. The maven release plugin use <code class="highlighter-rouge">gpg</code> to sign generated jars and packages.</p>
+</blockquote>
+
+<p>Use Maven release plugin to build the release artifacts, as follows:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>mvn release:prepare \
+    -Dresume=false \
+    -DreleaseVersion=${VERSION} \
+    -Dtag=${TAG} \
+    -DupdateWorkingCopyVersions=false \
+    [-DdryRun] \
+    [-Darguments="-Dmaven.javadoc.skip=true -DskipTests=true"] \ // to skip javadoc and tests
+    [-Dresume=true] // resume prepare if it is interrupted in the middle
+</code></pre>
+</div>
+
+<p>Use Maven release plugin to stage these artifacts on the Apache Nexus repository, as follows:</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>mvn release:perform [-DdryRun] [-Darguments="-Dmaven.javadoc.skip=true -DskipTests=true"] [-Dresume=true]
+</code></pre>
+</div>
+
+<blockquote>
+  <p>If <code class="highlighter-rouge">release:perform</code> failed, 
+delete the release tag: git tag -d ${VERSION} &amp;&amp; git push apache :refs/tags/${VERSION}</p>
+
+  <p>Also, you need to check the git commits on the github and if needed you may have to
+force push backed out local git branch to github again.</p>
+
+  <p>After reset, run <code class="highlighter-rouge">release:prepare</code> again.</p>
+</blockquote>
+
+<p>Review all staged artifacts. They should contain all relevant parts for each module, including <code class="highlighter-rouge">pom.xml</code>, jar, test jar, source, test source, javadoc, etc. Artifact names should follow <a href="https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22org.apache.bookkeeper%22">the existing format</a> in which artifact name mirrors directory structure, e.g., <code class="highlighter-rouge">bookkeeper-server</code>. Carefully review any new artifacts.</p>
+
+<p>Close the staging repository on Apache Nexus. When prompted for a description, enter “Apache BookKeeper, version X, release candidate Y”.</p>
+
+<h3 id="stage-source-release-on-distapacheorg">Stage source release on dist.apache.org</h3>
+
+<p>Copy the source release to the dev repository of <code class="highlighter-rouge">dist.apache.org</code>.</p>
+
+<ol>
+  <li>
+    <p>If you have not already, check out the BookKeeper section of the <code class="highlighter-rouge">dev</code> repository on <code class="highlighter-rouge">dist.apache.org</code> via Subversion. In a fresh directory:</p>
+
+    <div class="highlighter-rouge"><pre class="highlight"><code> svn co https://dist.apache.org/repos/dist/dev/bookkeeper
+</code></pre>
+    </div>
+  </li>
+  <li>
+    <p>Make a directory for the new release:</p>
+
+    <div class="highlighter-rouge"><pre class="highlight"><code> mkdir bookkeeper/${RC_DIR}
+</code></pre>
+    </div>
+  </li>
+  <li>
+    <p>Copy the BookKeeper source and binary distribution, and their GPG signatures:</p>
+
+    <div class="highlighter-rouge"><pre class="highlight"><code> cp target/bookkeeper-${VERSION}-src.tar.gz bookkeeper/${RC_DIR}/bookkeeper-${VERSION}-src.tar.gz
+ cp target/bookkeeper-${VERSION}-src.tar.gz.asc bookkeeper/${RC_DIR}/bookkeeper-${VERSION}-src.tar.gz.asc
+ cp bookkeeper-server/target/bookkeeper-server-${VERSION}-bin.tar.gz bookkeeper/${RC_DIR}/bookkeeper-server-${VERSION}-bin.tar.gz
+ cp bookkeeper-server/target/bookkeeper-server-${VERSION}-bin.tar.gz.asc bookkeeper/${RC_DIR}/bookkeeper-server-${VERSION}-bin.tar.gz.asc
+</code></pre>
+    </div>
+  </li>
+  <li>
+    <p>Sign the BookKeeper source and binary distribution.</p>
+
+    <div class="highlighter-rouge"><pre class="highlight"><code> cd bookkeeper/${RC_DIR}
+ md5sum bookkeeper-${VERSION}-src.tar.gz &gt; bookkeeper-${VERSION}-src.tar.gz.md5
+ shasum bookkeeper-${VERSION}-src.tar.gz &gt; bookkeeper-${VERSION}-src.tar.gz.sha1
+ md5sum bookkeeper-server-${VERSION}-bin.tar.gz &gt; bookkeeper-server-${VERSION}-bin.tar.gz.md5
+ shasum bookkeeper-server-${VERSION}-bin.tar.gz &gt; bookkeeper-server-${VERSION}-bin.tar.gz.sha1
+</code></pre>
+    </div>
+  </li>
+  <li>
+    <p>Go back to BookKeeper directory, add and commit all the files.</p>
+
+    <div class="highlighter-rouge"><pre class="highlight"><code> cd ..
+ svn add ${RC_DIR}
+ svn commit
+</code></pre>
+    </div>
+  </li>
+  <li>
+    <p>Verify that files are <a href="https://dist.apache.org/repos/dist/dev/bookkeeper">present</a>.</p>
+  </li>
+</ol>
+
+<h3 id="checklist-to-proceed-to-the-next-step-2">Checklist to proceed to the next step</h3>
+
+<ol>
+  <li>Maven artifacts deployed to the staging repository of <a href="https://repository.apache.org/content/repositories/">repository.apache.org</a></li>
+  <li>Source and Binary distribution deployed to the dev repository of <a href="https://dist.apache.org/repos/dist/dev/incubator/bookkeeper/">dist.apache.org</a></li>
+</ol>
+
+<hr />
+
+<h2 id="vote-on-the-release-candidate">Vote on the release candidate</h2>
+
+<p>Once you have built and individually reviewed the release candidate, please share it for the community-wide review. Please review foundation-wide <a href="http://www.apache.org/foundation/voting.html">voting guidelines</a> for more information.</p>
+
+<p>Start the review-and-vote thread on the dev@ mailing list. Here’s an email template; please adjust as you see fit.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>From: Release Manager
+To: dev@bookkeeper.apache.org
+Subject: [VOTE] Release 4.5.0, release candidate #0
+
+Hi everyone,
+Please review and vote on the release candidate #0 for the version 0.4.0, as follows:
+[ ] +1, Approve the release
+[ ] -1, Do not approve the release (please provide specific comments)
+
+The complete staging area is available for your review, which includes:
+* Release notes [1]
+* The official Apache source and binary distributions to be deployed to dist.apache.org [2]
+* All artifacts to be deployed to the Maven Central Repository [3]
+* Source code tag "release-4.5.0" [4]
+
+BookKeeper's KEY file contains PGP keys we use to sign this release:
+https://dist.apache.org/repos/dist/release/bookkeeper/KEYS
+
+Please down this packages and review this release candidate:
+
+- Review release notes
+- Download the source package (verify md5, shasum, and asc) and follow the
+instructions to build and run the bookkeeper service.
+- Download the binary package (verify md5, shasum, and asc) and follow the
+instructions to run the bookkeeper service.
+- Review maven repo, release tag, licenses, and any other things you think
+it is important to a release.
+
+The vote will be open for at least 72 hours. It is adopted by majority approval, with at least 3 PMC affirmative votes.
+
+Thanks,
+Release Manager
+
+[1] link
+[2] link
+[3] link
+[4] link
+[5] link
+</code></pre>
+</div>
+
+<p>If there are any issues found in the release candidate, reply on the vote thread to cancel the vote. There’s no need to wait 72 hours. Proceed to the <code class="highlighter-rouge">Fix Issues</code> step below and address the problem. However, some issues don’t require cancellation. For example, if an issue is found in the website pull request, just correct it on the spot and the vote can continue as-is.</p>
+
+<p>If there are no issues, reply on the vote thread to close the voting. Then, tally the votes in a separate email. Here’s an email template; please adjust as you see fit. (NOTE: the approver list are binding approvers.)</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>From: Release Manager
+To: dev@bookkeeper.incubator.apache.org
+Subject: [RESULT] [VOTE] Release 0.4.0, release candidate #0
+
+I'm happy to announce that we have unanimously approved this release.
+
+There are XXX approving votes, XXX of which are binding:
+* approver 1
+* approver 2
+* approver 3
+* approver 4
+
+There are no disapproving votes.
+
+Thanks everyone!
+</code></pre>
+</div>
+
+<h3 id="checklist-to-proceed-to-the-finalization-step">Checklist to proceed to the finalization step</h3>
+
+<ol>
+  <li>Community votes to release the proposed candidate</li>
+</ol>
+
+<hr />
+
+<h2 id="fix-any-issues">Fix any issues</h2>
+
+<p>Any issues identified during the community review and vote should be fixed in this step.</p>
+
+<p>Code changes should be proposed as standard pull requests to the <code class="highlighter-rouge">master</code> branch and reviewed using the normal contributing process. Then, relevant changes should be cherry-picked into the release branch. The cherry-pick commits should then be proposed as the pull requests against the release branch, again reviewed and merged using the normal contributing process.</p>
+
+<p>Once all issues have been resolved, you should go back and build a new release candidate with these changes.</p>
+
+<h3 id="checklist-to-proceed-to-the-next-step-3">Checklist to proceed to the next step</h3>
+
+<ol>
+  <li>Issues identified during vote have been resolved, with fixes committed to the release branch.</li>
+</ol>
+
+<hr />
+
+<h2 id="finalize-the-release">Finalize the release</h2>
+
+<p>Once the release candidate has been reviewed and approved by the community, the release should be finalized. This involves the final deployment of the release candidate to the release repositories, merging of the website changes, etc.</p>
+
+<h3 id="deploy-artifacts-to-maven-central-repository">Deploy artifacts to Maven Central Repository</h3>
+
+<p>Use the Apache Nexus repository to release the staged binary artifacts to the Maven Central repository. In the <code class="highlighter-rouge">Staging Repositories</code> section, find the relevant release candidate <code class="highlighter-rouge">orgapachebookkeeper-XXX</code> entry and click <code class="highlighter-rouge">Release</code>. Drop all other release candidates that are not being released.</p>
+
+<h3 id="deploy-source-release-to-distapacheorg">Deploy source release to dist.apache.org</h3>
+
+<p>Copy the source release from the <code class="highlighter-rouge">dev</code> repository to the <code class="highlighter-rouge">release</code> repository at <code class="highlighter-rouge">dist.apache.org</code> using Subversion.</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>svn move https://dist.apache.org/repos/dist/dev/bookkeeper/bookkeeper-${VERSION}-rc${RC_NUM} https://dist.apache.org/repos/dist/release/bookkeeper/bookkeeper-${VERSION}
+</code></pre>
+</div>
+
+<h3 id="update-website">Update Website</h3>
+
+<ol>
+  <li>
+    <p>Create the documentation for <code class="highlighter-rouge">${VERSION}</code>. Run the <code class="highlighter-rouge">release.sh</code> to generate the branch for <code class="highlighter-rouge">${VERSION}</code> and bump
+ the versions for website documentation.</p>
+
+    <div class="language-shell highlighter-rouge"><pre class="highlight"><code> <span class="nv">$ </span><span class="nb">cd </span>site
+ <span class="nv">$ </span>./site/release.sh
+</code></pre>
+    </div>
+
+    <p>Once run the <code class="highlighter-rouge">release.sh</code>, please send a pull request for it and get approval from any committers, then merge it.
+ The CI job will automatically update the website in a few minutes. Please review the website to make sure the
+ documentation for <code class="highlighter-rouge">${VERSION}</code> is live.</p>
+  </li>
+  <li>
+    <p>Merge the Release Notes pull request and make sure the Release Notes is updated.</p>
+  </li>
+</ol>
+
+<h3 id="update-dockerfile">Update Dockerfile</h3>
+
+<ol>
+  <li>
+    <p>Update the <code class="highlighter-rouge">BK_VERSION</code> and <code class="highlighter-rouge">GPG_KEY</code> in <code class="highlighter-rouge">docker/Dockerfile</code> (e.g. <a href="https://github.com/apache/bookkeeper/pull/436">Pull Request 436</a> ),
+ send a pull request for review and get an approval from the community.</p>
+  </li>
+  <li>
+    <p>Once the pull request is approved, merge this pull request into master and make sure it is cherry-picked into corresponding branch.</p>
+  </li>
+  <li>
+    <p>After this pull request is merged, you need to cherry-pick the change to the release tag.</p>
+
+    <div class="language-shell highlighter-rouge"><pre class="highlight"><code> // create a cherry-pick branch
+ <span class="nv">$ </span>git checkout <span class="k">${</span><span class="nv">TAG</span><span class="k">}</span>
+ <span class="nv">$ </span>git checkout -b <span class="k">${</span><span class="nv">TAG</span><span class="k">}</span>_cherrypick
+ <span class="nv">$ </span>git cherry-pick &lt;GIT SHA&gt;
+ // remove the release tag locally and remotely
+ <span class="nv">$ </span>git tag -d <span class="k">${</span><span class="nv">TAG</span><span class="k">}</span>
+ <span class="nv">$ </span>git push apache :<span class="k">${</span><span class="nv">TAG</span><span class="k">}</span>
+ // re-tag based on the cherry-pick branch
+ <span class="nv">$ </span>git tag <span class="k">${</span><span class="nv">TAG</span><span class="k">}</span>
+ <span class="nv">$ </span>git push apache <span class="k">${</span><span class="nv">TAG</span><span class="k">}</span>
+</code></pre>
+    </div>
+  </li>
+  <li>
+    <p>Verify the <a href="https://hub.docker.com/r/apache/bookkeeper/">docker hub</a> to see if a new build for the given tag is build.</p>
+  </li>
+</ol>
+
+<h3 id="mark-the-version-as-released-in-jira-and-github">Mark the version as released in JIRA and Github</h3>
+
+<p>In JIRA, inside <a href="https://issues.apache.org/jira/plugins/servlet/project-config/BOOKKEEPER/versions">version management</a>, hover over the current release and a settings menu will appear. Click <code class="highlighter-rouge">Release</code>, and select today’s date.</p>
+
+<p>In Github, inside <a href="https://github.com/apache/bookkeeper/milestones">milestones</a>, hover over the current milestone and click <code class="highlighter-rouge">close</code> button to close a milestone and set today’s date as due-date.</p>
+
+<h3 id="checklist-to-proceed-to-the-next-step-4">Checklist to proceed to the next step</h3>
+
+<ul>
+  <li>Maven artifacts released and indexed in the <a href="https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22org.apache.bookkeeper%22">Maven Central Repository</a></li>
+  <li>Source and Binary distribution available in the release repository of <a href="https://dist.apache.org/repos/dist/release/incubator/bookkeeper/">dist.apache.org</a></li>
+  <li>Website is updated with new release</li>
+  <li>Docker image is built with new release</li>
+  <li>Release tagged in the source code repository</li>
+  <li>Release version finalized in JIRA and Github</li>
+</ul>
+
+<hr />
+
+<h2 id="promote-the-release">Promote the release</h2>
+
+<p>Once the release has been finalized, the last step of the process is to promote the release within the project and beyond.</p>
+
+<h3 id="apache-mailing-lists">Apache mailing lists</h3>
+
+<ul>
+  <li>Announce on the dev@ mailing list that the release has been finished.</li>
+  <li>Announce on the release on the user@ mailing list, listing major improvements and contributions.</li>
+  <li>Announce the release on the announce@apache.org mailing list.</li>
+</ul>
+
+<blockquote>
+  <p>NOTE: Make sure sending the announce email using apache email, otherwise announce@apache.org will reject your email.</p>
+</blockquote>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>From: xxx@apache.org
+To: dev@bookkeeper.apache.org, dev@bookkeeper.apache.org, announce@apache.org
+Subject: [ANNOUNCE] Apache BookKeeper x.y.z released
+ 
+The Apache BookKeeper team is proud to announce Apache BookKeeper version
+x.y.z.
+
+Apache BookKeeper is a scalable, fault-tolerant, and low-latency storage service optimized for
+real-time workloads. It has been used for a fundamental service to build reliable services.
+It is also the log segment store for Apache DistributedLog and the message store for Apache Pulsar.
+
+This is the N release of the Apache BookKeeper.
+
+[highlights the release and why users need to try the release]
+ 
+For BookKeeper release details and downloads, visit:
+ 
+[download link]
+ 
+BookKeeper x.y.z Release Notes are at:
+
+[release notes link]
+ 
+We would like to thank the contributors that made the release possible.
+ 
+Regards,
+ 
+The BookKeeper Team
+</code></pre>
+</div>
+
+<h3 id="recordkeeping">Recordkeeping</h3>
+
+<p>Use reporter.apache.org to seed the information about the release into future project reports.</p>
+
+<h3 id="social-media">Social media</h3>
+
+<p>Tweet, post on Facebook, LinkedIn, and other platforms. Ask other contributors to do the same.</p>
+
+<h3 id="checklist-to-declare-the-process-completed">Checklist to declare the process completed</h3>
+
+<ol>
+  <li>Release announced on the user@ mailing list.</li>
+  <li>Blog post published, if applicable.</li>
+  <li>Apache Software Foundation press release published.</li>
+  <li>Release announced on social media.</li>
+  <li>Completion declared on the dev@ mailing list.</li>
+</ol>
+
+<hr />
+
+<h2 id="improve-the-process">Improve the process</h2>
+
+<p>It is important that we improve the release processes over time. Once you’ve finished the release, please take a step back and look what areas of this process and be improved. Perhaps some part of the process can be simplified. Perhaps parts of this guide can be clarified.</p>
+
+<p>If we have specific ideas, please start a discussion on the dev@ mailing list and/or propose a pull request to update this guide. Thanks!</p>
+
+        </section>
+
+        
+      </div>
+    </div>
+  </div>
+</div>
+    </main>
+
+    <footer class="footer">
+  <div class="container">
+    <div class="content has-text-centered">
+      <p>
+        Copyright &copy; 2016 - 2017 <a href="https://www.apache.org/">The Apache Software Foundation</a>,<br /> licensed under the <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache License, version 2.0</a>.
+      </p>
+    </div>
+  </div>
+</footer>
+
+  </body>
+
+  <script src="/js/app.js"></script>
+
+  
+  <!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+      http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-104419626-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+  
+</html>

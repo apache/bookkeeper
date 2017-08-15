@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Apache BookKeeper - Example doc</title>
+    <title>Apache BookKeeper - Release Management</title>
 
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -200,367 +200,88 @@
 </nav>
 
 
-      <div class="bk-docs-container">
-  <div class="columns is-gapless">
-    <div class="column is-2 is-hidden-mobile">
-      <div class="container">
-        
-<aside class="sidebar">
-  
-  <a class="button is-info">
-    Version: latest
-  </a>
-  <hr />
-  
-  <p>
-    Getting started
-  </p>
-  <ul class="sidebar-items">
-    
-    
-    <li>
-      <a href="../../getting-started/installation">
-      Installation
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="../../getting-started/run-locally">
-      Run bookies locally
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="../../getting-started/concepts">
-      Concepts and architecture
-      </a>
-    </li>
-    
-  </ul>
-  
-  <p>
-    Deployment
-  </p>
-  <ul class="sidebar-items">
-    
-    
-    <li>
-      <a href="../../deployment/manual">
-      Manual deployment
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="../../deployment/dcos">
-      BookKeeper on DC/OS
-      </a>
-    </li>
-    
-  </ul>
-  
-  <p>
-    Administration
-  </p>
-  <ul class="sidebar-items">
-    
-    
-    <li>
-      <a href="../../admin/bookies">
-      BookKeeper administration
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="../../admin/autorecovery">
-      AutoRecovery
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="../../admin/metrics">
-      Metric collection
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="../../admin/upgrade">
-      Upgrade
-      </a>
-    </li>
-    
-  </ul>
-  
-  <p>
-    API
-  </p>
-  <ul class="sidebar-items">
-    
-    
-    <li>
-      <a href="../../api/overview">
-      Overview
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="../../api/ledger-api">
-      Ledger API
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="../../api/ledger-adv-api">
-      Advanced Ledger API
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="../../api/distributedlog-api">
-      DistributedLog
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="../../api/javadoc">
-      Java API Docs
-      </a>
-    </li>
-    
-  </ul>
-  
-  <p>
-    Security
-  </p>
-  <ul class="sidebar-items">
-    
-    
-    <li>
-      <a href="../../security/overview">
-      Overview
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="../../security/tls">
-      TLS Authentication
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="../../security/sasl">
-      SASL Authentication
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="../../security/zookeeper">
-      ZooKeeper Authentication
-      </a>
-    </li>
-    
-  </ul>
-  
-  <p>
-    Development
-  </p>
-  <ul class="sidebar-items">
-    
-    
-    <li>
-      <a href="../../development/protocol">
-      BookKeeper protocol
-      </a>
-    </li>
-    
-  </ul>
-  
-  <p>
-    Reference
-  </p>
-  <ul class="sidebar-items">
-    
-    
-    <li>
-      <a href="../../reference/config">
-      Configuration
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="../../reference/cli">
-      Command-line tools
-      </a>
-    </li>
-    
-    
-    <li>
-      <a href="../../reference/metrics">
-      Metrics
-      </a>
-    </li>
-    
-  </ul>
-  
-</aside>
-
-
-      </div>
-    </div>
-
-    <div class="column is-8 bk-docs-block">
+      <div class="bk-community-container">
+  <div class="columns">
+    <div class="column is-12">
       <header class="docs-title">
-        <nav class="level bk-level">
+        <nav class="level">
           <div class="level-left">
             <div class="level-item">
-              <h1 class="title">Example doc</h1>
+              <h1 class="title">Release Management</h1>
             </div>
           </div>
           
         </nav>
 
-        <h2 class="subtitle">Just for experimentation purposes.</h2>
+        
       </header>
 
       <hr />
 
-      <div class="content">
-        <section class="bk-main-content">
-          <p><span class="pop" id="ledger-popover">ledger</span></p>
+      <div class="content is-medium">
+        <section class="bk-community-content">
+          <blockquote>
+  <p>Apache BookKeeper community adopts <a href="https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-13+-+Time+Based+Release+Plan">Time Based Release Plan</a> starting from 4.6.0.</p>
+</blockquote>
+
+<p>Apache BookKeeper community makes a feture release every 3 month.</p>
+
+<ul>
+  <li>A month before the release date, the release manager will cut branches and also publish a list of features that will be included in the release. These features will typically
+  be <a href="https://cwiki.apache.org/confluence/display/BOOKKEEPER/BookKeeper+Proposals">BookKeeper Proposals</a>, but not always.</li>
+  <li>Another week will be left for <em>minor</em> features to get in, but at this point the community will start efforts to stabilize the release branch and contribute mostly tests and fixes.</li>
+  <li>Two weeks before the release date, the bookkeeper community will announce code-freeze and start rolling out release candidates, after which only fixes for blocking bugs will be merged.</li>
+</ul>
+
+<h2 id="current-release">Current Release</h2>
+
+<h3 id="feature-release-window">Feature Release Window</h3>
+
+<p>The next feature release is <code class="highlighter-rouge">4.6.0</code>. The release window is the following:</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td><strong>Date</strong></td>
+      <td><strong>Event</strong></td>
+    </tr>
+    <tr>
+      <td>August 12, 2017</td>
+      <td>Merge window opens on master branch</td>
+    </tr>
+    <tr>
+      <td>October 16, 2017</td>
+      <td>Major feature should be in, Cut release branch</td>
+    </tr>
+    <tr>
+      <td>October 23, 2017</td>
+      <td>Minor feature should be in, Stabilize release branch</td>
+    </tr>
+    <tr>
+      <td>October 30, 2017 - November 12, 2017</td>
+      <td>Code freeze, Only accept fixes for blocking issues, Rolling out release candidates</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="release-schedule">Release Schedule</h2>
+
+<ul>
+  <li><strong>4.6.0</strong>: August 2017 - November 2017</li>
+  <li><strong>4.7.0</strong>: November 2017 - February 2018</li>
+  <li><strong>4.8.0</strong>: Februrary 2018 - May 2018</li>
+  <li><strong>4.9.0</strong>: May 2018 - August 2018</li>
+</ul>
+
+<iframe src="https://calendar.google.com/calendar/embed?src=aam1p2gcoa40n68a6duflnva7c%40group.calendar.google.com&amp;ctz=America/Los_Angeles" style="border: 0" width="800" height="600" frameborder="0" scrolling="no"></iframe>
 
         </section>
 
         
       </div>
     </div>
-
-    <div class="column is-2 is-hidden-mobile">
-      
-      
-<div class="toc">
-  <h2 class="title">Example doc</h2>
-  <ul class="section-nav">
-</ul>
-</div>
-
-
-      
-    </div>
   </div>
 </div>
-
-
-
-<div id="entry-popover-html" class="popover-template">
-  <p>An entry is a sequence of bytes (plus some metadata) written to a BookKeeper ledger. Entries are also known as records.</p>
-
-</div>
-
-<div id="ledger-popover-html" class="popover-template">
-  <p>A ledger is a sequence of entries written to BookKeeper. Entries are written sequentially to ledgers and at most once, giving ledgers append-only semantics.</p>
-
-</div>
-
-<div id="bookie-popover-html" class="popover-template">
-  <p>A bookie is an individual BookKeeper storage server.</p>
-
-<p>Bookies store the content of ledgers and act as a distributed ensemble.</p>
-
-</div>
-
-<div id="rereplication-popover-html" class="popover-template">
-  <p>A subsystem that runs in the background on bookies to ensure that ledgers are fully replicated even if one bookie from the ensemble is down.</p>
-
-</div>
-
-<div id="striping-popover-html" class="popover-template">
-  <p>Striping is the process of distributing BookKeeper ledgers to sub-groups of bookies rather than to all bookies in a BookKeeper ensemble.</p>
-
-<p>Striping is essential to ensuring fast performance.</p>
-
-</div>
-
-<div id="journal-popover-html" class="popover-template">
-  <p>A journal file stores BookKeeper transaction logs.</p>
-
-</div>
-
-<div id="fencing-popover-html" class="popover-template">
-  <p>When a reader forces a ledger to close, preventing any further entries from being written to the ledger.</p>
-
-</div>
-
-<div id="record-popover-html" class="popover-template">
-  <p>A record is a sequence of bytes (plus some metadata) written to a BookKeeper ledger. Records are also known as entries.</p>
-
-</div>
-
-
-<script type="text/javascript">
-
-tippy('#entry-popover', {
-  html: '#entry-popover-html',
-  arrow: true,
-  animation: 'fade'
-});
-
-tippy('#ledger-popover', {
-  html: '#ledger-popover-html',
-  arrow: true,
-  animation: 'fade'
-});
-
-tippy('#bookie-popover', {
-  html: '#bookie-popover-html',
-  arrow: true,
-  animation: 'fade'
-});
-
-tippy('#rereplication-popover', {
-  html: '#rereplication-popover-html',
-  arrow: true,
-  animation: 'fade'
-});
-
-tippy('#striping-popover', {
-  html: '#striping-popover-html',
-  arrow: true,
-  animation: 'fade'
-});
-
-tippy('#journal-popover', {
-  html: '#journal-popover-html',
-  arrow: true,
-  animation: 'fade'
-});
-
-tippy('#fencing-popover', {
-  html: '#fencing-popover-html',
-  arrow: true,
-  animation: 'fade'
-});
-
-tippy('#record-popover', {
-  html: '#record-popover-html',
-  arrow: true,
-  animation: 'fade'
-});
-
-</script>
-
     </main>
 
     <footer class="footer">
