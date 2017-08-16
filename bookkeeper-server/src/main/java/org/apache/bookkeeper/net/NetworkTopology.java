@@ -25,7 +25,8 @@ import java.util.Set;
 public interface NetworkTopology {
 
     public final static String DEFAULT_REGION = "/default-region";
-    public final static String DEFAULT_RACK = "/default-region/default-rack";
+    public final static String DEFAULT_RACK = "/default-rack";
+    public final static String DEFAULT_REGION_AND_RACK = DEFAULT_REGION + DEFAULT_RACK;
 
     /**
      * Add a node to the network topology

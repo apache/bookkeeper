@@ -46,6 +46,12 @@ public class CachedDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
     this.rawMapping = rawMapping;
   }
 
+  // we'll use IP Address for these mappings.
+  @Override
+  public boolean useHostName() {
+    return false;
+  }
+
   /**
    * @param names a list of hostnames to probe for being cached
    * @return the hosts from 'names' that have not been cached previously
