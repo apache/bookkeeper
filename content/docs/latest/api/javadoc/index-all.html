@@ -1873,6 +1873,10 @@
 <dd>
 <div class="block">Get the time interval between retries on unsuccessful bookie info request.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getHttpServerPort--">getHttpServerPort()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">Get the http server port</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#getId--">getId()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>
 <div class="block">Get the id of the current ledger</div>
@@ -2428,7 +2432,8 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getTLSKeyStorePasswordPath--">getTLSKeyStorePasswordPath()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
-<div class="block">Get the path to file containing keystore password if the client keystore is password protected.</div>
+<div class="block">Gets the minimum safe Usable size to be available in index directory for Bookie to create Index File while replaying
+ Get the path to file containing keystore password if the client keystore is password protected.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#getTLSKeyStoreType--">getTLSKeyStoreType()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
@@ -2611,6 +2616,10 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingReadOp.html#heardFromHostsBitSet">heardFromHostsBitSet</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingReadOp.html" title="class in org.apache.bookkeeper.client">PendingReadOp</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html#heardFromHostsBitSet">heardFromHostsBitSet</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html" title="class in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#HTTP_SERVER_ENABLED">HTTP_SERVER_ENABLED</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#HTTP_SERVER_PORT">HTTP_SERVER_PORT</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/stats/twitter/science/HTTPStatsExporter.html" title="class in org.apache.bookkeeper.stats.twitter.science"><span class="typeNameLink">HTTPStatsExporter</span></a> - Class in <a href="org/apache/bookkeeper/stats/twitter/science/package-summary.html">org.apache.bookkeeper.stats.twitter.science</a></dt>
 <dd>
@@ -2847,6 +2856,10 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#isForceReadOnlyBookie--">isForceReadOnlyBookie()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Get whether the Bookie is force started in read only mode or not</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#isHttpServerEnabled--">isHttpServerEnabled()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">Get whether to start the http server or not</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#isInRecovery--">isInRecovery()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
 <dd>&nbsp;</dd>
@@ -4807,6 +4820,14 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#setGetBookieInfoTimeout-int-">setGetBookieInfoTimeout(int)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
 <div class="block">Set the timeout value in secs for the GET_BOOKIE_INFO request</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setHttpServerEnabled-boolean-">setHttpServerEnabled(boolean)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">Set whether to start the http server or not</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setHttpServerPort-int-">setHttpServerPort(int)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">Set Http server port listening on</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setIndexDirName-java.lang.String:A-">setIndexDirName(String[])</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
