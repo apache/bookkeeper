@@ -1316,7 +1316,7 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/AutoClose
  read entries for which the writer has not received the acknowledge yet. <br>
  For entries which are within the range 0..LastAddConfirmed BookKeeper guarantees that the writer has successfully
  received the acknowledge.<br>
- For entries outside that range it is possible that the writer never received the acknoledge
+ For entries outside that range it is possible that the writer never received the acknowledge
  and so there is the risk that the reader is seeing entries before the writer and this could result in a consistency
  issue in some cases.<br>
  With this method you can even read entries before the LastAddConfirmed and entries after it with one call,
