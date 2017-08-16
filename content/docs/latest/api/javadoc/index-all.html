@@ -637,6 +637,10 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html#BookieNode-org.apache.bookkeeper.net.BookieSocketAddress-java.lang.String-">BookieNode(BookieSocketAddress, String)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#bookiesJoinedCounter">bookiesJoinedCounter</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#bookiesLeftCounter">bookiesLeftCounter</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
+<dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/BookiesListener.html" title="interface in org.apache.bookkeeper.client"><span class="typeNameLink">BookiesListener</span></a> - Interface in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
 <dd>
 <div class="block">Listener for the the available bookies changes.</div>
@@ -1124,7 +1128,13 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#defaultLoader">defaultLoader</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DefaultResolver.html#defaultRackSupplier">defaultRackSupplier</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DefaultResolver.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl.DefaultResolver</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator.html#defaultRackSupplier">defaultRackSupplier</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DefaultResolver.html#DefaultResolver--">DefaultResolver()</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DefaultResolver.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl.DefaultResolver</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DefaultResolver.html#DefaultResolver-java.util.function.Supplier-">DefaultResolver(Supplier&lt;String&gt;)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DefaultResolver.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl.DefaultResolver</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/DefaultSpeculativeRequestExecutionPolicy.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">DefaultSpeculativeRequestExecutionPolicy</span></a> - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
 <dd>
@@ -1219,6 +1229,8 @@
 <div class="block">Configure the bookkeeper client to use the provided dns resolver <code>DNSToSwitchMapping</code>.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#dnsResolver">dnsResolver</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator.html#DNSResolverDecorator-org.apache.bookkeeper.net.DNSToSwitchMapping-java.util.function.Supplier-">DNSResolverDecorator(DNSToSwitchMapping, Supplier&lt;String&gt;)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#doAsyncAddEntry-org.apache.bookkeeper.client.PendingAddOp-io.netty.buffer.ByteBuf-org.apache.bookkeeper.client.AsyncCallback.AddCallback-java.lang.Object-">doAsyncAddEntry(PendingAddOp, ByteBuf, AsyncCallback.AddCallback, Object)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>&nbsp;</dd>
@@ -1712,6 +1724,8 @@
 <div class="block">Get bookie death watch interval</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#getDefaultEventLoopGroup--">getDefaultEventLoopGroup()</a></span> - Static method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#getDefaultRack--">getDefaultRack()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/Gauge.html#getDefaultValue--">getDefaultValue()</a></span> - Method in interface org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/Gauge.html" title="interface in org.apache.bookkeeper.stats">Gauge</a></dt>
 <dd>&nbsp;</dd>
@@ -3943,6 +3957,10 @@
 <dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DefaultResolver.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">RackawareEnsemblePlacementPolicyImpl.DefaultResolver</span></a> - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
 <dd>&nbsp;</dd>
+<dt><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator</span></a> - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
+<dd>
+<div class="block">Decorator for any existing dsn resolver.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#RACKNAME_DISTANCE_FROM_LEAVES">RACKNAME_DISTANCE_FROM_LEAVES</a></span> - Static variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.RackOrRegionDurabilityCoverageSet.html#RackOrRegionDurabilityCoverageSet--">RackOrRegionDurabilityCoverageSet()</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.RackOrRegionDurabilityCoverageSet.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.RackOrRegionDurabilityCoverageSet</a></dt>
@@ -4252,6 +4270,8 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DefaultResolver.html#reloadCachedMappings--">reloadCachedMappings()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DefaultResolver.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl.DefaultResolver</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator.html#reloadCachedMappings--">reloadCachedMappings()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html#REMOTE_NODE_IN_REORDER_SEQUENCE">REMOTE_NODE_IN_REORDER_SEQUENCE</a></span> - Static variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RegionAwareEnsemblePlacementPolicy</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.LedgerEntriesIterator.html#remove--">remove()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.LedgerEntriesIterator.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin.LedgerEntriesIterator</a></dt>
@@ -4395,7 +4415,11 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DefaultResolver.html#resolve-java.util.List-">resolve(List&lt;String&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DefaultResolver.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl.DefaultResolver</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator.html#resolve-java.util.List-">resolve(List&lt;String&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#resolveNetworkLocation-org.apache.bookkeeper.net.BookieSocketAddress-">resolveNetworkLocation(BookieSocketAddress)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator.html#resolver">resolver</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.LastConfirmedCtx.html#response">response</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.LastConfirmedCtx.html" title="class in org.apache.bookkeeper.client">LedgerHandle.LastConfirmedCtx</a></dt>
 <dd>&nbsp;</dd>
@@ -5770,6 +5794,8 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#USE_V2_WIRE_PROTOCOL">USE_V2_WIRE_PROTOCOL</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator.html#useHostName--">useHostName()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl.DNSResolverDecorator</a></dt>
+<dd>&nbsp;</dd>
 </dl>
 <a name="I:V">
 <!--   -->
@@ -5843,6 +5869,8 @@ the order they are declared.</div>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/WeightedRandomSelection.html#WeightedRandomSelection-int-">WeightedRandomSelection(int)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/WeightedRandomSelection.html" title="class in org.apache.bookkeeper.client">WeightedRandomSelection</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/WeightedRandomSelection.WeightedObject.html" title="interface in org.apache.bookkeeper.client"><span class="typeNameLink">WeightedRandomSelection.WeightedObject</span></a> - Interface in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#withDefaultRack-java.lang.String-">withDefaultRack(String)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#WRITE_BUFFER_SIZE">WRITE_BUFFER_SIZE</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
