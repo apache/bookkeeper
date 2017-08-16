@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,22 +65,20 @@ public class NetUtils {
 
     public static String resolveNetworkLocation(DNSToSwitchMapping dnsResolver, InetSocketAddress addr) {
         List<String> names = new ArrayList<String>(1);
-        if (dnsResolver instanceof CachedDNSToSwitchMapping) {
-            names.add(addr.getAddress().getHostAddress());
-        } else {
+
+        if (dnsResolver.useHostName()) {
             names.add(addr.getHostName());
         }
+        else {
+            names.add(addr.getAddress().getHostAddress());
+        }
+
         // resolve network addresses
         List<String> rNames = dnsResolver.resolve(names);
-        String netLoc;
-        if (null == rNames) {
-            logger.warn("Failed to resolve network location for {}, using default rack for them : {}.", names,
-                NetworkTopology.DEFAULT_RACK);
-            netLoc = NetworkTopology.DEFAULT_RACK;
-        } else {
-            netLoc = rNames.get(0);
-        }
-        return netLoc;
+        Preconditions.checkNotNull(rNames, "DNS Resolver should not return null response.");
+        Preconditions.checkState(rNames.size() == 1, "Expected exactly one element");
+
+        return rNames.get(0);
     }
 
 }
