@@ -21,7 +21,6 @@ import com.google.common.base.Optional;
 import org.apache.distributedlog.impl.metadata.BKDLConfig;
 import org.apache.distributedlog.metadata.DLMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.shims.zk.ZooKeeperServerShim;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.LocalBookKeeper;
@@ -33,14 +32,12 @@ import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -178,36 +175,6 @@ public class LocalDLMEmulator {
 
     public URI getUri() {
         return uri;
-    }
-
-    public BookieServer newBookie() throws Exception {
-        ServerConfiguration bookieConf = new ServerConfiguration();
-        bookieConf.setZkTimeout(zkTimeoutSec * 1000);
-        bookieConf.setBookiePort(0);
-        bookieConf.setAllowLoopback(true);
-        File tmpdir = File.createTempFile("bookie" + UUID.randomUUID() + "_",
-            "test");
-        if (!tmpdir.delete()) {
-            LOG.debug("Fail to delete tmpdir " + tmpdir);
-        }
-        if (!tmpdir.mkdir()) {
-            throw new IOException("Fail to create tmpdir " + tmpdir);
-        }
-        tmpDirs.add(tmpdir);
-
-        bookieConf.setZkServers(zkEnsemble);
-        bookieConf.setJournalDirName(tmpdir.getPath());
-        bookieConf.setLedgerDirNames(new String[]{tmpdir.getPath()});
-
-        BookieServer b = new BookieServer(bookieConf);
-        b.start();
-        for (int i = 0; i < 10 && !b.isRunning(); i++) {
-            Thread.sleep(10000);
-        }
-        if (!b.isRunning()) {
-            throw new IOException("Bookie would not start");
-        }
-        return b;
     }
 
     /**

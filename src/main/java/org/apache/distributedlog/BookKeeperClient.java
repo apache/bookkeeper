@@ -18,6 +18,9 @@
 package org.apache.distributedlog;
 
 import com.google.common.base.Optional;
+import io.netty.channel.EventLoopGroup;
+import io.netty.util.HashedWheelTimer;
+import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.client.BKException;
@@ -40,8 +43,6 @@ import org.apache.distributedlog.net.NetUtils;
 import org.apache.distributedlog.util.ConfUtils;
 import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.zookeeper.KeeperException;
-import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
-import org.jboss.netty.util.HashedWheelTimer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +67,7 @@ public class BookKeeperClient {
     private final String zkServers;
     private final String ledgersPath;
     private final byte[] passwd;
-    private final ClientSocketChannelFactory channelFactory;
+    private final EventLoopGroup eventLoopGroup;
     private final HashedWheelTimer requestTimer;
     private final StatsLogger statsLogger;
 
@@ -80,8 +81,10 @@ public class BookKeeperClient {
 
     @SuppressWarnings("deprecation")
     private synchronized void commonInitialization(
-            DistributedLogConfiguration conf, String ledgersPath,
-            ClientSocketChannelFactory channelFactory, StatsLogger statsLogger, HashedWheelTimer requestTimer)
+            DistributedLogConfiguration conf,
+            String ledgersPath,
+            EventLoopGroup eventLoopGroup,
+            StatsLogger statsLogger, HashedWheelTimer requestTimer)
         throws IOException, InterruptedException, KeeperException {
         ClientConfiguration bkConfig = new ClientConfiguration();
         bkConfig.setAddEntryTimeout(conf.getBKClientWriteTimeout());
@@ -106,11 +109,10 @@ public class BookKeeperClient {
         final DNSToSwitchMapping dnsResolver =
                 NetUtils.getDNSResolver(dnsResolverCls, conf.getBkDNSResolverOverrides());
 
-        this.bkc = BookKeeper.newBuilder()
-            .config(bkConfig)
-            .zk(zkc.get())
-            .channelFactory(channelFactory)
-            .statsLogger(statsLogger)
+        this.bkc = BookKeeper.forConfig(bkConfig)
+            .setZookeeper(zkc.get())
+            .setEventLoopGroup(eventLoopGroup)
+            .setStatsLogger(statsLogger)
             .dnsResolver(dnsResolver)
             .requestTimer(requestTimer)
             .featureProvider(featureProvider.orNull())
@@ -122,7 +124,7 @@ public class BookKeeperClient {
                      String zkServers,
                      ZooKeeperClient zkc,
                      String ledgersPath,
-                     ClientSocketChannelFactory channelFactory,
+                     EventLoopGroup eventLoopGroup,
                      HashedWheelTimer requestTimer,
                      StatsLogger statsLogger,
                      Optional<FeatureProvider> featureProvider) {
@@ -131,7 +133,7 @@ public class BookKeeperClient {
         this.zkServers = zkServers;
         this.ledgersPath = ledgersPath;
         this.passwd = conf.getBKDigestPW().getBytes(UTF_8);
-        this.channelFactory = channelFactory;
+        this.eventLoopGroup = eventLoopGroup;
         this.requestTimer = requestTimer;
         this.statsLogger = statsLogger;
         this.featureProvider = featureProvider;
@@ -162,7 +164,7 @@ public class BookKeeperClient {
         }
 
         try {
-            commonInitialization(conf, ledgersPath, channelFactory, statsLogger, requestTimer);
+            commonInitialization(conf, ledgersPath, eventLoopGroup, statsLogger, requestTimer);
         } catch (InterruptedException e) {
             throw new DLInterruptedException("Interrupted on creating bookkeeper client " + name + " : ", e);
         } catch (KeeperException e) {
@@ -216,7 +218,7 @@ public class BookKeeperClient {
                             promise.completeExceptionally(BKException.create(rc));
                         }
                     }
-                }, null);
+                }, null, Collections.emptyMap());
         return promise;
     }
 

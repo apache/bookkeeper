@@ -70,7 +70,7 @@ public class ChainedRequestLimiter<Request> implements RequestLimiter<Request> {
                 limiter.apply(request);
             }
         } finally {
-            applyTime.registerSuccessfulEvent(stopwatch.elapsed(TimeUnit.MICROSECONDS));
+            applyTime.registerSuccessfulEvent(stopwatch.elapsed(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
         }
     }
 }

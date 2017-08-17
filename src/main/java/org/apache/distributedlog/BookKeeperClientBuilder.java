@@ -19,13 +19,11 @@ package org.apache.distributedlog;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
+import io.netty.channel.EventLoopGroup;
+import io.netty.util.HashedWheelTimer;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
-import org.jboss.netty.util.HashedWheelTimer;
 import org.apache.bookkeeper.feature.FeatureProvider;
-
-import org.apache.bookkeeper.feature.Feature;
 
 /**
  * Builder to build bookkeeper client.
@@ -55,7 +53,7 @@ public class BookKeeperClientBuilder {
     // statsLogger
     private StatsLogger statsLogger = NullStatsLogger.INSTANCE;
     // client channel factory
-    private ClientSocketChannelFactory channelFactory = null;
+    private EventLoopGroup eventLoopGroup = null;
     // request timer
     private HashedWheelTimer requestTimer = null;
     // feature provider
@@ -150,12 +148,12 @@ public class BookKeeperClientBuilder {
     /**
      * Build BookKeeper client using existing <i>channelFactory</i>.
      *
-     * @param channelFactory
-     *          Channel Factory used to build bookkeeper client.
+     * @param eventLoopGroup
+     *          event loop group used to build bookkeeper client.
      * @return bookkeeper client builder.
      */
-    public synchronized BookKeeperClientBuilder channelFactory(ClientSocketChannelFactory channelFactory) {
-        this.channelFactory = channelFactory;
+    public synchronized BookKeeperClientBuilder eventLoopGroup(EventLoopGroup eventLoopGroup) {
+        this.eventLoopGroup = eventLoopGroup;
         return this;
     }
 
@@ -204,6 +202,15 @@ public class BookKeeperClientBuilder {
 
     private BookKeeperClient buildClient() {
         validateParameters();
-        return new BookKeeperClient(dlConfig, name, zkServers, zkc, ledgersPath, channelFactory, requestTimer, statsLogger, featureProvider);
+        return new BookKeeperClient(
+            dlConfig,
+            name,
+            zkServers,
+            zkc,
+            ledgersPath,
+            eventLoopGroup,
+            requestTimer,
+            statsLogger,
+            featureProvider);
     }
 }

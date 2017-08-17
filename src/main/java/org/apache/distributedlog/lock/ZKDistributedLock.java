@@ -147,11 +147,15 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
         promise.whenComplete(new FutureEventListener<ZKDistributedLock>() {
             @Override
             public void onSuccess(ZKDistributedLock lock) {
-                acquireStats.registerSuccessfulEvent(stopwatch.stop().elapsed(TimeUnit.MICROSECONDS));
+                acquireStats.registerSuccessfulEvent(
+                    stopwatch.stop().elapsed(TimeUnit.MICROSECONDS),
+                    TimeUnit.MICROSECONDS);
             }
             @Override
             public void onFailure(Throwable cause) {
-                acquireStats.registerFailedEvent(stopwatch.stop().elapsed(TimeUnit.MICROSECONDS));
+                acquireStats.registerFailedEvent(
+                    stopwatch.stop().elapsed(TimeUnit.MICROSECONDS),
+                    TimeUnit.MICROSECONDS);
                 // release the lock if fail to acquire
                 asyncClose();
             }
@@ -496,7 +500,9 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
                     synchronized (ZKDistributedLock.this) {
                         lockReacquireFuture = null;
                     }
-                    reacquireStats.registerSuccessfulEvent(stopwatch.elapsed(TimeUnit.MICROSECONDS));
+                    reacquireStats.registerSuccessfulEvent(
+                        stopwatch.elapsed(TimeUnit.MICROSECONDS),
+                        TimeUnit.MICROSECONDS);
                 }
 
                 @Override
@@ -509,7 +515,9 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
                                     "Exception on re-acquiring lock", cause);
                         }
                     }
-                    reacquireStats.registerFailedEvent(stopwatch.elapsed(TimeUnit.MICROSECONDS));
+                    reacquireStats.registerFailedEvent(
+                        stopwatch.elapsed(TimeUnit.MICROSECONDS),
+                        TimeUnit.MICROSECONDS);
                 }
             });
         }

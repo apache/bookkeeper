@@ -20,6 +20,12 @@ package org.apache.distributedlog.impl;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.epoll.EpollEventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.util.HashedWheelTimer;
+import java.util.concurrent.ThreadFactory;
+import org.apache.commons.lang.SystemUtils;
 import org.apache.distributedlog.BookKeeperClient;
 import org.apache.distributedlog.BookKeeperClientBuilder;
 import org.apache.distributedlog.DistributedLogConfiguration;
@@ -58,9 +64,6 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.common.PathUtils;
 import org.apache.zookeeper.data.Stat;
-import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.util.HashedWheelTimer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,7 +72,6 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -130,7 +132,7 @@ public class BKNamespaceDriver implements NamespaceDriver {
     //       {@link org.apache.distributedlog.BookKeeperClient#get()}. So it is safe to
     //       keep builders and their client wrappers here, as they will be used when
     //       instantiating readers or writers.
-    private ClientSocketChannelFactory channelFactory;
+    private EventLoopGroup eventLoopGroup;
     private HashedWheelTimer requestTimer;
     private BookKeeperClientBuilder sharedWriterBKCBuilder;
     private BookKeeperClient writerBKC;
@@ -250,11 +252,22 @@ public class BKNamespaceDriver implements NamespaceDriver {
         return bkdlConfig;
     }
 
+    static EventLoopGroup getDefaultEventLoopGroup(int numThreads) {
+        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat("DL-io-%s").build();
+        if (SystemUtils.IS_OS_LINUX) {
+            try {
+                return new EpollEventLoopGroup(numThreads, threadFactory);
+            } catch (Throwable t) {
+                LOG.warn("Could not use Netty Epoll event loop for bookie server:", t);
+                return new NioEventLoopGroup(numThreads, threadFactory);
+            }
+        } else {
+            return new NioEventLoopGroup(numThreads, threadFactory);
+        }
+    }
+
     private void initializeBookKeeperClients() throws IOException {
-        this.channelFactory = new NioClientSocketChannelFactory(
-                Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("DL-netty-boss-%d").build()),
-                Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("DL-netty-worker-%d").build()),
-                conf.getBKClientNumberIOThreads());
+        this.eventLoopGroup = getDefaultEventLoopGroup(conf.getBKClientNumberIOThreads());
         this.requestTimer = new HashedWheelTimer(
                 new ThreadFactoryBuilder().setNameFormat("DLFactoryTimer-%d").build(),
                 conf.getTimeoutTimerTickDurationMs(), TimeUnit.MILLISECONDS,
@@ -265,7 +278,7 @@ public class BKNamespaceDriver implements NamespaceDriver {
                 conf,
                 bkdlConfig.getBkZkServersForWriter(),
                 bkdlConfig.getBkLedgersPath(),
-                channelFactory,
+                eventLoopGroup,
                 requestTimer,
                 Optional.of(featureProvider.scope("bkc")),
                 statsLogger);
@@ -280,7 +293,7 @@ public class BKNamespaceDriver implements NamespaceDriver {
                     conf,
                     bkdlConfig.getBkZkServersForReader(),
                     bkdlConfig.getBkLedgersPath(),
-                    channelFactory,
+                    eventLoopGroup,
                     requestTimer,
                     Optional.<FeatureProvider>absent(),
                     statsLogger);
@@ -393,7 +406,7 @@ public class BKNamespaceDriver implements NamespaceDriver {
         writerZKC.close();
         readerZKC.close();
         // release bookkeeper resources
-        channelFactory.releaseExternalResources();
+        eventLoopGroup.shutdownGracefully();
         LOG.info("Release external resources used by channel factory.");
         requestTimer.stop();
         LOG.info("Stopped request timer");
@@ -582,7 +595,7 @@ public class BKNamespaceDriver implements NamespaceDriver {
                                                      DistributedLogConfiguration conf,
                                                      String zkServers,
                                                      String ledgersPath,
-                                                     ClientSocketChannelFactory channelFactory,
+                                                     EventLoopGroup eventLoopGroup,
                                                      HashedWheelTimer requestTimer,
                                                      Optional<FeatureProvider> featureProviderOptional,
                                                      StatsLogger statsLogger) {
@@ -591,7 +604,7 @@ public class BKNamespaceDriver implements NamespaceDriver {
                 .dlConfig(conf)
                 .zkServers(zkServers)
                 .ledgersPath(ledgersPath)
-                .channelFactory(channelFactory)
+                .eventLoopGroup(eventLoopGroup)
                 .requestTimer(requestTimer)
                 .featureProvider(featureProviderOptional)
                 .statsLogger(statsLogger);

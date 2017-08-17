@@ -426,13 +426,16 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
         ).whenComplete(new FutureEventListener<LogRecordWithDLSN>() {
             @Override
             public void onSuccess(LogRecordWithDLSN value) {
-                recoverLastEntryStats.registerSuccessfulEvent(stopwatch.stop().elapsed(TimeUnit.MICROSECONDS));
-                recoverScannedEntriesStats.registerSuccessfulEvent(numRecordsScanned.get());
+                recoverLastEntryStats.registerSuccessfulEvent(
+                    stopwatch.stop().elapsed(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
+                recoverScannedEntriesStats.registerSuccessfulValue(numRecordsScanned.get());
             }
 
             @Override
             public void onFailure(Throwable cause) {
-                recoverLastEntryStats.registerFailedEvent(stopwatch.stop().elapsed(TimeUnit.MICROSECONDS));
+                recoverLastEntryStats.registerFailedEvent(
+                    stopwatch.stop().elapsed(TimeUnit.MICROSECONDS),
+                    TimeUnit.MICROSECONDS);
             }
         });
     }
@@ -508,9 +511,9 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
                         LOG.warn("{} received inprogress log segment in {} millis: {}",
                                  new Object[] { getFullyQualifiedName(), elapsedMillis, metadata });
                     }
-                    getInprogressSegmentStat.registerSuccessfulEvent(elapsedMicroSec);
+                    getInprogressSegmentStat.registerSuccessfulEvent(elapsedMicroSec, TimeUnit.MICROSECONDS);
                 } else {
-                    negativeGetInprogressSegmentStat.registerSuccessfulEvent(-elapsedMicroSec);
+                    negativeGetInprogressSegmentStat.registerSuccessfulEvent(-elapsedMicroSec, TimeUnit.MICROSECONDS);
                 }
             } else {
                 long elapsedMillis = ts - metadata.getCompletionTime();
@@ -520,9 +523,9 @@ abstract class BKLogHandler implements AsyncCloseable, AsyncAbortable {
                         LOG.warn("{} received completed log segment in {} millis : {}",
                                  new Object[] { getFullyQualifiedName(), elapsedMillis, metadata });
                     }
-                    getCompletedSegmentStat.registerSuccessfulEvent(elapsedMicroSec);
+                    getCompletedSegmentStat.registerSuccessfulEvent(elapsedMicroSec, TimeUnit.MICROSECONDS);
                 } else {
-                    negativeGetCompletedSegmentStat.registerSuccessfulEvent(-elapsedMicroSec);
+                    negativeGetCompletedSegmentStat.registerSuccessfulEvent(-elapsedMicroSec, TimeUnit.MICROSECONDS);
                 }
             }
         }

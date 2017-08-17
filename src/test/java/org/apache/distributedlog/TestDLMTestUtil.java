@@ -32,6 +32,12 @@ import org.slf4j.LoggerFactory;
 public class TestDLMTestUtil {
     static final Logger LOG = LoggerFactory.getLogger(TestDLMTestUtil.class);
 
+    static {
+        // org.apache.zookeeper.test.ClientBase uses FourLetterWordMain, from 3.5.3 four letter words
+        // are disabled by default due to security reasons
+        System.setProperty("zookeeper.4lw.commands.whitelist", "*");
+    }
+
     @Rule
     public TestName testNames = new TestName();
 

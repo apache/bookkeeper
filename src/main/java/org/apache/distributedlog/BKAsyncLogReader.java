@@ -163,8 +163,10 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
         void completeExceptionally(Throwable throwable) {
             Stopwatch stopwatch = Stopwatch.createStarted();
             if (promise.completeExceptionally(throwable)) {
-                futureSetLatency.registerFailedEvent(stopwatch.stop().elapsed(TimeUnit.MICROSECONDS));
-                delayUntilPromiseSatisfied.registerFailedEvent(enqueueTime.elapsed(TimeUnit.MICROSECONDS));
+                futureSetLatency.registerFailedEvent(
+                    stopwatch.stop().elapsed(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
+                delayUntilPromiseSatisfied.registerFailedEvent(
+                    enqueueTime.elapsed(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
             }
         }
 
@@ -191,10 +193,12 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
             if (LOG.isTraceEnabled()) {
                 LOG.trace("{} : Satisfied promise with {} records", readHandler.getFullyQualifiedName(), records.size());
             }
-            delayUntilPromiseSatisfied.registerSuccessfulEvent(enqueueTime.stop().elapsed(TimeUnit.MICROSECONDS));
+            delayUntilPromiseSatisfied.registerSuccessfulEvent(
+                enqueueTime.stop().elapsed(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
             Stopwatch stopwatch = Stopwatch.createStarted();
             promise.complete(records);
-            futureSetLatency.registerSuccessfulEvent(stopwatch.stop().elapsed(TimeUnit.MICROSECONDS));
+            futureSetLatency.registerSuccessfulEvent(
+                stopwatch.stop().elapsed(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
         }
     }
 
@@ -396,7 +400,8 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
     private synchronized CompletableFuture<List<LogRecordWithDLSN>> readInternal(int numEntries,
                                                                       long deadlineTime,
                                                                       TimeUnit deadlineTimeUnit) {
-        timeBetweenReadNexts.registerSuccessfulEvent(readNextDelayStopwatch.elapsed(TimeUnit.MICROSECONDS));
+        timeBetweenReadNexts.registerSuccessfulEvent(
+            readNextDelayStopwatch.elapsed(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
         readNextDelayStopwatch.reset().start();
         final PendingReadRequest readRequest = new PendingReadRequest(numEntries, deadlineTime, deadlineTimeUnit);
 
@@ -443,7 +448,8 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
             }
         }
 
-        readNextExecTime.registerSuccessfulEvent(readNextDelayStopwatch.elapsed(TimeUnit.MICROSECONDS));
+        readNextExecTime.registerSuccessfulEvent(
+            readNextDelayStopwatch.elapsed(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
         readNextDelayStopwatch.reset().start();
 
         return readRequest.getPromise();
@@ -553,7 +559,8 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
     public void run() {
         synchronized(scheduleLock) {
             if (scheduleDelayStopwatch.isRunning()) {
-                scheduleLatency.registerSuccessfulEvent(scheduleDelayStopwatch.stop().elapsed(TimeUnit.MICROSECONDS));
+                scheduleLatency.registerSuccessfulEvent(
+                    scheduleDelayStopwatch.stop().elapsed(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
             }
 
             Stopwatch runTime = Stopwatch.createStarted();
@@ -573,7 +580,8 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
                     if (null == nextRequest) {
                         LOG.trace("{}: Queue Empty waiting for Input", readHandler.getFullyQualifiedName());
                         scheduleCount.set(0);
-                        backgroundReaderRunTime.registerSuccessfulEvent(runTime.stop().elapsed(TimeUnit.MICROSECONDS));
+                        backgroundReaderRunTime.registerSuccessfulEvent(
+                            runTime.stop().elapsed(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
                         return;
                     }
 
@@ -599,7 +607,8 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
                     if (!(lastException.get().getCause() instanceof LogNotFoundException)) {
                         LOG.warn("{}: Exception", readHandler.getFullyQualifiedName(), lastException.get());
                     }
-                    backgroundReaderRunTime.registerFailedEvent(runTime.stop().elapsed(TimeUnit.MICROSECONDS));
+                    backgroundReaderRunTime.registerFailedEvent(
+                        runTime.stop().elapsed(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
                     return;
                 }
 
@@ -646,7 +655,8 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
                 if (nextRequest.hasReadRecords()) {
                     long remainingWaitTime = nextRequest.getRemainingWaitTime();
                     if (remainingWaitTime > 0 && !nextRequest.hasReadEnoughRecords()) {
-                        backgroundReaderRunTime.registerSuccessfulEvent(runTime.stop().elapsed(TimeUnit.MICROSECONDS));
+                        backgroundReaderRunTime.registerSuccessfulEvent(
+                            runTime.stop().elapsed(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
                         scheduleDelayStopwatch.reset().start();
                         scheduleCount.set(0);
                         // the request could still wait for more records
@@ -681,7 +691,8 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
                 } else {
                     if (0 == scheduleCountLocal) {
                         LOG.trace("Schedule count dropping to zero", lastException.get());
-                        backgroundReaderRunTime.registerSuccessfulEvent(runTime.stop().elapsed(TimeUnit.MICROSECONDS));
+                        backgroundReaderRunTime.registerSuccessfulEvent(
+                            runTime.stop().elapsed(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
                         return;
                     }
                     scheduleCountLocal = scheduleCount.decrementAndGet();

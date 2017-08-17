@@ -1131,8 +1131,10 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
         final BKTransmitPacket transmitPacket = (BKTransmitPacket) ctx;
 
         // Time from transmit until receipt of addComplete callback
-        addCompleteTime.registerSuccessfulEvent(TimeUnit.MICROSECONDS.convert(
-            System.nanoTime() - transmitPacket.getTransmitTime(), TimeUnit.NANOSECONDS));
+        addCompleteTime.registerSuccessfulEvent(
+            TimeUnit.MICROSECONDS.convert(
+            System.nanoTime() - transmitPacket.getTransmitTime(), TimeUnit.NANOSECONDS),
+            TimeUnit.MICROSECONDS);
 
         if (BKException.Code.OK == rc) {
             EntryBuffer recordSet = transmitPacket.getRecordSet();
@@ -1149,9 +1151,13 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
                 @Override
                 public Void call() {
                     final Stopwatch deferredTime = Stopwatch.createStarted();
-                    addCompleteQueuedTime.registerSuccessfulEvent(queuedTime.elapsed(TimeUnit.MICROSECONDS));
+                    addCompleteQueuedTime.registerSuccessfulEvent(
+                        queuedTime.elapsed(TimeUnit.MICROSECONDS),
+                        TimeUnit.MICROSECONDS);
                     addCompleteDeferredProcessing(transmitPacket, entryId, effectiveRC.get());
-                    addCompleteDeferredTime.registerSuccessfulEvent(deferredTime.elapsed(TimeUnit.MICROSECONDS));
+                    addCompleteDeferredTime.registerSuccessfulEvent(
+                        deferredTime.elapsed(TimeUnit.MICROSECONDS),
+                        TimeUnit.MILLISECONDS);
                     return null;
                 }
                 @Override
@@ -1199,14 +1205,16 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
 
             if (transmitResult.get() != BKException.Code.OK) {
                 if (recordSet.hasUserRecords()) {
-                    transmitDataPacketSize.registerFailedEvent(recordSet.getNumBytes());
+                    transmitDataPacketSize.registerFailedEvent(
+                        recordSet.getNumBytes(), TimeUnit.MICROSECONDS);
                 }
             } else {
                 // If we had data that we flushed then we need it to make sure that
                 // background flush in the next pass will make the previous writes
                 // visible by advancing the lastAck
                 if (recordSet.hasUserRecords()) {
-                    transmitDataPacketSize.registerSuccessfulEvent(recordSet.getNumBytes());
+                    transmitDataPacketSize.registerSuccessfulEvent(
+                        recordSet.getNumBytes(), TimeUnit.MICROSECONDS);
                     controlFlushNeeded = true;
                     if (immediateFlushEnabled) {
                         if (0 == minDelayBetweenImmediateFlushMs) {

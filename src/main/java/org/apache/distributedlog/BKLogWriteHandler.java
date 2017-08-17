@@ -430,9 +430,11 @@ class BKLogWriteHandler extends BKLogHandler {
             return writer;
         } finally {
             if (success) {
-                openOpStats.registerSuccessfulEvent(stopwatch.stop().elapsed(TimeUnit.MICROSECONDS));
+                openOpStats.registerSuccessfulEvent(
+                    stopwatch.stop().elapsed(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
             } else {
-                openOpStats.registerFailedEvent(stopwatch.stop().elapsed(TimeUnit.MICROSECONDS));
+                openOpStats.registerFailedEvent(
+                    stopwatch.stop().elapsed(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
             }
         }
     }
@@ -743,9 +745,13 @@ class BKLogWriteHandler extends BKLogHandler {
             return completedLogSegment;
         } finally {
             if (success) {
-                closeOpStats.registerSuccessfulEvent(stopwatch.stop().elapsed(TimeUnit.MICROSECONDS));
+                closeOpStats.registerSuccessfulEvent(
+                    stopwatch.stop().elapsed(TimeUnit.MICROSECONDS),
+                    TimeUnit.MICROSECONDS);
             } else {
-                closeOpStats.registerFailedEvent(stopwatch.stop().elapsed(TimeUnit.MICROSECONDS));
+                closeOpStats.registerFailedEvent(
+                    stopwatch.stop().elapsed(TimeUnit.MICROSECONDS),
+                    TimeUnit.MICROSECONDS);
             }
         }
     }
@@ -1196,12 +1202,16 @@ class BKLogWriteHandler extends BKLogHandler {
         promise.whenComplete(new FutureEventListener<LogSegmentMetadata>() {
             @Override
             public void onSuccess(LogSegmentMetadata segment) {
-                deleteOpStats.registerSuccessfulEvent(stopwatch.stop().elapsed(TimeUnit.MICROSECONDS));
+                deleteOpStats.registerSuccessfulEvent(
+                    stopwatch.stop().elapsed(TimeUnit.MICROSECONDS),
+                    TimeUnit.MICROSECONDS);
             }
 
             @Override
             public void onFailure(Throwable cause) {
-                deleteOpStats.registerFailedEvent(stopwatch.stop().elapsed(TimeUnit.MICROSECONDS));
+                deleteOpStats.registerFailedEvent(
+                    stopwatch.stop().elapsed(TimeUnit.MICROSECONDS),
+                    TimeUnit.MICROSECONDS);
             }
         });
         entryStore.deleteLogSegment(ledgerMetadata)

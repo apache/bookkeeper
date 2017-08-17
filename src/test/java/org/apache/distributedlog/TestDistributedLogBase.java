@@ -67,6 +67,12 @@ import java.util.concurrent.TimeUnit;
 public class TestDistributedLogBase {
     static final Logger LOG = LoggerFactory.getLogger(TestDistributedLogBase.class);
 
+    static {
+        // org.apache.zookeeper.test.ClientBase uses FourLetterWordMain, from 3.5.3 four letter words
+        // are disabled by default due to security reasons
+        System.setProperty("zookeeper.4lw.commands.whitelist", "*");
+    }
+
     // Num worker threads should be one, since the exec service is used for the ordered
     // future pool in test cases, and setting to > 1 will therefore result in unordered
     // write ops.

@@ -17,16 +17,9 @@
  */
 package org.apache.bookkeeper.client;
 
-import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookieClient;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
-import org.apache.bookkeeper.proto.BookkeeperProtocol;
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBufferInputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.Unpooled;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -36,6 +29,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieClient;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Reader used for DL tools to read entries
@@ -93,17 +92,21 @@ public class LedgerReader {
         final Set<ReadResult<InputStream>> readResults = new HashSet<ReadResult<InputStream>>();
         ReadEntryCallback readEntryCallback = new ReadEntryCallback() {
             @Override
-            public void readEntryComplete(int rc, long lid, long eid, ChannelBuffer buffer, Object ctx) {
+            public void readEntryComplete(int rc, long lid, long eid, ByteBuf buffer, Object ctx) {
                 BookieSocketAddress bookieAddress = (BookieSocketAddress) ctx;
                 ReadResult<InputStream> rr;
                 if (BKException.Code.OK != rc) {
                     rr = new ReadResult<InputStream>(eid, rc, null, bookieAddress.getSocketAddress());
                 } else {
+                    ByteBuf content;
                     try {
-                        ChannelBufferInputStream is = lh.macManager.verifyDigestAndReturnData(eid, buffer);
-                        rr = new ReadResult<InputStream>(eid, BKException.Code.OK, is, bookieAddress.getSocketAddress());
+                        content = lh.macManager.verifyDigestAndReturnData(eid, buffer);
+                        ByteBuf toRet = Unpooled.copiedBuffer(content);
+                        rr = new ReadResult<InputStream>(eid, BKException.Code.OK, new ByteBufInputStream(toRet), bookieAddress.getSocketAddress());
                     } catch (BKException.BKDigestMatchException e) {
                         rr = new ReadResult<InputStream>(eid, BKException.Code.DigestMatchException, null, bookieAddress.getSocketAddress());
+                    } finally {
+                        buffer.release();
                     }
                 }
                 readResults.add(rr);
@@ -184,7 +187,7 @@ public class LedgerReader {
         final Set<ReadResult<Long>> readResults = new HashSet<ReadResult<Long>>();
         ReadEntryCallback readEntryCallback = new ReadEntryCallback() {
             @Override
-            public void readEntryComplete(int rc, long lid, long eid, ChannelBuffer buffer, Object ctx) {
+            public void readEntryComplete(int rc, long lid, long eid, ByteBuf buffer, Object ctx) {
                 InetSocketAddress bookieAddress = (InetSocketAddress) ctx;
                 ReadResult<Long> rr;
                 if (BKException.Code.OK != rc) {

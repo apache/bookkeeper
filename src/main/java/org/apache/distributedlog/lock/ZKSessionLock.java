@@ -838,9 +838,13 @@ class ZKSessionLock implements SessionLock {
             throw new LockingException(lockPath, message, ex);
         } finally {
             if (success) {
-                tryStats.registerSuccessfulEvent(stopwatch.elapsed(TimeUnit.MICROSECONDS));
+                tryStats.registerSuccessfulEvent(
+                    stopwatch.elapsed(TimeUnit.MICROSECONDS),
+                    TimeUnit.MICROSECONDS);
             } else {
-                tryStats.registerFailedEvent(stopwatch.elapsed(TimeUnit.MICROSECONDS));
+                tryStats.registerFailedEvent(
+                    stopwatch.elapsed(TimeUnit.MICROSECONDS),
+                    TimeUnit.MICROSECONDS);
             }
             // This can only happen for a Throwable thats not an
             // Exception, i.e. an Error
