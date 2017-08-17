@@ -19,6 +19,7 @@ package org.apache.distributedlog.common.stats;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.stats.CachingStatsLogger;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
@@ -63,16 +64,29 @@ public class BroadCastStatsLogger {
             final OpStatsLogger firstLogger = first.getOpStatsLogger(statName);
             final OpStatsLogger secondLogger = second.getOpStatsLogger(statName);
             return new OpStatsLogger() {
+
                 @Override
-                public void registerFailedEvent(long l) {
-                    firstLogger.registerFailedEvent(l);
-                    secondLogger.registerFailedEvent(l);
+                public void registerFailedEvent(long l, TimeUnit timeUnit) {
+                    firstLogger.registerFailedEvent(l, timeUnit);
+                    secondLogger.registerFailedEvent(l, timeUnit);
                 }
 
                 @Override
-                public void registerSuccessfulEvent(long l) {
-                    firstLogger.registerSuccessfulEvent(l);
-                    secondLogger.registerSuccessfulEvent(l);
+                public void registerSuccessfulEvent(long l, TimeUnit timeUnit) {
+                    firstLogger.registerSuccessfulEvent(l, timeUnit);
+                    secondLogger.registerSuccessfulEvent(l, timeUnit);
+                }
+
+                @Override
+                public void registerSuccessfulValue(long l) {
+                    firstLogger.registerSuccessfulValue(l);
+                    secondLogger.registerSuccessfulValue(l);
+                }
+
+                @Override
+                public void registerFailedValue(long l) {
+                    firstLogger.registerFailedValue(l);
+                    secondLogger.registerFailedValue(l);
                 }
 
                 @Override
