@@ -58,7 +58,7 @@ public class LZ4CompressionCodec implements CompressionCodec {
 
         Stopwatch watch = Stopwatch.createStarted();
         byte[] compressed = compressor.compress(data, offset, length);
-        compressionStat.registerSuccessfulEvent(watch.elapsed(TimeUnit.MICROSECONDS));
+        compressionStat.registerSuccessfulEvent(watch.elapsed(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
         return compressed;
     }
 
@@ -75,7 +75,7 @@ public class LZ4CompressionCodec implements CompressionCodec {
         while (true) {
             try {
                 byte[] decompressed = safeDecompressor.decompress(data, offset, length, outLength);
-                decompressionStat.registerSuccessfulEvent(watch.elapsed(TimeUnit.MICROSECONDS));
+                decompressionStat.registerSuccessfulEvent(watch.elapsed(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
                 return decompressed;
             } catch (LZ4Exception e) {
                 outLength *= 2;
@@ -95,7 +95,7 @@ public class LZ4CompressionCodec implements CompressionCodec {
 
         Stopwatch watch = Stopwatch.createStarted();
         byte[] decompressed = fastDecompressor.decompress(data, offset, decompressedSize);
-        decompressionStat.registerSuccessfulEvent(watch.elapsed(TimeUnit.MICROSECONDS));
+        decompressionStat.registerSuccessfulEvent(watch.elapsed(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
         return decompressed;
     }
 }
