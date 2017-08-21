@@ -323,6 +323,7 @@ public class LocalBookKeeper {
         int numBookies = Integer.parseInt(args[0]);
 
         ServerConfiguration conf = new ServerConfiguration();
+        conf.setAllowLoopback(true);
         if (args.length >= 2) {
             String confFile = args[1];
             try {
