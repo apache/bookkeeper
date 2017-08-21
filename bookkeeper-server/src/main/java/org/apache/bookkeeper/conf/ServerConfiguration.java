@@ -21,6 +21,8 @@ import java.io.File;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.annotations.Beta;
+
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.SortedLedgerStorage;
@@ -30,8 +32,6 @@ import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang.StringUtils;
-
-import com.google.common.annotations.Beta;
 
 /**
  * Configuration manages server-side settings
@@ -155,6 +155,11 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     protected final static String ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION = "allowMultipleDirsUnderSameDiskPartition";
 
+    // Http Server parameters
+    protected final static String HTTP_SERVER_ENABLED = "httpServerEnabled";
+    protected final static String HTTP_SERVER_PORT = "httpServerPort";
+
+    // TLS parameters
     protected final static String TLS_KEYSTORE_TYPE = "tlsKeyStoreType";
     protected final static String TLS_KEYSTORE = "tlsKeyStore";
     protected final static String TLS_KEYSTORE_PASSWORD_PATH = "tlsKeyStorePasswordPath";
@@ -863,7 +868,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * sent or the linger timeout has been reached. Otherwise, the call returns immediately and the closing is done in
      * the background.
      *
-     * @param noDelay
+     * @param linger
      *            NoDelay setting
      * @return server configuration
      */
@@ -1927,7 +1932,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     /**
      * Configure the bookie to listen for BookKeeper clients executed on the local JVM
      *
-     * @see #getEnableLocalTransport
+     * @see #isEnableLocalTransport
      * @param enableLocalTransport
      *            whether to use listen for local JVM clients
      * @return server configuration
@@ -1950,7 +1955,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * Configure the bookie to disable bind on network interfaces,
      * this bookie will be available only to BookKeeper clients executed on the local JVM
      *
-     * @see #getDisableServerSocketBind
+     * @see #isDisableServerSocketBind
      * @param disableServerSocketBind
      *            whether to disable binding on network interfaces
      * @return server configuration
@@ -2098,7 +2103,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Get the truststore type for client. Default is JKS.
-     * 
+     *
      * @return
      */
     public String getTLSTrustStoreType() {
@@ -2117,7 +2122,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Get the keystore path for the client.
-     * 
+     *
      * @return
      */
     public String getTLSKeyStore() {
@@ -2126,8 +2131,8 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Set the keystore path for the client.
-     * 
-     * @return
+     *
+     * @return ServerConfiguration
      */
     public ServerConfiguration setTLSKeyStore(String arg) {
         setProperty(TLS_KEYSTORE, arg);
@@ -2135,6 +2140,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Gets the minimum safe Usable size to be available in index directory for Bookie to create Index File while replaying
      * Get the path to file containing keystore password if the client keystore is password protected. Default is null.
      * 
      * @return
@@ -2255,4 +2261,47 @@ public class ServerConfiguration extends AbstractConfiguration {
         this.setProperty(ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION, allow);
         return this;
     }
+
+    /**
+     * Get whether to start the http server or not
+     *
+     * @return true - if http server should start
+     */
+    public boolean isHttpServerEnabled() {
+        return getBoolean(HTTP_SERVER_ENABLED, false);
+    }
+
+    /**
+     * Set whether to start the http server or not
+     *
+     * @param enabled
+     *            - true if we should start http server
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setHttpServerEnabled(boolean enabled) {
+        setProperty(HTTP_SERVER_ENABLED, enabled);
+        return this;
+    }
+
+    /**
+     * Get the http server port
+     *
+     * @return http server port
+     */
+    public int getHttpServerPort() {
+        return getInt(HTTP_SERVER_PORT, 8080);
+    }
+
+    /**
+     * Set Http server port listening on
+     *
+     * @param port
+     *          Port to listen on
+     * @return server configuration
+     */
+    public ServerConfiguration setHttpServerPort(int port) {
+        setProperty(HTTP_SERVER_PORT, port);
+        return this;
+    }
+
 }

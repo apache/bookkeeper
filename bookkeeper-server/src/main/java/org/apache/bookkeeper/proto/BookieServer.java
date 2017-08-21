@@ -28,11 +28,14 @@ import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import org.apache.bookkeeper.bookie.Bookie;
-import org.apache.bookkeeper.bookie.ReadOnlyBookie;
 import org.apache.bookkeeper.bookie.BookieCriticalThread;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.ExitCode;
+import org.apache.bookkeeper.bookie.ReadOnlyBookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.http.BKServiceProvider;
+import org.apache.bookkeeper.http.HttpServer;
+import org.apache.bookkeeper.http.HttpServerLoader;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.processor.RequestProcessor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
@@ -48,8 +51,8 @@ import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
 import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.zookeeper.KeeperException;
@@ -76,6 +79,7 @@ public class BookieServer {
 
     // operation stats
     AutoRecoveryMain autoRecoveryMain = null;
+    HttpServer httpServer = null;
     private boolean isAutoRecoveryDaemonEnabled;
 
     // request processor
@@ -134,6 +138,18 @@ public class BookieServer {
         if (isAutoRecoveryDaemonEnabled && this.autoRecoveryMain != null) {
             this.autoRecoveryMain.start();
         }
+        if (conf.isHttpServerEnabled()) {
+            BKServiceProvider serviceProvider = new BKServiceProvider.Builder()
+                .setBookieServer(this)
+                .setServerConfiguration(conf)
+                .build();
+            HttpServerLoader.loadHttpServer(conf);
+            this.httpServer = HttpServerLoader.get();
+            if (this.httpServer != null) {
+                this.httpServer.initialize(serviceProvider);
+                this.httpServer.startServer(conf.getHttpServerPort());
+            }
+        }
         this.nettyServer.start();
 
         running = true;
@@ -184,6 +200,9 @@ public class BookieServer {
             this.autoRecoveryMain.shutdown();
         }
         this.requestProcessor.close();
+        if (this.httpServer != null && this.httpServer.isRunning()) {
+            this.httpServer.stopServer();
+        }
         running = false;
     }
 

@@ -163,10 +163,7 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
             }
 
             if (scriptName == null) {
-                for (int i = 0; i < names.size(); i++) {
-                    m.add(NetworkTopology.DEFAULT_RACK);
-                }
-                return m;
+                return null;
             }
 
             String output = runResolveCommand(names);
