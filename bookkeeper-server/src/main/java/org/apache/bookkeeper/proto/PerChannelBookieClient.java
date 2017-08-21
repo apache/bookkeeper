@@ -576,6 +576,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 addBuilder.setFlag(AddRequest.Flag.RECOVERY_ADD);
             }
 
+            if (((short) options & BookieProtocol.FLAG_NOSYNCH_ADD) == BookieProtocol.FLAG_NOSYNCH_ADD) {
+                addBuilder.setFlag(AddRequest.Flag.NOSYNCH_ADD);
+            }
+
             request = Request.newBuilder()
                     .setHeader(headerBuilder)
                     .setAddRequest(addBuilder)
@@ -1374,7 +1378,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     switch (type) {
                         case ADD_ENTRY: {
                             AddResponse addResponse = response.getAddResponse();
-                            StatusCode status = response.getStatus() == StatusCode.EOK ? addResponse.getStatus() : response.getStatus();
+                            StatusCode status = response.getStatus() == StatusCode.EOK ? addResponse.getStatus() : response.getStatus();                            
                             handleAddResponse(addResponse.getLedgerId(), addResponse.getEntryId(), status, completionValue);
                             break;
                         }

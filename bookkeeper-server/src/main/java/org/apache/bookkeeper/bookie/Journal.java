@@ -277,20 +277,23 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
         WriteCallback cb;
         Object ctx;
         long enqueueTime;
+        boolean noSynch;
 
-        QueueEntry(ByteBuf entry, long ledgerId, long entryId, WriteCallback cb, Object ctx, long enqueueTime) {
+        QueueEntry(ByteBuf entry, long ledgerId, long entryId, WriteCallback cb, Object ctx,
+            long enqueueTime, boolean noSynch) {
             this.entry = entry.duplicate();
             this.cb = cb;
             this.ctx = ctx;
             this.ledgerId = ledgerId;
             this.entryId = entryId;
             this.enqueueTime = enqueueTime;
+            this.noSynch = noSynch;
         }
 
         @Override
         public void run() {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Acknowledge Ledger: {}, Entry: {}", ledgerId, entryId);
+                LOG.debug("Acknowledge Ledger: {}, Entry: {}, noSynch: {}", ledgerId, entryId, noSynch);
             }
             journalAddEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueTime), TimeUnit.NANOSECONDS);
             cb.writeComplete(0, ledgerId, entryId, null, ctx);
@@ -752,20 +755,20 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
     }
 
     public void logAddEntry(ByteBuffer entry, WriteCallback cb, Object ctx) {
-        logAddEntry(Unpooled.wrappedBuffer(entry), cb, ctx);
+        logAddEntry(Unpooled.wrappedBuffer(entry), false, cb, ctx);
     }
 
     /**
      * record an add entry operation in journal.
      */
-    public void logAddEntry(ByteBuf entry, WriteCallback cb, Object ctx) {
+    public void logAddEntry(ByteBuf entry, boolean noSynch, WriteCallback cb, Object ctx) {
         long ledgerId = entry.getLong(entry.readerIndex() + 0);
         long entryId = entry.getLong(entry.readerIndex() + 8);
         journalQueueSize.inc();
 
         //Retain entry until it gets written to journal
         entry.retain();
-        queue.add(new QueueEntry(entry, ledgerId, entryId, cb, ctx, MathUtils.nowInNano()));
+        queue.add(new QueueEntry(entry, ledgerId, entryId, cb, ctx, MathUtils.nowInNano(), noSynch));
     }
 
     /**

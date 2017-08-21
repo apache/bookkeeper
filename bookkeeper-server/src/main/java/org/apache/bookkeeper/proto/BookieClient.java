@@ -217,6 +217,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
     private void completeAdd(final int rc,
                              final long ledgerId,
                              final long entryId,
+                             final boolean noSynch,
                              final BookieSocketAddress addr,
                              final WriteCallback cb,
                              final Object ctx) {
@@ -249,7 +250,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
             final PerChannelBookieClientPool client = lookupClient(addr, entryId);
             if (client == null) {
                 completeAdd(getRc(BKException.Code.BookieHandleNotAvailableException),
-                            ledgerId, entryId, addr, cb, ctx);
+                            ledgerId, entryId, false, addr, cb, ctx);
                 return;
             }
 
@@ -261,7 +262,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                 @Override
                 public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
                     if (rc != BKException.Code.OK) {
-                        completeAdd(rc, ledgerId, entryId, addr, cb, ctx);
+                        completeAdd(rc, ledgerId, entryId, false, addr, cb, ctx);
                     } else {
                         pcbc.addEntry(ledgerId, masterKey, entryId, toSend, cb, ctx, options);
                     }

@@ -1378,7 +1378,7 @@ public class Bookie extends BookieCriticalThread {
     /**
      * Add an entry to a ledger as specified by handle.
      */
-    private void addEntryInternal(LedgerDescriptor handle, ByteBuf entry, WriteCallback cb, Object ctx)
+    private void addEntryInternal(LedgerDescriptor handle, ByteBuf entry, boolean noSynch, WriteCallback cb, Object ctx)
             throws IOException, BookieException {
         long ledgerId = handle.getLedgerId();
         long entryId = handle.addEntry(entry);
@@ -1388,7 +1388,7 @@ public class Bookie extends BookieCriticalThread {
         if (LOG.isTraceEnabled()) {
             LOG.trace("Adding {}@{}", entryId, ledgerId);
         }
-        getJournal(ledgerId).logAddEntry(entry, cb, ctx);
+        getJournal(ledgerId).logAddEntry(entry, noSynch, cb, ctx);
     }
 
     /**
@@ -1406,7 +1406,7 @@ public class Bookie extends BookieCriticalThread {
             LedgerDescriptor handle = getLedgerForEntry(entry, masterKey);
             synchronized (handle) {
                 entrySize = entry.readableBytes();
-                addEntryInternal(handle, entry, cb, ctx);
+                addEntryInternal(handle, entry, false, cb, ctx);
             }
             success = true;
         } catch (NoWritableLedgerDirException e) {
@@ -1455,6 +1455,11 @@ public class Bookie extends BookieCriticalThread {
      */
     public void addEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey)
             throws IOException, BookieException.LedgerFencedException, BookieException {
+        addEntry(entry, cb, ctx, masterKey, false);
+    }
+
+    public void addEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey, boolean noSynch)
+            throws IOException, BookieException.LedgerFencedException, BookieException {
         long requestNanos = MathUtils.nowInNano();
         boolean success = false;
         int entrySize = 0;
@@ -1466,7 +1471,7 @@ public class Bookie extends BookieCriticalThread {
                             .create(BookieException.Code.LedgerFencedException);
                 }
                 entrySize = entry.readableBytes();
-                addEntryInternal(handle, entry, cb, ctx);
+                addEntryInternal(handle, entry, noSynch, cb, ctx);
             }
             success = true;
         } catch (NoWritableLedgerDirException e) {

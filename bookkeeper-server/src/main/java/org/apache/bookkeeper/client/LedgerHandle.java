@@ -84,6 +84,7 @@ public class LedgerHandle implements AutoCloseable {
     final RateLimiter throttler;
     final LoadingCache<BookieSocketAddress, Long> bookieFailureHistory;
     final boolean enableParallelRecoveryRead;
+    final boolean allowNoSynchWrites;
     final int recoveryReadBatchSize;
 
     /**
@@ -112,13 +113,14 @@ public class LedgerHandle implements AutoCloseable {
     }
 
     LedgerHandle(BookKeeper bk, long ledgerId, LedgerMetadata metadata,
-                 DigestType digestType, byte[] password)
+                 DigestType digestType, byte[] password, boolean allowNoSynchWrites)
             throws GeneralSecurityException, NumberFormatException {
         this.bk = bk;
         this.metadata = metadata;
         this.pendingAddOps = new ConcurrentLinkedQueue<PendingAddOp>();
         this.enableParallelRecoveryRead = bk.getConf().getEnableParallelRecoveryRead();
         this.recoveryReadBatchSize = bk.getConf().getRecoveryReadBatchSize();
+        this.allowNoSynchWrites = allowNoSynchWrites;
 
         if (metadata.isClosed()) {
             lastAddConfirmed = lastAddPushed = metadata.getLastEntryId();
@@ -751,12 +753,18 @@ public class LedgerHandle implements AutoCloseable {
         }
 
         PendingAddOp op = new PendingAddOp(LedgerHandle.this, cb, ctx);
+        if (allowNoSynchWrites) {
+            op.enableNosynch();
+        }
         doAsyncAddEntry(op, Unpooled.wrappedBuffer(data, offset, length), cb, ctx);
     }
 
     public void asyncAddEntry(ByteBuf data, final AddCallback cb, final Object ctx) {
         data.retain();
         PendingAddOp op = new PendingAddOp(LedgerHandle.this, cb, ctx);
+        if (allowNoSynchWrites) {
+            op.enableNosynch();
+        }
         doAsyncAddEntry(op, data, cb, ctx);
     }
 

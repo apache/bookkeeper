@@ -52,9 +52,10 @@ public class LedgerHandleAdv extends LedgerHandle {
         }
     }
 
-    LedgerHandleAdv(BookKeeper bk, long ledgerId, LedgerMetadata metadata, DigestType digestType, byte[] password)
+    LedgerHandleAdv(BookKeeper bk, long ledgerId, LedgerMetadata metadata, DigestType digestType,
+        byte[] password, boolean allowNoSynchWrites)
             throws GeneralSecurityException, NumberFormatException {
-        super(bk, ledgerId, metadata, digestType, password);
+        super(bk, ledgerId, metadata, digestType, password, allowNoSynchWrites);
         pendingAddOps = new PriorityBlockingQueue<PendingAddOp>(10, new PendingOpsComparator());
     }
 
@@ -148,6 +149,9 @@ public class LedgerHandleAdv extends LedgerHandle {
     public void asyncAddEntry(final long entryId, final byte[] data, final int offset, final int length,
             final AddCallback cb, final Object ctx) {
         PendingAddOp op = new PendingAddOp(this, cb, ctx);
+        if (allowNoSynchWrites) {
+            op.enableNosynch();
+        }
         op.setEntryId(entryId);
         if ((entryId <= this.lastAddConfirmed) || pendingAddOps.contains(op)) {
             LOG.error("Trying to re-add duplicate entryid:{}", entryId);

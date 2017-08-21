@@ -63,6 +63,7 @@ class PendingAddOp implements WriteCallback, TimerTask {
 
     LedgerHandle lh;
     boolean isRecoveryAdd = false;
+    boolean isNosynchAdd = false;
     long requestTimeNanos;
 
     final int timeoutSec;
@@ -90,6 +91,10 @@ class PendingAddOp implements WriteCallback, TimerTask {
         return this;
     }
 
+    void enableNosynch() {
+        isNosynchAdd = true;
+    }
+
     void setEntryId(long entryId) {
         this.entryId = entryId;
         writeSet = new HashSet<Integer>(lh.distributionSchedule.getWriteSet(entryId));
@@ -100,7 +105,9 @@ class PendingAddOp implements WriteCallback, TimerTask {
     }
 
     void sendWriteRequest(int bookieIndex) {
-        int flags = isRecoveryAdd ? BookieProtocol.FLAG_RECOVERY_ADD : BookieProtocol.FLAG_NONE;
+        int flags = isRecoveryAdd ? BookieProtocol.FLAG_RECOVERY_ADD :
+            isNosynchAdd ? BookieProtocol.FLAG_NOSYNCH_ADD :
+            BookieProtocol.FLAG_NONE;
 
         lh.bk.bookieClient.addEntry(lh.metadata.currentEnsemble.get(bookieIndex), lh.ledgerId, lh.ledgerKey, entryId, toSend,
                 this, bookieIndex, flags);
@@ -198,7 +205,8 @@ class PendingAddOp implements WriteCallback, TimerTask {
     }
 
     @Override
-    public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
+    public void writeComplete(int rc, long ledgerId, long entryId,
+        BookieSocketAddress addr, Object ctx) {
         int bookieIndex = (Integer) ctx;
 
         if (!lh.metadata.currentEnsemble.get(bookieIndex).equals(addr)) {
