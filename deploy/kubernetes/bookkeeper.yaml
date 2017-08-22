@@ -17,6 +17,8 @@
 # under the License.
 #
 
+## A reference of https://github.com/apache/incubator-pulsar/blob/master/kubernetes/google-container-engine/bookie.yaml
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -27,6 +29,7 @@ data:
     BK_ledgerDirectories: "/bookkeeper/data/ledgers"
     BK_indexDirectories: "/bookkeeper/data/ledgers"
     BK_zkServers: zk-0.zookeeper,zk-1.zookeeper,zk-2.zookeeper
+    # TODO: Issue 458: https://github.com/apache/bookkeeper/issues/458
     #BK_statsProviderClass: org.apache.bookkeeper.stats.PrometheusMetricsProvider
 ---
 
@@ -105,4 +108,30 @@ spec:
         app: bookkeeper
         component: bookie
 
-
+---
+##
+## Run BookKeeper auto-recovery from a different set of containers
+## Auto-Recovery makes sure to restore the replication factor when any bookie
+## crashes and it's not recovering on its own.
+##
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+    name: bookie-autorecovery
+spec:
+    replicas: 2
+    template:
+        metadata:
+            labels:
+                app: bookkeeper
+                component: bookkeeper-replication
+        spec:
+            containers:
+              - name: replication-worker
+                image: apachepulsar/pulsar:latest
+                image: apache/bookkeeper:latest
+                command: [ "/bin/bash", "/opt/bookkeeper/entrypoint.sh" ]
+                args: ["/opt/bookkeeper/bin/bookkeeper", "autorecovery"]
+                envFrom:
+                  - configMapRef:
+                        name: bookie-config
