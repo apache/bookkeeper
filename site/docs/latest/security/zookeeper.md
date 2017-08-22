@@ -5,12 +5,12 @@ prev: ../sasl
 
 ## New Clusters
 
-To enable `ZooKeeper` authentication on Bookies or Clients, there are two necessary steps:
+To enable ZooKeeper authentication on bookies or BookKeeper clients, there are two necessary steps:
 
-1. Create a `JAAS` login file and set the appropriate system property to point to it as described in [GSSAPI (Kerberos)](../sasl#notes).
-2. Set the configuration property `zkEnableSecurity` in each bookie to `true`.
+1. Create a [Java Authentication and Authorization Service](https://en.wikipedia.org/wiki/Java_Authentication_and_Authorization_Service) (JAAS) login file and set the appropriate system property to point to it as described in [GSSAPI (Kerberos)](../sasl#notes).
+2. Set the configuration property [`zkEnableSecurity`](../../reference/config#zkEnableSecurity) in each bookie to `true`.
 
-The metadata stored in `ZooKeeper` is such that only certain clients will be able to modify and read the corresponding znodes.
+The metadata stored in ZooKeeper is such that only certain clients will be able to modify and read the corresponding znodes.
 The rationale behind this decision is that the data stored in ZooKeeper is not sensitive, but inappropriate manipulation of znodes can cause cluster
 disruption.
 
