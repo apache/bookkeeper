@@ -46,11 +46,6 @@
   </fileSets>
   <files>
     <file>
-      <source>../CHANGES.txt</source>
-      <outputDirectory>/</outputDirectory>
-      <fileMode>644</fileMode>
-    </file>
-    <file>
       <source>../README.md</source>
       <outputDirectory>/</outputDirectory>
       <fileMode>644</fileMode>
