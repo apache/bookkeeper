@@ -451,14 +451,14 @@
 <p>You can manually recover failed bookies using the <a href="../../reference/cli"><code class="highlighter-rouge">bookkeeper</code></a> command-line tool. You need to specify:</p>
 
 <ul>
-  <li>that the <code class="highlighter-rouge">org.apache.bookkeeper.tools.BookKeeperTools</code> class needs to be run</li>
+  <li>the <code class="highlighter-rouge">shell recover</code> option</li>
   <li>an IP and port for your BookKeeper cluster’s ZooKeeper ensemble</li>
   <li>the IP and port for the failed bookie</li>
 </ul>
 
 <p>Here’s an example:</p>
 
-<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper org.apache.bookkeeper.tools.BookKeeperTools <span class="se">\</span>
+<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell recover <span class="se">\</span>
   zk1.example.com:2181 <span class="se">\ </span><span class="c"># IP and port for ZooKeeper</span>
   192.168.1.10:3181      <span class="c"># IP and port for the failed bookie</span>
 </code></pre>
@@ -466,7 +466,7 @@
 
 <p>If you wish, you can also specify which bookie you’d like to rereplicate to. Here’s an example:</p>
 
-<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper org.apache.bookkeeper.tools.BookKeeperTools <span class="se">\</span>
+<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell recover <span class="se">\</span>
   zk1.example.com:2181 <span class="se">\ </span><span class="c"># IP and port for ZooKeeper</span>
   192.168.1.10:3181 <span class="se">\ </span>   <span class="c"># IP and port for the failed bookie</span>
   192.168.1.11:3181      <span class="c"># IP and port for the bookie to rereplicate to</span>
