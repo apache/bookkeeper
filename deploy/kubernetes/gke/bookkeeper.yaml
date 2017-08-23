@@ -24,6 +24,7 @@ kind: ConfigMap
 metadata:
     name: bookie-config
 data:
+    BK_BOOKIE_EXTRA_OPTS: "\"-Xms1g -Xmx1g -XX:MaxDirectMemorySize=1g -XX:+UseG1GC  -XX:MaxGCPauseMillis=10 -XX:+ParallelRefProcEnabled -XX:+UnlockExperimentalVMOptions -XX:+AggressiveOpts -XX:+DoEscapeAnalysis -XX:ParallelGCThreads=32 -XX:ConcGCThreads=32 -XX:G1NewSizePercent=50 -XX:+DisableExplicitGC -XX:-ResizePLAB\""
     BK_bookiePort: "3181"
     BK_journalDirectory: "/data/bookkeeper/journal"
     BK_ledgerDirectories: "/bookkeeper/data/ledgers"
@@ -61,6 +62,13 @@ spec:
             containers:
               - name: bookie
                 image: apache/bookkeeper:latest
+                resources:
+                  requests:
+                    memory: "3Gi"
+                    cpu: "1000m"
+                  limits:
+                    memory: "5Gi"
+                    cpu: "2000m"
                 command: [ "/bin/bash", "/opt/bookkeeper/entrypoint.sh" ]
                 args: ["/opt/bookkeeper/bin/bookkeeper", "bookie"]
                 ports:
@@ -128,7 +136,6 @@ spec:
         spec:
             containers:
               - name: replication-worker
-                image: apachepulsar/pulsar:latest
                 image: apache/bookkeeper:latest
                 command: [ "/bin/bash", "/opt/bookkeeper/entrypoint.sh" ]
                 args: ["/opt/bookkeeper/bin/bookkeeper", "autorecovery"]

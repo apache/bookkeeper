@@ -35,8 +35,8 @@ As an example, we'll create a new GKE cluster for Kubernetes version [1.6.4](htt
 
 ```bash
 $ gcloud config set compute/zone us-central1-a
+$ gcloud config set project your-project-name
 $ gcloud container clusters create bookkeeper-gke-cluster \
-  --zone=us-central1-a \
   --machine-type=n1-standard-8 \
   --num-nodes=3 \
   --local-ssd-count=2 \
@@ -102,6 +102,7 @@ Once ZooKeeper cluster is Running, you can then deploy the bookies.
 ```bash
 $ kubectl apply -f bookkeeper.yaml
 ```
+
 You can check on the status of the Bookie pods for these components either in the Kubernetes Dashboard or using `kubectl`:
 
 ```bash
@@ -109,3 +110,54 @@ $ kubectl get pods
 ```
 
 While all BookKeeper pods is Running, by zk-shell you could find all available bookies under /ledgers/
+
+You could also run a [bookkeeper tutorial](https://github.com/ivankelly/bookkeeper-tutorial/) instance, which named as 'dice' here, in this bookkeeper cluster.
+
+```bash
+$﻿kubectl run -i --tty --attach dice --image=caiok/bookkeeper-tutorial --env ZOOKEEPER_SERVERS="zk-0.zookeeper"
+```
+
+An example output of Dice instance is like this:
+```aidl
+➜ $ kubectl run -i --tty --attach dice --image=caiok/bookkeeper-tutorial --env ZOOKEEPER_SERVERS="zk-0.zookeeper"          
+If you don't see a command prompt, try pressing enter.
+Value = 1, epoch = 5, leading
+Value = 2, epoch = 5, leading
+Value = 1, epoch = 5, leading
+Value = 4, epoch = 5, leading
+Value = 5, epoch = 5, leading
+Value = 4, epoch = 5, leading
+Value = 3, epoch = 5, leading
+Value = 5, epoch = 5, leading
+Value = 3, epoch = 5, leading
+Value = 2, epoch = 5, leading
+Value = 1, epoch = 5, leading
+Value = 4, epoch = 5, leading
+Value = 2, epoch = 5, leading
+```
+
+### Un-Deploy
+
+Delete Demo dice instance
+
+```bash
+$﻿kubectl delete deployment dice      
+```
+
+Delete BookKeeper
+```bash
+$ kubectl delete -f bookkeeper.yaml    
+```
+
+Delete ZooKeeper
+```bash
+$ kubectl delete -f zookeeper.yaml    
+```
+
+Delete cluster
+```bash
+$ gcloud container clusters delete bookkeeper-gke-cluster    
+```
+
+
+
