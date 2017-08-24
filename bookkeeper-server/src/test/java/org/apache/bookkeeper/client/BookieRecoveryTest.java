@@ -124,7 +124,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
     @After
     @Override
     public void tearDown() throws Exception {
-        // Release any resources used by the BookKeeperTools instance.
+        // Release any resources used by the BookieRecoveryTest instance.
         if(bkAdmin != null){
             bkAdmin.close();
         }

@@ -162,7 +162,7 @@ If the change was the result of an accidental configuration change, the change c
 1. Run the following command to re-replicate the data:
 
    ```bash
-   $ bin/bookkeeper org.apache.bookkeeper.tools.BookKeeperTools \
+   $ bookkeeper-server/bin/bookkeeper shell recover \
      <zkserver> \
      <oldbookie> \
      <newbookie>
@@ -171,7 +171,7 @@ If the change was the result of an accidental configuration change, the change c
    The ZooKeeper server, old bookie, and new bookie, are all identified by their external IP and `bookiePort` (3181 by default). Here's an example:
 
    ```bash
-   $ bin/bookkeeper org.apache.bookkeeper.tools.BookKeeperTools \
+   $ bookkeeper-server/bin/bookkeeper shell recover \
      zk1.example.com \
      192.168.1.10:3181 \
      192.168.1.10:3181
