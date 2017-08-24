@@ -31,7 +31,6 @@
     <module>bookkeeper-server-compat-4.0.0</module>
     <module>bookkeeper-server-compat-4.1.0</module>
     <module>bookkeeper-server-compat-4.2.0</module>
-    <module>bookkeeper-server-compat-4.3.0</module>
     <module>backward</module>
   </modules>
   <build>

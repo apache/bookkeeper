@@ -37,6 +37,10 @@
           <groupId>org.apache.bookkeeper</groupId>
           <artifactId>bookkeeper-server</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.google.protobuf</groupId>
+          <artifactId>protobuf-java</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -54,18 +58,6 @@
     <dependency>
       <groupId>org.apache.bookkeeper.tests</groupId>
       <artifactId>bookkeeper-server-compat420</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.bookkeeper</groupId>
-          <artifactId>bookkeeper-server</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.bookkeeper.tests</groupId>
-      <artifactId>bookkeeper-server-compat430</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
       <exclusions>
