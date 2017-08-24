@@ -362,6 +362,15 @@ class BKLogWriteHandler extends BKLogHandler {
     }
 
     /**
+     * Delete the whole log and all log segments under the log
+     */
+    void deleteLog() throws IOException {
+        lock.checkOwnershipAndReacquire();
+        Utils.ioResult(purgeLogSegmentsOlderThanTxnId(-1));
+        Utils.closeQuietly(lock);
+    }
+
+    /**
      * The caller could call this before any actions, which to hold the lock for
      * the write handler of its whole lifecycle. The lock will only be released
      * when closing the write handler.

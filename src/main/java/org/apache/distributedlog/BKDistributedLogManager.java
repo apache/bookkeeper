@@ -950,6 +950,10 @@ class BKDistributedLogManager implements DistributedLogManager {
      */
     @Override
     public void delete() throws IOException {
+        // delete the actual log stream and log segments
+        BKLogWriteHandler ledgerHandler = createWriteHandler(true);
+        ledgerHandler.deleteLog();
+        // delete the log stream metadata
         Utils.ioResult(driver.getLogStreamMetadataStore(WRITER)
                 .deleteLog(uri, getStreamName()));
     }
