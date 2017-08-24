@@ -41,16 +41,6 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>${guava.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>${slf4j.version}</version>
-    </dependency>
-    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
       <version>${slf4j.version}</version>
@@ -173,42 +163,6 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>org.apache.bookkeeper</groupId>
-      <artifactId>bookkeeper-server-compat400</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.bookkeeper</groupId>
-          <artifactId>bookkeeper-server</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.bookkeeper</groupId>
-      <artifactId>bookkeeper-server-compat410</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.bookkeeper</groupId>
-          <artifactId>bookkeeper-server</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.bookkeeper</groupId>
-      <artifactId>bookkeeper-server-compat420</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.bookkeeper</groupId>
-          <artifactId>bookkeeper-server</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-all</artifactId>
       <version>${netty.version}</version>
@@ -233,12 +187,12 @@
   <build>
     <plugins>
       <plugin>
-            <!-- for mini-kdc -->
-            <groupId>org.apache.felix</groupId>
-            <artifactId>maven-bundle-plugin</artifactId>
-            <version>3.2.0</version>
-            <inherited>true</inherited>
-            <extensions>true</extensions>
+        <!-- for mini-kdc -->
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <version>3.2.0</version>
+        <inherited>true</inherited>
+        <extensions>true</extensions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -255,13 +209,16 @@
             </goals>
             <configuration>
               <createDependencyReducedPom>true</createDependencyReducedPom>
+              <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+              <shadedArtifactAttached>true</shadedArtifactAttached>
+              <shadedClassifierName>shaded</shadedClassifierName>
+              <minimizeJar>true</minimizeJar>
               <artifactSet>
                 <includes>
                   <include>com.google.protobuf:protobuf-java</include>
                   <include>com.google.guava:guava</include>
                 </includes>
               </artifactSet>
-              <minimizeJar>true</minimizeJar>
               <relocations>
                 <relocation>
                   <pattern>com.google.protobuf</pattern>
@@ -303,7 +260,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
-        <version>2.2</version>
+        <version>${maven-jar-plugin.version}</version>
         <executions>
           <execution>
             <goals>

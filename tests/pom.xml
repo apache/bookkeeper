@@ -24,9 +24,26 @@
     <artifactId>bookkeeper</artifactId>
     <version>4.6.0-SNAPSHOT</version>
   </parent>
+  <groupId>org.apache.bookkeeper.tests</groupId>
   <artifactId>tests-parent</artifactId>
   <name>Apache BookKeeper :: Tests</name>
   <modules>
-    <module>integration</module>
+    <module>bookkeeper-server-compat-4.0.0</module>
+    <module>bookkeeper-server-compat-4.1.0</module>
+    <module>bookkeeper-server-compat-4.2.0</module>
+    <module>bookkeeper-server-compat-4.3.0</module>
+    <module>backward</module>
   </modules>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>${maven-deploy-plugin.version}</version>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>
