@@ -144,17 +144,6 @@
         <version>4.3.0</version>
       </plugin>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>cobertura-maven-plugin</artifactId>
-        <version>2.7</version>
-        <configuration>
-         <formats>
-          <format>html</format>
-          <format>xml</format>
-         </formats>
-        </configuration>
-      </plugin>
-      <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
         <version>0.7.9</version>
@@ -184,6 +173,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.19.1</version>
         <configuration>
+          <!-- @{argLine} is a variable injected by JaCoCo-->
           <argLine>@{argLine} -Xmx2G -Djava.net.preferIPv4Stack=true</argLine>
 	  <redirectTestOutputToFile>true</redirectTestOutputToFile>
 	  <reuseForks>false</reuseForks>
