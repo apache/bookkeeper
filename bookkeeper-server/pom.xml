@@ -243,7 +243,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>2.4.3</version>
+        <version>${maven-shade-plugin.version}</version>
         <configuration>
           <!-- put your configurations here -->
         </configuration>
@@ -255,13 +255,16 @@
             </goals>
             <configuration>
               <createDependencyReducedPom>true</createDependencyReducedPom>
+              <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+              <shadedArtifactAttached>true</shadedArtifactAttached>
+              <shadedClassifierName>shaded</shadedClassifierName>
+              <minimizeJar>true</minimizeJar>
               <artifactSet>
                 <includes>
                   <include>com.google.protobuf:protobuf-java</include>
                   <include>com.google.guava:guava</include>
                 </includes>
               </artifactSet>
-              <minimizeJar>true</minimizeJar>
               <relocations>
                 <relocation>
                   <pattern>com.google.protobuf</pattern>
