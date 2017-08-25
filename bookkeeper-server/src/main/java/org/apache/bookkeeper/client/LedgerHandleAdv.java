@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.client;
 
+import com.google.common.base.Preconditions;
 import java.io.Serializable;
 import java.security.GeneralSecurityException;
 import java.util.Comparator;
@@ -53,9 +54,9 @@ public class LedgerHandleAdv extends LedgerHandle {
     }
 
     LedgerHandleAdv(BookKeeper bk, long ledgerId, LedgerMetadata metadata, DigestType digestType,
-        byte[] password, boolean allowNoSynchWrites)
+        byte[] password, SyncMode defaultSyncMode)
             throws GeneralSecurityException, NumberFormatException {
-        super(bk, ledgerId, metadata, digestType, password, allowNoSynchWrites);
+        super(bk, ledgerId, metadata, digestType, password, defaultSyncMode);
         pendingAddOps = new PriorityBlockingQueue<PendingAddOp>(10, new PendingOpsComparator());
     }
 
@@ -72,9 +73,12 @@ public class LedgerHandleAdv extends LedgerHandle {
      */
     @Override
     public long addEntry(final long entryId, byte[] data) throws InterruptedException, BKException {
-
         return addEntry(entryId, data, 0, data.length);
+    }
 
+    @Override
+    public long addEntry(final long entryId, byte[] data, SyncMode syncMode) throws InterruptedException, BKException {
+        return addEntry(entryId, data, 0, data.length, syncMode);
     }
 
     /**
@@ -91,16 +95,23 @@ public class LedgerHandleAdv extends LedgerHandle {
      * @return The entryId of newly inserted entry.
      */
     @Override
-    public long addEntry(final long entryId, byte[] data, int offset, int length) throws InterruptedException,
-            BKException {
+    public long addEntry(final long entryId, byte[] data, int offset, int length)
+        throws InterruptedException, BKException {
+        return addEntry(entryId, data, offset, length, defaultSyncMode);
+    }
+
+    @Override
+    public long addEntry(final long entryId, byte[] data, int offset, int length, SyncMode syncMode)
+        throws InterruptedException, BKException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Adding entry {}", data);
         }
+        Preconditions.checkNotNull(syncMode,"syncMode must not be null");
 
         CompletableFuture<Long> counter = new CompletableFuture<>();
 
         SyncAddCallback callback = new SyncAddCallback();
-        asyncAddEntry(entryId, data, offset, length, callback, counter);
+        asyncAddEntry(entryId, data, offset, length, callback, counter, defaultSyncMode);
 
         try {
             return counter.get();
@@ -148,8 +159,13 @@ public class LedgerHandleAdv extends LedgerHandle {
 
     public void asyncAddEntry(final long entryId, final byte[] data, final int offset, final int length,
             final AddCallback cb, final Object ctx) {
+        asyncAddEntry(entryId, data, offset, length, cb, ctx, defaultSyncMode);
+    }
+    public void asyncAddEntry(final long entryId, final byte[] data, final int offset, final int length,
+            final AddCallback cb, final Object ctx, final SyncMode syncMode) {
+        Preconditions.checkNotNull(syncMode, "syncMode must not be null");
         PendingAddOp op = new PendingAddOp(this, cb, ctx);
-        if (allowNoSynchWrites) {
+        if (syncMode == SyncMode.JOURNAL_NOSYNC) {
             op.enableNosynch();
         }
         op.setEntryId(entryId);
@@ -159,7 +175,7 @@ public class LedgerHandleAdv extends LedgerHandle {
                     LedgerHandleAdv.this, entryId, ctx);
             return;
         }
-        doAsyncAddEntry(op, Unpooled.wrappedBuffer(data, offset, length), cb, ctx);
+        doAsyncAddEntry(op, Unpooled.wrappedBuffer(data, offset, length), cb, ctx, syncMode);
     }
 
     /**
@@ -168,7 +184,8 @@ public class LedgerHandleAdv extends LedgerHandle {
      * unaltered in the base class.
      */
     @Override
-    protected void doAsyncAddEntry(final PendingAddOp op, final ByteBuf data, final AddCallback cb, final Object ctx) {
+    protected void doAsyncAddEntry(final PendingAddOp op, final ByteBuf data, final AddCallback cb,
+        final Object ctx, final SyncMode syncMode) {
         if (throttler != null) {
             throttler.acquire();
         }

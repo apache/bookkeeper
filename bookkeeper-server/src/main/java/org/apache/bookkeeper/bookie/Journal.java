@@ -329,11 +329,25 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
                 return 0;
             }
 
-            try {
+            try {                
                 if (shouldForceWrite) {
-                    long startTime = MathUtils.nowInNano();
-                    this.logFile.forceWrite(false);
-                    journalSyncStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
+                    // if no entry in the batch requires sync skip it, this will save disk resources
+                    boolean oneSyncOrEmpty = forceWriteWaiters.isEmpty();
+                    for (QueueEntry e : this.forceWriteWaiters) {
+                        if (!e.noSynch) {
+                            oneSyncOrEmpty = true;
+                            break;
+                        }
+                    }
+                    if (oneSyncOrEmpty) {
+                        long startTime = MathUtils.nowInNano();
+                        this.logFile.forceWrite(false);
+                        journalSyncStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
+                        LOG.info("force write with SYNC "+forceWriteWaiters.size()+" entries");
+                    } else {
+                        LOG.info("force write with NOSYNC "+forceWriteWaiters.size()+" entries");
+                        this.logFile.flushNoSync();
+                    }
                 }
                 lastLogMark.setCurLogMark(this.logId, this.lastFlushedPosition);
 

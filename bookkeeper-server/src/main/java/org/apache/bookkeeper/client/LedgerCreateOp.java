@@ -57,7 +57,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
     OpStatsLogger createOpLogger;
     boolean adv = false;
     boolean generateLedgerId = true;
-    boolean allowNoSynchWrites;
+    SyncMode defaultSyncMode;
 
     /**
      * Constructor
@@ -83,7 +83,8 @@ class LedgerCreateOp implements GenericCallback<Void> {
      *       preserve the order(e.g. sortedMap) upon later retireval.
      */
     LedgerCreateOp(BookKeeper bk, int ensembleSize, int writeQuorumSize, int ackQuorumSize, DigestType digestType,
-            byte[] passwd, CreateCallback cb, Object ctx, final Map<String, byte[]> customMetadata, boolean allowNoSynchWrites) {
+            byte[] passwd, CreateCallback cb, Object ctx, final Map<String, byte[]> customMetadata,
+            SyncMode defaultSyncMode) {
         this.bk = bk;
         this.metadata = new LedgerMetadata(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, passwd, customMetadata);
         this.digestType = digestType;
@@ -92,7 +93,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
         this.ctx = ctx;
         this.startTime = MathUtils.nowInNano();
         this.createOpLogger = bk.getCreateOpLogger();
-        this.allowNoSynchWrites = allowNoSynchWrites;
+        this.defaultSyncMode = defaultSyncMode;
     }
 
     /**
@@ -175,9 +176,9 @@ class LedgerCreateOp implements GenericCallback<Void> {
 
         try {
             if (adv) {
-                lh = new LedgerHandleAdv(bk, ledgerId, metadata, digestType, passwd, allowNoSynchWrites);
+                lh = new LedgerHandleAdv(bk, ledgerId, metadata, digestType, passwd, defaultSyncMode);
             } else {
-                lh = new LedgerHandle(bk, ledgerId, metadata, digestType, passwd, allowNoSynchWrites);
+                lh = new LedgerHandle(bk, ledgerId, metadata, digestType, passwd, defaultSyncMode);
             }
         } catch (GeneralSecurityException e) {
             LOG.error("Security exception while creating ledger: " + ledgerId, e);

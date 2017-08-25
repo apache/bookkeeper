@@ -73,7 +73,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
     ReadOnlyLedgerHandle(BookKeeper bk, long ledgerId, LedgerMetadata metadata,
                          DigestType digestType, byte[] password, boolean watch)
             throws GeneralSecurityException, NumberFormatException {
-        super(bk, ledgerId, metadata, digestType, password, false);
+        super(bk, ledgerId, metadata, digestType, password, SyncMode.JOURNAL_SYNC);
         if (watch) {
             bk.getLedgerManager().registerLedgerMetadataListener(ledgerId, this);
         }

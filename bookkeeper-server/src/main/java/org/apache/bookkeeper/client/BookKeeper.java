@@ -707,7 +707,7 @@ public class BookKeeper implements AutoCloseable {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata, false)
+                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata, SyncMode.JOURNAL_SYNC)
                 .initiate();
         } finally {
             closeLock.readLock().unlock();
@@ -846,7 +846,8 @@ public class BookKeeper implements AutoCloseable {
     public LedgerHandle createLedgerAdv(int ensSize, int writeQuorumSize, int ackQuorumSize,
                                         DigestType digestType, byte passwd[], final Map<String, byte[]> customMetadata)
          throws InterruptedException, BKException {
-        return createLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd, customMetadata, false);
+        return createLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd, customMetadata,
+            SyncMode.JOURNAL_SYNC);
     }
 
     /**
@@ -870,7 +871,8 @@ public class BookKeeper implements AutoCloseable {
      */
     public LedgerHandle createLedgerAdv(int ensSize, int writeQuorumSize, int ackQuorumSize,
                                         DigestType digestType, byte passwd[],
-                                        final Map<String, byte[]> customMetadata, final boolean noSynch)
+                                        final Map<String, byte[]> customMetadata,
+                                        final SyncMode defaultSyncMode)
             throws InterruptedException, BKException {
         CompletableFuture<LedgerHandle> counter = new CompletableFuture<>();
 
@@ -878,7 +880,7 @@ public class BookKeeper implements AutoCloseable {
          * Calls asynchronous version
          */
         asyncCreateLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
-                             new SyncCreateCallback(), counter, customMetadata, noSynch);
+                             new SyncCreateCallback(), counter, customMetadata, defaultSyncMode);
 
         LedgerHandle lh = SynchCallbackUtils.waitForResult(counter);
         if (lh == null) {
@@ -923,7 +925,8 @@ public class BookKeeper implements AutoCloseable {
     public void asyncCreateLedgerAdv(final int ensSize, final int writeQuorumSize, final int ackQuorumSize,
             final DigestType digestType, final byte[] passwd, final CreateCallback cb, final Object ctx,
             final Map<String, byte[]> customMetadata) {
-        asyncCreateLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd, cb, ctx, customMetadata, false);
+        asyncCreateLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd, cb, ctx, customMetadata,
+            SyncMode.JOURNAL_SYNC);
     }
 
     /**
@@ -957,12 +960,12 @@ public class BookKeeper implements AutoCloseable {
      *          optional control object
      * @param customMetadata
      *          optional customMetadata that holds user specified metadata
-     * @param noSynch
+     * @param defaultSyncMode
      *          do not require an fsynch on journal of Bookies. This option will relax durability guarantees
      */
     public void asyncCreateLedgerAdv(final int ensSize, final int writeQuorumSize, final int ackQuorumSize,
             final DigestType digestType, final byte[] passwd, final CreateCallback cb, final Object ctx,
-            final Map<String, byte[]> customMetadata, boolean noSynch) {
+            final Map<String, byte[]> customMetadata, SyncMode defaultSyncMode) {
         if (writeQuorumSize < ackQuorumSize) {
             throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
         }
@@ -973,7 +976,7 @@ public class BookKeeper implements AutoCloseable {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata, noSynch).initiateAdv((long)(-1));
+                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata, defaultSyncMode).initiateAdv((long)(-1));
         } finally {
             closeLock.readLock().unlock();
         }
@@ -1070,7 +1073,8 @@ public class BookKeeper implements AutoCloseable {
                                      final CreateCallback cb,
                                      final Object ctx,
                                      final Map<String, byte[]> customMetadata) {
-        asyncCreateLedgerAdv(ledgerId, ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd, cb, ctx, customMetadata, false);
+        asyncCreateLedgerAdv(ledgerId, ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd, cb, ctx,
+            customMetadata, SyncMode.JOURNAL_SYNC);
     }
 
     /**
@@ -1119,7 +1123,7 @@ public class BookKeeper implements AutoCloseable {
                                      final CreateCallback cb,
                                      final Object ctx,
                                      final Map<String, byte[]> customMetadata,
-                                     final boolean noSynch) {
+                                     final SyncMode defaultSyncMode) {
         if (writeQuorumSize < ackQuorumSize) {
             throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
         }
@@ -1130,7 +1134,8 @@ public class BookKeeper implements AutoCloseable {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata, noSynch).initiateAdv(ledgerId);
+                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata, defaultSyncMode)
+                .initiateAdv(ledgerId);
         } finally {
             closeLock.readLock().unlock();
         }

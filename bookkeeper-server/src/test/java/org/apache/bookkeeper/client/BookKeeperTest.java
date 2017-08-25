@@ -21,8 +21,11 @@
 package org.apache.bookkeeper.client;
 
 import io.netty.util.IllegalReferenceCountException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -692,17 +695,23 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
 
     @Test
     public void testAddEntryNosynch() throws Exception {
+        int numEntries = 10000;
+        byte[] data = "foobar".getBytes();        
         ClientConfiguration confWriter = new ClientConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString());
-        int numEntries = 10;
-        byte[] data = "foobar".getBytes();
-        long ledgerId;
+            .setZkServers(zkUtil.getZooKeeperConnectString());                        
+        long ledgerId;        
         try (BookKeeper bkc = new BookKeeper(confWriter)) {
-            try (LedgerHandle lh = bkc.createLedgerAdv(1,1,1, digestType, "testPasswd".getBytes(), null, true)) {
-                ledgerId = lh.getId();
-                for (int i = 0; i < numEntries; i++) {
-                    lh.addEntry(i, data);
-                }
+            try (LedgerHandle lh = bkc.createLedgerAdv(1,1,1, digestType, "testPasswd".getBytes(), null,
+                SyncMode.JOURNAL_NOSYNC)) {
+                ledgerId = lh.getId();                    
+                for (int i = 0; i < numEntries - 1; i++) {                        
+                    lh.asyncAddEntry(i, data, new AddCallback() {
+                        @Override
+                        public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {                                
+                        }
+                    },null);                        
+                }                                        
+                lh.addEntry(numEntries-1, data);                    
             }
             try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
                 Enumeration<LedgerEntry> entries = lh.readEntries(0, numEntries -1);
@@ -711,7 +720,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                     assertArrayEquals(data, e.getEntry());
                 }
             }
-        }
+        }        
     }
 
     @Test(timeout = 60000)
