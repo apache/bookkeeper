@@ -1107,7 +1107,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 }
 
                 addCompletion.cb.writeComplete(rc, addCompletion.ledgerId, addCompletion.entryId,
-                                               addr, addCompletion.ctx);
+                                               addCompletion.lastAddSyncedEntry, addr, addCompletion.ctx);
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Invoked callback method: {}", addCompletion.entryId);
                 }
@@ -1292,7 +1292,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 public void safeRun() {
                     switch (operationType) {
                         case ADD_ENTRY: {
-                            handleAddResponse(ledgerId, entryId, status, completionValue);
+                            handleAddResponse(ledgerId, entryId, -1, status, completionValue);
                             break;
                         }
                         case READ_ENTRY: {
@@ -1379,7 +1379,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                         case ADD_ENTRY: {
                             AddResponse addResponse = response.getAddResponse();
                             StatusCode status = response.getStatus() == StatusCode.EOK ? addResponse.getStatus() : response.getStatus();                            
-                            handleAddResponse(addResponse.getLedgerId(), addResponse.getEntryId(), status, completionValue);
+                            handleAddResponse(addResponse.getLedgerId(), addResponse.getEntryId(),
+                                addResponse.getLastAddSynced(), status, completionValue);
                             break;
                         }
                         case READ_ENTRY: {
@@ -1562,7 +1563,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         plc.cb.writeLacComplete(rcToRet, ledgerId, addr, plc.ctx);
     }
 
- void handleAddResponse(long ledgerId, long entryId, StatusCode status, CompletionValue completionValue) {
+ void handleAddResponse(long ledgerId, long entryId, long lastAddSyncedEntry, StatusCode status, CompletionValue completionValue) {
         // The completion value should always be an instance of an AddCompletion object when we reach here.
         AddCompletion ac = (AddCompletion)completionValue;
 
@@ -1581,7 +1582,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             }
             rcToRet = BKException.Code.WriteException;
         }
-        ac.cb.writeComplete(rcToRet, ledgerId, entryId, addr, ac.ctx);
+        ac.cb.writeComplete(rcToRet, ledgerId, entryId, lastAddSyncedEntry, addr, ac.ctx);
     }
 
     void handleReadLacResponse(long ledgerId, StatusCode status, ByteBuf lacBuffer, ByteBuf lastEntryBuffer, CompletionValue completionValue) {
@@ -1674,13 +1675,15 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         final Object ctx;
         protected final long ledgerId;
         protected final long entryId;
+        protected final long lastAddSyncedEntry;
         protected final Timeout timeout;
 
-        public CompletionValue(Object ctx, long ledgerId, long entryId,
+        public CompletionValue(Object ctx, long ledgerId, long entryId, long lastAddSyncedEntry,
                                Timeout timeout) {
             this.ctx = ctx;
             this.ledgerId = ledgerId;
             this.entryId = entryId;
+            this.lastAddSyncedEntry = lastAddSyncedEntry;
             this.timeout = timeout;
         }
 
@@ -1701,7 +1704,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         public WriteLacCompletion(final OpStatsLogger writeLacOpLogger, final WriteLacCallback originalCallback,
                 final Object originalCtx, final long ledgerId, final Timeout timeout) {
-            super(originalCtx, ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, timeout);
+            super(originalCtx, ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, BookieProtocol.LAST_ADD_CONFIRMED, timeout);
             final long startTime = MathUtils.nowInNano();
             this.cb = null == writeLacOpLogger ? originalCallback : new WriteLacCallback() {
                 @Override
@@ -1730,7 +1733,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         public ReadLacCompletion(final OpStatsLogger readLacOpLogger, final ReadLacCallback originalCallback,
                 final Object ctx, final long ledgerId, final Timeout timeout) {
-            super(ctx, ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, timeout);
+            super(ctx, ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, BookieProtocol.LAST_ADD_CONFIRMED, timeout);
             final long startTime = MathUtils.nowInNano();
             this.cb = null == readLacOpLogger ? originalCallback : new ReadLacCallback() {
                 @Override
@@ -1762,7 +1765,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                               final ReadEntryCallback originalCallback,
                               final Object originalCtx, final long ledgerId, final long entryId,
                               final Timeout timeout) {
-            super(originalCtx, ledgerId, entryId, timeout);
+            super(originalCtx, ledgerId, entryId, BookieProtocol.INVALID_ENTRY_ID, timeout);
             final long startTime = MathUtils.nowInNano();
             this.cb = new ReadEntryCallback() {
                 @Override
@@ -1796,7 +1799,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         public StartTLSCompletion(final PerChannelBookieClient pcbc, final OpStatsLogger startTLSOpLogger,
                                   final StartTLSCallback originalCallback, final Object originalCtx, final Timeout timeout) {
-            super(originalCtx, -1, -1, timeout);
+            super(originalCtx, -1, -1, BookieProtocol.INVALID_ENTRY_ID, timeout);
             final long startTime = MathUtils.nowInNano();
             this.cb = new StartTLSCallback() {
                 @Override
@@ -1834,7 +1837,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         public GetBookieInfoCompletion(final PerChannelBookieClient pcbc, final OpStatsLogger getBookieInfoOpLogger,
                               final GetBookieInfoCallback originalCallback,
                               final Object originalCtx, final Timeout timeout) {
-            super(originalCtx, 0L, 0L, timeout);
+            super(originalCtx, 0L, 0L, BookieProtocol.INVALID_ENTRY_ID, timeout);
             final long startTime = MathUtils.nowInNano();
             this.cb = (null == getBookieInfoOpLogger) ? originalCallback : new GetBookieInfoCallback() {
                 @Override
@@ -1872,11 +1875,12 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                              final WriteCallback originalCallback,
                              final Object originalCtx, final long ledgerId, final long entryId,
                              final Timeout timeout) {
-            super(originalCtx, ledgerId, entryId, timeout);
+            super(originalCtx, ledgerId, entryId, BookieProtocol.INVALID_ENTRY_ID, timeout);
             final long startTime = MathUtils.nowInNano();
             this.cb = null == addEntryOpLogger ? originalCallback : new WriteCallback() {
                 @Override
-                public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
+                public void writeComplete(int rc, long ledgerId, long entryId, long lastAddSyncedEntry,
+                    BookieSocketAddress addr, Object ctx) {
                     cancelTimeout();
                     if (pcbc.addEntryOpLogger != null) {
                         long latency = MathUtils.elapsedNanos(startTime);
@@ -1891,7 +1895,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                         pcbc.recordError();
                     }
 
-                    originalCallback.writeComplete(rc, ledgerId, entryId, addr, originalCtx);
+                    originalCallback.writeComplete(rc, ledgerId, entryId, lastAddSyncedEntry, addr, originalCtx);
                 }
             };
         }

@@ -217,7 +217,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
     private void completeAdd(final int rc,
                              final long ledgerId,
                              final long entryId,
-                             final boolean noSynch,
+                             final long lastAddSyncedEntry,
                              final BookieSocketAddress addr,
                              final WriteCallback cb,
                              final Object ctx) {
@@ -225,7 +225,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
             executor.submitOrdered(ledgerId, new SafeRunnable() {
                 @Override
                 public void safeRun() {
-                    cb.writeComplete(rc, ledgerId, entryId, addr, ctx);
+                    cb.writeComplete(rc, ledgerId, entryId, lastAddSyncedEntry, addr, ctx);
                 }
                 @Override
                 public String toString() {
@@ -233,7 +233,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                 }
             });
         } catch (RejectedExecutionException ree) {
-            cb.writeComplete(getRc(BKException.Code.InterruptedException), ledgerId, entryId, addr, ctx);
+            cb.writeComplete(getRc(BKException.Code.InterruptedException), ledgerId, entryId, lastAddSyncedEntry, addr, ctx);
         }
     }
 
@@ -250,7 +250,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
             final PerChannelBookieClientPool client = lookupClient(addr, entryId);
             if (client == null) {
                 completeAdd(getRc(BKException.Code.BookieHandleNotAvailableException),
-                            ledgerId, entryId, false, addr, cb, ctx);
+                            ledgerId, entryId, BookieProtocol.INVALID_ENTRY_ID, addr, cb, ctx);
                 return;
             }
 
@@ -262,7 +262,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                 @Override
                 public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
                     if (rc != BKException.Code.OK) {
-                        completeAdd(rc, ledgerId, entryId, false, addr, cb, ctx);
+                        completeAdd(rc, ledgerId, entryId, BookieProtocol.INVALID_ENTRY_ID, addr, cb, ctx);
                     } else {
                         pcbc.addEntry(ledgerId, masterKey, entryId, toSend, cb, ctx, options);
                     }
@@ -511,7 +511,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
         }
         WriteCallback cb = new WriteCallback() {
 
-            public void writeComplete(int rc, long ledger, long entry, BookieSocketAddress addr, Object ctx) {
+            public void writeComplete(int rc, long ledger, long entry, long lastAddSyncedEntry, BookieSocketAddress addr, Object ctx) {
                 Counter counter = (Counter) ctx;
                 counter.dec();
                 if (rc != 0) {

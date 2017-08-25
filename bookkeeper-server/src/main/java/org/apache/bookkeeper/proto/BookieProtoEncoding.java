@@ -263,7 +263,8 @@ public class BookieProtoEncoding {
                 rc = buffer.readInt();
                 ledgerId = buffer.readLong();
                 entryId = buffer.readLong();
-                return new BookieProtocol.AddResponse(version, rc, ledgerId, entryId);
+                // v2 protocol does not support lastAddSyncedEntry
+                return new BookieProtocol.AddResponse(version, rc, ledgerId, BookieProtocol.INVALID_ENTRY_ID, entryId);
             case BookieProtocol.READENTRY:
                 rc = buffer.readInt();
                 ledgerId = buffer.readLong();

@@ -72,6 +72,8 @@ class PendingAddOp implements WriteCallback, TimerTask {
     OpStatsLogger addOpLogger;
     boolean callbackTriggered = false;
 
+    long lastAddSyncedEntry;
+
     PendingAddOp(LedgerHandle lh, AddCallback cb, Object ctx) {
         this.lh = lh;
         this.cb = cb;
@@ -205,7 +207,7 @@ class PendingAddOp implements WriteCallback, TimerTask {
     }
 
     @Override
-    public void writeComplete(int rc, long ledgerId, long entryId,
+    public void writeComplete(int rc, long ledgerId, long entryId, long lastAddSyncedEntry,
         BookieSocketAddress addr, Object ctx) {
         int bookieIndex = (Integer) ctx;
 
@@ -221,6 +223,16 @@ class PendingAddOp implements WriteCallback, TimerTask {
         boolean ackQuorum = false;
         if (BKException.Code.OK == rc) {
             ackQuorum = ackSet.completeBookieAndCheck(bookieIndex);
+
+            if (lastAddSyncedEntry >= 0) {
+                if (this.lastAddSyncedEntry < 0) {
+                    // never heard about lastAddSyncedEntry from any bookie in the ensemble for this addEntry
+                    this.lastAddSyncedEntry = lastAddSyncedEntry;
+                } else if (this.lastAddSyncedEntry > lastAddSyncedEntry) {
+                    // we must keep the minimum lastAddSyncedEntry among the responses of the bookies in the ensemble
+                    this.lastAddSyncedEntry = lastAddSyncedEntry;
+                }
+            }
         }
 
         if (completed) {

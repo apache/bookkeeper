@@ -697,6 +697,13 @@ public class BookKeeper implements AutoCloseable {
     public void asyncCreateLedger(final int ensSize, final int writeQuorumSize, final int ackQuorumSize,
                                   final DigestType digestType, final byte[] passwd,
                                   final CreateCallback cb, final Object ctx, final Map<String, byte[]> customMetadata) {
+        asyncCreateLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd, cb, ctx,
+            customMetadata, SyncMode.JOURNAL_SYNC);
+    }
+    public void asyncCreateLedger(final int ensSize, final int writeQuorumSize, final int ackQuorumSize,
+                                  final DigestType digestType, final byte[] passwd,
+                                  final CreateCallback cb, final Object ctx, final Map<String, byte[]> customMetadata,
+                                  final SyncMode defaultSyncMode) {
         if (writeQuorumSize < ackQuorumSize) {
             throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
         }
@@ -707,7 +714,7 @@ public class BookKeeper implements AutoCloseable {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata, SyncMode.JOURNAL_SYNC)
+                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata, defaultSyncMode)
                 .initiate();
         } finally {
             closeLock.readLock().unlock();
@@ -788,13 +795,20 @@ public class BookKeeper implements AutoCloseable {
     public LedgerHandle createLedger(int ensSize, int writeQuorumSize, int ackQuorumSize,
                                      DigestType digestType, byte passwd[], final Map<String, byte[]> customMetadata)
             throws InterruptedException, BKException {
+        return createLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
+            customMetadata, SyncMode.JOURNAL_SYNC);
+    }
+    public LedgerHandle createLedger(int ensSize, int writeQuorumSize, int ackQuorumSize,
+                                     DigestType digestType, byte passwd[], final Map<String, byte[]> customMetadata,
+                                     SyncMode defaultSyncMode)
+            throws InterruptedException, BKException {
         CompletableFuture<LedgerHandle> counter = new CompletableFuture<>();
 
         /*
          * Calls asynchronous version
          */
         asyncCreateLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
-                          new SyncCreateCallback(), counter, customMetadata);
+                          new SyncCreateCallback(), counter, customMetadata, defaultSyncMode);
 
         LedgerHandle lh = SynchCallbackUtils.waitForResult(counter);
         if (lh == null) {

@@ -26,7 +26,7 @@ class ResponseBuilder {
     static BookieProtocol.Response buildErrorResponse(int errorCode, BookieProtocol.Request r) {
         if (r.getOpCode() == BookieProtocol.ADDENTRY) {
             return new BookieProtocol.AddResponse(r.getProtocolVersion(), errorCode,
-                                                  r.getLedgerId(), r.getEntryId());
+                                                  r.getLedgerId(), r.getEntryId(), BookieProtocol.INVALID_ENTRY_ID);
         } else {
             assert(r.getOpCode() == BookieProtocol.READENTRY);
             return new BookieProtocol.ReadResponse(r.getProtocolVersion(), errorCode,
@@ -34,9 +34,9 @@ class ResponseBuilder {
         }
     }
 
-    static BookieProtocol.Response buildAddResponse(BookieProtocol.Request r) {
+    static BookieProtocol.Response buildAddResponse(BookieProtocol.Request r, long lastAddSyncedEntry) {
         return new BookieProtocol.AddResponse(r.getProtocolVersion(), BookieProtocol.EOK, r.getLedgerId(),
-                                              r.getEntryId());
+            lastAddSyncedEntry, r.getEntryId());
     }
 
     static BookieProtocol.Response buildReadResponse(ByteBuf data, BookieProtocol.Request r) {

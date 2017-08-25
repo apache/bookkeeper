@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -48,6 +49,7 @@ import org.apache.bookkeeper.util.DaemonThreadFactory;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.ZeroBuffer;
+import org.apache.bookkeeper.util.collections.EnsureLongIncrementAccumulator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -279,6 +281,8 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
         long enqueueTime;
         boolean noSynch;
 
+        long lastAddSyncedEntry;
+
         QueueEntry(ByteBuf entry, long ledgerId, long entryId, WriteCallback cb, Object ctx,
             long enqueueTime, boolean noSynch) {
             this.entry = entry.duplicate();
@@ -293,10 +297,10 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
         @Override
         public void run() {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Acknowledge Ledger: {}, Entry: {}, noSynch: {}", ledgerId, entryId, noSynch);
+                LOG.debug("Acknowledge Ledger: {}, Entry: {}, noSynch: {}, lastAddSyncedEntry: {}", ledgerId, entryId, noSynch, lastAddSyncedEntry);
             }
             journalAddEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueTime), TimeUnit.NANOSECONDS);
-            cb.writeComplete(0, ledgerId, entryId, null, ctx);
+            cb.writeComplete(0, ledgerId, entryId, lastAddSyncedEntry, null, ctx);
         }
     }
 
@@ -329,7 +333,8 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
                 return 0;
             }
 
-            try {                
+            try {
+                boolean syncPerformed = false;
                 if (shouldForceWrite) {
                     // if no entry in the batch requires sync skip it, this will save disk resources
                     boolean oneSyncOrEmpty = forceWriteWaiters.isEmpty();
@@ -340,19 +345,30 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
                         }
                     }
                     if (oneSyncOrEmpty) {
+                        syncPerformed = true;
                         long startTime = MathUtils.nowInNano();
                         this.logFile.forceWrite(false);
-                        journalSyncStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
-                        LOG.info("force write with SYNC "+forceWriteWaiters.size()+" entries");
-                    } else {
-                        LOG.info("force write with NOSYNC "+forceWriteWaiters.size()+" entries");
+                        journalSyncStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);                        
+                    } else {                        
                         this.logFile.flushNoSync();
                     }
                 }
                 lastLogMark.setCurLogMark(this.logId, this.lastFlushedPosition);
 
+                if (syncPerformed) {
+                    for (QueueEntry e : this.forceWriteWaiters) {
+                        if (e.ledgerId >= 0 && e.entryId >= 0) {
+                            handleLastAddSynced(e);
+                        }
+                    }
+                }
+
                 // Notify the waiters that the force write succeeded
                 for (QueueEntry e : this.forceWriteWaiters) {
+                    if (e.noSynch) {
+                        e.lastAddSyncedEntry = lastAddSynched.getOrDefault(e.ledgerId, Long.valueOf(-1));
+                    }
+                    LOG.info("entry "+e.ledgerId+", "+e.entryId+" written to journal");
                     cbThreadPool.execute(e);
                 }
 
@@ -361,7 +377,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
                 closeFileIfNecessary();
             }
         }
-
+        
         public void closeFileIfNecessary() {
             // Close if shouldClose is set
             if (shouldClose) {
@@ -376,6 +392,11 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
                 }
             }
         }
+    }
+
+    private void handleLastAddSynced(QueueEntry e) {
+        Long actualLastAddSynced = lastAddSynched.merge(e.ledgerId, e.entryId, EnsureLongIncrementAccumulator.INSTANCE);
+        LOG.debug("lastAddSynced for {} is {}", e.ledgerId, actualLastAddSynced);
     }
 
     /**
@@ -526,6 +547,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
     // journal entry queue to commit
     final LinkedBlockingQueue<QueueEntry> queue = new LinkedBlockingQueue<QueueEntry>();
     final LinkedBlockingQueue<ForceWriteRequest> forceWriteRequests = new LinkedBlockingQueue<ForceWriteRequest>();
+    final ConcurrentHashMap<Long, Long> lastAddSynched = new ConcurrentHashMap<>();
 
     volatile boolean running = true;
     private final LedgerDirsManager ledgerDirsManager;

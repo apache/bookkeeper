@@ -111,7 +111,7 @@ public class LedgerHandleAdv extends LedgerHandle {
         CompletableFuture<Long> counter = new CompletableFuture<>();
 
         SyncAddCallback callback = new SyncAddCallback();
-        asyncAddEntry(entryId, data, offset, length, callback, counter, defaultSyncMode);
+        asyncAddEntry(entryId, data, offset, length, callback, counter, syncMode);
 
         try {
             return counter.get();

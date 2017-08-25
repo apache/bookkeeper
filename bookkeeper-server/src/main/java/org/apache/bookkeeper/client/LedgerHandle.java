@@ -78,6 +78,7 @@ public class LedgerHandle implements AutoCloseable {
     final long ledgerId;
     long lastAddPushed;
     volatile long lastAddConfirmed;
+    volatile long lastAddSynced;
 
     long length;
     final DigestManager macManager;
@@ -124,6 +125,7 @@ public class LedgerHandle implements AutoCloseable {
         this.enableParallelRecoveryRead = bk.getConf().getEnableParallelRecoveryRead();
         this.recoveryReadBatchSize = bk.getConf().getRecoveryReadBatchSize();        
         this.defaultSyncMode = defaultSyncMode;
+        this.lastAddSynced = INVALID_ENTRY_ID;
         if (metadata.isClosed()) {
             lastAddConfirmed = lastAddPushed = metadata.getLastEntryId();
             length = metadata.getLength();
@@ -203,10 +205,6 @@ public class LedgerHandle implements AutoCloseable {
         return lastAddConfirmed;
     }
 
-    synchronized void setLastAddConfirmed(long lac) {
-        this.lastAddConfirmed = lac;
-    }
-
     /**
      * Get the entry id of the last entry that has been enqueued for addition (but
      * may not have possibly been persited to the ledger)
@@ -215,6 +213,14 @@ public class LedgerHandle implements AutoCloseable {
      */
     synchronized public long getLastAddPushed() {
         return lastAddPushed;
+    }
+
+    /**
+     * Last entry which is known to have been written durably
+     * @return the id of the last entry pushed and confirmed to have been stored durable
+     */
+    synchronized long getLastAddSynced() {
+        return lastAddSynced;
     }
 
     /**
@@ -629,7 +635,11 @@ public class LedgerHandle implements AutoCloseable {
      * @return the entryId of the new inserted entry
      */
     public long addEntry(byte[] data) throws InterruptedException, BKException {
-        return addEntry(data, 0, data.length);
+        return addEntry(data, 0, data.length, defaultSyncMode);
+    }
+
+    public long addEntry(byte[] data, SyncMode syncMode) throws InterruptedException, BKException {
+        return addEntry(data, 0, data.length, syncMode);
     }
 
     /**
@@ -667,6 +677,11 @@ public class LedgerHandle implements AutoCloseable {
      */
     public long addEntry(byte[] data, int offset, int length)
             throws InterruptedException, BKException {
+        return addEntry(data, offset, length, defaultSyncMode);
+    }
+    
+    public long addEntry(byte[] data, int offset, int length, SyncMode syncMode)
+            throws InterruptedException, BKException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Adding entry {}", data);
         }
@@ -674,7 +689,7 @@ public class LedgerHandle implements AutoCloseable {
         CompletableFuture<Long> counter = new CompletableFuture<>();
 
         SyncAddCallback callback = new SyncAddCallback();
-        asyncAddEntry(data, offset, length, callback, counter);
+        asyncAddEntry(data, offset, length, callback, counter, syncMode);
 
         return SynchCallbackUtils.waitForResult(counter);
     }
@@ -912,6 +927,7 @@ public class LedgerHandle implements AutoCloseable {
             lacUpdateMissesCounter.inc();
         }
         lastAddPushed = Math.max(lastAddPushed, lac);
+        lastAddSynced = Math.max(lastAddSynced, lac);
         length = Math.max(length, len);
     }
 
@@ -1288,8 +1304,20 @@ public class LedgerHandle implements AutoCloseable {
                 }
                 return;
             }
+
+            if (pendingAddOp.isNosynchAdd) {
+                pendingAddOps.remove();
+                pendingAddOp.submitCallback(BKException.Code.OK);
+                if (pendingAddOp.lastAddSyncedEntry > 0 && this.lastAddSynced < pendingAddOp.lastAddSyncedEntry) {
+                    this.lastAddSynced = pendingAddOp.lastAddSyncedEntry;
+                }
+                return;
+            }
+
             // Check if it is the next entry in the sequence.
             if (pendingAddOp.entryId != 0 && pendingAddOp.entryId != lastAddConfirmed + 1) {
+                LOG.info("Head of the queue entryId: {} is not lac: {} + 1", pendingAddOp.entryId,
+                            lastAddConfirmed);
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Head of the queue entryId: {} is not lac: {} + 1", pendingAddOp.entryId,
                             lastAddConfirmed);
@@ -1299,7 +1327,7 @@ public class LedgerHandle implements AutoCloseable {
 
             pendingAddOps.remove();
             explicitLacFlushPolicy.updatePiggyBackedLac(lastAddConfirmed);
-            lastAddConfirmed = pendingAddOp.entryId;
+            lastAddConfirmed = pendingAddOp.entryId;            
 
             pendingAddOp.submitCallback(BKException.Code.OK);
         }

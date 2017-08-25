@@ -122,7 +122,8 @@ public class BookieClientTest {
     };
 
     WriteCallback wrcb = new WriteCallback() {
-        public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
+        public void writeComplete(int rc, long ledgerId, long entryId, long lastAddSyncedEntry,
+            BookieSocketAddress addr, Object ctx) {
             if (ctx != null) {
                 synchronized (ctx) {
                     if (ctx instanceof ResultStruct) {

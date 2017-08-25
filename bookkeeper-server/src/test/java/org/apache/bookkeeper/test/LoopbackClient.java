@@ -80,7 +80,8 @@ class LoopbackClient implements WriteCallback {
     }
 
     @Override
-    public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
+    public void writeComplete(int rc, long ledgerId, long entryId,
+        long lastAddSyncedEntry, BookieSocketAddress addr, Object ctx) {
         Counter counter = (Counter) ctx;
         counter.increment();
     }
