@@ -167,6 +167,8 @@ message AddResponse {
     required StatusCode status = 1;
     required int64 ledgerId = 2;
     required int64 entryId = 3;
+    // Piggyback LAS
+    optional int64 lastAddSynced = 4;
 }
 
 message AuthMessage {
