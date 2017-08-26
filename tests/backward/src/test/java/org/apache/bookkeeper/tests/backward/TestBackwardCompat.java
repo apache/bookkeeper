@@ -18,41 +18,43 @@
  * under the License.
  *
  */
-package org.apache.bookkeeper.test;
+package org.apache.bookkeeper.tests.backward;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.IOException;
 import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
-import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.io.FileUtils;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.test.PortManager;
+import org.apache.bookkeeper.test.ZooKeeperUtil;
 import org.apache.bookkeeper.util.IOUtils;
+import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+/**
+ * Test backward compat between versions.
+ */
 public class TestBackwardCompat {
-    private final static Logger LOG = LoggerFactory.getLogger(TestBackwardCompat.class);
 
-    private static ZooKeeperUtil zkUtil = new ZooKeeperUtil();
-    private static byte[] ENTRY_DATA = "ThisIsAnEntry".getBytes();
+    private static final ZooKeeperUtil zkUtil = new ZooKeeperUtil();
+    private static final byte[] ENTRYDATA = "ThisIsAnEntry".getBytes();
 
     static void waitUp(int port) throws Exception {
-        while(zkUtil.getZooKeeperClient().exists(
+        while (zkUtil.getZooKeeperClient().exists(
                       "/ledgers/available/" + InetAddress.getLocalHost().getHostAddress() + ":" + port,
                       false) == null) {
             Thread.sleep(500);
@@ -82,7 +84,7 @@ public class TestBackwardCompat {
     }
 
     /**
-     * Version 4.1.0 classes
+     * Version 4.1.0 classes.
      */
     static class Server410 {
         org.apache.bk_v4_1_0.bookkeeper.conf.ServerConfiguration conf;
@@ -124,20 +126,20 @@ public class TestBackwardCompat {
         }
 
         static Ledger410 newLedger() throws Exception {
-            org.apache.bk_v4_1_0.bookkeeper.client.BookKeeper newbk
-                = new org.apache.bk_v4_1_0.bookkeeper.client.BookKeeper(zkUtil.getZooKeeperConnectString());
-            org.apache.bk_v4_1_0.bookkeeper.client.LedgerHandle newlh
-                = newbk.createLedger(1, 1,
+            org.apache.bk_v4_1_0.bookkeeper.client.BookKeeper newbk =
+                    new org.apache.bk_v4_1_0.bookkeeper.client.BookKeeper(zkUtil.getZooKeeperConnectString());
+            org.apache.bk_v4_1_0.bookkeeper.client.LedgerHandle newlh =
+                    newbk.createLedger(1, 1,
                                   org.apache.bk_v4_1_0.bookkeeper.client.BookKeeper.DigestType.CRC32,
                                   "foobar".getBytes());
             return new Ledger410(newbk, newlh);
         }
 
         static Ledger410 openLedger(long id) throws Exception {
-            org.apache.bk_v4_1_0.bookkeeper.client.BookKeeper newbk
-                = new org.apache.bk_v4_1_0.bookkeeper.client.BookKeeper(zkUtil.getZooKeeperConnectString());
-            org.apache.bk_v4_1_0.bookkeeper.client.LedgerHandle newlh
-                = newbk.openLedger(id,
+            org.apache.bk_v4_1_0.bookkeeper.client.BookKeeper newbk =
+                    new org.apache.bk_v4_1_0.bookkeeper.client.BookKeeper(zkUtil.getZooKeeperConnectString());
+            org.apache.bk_v4_1_0.bookkeeper.client.LedgerHandle newlh =
+                    newbk.openLedger(id,
                                 org.apache.bk_v4_1_0.bookkeeper.client.BookKeeper.DigestType.CRC32,
                                 "foobar".getBytes());
             return new Ledger410(newbk, newlh);
@@ -149,17 +151,17 @@ public class TestBackwardCompat {
 
         void write100() throws Exception {
             for (int i = 0; i < 100; i++) {
-                lh.addEntry(ENTRY_DATA);
+                lh.addEntry(ENTRYDATA);
             }
         }
 
         long readAll() throws Exception {
             long count = 0;
-            Enumeration<org.apache.bk_v4_1_0.bookkeeper.client.LedgerEntry> entries
-                = lh.readEntries(0, lh.getLastAddConfirmed());
+            Enumeration<org.apache.bk_v4_1_0.bookkeeper.client.LedgerEntry> entries =
+                    lh.readEntries(0, lh.getLastAddConfirmed());
             while (entries.hasMoreElements()) {
                 assertTrue("entry data doesn't match",
-                           Arrays.equals(entries.nextElement().getEntry(), ENTRY_DATA));
+                           Arrays.equals(entries.nextElement().getEntry(), ENTRYDATA));
                 count++;
             }
             return count;
@@ -179,7 +181,7 @@ public class TestBackwardCompat {
     }
 
     /**
-     * Version 4.2.0 classes
+     * Version 4.2.0 classes.
      */
     static class Server420 {
         org.apache.bk_v4_2_0.bookkeeper.conf.ServerConfiguration conf;
@@ -222,20 +224,20 @@ public class TestBackwardCompat {
         }
 
         static Ledger420 newLedger() throws Exception {
-            org.apache.bk_v4_2_0.bookkeeper.client.BookKeeper newbk
-                = new org.apache.bk_v4_2_0.bookkeeper.client.BookKeeper(zkUtil.getZooKeeperConnectString());
-            org.apache.bk_v4_2_0.bookkeeper.client.LedgerHandle newlh
-                = newbk.createLedger(1, 1,
+            org.apache.bk_v4_2_0.bookkeeper.client.BookKeeper newbk =
+                    new org.apache.bk_v4_2_0.bookkeeper.client.BookKeeper(zkUtil.getZooKeeperConnectString());
+            org.apache.bk_v4_2_0.bookkeeper.client.LedgerHandle newlh =
+                    newbk.createLedger(1, 1,
                                   org.apache.bk_v4_2_0.bookkeeper.client.BookKeeper.DigestType.CRC32,
                                   "foobar".getBytes());
             return new Ledger420(newbk, newlh);
         }
 
         static Ledger420 openLedger(long id) throws Exception {
-            org.apache.bk_v4_2_0.bookkeeper.client.BookKeeper newbk
-                = new org.apache.bk_v4_2_0.bookkeeper.client.BookKeeper(zkUtil.getZooKeeperConnectString());
-            org.apache.bk_v4_2_0.bookkeeper.client.LedgerHandle newlh
-                = newbk.openLedger(id,
+            org.apache.bk_v4_2_0.bookkeeper.client.BookKeeper newbk =
+                    new org.apache.bk_v4_2_0.bookkeeper.client.BookKeeper(zkUtil.getZooKeeperConnectString());
+            org.apache.bk_v4_2_0.bookkeeper.client.LedgerHandle newlh =
+                    newbk.openLedger(id,
                                 org.apache.bk_v4_2_0.bookkeeper.client.BookKeeper.DigestType.CRC32,
                                 "foobar".getBytes());
             return new Ledger420(newbk, newlh);
@@ -247,17 +249,17 @@ public class TestBackwardCompat {
 
         void write100() throws Exception {
             for (int i = 0; i < 100; i++) {
-                lh.addEntry(ENTRY_DATA);
+                lh.addEntry(ENTRYDATA);
             }
         }
 
         long readAll() throws Exception {
             long count = 0;
-            Enumeration<org.apache.bk_v4_2_0.bookkeeper.client.LedgerEntry> entries
-                = lh.readEntries(0, lh.getLastAddConfirmed());
+            Enumeration<org.apache.bk_v4_2_0.bookkeeper.client.LedgerEntry> entries =
+                    lh.readEntries(0, lh.getLastAddConfirmed());
             while (entries.hasMoreElements()) {
                 assertTrue("entry data doesn't match",
-                           Arrays.equals(entries.nextElement().getEntry(), ENTRY_DATA));
+                           Arrays.equals(entries.nextElement().getEntry(), ENTRYDATA));
                 count++;
             }
             return count;
@@ -277,7 +279,7 @@ public class TestBackwardCompat {
     }
 
     /**
-     * Current verion classes
+     * Current verion classes.
      */
     static class ServerCurrent {
         org.apache.bookkeeper.conf.ServerConfiguration conf;
@@ -322,20 +324,20 @@ public class TestBackwardCompat {
         }
 
         static LedgerCurrent newLedger() throws Exception {
-            org.apache.bookkeeper.client.BookKeeper newbk
-                = new org.apache.bookkeeper.client.BookKeeper(zkUtil.getZooKeeperConnectString());
-            org.apache.bookkeeper.client.LedgerHandle newlh
-                = newbk.createLedger(1, 1,
+            org.apache.bookkeeper.client.BookKeeper newbk =
+                    new org.apache.bookkeeper.client.BookKeeper(zkUtil.getZooKeeperConnectString());
+            org.apache.bookkeeper.client.LedgerHandle newlh =
+                    newbk.createLedger(1, 1,
                                      org.apache.bookkeeper.client.BookKeeper.DigestType.CRC32,
                                      "foobar".getBytes());
             return new LedgerCurrent(newbk, newlh);
         }
 
         static LedgerCurrent openLedger(long id) throws Exception {
-            org.apache.bookkeeper.client.BookKeeper newbk
-                = new org.apache.bookkeeper.client.BookKeeper(zkUtil.getZooKeeperConnectString());
-            org.apache.bookkeeper.client.LedgerHandle newlh
-                = newbk.openLedger(id,
+            org.apache.bookkeeper.client.BookKeeper newbk =
+                    new org.apache.bookkeeper.client.BookKeeper(zkUtil.getZooKeeperConnectString());
+            org.apache.bookkeeper.client.LedgerHandle newlh =
+                    newbk.openLedger(id,
                                 org.apache.bookkeeper.client.BookKeeper.DigestType.CRC32,
                                 "foobar".getBytes());
             return new LedgerCurrent(newbk, newlh);
@@ -343,10 +345,10 @@ public class TestBackwardCompat {
 
         static LedgerCurrent openLedger(long id, ClientConfiguration conf) throws Exception {
             conf.setZkServers(zkUtil.getZooKeeperConnectString());
-            org.apache.bookkeeper.client.BookKeeper newbk
-                = new org.apache.bookkeeper.client.BookKeeper(conf);
-            org.apache.bookkeeper.client.LedgerHandle newlh
-                = newbk.openLedger(id,
+            org.apache.bookkeeper.client.BookKeeper newbk =
+                    new org.apache.bookkeeper.client.BookKeeper(conf);
+            org.apache.bookkeeper.client.LedgerHandle newlh =
+                    newbk.openLedger(id,
                                    org.apache.bookkeeper.client.BookKeeper.DigestType.CRC32,
                                 "foobar".getBytes());
             return new LedgerCurrent(newbk, newlh);
@@ -358,17 +360,17 @@ public class TestBackwardCompat {
 
         void write100() throws Exception {
             for (int i = 0; i < 100; i++) {
-                lh.addEntry(ENTRY_DATA);
+                lh.addEntry(ENTRYDATA);
             }
         }
 
         long readAll() throws Exception {
             long count = 0;
-            Enumeration<org.apache.bookkeeper.client.LedgerEntry> entries
-                = lh.readEntries(0, lh.getLastAddConfirmed());
+            Enumeration<org.apache.bookkeeper.client.LedgerEntry> entries =
+                    lh.readEntries(0, lh.getLastAddConfirmed());
             while (entries.hasMoreElements()) {
                 assertTrue("entry data doesn't match",
-                           Arrays.equals(entries.nextElement().getEntry(), ENTRY_DATA));
+                           Arrays.equals(entries.nextElement().getEntry(), ENTRYDATA));
                 count++;
             }
             return count;
@@ -390,7 +392,7 @@ public class TestBackwardCompat {
     /*
      * Test old cookie accessing the new version formatted cluster.
      */
-    @Test(timeout=60000)
+    @Test(timeout = 60000)
     public void testOldCookieAccessingNewCluster() throws Exception {
         File journalDir = createTempDir("bookie", "journal");
         File ledgerDir = createTempDir("bookie", "ledger");
@@ -443,7 +445,7 @@ public class TestBackwardCompat {
      *    version due to a change in the ledger metadata format.
      *  - Otherwise, they should be compatible.
      */
-    @Test(timeout=60000)
+    @Test(timeout = 60000)
     public void testCompat410() throws Exception {
         File journalDir = createTempDir("bookie", "journal");
         File ledgerDir = createTempDir("bookie", "ledger");
@@ -673,7 +675,8 @@ public class TestBackwardCompat {
         int port = PortManager.nextFreePort();
         // start server, upgrade
         Server420 s420 = new Server420(journalDir, ledgerDir, port);
-        s420.getConf().setLedgerManagerFactoryClassName("org.apache.bk_v4_2_0.bookkeeper.meta.HierarchicalLedgerManagerFactory");
+        s420.getConf().setLedgerManagerFactoryClassName(
+                "org.apache.bk_v4_2_0.bookkeeper.meta.HierarchicalLedgerManagerFactory");
         s420.start();
 
         Ledger420 l420 = Ledger420.newLedger();
