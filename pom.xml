@@ -276,6 +276,7 @@
             <exclude>**/.gitignore</exclude>
             <exclude>**/.project</exclude>
             <exclude>**/.settings/*</exclude>
+            <exclude>**/*.iml</exclude>
             <exclude>site/**</exclude>
             <exclude>.repository/**</exclude>
           </excludes>
