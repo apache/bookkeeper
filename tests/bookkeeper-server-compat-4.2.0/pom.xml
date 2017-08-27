@@ -18,26 +18,22 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <artifactId>compat-deps</artifactId>
-    <groupId>org.apache.bookkeeper</groupId>
+    <groupId>org.apache.bookkeeper.tests</groupId>
+    <artifactId>tests-parent</artifactId>
     <version>4.6.0-SNAPSHOT</version>
+    <relativePath>..</relativePath>
   </parent>
-  <groupId>org.apache.bookkeeper</groupId>
-  <artifactId>bookkeeper-server-compat400</artifactId>
-  <name>Apache BookKeeper :: Compability Dependencies :: 4.0.0</name>
+  <groupId>org.apache.bookkeeper.tests</groupId>
+  <artifactId>bookkeeper-server-compat420</artifactId>
+  <name>Apache BookKeeper :: Tests :: Compability Dependencies :: 4.2.0</name>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
   <dependencies>
     <dependency>
-      <groupId>com.google.protobuf</groupId>
-      <artifactId>protobuf-java</artifactId>
-      <version>2.4.1</version>
-    </dependency>
-    <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-server</artifactId>
-      <version>4.0.0</version>
+      <version>4.2.0</version>
     </dependency>
   </dependencies>
   <build>
@@ -69,22 +65,31 @@
               <relocations>
                 <relocation>
                   <pattern>com.google.protobuf</pattern>
-                  <shadedPattern>bk-shade.com.google.proto_bk_v4_0_0</shadedPattern>
+                  <shadedPattern>bk-shade.com.google.proto_bk_v4_2_0</shadedPattern>
                 </relocation>
                 <relocation>
-                  <pattern>org.apache</pattern>
-                  <shadedPattern>org.apache.bk_v4_0_0</shadedPattern>
-                  <excludes>
-                    <exclude>org.apache.log4j</exclude>
-                  </excludes>
+                  <pattern>org.apache.commons</pattern>
+                  <shadedPattern>org.apache.bk_v4_2_0.commons</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache.bookkeeper</pattern>
+                  <shadedPattern>org.apache.bk_v4_2_0.bookkeeper</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache.zookeeper</pattern>
+                  <shadedPattern>org.apache.bk_v4_2_0.zookeeper</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache.jute</pattern>
+                  <shadedPattern>org.apache.bk_v4_2_0.jute</shadedPattern>
                 </relocation>
                 <relocation>
                   <pattern>org.jboss</pattern>
-                  <shadedPattern>org.jboss.bk_v4_0_0</shadedPattern>
+                  <shadedPattern>org.jboss.bk_v4_2_0</shadedPattern>
                 </relocation>
-                 <relocation>
+                <relocation>
                   <pattern>com.google</pattern>
-                  <shadedPattern>com.google.bk_v4_0_0</shadedPattern>
+                  <shadedPattern>com.google.bk_v4_2_0</shadedPattern>
                 </relocation>
               </relocations>
             </configuration>
