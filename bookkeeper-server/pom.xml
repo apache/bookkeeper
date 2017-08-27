@@ -190,6 +190,13 @@
     </dependency>
   </dependencies>
   <build>
+    <extensions>
+      <extension>
+        <groupId>kr.motd.maven</groupId>
+        <artifactId>os-maven-plugin</artifactId>
+        <version>1.4.1.Final</version>
+      </extension>
+    </extensions>
     <plugins>
       <plugin>
         <!-- for mini-kdc -->
@@ -202,7 +209,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>2.4.3</version>
+        <version>${maven-shade-plugin.version}</version>
         <configuration>
           <!-- put your configurations here -->
         </configuration>
@@ -375,40 +382,24 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.xolstice.maven.plugins</groupId>
+        <artifactId>protobuf-maven-plugin</artifactId>
+        <version>0.5.0</version>
+        <configuration>
+          <protocArtifact>com.google.protobuf:protoc:3.4.0:exe:${os.detected.classifier}</protocArtifact>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
   <profiles>
-    <profile>
-      <id>protobuf</id>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-antrun-plugin</artifactId>
-            <executions>
-              <execution>
-                <phase>generate-sources</phase>
-                <id>default-cli</id>
-                <configuration>
-                  <target>
-                    <exec executable="protoc" failonerror="true">
-                      <arg value="--java_out=src/main/java" />
-                      <arg value="src/main/proto/DataFormats.proto" />
-                    </exec>
-                    <exec executable="protoc" failonerror="true">
-                      <arg value="--java_out=src/main/java" />
-                      <arg value="src/main/proto/BookkeeperProtocol.proto" />
-                    </exec>
-                  </target>
-                </configuration>
-                <goals>
-                  <goal>run</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
     <profile>
       <id>twitter-science-provider</id>
       <dependencies>
