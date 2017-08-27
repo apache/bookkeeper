@@ -48,34 +48,35 @@ make run-dice
 make run-dice
 ```
 This will do all the following steps and start up a working ensemble with two dice applications.
+Note: If you want to restart from scratch the cluster, please remove all its data using `sudo rm -rf /tmp/test_bk`, else the Zookeeper connection maybe fail. 
 
 ## Step by step
 
 The simplest way to let Bookkeeper servers publish themselves with a name, which could be resolved consistently across container runs, is through creation of a [docker network](https://docs.docker.com/engine/reference/commandline/network_create/):
 ```
-docker network create "my-bookkeeper-network"
+docker network create "bk_network"
 ```
 Then we can start a Zookeeper (from [Zookeeper official image](https://hub.docker.com/_/zookeeper/)) server in standalone mode on that network:
 ```
 docker run -d \
-    --network "my-bookkeeper-network" \
-    --name "my-zookeeper" \
-    --hostname "my-zookeeper" \
+    --network "bk_network" \
+    --name "test_zookeeper" \
+    --hostname "test_zookeeper" \
     zookeeper
 ```
 And initialize the metadata store that bookies will use to store information (This step is necessary when we setup the BookKeeper cluster first time, but is not necessary when using our current BookKeeper Docker image, because we have done this work when we start the first bookie):
 ```
 docker run -it --rm \
-    --network "my-bookkeeper-network" \
-    --env BK_zkServers=my-zookeeper:2181 \
+    --network "bk_network" \
+    --env BK_zkServers=test_zookeeper:2181 \
     apache/bookkeeper \
     bookkeeper shell metaformat
 ```
 Now we can start our Bookkeeper ensemble (e.g. with three bookies):
 ```
 docker run -it\
-    --network "my-bookkeeper-network" \
-    --env BK_zkServers=my-zookeeper:2181 \
+    --network "bk_network" \
+    --env BK_zkServers=test_zookeeper:2181 \
     --name "bookie1" \
     --hostname "bookie1" \
     apache/bookkeeper
@@ -89,8 +90,8 @@ This application check if it can be leader, if yes start to roll a dice and book
 Start a dice application (you can run it several times to view the behavior in a concurrent environment):
 ```
 docker run -it --rm \
-    --network "my-bookkeeper-network" \
-    --env ZOOKEEPER_SERVERS=my-zookeeper:2181 \
+    --network "bk_network" \
+    --env ZOOKEEPER_SERVERS=test_zookeeper:2181 \
     caiok/bookkeeper-tutorial
 ```
 ## Configuration
