@@ -237,8 +237,10 @@ public class TestTLS extends BookKeeperClusterTestCase {
      */
     @Test(timeout = 60000)
     public void testClientWantsTLSNoServersHaveIt() throws Exception {
-        ServerConfiguration serverConf = new ServerConfiguration(baseConf);
-        serverConf.setTLSProviderFactoryClass(null);
+        ServerConfiguration serverConf = new ServerConfiguration();
+        for (ServerConfiguration conf : bsConfs) {
+            conf.setTLSProviderFactoryClass(null);
+        }
         restartBookies(serverConf);
 
         ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
@@ -257,8 +259,10 @@ public class TestTLS extends BookKeeperClusterTestCase {
     @Test(timeout = 60000)
     public void testTLSClientButOnlyFewTLSServers() throws Exception {
         // disable TLS on initial set of bookies
-        ServerConfiguration serverConf = new ServerConfiguration(baseConf);
-        serverConf.setTLSProviderFactoryClass(null);
+        ServerConfiguration serverConf = new ServerConfiguration();
+        for (ServerConfiguration conf : bsConfs) {
+            conf.setTLSProviderFactoryClass(null);
+        }
         restartBookies(serverConf);
 
         // add two bookies which support TLS
