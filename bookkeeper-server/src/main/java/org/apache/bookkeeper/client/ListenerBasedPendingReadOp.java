@@ -30,10 +30,30 @@ class ListenerBasedPendingReadOp extends PendingReadOp {
 
     final ReadEntryListener listener;
 
-    ListenerBasedPendingReadOp(LedgerHandle lh, ScheduledExecutorService scheduler,
-                               long startEntryId, long endEntryId,
-                               ReadEntryListener listener, Object ctx) {
-        super(lh, scheduler, startEntryId, endEntryId, null, ctx);
+    ListenerBasedPendingReadOp(LedgerHandle lh,
+                               ScheduledExecutorService scheduler,
+                               long startEntryId,
+                               long endEntryId,
+                               ReadEntryListener listener,
+                               Object ctx) {
+        this(
+            lh,
+            scheduler,
+            startEntryId,
+            endEntryId,
+            listener,
+            ctx,
+            false);
+    }
+
+    ListenerBasedPendingReadOp(LedgerHandle lh,
+                               ScheduledExecutorService scheduler,
+                               long startEntryId,
+                               long endEntryId,
+                               ReadEntryListener listener,
+                               Object ctx,
+                               boolean isRecoveryRead) {
+        super(lh, scheduler, startEntryId, endEntryId, null, ctx, isRecoveryRead);
         this.listener = listener;
     }
 
