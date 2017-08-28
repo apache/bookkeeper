@@ -109,7 +109,7 @@ public class TestAuth extends BookKeeperClusterTestCase {
      * Test an connection will authorize with a single message
      * to the server and a single response.
      */
-    @Test(timeout=30000)
+    @Test
     public void testSingleMessageAuth() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration();
         bookieConf.setBookieAuthProviderFactoryClass(
@@ -128,7 +128,7 @@ public class TestAuth extends BookKeeperClusterTestCase {
         assertEquals("Should have entry", 1, entryCount(ledgerId.get(), bookieConf, clientConf));
     }
     
-    @Test(timeout=30000)
+    @Test
     public void testCloseMethodCalledOnAuthProvider() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration();
         bookieConf.setBookieAuthProviderFactoryClass(
@@ -170,7 +170,7 @@ public class TestAuth extends BookKeeperClusterTestCase {
      * Test that when the bookie provider sends a failure message
      * the client will not be able to write
      */
-    @Test(timeout=30000)
+    @Test
     public void testSingleMessageAuthFailure() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration();
         bookieConf.setBookieAuthProviderFactoryClass(
@@ -198,7 +198,7 @@ public class TestAuth extends BookKeeperClusterTestCase {
      * Test that authentication works when the providers
      * exchange multiple messages
      */
-    @Test(timeout=30000)
+    @Test
     public void testMultiMessageAuth() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration();
         bookieConf.setBookieAuthProviderFactoryClass(
@@ -220,7 +220,7 @@ public class TestAuth extends BookKeeperClusterTestCase {
      * Test that when the bookie provider sends a failure message
      * the client will not be able to write
      */
-    @Test(timeout=30000)
+    @Test
     public void testMultiMessageAuthFailure() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration();
         bookieConf.setBookieAuthProviderFactoryClass(
@@ -248,7 +248,7 @@ public class TestAuth extends BookKeeperClusterTestCase {
      * Test that when the bookie and the client have a different
      * plugin configured, no messages will get through.
      */
-    @Test(timeout=30000)
+    @Test
     public void testDifferentPluginFailure() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration();
         bookieConf.setBookieAuthProviderFactoryClass(
@@ -275,7 +275,7 @@ public class TestAuth extends BookKeeperClusterTestCase {
      * Test that when the plugin class does exist, but
      * doesn't implement the interface, we fail predictably
      */
-    @Test(timeout=30000)
+    @Test
     public void testExistantButNotValidPlugin() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration();
         bookieConf.setBookieAuthProviderFactoryClass(
@@ -310,7 +310,7 @@ public class TestAuth extends BookKeeperClusterTestCase {
      * the bookie will not start and the client will
      * break.
      */
-    @Test(timeout=30000)
+    @Test
     public void testNonExistantPlugin() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration();
         bookieConf.setBookieAuthProviderFactoryClass(
@@ -342,7 +342,7 @@ public class TestAuth extends BookKeeperClusterTestCase {
      * Test that when the plugin on the bookie crashes, the client doesn't
      * hang also, but it cannot write in any case.
      */
-    @Test(timeout=30000)
+    @Test
     public void testCrashDuringAuth() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration();
         bookieConf.setBookieAuthProviderFactoryClass(
@@ -370,7 +370,7 @@ public class TestAuth extends BookKeeperClusterTestCase {
      * Test that when a bookie simply stops replying during auth, the client doesn't
      * hang also, but it cannot write in any case.
      */
-    @Test(timeout=30000)
+    @Test
     public void testCrashType2DuringAuth() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration();
         bookieConf.setBookieAuthProviderFactoryClass(
@@ -396,7 +396,7 @@ public class TestAuth extends BookKeeperClusterTestCase {
     /**
      * Client will try to perform authentication but bookies are not configured
      */
-    @Test(timeout=30000)
+    @Test
     public void testClientWithAuthAndBookieWithDisabledAuth() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration();
         assertNull(bookieConf.getBookieAuthProviderFactoryClass());
@@ -417,7 +417,7 @@ public class TestAuth extends BookKeeperClusterTestCase {
     /**
      * The plugin will drop the connection from the bookie side
      */
-    @Test(timeout=30000)
+    @Test
     public void testDropConnectionFromBookieAuthPlugin() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration();
         bookieConf.setBookieAuthProviderFactoryClass(

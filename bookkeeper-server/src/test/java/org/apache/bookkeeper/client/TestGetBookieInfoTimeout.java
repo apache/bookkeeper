@@ -76,7 +76,7 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
         executor.shutdown();
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testGetBookieInfoTimeout() throws Exception {
 
         // connect to the bookies and create a ledger

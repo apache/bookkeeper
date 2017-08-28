@@ -130,7 +130,7 @@ public class BookieStorageThresholdTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testStorageThresholdCompaction() throws Exception {
 
         // We are having BKCluster with just one bookie (NUM_BOOKIES = 1).

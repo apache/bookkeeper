@@ -67,7 +67,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
     /**
      * Tests verifies update bookie id when there are many ledgers.
      */
-    @Test(timeout = 120000)
+    @Test
     public void testManyLedgers() throws Exception {
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
         BookKeeperAdmin bkadmin = new BookKeeperAdmin(bk);
@@ -107,7 +107,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
     /**
      * Tests verifies with limit value lesser than the total number of ledgers.
      */
-    @Test(timeout = 120000)
+    @Test
     public void testLimitLessThanTotalLedgers() throws Exception {
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
         BookKeeperAdmin bkadmin = new BookKeeperAdmin(bk);
@@ -152,7 +152,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
      * Tests verifies the ensemble reformation after updating the bookie id in
      * the existing ensemble
      */
-    @Test(timeout = 120000)
+    @Test
     public void testChangeEnsembleAfterRenaming() throws Exception {
 
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
@@ -214,7 +214,7 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
      * Tests verifies simultaneous flow between adding entries and rename of
      * bookie id
      */
-    @Test(timeout = 120000)
+    @Test
     public void testRenameWhenAddEntryInProgress() throws Exception {
         final BookKeeper bk = new BookKeeper(baseClientConf, zkc);
         BookKeeperAdmin bkadmin = new BookKeeperAdmin(bk);

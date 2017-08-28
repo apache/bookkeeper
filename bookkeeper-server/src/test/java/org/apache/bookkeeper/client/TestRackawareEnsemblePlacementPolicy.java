@@ -107,7 +107,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         StaticDNSResolver.addNodeToRack("localhost", rack);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNodeDown() throws Exception {
         repp.uninitalize();
         updateMyRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
@@ -136,7 +136,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertEquals(expectedSet, reoderSet);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNodeReadOnly() throws Exception {
         repp.uninitalize();
         updateMyRack("/r1/rack1");
@@ -168,7 +168,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertEquals(expectedSet, reoderSet);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testTwoNodesDown() throws Exception {
         repp.uninitalize();
         updateMyRack("/r1/rack1");
@@ -199,7 +199,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertEquals(expectedSet, reoderSet);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNodeDownAndReadOnly() throws Exception {
         repp.uninitalize();
         updateMyRack("/r1/rack1");
@@ -230,7 +230,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertEquals(expectedSet, reoderSet);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReplaceBookieWithEnoughBookiesInSameRack() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);
@@ -253,7 +253,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertEquals(addr3, replacedBookie);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReplaceBookieWithEnoughBookiesInDifferentRack() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);
@@ -280,7 +280,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertTrue(addr3.equals(replacedBookie) || addr4.equals(replacedBookie));
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReplaceBookieWithNotEnoughBookies() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);
@@ -311,7 +311,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNewEnsembleWithSingleRack() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.6", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.7", 3181);
@@ -334,7 +334,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNewEnsembleWithMultipleRacks() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
@@ -364,7 +364,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNewEnsembleWithEnoughRacks() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);
@@ -407,7 +407,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
     /**
      * Test for BOOKKEEPER-633
      */
-    @Test(timeout = 60000)
+    @Test
     public void testRemoveBookieFromCluster() {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);
@@ -429,7 +429,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testWeightedPlacementAndReplaceBookieWithEnoughBookiesInSameRack() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
@@ -477,7 +477,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertTrue("Weights not being honored " + observedMultiple, Math.abs(observedMultiple-multiple) < 1);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testWeightedPlacementAndReplaceBookieWithoutEnoughBookiesInSameRack() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
@@ -538,7 +538,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                 Math.abs(observedMultiple2-expected) < 1);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testWeightedPlacementAndNewEnsembleWithEnoughBookiesInSameRack() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
@@ -622,7 +622,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                 Math.abs(observedMultiple2-maxMultiple) < 0.5);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testWeightedPlacementAndNewEnsembleWithoutEnoughBookies() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
@@ -695,7 +695,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         return numCoveredWriteQuorums;
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNodeWithFailures() throws Exception {
         repp.uninitalize();
         updateMyRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
@@ -724,7 +724,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertEquals(ensemble.get(reoderSet.get(1)), addr4);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testPlacementOnStabilizeNetworkTopology() throws Exception {
         repp.uninitalize();
         updateMyRack(NetworkTopology.DEFAULT_REGION_AND_RACK);

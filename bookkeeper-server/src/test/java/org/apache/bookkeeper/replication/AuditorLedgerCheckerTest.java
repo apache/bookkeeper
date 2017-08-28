@@ -152,7 +152,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
     /**
      * Test publishing of under replicated ledgers by the auditor bookie
      */
-    @Test(timeout=60000)
+    @Test
     public void testSimpleLedger() throws Exception {
         LedgerHandle lh1 = createAndAddEntriesToLedger();
         Long ledgerId = lh1.getId();
@@ -190,7 +190,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
      * Test once published under replicated ledger should exists even after
      * restarting respective bookie
      */
-    @Test(timeout=60000)
+    @Test
     public void testRestartBookie() throws Exception {
         LedgerHandle lh1 = createAndAddEntriesToLedger();
         LedgerHandle lh2 = createAndAddEntriesToLedger();
@@ -212,7 +212,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
      * Test publishing of under replicated ledgers when multiple bookie failures
      * one after another.
      */
-    @Test(timeout=60000)
+    @Test
     public void testMultipleBookieFailures() throws Exception {
         LedgerHandle lh1 = createAndAddEntriesToLedger();
 
@@ -231,7 +231,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
                    waitForLedgerMissingReplicas(lh1.getId(), 10, shutdownBookie));
     }
 
-    @Test(timeout = 30000)
+    @Test
     public void testToggleLedgerReplication() throws Exception {
         LedgerHandle lh1 = createAndAddEntriesToLedger();
         ledgerList.add(lh1.getId());
@@ -256,7 +256,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
                 5, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 20000)
+    @Test
     public void testDuplicateEnDisableAutoRecovery() throws Exception {
         urLedgerMgr.disableLedgerReplication();
         try {
@@ -280,7 +280,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
      * Test Auditor should consider Readonly bookie as available bookie. Should not publish ur ledgers for
      * readonly bookies.
      */
-    @Test(timeout = 20000)
+    @Test
     public void testReadOnlyBookieExclusionFromURLedgersCheck() throws Exception {
         LedgerHandle lh = createAndAddEntriesToLedger();
         ledgerList.add(lh.getId());
@@ -302,7 +302,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
     /**
      * Test Auditor should consider Readonly bookie fail and publish ur ledgers for readonly bookies.
      */
-    @Test(timeout = 20000)
+    @Test
     public void testReadOnlyBookieShutdown() throws Exception {
         LedgerHandle lh = createAndAddEntriesToLedger();
         long ledgerId = lh.getId();
@@ -378,7 +378,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
      * Test publishing of under replicated ledgers by the auditor
      * bookie is delayed if LostBookieRecoveryDelay option is set
      */
-    @Test(timeout=60000)
+    @Test
     public void testDelayedAuditOfLostBookies() throws Exception {
         // wait for a second so that the initial periodic check finishes
         Thread.sleep(1000);
@@ -393,7 +393,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
      *  is set to run every 2 secs. I.e. periodic bookie check doesn't
      *  override the delay
      */
-    @Test(timeout=60000)
+    @Test
     public void testDelayedAuditWithPeriodicBookieCheck() throws Exception {
         // enable periodic bookie check on a cadence of every 2 seconds.
         // this requires us to stop the auditor/auditorElectors, set the
@@ -410,7 +410,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         _testDelayedAuditOfLostBookies();
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testRescheduleOfDelayedAuditOfLostBookiesToStartImmediately() throws Exception {
      // wait for a second so that the initial periodic check finishes
         Thread.sleep(1000);
@@ -450,7 +450,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
                 data.contains(shutdownBookie));
     }
     
-    @Test(timeout=60000)
+    @Test
     public void testRescheduleOfDelayedAuditOfLostBookiesToStartLater() throws Exception {
      // wait for a second so that the initial periodic check finishes
         Thread.sleep(1000);
@@ -495,7 +495,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
                 data.contains(shutdownBookie));
     }
     
-    @Test(timeout=60000)
+    @Test
     public void testTriggerAuditorWithNoPendingAuditTask() throws Exception {
         // wait for a second so that the initial periodic check finishes
         Thread.sleep(1000);
@@ -557,7 +557,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
                 lostBookieRecoveryDelayBeforeChange, auditorBookiesAuditor.getLostBookieRecoveryDelayBeforeChange());
     }
     
-    @Test(timeout=60000)
+    @Test
     public void testTriggerAuditorWithPendingAuditTask() throws Exception {
      // wait for a second so that the initial periodic check finishes
         Thread.sleep(1000);
@@ -604,7 +604,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
                 lostBookieRecoveryDelay, auditorBookiesAuditor.getLostBookieRecoveryDelayBeforeChange());
     }
     
-    @Test(timeout=60000)
+    @Test
     public void testTriggerAuditorBySettingDelayToZeroWithPendingAuditTask() throws Exception {
      // wait for a second so that the initial periodic check finishes
         Thread.sleep(1000);
@@ -655,7 +655,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
      * Test audit of bookies is delayed when one bookie is down. But when
      * another one goes down, the audit is started immediately.
      */
-    @Test(timeout=60000)
+    @Test
     public void testDelayedAuditWithMultipleBookieFailures() throws Exception {
         // wait for the periodic bookie check to finish
         Thread.sleep(1000);
@@ -708,7 +708,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
      * a bookies goes down and comes up, the next bookie go down and up and so on.
      * At any time only one bookie is down.
      */
-    @Test(timeout=60000)
+    @Test
     public void testDelayedAuditWithRollingUpgrade() throws Exception {
         // wait for the periodic bookie check to finish
         Thread.sleep(1000);

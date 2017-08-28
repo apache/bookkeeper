@@ -56,6 +56,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TestName;
+import org.junit.rules.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,6 +69,9 @@ public abstract class BookKeeperClusterTestCase {
 
     @Rule
     public final TestName runtime = new TestName();
+
+    @Rule
+    public final Timeout globalTimeout;
 
     // ZooKeeper related variables
     protected final ZooKeeperUtil zkUtil = new ZooKeeperUtil();
@@ -88,7 +92,12 @@ public abstract class BookKeeperClusterTestCase {
     private boolean isAutoRecoveryEnabled;
 
     public BookKeeperClusterTestCase(int numBookies) {
+        this(numBookies, 120);
+    }
+
+    public BookKeeperClusterTestCase(int numBookies, int testTimeoutSecs) {
         this.numBookies = numBookies;
+        this.globalTimeout = Timeout.seconds(testTimeoutSecs);
         baseConf.setAllowLoopback(true);
     }
 

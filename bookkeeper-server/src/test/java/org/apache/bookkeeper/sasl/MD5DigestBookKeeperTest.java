@@ -107,7 +107,7 @@ public class MD5DigestBookKeeperTest extends BookKeeperClusterTestCase {
     /**
      * Test an connection will authorize with a single message to the server and a single response.
      */
-    @Test(timeout = 30000)
+    @Test
     public void testSingleMessageAuth() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration();
         bookieConf.setBookieAuthProviderFactoryClass(

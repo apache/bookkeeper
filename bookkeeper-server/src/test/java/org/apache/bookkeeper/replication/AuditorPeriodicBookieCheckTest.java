@@ -93,7 +93,7 @@ public class AuditorPeriodicBookieCheckTest extends BookKeeperClusterTestCase {
     /**
      * Test that the periodic bookie checker works
      */
-    @Test(timeout=30000)
+    @Test
     public void testPeriodicBookieCheckInterval() throws Exception {
         LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(bsConfs.get(0), zkc);
         LedgerManager ledgerManager = mFactory.newLedgerManager();

@@ -32,7 +32,7 @@ public class TestBKStats {
      * Tests that updatLatency should not fail with
      * ArrayIndexOutOfBoundException when latency time coming as negative.
      */
-    @Test(timeout=60000)
+    @Test
     public void testUpdateLatencyShouldNotFailWithAIOBEWithNegativeLatency()
             throws Exception {
         OpStats opStat = new OpStats();

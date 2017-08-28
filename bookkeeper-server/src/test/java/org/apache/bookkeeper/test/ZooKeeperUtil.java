@@ -53,18 +53,18 @@ public class ZooKeeperUtil {
     static final Logger LOG = LoggerFactory.getLogger(ZooKeeperUtil.class);
 
     // ZooKeeper related variables
-    protected final static Integer zooKeeperPort = PortManager.nextFreePort();
-    private final InetSocketAddress zkaddr;
+    protected Integer zooKeeperPort = 0;
+    private InetSocketAddress zkaddr;
 
     protected ZooKeeperServer zks;
     protected ZooKeeper zkc; // zookeeper client
     protected NIOServerCnxnFactory serverFactory;
     protected File ZkTmpDir;
-    private final String connectString;
+    private String connectString;
 
     public ZooKeeperUtil() {
         String loopbackIPAddr = InetAddress.getLoopbackAddress().getHostAddress();
-        zkaddr = new InetSocketAddress(loopbackIPAddr, zooKeeperPort);
+        zkaddr = new InetSocketAddress(loopbackIPAddr, 0);
         connectString = loopbackIPAddr + ":" + zooKeeperPort;
     }
 
@@ -103,6 +103,12 @@ public class ZooKeeperUtil {
         serverFactory = new NIOServerCnxnFactory();
         serverFactory.configure(zkaddr, 100);
         serverFactory.startup(zks);
+
+        if (0 == zooKeeperPort) {
+            zooKeeperPort = serverFactory.getLocalPort();
+            zkaddr = new InetSocketAddress(zkaddr.getHostName(), zooKeeperPort);
+            connectString = zkaddr.getHostName() + ":" + zooKeeperPort;
+        }
 
         boolean b = ClientBase.waitForServerUp(getZooKeeperConnectString(),
                 ClientBase.CONNECTION_TIMEOUT);

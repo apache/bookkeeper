@@ -95,7 +95,7 @@ public class TestLedgerDirsManager {
         tempDirs.clear();
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testGetWritableDir() throws Exception {
         try {
             List<File> writeDirs = dirsManager.getWritableLedgerDirs();
@@ -105,7 +105,7 @@ public class TestLedgerDirsManager {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testPickWritableDirExclusive() throws Exception {
         try {
             dirsManager.pickRandomWritableDir(curDir);
@@ -116,7 +116,7 @@ public class TestLedgerDirsManager {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testNoWritableDir() throws Exception {
         try {
             dirsManager.addToFilledDirs(curDir);
@@ -129,7 +129,7 @@ public class TestLedgerDirsManager {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testGetWritableDirForLog() throws Exception {
         List<File> writeDirs;
         try {
@@ -148,7 +148,7 @@ public class TestLedgerDirsManager {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testLedgerDirsMonitorDuringTransition() throws Exception {
 
         MockLedgerDirsListener mockLedgerDirsListener = new MockLedgerDirsListener();
@@ -168,7 +168,7 @@ public class TestLedgerDirsManager {
         assertFalse(mockLedgerDirsListener.readOnly);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerDirsMonitorHandlingLowWaterMark() throws Exception {
 
         ledgerMonitor.shutdown();
@@ -226,7 +226,7 @@ public class TestLedgerDirsManager {
         assertFalse(mockLedgerDirsListener.readOnly);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerDirsMonitorHandlingWithMultipleLedgerDirectories() throws Exception {
         ledgerMonitor.shutdown();
 

@@ -117,7 +117,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
      * test that the periodic checking will detect corruptions in
      * the bookie entry log
      */
-    @Test(timeout=30000)
+    @Test
     public void testEntryLogCorruption() throws Exception {
         LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(bsConfs.get(0), zkc);
         LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
@@ -166,7 +166,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
      * test that the period checker will detect corruptions in
      * the bookie index files
      */
-    @Test(timeout=30000)
+    @Test
     public void testIndexCorruption() throws Exception {
         LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(bsConfs.get(0), zkc);
         LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
@@ -213,7 +213,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
     /**
      * Test that the period checker will not run when auto replication has been disabled
      */
-    @Test(timeout=120000)
+    @Test
     public void testPeriodicCheckWhenDisabled() throws Exception {
         LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(bsConfs.get(0), zkc);
         final LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
@@ -298,7 +298,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
     /**
      * Test that the period check will succeed if a ledger is deleted midway
      */
-    @Test(timeout=120000)
+    @Test
     public void testPeriodicCheckWhenLedgerDeleted() throws Exception {
         for (AuditorElector e : auditorElectors.values()) {
             e.shutdown();

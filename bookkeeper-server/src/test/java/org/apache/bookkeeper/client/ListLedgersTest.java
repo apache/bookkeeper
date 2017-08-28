@@ -32,7 +32,7 @@ public class ListLedgersTest extends BookKeeperClusterTestCase {
         this.digestType = DigestType.CRC32;
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testListLedgers()
     throws Exception {
         int numOfLedgers = 10;
@@ -59,7 +59,7 @@ public class ListLedgersTest extends BookKeeperClusterTestCase {
                 counter == numOfLedgers);
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testEmptyList()
     throws Exception {
         ClientConfiguration conf = new ClientConfiguration()
@@ -72,7 +72,7 @@ public class ListLedgersTest extends BookKeeperClusterTestCase {
         Assert.assertFalse("There should be no ledger", iterable.iterator().hasNext());
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testRemoveNotSupported()
     throws Exception {
         int numOfLedgers = 1;
@@ -101,7 +101,7 @@ public class ListLedgersTest extends BookKeeperClusterTestCase {
 
     }
     
-    @Test(timeout = 60000)
+    @Test
     public void testCtimeRecorded()
             throws Exception {
 

@@ -38,7 +38,7 @@ public class TestBenchmark extends BookKeeperClusterTestCase {
         super(5);
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testThroughputLatency() throws Exception {
         String latencyFile = System.getProperty("test.latency.file", "latencyDump.dat");
         BenchThroughputLatency.main(new String[] {
@@ -51,7 +51,7 @@ public class TestBenchmark extends BookKeeperClusterTestCase {
             });
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testBookie() throws Exception {
         BookieSocketAddress bookie = getBookie(0);
         BenchBookie.main(new String[] {
@@ -61,7 +61,7 @@ public class TestBenchmark extends BookKeeperClusterTestCase {
                 });
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testReadThroughputLatency() throws Exception {
         final AtomicBoolean threwException = new AtomicBoolean(false);
         Thread t = new Thread() {

@@ -41,7 +41,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
             .build();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testHeartbeatService() throws Exception {
         // test heartbeat service
         Service heartbeatService = serviceProvider.provideHeartbeatService();
@@ -50,7 +50,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         assertEquals("OK\n", response.getBody());
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testConfigService() throws Exception {
         // test config service
         String testProperty = "TEST_PROPERTY";

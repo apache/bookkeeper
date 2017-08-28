@@ -136,7 +136,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
     /**
      * Test to show that weight based selection honors the disk weight of bookies
      */
-    @Test(timeout=60000)
+    @Test
     public void testDiskSpaceWeightedBookieSelection() throws Exception {
         long freeDiskSpace=1000000L;
         int multiple=3;
@@ -182,7 +182,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
      * Test to show that weight based selection honors the disk weight of bookies and also adapts
      * when the bookies's weight changes.
      */
-    @Test(timeout=60000)
+    @Test
     public void testDiskSpaceWeightedBookieSelectionWithChangingWeights() throws Exception {
         long freeDiskSpace=1000000L;
         int multiple=3;
@@ -264,7 +264,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
      * Test to show that weight based selection honors the disk weight of bookies and also adapts
      * when bookies go away permanently.
      */
-    @Test(timeout=60000)
+    @Test
     public void testDiskSpaceWeightedBookieSelectionWithBookiesDying() throws Exception {
         long freeDiskSpace=1000000L;
         int multiple=3;
@@ -339,7 +339,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
      * Test to show that weight based selection honors the disk weight of bookies and also adapts
      * when bookies are added.
      */
-    @Test(timeout=60000)
+    @Test
     public void testDiskSpaceWeightedBookieSelectionWithBookiesBeingAdded() throws Exception {
         long freeDiskSpace=1000000L;
         int multiple=3;
@@ -407,7 +407,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
      * Tests that the bookie selection is based on the amount of free disk space a bookie has. Also make sure that
      * the periodic bookieInfo read is working and causes the new weights to be taken into account.
      */
-    @Test(timeout=60000)
+    @Test
     public void testDiskSpaceWeightedBookieSelectionWithPeriodicBookieInfoUpdate() throws Exception {
         long freeDiskSpace=1000000L;
         int multiple=3;

@@ -241,7 +241,7 @@ public class TestBookieRecovery extends BookKeeperClusterTestCase {
      * Test that when we try to recover a ledger which doesn't have
      * the password stored in the configuration, we don't succeed.
      */
-    @Test(timeout = 60000)
+    @Test
     public void ensurePasswordUsedForOldLedgers() throws Exception {
         // This test bases on creating old ledgers in version 4.1.0, which only
         // supports ZooKeeper based flat and hierarchical LedgerManagerFactory.

@@ -115,7 +115,7 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testOpenException() throws IOException, InterruptedException {
         try {
             lh = bkc.openLedger(0, digestType, ledgerPassword);
@@ -130,7 +130,7 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
      *
      * @throws {@link IOException}
      */
-    @Test(timeout=60000)
+    @Test
     public void testStreamingClients() throws IOException, BKException, InterruptedException {
         lh = bkc.createLedger(digestType, ledgerPassword);
         // write a string so that we cna
@@ -258,7 +258,7 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testReadWriteAsyncSingleClient200() throws IOException {
         testReadWriteAsyncSingleClient(200);
     }
@@ -268,7 +268,7 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
      * First try varying the offset. Then the length with a fixed non-zero
      * offset.
      */
-    @Test(timeout=60000)
+    @Test
     public void testReadWriteRangeAsyncSingleClient() throws IOException {
         SyncObj sync = new SyncObj();
         try {
@@ -414,7 +414,7 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testSyncReadAsyncWriteStringsSingleClient() throws IOException {
         SyncObj sync = new SyncObj();
         LOG.info("TEST READ WRITE STRINGS MIXED SINGLE CLIENT");
@@ -489,7 +489,7 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
 
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testReadWriteSyncSingleClient() throws IOException {
         try {
             // Create a ledger
@@ -532,7 +532,7 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testReadWriteZero() throws IOException {
         try {
             // Create a ledger
@@ -588,7 +588,7 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testMultiLedger() throws IOException {
         try {
             // Create a ledger
@@ -661,7 +661,7 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testReadWriteAsyncLength() throws IOException {
         SyncObj sync = new SyncObj();
         try {
@@ -746,7 +746,7 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
         return lh.getLastAddConfirmed();
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testReadFromOpenLedger() throws Exception {
         try {
             // Create a ledger
@@ -826,7 +826,7 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testReadFromOpenLedgerOpenOnce() throws Exception {
         try {
             // Create a ledger
@@ -882,7 +882,7 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testReadFromOpenLedgerZeroAndOne() throws Exception {
         try {
             // Create a ledger
@@ -950,7 +950,7 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
     }
 
 
-    @Test(timeout=60000)
+    @Test
     public void testLastConfirmedAdd() throws Exception {
         try {
             // Create a ledger

@@ -96,7 +96,7 @@ public class BookieWriteLedgersWithDifferentDigestsTest extends
         baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testLedgersWithDifferentDigestTypesNoAutodetection() throws Exception {
     	bkc.conf.setEnableDigestTypeAutodetection(false);
         // Create ledgers
@@ -129,7 +129,7 @@ public class BookieWriteLedgersWithDifferentDigestsTest extends
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testLedgersWithDifferentDigestTypesWithAutodetection() throws Exception {
     	bkc.conf.setEnableDigestTypeAutodetection(true);
         // Create ledgers

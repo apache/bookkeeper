@@ -73,7 +73,7 @@ public class TestSyncThread {
      * the sync thread will not shutdown until it
      * has finished.
      */
-    @Test(timeout=60000)
+    @Test
     public void testSyncThreadLongShutdown() throws Exception {
         int flushInterval = 100;
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
@@ -149,7 +149,7 @@ public class TestSyncThread {
      * i.e. when we suspend the syncthread, nothing
      * will be synced.
      */
-    @Test(timeout=60000)
+    @Test
     public void testSyncThreadSuspension() throws Exception {
         int flushInterval = 100;
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
@@ -194,7 +194,7 @@ public class TestSyncThread {
      * runtime exception, the bookie will be told
      * to shutdown.
      */
-    @Test(timeout=60000)
+    @Test
     public void testSyncThreadShutdownOnError() throws Exception {
         int flushInterval = 100;
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
@@ -226,7 +226,7 @@ public class TestSyncThread {
      * a disk full exception, the owner of the sync
      * thread will be notified.
      */
-    @Test(timeout=60000)
+    @Test
     public void testSyncThreadDisksFull() throws Exception {
         int flushInterval = 100;
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
