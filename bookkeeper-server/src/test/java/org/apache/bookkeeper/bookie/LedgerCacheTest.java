@@ -272,6 +272,7 @@ public class LedgerCacheTest {
         File ledgerDir2 = createTempDir("bkTest", ".dir");
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setLedgerDirNames(new String[] { ledgerDir1.getAbsolutePath(), ledgerDir2.getAbsolutePath() });
+        conf.setJournalDirName(ledgerDir1.toString());
 
         Bookie bookie = new Bookie(conf);
         InterleavedLedgerStorage ledgerStorage = ((InterleavedLedgerStorage) bookie.ledgerStorage);
@@ -517,6 +518,7 @@ public class LedgerCacheTest {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setGcWaitTime(gcWaitTime);
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
+        conf.setJournalDirName(tmpDir.toString());
         conf.setLedgerStorageClass(FlushTestSortedLedgerStorage.class.getName());
 
         Bookie bookie = new Bookie(conf);
