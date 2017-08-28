@@ -54,7 +54,7 @@ public class BenchBookie {
     static class LatencyCallback implements WriteCallback {
         boolean complete;
         @Override
-        public synchronized void writeComplete(int rc, long ledgerId, long entryId,
+        public synchronized void writeComplete(int rc, long ledgerId, long entryId, long lastAddsynced,
                 BookieSocketAddress addr, Object ctx) {
             if (rc != 0) {
                 LOG.error("Got error " + rc);
@@ -75,7 +75,7 @@ public class BenchBookie {
     static class ThroughputCallback implements WriteCallback {
         int count;
         int waitingCount = Integer.MAX_VALUE;
-        public synchronized void writeComplete(int rc, long ledgerId, long entryId,
+        public synchronized void writeComplete(int rc, long ledgerId, long entryId, long lastAddSynced,
                 BookieSocketAddress addr, Object ctx) {
             if (rc != 0) {
                 LOG.error("Got error " + rc);

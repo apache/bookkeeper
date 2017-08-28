@@ -77,8 +77,22 @@ public class LedgerHandle implements AutoCloseable {
     final BookKeeper bk;
     final long ledgerId;
     long lastAddPushed;
+    /**
+     * Last entryId which has been confirmed to be written durably to the bookies.
+     * This value is used by readers, the the LAC protocol
+     */
     volatile long lastAddConfirmed;
+    /**
+     * Last entryId which has been confirmed to be written durably to the bookies,
+     * this is an internal variable used to track the status of entries and to handle correcly the lastAddConfirmed
+     * value
+     */
     volatile long lastAddSynced;
+    /**
+     * Next entryId which is expected to move forward during {@link #sendAddSuccessCallbacks() }. This is important
+     * in order to have an ordered sequence of addEntry ackknowledged to the writer
+     */
+    volatile long pendingAddsSequenceHead;
 
     long length;
     final DigestManager macManager;
@@ -133,6 +147,7 @@ public class LedgerHandle implements AutoCloseable {
             lastAddConfirmed = lastAddPushed = INVALID_ENTRY_ID;
             length = 0;
         }
+        this.pendingAddsSequenceHead = 0;
 
         this.ledgerId = ledgerId;
 
@@ -1303,31 +1318,37 @@ public class LedgerHandle implements AutoCloseable {
                     LOG.debug("pending add not completed: {}", pendingAddOp);
                 }
                 return;
-            }
-
-            if (pendingAddOp.isNosynchAdd) {
-                pendingAddOps.remove();
-                pendingAddOp.submitCallback(BKException.Code.OK);
-                if (pendingAddOp.lastAddSyncedEntry > 0 && this.lastAddSynced < pendingAddOp.lastAddSyncedEntry) {
-                    this.lastAddSynced = pendingAddOp.lastAddSyncedEntry;
-                }
-                return;
-            }
-
+            }          
             // Check if it is the next entry in the sequence.
-            if (pendingAddOp.entryId != 0 && pendingAddOp.entryId != lastAddConfirmed + 1) {
-                LOG.info("Head of the queue entryId: {} is not lac: {} + 1", pendingAddOp.entryId,
-                            lastAddConfirmed);
+            if (pendingAddOp.entryId != 0 && pendingAddOp.entryId != pendingAddsSequenceHead) {                
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Head of the queue entryId: {} is not lac: {} + 1", pendingAddOp.entryId,
-                            lastAddConfirmed);
+                    LOG.debug("Head of the queue entryId: {} is not the expected value: {}", pendingAddOp.entryId,
+                            pendingAddsSequenceHead);
                 }
                 return;
             }
 
-            pendingAddOps.remove();
+            PendingAddOp removed = pendingAddOps.remove();
+            Preconditions.checkState(removed == pendingAddOp, "removed unexpected entry %s, expected %s",
+                removed.entryId, pendingAddOp.entryId);
+
+            LOG.info("pendingAddOp.lastAddSyncedEntry {}", pendingAddOp.lastAddSyncedEntry);
+            if (pendingAddOp.lastAddSyncedEntry >= 0) {
+                this.lastAddSynced = Math.max(lastAddSynced, pendingAddOp.lastAddSyncedEntry);
+                LOG.info("nosynchAdd lastAddSynced {}", lastAddSynced);
+            } else if (!pendingAddOp.isNosynchAdd) {
+                this.lastAddSynced = Math.max(lastAddSynced, pendingAddOp.entryId);
+                LOG.info("synchAdd lastAddSynced {}", lastAddSynced);
+            } else {
+                LOG.warn("AddResponse did not carry lastAddSyncedEntry of a no-sync addEntry: {}", pendingAddOp.entryId);
+            }
+            
+            
+            lastAddConfirmed = this.lastAddSynced;
             explicitLacFlushPolicy.updatePiggyBackedLac(lastAddConfirmed);
-            lastAddConfirmed = pendingAddOp.entryId;            
+            LOG.info("new lastAddConfirmed {}", lastAddConfirmed);
+            
+            pendingAddsSequenceHead = pendingAddOp.entryId + 1;
 
             pendingAddOp.submitCallback(BKException.Code.OK);
         }

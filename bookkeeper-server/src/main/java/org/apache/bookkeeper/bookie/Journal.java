@@ -281,7 +281,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
         long enqueueTime;
         boolean noSynch;
 
-        long lastAddSyncedEntry;
+        long lastAddSyncedEntry = -1;
 
         QueueEntry(ByteBuf entry, long ledgerId, long entryId, WriteCallback cb, Object ctx,
             long enqueueTime, boolean noSynch) {
@@ -299,6 +299,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Acknowledge Ledger: {}, Entry: {}, noSynch: {}, lastAddSyncedEntry: {}", ledgerId, entryId, noSynch, lastAddSyncedEntry);
             }
+            LOG.info("Acknowledge Ledger: {}, Entry: {}, noSynch: {}, lastAddSyncedEntry: {}", ledgerId, entryId, noSynch, lastAddSyncedEntry);
             journalAddEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueTime), TimeUnit.NANOSECONDS);
             cb.writeComplete(0, ledgerId, entryId, lastAddSyncedEntry, null, ctx);
         }
@@ -368,7 +369,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
                     if (e.noSynch) {
                         e.lastAddSyncedEntry = lastAddSynched.getOrDefault(e.ledgerId, Long.valueOf(-1));
                     }
-                    LOG.info("entry "+e.ledgerId+", "+e.entryId+" written to journal");
+                    LOG.info("entry "+e.ledgerId+", "+e.entryId+" written to journal, e.lastAddSyncedEntry:"+e.lastAddSyncedEntry);
                     cbThreadPool.execute(e);
                 }
 
@@ -396,7 +397,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
 
     private void handleLastAddSynced(QueueEntry e) {
         Long actualLastAddSynced = lastAddSynched.merge(e.ledgerId, e.entryId, EnsureLongIncrementAccumulator.INSTANCE);
-        LOG.debug("lastAddSynced for {} is {}", e.ledgerId, actualLastAddSynced);
+        LOG.info("lastAddSynced for {} is {}", e.ledgerId, actualLastAddSynced);
     }
 
     /**

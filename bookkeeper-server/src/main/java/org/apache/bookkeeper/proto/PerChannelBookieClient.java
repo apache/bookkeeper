@@ -1378,9 +1378,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     switch (type) {
                         case ADD_ENTRY: {
                             AddResponse addResponse = response.getAddResponse();
-                            StatusCode status = response.getStatus() == StatusCode.EOK ? addResponse.getStatus() : response.getStatus();                            
+                            StatusCode status = response.getStatus() == StatusCode.EOK ? addResponse.getStatus() : response.getStatus();
+                            long lastAddSynced = addResponse.hasLastAddSynced() ? addResponse.getLastAddSynced() : BookieProtocol.INVALID_ENTRY_ID;
                             handleAddResponse(addResponse.getLedgerId(), addResponse.getEntryId(),
-                                addResponse.getLastAddSynced(), status, completionValue);
+                                lastAddSynced, status, completionValue);
                             break;
                         }
                         case READ_ENTRY: {

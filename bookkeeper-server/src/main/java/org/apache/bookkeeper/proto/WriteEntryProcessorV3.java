@@ -72,6 +72,7 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
             @Override
             public void writeComplete(int rc, long ledgerId, long entryId, long lastAddSyncedEntry,
                                       BookieSocketAddress addr, Object ctx) {
+                logger.info("writeComplete ledg "+ledgerId+", entryId "+entryId+" lastAddSyncedEntry:"+lastAddSyncedEntry);
                 if (BookieProtocol.EOK == rc) {
                     requestProcessor.addEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
                             TimeUnit.NANOSECONDS);
