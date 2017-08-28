@@ -238,8 +238,8 @@ public interface BookieProtocol {
     static class AddRequest extends Request {
         final ByteBuf data;
 
-        AddRequest(byte protocolVersion, long ledgerId, long entryId,
-                   short flags, byte[] masterKey, ByteBuf data) {
+        public AddRequest(byte protocolVersion, long ledgerId, long entryId,
+                          short flags, byte[] masterKey, ByteBuf data) {
             super(protocolVersion, ADDENTRY, ledgerId, entryId, flags, masterKey);
             this.data = data.retain();
         }

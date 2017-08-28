@@ -71,7 +71,7 @@ public class BookieProtoEncoding {
 
     }
 
-    static class RequestEnDeCoderPreV3 implements EnDecoder {
+    public static class RequestEnDeCoderPreV3 implements EnDecoder {
         final ExtensionRegistry extensionRegistry;
 
         //This empty master key is used when an empty password is provided which is the hash of an empty string
@@ -84,7 +84,7 @@ public class BookieProtoEncoding {
             }
         }
 
-        RequestEnDeCoderPreV3(ExtensionRegistry extensionRegistry) {
+        public RequestEnDeCoderPreV3(ExtensionRegistry extensionRegistry) {
             this.extensionRegistry = extensionRegistry;
         }
 
@@ -205,10 +205,10 @@ public class BookieProtoEncoding {
         }
     }
 
-    static class ResponseEnDeCoderPreV3 implements EnDecoder {
+    public static class ResponseEnDeCoderPreV3 implements EnDecoder {
         final ExtensionRegistry extensionRegistry;
 
-        ResponseEnDeCoderPreV3(ExtensionRegistry extensionRegistry) {
+        public ResponseEnDeCoderPreV3(ExtensionRegistry extensionRegistry) {
             this.extensionRegistry = extensionRegistry;
         }
 
@@ -288,10 +288,10 @@ public class BookieProtoEncoding {
         }
     }
 
-    static class RequestEnDecoderV3 implements EnDecoder {
+    public static class RequestEnDecoderV3 implements EnDecoder {
         final ExtensionRegistry extensionRegistry;
 
-        RequestEnDecoderV3(ExtensionRegistry extensionRegistry) {
+        public RequestEnDecoderV3(ExtensionRegistry extensionRegistry) {
             this.extensionRegistry = extensionRegistry;
         }
 
@@ -308,10 +308,10 @@ public class BookieProtoEncoding {
 
     }
 
-    static class ResponseEnDecoderV3 implements EnDecoder {
+    public static class ResponseEnDecoderV3 implements EnDecoder {
         final ExtensionRegistry extensionRegistry;
 
-        ResponseEnDecoderV3(ExtensionRegistry extensionRegistry) {
+        public ResponseEnDecoderV3(ExtensionRegistry extensionRegistry) {
             this.extensionRegistry = extensionRegistry;
         }
 
@@ -351,7 +351,7 @@ public class BookieProtoEncoding {
         final EnDecoder REQ_PREV3;
         final EnDecoder REQ_V3;
 
-        RequestEncoder(ExtensionRegistry extensionRegistry) {
+        public RequestEncoder(ExtensionRegistry extensionRegistry) {
             REQ_PREV3 = new RequestEnDeCoderPreV3(extensionRegistry);
             REQ_V3 = new RequestEnDecoderV3(extensionRegistry);
         }
