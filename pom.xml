@@ -157,23 +157,6 @@
         </configuration>
       </plugin>
       <plugin>
-        <groupId>org.eluder.coveralls</groupId>
-        <artifactId>coveralls-maven-plugin</artifactId>
-        <version>4.3.0</version>
-      </plugin>
-      <plugin>
-        <groupId>org.jacoco</groupId>
-        <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.7.9</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>prepare-agent</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>${maven-compiler-plugin.version}</version>
         <configuration>
@@ -191,8 +174,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven-surefire-plugin.version}</version>
         <configuration>
-          <!-- @{argLine} is a variable injected by JaCoCo-->
-          <argLine>@{argLine} -Xmx2G -Djava.net.preferIPv4Stack=true</argLine>
+          <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true</argLine>
 	  <redirectTestOutputToFile>true</redirectTestOutputToFile>
 	  <reuseForks>false</reuseForks>
 	  <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
@@ -338,6 +320,42 @@
               compilation too and we want to deploy tests. -->
         <skipTests>true</skipTests>
       </properties>
+    </profile>
+    <profile>
+        <id>code-coverage</id>
+        <build>
+          <plugins>
+              <plugin>
+                <groupId>org.eluder.coveralls</groupId>
+                <artifactId>coveralls-maven-plugin</artifactId>
+                <version>4.3.0</version>
+              </plugin>
+              <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire-plugin.version}</version>
+                <configuration>
+                  <!-- @{argLine} is a variable injected by JaCoCo-->
+                  <argLine>@{argLine} -Xmx2G -Djava.net.preferIPv4Stack=true</argLine>
+	          <redirectTestOutputToFile>true</redirectTestOutputToFile>
+	          <reuseForks>false</reuseForks>
+	          <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
+                </configuration>
+             </plugin>
+             <plugin>
+               <groupId>org.jacoco</groupId>
+               <artifactId>jacoco-maven-plugin</artifactId>
+               <version>0.7.9</version>
+               <executions>
+                 <execution>
+                   <goals>
+                   <goal>prepare-agent</goal>
+                   </goals>
+                 </execution>
+                </executions>
+             </plugin>
+         </plugins>
+       </build>
     </profile>
   </profiles>
 </project>
