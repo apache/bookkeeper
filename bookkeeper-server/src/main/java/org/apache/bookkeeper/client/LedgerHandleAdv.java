@@ -188,6 +188,7 @@ public class LedgerHandleAdv extends LedgerHandle {
         }
         if (syncMode == SyncMode.JOURNAL_NOSYNC) {
             op.enableNosynch();
+            ledgerUsesNoSyncOperations();
         }
         final long currentLength;
         boolean wasClosed = false;

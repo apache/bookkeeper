@@ -62,6 +62,7 @@ enum OperationType {
     READ_LAC = 7;
     GET_BOOKIE_INFO = 8;
     START_TLS = 9;
+    SYNC = 10;
 }
 
 /**
@@ -83,6 +84,7 @@ message Request {
     optional ReadLacRequest readLacRequest = 104;
     optional GetBookieInfoRequest getBookieInfoRequest = 105;
     optional StartTLSRequest startTLSRequest = 106;
+    optional SyncRequest syncRequest = 107;
 }
 
 message ReadRequest {
@@ -124,6 +126,13 @@ message WriteLacRequest {
     required bytes body = 4;
 }
 
+message SyncRequest {
+    required int64 ledgerId = 1;    
+    required bytes masterKey = 2;
+    required int64 firstEntryId = 3;
+    required int64 lastEntryId = 4;
+}
+
 message ReadLacRequest {
     required int64 ledgerId = 1;
 }
@@ -151,6 +160,7 @@ message Response {
     optional ReadLacResponse readLacResponse = 104;
     optional GetBookieInfoResponse getBookieInfoResponse = 105;
     optional StartTLSResponse startTLSResponse = 106;
+    optional SyncResponse syncResponse = 107;
 }
 
 message ReadResponse {
@@ -186,6 +196,12 @@ message ReadLacResponse {
     required int64 ledgerId = 2;
     optional bytes lacBody = 3; // lac sent by PutLacRequest
     optional bytes lastEntryBody = 4; // Actual last entry on the disk
+}
+
+message SyncResponse {
+    required StatusCode status = 1;
+    required int64 ledgerId = 2;
+    required int64 lastPersistedEntryId = 3;
 }
 
 message GetBookieInfoResponse {

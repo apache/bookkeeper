@@ -62,6 +62,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
+import org.apache.bookkeeper.client.AsyncCallback;
 
 /**
  * Implements the client-side part of the BookKeeper protocol.
@@ -207,6 +208,41 @@ public class BookieClient implements PerChannelBookieClientFactory {
                     }
 
                     toSend.release();
+                }
+            }, ledgerId);
+        } finally {
+            closeLock.readLock().unlock();
+        }
+    }
+
+    public void sendSync(final BookieSocketAddress addr, final long ledgerId, final byte[] masterKey,
+            final long firstEntryId, final long lastEntryId, final BookkeeperInternalCallbacks.SyncCallback cb, final Object ctx) {
+        closeLock.readLock().lock();
+        try {
+            final PerChannelBookieClientPool client = lookupClient(addr, null);
+            if (client == null) {
+                cb.syncComplete(getRc(BKException.Code.BookieHandleNotAvailableException),
+                                  ledgerId, BookieProtocol.INVALID_ENTRY_ID, addr, ctx);
+                return;
+            }
+            
+            client.obtain(new GenericCallback<PerChannelBookieClient>() {
+                @Override
+                public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
+                    if (rc != BKException.Code.OK) {
+                        try {
+                            executor.submitOrdered(ledgerId, new SafeRunnable() {
+                                @Override
+                                public void safeRun() {
+                                    cb.syncComplete(rc, ledgerId, BookieProtocol.INVALID_ENTRY_ID, addr, ctx);
+                                }
+                            });
+                        } catch (RejectedExecutionException re) {
+                            cb.syncComplete(getRc(BKException.Code.InterruptedException), ledgerId, BookieProtocol.INVALID_ENTRY_ID, addr, ctx);
+                        }
+                    } else {
+                        pcbc.sendSync(ledgerId, masterKey, firstEntryId, lastEntryId, cb, ctx);
+                    }                   
                 }
             }, ledgerId);
         } finally {

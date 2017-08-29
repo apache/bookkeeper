@@ -117,6 +117,7 @@ public class LedgerHandle implements AutoCloseable {
     final Counter ensembleChangeCounter;
     final Counter lacUpdateHitsCounter;
     final Counter lacUpdateMissesCounter;
+    boolean usingNoSyncOperations;
 
     // This empty master key is used when an empty password is provided which is the hash of an empty string
     private final static byte[] emptyLedgerKey;
@@ -395,6 +396,25 @@ public class LedgerHandle implements AutoCloseable {
      * @param rc
      */
     void doAsyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc) {
+
+        if (usingNoSyncOperations
+            && this.lastAddPushed >= 0
+            && this.lastAddPushed != this.lastAddConfirmed) {
+            LOG.info("need to sync up to lastAddPushed {} before closing ledger, lastAddConfirmed is {}", lastAddPushed, lastAddConfirmed);
+            asyncSync(this.lastAddPushed, new AsyncCallback.SyncCallback() {
+                @Override
+                public void syncComplete(int rc, LedgerHandle lh, long lastSyncedEntryId, Object ctx) {
+                    if (rc != BKException.Code.OK) {
+                        cb.closeComplete(rc, lh, ctx);
+                    } else {
+                        usingNoSyncOperations = false;
+                        doAsyncCloseInternal(cb, ctx, rc);
+                    }
+                }
+            }, ctx);
+            return;
+        }
+
         bk.mainWorkerPool.submitOrdered(ledgerId, new SafeRunnable() {
             @Override
             public void safeRun() {
@@ -857,6 +877,10 @@ public class LedgerHandle implements AutoCloseable {
         doAsyncAddEntry(op, Unpooled.wrappedBuffer(data, offset, length), cb, ctx, SyncMode.JOURNAL_SYNC);
     }
 
+    protected void ledgerUsesNoSyncOperations() {
+        usingNoSyncOperations = true;
+    }
+
     protected void doAsyncAddEntry(final PendingAddOp op, final ByteBuf data, final AddCallback cb,
         final Object ctx, final SyncMode syncMode) {
         if (throttler != null) {
@@ -864,6 +888,7 @@ public class LedgerHandle implements AutoCloseable {
         }
         if (syncMode == SyncMode.JOURNAL_NOSYNC) {
             op.enableNosynch();
+            ledgerUsesNoSyncOperations();
         }
 
         final long entryId;
@@ -1101,6 +1126,16 @@ public class LedgerHandle implements AutoCloseable {
             }
         };
         new ReadLastConfirmedAndEntryOp(this, innercb, entryId - 1, timeOutInMillis, bk.scheduler).parallelRead(parallel).initiate();
+    }
+
+    synchronized void syncCompleted(long minLastSyncedEntryId) {
+        LOG.info("syncCompleted {}", minLastSyncedEntryId);
+        if (lastAddSynced < minLastSyncedEntryId) {
+            lastAddSynced = minLastSyncedEntryId;
+            if (lastAddConfirmed < lastAddSynced) {
+                lastAddConfirmed = lastAddSynced;
+            }
+        }
     }
 
     /**
@@ -1823,6 +1858,50 @@ public class LedgerHandle implements AutoCloseable {
         });
     }
 
+    public void asyncSync(final long entryId,
+                              final AsyncCallback.SyncCallback cb, final Object ctx) {
+        if (entryId > lastAddPushed) {
+            cb.syncComplete(BKException.Code.IncorrectParameterException, this, BookieProtocol.INVALID_ENTRY_ID, ctx);
+            return;
+        } else if (entryId <= lastAddSynced || entryId <= lastAddConfirmed) {
+            // no need to ask to bookies
+            cb.syncComplete(BKException.Code.OK, this, lastAddSynced, ctx);
+            return;
+        }
+        // TODO: compute the start entry of the ensemble which contains entry
+        final long firstEntryIdInEnsembleForEntry = 0;
+        doAsyncSync(firstEntryIdInEnsembleForEntry, entryId, cb, ctx);
+    }
+
+    public void sync(final long entryId) throws InterruptedException, BKException {
+        CompletableFuture<Long> counter = new CompletableFuture<>();
+        SyncSyncCallback callback = new SyncSyncCallback();
+        asyncSync(entryId, callback, counter);
+        SynchCallbackUtils.waitForResult(counter);
+    }
+
+    /**
+     * Make a Sync request.
+     * @since 4.6
+     */
+    private void doAsyncSync(final long firstEntryId, final long lastEntryId, AsyncCallback.SyncCallback cb, Object ctx) {
+        
+        final PendingSyncOp op = new PendingSyncOp(this, firstEntryId, lastEntryId, cb, ctx);
+        try {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Sending Sync: {}", lastEntryId);
+            }
+            bk.mainWorkerPool.submit(new SafeRunnable() {
+                @Override
+                public void safeRun() {                    
+                    op.initiate();
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            cb.syncComplete(bk.getReturnRc(BKException.Code.InterruptedException), this, BookieProtocol.INVALID_ENTRY_ID, ctx);
+        }
+    }
+
     static class NoopCloseCallback implements CloseCallback {
         static NoopCloseCallback instance = new NoopCloseCallback();
 
@@ -1898,6 +1977,15 @@ public class LedgerHandle implements AutoCloseable {
         @SuppressWarnings("unchecked")
         public void addComplete(int rc, LedgerHandle lh, long entry, Object ctx) {
             SynchCallbackUtils.finish(rc, entry, (CompletableFuture<Long>)ctx);
+        }
+    }
+
+    static class SyncSyncCallback implements AsyncCallback.SyncCallback {
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public void syncComplete(int rc, LedgerHandle lh, long lastAddSyncedEntryId, Object ctx) {
+            SynchCallbackUtils.finish(rc, null, (CompletableFuture<Long>)ctx);
         }
     }
 

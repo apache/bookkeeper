@@ -101,4 +101,77 @@ public class BookKeeperNoSyncTest extends BookKeeperClusterTestCase {
             }
         }
     }
+
+    @Test(timeout = 60000)
+    public void testSync() throws Exception {
+        int numEntries = 100;
+        byte[] data = "foobar".getBytes();
+        ClientConfiguration confWriter = new ClientConfiguration()
+            .setZkServers(zkUtil.getZooKeeperConnectString());
+        long ledgerId;
+        try (BookKeeper bkc = new BookKeeper(confWriter)) {
+            try (LedgerHandle lh = bkc.createLedger(1, 1, 1, digestType, "testPasswd".getBytes(),
+                null, SyncMode.JOURNAL_NOSYNC)) {
+                ledgerId = lh.getId();
+
+                try {
+                    lh.sync(0);
+                    fail("sync not possible as no entry has ever been written");
+                } catch (BKException.BKIncorrectParameterException err){
+                }
+
+                for (int i = 0; i < numEntries - 1; i++) {
+                    lh.addEntry(data);
+                }
+                long lastEntryId = lh.addEntry(data);
+                // wait for bookies to sync up to the lastEntryId
+                // this will advance LastAddConfirmed
+                lh.sync(lastEntryId);
+                assertEquals(lastEntryId, lh.getLastAddConfirmed());
+                assertEquals(lastEntryId, lh.getLastAddPushed());
+            }
+            try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                Enumeration<LedgerEntry> entries = lh.readEntries(0, numEntries - 1);
+                while (entries.hasMoreElements()) {
+                    LedgerEntry e = entries.nextElement();
+                    assertArrayEquals(data, e.getEntry());
+                }
+            }
+        }
+    }
+
+    @Test(timeout = 60000)
+    public void testAutoSyncOnClose() throws Exception {
+        int numEntries = 100;
+        byte[] data = "foobar".getBytes();
+        ClientConfiguration confWriter = new ClientConfiguration()
+            .setZkServers(zkUtil.getZooKeeperConnectString());
+        long ledgerId;
+        try (BookKeeper bkc = new BookKeeper(confWriter)) {
+            try (LedgerHandle lh = bkc.createLedger(1, 1, 1, digestType, "testPasswd".getBytes(),
+                null, SyncMode.JOURNAL_NOSYNC)) {
+                ledgerId = lh.getId();
+
+                try {
+                    lh.sync(0);
+                    fail("sync not possible as no entry has ever been written");
+                } catch (BKException.BKIncorrectParameterException err){
+                }
+
+                for (int i = 0; i < numEntries - 1; i++) {
+                    lh.addEntry(data);
+                }
+                long lastEntryId = lh.addEntry(data);
+                assertEquals(lastEntryId, lh.getLastAddPushed());
+                // close operation will automatically perform a 'sync' up to lastAddPushed
+            }
+            try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                Enumeration<LedgerEntry> entries = lh.readEntries(0, numEntries - 1);
+                while (entries.hasMoreElements()) {
+                    LedgerEntry e = entries.nextElement();
+                    assertArrayEquals(data, e.getEntry());
+                }
+            }
+        }
+    }
 }

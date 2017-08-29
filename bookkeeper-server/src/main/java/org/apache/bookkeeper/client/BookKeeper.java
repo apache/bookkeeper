@@ -100,6 +100,7 @@ public class BookKeeper implements AutoCloseable {
     private OpStatsLogger readLacAndEntryRespLogger;
     private OpStatsLogger addOpLogger;
     private OpStatsLogger writeLacOpLogger;
+    private OpStatsLogger syncOpLogger;
     private OpStatsLogger readLacOpLogger;
     private OpStatsLogger recoverAddEntriesStats;
     private OpStatsLogger recoverReadEntriesStats;
@@ -1516,6 +1517,7 @@ public class BookKeeper implements AutoCloseable {
         readLacAndEntryRespLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY_RESPONSE);
         addOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.ADD_OP);
         writeLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.WRITE_LAC_OP);
+        syncOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.SYNC_OP);
         readLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAC_OP);
         recoverAddEntriesStats = stats.getOpStatsLogger(BookKeeperClientStats.LEDGER_RECOVER_ADD_ENTRIES);
         recoverReadEntriesStats = stats.getOpStatsLogger(BookKeeperClientStats.LEDGER_RECOVER_READ_ENTRIES);
@@ -1530,6 +1532,7 @@ public class BookKeeper implements AutoCloseable {
     OpStatsLogger getReadLacAndEntryRespLogger() { return readLacAndEntryRespLogger; }
     OpStatsLogger getAddOpLogger() { return addOpLogger; }
     OpStatsLogger getWriteLacOpLogger() { return writeLacOpLogger; }
+    OpStatsLogger getSyncOpLogger() { return syncOpLogger; }
     OpStatsLogger getReadLacOpLogger() { return readLacOpLogger; }
     OpStatsLogger getRecoverAddCountLogger() { return recoverAddEntriesStats; }
     OpStatsLogger getRecoverReadCountLogger() { return recoverReadEntriesStats; }
