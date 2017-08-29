@@ -96,7 +96,7 @@ public class GrowableArrayBlockingQueueTest {
         }
     }
 
-    @Test(timeout = 10000)
+    @Test
     public void blockingTake() throws Exception {
         BlockingQueue<Integer> queue = new GrowableArrayBlockingQueue<>();
 
@@ -163,7 +163,7 @@ public class GrowableArrayBlockingQueueTest {
         assertEquals(Lists.newArrayList(1, 2, 3), list);
     }
 
-    @Test(timeout = 10000)
+    @Test
     public void pollTimeout() throws Exception {
         BlockingQueue<Integer> queue = new GrowableArrayBlockingQueue<>(4);
 
@@ -181,7 +181,7 @@ public class GrowableArrayBlockingQueueTest {
         assertEquals(3, queue.poll(1, TimeUnit.HOURS).intValue());
     }
 
-    @Test(timeout = 10000)
+    @Test
     public void pollTimeout2() throws Exception {
         BlockingQueue<Integer> queue = new GrowableArrayBlockingQueue<>();
 

@@ -38,7 +38,7 @@ public class CloseTest extends BookKeeperClusterTestCase  {
         this.digestType = DigestType.CRC32;
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testClose() throws Exception {
 
         /*
@@ -69,7 +69,7 @@ public class CloseTest extends BookKeeperClusterTestCase  {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testCloseByOthers() throws Exception {
 
         int numLedgers = 1;

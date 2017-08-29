@@ -63,7 +63,7 @@ public class TestWeightedRandomSelection {
     public void tearDown() throws Exception {
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testSelectionWithEqualWeights() throws Exception {
         Map<String, WeightedObject> map = new HashMap<String, WeightedObject>();
 
@@ -92,7 +92,7 @@ public class TestWeightedRandomSelection {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testSelectionWithAllZeroWeights() throws Exception {
         Map<String, WeightedObject> map = new HashMap<String, WeightedObject>();
 
@@ -162,7 +162,7 @@ public class TestWeightedRandomSelection {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testSelectionWithSomeZeroWeights() throws Exception {
         Map<String, WeightedObject> map = new HashMap<String, WeightedObject>();
         Map<String, Integer> randomSelection = new HashMap<String, Integer>();
@@ -192,7 +192,7 @@ public class TestWeightedRandomSelection {
         verifyResult(map, randomSelection, multiplier, minWeight, medianWeight, total, totalTries);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testSelectionWithUnequalWeights() throws Exception {
         Map<String, WeightedObject> map = new HashMap<String, WeightedObject>();
         Map<String, Integer> randomSelection = new HashMap<String, Integer>();
@@ -222,7 +222,7 @@ public class TestWeightedRandomSelection {
         verifyResult(map, randomSelection, multiplier, minWeight, medianWeight, total, totalTries);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testSelectionWithHotNode() throws Exception {
         Map<String, WeightedObject> map = new HashMap<String, WeightedObject>();
         Map<String, Integer> randomSelection = new HashMap<String, Integer>();
@@ -250,7 +250,7 @@ public class TestWeightedRandomSelection {
         verifyResult(map, randomSelection, multiplier, minWeight, medianWeight, total, totalTries);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testSelectionWithHotNodeWithLimit() throws Exception {
         Map<String, WeightedObject> map = new HashMap<String, WeightedObject>();
         Map<String, Integer> randomSelection = new HashMap<String, Integer>();

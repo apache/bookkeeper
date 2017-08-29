@@ -48,12 +48,12 @@ public class LedgerMetadataCreationTest extends LedgerManagerTestCase {
         baseConf.setGcWaitTime(100000);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCreationAndDeletionWithRandomLedgerIds() throws Exception {
         testExecution(true);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCreationAndDeletion() throws Exception{
         testExecution(false);
     }
@@ -121,7 +121,7 @@ public class LedgerMetadataCreationTest extends LedgerManagerTestCase {
         }
         executor.shutdown();
         assertTrue("All the ledger create/delete operations should have'been completed",
-                executor.awaitTermination(30, TimeUnit.SECONDS));
+                executor.awaitTermination(120, TimeUnit.SECONDS));
         assertTrue("There should be no failed creates. But there are " + failedCreates.size() + " failedCreates",
                 failedCreates.isEmpty());
         assertTrue("There should be no failed deletes. But there are " + failedDeletes.size() + " failedDeletes",
@@ -129,7 +129,7 @@ public class LedgerMetadataCreationTest extends LedgerManagerTestCase {
         bookKeeper.close();
     }
     
-    @Test(timeout = 60000)
+    @Test
     public void testParentNodeDeletion() throws Exception {
         /*
          * run this testcase only for HierarchicalLedgerManager and

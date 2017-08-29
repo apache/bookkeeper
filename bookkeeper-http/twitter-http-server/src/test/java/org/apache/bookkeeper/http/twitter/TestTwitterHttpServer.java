@@ -39,7 +39,7 @@ public class TestTwitterHttpServer {
 
     private int port = 8080;
 
-    @Test(timeout = 60000)
+    @Test
     public void testStartBasicHttpServer() throws Exception {
         TwitterHttpServer httpServer = new TwitterHttpServer();
         ServiceProvider serviceProvider = NullServiceProvider.getInstance();

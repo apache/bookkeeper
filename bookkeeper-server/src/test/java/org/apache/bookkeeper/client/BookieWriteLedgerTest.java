@@ -87,7 +87,7 @@ public class BookieWriteLedgerTest extends
     }
 
     public BookieWriteLedgerTest() {
-        super(5);
+        super(5, 180);
         this.digestType = DigestType.CRC32;
         String ledgerManagerFactory = "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory";
         // set ledger manager
@@ -99,7 +99,7 @@ public class BookieWriteLedgerTest extends
      * Verify write when few bookie failures in last ensemble and forcing
      * ensemble reformation
      */
-    @Test(timeout=60000)
+    @Test
     public void testWithMultipleBookieFailuresInLastEnsemble() throws Exception {
         // Create a ledger
         lh = bkc.createLedger(5, 4, digestType, ledgerPassword);
@@ -146,7 +146,7 @@ public class BookieWriteLedgerTest extends
      *
      * @throws Exception
      */
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCreateAdv() throws Exception {
         // Create a ledger
         lh = bkc.createLedgerAdv(5, 3, 2, digestType, ledgerPassword);
@@ -186,7 +186,7 @@ public class BookieWriteLedgerTest extends
      *
      * @throws Exception
      */
-    @Test(timeout = 60000)
+    @Test
     public void testNoAddEntryLedgerCreateAdv() throws Exception {
 
         ByteBuffer entry = ByteBuffer.allocate(4);
@@ -258,7 +258,7 @@ public class BookieWriteLedgerTest extends
      *
      * @throws Exception
      */
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCreateAdvWithLedgerId() throws Exception {
         // Create a ledger
         long ledgerId = 0xABCDEF;
@@ -301,7 +301,7 @@ public class BookieWriteLedgerTest extends
      *
      * @throws Exception
      */
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCreateWithCustomMetadata() throws Exception {
         // Create a ledger
         long ledgerId;
@@ -347,7 +347,7 @@ public class BookieWriteLedgerTest extends
      *
      * @throws Exception
      */
-    @Test(timeout = 180000)
+    @Test
     public void testLedgerCreateAdvWithLedgerIdInLoop() throws Exception {
         long ledgerId;
         int ledgerCount = 40;
@@ -393,7 +393,7 @@ public class BookieWriteLedgerTest extends
     /**
      * Verify asynchronous writing when few bookie failures in last ensemble.
      */
-    @Test(timeout=60000)
+    @Test
     public void testAsyncWritesWithMultipleFailuresInLastEnsemble()
             throws Exception {
         // Create ledgers
@@ -466,7 +466,7 @@ public class BookieWriteLedgerTest extends
     /**
      * Verify Advanced asynchronous writing with entryIds in reverse order
      */
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCreateAdvWithAsyncWritesWithBookieFailures() throws Exception {
         // Create ledgers
         lh = bkc.createLedgerAdv(5, 3, 2, digestType, ledgerPassword);
@@ -520,7 +520,7 @@ public class BookieWriteLedgerTest extends
     /**
      * Verify Advanced asynchronous writing with entryIds in pseudo random order with bookie failures between writes
      */
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCreateAdvWithRandomAsyncWritesWithBookieFailuresBetweenWrites() throws Exception {
         // Create ledgers
         lh = bkc.createLedgerAdv(5, 3, 2, digestType, ledgerPassword);
@@ -588,7 +588,7 @@ public class BookieWriteLedgerTest extends
     /**
      * Verify Advanced asynchronous writing with entryIds in pseudo random order
      */
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCreateAdvWithRandomAsyncWritesWithBookieFailures() throws Exception {
         // Create ledgers
         lh = bkc.createLedgerAdv(5, 3, 2, digestType, ledgerPassword);
@@ -657,7 +657,7 @@ public class BookieWriteLedgerTest extends
      *
      * @throws Exception
      */
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCreateAdvWithSkipEntries() throws Exception {
         long ledgerId;
         SyncObj syncObj1 = new SyncObj();
@@ -703,7 +703,7 @@ public class BookieWriteLedgerTest extends
      *
      * @throws Exception
      */
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCreateAdvSyncAddDuplicateEntryIds() throws Exception {
         // Create a ledger
         lh = bkc.createLedgerAdv(5, 3, 2, digestType, ledgerPassword);
@@ -740,7 +740,7 @@ public class BookieWriteLedgerTest extends
      *
      * @throws Exception
      */
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCreateAdvSyncAsyncAddDuplicateEntryIds() throws Exception {
         long ledgerId;
         SyncObj syncObj1 = new SyncObj();

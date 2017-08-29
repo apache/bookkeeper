@@ -31,7 +31,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
         super(lmFactoryCls);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testIterateNoLedgers() throws Exception {
         LedgerManager lm = getLedgerManager();
         LedgerRangeIterator lri = lm.getLedgerRanges();

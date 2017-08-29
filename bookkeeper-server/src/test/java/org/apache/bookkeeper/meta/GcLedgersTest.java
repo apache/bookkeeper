@@ -144,7 +144,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         assertEquals("Remove should have succeeded", 0, rc.get());
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testGarbageCollectLedgers() throws Exception {
         int numLedgers = 100;
         int numRemovedLedgers = 10;
@@ -244,7 +244,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testGcLedgersOutsideRange() throws Exception {
         final SortedSet<Long> createdLedgers = Collections.synchronizedSortedSet(new TreeSet<Long>());
         final Queue<Long> cleaned = new LinkedList<Long>();
@@ -278,7 +278,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         assertEquals("Should have cleaned first ledger" + first, (long)first, (long)cleaned.poll());
     }
 
-    @Test(timeout=120000)
+    @Test
     public void testGcLedgersNotLast() throws Exception {
         final SortedSet<Long> createdLedgers = Collections.synchronizedSortedSet(new TreeSet<Long>());
         final List<Long> cleaned = new ArrayList<Long>();

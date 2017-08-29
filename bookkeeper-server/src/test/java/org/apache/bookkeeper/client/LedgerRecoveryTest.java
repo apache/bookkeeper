@@ -86,23 +86,23 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
                    afterlh.getLength() == length);
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testLedgerRecovery() throws Exception {
         testInternal(100);
 
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testEmptyLedgerRecoveryOne() throws Exception {
         testInternal(1);
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testEmptyLedgerRecovery() throws Exception {
         testInternal(0);
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testLedgerRecoveryWithWrongPassword() throws Exception {
         // Create a ledger
         byte[] ledgerPassword = "aaaa".getBytes();
@@ -126,7 +126,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testLedgerRecoveryWithNotEnoughBookies() throws Exception {
         int numEntries = 3;
 
@@ -164,7 +164,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
         assertEquals(numEntries - 1, afterlh.getLastAddConfirmed());
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testLedgerRecoveryWithSlowBookie() throws Exception {
         for (int i = 0; i < 3; i++) {
             LOG.info("TestLedgerRecoveryWithAckQuorum @ slow bookie {}", i);
@@ -236,7 +236,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
      * 7. B2 goes down for maintenance.
      * 8. Ledger recovery starts (ledger is now unavailable)
      */
-    @Test(timeout=60000)
+    @Test
     public void testLedgerRecoveryWithRollingRestart() throws Exception {
         LedgerHandle lhbefore = bkc.createLedger(numBookies, 2, digestType, "".getBytes());
         for (int i = 0; i < (numBookies*3)+1; i++) {
@@ -317,7 +317,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
      * 7. A new non-faulty bookie comes up
      * 8. Another client trying to recover the same ledger.
      */
-    @Test(timeout=60000)
+    @Test
     public void testBookieFailureDuringRecovery() throws Exception {
         LedgerHandle lhbefore = bkc.createLedger(numBookies, 2, digestType, "".getBytes());
         for (int i = 0; i < (numBookies*3)+1; i++) {
@@ -363,7 +363,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
      * Verify that it doesn't break the recovery when changing ensemble in
      * recovery add.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testEnsembleChangeDuringRecovery() throws Exception {
         LedgerHandle lh = bkc.createLedger(numBookies, 2, 2, digestType, "".getBytes());
         int numEntries = (numBookies * 3) + 1;
@@ -422,12 +422,12 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
         bs.add(startBookie(conf, rBookie));
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testBatchRecoverySize3() throws Exception {
         batchRecovery(3);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testBatchRecoverySize13() throws Exception {
         batchRecovery(13);
     }

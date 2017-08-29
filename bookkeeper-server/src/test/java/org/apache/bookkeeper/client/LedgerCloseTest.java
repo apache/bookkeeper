@@ -67,7 +67,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
         baseConf.setGcWaitTime(999999);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCloseWithConsistentLength() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         conf.setZkServers(zkUtil.getZooKeeperConnectString()).setReadTimeout(1);
@@ -95,14 +95,14 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
         assertEquals(LedgerHandle.INVALID_ENTRY_ID, newLh.getLastAddConfirmed());
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCloseDuringUnrecoverableErrors() throws Exception {
         int numEntries = 3;
         LedgerHandle lh = bkc.createLedger(3, 3, 3, digestType, "".getBytes());
         verifyMetadataConsistency(numEntries, lh);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCheckerShouldnotSelectInvalidLastFragments() throws Exception {
         int numEntries = 10;
         LedgerHandle lh = bkc.createLedger(3, 3, 3, digestType, "".getBytes());
@@ -233,7 +233,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
         bs.add(startBookie(conf, dBookie));
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testAllWritesAreCompletedOnClosedLedger() throws Exception {
         for (int i = 0; i < 100; i++) {
             LOG.info("Iteration {}", i);

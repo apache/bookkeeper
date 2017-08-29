@@ -42,7 +42,7 @@ public class TestTryReadLastConfirmed extends BookKeeperClusterTestCase {
         this.digestType = DigestType.CRC32;
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testTryReadLACWhenAllBookiesUp() throws Exception {
         final int numEntries = 3;
 
@@ -99,7 +99,7 @@ public class TestTryReadLastConfirmed extends BookKeeperClusterTestCase {
         readLh.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testTryReadLaCWhenSomeBookiesDown() throws Exception {
         final int numEntries = 3;
         final int ensembleSize = 3;
@@ -147,7 +147,7 @@ public class TestTryReadLastConfirmed extends BookKeeperClusterTestCase {
         readLh.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testTryReadLACWhenAllBookiesDown() throws Exception {
         final int numEntries = 2;
         final int ensembleSize = 3;

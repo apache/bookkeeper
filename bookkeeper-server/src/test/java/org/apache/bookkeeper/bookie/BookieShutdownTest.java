@@ -59,7 +59,7 @@ public class BookieShutdownTest extends BookKeeperClusterTestCase {
      * Continuously restarting the bookie server to see all the external
      * resources are releasing properly. BOOKKEEPER-678
      */
-    @Test(timeout = 150000)
+    @Test
     public void testBookieRestartContinuously() throws Exception {
         for (int index = 0; index < 10; index++) {
             SyncObj sync = new SyncObj();
@@ -111,7 +111,7 @@ public class BookieShutdownTest extends BookKeeperClusterTestCase {
      *
      * @throws Exception
      */
-    @Test(timeout = 60000)
+    @Test
     public void testBookieShutdownFromBookieThread() throws Exception {
         ServerConfiguration conf = bsConfs.get(0);
         killBookie(0);

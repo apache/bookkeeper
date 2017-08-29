@@ -88,7 +88,7 @@ public class AuthAutoRecoveryTest extends BookKeeperClusterTestCase {
     /*
      * test the client role of the auditor
      */
-    @Test(timeout = 60000)
+    @Test
     public void testAuthClientRole() throws Exception {
         ServerConfiguration config = bsConfs.get(0);
         assertEquals(AuditorClientAuthInterceptorFactory.class.getName(), config.getClientAuthProviderFactoryClass());

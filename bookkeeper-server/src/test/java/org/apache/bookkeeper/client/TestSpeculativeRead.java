@@ -116,7 +116,7 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
      * - read second bookie, spec client should find on bookie three,
      *   non spec client should hang.
      */
-    @Test(timeout=60000)
+    @Test
     public void testSpeculativeRead() throws Exception {
         long id = getLedgerToRead(3,2);
         BookKeeper bknospec = createClient(0); // disabled
@@ -160,7 +160,7 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
      * Test that if more than one replica is down, we can still read, as long as the quorum
      * size is larger than the number of down replicas.
      */
-    @Test(timeout=60000)
+    @Test
     public void testSpeculativeReadMultipleReplicasDown() throws Exception {
         long id = getLedgerToRead(5,5);
         int timeout = 5000;
@@ -231,7 +231,7 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
      * Test that if after a speculative read is kicked off, the original read completes
      * nothing bad happens.
      */
-    @Test(timeout=60000)
+    @Test
     public void testSpeculativeReadFirstReadCompleteIsOk() throws Exception {
         long id = getLedgerToRead(2,2);
         int timeout = 1000;
@@ -274,7 +274,7 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
     /**
      * Unit test for the speculative read scheduling method
      */
-    @Test(timeout=60000)
+    @Test
     public void testSpeculativeReadScheduling() throws Exception {
         long id = getLedgerToRead(3,2);
         int timeout = 1000;

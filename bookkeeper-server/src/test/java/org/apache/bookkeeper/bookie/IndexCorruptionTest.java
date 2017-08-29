@@ -52,7 +52,7 @@ public class IndexCorruptionTest extends BookKeeperClusterTestCase {
         baseConf.setPageSize(pageSize);
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testNoSuchLedger() throws Exception {
         LOG.debug("Testing NoSuchLedger");
 
@@ -93,7 +93,7 @@ public class IndexCorruptionTest extends BookKeeperClusterTestCase {
         assertEquals(entryId, numMsgs);
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testEmptyIndexPage() throws Exception {
         LOG.debug("Testing EmptyIndexPage");
 

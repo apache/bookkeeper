@@ -285,17 +285,17 @@ public class MultipleThreadReadTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void test10Ledgers20ThreadsRead() throws IOException {
         multiLedgerMultiThreadRead(10, 20);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void test10Ledgers200ThreadsRead() throws IOException {
         multiLedgerMultiThreadRead(10, 200);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void test1Ledger20ThreadsRead() throws IOException {
         multiLedgerMultiThreadRead(1, 20);
     }

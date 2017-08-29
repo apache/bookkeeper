@@ -75,7 +75,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
      * This specific race was found in
      * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-485}.
      */
-    @Test(timeout=60000)
+    @Test
     public void testConnectCloseRace() throws Exception {
         EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
         OrderedSafeExecutor executor = getOrderedSafeExecutor();
@@ -111,7 +111,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
      * where multiple clients try to connect a channel simultaneously. If not synchronised
      * correctly, this causes the netty channel to get orphaned.
      */
-    @Test(timeout=60000)
+    @Test
     public void testConnectRace() throws Exception {
         GenericCallback<PerChannelBookieClient> nullop = new GenericCallback<PerChannelBookieClient>() {
             @Override
@@ -142,7 +142,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
      *
      * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-620}
      */
-    @Test(timeout=60000)
+    @Test
     public void testDisconnectRace() throws Exception {
         final GenericCallback<PerChannelBookieClient> nullop = new GenericCallback<PerChannelBookieClient>() {
             @Override
@@ -228,7 +228,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
      * Test that requests are completed even if the channel is disconnected
      * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-668}
      */
-    @Test(timeout=60000)
+    @Test
     public void testRequestCompletesAfterDisconnectRace() throws Exception {
         ServerConfiguration conf = killBookie(0);
 

@@ -84,7 +84,7 @@ public class TestReadLastConfirmedAndEntry extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testAdvancedLacWithEmptyResponse() throws Exception {
         byte[] passwd = "advanced-lac-with-empty-response".getBytes(UTF_8);
 
@@ -200,7 +200,7 @@ public class TestReadLastConfirmedAndEntry extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testRaceOnLastAddConfirmed() throws Exception {
         byte[] passwd = "race-on-last-add-confirmed".getBytes(UTF_8);
 

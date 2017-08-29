@@ -73,7 +73,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
      * Tests that replicate method should replicate the failed bookie fragments
      * to target bookie passed.
      */
-    @Test(timeout=60000)
+    @Test
     public void testReplicateLFShouldCopyFailedBookieFragmentsToTargetBookie()
             throws Exception {
         byte[] data = "TestLedgerFragmentReplication".getBytes();
@@ -130,7 +130,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
      * Tests that fragment re-replication fails on last unclosed ledger
      * fragments.
      */
-    @Test(timeout=60000)
+    @Test
     public void testReplicateLFFailsOnlyOnLastUnClosedFragments()
             throws Exception {
         byte[] data = "TestLedgerFragmentReplication".getBytes();
@@ -188,7 +188,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
      * Tests that ReplicateLedgerFragment should return false if replication
      * fails
      */
-    @Test(timeout=60000)
+    @Test
     public void testReplicateLFShouldReturnFalseIfTheReplicationFails()
             throws Exception {
         byte[] data = "TestLedgerFragmentReplication".getBytes();
@@ -232,7 +232,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
      * Tests that splitIntoSubFragment should be able to split the original
      * passed fragment into sub fragments at correct boundaries
      */
-    @Test(timeout = 30000)
+    @Test
     public void testSplitIntoSubFragmentsWithDifferentFragmentBoundaries()
             throws Exception {
         LedgerMetadata metadata = new LedgerMetadata(3, 3, 3, TEST_DIGEST_TYPE,

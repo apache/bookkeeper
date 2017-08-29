@@ -76,7 +76,7 @@ public class CreateNewLogTest {
      * 
      * @throws Exception
      */
-    @Test(timeout=60000)
+    @Test
     public void testCreateNewLog() throws Exception {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
                      
@@ -101,7 +101,7 @@ public class CreateNewLogTest {
         Assert.assertTrue("Wrong log id", el.getCurrentLogId() > 1);
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testCreateNewLogWithNoWritableLedgerDirs() throws Exception {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
 

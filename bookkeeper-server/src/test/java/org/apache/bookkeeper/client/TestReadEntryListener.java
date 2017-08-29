@@ -143,12 +143,12 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
         lh.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testBasicEnableParallelRead() throws Exception {
         basicReadTest(true);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testBasicDisableParallelRead() throws Exception {
         basicReadTest(false);
     }
@@ -207,12 +207,12 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
         lh.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReadMissingEntriesEnableParallelRead() throws Exception {
         readMissingEntriesTest(true);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReadMissingEntriesDisableParallelRead() throws Exception {
         readMissingEntriesTest(false);
     }
@@ -247,12 +247,12 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
         lh.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReadWithFailedBookiesEnableParallelRead() throws Exception {
         readWithFailedBookiesTest(true);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReadWithFailedBookiesDisableParallelRead() throws Exception {
         readWithFailedBookiesTest(false);
     }
@@ -292,12 +292,12 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
         lh.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReadFailureWithFailedBookiesEnableParallelRead() throws Exception {
         readWithFailedBookiesTest(true);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReadFailureWithFailedBookiesDisableParallelRead() throws Exception {
         readWithFailedBookiesTest(false);
     }
