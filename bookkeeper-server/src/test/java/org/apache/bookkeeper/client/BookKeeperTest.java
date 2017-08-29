@@ -97,7 +97,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
      * Test that bookkeeper is not able to open ledgers if
      * it provides the wrong password or wrong digest
      */
-    @Test(timeout=60000)
+    @Test
     public void testBookkeeperPassword() throws Exception {
         ClientConfiguration conf = new ClientConfiguration()
             .setZkServers(zkUtil.getZooKeeperConnectString());
@@ -157,7 +157,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
      * a callback error and not an InterruptedException.
      * @throws Exception
      */
-    @Test(timeout=60000)
+    @Test
     public void testAsyncReadWithError() throws Exception {
         LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "testPasswd".getBytes());
         bkc.close();
@@ -182,7 +182,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
      * Test that bookkeeper will close cleanly if close is issued
      * while another operation is in progress.
      */
-    @Test(timeout=60000)
+    @Test
     public void testCloseDuringOp() throws Exception {
         ClientConfiguration conf = new ClientConfiguration()
             .setZkServers(zkUtil.getZooKeeperConnectString());
@@ -218,7 +218,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testIsClosed() throws Exception {
         ClientConfiguration conf = new ClientConfiguration()
         .setZkServers(zkUtil.getZooKeeperConnectString());
@@ -238,7 +238,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         bkc.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReadFailureCallback() throws Exception {
         ClientConfiguration conf = new ClientConfiguration().setZkServers(zkUtil.getZooKeeperConnectString());
 
@@ -284,7 +284,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         startBKCluster();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testAutoCloseableBookKeeper() throws Exception {
         ClientConfiguration conf = new ClientConfiguration()
                 .setZkServers(zkUtil.getZooKeeperConnectString());
@@ -303,7 +303,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         Assert.assertTrue("BookKeeper should be closed!", _bkc.closed);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReadHandleWithNoExplicitLAC() throws Exception {
         ClientConfiguration confWithNoExplicitLAC = new ClientConfiguration()
                 .setZkServers(zkUtil.getZooKeeperConnectString());
@@ -363,7 +363,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         bkcWithNoExplicitLAC.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReadHandleWithExplicitLAC() throws Exception {
         ClientConfiguration confWithExplicitLAC = new ClientConfiguration()
                 .setZkServers(zkUtil.getZooKeeperConnectString());
@@ -427,7 +427,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         bkcWithExplicitLAC.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReadAfterLastAddConfirmed() throws Exception {
 
         ClientConfiguration clientConfiguration = new ClientConfiguration()
@@ -644,7 +644,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReadWriteWithV2WireProtocol() throws Exception {
         ClientConfiguration conf = new ClientConfiguration()
                 .setZkServers(zkUtil.getZooKeeperConnectString())
@@ -690,7 +690,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReadEntryReleaseByteBufs() throws Exception {
         ClientConfiguration confWriter = new ClientConfiguration()
             .setZkServers(zkUtil.getZooKeeperConnectString());

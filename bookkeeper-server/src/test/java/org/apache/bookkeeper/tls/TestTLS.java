@@ -119,7 +119,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     /**
      * Verify that a server will not start if tls is enabled but no cert is specified
      */
-    @Test(timeout = 60000)
+    @Test
     public void testStartTLSServerNoKeyStore() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration().setTLSKeyStore(null);
 
@@ -134,7 +134,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     /**
      * Verify that a server will not start if tls is enabled but the cert password is incorrect
      */
-    @Test(timeout = 60000)
+    @Test
     public void testStartTLSServerBadPassword() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration().setTLSKeyStorePasswordPath("badpassword");
         try {
@@ -172,7 +172,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     /**
      * Verify the basic use of TLS. TLS client, TLS servers
      */
-    @Test(timeout = 60000)
+    @Test
     public void testConnectToTLSClusterTLSClient() throws Exception {
         ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
         testClient(clientConf, numBookies);
@@ -182,7 +182,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     /**
      * Multiple clients, some with TLS, and some without TLS
      */
-    @Test(timeout = 60000)
+    @Test
     public void testConnectToTLSClusterMixedClient() throws Exception {
         ClientConfiguration confWithTLS = new ClientConfiguration(baseClientConf);
         testClient(confWithTLS, numBookies);
@@ -195,7 +195,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     /**
      * Verify the basic use of TLS. TLS client, TLS servers. No Mutual Authentication.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testConnectToTLSClusterTLSClientWithTLSNoAuthentication() throws Exception {
         ServerConfiguration serverConf = new ServerConfiguration(baseConf);
         serverConf.setTLSClientAuthentication(false);
@@ -208,7 +208,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     /**
      * Verify the basic use of TLS. TLS client, TLS servers with mutual Auth.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testConnectToTLSClusterTLSClientWithAuthentication() throws Exception {
         ClientConfiguration conf = new ClientConfiguration(baseClientConf);
         try {
@@ -221,7 +221,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     /**
      * Verify that a client without tls enabled can connect to a cluster with TLS
      */
-    @Test(timeout = 60000)
+    @Test
     public void testConnectToTLSClusterNonTLSClient() throws Exception {
         ClientConfiguration conf = new ClientConfiguration(baseClientConf);
         conf.setTLSProviderFactoryClass(null);
@@ -235,7 +235,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     /**
      * Verify that a client will fail to connect to a server if it has asked for TLS, but it is not available.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testClientWantsTLSNoServersHaveIt() throws Exception {
         ServerConfiguration serverConf = new ServerConfiguration();
         for (ServerConfiguration conf : bsConfs) {
@@ -256,7 +256,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
      * Verify that a client will be able to connect to a bookie cluster if it has asked for TLS, and there are enough
      * bookies with TLS enabled in the cluster, although few bookies do not have TLS enabled.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testTLSClientButOnlyFewTLSServers() throws Exception {
         // disable TLS on initial set of bookies
         ServerConfiguration serverConf = new ServerConfiguration();
@@ -287,7 +287,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     /**
      * Verify that a client-side Auth plugin can access server certificates
      */
-    @Test(timeout = 60000)
+    @Test
     public void testClientAuthPlugin() throws Exception {
         secureClientSideChannel = false;
         secureClientSideChannelPrincipals = null;
@@ -307,7 +307,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     /**
      * Verify that a bookie-side Auth plugin can access server certificates
      */
-    @Test(timeout = 60000)
+    @Test
     public void testBookieAuthPluginRequireClientTLSAuthentication() throws Exception {
         ServerConfiguration serverConf = new ServerConfiguration(baseConf);
         serverConf.setBookieAuthProviderFactoryClass(AllowOnlyClientsWithX509Certificates.class.getName());
@@ -329,7 +329,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     /**
      * Verify that a bookie-side Auth plugin can access server certificates
      */
-    @Test(timeout = 60000)
+    @Test
     public void testBookieAuthPluginDenyAccesstoClientWithoutTLSAuthentication() throws Exception {
         ServerConfiguration serverConf = new ServerConfiguration(baseConf);
         serverConf.setTLSClientAuthentication(false);
@@ -355,7 +355,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     /**
      * Verify that a bookie-side Auth plugin can access server certificates
      */
-    @Test(timeout = 60000)
+    @Test
     public void testBookieAuthPluginDenyAccessToClientWithoutTLS() throws Exception {
         ServerConfiguration serverConf = new ServerConfiguration(baseConf);
         serverConf.setBookieAuthProviderFactoryClass(AllowOnlyClientsWithX509Certificates.class.getName());
@@ -462,7 +462,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
      * Verify that a client will fail to connect to a server if it has asked for TLS, but it is not available. Verify
      * that if there are enough TLS servers to fill the ensemble, it will eventually use those rather than the non-TLS
      */
-    @Test(timeout = 60000)
+    @Test
     public void testMixedCluster() throws Exception {
         ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
         int origNumBookies = numBookies;
@@ -488,7 +488,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     /**
      * Verify that if the server hangs while an TLS client is trying to connect, the client can continue.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testHungServer() throws Exception {
         ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
         CountDownLatch latch = new CountDownLatch(1);

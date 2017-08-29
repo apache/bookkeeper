@@ -241,12 +241,12 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
      *
      * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-667}
      */
-    @Test(timeout = 60000)
+    @Test
     public void testMetadataConflictWithRecovery() throws Exception {
         metadataConflictWithRecovery(bkc);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testMetadataConflictWhenDelayingEnsembleChange() throws Exception {
         ClientConfiguration newConf = new ClientConfiguration(baseClientConf);
         newConf.setZkServers(zkUtil.getZooKeeperConnectString());
@@ -298,7 +298,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
      *
      * @throws Exception
      */
-    @Test(timeout=60000)
+    @Test
     public void testAsyncBookieRecoveryToSpecificBookie() throws Exception {
         // Create the ledgers
         int numLedgers = 3;
@@ -354,7 +354,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
      *
      * @throws Exception
      */
-    @Test(timeout=60000)
+    @Test
     public void testAsyncBookieRecoveryToRandomBookies() throws Exception {
         // Create the ledgers
         int numLedgers = 3;
@@ -410,7 +410,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
      *
      * @throws Exception
      */
-    @Test(timeout=60000)
+    @Test
     public void testSyncBookieRecoveryToSpecificBookie() throws Exception {
         // Create the ledgers
         int numLedgers = 3;
@@ -456,7 +456,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
      *
      * @throws Exception
      */
-    @Test(timeout=60000)
+    @Test
     public void testSyncBookieRecoveryToRandomBookies() throws Exception {
         // Create the ledgers
         int numLedgers = 3;
@@ -625,7 +625,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
     /**
      * Test recoverying the closed ledgers when the failed bookie server is in the last ensemble
      */
-    @Test(timeout=60000)
+    @Test
     public void testBookieRecoveryOnClosedLedgers() throws Exception {
         // Create the ledgers
         int numLedgers = 3;
@@ -657,7 +657,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testBookieRecoveryOnOpenedLedgers() throws Exception {
         // Create the ledgers
         int numLedgers = 3;
@@ -694,7 +694,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testBookieRecoveryOnInRecoveryLedger() throws Exception {
         int numMsgs = 10;
         // Create the ledgers
@@ -756,7 +756,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
 
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testAsyncBookieRecoveryToRandomBookiesNotEnoughBookies() throws Exception {
         // Create the ledgers
         int numLedgers = 3;
@@ -787,7 +787,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testSyncBookieRecoveryToRandomBookiesCheckForDupes() throws Exception {
         Random r = new Random();
 
@@ -831,7 +831,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void recoverWithoutPasswordInConf() throws Exception {
         byte[] passwdCorrect = "AAAAAA".getBytes();
         byte[] passwdBad = "BBBBBB".getBytes();

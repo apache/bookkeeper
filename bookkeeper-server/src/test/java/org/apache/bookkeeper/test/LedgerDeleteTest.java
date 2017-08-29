@@ -114,7 +114,7 @@ public class LedgerDeleteTest extends BookKeeperClusterTestCase {
      *
      * @throws Exception
      */
-    @Test(timeout=60000)
+    @Test
     public void testLedgerDelete() throws Exception {
         // Write enough ledger entries so that we roll over the initial entryLog (0.log)
         LedgerHandle[] lhs = writeLedgerEntries(3, 1024, 1024);
@@ -143,7 +143,7 @@ public class LedgerDeleteTest extends BookKeeperClusterTestCase {
      *
      * @throws Exception
      */
-    @Test(timeout=60000)
+    @Test
     public void testLedgerDeleteWithExistingEntryLogs() throws Exception {
         // Write enough ledger entries so that we roll over the initial entryLog (0.log)
         LedgerHandle[] lhs = writeLedgerEntries(3, 1024, 1024);

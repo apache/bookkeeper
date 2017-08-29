@@ -37,7 +37,7 @@ public class TestReadLastConfirmedLongPoll extends BookKeeperClusterTestCase {
         this.digestType = DigestType.CRC32;
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReadLACLongPollWhenAllBookiesUp() throws Exception {
         final int numEntries = 3;
 
@@ -114,7 +114,7 @@ public class TestReadLastConfirmedLongPoll extends BookKeeperClusterTestCase {
         readLh.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReadLACLongPollWhenSomeBookiesDown() throws Exception {
         final int numEntries = 3;
         final LedgerHandle lh = bkc.createLedger(3, 1, 1, digestType, "".getBytes());

@@ -56,7 +56,7 @@ public class TestZkUtils extends TestCase {
         logger.info("Teared down test {}.", getName());
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testAsyncCreateAndDeleteFullPathOptimistic() throws IOException, KeeperException, InterruptedException {
         ZooKeeper zkc = new ZooKeeper(zkUtil.getZooKeeperConnectString(), 10000, null);
         /*

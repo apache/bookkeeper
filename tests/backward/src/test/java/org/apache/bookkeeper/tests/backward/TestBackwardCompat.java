@@ -392,7 +392,7 @@ public class TestBackwardCompat {
     /*
      * Test old cookie accessing the new version formatted cluster.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testOldCookieAccessingNewCluster() throws Exception {
         File journalDir = createTempDir("bookie", "journal");
         File ledgerDir = createTempDir("bookie", "ledger");
@@ -445,7 +445,7 @@ public class TestBackwardCompat {
      *    version due to a change in the ledger metadata format.
      *  - Otherwise, they should be compatible.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testCompat410() throws Exception {
         File journalDir = createTempDir("bookie", "journal");
         File ledgerDir = createTempDir("bookie", "ledger");
@@ -563,7 +563,7 @@ public class TestBackwardCompat {
      * - old server restarts with useHostNameAsBookieID=true.
      * - Read ledgers with old and new clients
      */
-    @Test(timeout = 60000)
+    @Test
     public void testCompatReads() throws Exception {
         File journalDir = createTempDir("bookie", "journal");
         File ledgerDir = createTempDir("bookie", "ledger");
@@ -613,7 +613,7 @@ public class TestBackwardCompat {
      * - Write ledgers with old and new clients
      * - Read ledgers written by old clients.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testCompatWrites() throws Exception {
         File journalDir = createTempDir("bookie", "journal");
         File ledgerDir = createTempDir("bookie", "ledger");
@@ -667,7 +667,7 @@ public class TestBackwardCompat {
      * - Write ledgers with old and new clients
      * - Read ledgers written by old clients.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testCompatHierarchicalLedgerManager() throws Exception {
         File journalDir = createTempDir("bookie", "journal");
         File ledgerDir = createTempDir("bookie", "ledger");

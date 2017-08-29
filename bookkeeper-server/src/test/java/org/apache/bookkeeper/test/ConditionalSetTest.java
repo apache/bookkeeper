@@ -69,7 +69,7 @@ public class ConditionalSetTest extends BookKeeperClusterTestCase {
      * @throws KeeperException
      */
 
-    @Test(timeout=60000)
+    @Test
     public void testConditionalSet() throws IOException, InterruptedException,
                                     BKException, KeeperException {
         LedgerHandle lhWrite = bkc.createLedger(digestType, new byte[] { 'a',

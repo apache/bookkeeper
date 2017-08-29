@@ -41,7 +41,7 @@ public class TestPiggybackLAC extends BookKeeperClusterTestCase {
         this.digestType = DigestType.CRC32;
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testPiggybackLAC() throws Exception {
         int numEntries = 10;
         LedgerHandle lh = bkc.createLedger(3, 3, 3, digestType, "".getBytes());

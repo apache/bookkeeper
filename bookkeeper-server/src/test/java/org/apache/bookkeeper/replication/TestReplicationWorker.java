@@ -109,7 +109,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
      * Tests that replication worker should replicate the failed bookie
      * fragments to target bookie given to the worker.
      */
-    @Test(timeout = 30000)
+    @Test
     public void testRWShouldReplicateFragmentsToTargetBookie() throws Exception {
         LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32,
                 TESTPASSWD);
@@ -158,7 +158,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
      * Tests that replication worker should retry for replication until enough
      * bookies available for replication
      */
-    @Test(timeout = 60000)
+    @Test
     public void testRWShouldRetryUntilThereAreEnoughBksAvailableForReplication()
             throws Exception {
         LedgerHandle lh = bkc.createLedger(1, 1, BookKeeper.DigestType.CRC32,
@@ -210,7 +210,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
      * Tests that replication worker1 should take one fragment replication and
      * other replication worker also should compete for the replication.
      */
-    @Test(timeout = 90000)
+    @Test
     public void test2RWsShouldCompeteForReplicationOf2FragmentsAndCompleteReplication()
             throws Exception {
         LedgerHandle lh = bkc.createLedger(2, 2, BookKeeper.DigestType.CRC32,
@@ -277,7 +277,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
      * Tests that Replication worker should clean the leadger under replication
      * node of the ledger already deleted
      */
-    @Test(timeout = 3000)
+    @Test
     public void testRWShouldCleanTheLedgerFromUnderReplicationIfLedgerAlreadyDeleted()
             throws Exception {
         LedgerHandle lh = bkc.createLedger(2, 2, BookKeeper.DigestType.CRC32,
@@ -314,7 +314,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testMultipleLedgerReplicationWithReplicationWorker()
             throws Exception {
         // Ledger1
@@ -390,7 +390,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
      * Tests that ReplicationWorker should fence the ledger and release ledger
      * lock after timeout. Then replication should happen normally.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testRWShouldReplicateTheLedgersAfterTimeoutIfLastFragmentIsUR()
             throws Exception {
         LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32,
@@ -447,7 +447,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
      * the replication if ledger is in open state and lastFragment is not in
      * underReplication state. Note that RW should not fence such ledgers.
      */
-    @Test(timeout = 30000)
+    @Test
     public void testRWShouldReplicateTheLedgersAfterTimeoutIfLastFragmentIsNotUR()
             throws Exception {
         LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32,
@@ -511,7 +511,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
     /**
      * Test that if the local bookie turns out to be read-only, then the replicator will pause but not shutdown.
      */
-    @Test(timeout = 20000)
+    @Test
     public void testRWOnLocalBookieReadonlyTransition() throws Exception {
         LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32, TESTPASSWD);
 
@@ -554,7 +554,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
     /**
      * Test that the replication worker will not shutdown on a simple ZK disconnection
      */
-    @Test(timeout=30000)
+    @Test
     public void testRWZKConnectionLost() throws Exception {
         ZooKeeper zk = ZooKeeperClient.newBuilder()
                 .connectString(zkUtil.getZooKeeperConnectString())

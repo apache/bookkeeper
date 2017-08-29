@@ -50,7 +50,7 @@ public class ForceReadOnlyBookieTest extends BookKeeperClusterTestCase {
     /**
      * Check force start readonly bookie
      */
-    @Test(timeout = 60000)
+    @Test
     public void testBookieForceStartAsReadOnly() throws Exception {
         // create ledger, add entries
         LedgerHandle ledger = bkc.createLedger(2, 2, DigestType.MAC,

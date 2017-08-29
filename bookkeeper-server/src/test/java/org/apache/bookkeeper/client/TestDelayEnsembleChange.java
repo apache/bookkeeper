@@ -122,7 +122,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNotChangeEnsembleIfNotBrokenAckQuorum() throws Exception {
         LedgerHandle lh = bkc.createLedger(5, 5, 3, digestType, testPasswd);
 
@@ -164,7 +164,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
         verifyEntries(lh, 2 * numEntries, 3 * numEntries, 5, 0);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testChangeEnsembleIfBrokenAckQuorum() throws Exception {
         startNewBookie();
         startNewBookie();
@@ -247,7 +247,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
         verifyEntries(lh, 4 * numEntries, 5 * numEntries, 5, 0);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testEnsembleChangeWithNotEnoughBookies() throws Exception {
         startNewBookie();
 
@@ -298,7 +298,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
         verifyEntries(lh, 2 * numEntries, 3 * numEntries, 5, 0);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testEnsembleChangeWithMoreBookieFailures() throws Exception {
         for (int i = 0; i < 5; i++) {
             startNewBookie();
@@ -353,7 +353,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
         verifyEntries(lh, 2 * numEntries, 3 * numEntries, 5, 0);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testChangeEnsembleIfBookieReadOnly() throws Exception {
         LedgerHandle lh = bkc.createLedger(3, 3, 2, digestType, testPasswd);
 
@@ -377,7 +377,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
 
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testChangeEnsembleSecondBookieReadOnly() throws Exception {
         LedgerHandle lh = bkc.createLedger(3, 3, 2, digestType, testPasswd);
 

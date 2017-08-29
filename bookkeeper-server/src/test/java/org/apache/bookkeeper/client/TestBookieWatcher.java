@@ -63,7 +63,7 @@ public class TestBookieWatcher extends BookKeeperClusterTestCase {
         newZk.close();
     }
 
-    @Test(timeout=10000)
+    @Test
     public void testBookieWatcherSurviveWhenSessionExpired() throws Exception {
         final int timeout = 2000;
         ZooKeeper zk = ZooKeeperClient.newBuilder()
@@ -77,7 +77,7 @@ public class TestBookieWatcher extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout=10000)
+    @Test
     public void testBookieWatcherDieWhenSessionExpired() throws Exception {
         final int timeout = 2000;
         final CountDownLatch connectLatch = new CountDownLatch(1);

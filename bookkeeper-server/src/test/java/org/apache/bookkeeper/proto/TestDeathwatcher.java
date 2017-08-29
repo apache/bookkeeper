@@ -46,7 +46,7 @@ public class TestDeathwatcher extends BookKeeperClusterTestCase {
      * then a failure/crash in the autorecovery daemon will not take down the
      * bookie also.
      */
-    @Test(timeout=30000)
+    @Test
     public void testAutorecoveryFailureDoesntKillBookie() throws Exception {
         ServerConfiguration conf = newServerConfiguration().setAutoRecoveryDaemonEnabled(true);
         BookieServer bs = startBookie(conf);

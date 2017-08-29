@@ -96,12 +96,12 @@ public class IndexPersistenceMgrTest {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testEvictFileInfoWhenUnderlyingFileExists() throws Exception {
         evictFileInfoTest(true);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testEvictFileInfoWhenUnderlyingFileDoesntExist() throws Exception {
         evictFileInfoTest(false);
     }

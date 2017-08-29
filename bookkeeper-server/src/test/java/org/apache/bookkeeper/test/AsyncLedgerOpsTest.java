@@ -102,7 +102,7 @@ public class AsyncLedgerOpsTest extends BookKeeperClusterTestCase
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testAsyncCreateClose() throws IOException, BKException {
         try {
 

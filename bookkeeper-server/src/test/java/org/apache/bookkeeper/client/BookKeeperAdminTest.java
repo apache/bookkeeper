@@ -47,13 +47,13 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
     private final int lostBookieRecoveryDelayInitValue = 1800;
 
     public BookKeeperAdminTest() {
-        super(numOfBookies);
+        super(numOfBookies, 480);
         baseConf.setAutoRecoveryDaemonEnabled(true);
         baseConf.setLostBookieRecoveryDelay(lostBookieRecoveryDelayInitValue);
         baseConf.setOpenLedgerRereplicationGracePeriod(String.valueOf(30000));
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testLostBookieRecoveryDelayValue() throws Exception {
         BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString());
         assertEquals("LostBookieRecoveryDelay", lostBookieRecoveryDelayInitValue, bkAdmin.getLostBookieRecoveryDelay());
@@ -67,7 +67,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         bkAdmin.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testTriggerAudit() throws Exception {
         ZkLedgerUnderreplicationManager urLedgerMgr = new ZkLedgerUnderreplicationManager(baseClientConf, zkc);
         BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString());
@@ -103,7 +103,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         bkAdmin.close();
     }
 
-    @Test(timeout = 480000)
+    @Test
     public void testDecommissionBookie() throws Exception {
         ZkLedgerUnderreplicationManager urLedgerMgr = new ZkLedgerUnderreplicationManager(baseClientConf, zkc);
         BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString());
@@ -168,7 +168,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         bkAdmin.close();
     }
 
-    @Test(timeout = 240000)
+    @Test
     public void testDecommissionForLedgersWithMultipleSegmentsAndNotWriteClosed() throws Exception {
         ZkLedgerUnderreplicationManager urLedgerMgr = new ZkLedgerUnderreplicationManager(baseClientConf, zkc);
         BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString());

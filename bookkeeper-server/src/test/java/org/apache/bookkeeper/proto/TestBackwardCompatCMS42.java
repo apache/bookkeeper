@@ -70,7 +70,7 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
                 new ClientConfiguration());
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testAuthSingleMessage() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration();
         bookieConf.setBookieAuthProviderFactoryClass(
@@ -92,7 +92,7 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
         assertEquals("Should have succeeded", response.getErrorCode(), BookieProtocol.EOK);
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testAuthMultiMessage() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration();
         bookieConf.setBookieAuthProviderFactoryClass(
@@ -125,7 +125,7 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testAuthFail() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration();
         bookieConf.setBookieAuthProviderFactoryClass(

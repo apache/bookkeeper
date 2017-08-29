@@ -52,7 +52,7 @@ public class TestFencing extends BookKeeperClusterTestCase {
      * Basic fencing test. Create ledger, write to it,
      * open ledger, write again (should fail).
      */
-    @Test(timeout=60000)
+    @Test
     public void testBasicFencing() throws Exception {
         /*
          * Create ledger.
@@ -154,7 +154,7 @@ public class TestFencing extends BookKeeperClusterTestCase {
      * All opens should result in a ledger with an equals number of
      * entries.
      */
-    @Test(timeout=60000)
+    @Test
     public void testManyOpenParallel() throws Exception {
         /*
          * Create ledger.
@@ -203,7 +203,7 @@ public class TestFencing extends BookKeeperClusterTestCase {
      * Test that opening a ledger in norecovery mode
      * doesn't fence off a ledger
      */
-    @Test(timeout=60000)
+    @Test
     public void testNoRecoveryOpen() throws Exception {
         /*
          * Create ledger.
@@ -249,7 +249,7 @@ public class TestFencing extends BookKeeperClusterTestCase {
      * kill a bookie in the ensemble. Recover.
      * Fence the ledger. Kill another bookie. Recover.
      */
-    @Test(timeout=60000)
+    @Test
     public void testFencingInteractionWithBookieRecovery() throws Exception {
         System.setProperty("digestType", digestType.toString());
         System.setProperty("passwd", "testPasswd");
@@ -299,7 +299,7 @@ public class TestFencing extends BookKeeperClusterTestCase {
      * Fence the ledger. Kill a bookie. Recover.
      * Ensure that recover doesn't reallow adding
      */
-    @Test(timeout=60000)
+    @Test
     public void testFencingInteractionWithBookieRecovery2() throws Exception {
         System.setProperty("digestType", digestType.toString());
         System.setProperty("passwd", "testPasswd");
@@ -338,7 +338,7 @@ public class TestFencing extends BookKeeperClusterTestCase {
     /**
      * Test that fencing doesn't work with a bad password
      */
-    @Test(timeout=60000)
+    @Test
     public void testFencingBadPassword() throws Exception {
         /*
          * Create ledger.
@@ -365,7 +365,7 @@ public class TestFencing extends BookKeeperClusterTestCase {
         writelh.addEntry(tmp.getBytes());
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testFencingAndRestartBookies() throws Exception {
         LedgerHandle writelh = null;
         writelh = bkc.createLedger(digestType, "password".getBytes());
