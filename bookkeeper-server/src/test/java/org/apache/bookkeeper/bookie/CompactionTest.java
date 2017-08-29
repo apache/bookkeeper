@@ -266,6 +266,9 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
 
         // disable major compaction
         baseConf.setMajorCompactionThreshold(0.0f);
+        baseConf.setGcWaitTime(60000);
+        baseConf.setMinorCompactionInterval(120000);
+        baseConf.setMajorCompactionInterval(240000);
 
         // restart bookies
         restartBookies(baseConf);
@@ -309,6 +312,9 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
 
         // disable major compaction
         baseConf.setMajorCompactionThreshold(0.0f);
+        baseConf.setGcWaitTime(60000);
+        baseConf.setMinorCompactionInterval(120000);
+        baseConf.setMajorCompactionInterval(240000);
 
         // restart bookies
         restartBookies(baseConf);
@@ -363,6 +369,9 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         // here we are setting isForceGCAllowWhenNoSpace to true, so Major and Minor compaction wont be disabled in case
         // when discs are full
         baseConf.setIsForceGCAllowWhenNoSpace(true);
+        baseConf.setGcWaitTime(60000);
+        baseConf.setMinorCompactionInterval(120000);
+        baseConf.setMajorCompactionInterval(240000);
 
         // restart bookies
         restartBookies(baseConf);
@@ -434,6 +443,9 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
 
         // disable minor compaction
         baseConf.setMinorCompactionThreshold(0.0f);
+        baseConf.setGcWaitTime(60000);
+        baseConf.setMinorCompactionInterval(120000);
+        baseConf.setMajorCompactionInterval(240000);
 
         // restart bookies
         restartBookies(baseConf);
