@@ -20,12 +20,14 @@
  */
 package org.apache.bookkeeper.replication;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Map.Entry;
 import java.util.Set;
-
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -35,8 +37,6 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-
 public class TestAutoRecoveryAlongWithBookieServers extends
         BookKeeperClusterTestCase {
 
@@ -44,7 +44,7 @@ public class TestAutoRecoveryAlongWithBookieServers extends
 
     public TestAutoRecoveryAlongWithBookieServers() {
         super(3);
-        baseConf.setAutoRecoveryDaemonEnabled(true);
+        setAutoRecoveryEnabled(true);
         basePath = baseClientConf.getZkLedgersRootPath() + '/'
                 + BookKeeperConstants.UNDER_REPLICATION_NODE
                 + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH;
