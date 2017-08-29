@@ -800,10 +800,7 @@ public class LedgerHandle implements AutoCloseable {
         }
         Preconditions.checkNotNull(syncMode, "syncMode must not be null");
 
-        PendingAddOp op = new PendingAddOp(LedgerHandle.this, cb, ctx);
-        if (syncMode == SyncMode.JOURNAL_NOSYNC) {
-            op.enableNosynch();
-        }
+        PendingAddOp op = new PendingAddOp(LedgerHandle.this, cb, ctx);        
         doAsyncAddEntry(op, Unpooled.wrappedBuffer(data, offset, length), cb, ctx, syncMode);
     }
 
@@ -814,10 +811,7 @@ public class LedgerHandle implements AutoCloseable {
     public void asyncAddEntry(ByteBuf data, final AddCallback cb, final Object ctx, final SyncMode syncMode) {
         Preconditions.checkNotNull(syncMode, "syncMode must not be null");
         data.retain();
-        PendingAddOp op = new PendingAddOp(LedgerHandle.this, cb, ctx);
-        if (syncMode == SyncMode.JOURNAL_NOSYNC) {
-            op.enableNosynch();
-        }
+        PendingAddOp op = new PendingAddOp(LedgerHandle.this, cb, ctx);        
         doAsyncAddEntry(op, data, cb, ctx, syncMode);
     }
 
@@ -867,6 +861,9 @@ public class LedgerHandle implements AutoCloseable {
         final Object ctx, final SyncMode syncMode) {
         if (throttler != null) {
             throttler.acquire();
+        }
+        if (syncMode == SyncMode.JOURNAL_NOSYNC) {
+            op.enableNosynch();
         }
 
         final long entryId;

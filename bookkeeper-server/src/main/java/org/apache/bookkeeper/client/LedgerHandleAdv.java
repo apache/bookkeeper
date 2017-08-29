@@ -164,10 +164,7 @@ public class LedgerHandleAdv extends LedgerHandle {
     public void asyncAddEntry(final long entryId, final byte[] data, final int offset, final int length,
             final AddCallback cb, final Object ctx, final SyncMode syncMode) {
         Preconditions.checkNotNull(syncMode, "syncMode must not be null");
-        PendingAddOp op = new PendingAddOp(this, cb, ctx);
-        if (syncMode == SyncMode.JOURNAL_NOSYNC) {
-            op.enableNosynch();
-        }
+        PendingAddOp op = new PendingAddOp(this, cb, ctx);        
         op.setEntryId(entryId);
         if ((entryId <= this.lastAddConfirmed) || pendingAddOps.contains(op)) {
             LOG.error("Trying to re-add duplicate entryid:{}", entryId);
@@ -189,7 +186,9 @@ public class LedgerHandleAdv extends LedgerHandle {
         if (throttler != null) {
             throttler.acquire();
         }
-
+        if (syncMode == SyncMode.JOURNAL_NOSYNC) {
+            op.enableNosynch();
+        }
         final long currentLength;
         boolean wasClosed = false;
         synchronized (this) {
