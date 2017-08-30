@@ -193,7 +193,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
 
         /*
          * since one of the bookie is killed, ensemble change happens when next
-         * write is made.So new segment will be created for those 2 ledgers.
+         * write is made.So new fragment will be created for those 2 ledgers.
          */
         for (int j = numOfEntries; j < 2 * numOfEntries; j++) {
             lh1.addEntry(j, "data".getBytes());
@@ -201,14 +201,14 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         }
         
         /*
-         * Here lh1 and lh2 have multiple segments and are writeclosed. But lh3 and lh4 are 
-         * not writeclosed and contains only one segment.
+         * Here lh1 and lh2 have multiple fragments and are writeclosed. But lh3 and lh4 are
+         * not writeclosed and contains only one fragment.
          */
         lh1.close();
         lh2.close();
         
         /*
-         * If the last segment of the ledger is underreplicated and if the
+         * If the last fragment of the ledger is underreplicated and if the
          * ledger is not closed then it will remain underreplicated for
          * openLedgerRereplicationGracePeriod (by default 30 secs). For more
          * info. Check BOOKKEEPER-237 and BOOKKEEPER-325. But later

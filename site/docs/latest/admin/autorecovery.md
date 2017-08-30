@@ -37,7 +37,7 @@ $ bookkeeper-server/bin/bookkeeper shell recover \
 When you initiate a manual recovery process, the following happens:
 
 1. The client (the process running ) reads the metadata of active ledgers from ZooKeeper.
-1. The ledgers that contain segments from the failed bookie in their ensemble are selected.
+1. The ledgers that contain fragments from the failed bookie in their ensemble are selected.
 1. A recovery process is initiated for each ledger in this list and the rereplication process is run for each ledger.
 1. Once all the ledgers are marked as fully replicated, bookie recovery is finished.
 
@@ -106,11 +106,11 @@ When the auditor sees that a bookie has disappeared, it immediately scans the co
 
 Each replication worker watches for tasks being published by the auditor on the `/underreplicated/` znode in ZooKeeper. When a new task appears, the replication worker will try to get a lock on it. If it cannot acquire the lock, it will try the next entry. The locks are implemented using ZooKeeper ephemeral znodes.
 
-The replication worker will scan through the rereplication task's ledger for segments of which its local bookie is not a member. When it finds segments matching this criterion, it will replicate the entries of that segment to the local bookie. If, after this process, the ledger is fully replicated, the ledgers entry under /underreplicated/ is deleted, and the lock is released. If there is a problem replicating, or there are still segments in the ledger which are still underreplicated (due to the local bookie already being part of the ensemble for the segment), then the lock is simply released.
+The replication worker will scan through the rereplication task's ledger for fragments of which its local bookie is not a member. When it finds fragments matching this criterion, it will replicate the entries of that fragment to the local bookie. If, after this process, the ledger is fully replicated, the ledgers entry under /underreplicated/ is deleted, and the lock is released. If there is a problem replicating, or there are still fragments in the ledger which are still underreplicated (due to the local bookie already being part of the ensemble for the fragment), then the lock is simply released.
 
-If the replication worker finds a segment which needs rereplication, but does not have a defined endpoint (i.e. the final segment of a ledger currently being written to), it will wait for a grace period before attempting rereplication. If the segment needing rereplication still does not have a defined endpoint, the ledger is fenced and rereplication then takes place.
+If the replication worker finds a fragment which needs rereplication, but does not have a defined endpoint (i.e. the final fragment of a ledger currently being written to), it will wait for a grace period before attempting rereplication. If the fragment needing rereplication still does not have a defined endpoint, the ledger is fenced and rereplication then takes place.
 
-This avoids the situation in which a client is writing to a ledger and one of the bookies goes down, but the client has not written an entry to that bookie before rereplication takes place. The client could continue writing to the old segment, even though the ensemble for the segment had changed. This could lead to data loss. Fencing prevents this scenario from happening. In the normal case, the client will try to write to the failed bookie within the grace period, and will have started a new segment before rereplication starts.
+This avoids the situation in which a client is writing to a ledger and one of the bookies goes down, but the client has not written an entry to that bookie before rereplication takes place. The client could continue writing to the old fragment, even though the ensemble for the fragment had changed. This could lead to data loss. Fencing prevents this scenario from happening. In the normal case, the client will try to write to the failed bookie within the grace period, and will have started a new fragment before rereplication starts.
 
 You can configure this grace period using the [`openLedgerRereplicationGracePeriod`](../../reference/config#openLedgerRereplicationGracePeriod) parameter.
 
@@ -118,11 +118,11 @@ You can configure this grace period using the [`openLedgerRereplicationGracePeri
 
 The ledger rereplication process happens in these steps:
 
-1. The client goes through all ledger segments in the ledger, selecting those that contain the failed bookie.
-1. A recovery process is initiated for each ledger segment in this list.
-   1. The client selects a bookie to which all entries in the ledger segment will be replicated; In the case of autorecovery, this will always be the local bookie.
-   1. The client reads entries that belong to the ledger segment from other bookies in the ensemble and writes them to the selected bookie.
-   1. Once all entries have been replicated, the zookeeper metadata for the segment is updated to reflect the new ensemble.
-   1. The segment is marked as fully replicated in the recovery tool.
-1. Once all ledger segments are marked as fully replicated, the ledger is marked as fully replicated.
+1. The client goes through all ledger fragments in the ledger, selecting those that contain the failed bookie.
+1. A recovery process is initiated for each ledger fragment in this list.
+   1. The client selects a bookie to which all entries in the ledger fragment will be replicated; In the case of autorecovery, this will always be the local bookie.
+   1. The client reads entries that belong to the ledger fragment from other bookies in the ensemble and writes them to the selected bookie.
+   1. Once all entries have been replicated, the zookeeper metadata for the fragment is updated to reflect the new ensemble.
+   1. The fragment is marked as fully replicated in the recovery tool.
+1. Once all ledger fragments are marked as fully replicated, the ledger is marked as fully replicated.
   
