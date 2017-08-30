@@ -200,16 +200,16 @@ public class LedgerChecker {
             curEnsemble = e.getValue();
         }
 
-        /* Checking the last segment of the ledger can be complicated in some cases.
+        /* Checking the last fragment of the ledger can be complicated in some cases.
          * In the case that the ledger is closed, we can just check the fragments of
-         * the segment as normal, except in the case that no entry was ever written,
+         * the ledger as normal, except in the case that no entry was ever written,
          * to the ledger, in which case we check no fragments.
          * In the case that the ledger is open, but enough entries have been written,
-         * for lastAddConfirmed to be set above the start entry of the segment, we
+         * for lastAddConfirmed to be set above the start entry of the fragment, we
          * can also check as normal.
          * However, if lastAddConfirmed cannot be trusted, such as when it's lower than
          * the first entry id, or not set at all, we cannot be sure if there has been
-         * data written to the segment. For this reason, we have to send a read request
+         * data written to the fragment. For this reason, we have to send a read request
          * to the bookies which should have the first entry. If they respond with
          * NoSuchEntry we can assume it was never written. If they respond with anything
          * else, we must assume the entry has been written, so we run the check.
@@ -221,9 +221,9 @@ public class LedgerChecker {
                 lastEntry = curEntryId;
             }
 
-            final Set<LedgerFragment> finalSegmentFragments = new HashSet<LedgerFragment>();
+            final Set<LedgerFragment> finalFragments = new HashSet<LedgerFragment>();
             for (int i = 0; i < curEnsemble.size(); i++) {
-                finalSegmentFragments.add(new LedgerFragment(lh, curEntryId,
+                finalFragments.add(new LedgerFragment(lh, curEntryId,
                         lastEntry, i));
             }
 
@@ -237,7 +237,7 @@ public class LedgerChecker {
                                               new GenericCallback<Boolean>() {
                                                   public void operationComplete(int rc, Boolean result) {
                                                       if (result) {
-                                                          fragments.addAll(finalSegmentFragments);
+                                                          fragments.addAll(finalFragments);
                                                       }
                                                       checkFragments(fragments, cb);
                                                   }
@@ -250,7 +250,7 @@ public class LedgerChecker {
                 }
                 return;
             } else {
-                fragments.addAll(finalSegmentFragments);
+                fragments.addAll(finalFragments);
             }
         }
 
