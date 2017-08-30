@@ -142,16 +142,21 @@ public class BookieRequestProcessor implements RequestProcessor {
             StatsLogger statsLogger, SecurityHandlerFactory shFactory) throws SecurityException {
         this.serverCfg = serverCfg;
         this.bookie = bookie;
-        this.readThreadPool = createExecutor(this.serverCfg.getNumReadWorkerThreads(),
-                "BookieReadThread-" + serverCfg.getBookiePort(),
-                serverCfg.getMaxPendingReadRequestPerThread());
-        this.writeThreadPool = createExecutor(this.serverCfg.getNumAddWorkerThreads(),
-                "BookieWriteThread-" + serverCfg.getBookiePort(),
-                serverCfg.getMaxPendingAddRequestPerThread());
-        this.longPollThreadPool =
-            createExecutor(
+        this.readThreadPool = createExecutor(
+                this.serverCfg.getNumReadWorkerThreads(),
+                "BookieReadThreadPool",
+                serverCfg.getMaxPendingReadRequestPerThread(),
+                statsLogger);
+        this.writeThreadPool = createExecutor(
+                this.serverCfg.getNumAddWorkerThreads(),
+                "BookieWriteThreadPool",
+                serverCfg.getMaxPendingAddRequestPerThread(),
+                statsLogger);
+        this.longPollThreadPool = createExecutor(
                 this.serverCfg.getNumLongPollWorkerThreads(),
-                "BookieLongPollThread-" + serverCfg.getBookiePort(), OrderedScheduler.NO_TASK_LIMIT);
+                "BookieLongPollThread",
+                OrderedScheduler.NO_TASK_LIMIT,
+                statsLogger);
         this.requestTimer = new HashedWheelTimer(
             new ThreadFactoryBuilder().setNameFormat("BookieRequestTimer-%d").build(),
             this.serverCfg.getRequestTimerTickDurationMs(),
@@ -191,12 +196,21 @@ public class BookieRequestProcessor implements RequestProcessor {
         shutdownExecutor(readThreadPool);
     }
 
-    private OrderedSafeExecutor createExecutor(int numThreads, String nameFormat, int maxTasksInQueue) {
+    private OrderedSafeExecutor createExecutor(
+            int numThreads,
+            String nameFormat,
+            int maxTasksInQueue,
+            StatsLogger statsLogger) {
         if (numThreads <= 0) {
             return null;
         } else {
-            return OrderedSafeExecutor.newBuilder().numThreads(numThreads).name(nameFormat)
-                .maxTasksInQueue(maxTasksInQueue).build();
+            return OrderedSafeExecutor.newBuilder()
+                    .numThreads(numThreads)
+                    .name(nameFormat)
+                    .traceTaskExecution(serverCfg.getEnableTaskExecutionStats())
+                    .statsLogger(statsLogger)
+                    .maxTasksInQueue(maxTasksInQueue)
+                    .build();
         }
     }
 
