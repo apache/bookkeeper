@@ -1374,9 +1374,10 @@ public class LedgerHandle implements AutoCloseable {
                 LOG.warn("AddResponse did not carry lastAddSyncedEntry of a no-sync addEntry: {}", pendingAddOp.entryId);
             }
             
-            
-            lastAddConfirmed = this.lastAddSynced;
+
             explicitLacFlushPolicy.updatePiggyBackedLac(lastAddConfirmed);
+            lastAddConfirmed = this.lastAddSynced;
+            
             LOG.info("new lastAddConfirmed {}", lastAddConfirmed);
             
             pendingAddsSequenceHead = pendingAddOp.entryId + 1;
