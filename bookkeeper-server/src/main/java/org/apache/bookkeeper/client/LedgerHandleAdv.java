@@ -250,7 +250,7 @@ public class LedgerHandleAdv extends LedgerHandle {
      * LedgerHandleAdv will not allow addEntry without providing an entryId
      */
     @Override
-    public void asyncAddEntry(ByteBuf data, AddCallback cb, Object ctx) {
+    public void asyncAddEntry(ByteBuf data, AddCallback cb, Object ctx, SyncMode sychMode) {
         cb.addComplete(BKException.Code.IllegalOpException, this, LedgerHandle.INVALID_ENTRY_ID, ctx);
     }
 
@@ -259,7 +259,7 @@ public class LedgerHandleAdv extends LedgerHandle {
      */
     @Override
     public void asyncAddEntry(final byte[] data, final int offset, final int length,
-                              final AddCallback cb, final Object ctx) {
+                              final AddCallback cb, final Object ctx, SyncMode sychMode) {
         cb.addComplete(BKException.Code.IllegalOpException, this, LedgerHandle.INVALID_ENTRY_ID, ctx);
     }
 
