@@ -148,8 +148,7 @@ public class LedgerHandle implements AutoCloseable {
             lastAddConfirmed = lastAddPushed = INVALID_ENTRY_ID;
             length = 0;
         }
-        this.pendingAddsSequenceHead = 0;
-
+        this.pendingAddsSequenceHead = lastAddConfirmed + 1;
         this.ledgerId = ledgerId;
 
         if (bk.getConf().getThrottleValue() > 0) {
