@@ -65,6 +65,7 @@ public interface BookKeeperServerStats {
 
     // Bookie Operations
     String BOOKIE_ADD_ENTRY = "BOOKIE_ADD_ENTRY";
+    String BOOKIE_SYNC = "BOOKIE_SYNC";
     String BOOKIE_RECOVERY_ADD_ENTRY = "BOOKIE_RECOVERY_ADD_ENTRY";
     String BOOKIE_READ_ENTRY = "BOOKIE_READ_ENTRY";
     String BOOKIE_READ_LAST_CONFIRMED = "BOOKIE_READ_LAST_CONFIRMED";

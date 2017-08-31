@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.proto;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
@@ -30,6 +32,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.netty.channel.Channel;
+import java.io.IOException;
+import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.SyncRequest;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.SyncResponse;
 
@@ -62,23 +67,75 @@ class SyncProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
             syncResponse.setStatus(StatusCode.EREADONLY);
             return syncResponse.build();
         }
-
-        StatusCode status = null;
+        
         byte[] masterKey = syncRequest.getMasterKey().toByteArray();
 
-        // TODO: code the 'sync'
-        status = StatusCode.EOK;
-        syncResponse.setLastPersistedEntryId(lastEntryId);
+        BookkeeperInternalCallbacks.SyncCallback wcb = new BookkeeperInternalCallbacks.SyncCallback() {
+            @Override
+            public void syncComplete(int rc, long ledgerId, long lastSyncedEntryId, BookieSocketAddress addr, Object ctx) {
+                logger.info("sync ledg "+ledgerId+", lastAddSyncedEntry:"+lastSyncedEntryId);
+                if (BookieProtocol.EOK == rc) {
+                    requestProcessor.syncStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
+                            TimeUnit.NANOSECONDS);
+                } else {
+                    requestProcessor.syncStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
+                            TimeUnit.NANOSECONDS);
+                }
 
-        // If everything is okay, we return null so that the calling function
-        // dosn't return a response back to the caller.
-        if (status.equals(StatusCode.EOK)) {
-            requestProcessor.syncStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
-        } else {
-            requestProcessor.syncStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
+                StatusCode status;
+                switch (rc) {
+                    case BookieProtocol.EOK:
+                        status = StatusCode.EOK;
+                        break;
+                    case BookieProtocol.EIO:
+                        status = StatusCode.EIO;
+                        break;
+                    default:
+                        status = StatusCode.EUA;
+                        break;
+                }
+                syncResponse.setStatus(status);
+                syncResponse.setLastPersistedEntryId(lastSyncedEntryId);
+                
+                Response.Builder response = Response.newBuilder()
+                        .setHeader(getHeader())
+                        .setStatus(syncResponse.getStatus())
+                        .setSyncResponse(syncResponse);
+                Response resp = response.build();
+                sendResponse(status, resp, requestProcessor.syncRequestStats);
+            }
+        };
+        
+        StatusCode status;
+        try {            
+            requestProcessor.bookie.sync(ledgerId, firstEntryId, lastEntryId, wcb, channel, masterKey);
+            status = StatusCode.EOK;
+        } catch (IOException e) {
+            logger.error("Error syncing to entry:{} to ledger:{}",
+                         new Object[] { lastEntryId, ledgerId, e });
+            status = StatusCode.EIO;
+        } catch (BookieException.LedgerFencedException e) {
+            logger.debug("Ledger fenced while syncing to entry:{} to ledger:{}",
+                         lastEntryId, ledgerId);
+            status = StatusCode.EFENCED;
+        } catch (BookieException e) {
+            logger.error("Unauthorized access to ledger:{} while syncing to entry:{}",
+                         ledgerId, lastEntryId);
+            status = StatusCode.EUA;
+        } catch (Throwable t) {
+            logger.error("Unexpected exception while syncing to {}@{} : ",
+                         new Object[] { lastEntryId, ledgerId, t });
+            // some bad request which cause unexpected exception
+            status = StatusCode.EBADREQ;
         }
-        syncResponse.setStatus(status);
-        return syncResponse.build();
+        
+       // If everything is okay, we return null so that the calling function
+        // doesn't return a response back to the caller.
+        if (!status.equals(StatusCode.EOK)) {
+            syncResponse.setStatus(status);
+            return syncResponse.build();
+        }
+        return null;
     }
 
     @Override

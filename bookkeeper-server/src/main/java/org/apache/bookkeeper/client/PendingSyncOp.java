@@ -99,6 +99,7 @@ class PendingSyncOp implements BookkeeperInternalCallbacks.SyncCallback {
             }
             if (ackSet.completeBookieAndCheck(bookieIndex) && !completed) {                
                 completed = true;
+                LOG.warn("Sync succeeded: Ledger {} minLastSyncedEntryId {}", new Object[] { ledgerId, minLastSyncedEntryId });
                 lh.syncCompleted(minLastSyncedEntryId);
                 cb.syncComplete(rc, lh, minLastSyncedEntryId, this.ctx);
                 return;
