@@ -431,6 +431,10 @@ class ReadAheadEntryReader implements
         }
     }
 
+    synchronized boolean isClosed() {
+        return null != closePromise;
+    }
+
     @Override
     public CompletableFuture<Void> asyncClose() {
         final CompletableFuture<Void> closeFuture;
@@ -556,6 +560,14 @@ class ReadAheadEntryReader implements
 
     @Override
     public void onSuccess(List<Entry.Reader> entries) {
+        if (isClosed()) {
+            // if readahead is closing, don't put the entries to the queue
+            for (Entry.Reader entry : entries) {
+                entry.release();
+            }
+            return;
+        }
+
         lastEntryAddedTime.reset().start();
         for (Entry.Reader entry : entries) {
             entryQueue.add(entry);

@@ -18,9 +18,7 @@
 package org.apache.bookkeeper.client;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.Unpooled;
-import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -86,25 +84,25 @@ public class LedgerReader {
     }
 
     public void readEntriesFromAllBookies(final LedgerHandle lh, long eid,
-                                          final GenericCallback<Set<ReadResult<InputStream>>> callback) {
+                                          final GenericCallback<Set<ReadResult<ByteBuf>>> callback) {
         List<Integer> writeSet = lh.distributionSchedule.getWriteSet(eid);
         final AtomicInteger numBookies = new AtomicInteger(writeSet.size());
-        final Set<ReadResult<InputStream>> readResults = new HashSet<ReadResult<InputStream>>();
+        final Set<ReadResult<ByteBuf>> readResults = new HashSet<>();
         ReadEntryCallback readEntryCallback = new ReadEntryCallback() {
             @Override
             public void readEntryComplete(int rc, long lid, long eid, ByteBuf buffer, Object ctx) {
                 BookieSocketAddress bookieAddress = (BookieSocketAddress) ctx;
-                ReadResult<InputStream> rr;
+                ReadResult<ByteBuf> rr;
                 if (BKException.Code.OK != rc) {
-                    rr = new ReadResult<InputStream>(eid, rc, null, bookieAddress.getSocketAddress());
+                    rr = new ReadResult<>(eid, rc, null, bookieAddress.getSocketAddress());
                 } else {
                     ByteBuf content;
                     try {
                         content = lh.macManager.verifyDigestAndReturnData(eid, buffer);
                         ByteBuf toRet = Unpooled.copiedBuffer(content);
-                        rr = new ReadResult<InputStream>(eid, BKException.Code.OK, new ByteBufInputStream(toRet), bookieAddress.getSocketAddress());
+                        rr = new ReadResult<>(eid, BKException.Code.OK, toRet, bookieAddress.getSocketAddress());
                     } catch (BKException.BKDigestMatchException e) {
-                        rr = new ReadResult<InputStream>(eid, BKException.Code.DigestMatchException, null, bookieAddress.getSocketAddress());
+                        rr = new ReadResult<>(eid, BKException.Code.DigestMatchException, null, bookieAddress.getSocketAddress());
                     } finally {
                         buffer.release();
                     }

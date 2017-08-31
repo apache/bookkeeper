@@ -17,13 +17,13 @@
  */
 package org.apache.distributedlog.tools;
 
+import io.netty.buffer.ByteBuf;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -46,7 +46,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
@@ -1676,8 +1675,9 @@ public class DistributedLogTool extends Tool {
                     .setLogSegmentInfo(segment.getLogSegmentSequenceNumber(), segment.getStartSequenceId())
                     .setEntryId(lastEntry.getEntryId())
                     .setEnvelopeEntry(LogSegmentMetadata.supportsEnvelopedEntries(segment.getVersion()))
-                    .setInputStream(lastEntry.getEntryInputStream())
+                    .setEntry(lastEntry.getEntryBuffer())
                     .buildReader();
+            lastEntry.getEntryBuffer().release();
             LogRecordWithDLSN record = reader.nextRecord();
             LogRecordWithDLSN lastRecord = null;
             while (null != record) {
@@ -2245,26 +2245,22 @@ public class DistributedLogTool extends Tool {
                 throws Exception {
             for (long eid = fromEntryId; eid <= untilEntryId; ++eid) {
                 final CountDownLatch doneLatch = new CountDownLatch(1);
-                final AtomicReference<Set<LedgerReader.ReadResult<InputStream>>> resultHolder =
-                        new AtomicReference<Set<LedgerReader.ReadResult<InputStream>>>();
-                ledgerReader.readEntriesFromAllBookies(lh, eid, new BookkeeperInternalCallbacks.GenericCallback<Set<LedgerReader.ReadResult<InputStream>>>() {
-                    @Override
-                    public void operationComplete(int rc, Set<LedgerReader.ReadResult<InputStream>> readResults) {
-                        if (BKException.Code.OK == rc) {
-                            resultHolder.set(readResults);
-                        } else {
-                            resultHolder.set(null);
-                        }
-                        doneLatch.countDown();
+                final AtomicReference<Set<LedgerReader.ReadResult<ByteBuf>>> resultHolder = new AtomicReference<>();
+                ledgerReader.readEntriesFromAllBookies(lh, eid, (rc, readResults) -> {
+                    if (BKException.Code.OK == rc) {
+                        resultHolder.set(readResults);
+                    } else {
+                        resultHolder.set(null);
                     }
+                    doneLatch.countDown();
                 });
                 doneLatch.await();
-                Set<LedgerReader.ReadResult<InputStream>> readResults = resultHolder.get();
+                Set<LedgerReader.ReadResult<ByteBuf>> readResults = resultHolder.get();
                 if (null == readResults) {
                     throw new IOException("Failed to read entry " + eid);
                 }
                 boolean printHeader = true;
-                for (LedgerReader.ReadResult<InputStream> rr : readResults) {
+                for (LedgerReader.ReadResult<ByteBuf> rr : readResults) {
                     if (corruptOnly) {
                         if (BKException.Code.DigestMatchException == rr.getResultCode()) {
                             if (printHeader) {
@@ -2287,9 +2283,10 @@ public class DistributedLogTool extends Tool {
                             Entry.Reader reader = Entry.newBuilder()
                                     .setLogSegmentInfo(lh.getId(), 0L)
                                     .setEntryId(eid)
-                                    .setInputStream(rr.getValue())
+                                    .setEntry(rr.getValue())
                                     .setEnvelopeEntry(LogSegmentMetadata.supportsEnvelopedEntries(metadataVersion))
                                     .buildReader();
+                            rr.getValue().release();
                             printEntry(reader);
                         } else {
                             System.out.println("status = " + BKException.getMessage(rr.getResultCode()));
@@ -2346,9 +2343,10 @@ public class DistributedLogTool extends Tool {
                 Entry.Reader reader = Entry.newBuilder()
                         .setLogSegmentInfo(0L, 0L)
                         .setEntryId(entry.getEntryId())
-                        .setInputStream(entry.getEntryInputStream())
+                        .setEntry(entry.getEntryBuffer())
                         .setEnvelopeEntry(LogSegmentMetadata.supportsEnvelopedEntries(metadataVersion))
                         .buildReader();
+                entry.getEntryBuffer().release();
                 printEntry(reader);
                 ++i;
             }

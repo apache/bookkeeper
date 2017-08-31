@@ -17,6 +17,7 @@
  */
 package org.apache.distributedlog;
 
+import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -2039,10 +2040,8 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
             recordSetWriter.writeRecord(ByteBuffer.wrap(record.getPayload()), writePromise);
             recordSetFutures.add(writePromise);
         }
-        final ByteBuffer recordSetBuffer = recordSetWriter.getBuffer();
-        byte[] data = new byte[recordSetBuffer.remaining()];
-        recordSetBuffer.get(data);
-        LogRecord setRecord = new LogRecord(6L, data);
+        final ByteBuf recordSetBuffer = recordSetWriter.getBuffer();
+        LogRecord setRecord = new LogRecord(6L, recordSetBuffer);
         setRecord.setRecordSet();
         CompletableFuture<DLSN> writeRecordSetFuture = writer.write(setRecord);
         writeRecordSetFuture.whenComplete(new FutureEventListener<DLSN>() {

@@ -17,43 +17,70 @@
  */
 package org.apache.distributedlog;
 
-import org.apache.bookkeeper.stats.StatsLogger;
-
-import java.io.DataInputStream;
+import com.google.common.annotations.VisibleForTesting;
+import io.netty.buffer.ByteBuf;
 import java.io.IOException;
-import java.io.InputStream;
+import javax.annotation.concurrent.NotThreadSafe;
+import org.apache.bookkeeper.stats.StatsLogger;
 
 /**
  * Record reader to read records from an enveloped entry buffer.
  */
+@NotThreadSafe
 class EnvelopedEntryReader implements Entry.Reader, RecordStream {
 
     private final long logSegmentSeqNo;
     private final long entryId;
+    private final ByteBuf src;
     private final LogRecord.Reader reader;
 
     // slot id
     private long slotId = 0;
+    // error lag
+    private IOException lastException = null;
+    private boolean isExhausted = false;
 
     EnvelopedEntryReader(long logSegmentSeqNo,
                          long entryId,
                          long startSequenceId,
-                         InputStream in,
+                         ByteBuf in,
                          boolean envelopedEntry,
                          boolean deserializeRecordSet,
                          StatsLogger statsLogger)
             throws IOException {
         this.logSegmentSeqNo = logSegmentSeqNo;
         this.entryId = entryId;
-        InputStream src = in;
         if (envelopedEntry) {
-            src = EnvelopedEntry.fromInputStream(in, statsLogger);
+            this.src = EnvelopedEntry.fromEnvelopedBuf(in, statsLogger);
+        } else {
+            this.src = in;
         }
         this.reader = new LogRecord.Reader(
                 this,
-                new DataInputStream(src),
+                src,
                 startSequenceId,
                 deserializeRecordSet);
+    }
+
+    @VisibleForTesting
+    boolean isExhausted() {
+        return isExhausted;
+    }
+
+    @VisibleForTesting
+    ByteBuf getSrcBuf() {
+        return src;
+    }
+
+    private void checkLastException() throws IOException {
+        if (null != lastException) {
+            throw lastException;
+        }
+    }
+
+    private void releaseBuffer() {
+        isExhausted = true;
+        this.src.release();
     }
 
     @Override
@@ -68,16 +95,44 @@ class EnvelopedEntryReader implements Entry.Reader, RecordStream {
 
     @Override
     public LogRecordWithDLSN nextRecord() throws IOException {
-        return reader.readOp();
+        checkLastException();
+
+        if (isExhausted) {
+            return null;
+        }
+
+        LogRecordWithDLSN record;
+        try {
+            record = reader.readOp();
+        } catch (IOException ioe) {
+            lastException = ioe;
+            releaseBuffer();
+            throw ioe;
+        }
+        if (null == record) {
+            releaseBuffer();
+        }
+        return record;
+    }
+
+    public void release() {
+        if (isExhausted) {
+            return;
+        }
+        releaseBuffer();;
     }
 
     @Override
     public boolean skipTo(long txId) throws IOException {
+        checkLastException();
+
         return reader.skipTo(txId, true);
     }
 
     @Override
     public boolean skipTo(DLSN dlsn) throws IOException {
+        checkLastException();
+
         return reader.skipTo(dlsn);
     }
 
@@ -99,4 +154,5 @@ class EnvelopedEntryReader implements Entry.Reader, RecordStream {
     public String getName() {
         return "EnvelopedReader";
     }
+
 }

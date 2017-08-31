@@ -106,6 +106,22 @@ class BKSyncLogReader implements LogReader, AsyncNotification {
                 });
     }
 
+    synchronized void releaseCurrentEntry() {
+        if (null != currentEntry) {
+            currentEntry.release();
+            currentEntry = null;
+        }
+    }
+
+    synchronized void checkClosedOrException() throws IOException {
+        if (null != closeFuture) {
+            throw new IOException("Reader is closed");
+        }
+        if (null != readerException.get()) {
+            throw readerException.get();
+        }
+    }
+
     @VisibleForTesting
     ReadAheadEntryReader getReadAheadReader() {
         return readAheadReader;
@@ -150,9 +166,8 @@ class BKSyncLogReader implements LogReader, AsyncNotification {
     @Override
     public synchronized LogRecordWithDLSN readNext(boolean nonBlocking)
             throws IOException {
-        if (null != readerException.get()) {
-            throw readerException.get();
-        }
+        checkClosedOrException();
+
         LogRecordWithDLSN record = doReadNext(nonBlocking);
         // no record is returned, check if the reader becomes idle
         if (null == record && shouldCheckIdleReader) {
@@ -236,6 +251,7 @@ class BKSyncLogReader implements LogReader, AsyncNotification {
                 return closeFuture;
             }
             closeFuture = closePromise = new CompletableFuture<Void>();
+            releaseCurrentEntry();
         }
         readHandler.unregisterListener(readAheadReader);
         readAheadReader.removeStateChangeNotification(this);

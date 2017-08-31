@@ -154,6 +154,10 @@ public class LocalDLMEmulator {
             throw new Exception("Error starting zookeeper/bookkeeper");
         }
         int bookiesUp = checkBookiesUp(numBookies, zkTimeoutSec);
+        if (numBookies != bookiesUp) {
+            LOG.info("Only {} bookies are up, expected {} bookies to be there.",
+                bookiesUp, numBookies);
+        }
         assert (numBookies == bookiesUp);
         // Provision "/messaging/distributedlog" namespace
         DLMetadata.create(new BKDLConfig(zkEnsemble, "/ledgers")).create(uri);

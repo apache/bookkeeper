@@ -17,6 +17,13 @@
  */
 package org.apache.distributedlog;
 
+import static com.google.common.base.Charsets.UTF_8;
+import static org.apache.distributedlog.LogRecord.MAX_LOGRECORD_SIZE;
+import static org.apache.distributedlog.LogRecord.MAX_LOGRECORDSET_SIZE;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Stopwatch;
+import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -27,9 +34,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
-
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Stopwatch;
 import java.util.function.Function;
 import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
 import org.apache.distributedlog.exceptions.BKTransmitException;
@@ -44,13 +48,11 @@ import org.apache.distributedlog.exceptions.InvalidEnvelopedEntryException;
 import org.apache.distributedlog.feature.CoreFeatureKeys;
 import org.apache.distributedlog.injector.FailureInjector;
 import org.apache.distributedlog.injector.RandomDelayFailureInjector;
-import org.apache.distributedlog.io.Buffer;
 import org.apache.distributedlog.io.CompressionCodec;
 import org.apache.distributedlog.io.CompressionUtils;
 import org.apache.distributedlog.lock.DistributedLock;
 import org.apache.distributedlog.logsegment.LogSegmentEntryWriter;
 import org.apache.distributedlog.logsegment.LogSegmentWriter;
-import org.apache.distributedlog.common.stats.BroadCastStatsLogger;
 import org.apache.distributedlog.common.stats.OpStatsListener;
 import org.apache.distributedlog.util.FailpointUtils;
 import org.apache.distributedlog.common.concurrent.FutureEventListener;
@@ -74,10 +76,6 @@ import org.apache.bookkeeper.util.MathUtils;
 import org.apache.distributedlog.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.google.common.base.Charsets.UTF_8;
-import static org.apache.distributedlog.LogRecord.MAX_LOGRECORD_SIZE;
-import static org.apache.distributedlog.LogRecord.MAX_LOGRECORDSET_SIZE;
 
 /**
  * BookKeeper Based Log Segment Writer.
@@ -152,7 +150,6 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
     private final OrderedScheduler scheduler;
 
     // stats
-    private final StatsLogger envelopeStatsLogger;
     private final StatsLogger transmitOutstandingLogger;
     private final Counter transmitDataSuccesses;
     private final Counter transmitDataMisses;
@@ -220,7 +217,6 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
         }
         this.writeLimiter = new WriteLimiter(streamName, streamWriteLimiter, globalWriteLimiter);
         this.alertStatsLogger = alertStatsLogger;
-        this.envelopeStatsLogger = BroadCastStatsLogger.masterslave(statsLogger, perLogStatsLogger);
 
         StatsLogger flushStatsLogger = statsLogger.scope("flush");
         StatsLogger pFlushStatsLogger = flushStatsLogger.scope("periodic");
@@ -279,8 +275,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
                 streamName,
                 Math.max(transmissionThreshold, 1024),
                 envelopeBeforeTransmit(),
-                compressionType,
-                envelopeStatsLogger);
+                compressionType);
         this.packetPrevious = null;
         this.startTxId = startTxId;
         this.lastTxId = startTxId;
@@ -440,8 +435,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
                 streamName,
                 Math.max(transmissionThreshold, getAverageTransmitSize()),
                 envelopeBeforeTransmit(),
-                compressionType,
-                envelopeStatsLogger);
+                compressionType);
     }
 
     private boolean envelopeBeforeTransmit() {
@@ -1049,7 +1043,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
                 }
             }
 
-            Buffer toSend;
+            ByteBuf toSend;
             try {
                 toSend = recordSetToTransmit.getBuffer();
                 FailpointUtils.checkFailPoint(FailpointUtils.FailPointName.FP_TransmitFailGetBuffer);
@@ -1076,8 +1070,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
 
                 BKTransmitPacket packet = new BKTransmitPacket(recordSetToTransmit);
                 packetPrevious = packet;
-                entryWriter.asyncAddEntry(toSend.getData(), 0, toSend.size(),
-                                          this, packet);
+                entryWriter.asyncAddEntry(toSend, this, packet);
 
                 if (recordSetToTransmit.hasUserRecords()) {
                     transmitDataSuccesses.inc();

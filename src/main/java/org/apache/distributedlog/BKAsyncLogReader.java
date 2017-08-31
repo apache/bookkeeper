@@ -240,6 +240,13 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
         this.lastProcessTime = Stopwatch.createStarted();
     }
 
+    synchronized void releaseCurrentEntry() {
+        if (null != currentEntry) {
+            currentEntry.release();
+            currentEntry = null;
+        }
+    }
+
     private ScheduledFuture<?> scheduleIdleReaderTaskIfNecessary() {
         if (idleErrorThresholdMillis < Integer.MAX_VALUE) {
             // Dont run the task more than once every seconds (for sanity)
@@ -480,6 +487,7 @@ class BKAsyncLogReader implements AsyncLogReader, Runnable, AsyncNotification {
             closePromise = closeFuture = new CompletableFuture<Void>();
             exception = new ReadCancelledException(readHandler.getFullyQualifiedName(), "Reader was closed");
             setLastException(exception);
+            releaseCurrentEntry();
         }
 
         // Do this after we have checked that the reader was not previously closed

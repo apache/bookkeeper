@@ -18,6 +18,7 @@
 package org.apache.distributedlog.impl.logsegment;
 
 import com.google.common.annotations.VisibleForTesting;
+import io.netty.buffer.ByteBuf;
 import org.apache.distributedlog.logsegment.LogSegmentEntryWriter;
 import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -49,9 +50,9 @@ public class BKLogSegmentEntryWriter implements LogSegmentEntryWriter {
     }
 
     @Override
-    public void asyncAddEntry(byte[] data, int offset, int length,
+    public void asyncAddEntry(ByteBuf entry,
                               AsyncCallback.AddCallback callback, Object ctx) {
-        lh.asyncAddEntry(data, offset, length, callback, ctx);
+        lh.asyncAddEntry(entry, callback, ctx);
     }
 
     @Override
