@@ -57,7 +57,8 @@ class LedgerCreateOp implements GenericCallback<Void> {
     OpStatsLogger createOpLogger;
     boolean adv = false;
     boolean generateLedgerId = true;
-    SyncMode defaultSyncMode;
+    final SyncMode defaultSyncMode;
+    final boolean allowNoSyncWrites;
 
     /**
      * Constructor
@@ -83,7 +84,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
      *       preserve the order(e.g. sortedMap) upon later retireval.
      */
     LedgerCreateOp(BookKeeper bk, int ensembleSize, int writeQuorumSize, int ackQuorumSize, DigestType digestType,
-            byte[] passwd, CreateCallback cb, Object ctx, final Map<String, byte[]> customMetadata,
+            byte[] passwd, CreateCallback cb, Object ctx, final Map<String, byte[]> customMetadata, boolean allowNoSyncWrites,
             SyncMode defaultSyncMode) {
         this.bk = bk;
         this.metadata = new LedgerMetadata(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, passwd, customMetadata);
@@ -93,13 +94,32 @@ class LedgerCreateOp implements GenericCallback<Void> {
         this.ctx = ctx;
         this.startTime = MathUtils.nowInNano();
         this.createOpLogger = bk.getCreateOpLogger();
+        this.allowNoSyncWrites = allowNoSyncWrites;
         this.defaultSyncMode = defaultSyncMode;
+    }
+
+    private boolean validate() {
+        if (!allowNoSyncWrites) {
+            if (defaultSyncMode == SyncMode.JOURNAL_NOSYNC){
+                LOG.error("Cannot created a ledger with ensembleSize > writeQuorumSize and defaultSyncMode = "+SyncMode.JOURNAL_NOSYNC);
+                return false;
+            }
+            if (metadata.getEnsembleSize()> metadata.getWriteQuorumSize()) {
+                LOG.error("Cannot created a ledger with ensembleSize > writeQuorumSize and allowNoSyncWrites = true");
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
      * Initiates the operation
      */
     public void initiate() {
+        if (!validate()) {
+            cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
+            return;
+        }
         // allocate ensemble first
 
         /*

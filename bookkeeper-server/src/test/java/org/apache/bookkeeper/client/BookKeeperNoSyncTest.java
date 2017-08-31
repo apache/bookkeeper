@@ -53,7 +53,7 @@ public class BookKeeperNoSyncTest extends BookKeeperClusterTestCase {
         long ledgerId;
         try (BookKeeper bkc = new BookKeeper(confWriter)) {
             try (LedgerHandle lh = bkc.createLedger(1, 1, 1, digestType, "testPasswd".getBytes(),
-                null, SyncMode.JOURNAL_NOSYNC)) {
+                null, true, SyncMode.JOURNAL_NOSYNC)) {
                 ledgerId = lh.getId();
                 for (int i = 0; i < numEntries - 1; i++) {
                     lh.addEntry(data);
@@ -79,7 +79,7 @@ public class BookKeeperNoSyncTest extends BookKeeperClusterTestCase {
         long ledgerId;
         try (BookKeeper bkc = new BookKeeper(confWriter)) {
             try (LedgerHandle lh = bkc.createLedgerAdv(1, 1, 1, digestType, "testPasswd".getBytes(), null,
-                SyncMode.JOURNAL_NOSYNC)) {
+                true, SyncMode.JOURNAL_NOSYNC)) {
                 ledgerId = lh.getId();
                 for (int i = 0; i < numEntries - 2; i++) {
                     lh.addEntry(i, data, SyncMode.JOURNAL_NOSYNC);
@@ -111,7 +111,7 @@ public class BookKeeperNoSyncTest extends BookKeeperClusterTestCase {
         long ledgerId;
         try (BookKeeper bkc = new BookKeeper(confWriter)) {
             try (LedgerHandle lh = bkc.createLedger(1, 1, 1, digestType, "testPasswd".getBytes(),
-                null, SyncMode.JOURNAL_NOSYNC)) {
+                null, true, SyncMode.JOURNAL_NOSYNC)) {
                 ledgerId = lh.getId();
 
                 try {
@@ -149,7 +149,7 @@ public class BookKeeperNoSyncTest extends BookKeeperClusterTestCase {
         long ledgerId;
         try (BookKeeper bkc = new BookKeeper(confWriter)) {
             try (LedgerHandle lh = bkc.createLedger(1, 1, 1, digestType, "testPasswd".getBytes(),
-                null, SyncMode.JOURNAL_NOSYNC)) {
+                null, true, SyncMode.JOURNAL_NOSYNC)) {
                 ledgerId = lh.getId();
 
                 try {
