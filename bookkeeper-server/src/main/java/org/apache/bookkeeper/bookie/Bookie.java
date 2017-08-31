@@ -1515,11 +1515,6 @@ public class Bookie extends BookieCriticalThread {
      * Add entry to a ledger.
      * @throws BookieException.LedgerFencedException if the ledger is fenced
      */
-    public void addEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey)
-            throws IOException, BookieException.LedgerFencedException, BookieException {
-        addEntry(entry, cb, ctx, masterKey, false);
-    }
-
     public void addEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey, boolean noSynch)
             throws IOException, BookieException.LedgerFencedException, BookieException {
         long requestNanos = MathUtils.nowInNano();
@@ -1747,7 +1742,7 @@ public class Bookie extends BookieCriticalThread {
             buff.writeLong(1);
             buff.writeLong(i);
             cb.incCount();
-            b.addEntry(buff, cb, null, new byte[0]);
+            b.addEntry(buff, cb, null, new byte[0], false);
         }
         cb.waitZero();
         long end = MathUtils.now();

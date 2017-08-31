@@ -453,7 +453,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public void addEntry(ByteBuf entry, final WriteCallback cb, Object ctx, byte[] masterKey)
+        public void addEntry(ByteBuf entry, final WriteCallback cb, Object ctx, byte[] masterKey, boolean nosync)
                 throws IOException, BookieException {
             super.addEntry(entry, new WriteCallback() {
                 @Override
@@ -465,7 +465,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
                         cb.writeComplete(rc, ledgerId, entryId, lastAddSyncedEntry, addr, ctx);
                     }
                 }
-            }, ctx, masterKey);
+            }, ctx, masterKey, false);
         }
 
         @Override

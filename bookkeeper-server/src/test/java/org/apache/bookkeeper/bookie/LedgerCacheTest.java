@@ -334,7 +334,7 @@ public class LedgerCacheTest {
         b.start();
         for (int i = 1; i <= numLedgers; i++) {
             ByteBuf packet = generateEntry(i, 1);
-            b.addEntry(packet, new Bookie.NopWriteCallback(), null, "passwd".getBytes());
+            b.addEntry(packet, new Bookie.NopWriteCallback(), null, "passwd".getBytes(), false);
         }
 
         conf = TestBKConfiguration.newServerConfiguration()
@@ -513,7 +513,7 @@ public class LedgerCacheTest {
 
         // this bookie.addEntry call is required. FileInfo for Ledger 1 would be created with this call.
         // without the fileinfo, 'flushTestSortedLedgerStorage.addEntry' calls will fail because of BOOKKEEPER-965 change.
-        bookie.addEntry(generateEntry(1, 1), new Bookie.NopWriteCallback(), null, "passwd".getBytes());
+        bookie.addEntry(generateEntry(1, 1), new Bookie.NopWriteCallback(), null, "passwd".getBytes(), false);
 
         flushTestSortedLedgerStorage.addEntry(generateEntry(1, 2));
         assertFalse("Bookie is expected to be in ReadWrite mode", bookie.isReadOnly());
