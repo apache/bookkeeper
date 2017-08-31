@@ -36,7 +36,7 @@ class ResponseBuilder {
 
     static BookieProtocol.Response buildAddResponse(BookieProtocol.Request r, long lastAddSyncedEntry) {
         return new BookieProtocol.AddResponse(r.getProtocolVersion(), BookieProtocol.EOK, r.getLedgerId(),
-            lastAddSyncedEntry, r.getEntryId());
+            r.getEntryId(), lastAddSyncedEntry);
     }
 
     static BookieProtocol.Response buildReadResponse(ByteBuf data, BookieProtocol.Request r) {
