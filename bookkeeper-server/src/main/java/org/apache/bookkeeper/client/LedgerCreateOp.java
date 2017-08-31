@@ -104,7 +104,8 @@ class LedgerCreateOp implements GenericCallback<Void> {
                 LOG.error("Cannot created a ledger with ensembleSize > writeQuorumSize and defaultSyncMode = "+SyncMode.JOURNAL_NOSYNC);
                 return false;
             }
-            if (metadata.getEnsembleSize()> metadata.getWriteQuorumSize()) {
+        } else {
+            if (metadata.getEnsembleSize() > metadata.getWriteQuorumSize()) {
                 LOG.error("Cannot created a ledger with ensembleSize > writeQuorumSize and allowNoSyncWrites = true");
                 return false;
             }
