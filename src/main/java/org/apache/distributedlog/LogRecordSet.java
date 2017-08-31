@@ -19,12 +19,10 @@ package org.apache.distributedlog;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import java.io.ByteArrayInputStream;
+import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
-import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.distributedlog.exceptions.LogRecordTooLongException;
 import org.apache.distributedlog.exceptions.WriteException;
 import org.apache.distributedlog.io.CompressionCodec;
@@ -57,42 +55,35 @@ import org.apache.distributedlog.io.CompressionCodec;
  */
 public class LogRecordSet {
 
-    static final OpStatsLogger NULL_OP_STATS_LOGGER =
-            NullStatsLogger.INSTANCE.getOpStatsLogger("");
-
     public static final int HEADER_LEN =
-            4 /* Metadata */
-          + 4 /* Count */
-          + 8 /* Lengths */
+            Integer.BYTES /* Metadata */
+          + Integer.BYTES /* Count */
+          + Integer.BYTES + Integer.BYTES /* Lengths: (decompressed + compressed) */
             ;
 
     // Version
     static final int VERSION = 0x1000;
 
+    static final int METADATA_OFFSET = 0;
+    static final int COUNT_OFFSET = METADATA_OFFSET + Integer.BYTES;
+    static final int DECOMPRESSED_SIZE_OFFSET = COUNT_OFFSET + Integer.BYTES;
+    static final int COMPRESSED_SIZE_OFFSET = DECOMPRESSED_SIZE_OFFSET + Integer.BYTES;
+
     // Metadata
     static final int METADATA_VERSION_MASK = 0xf000;
     static final int METADATA_COMPRESSION_MASK = 0x3;
 
-    // Compression Codec
-    static final int COMPRESSION_CODEC_NONE = 0x0;
-    static final int COMPRESSION_CODEC_LZ4 = 0X1;
-
     public static int numRecords(LogRecord record) throws IOException {
         checkArgument(record.isRecordSet(),
                 "record is not a recordset");
-        byte[] data = record.getPayload();
-        return numRecords(data);
-    }
-
-    public static int numRecords(byte[] data) throws IOException {
-        ByteBuffer buffer = ByteBuffer.wrap(data);
-        int metadata = buffer.getInt();
+        ByteBuf buffer = record.getPayloadBuf();
+        int metadata = buffer.getInt(METADATA_OFFSET);
         int version = (metadata & METADATA_VERSION_MASK);
         if (version != VERSION) {
             throw new IOException(String.format("Version mismatch while reading. Received: %d,"
                 + " Required: %d", version, VERSION));
         }
-        return buffer.getInt();
+        return buffer.getInt(COUNT_OFFSET);
     }
 
     public static Writer newWriter(int initialBufferSize,
@@ -103,7 +94,6 @@ public class LogRecordSet {
     public static Reader of(LogRecordWithDLSN record) throws IOException {
         checkArgument(record.isRecordSet(),
                 "record is not a recordset");
-        byte[] data = record.getPayload();
         DLSN dlsn = record.getDlsn();
         int startPosition = record.getPositionWithinLogSegment();
         long startSequenceId = record.getStartSequenceIdOfCurrentSegment();
@@ -115,7 +105,7 @@ public class LogRecordSet {
                 dlsn.getSlotId(),
                 startPosition,
                 startSequenceId,
-                new ByteArrayInputStream(data));
+                record.getPayloadBuf());
     }
 
     /**
@@ -149,6 +139,11 @@ public class LogRecordSet {
          * @return next log record from this record set.
          */
         LogRecordWithDLSN nextRecord() throws IOException;
+
+        /**
+         * Release the resources hold by this record set reader.
+         */
+        void release();
 
     }
 

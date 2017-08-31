@@ -20,14 +20,12 @@ package org.apache.distributedlog.io;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.base.Stopwatch;
-import java.util.concurrent.TimeUnit;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
+import java.nio.ByteBuffer;
 import net.jpountz.lz4.LZ4Compressor;
-import net.jpountz.lz4.LZ4Exception;
 import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4FastDecompressor;
-import net.jpountz.lz4.LZ4SafeDecompressor;
-import org.apache.bookkeeper.stats.OpStatsLogger;
 
 /**
  * An {@code lz4} based {@link CompressionCodec} implementation.
@@ -36,66 +34,55 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
  */
 public class LZ4CompressionCodec implements CompressionCodec {
 
-    // Used for compression
-    private final LZ4Compressor compressor;
-    // Used to decompress when the size of the output is known
-    private final LZ4FastDecompressor fastDecompressor;
-    // Used to decompress when the size of the output is not known
-    private final LZ4SafeDecompressor safeDecompressor;
-
-    public LZ4CompressionCodec() {
-        this.compressor = LZ4Factory.fastestInstance().fastCompressor();
-        this.fastDecompressor = LZ4Factory.fastestInstance().fastDecompressor();
-        this.safeDecompressor = LZ4Factory.fastestInstance().safeDecompressor();
+    public static LZ4CompressionCodec of() {
+        return INSTANCE;
     }
 
-    @Override
-    public byte[] compress(byte[] data, int offset, int length, OpStatsLogger compressionStat) {
-        checkNotNull(data);
-        checkArgument(offset >= 0 && offset < data.length);
-        checkArgument(length >= 0);
-        checkNotNull(compressionStat);
+    private static final LZ4CompressionCodec INSTANCE = new LZ4CompressionCodec();
 
-        Stopwatch watch = Stopwatch.createStarted();
-        byte[] compressed = compressor.compress(data, offset, length);
-        compressionStat.registerSuccessfulEvent(watch.elapsed(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
+    private static final LZ4Factory factory = LZ4Factory.fastestJavaInstance();
+    // Used for compression
+    private static final LZ4Compressor compressor = factory.fastCompressor();
+    // Used to decompress when the size of the output is known
+    private static final LZ4FastDecompressor decompressor = factory.fastDecompressor();
+
+    @Override
+    public ByteBuf compress(ByteBuf uncompressed, int headerLen) {
+        checkNotNull(uncompressed);
+        checkArgument(uncompressed.readableBytes() > 0);
+
+        int uncompressedLen = uncompressed.readableBytes();
+        int maxLen = compressor.maxCompressedLength(uncompressedLen);
+
+        // get the source bytebuffer
+        ByteBuffer uncompressedNio = uncompressed.nioBuffer(uncompressed.readerIndex(), uncompressedLen);
+        ByteBuf compressed = PooledByteBufAllocator.DEFAULT.buffer(
+                maxLen + headerLen, maxLen + headerLen);
+        ByteBuffer compressedNio = compressed.nioBuffer(headerLen, maxLen);
+
+        int compressedLen = compressor.compress(
+                uncompressedNio, uncompressedNio.position(), uncompressedLen,
+                compressedNio, compressedNio.position(), maxLen);
+        compressed.writerIndex(compressedLen + headerLen);
+
         return compressed;
     }
 
     @Override
-    public byte[] decompress(byte[] data, int offset, int length, OpStatsLogger decompressionStat) {
-        checkNotNull(data);
-        checkArgument(offset >= 0 && offset < data.length);
-        checkArgument(length >= 0);
-        checkNotNull(decompressionStat);
-
-        Stopwatch watch = Stopwatch.createStarted();
-        // Assume that we have a compression ratio of 1/3.
-        int outLength = length * 3;
-        while (true) {
-            try {
-                byte[] decompressed = safeDecompressor.decompress(data, offset, length, outLength);
-                decompressionStat.registerSuccessfulEvent(watch.elapsed(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
-                return decompressed;
-            } catch (LZ4Exception e) {
-                outLength *= 2;
-            }
-        }
-    }
-
-    @Override
     // length parameter is ignored here because of the way the fastDecompressor works.
-    public byte[] decompress(byte[] data, int offset, int length, int decompressedSize,
-                             OpStatsLogger decompressionStat) {
-        checkNotNull(data);
-        checkArgument(offset >= 0 && offset < data.length);
-        checkArgument(length >= 0);
+    public ByteBuf decompress(ByteBuf compressed, int decompressedSize) {
+        checkNotNull(compressed);
+        checkArgument(compressed.readableBytes() >= 0);
         checkArgument(decompressedSize >= 0);
-        checkNotNull(decompressionStat);
 
-        Stopwatch watch = Stopwatch.createStarted();
-        byte[] decompressed = fastDecompressor.decompress(data, offset, decompressedSize);
-        decompressionStat.registerSuccessfulEvent(watch.elapsed(TimeUnit.MICROSECONDS), TimeUnit.MICROSECONDS);
-        return decompressed;
+        ByteBuf uncompressed = PooledByteBufAllocator.DEFAULT.buffer(decompressedSize, decompressedSize);
+        ByteBuffer uncompressedNio = uncompressed.nioBuffer(0, decompressedSize);
+        ByteBuffer compressedNio = compressed.nioBuffer(compressed.readerIndex(), compressed.readableBytes());
+
+        decompressor.decompress(
+                compressedNio, compressedNio.position(),
+                uncompressedNio, uncompressedNio.position(), uncompressedNio.remaining());
+        uncompressed.writerIndex(decompressedSize);
+        return uncompressed;
     }
 }

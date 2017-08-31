@@ -18,6 +18,7 @@
 package org.apache.distributedlog;
 
 import com.google.common.annotations.VisibleForTesting;
+import io.netty.buffer.ByteBuf;
 
 /**
  * Log record with {@link DLSN} and <code>SequenceId</code>.
@@ -68,6 +69,13 @@ public class LogRecordWithDLSN extends LogRecord {
     @VisibleForTesting
     public LogRecordWithDLSN(DLSN dlsn, long txid, byte[] data, long startSequenceIdOfCurrentSegment) {
         super(txid, data);
+        this.dlsn = dlsn;
+        this.startSequenceIdOfCurrentSegment = startSequenceIdOfCurrentSegment;
+    }
+
+    @VisibleForTesting
+    public LogRecordWithDLSN(DLSN dlsn, long txid, ByteBuf buffer, long startSequenceIdOfCurrentSegment) {
+        super(txid, buffer);
         this.dlsn = dlsn;
         this.startSequenceIdOfCurrentSegment = startSequenceIdOfCurrentSegment;
     }

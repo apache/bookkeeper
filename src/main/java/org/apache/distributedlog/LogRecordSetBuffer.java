@@ -17,7 +17,7 @@
  */
 package org.apache.distributedlog;
 
-import java.nio.ByteBuffer;
+import io.netty.buffer.ByteBuf;
 
 /**
  * Write representation of a {@link LogRecordSet}.
@@ -44,7 +44,7 @@ public interface LogRecordSetBuffer {
      *
      * @return the buffer to transmit.
      */
-    ByteBuffer getBuffer();
+    ByteBuf getBuffer();
 
     /**
      * Complete transmit.

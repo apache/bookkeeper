@@ -37,6 +37,11 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-buffer</artifactId>
+      <version>${netty.version}</version>
+    </dependency>
+    <dependency>
       <groupId>net.jpountz.lz4</groupId>
       <artifactId>lz4</artifactId>
       <version>${lz4.version}</version>

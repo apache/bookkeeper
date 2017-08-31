@@ -25,9 +25,6 @@ public class CompressionUtils {
     public static final String LZ4 = "lz4";
     public static final String NONE = "none";
 
-    private static final CompressionCodec IDENTITY_CODEC = new IdentityCompressionCodec();
-    private static final CompressionCodec LZ4_CODEC = new LZ4CompressionCodec();
-
     /**
      * Get a cached compression codec instance for the specified type.
      * @param type compression codec type
@@ -35,10 +32,10 @@ public class CompressionUtils {
      */
     public static CompressionCodec getCompressionCodec(CompressionCodec.Type type) {
         if (type == CompressionCodec.Type.LZ4) {
-            return LZ4_CODEC;
+            return LZ4CompressionCodec.of();
         }
         // No Compression
-        return IDENTITY_CODEC;
+        return IdentityCompressionCodec.of();
     }
 
     /**

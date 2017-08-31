@@ -20,31 +20,40 @@ package org.apache.distributedlog.io;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.util.Arrays;
-import org.apache.bookkeeper.stats.OpStatsLogger;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.CompositeByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
 
 /**
  * An identity compression codec implementation for {@link CompressionCodec}.
  */
 public class IdentityCompressionCodec implements CompressionCodec {
+
+    public static IdentityCompressionCodec of() {
+        return INSTANCE;
+    }
+
+    private static final IdentityCompressionCodec INSTANCE = new IdentityCompressionCodec();
+
     @Override
-    public byte[] compress(byte[] data, int offset, int length, OpStatsLogger compressionStat) {
-        checkNotNull(data);
-        checkArgument(length >= 0);
-        return Arrays.copyOfRange(data, offset, offset + length);
+    public ByteBuf compress(ByteBuf uncompressed, int headerLen) {
+        checkNotNull(uncompressed);
+        checkArgument(uncompressed.readableBytes() >= 0);
+        if (headerLen == 0) {
+            return uncompressed.retain();
+        } else {
+            CompositeByteBuf composited = PooledByteBufAllocator.DEFAULT.compositeBuffer(2);
+            composited.addComponent(PooledByteBufAllocator.DEFAULT.buffer(headerLen, headerLen));
+            composited.addComponent(uncompressed.retain());
+            return composited;
+        }
     }
 
     @Override
-    public byte[] decompress(byte[] data, int offset, int length, OpStatsLogger decompressionStat) {
-        checkNotNull(data);
-        return Arrays.copyOfRange(data, offset, offset + length);
-    }
-
-    @Override
-    // Decompressed size is the same as the length of the data because this is an
-    // Identity compressor
-    public byte[] decompress(byte[] data, int offset, int length,
-                             int decompressedSize, OpStatsLogger decompressionStat) {
-        return decompress(data, offset, length, decompressionStat);
+    public ByteBuf decompress(ByteBuf compressed, int decompressedSize) {
+        checkNotNull(compressed);
+        checkArgument(compressed.readableBytes() >= 0);
+        checkArgument(decompressedSize >= 0);
+        return compressed.retain();
     }
 }
