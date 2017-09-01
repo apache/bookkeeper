@@ -99,9 +99,9 @@ public class LedgerHandle implements AutoCloseable {
     final DistributionSchedule distributionSchedule;
     final RateLimiter throttler;
     final LoadingCache<BookieSocketAddress, Long> bookieFailureHistory;
-    final boolean enableParallelRecoveryRead;    
-    final int recoveryReadBatchSize;
-    final SyncMode defaultSyncMode;
+    final boolean enableParallelRecoveryRead;
+    final boolean relaxDurability;
+    final int recoveryReadBatchSize;    
 
     /**
      * Invalid entry id. This value is returned from methods which
@@ -116,8 +116,7 @@ public class LedgerHandle implements AutoCloseable {
 
     final Counter ensembleChangeCounter;
     final Counter lacUpdateHitsCounter;
-    final Counter lacUpdateMissesCounter;
-    boolean usingNoSyncOperations;
+    final Counter lacUpdateMissesCounter;    
 
     // This empty master key is used when an empty password is provided which is the hash of an empty string
     private final static byte[] emptyLedgerKey;
@@ -132,14 +131,14 @@ public class LedgerHandle implements AutoCloseable {
 
 
     LedgerHandle(BookKeeper bk, long ledgerId, LedgerMetadata metadata,
-                 DigestType digestType, byte[] password, SyncMode defaultSyncMode)
+                 DigestType digestType, byte[] password, boolean relaxDurability)
             throws GeneralSecurityException, NumberFormatException {
         this.bk = bk;
         this.metadata = metadata;
+        this.relaxDurability = relaxDurability;
         this.pendingAddOps = new ConcurrentLinkedQueue<PendingAddOp>();
         this.enableParallelRecoveryRead = bk.getConf().getEnableParallelRecoveryRead();
         this.recoveryReadBatchSize = bk.getConf().getRecoveryReadBatchSize();        
-        this.defaultSyncMode = defaultSyncMode;
         this.lastAddSynced = INVALID_ENTRY_ID;
         if (metadata.isClosed()) {
             lastAddConfirmed = lastAddPushed = metadata.getLastEntryId();
@@ -375,7 +374,7 @@ public class LedgerHandle implements AutoCloseable {
 
     void asyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc) {
         try {
-            doAsyncCloseInternal(cb, ctx, rc);
+            doAsyncCloseInternal(cb, ctx, rc, true);
         } catch (RejectedExecutionException re) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Failed to close ledger {} : ", ledgerId, re);
@@ -394,9 +393,10 @@ public class LedgerHandle implements AutoCloseable {
      * @param ctx
      * @param rc
      */
-    void doAsyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc) {
+    void doAsyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc, final boolean firstCall) {
 
-        if (usingNoSyncOperations
+        if (relaxDurability
+            && firstCall
             && this.lastAddPushed >= 0
             && this.lastAddPushed != this.lastAddConfirmed) {
             LOG.info("need to sync up to lastAddPushed {} before closing ledger, lastAddConfirmed is {}", lastAddPushed, lastAddConfirmed);
@@ -406,8 +406,7 @@ public class LedgerHandle implements AutoCloseable {
                     if (rc != BKException.Code.OK) {
                         cb.closeComplete(rc, lh, ctx);
                     } else {
-                        usingNoSyncOperations = false;
-                        doAsyncCloseInternal(cb, ctx, rc);
+                        doAsyncCloseInternal(cb, ctx, rc, false);
                     }
                 }
             }, ctx);
@@ -669,11 +668,7 @@ public class LedgerHandle implements AutoCloseable {
      * @return the entryId of the new inserted entry
      */
     public long addEntry(byte[] data) throws InterruptedException, BKException {
-        return addEntry(data, 0, data.length, defaultSyncMode);
-    }
-
-    public long addEntry(byte[] data, SyncMode syncMode) throws InterruptedException, BKException {
-        return addEntry(data, 0, data.length, syncMode);
+        return addEntry(data, 0, data.length);
     }
 
     /**
@@ -689,12 +684,6 @@ public class LedgerHandle implements AutoCloseable {
      * @return the entryId of the new inserted entry
      */
     public long addEntry(final long entryId, byte[] data) throws InterruptedException, BKException {
-        LOG.error("To use this feature Ledger must be created with createLedgerAdv interface.");
-        throw BKException.create(BKException.Code.IllegalOpException);
-    }
-
-    public long addEntry(final long entryId, byte[] data, SyncMode syncMode) throws InterruptedException, BKException {
-        LOG.error("To use this feature Ledger must be created with createLedgerAdv interface.");
         throw BKException.create(BKException.Code.IllegalOpException);
     }
 
@@ -709,12 +698,7 @@ public class LedgerHandle implements AutoCloseable {
      *          number of bytes to take from data
      * @return the entryId of the new inserted entry
      */
-    public long addEntry(byte[] data, int offset, int length)
-            throws InterruptedException, BKException {
-        return addEntry(data, offset, length, defaultSyncMode);
-    }
-    
-    public long addEntry(byte[] data, int offset, int length, SyncMode syncMode)
+    public long addEntry(byte[] data, int offset, int length)    
             throws InterruptedException, BKException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Adding entry {}", data);
@@ -723,7 +707,7 @@ public class LedgerHandle implements AutoCloseable {
         CompletableFuture<Long> counter = new CompletableFuture<>();
 
         SyncAddCallback callback = new SyncAddCallback();
-        asyncAddEntry(data, offset, length, callback, counter, syncMode);
+        asyncAddEntry(data, offset, length, callback, counter);
 
         return SynchCallbackUtils.waitForResult(counter);
     }
@@ -744,11 +728,6 @@ public class LedgerHandle implements AutoCloseable {
      * @return entryId
      */
     public long addEntry(final long entryId, byte[] data, int offset, int length) throws InterruptedException,
-            BKException {
-        return addEntry(entryId, data, offset, length, defaultSyncMode);
-    }
-
-    public long addEntry(final long entryId, byte[] data, int offset, int length, SyncMode syncMode) throws InterruptedException,
             BKException {
         LOG.error("To use this feature Ledger must be created with createLedgerAdv() interface.");
         throw BKException.create(BKException.Code.IllegalOpException);
@@ -805,33 +784,22 @@ public class LedgerHandle implements AutoCloseable {
      *          offset and length sum to a value higher than the length of data.
      */
     public void asyncAddEntry(final byte[] data, final int offset, final int length,
-                              final AddCallback cb, final Object ctx) {
-        asyncAddEntry(data, offset, length, cb, ctx, defaultSyncMode);
-    }
-
-    public void asyncAddEntry(final byte[] data, final int offset, final int length,
-                              final AddCallback cb, final Object ctx, SyncMode syncMode) {
+                              final AddCallback cb, final Object ctx) {        
         if (offset < 0 || length < 0
                 || (offset + length) > data.length) {
             throw new ArrayIndexOutOfBoundsException(
                     "Invalid values for offset("+offset
                     +") or length("+length+")");
-        }
-        Preconditions.checkNotNull(syncMode, "syncMode must not be null");
+        }        
 
         PendingAddOp op = new PendingAddOp(LedgerHandle.this, cb, ctx);        
-        doAsyncAddEntry(op, Unpooled.wrappedBuffer(data, offset, length), cb, ctx, syncMode);
+        doAsyncAddEntry(op, Unpooled.wrappedBuffer(data, offset, length), cb, ctx);
     }
 
-    public void asyncAddEntry(ByteBuf data, final AddCallback cb, final Object ctx) {
-        asyncAddEntry(ledgerKey, recoveryReadBatchSize, recoveryReadBatchSize, cb, ctx, defaultSyncMode);
-    }
-    
-    public void asyncAddEntry(ByteBuf data, final AddCallback cb, final Object ctx, final SyncMode syncMode) {
-        Preconditions.checkNotNull(syncMode, "syncMode must not be null");
+    public void asyncAddEntry(ByteBuf data, final AddCallback cb, final Object ctx) {        
         data.retain();
         PendingAddOp op = new PendingAddOp(LedgerHandle.this, cb, ctx);        
-        doAsyncAddEntry(op, data, cb, ctx, syncMode);
+        doAsyncAddEntry(op, data, cb, ctx);
     }
 
     /**
@@ -873,21 +841,16 @@ public class LedgerHandle implements AutoCloseable {
     void asyncRecoveryAddEntry(final byte[] data, final int offset, final int length,
                                final AddCallback cb, final Object ctx) {
         PendingAddOp op = new PendingAddOp(LedgerHandle.this, cb, ctx).enableRecoveryAdd();
-        doAsyncAddEntry(op, Unpooled.wrappedBuffer(data, offset, length), cb, ctx, SyncMode.JOURNAL_SYNC);
-    }
-
-    protected void ledgerUsesNoSyncOperations() {
-        usingNoSyncOperations = true;
+        doAsyncAddEntry(op, Unpooled.wrappedBuffer(data, offset, length), cb, ctx);
     }
 
     protected void doAsyncAddEntry(final PendingAddOp op, final ByteBuf data, final AddCallback cb,
-        final Object ctx, final SyncMode syncMode) {
+        final Object ctx) {
         if (throttler != null) {
             throttler.acquire();
         }
-        if (syncMode == SyncMode.JOURNAL_NOSYNC) {
-            op.enableNosynch();
-            ledgerUsesNoSyncOperations();
+        if (this.relaxDurability) {
+            op.enableNosynch();            
         }
 
         final long entryId;

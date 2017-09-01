@@ -53,12 +53,14 @@ public class BookKeeperNoSyncTest extends BookKeeperClusterTestCase {
         long ledgerId;
         try (BookKeeper bkc = new BookKeeper(confWriter)) {
             try (LedgerHandle lh = bkc.createLedger(1, 1, 1, digestType, "testPasswd".getBytes(),
-                null, true, SyncMode.JOURNAL_NOSYNC)) {
+                null, true)) {
                 ledgerId = lh.getId();
                 for (int i = 0; i < numEntries - 1; i++) {
                     lh.addEntry(data);
-                }
-                lh.addEntry(data, SyncMode.JOURNAL_SYNC);
+                }                
+                long lastEntryID = lh.addEntry(data);
+                assertEquals(numEntries - 1, lastEntryID);
+                assertEquals(numEntries - 1, lh.getLastAddPushed());
             }
             try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
                 Enumeration<LedgerEntry> entries = lh.readEntries(0, numEntries - 1);
@@ -79,18 +81,25 @@ public class BookKeeperNoSyncTest extends BookKeeperClusterTestCase {
         long ledgerId;
         try (BookKeeper bkc = new BookKeeper(confWriter)) {
             try (LedgerHandle lh = bkc.createLedgerAdv(1, 1, 1, digestType, "testPasswd".getBytes(), null,
-                true, SyncMode.JOURNAL_NOSYNC)) {
+                true)) {
                 ledgerId = lh.getId();
                 for (int i = 0; i < numEntries - 2; i++) {
-                    lh.addEntry(i, data, SyncMode.JOURNAL_NOSYNC);
+                    lh.addEntry(i, data);
                 }
                 // LAC must not advance on no-sync writes
                 assertEquals(-1, lh.getLastAddConfirmed());
                 // forcing a sync, LAC will be able to advance at the next addEntry
-                lh.addEntry(numEntries - 2, data, SyncMode.JOURNAL_SYNC);
+                long entryId = lh.addEntry(numEntries - 2, data);
+                assertEquals(numEntries - 2, entryId);
+                assertEquals(entryId, lh.getLastAddPushed());
+                lh.sync(entryId);
                 assertEquals(numEntries - 2, lh.getLastAddConfirmed());
-                lh.addEntry(numEntries - 1, data, SyncMode.JOURNAL_SYNC);
+                long lastEntryId = lh.addEntry(numEntries - 1, data);
+                assertEquals(numEntries - 1, lastEntryId);
+                assertEquals(lastEntryId, lh.getLastAddPushed());
+                lh.sync(lastEntryId);
                 assertEquals(numEntries - 1, lh.getLastAddConfirmed());
+                assertEquals(numEntries - 1, lh.getLastAddPushed());
             }
             try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
                 Enumeration<LedgerEntry> entries = lh.readEntries(0, numEntries - 1);
@@ -111,7 +120,7 @@ public class BookKeeperNoSyncTest extends BookKeeperClusterTestCase {
         long ledgerId;
         try (BookKeeper bkc = new BookKeeper(confWriter)) {
             try (LedgerHandle lh = bkc.createLedger(1, 1, 1, digestType, "testPasswd".getBytes(),
-                null, true, SyncMode.JOURNAL_NOSYNC)) {
+                null, true)) {
                 ledgerId = lh.getId();
 
                 try {
@@ -149,7 +158,7 @@ public class BookKeeperNoSyncTest extends BookKeeperClusterTestCase {
         long ledgerId;
         try (BookKeeper bkc = new BookKeeper(confWriter)) {
             try (LedgerHandle lh = bkc.createLedger(1, 1, 1, digestType, "testPasswd".getBytes(),
-                null, true, SyncMode.JOURNAL_NOSYNC)) {
+                null, true)) {
                 ledgerId = lh.getId();
 
                 try {

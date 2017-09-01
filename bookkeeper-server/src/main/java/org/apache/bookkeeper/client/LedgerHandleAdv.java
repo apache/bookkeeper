@@ -54,9 +54,9 @@ public class LedgerHandleAdv extends LedgerHandle {
     }
 
     LedgerHandleAdv(BookKeeper bk, long ledgerId, LedgerMetadata metadata, DigestType digestType,
-        byte[] password, SyncMode defaultSyncMode)
+        byte[] password, boolean relaxDurability)
             throws GeneralSecurityException, NumberFormatException {
-        super(bk, ledgerId, metadata, digestType, password, defaultSyncMode);
+        super(bk, ledgerId, metadata, digestType, password, relaxDurability);
         pendingAddOps = new PriorityBlockingQueue<PendingAddOp>(10, new PendingOpsComparator());
     }
 
@@ -72,13 +72,8 @@ public class LedgerHandleAdv extends LedgerHandle {
      *            entryId that is just created.
      */
     @Override
-    public long addEntry(final long entryId, byte[] data) throws InterruptedException, BKException {
+    public long addEntry(final long entryId, byte[] data) throws InterruptedException, BKException {        
         return addEntry(entryId, data, 0, data.length);
-    }
-
-    @Override
-    public long addEntry(final long entryId, byte[] data, SyncMode syncMode) throws InterruptedException, BKException {
-        return addEntry(entryId, data, 0, data.length, syncMode);
     }
 
     /**
@@ -95,23 +90,16 @@ public class LedgerHandleAdv extends LedgerHandle {
      * @return The entryId of newly inserted entry.
      */
     @Override
-    public long addEntry(final long entryId, byte[] data, int offset, int length)
-        throws InterruptedException, BKException {
-        return addEntry(entryId, data, offset, length, defaultSyncMode);
-    }
-
-    @Override
-    public long addEntry(final long entryId, byte[] data, int offset, int length, SyncMode syncMode)
+    public long addEntry(final long entryId, byte[] data, int offset, int length)        
         throws InterruptedException, BKException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Adding entry {}", data);
         }
-        Preconditions.checkNotNull(syncMode,"syncMode must not be null");
-
+        
         CompletableFuture<Long> counter = new CompletableFuture<>();
 
         SyncAddCallback callback = new SyncAddCallback();
-        asyncAddEntry(entryId, data, offset, length, callback, counter, syncMode);
+        asyncAddEntry(entryId, data, offset, length, callback, counter);
 
         try {
             return counter.get();
@@ -158,12 +146,7 @@ public class LedgerHandleAdv extends LedgerHandle {
      */
 
     public void asyncAddEntry(final long entryId, final byte[] data, final int offset, final int length,
-            final AddCallback cb, final Object ctx) {
-        asyncAddEntry(entryId, data, offset, length, cb, ctx, defaultSyncMode);
-    }
-    public void asyncAddEntry(final long entryId, final byte[] data, final int offset, final int length,
-            final AddCallback cb, final Object ctx, final SyncMode syncMode) {
-        Preconditions.checkNotNull(syncMode, "syncMode must not be null");
+            final AddCallback cb, final Object ctx) {                
         PendingAddOp op = new PendingAddOp(this, cb, ctx);        
         op.setEntryId(entryId);
         if ((entryId <= this.lastAddConfirmed) || pendingAddOps.contains(op)) {
@@ -172,7 +155,7 @@ public class LedgerHandleAdv extends LedgerHandle {
                     LedgerHandleAdv.this, entryId, ctx);
             return;
         }
-        doAsyncAddEntry(op, Unpooled.wrappedBuffer(data, offset, length), cb, ctx, syncMode);
+        doAsyncAddEntry(op, Unpooled.wrappedBuffer(data, offset, length), cb, ctx);
     }
 
     /**
@@ -182,13 +165,12 @@ public class LedgerHandleAdv extends LedgerHandle {
      */
     @Override
     protected void doAsyncAddEntry(final PendingAddOp op, final ByteBuf data, final AddCallback cb,
-        final Object ctx, final SyncMode syncMode) {
+        final Object ctx) {
         if (throttler != null) {
             throttler.acquire();
         }
-        if (syncMode == SyncMode.JOURNAL_NOSYNC) {
-            op.enableNosynch();
-            ledgerUsesNoSyncOperations();
+        if (relaxDurability) {
+            op.enableNosynch();            
         }
         final long currentLength;
         boolean wasClosed = false;
@@ -200,6 +182,7 @@ public class LedgerHandleAdv extends LedgerHandle {
                 wasClosed = true;
                 currentLength = 0;
             } else {
+                lastAddPushed = Math.max(lastAddPushed, op.getEntryId());
                 currentLength = addToLength(length);
                 pendingAddOps.add(op);
             }
@@ -250,7 +233,7 @@ public class LedgerHandleAdv extends LedgerHandle {
      * LedgerHandleAdv will not allow addEntry without providing an entryId
      */
     @Override
-    public void asyncAddEntry(ByteBuf data, AddCallback cb, Object ctx, SyncMode sychMode) {
+    public void asyncAddEntry(ByteBuf data, AddCallback cb, Object ctx) {
         cb.addComplete(BKException.Code.IllegalOpException, this, LedgerHandle.INVALID_ENTRY_ID, ctx);
     }
 
@@ -259,7 +242,7 @@ public class LedgerHandleAdv extends LedgerHandle {
      */
     @Override
     public void asyncAddEntry(final byte[] data, final int offset, final int length,
-                              final AddCallback cb, final Object ctx, SyncMode sychMode) {
+                              final AddCallback cb, final Object ctx) {
         cb.addComplete(BKException.Code.IllegalOpException, this, LedgerHandle.INVALID_ENTRY_ID, ctx);
     }
 

@@ -56,9 +56,8 @@ class LedgerCreateOp implements GenericCallback<Void> {
     long startTime;
     OpStatsLogger createOpLogger;
     boolean adv = false;
-    boolean generateLedgerId = true;
-    final SyncMode defaultSyncMode;
-    final boolean allowNoSyncWrites;
+    boolean generateLedgerId = true;    
+    final boolean relaxDurability;
 
     /**
      * Constructor
@@ -84,8 +83,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
      *       preserve the order(e.g. sortedMap) upon later retireval.
      */
     LedgerCreateOp(BookKeeper bk, int ensembleSize, int writeQuorumSize, int ackQuorumSize, DigestType digestType,
-            byte[] passwd, CreateCallback cb, Object ctx, final Map<String, byte[]> customMetadata, boolean allowNoSyncWrites,
-            SyncMode defaultSyncMode) {
+            byte[] passwd, CreateCallback cb, Object ctx, final Map<String, byte[]> customMetadata, boolean allowNoSyncWrites) {
         this.bk = bk;
         this.metadata = new LedgerMetadata(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, passwd, customMetadata);
         this.digestType = digestType;
@@ -94,17 +92,11 @@ class LedgerCreateOp implements GenericCallback<Void> {
         this.ctx = ctx;
         this.startTime = MathUtils.nowInNano();
         this.createOpLogger = bk.getCreateOpLogger();
-        this.allowNoSyncWrites = allowNoSyncWrites;
-        this.defaultSyncMode = defaultSyncMode;
+        this.relaxDurability = allowNoSyncWrites;
     }
 
     private boolean validate() {
-        if (!allowNoSyncWrites) {
-            if (defaultSyncMode == SyncMode.JOURNAL_NOSYNC){
-                LOG.error("Cannot created a ledger with ensembleSize > writeQuorumSize and defaultSyncMode = "+SyncMode.JOURNAL_NOSYNC);
-                return false;
-            }
-        } else {
+        if (relaxDurability) {
             if (metadata.getEnsembleSize() > metadata.getWriteQuorumSize()) {
                 LOG.error("Cannot created a ledger with ensembleSize > writeQuorumSize and allowNoSyncWrites = true");
                 return false;
@@ -197,9 +189,9 @@ class LedgerCreateOp implements GenericCallback<Void> {
 
         try {
             if (adv) {
-                lh = new LedgerHandleAdv(bk, ledgerId, metadata, digestType, passwd, defaultSyncMode);
+                lh = new LedgerHandleAdv(bk, ledgerId, metadata, digestType, passwd, relaxDurability);
             } else {
-                lh = new LedgerHandle(bk, ledgerId, metadata, digestType, passwd, defaultSyncMode);
+                lh = new LedgerHandle(bk, ledgerId, metadata, digestType, passwd, relaxDurability);
             }
         } catch (GeneralSecurityException e) {
             LOG.error("Security exception while creating ledger: " + ledgerId, e);
