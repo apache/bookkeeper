@@ -9,10 +9,30 @@ Apache Bookkeeper is a software project of the Apache Software Foundation, provi
 # How to use this image
 
 Bookkeeper needs [Zookeeper](https://zookeeper.apache.org/) in order to preserve its state and publish its bookies (Bookkeeper servers). The client only need to connect to a Zookeeper server in the ensamble in order to obtain the list of Bookkeeper servers.
+## standalone BookKeeper cluster
+Just like running a BookKeeper cluster in one machine(http://bookkeeper.apache.org/docs/latest/getting-started/run-locally/), you can run a standalone BookKeeper in one docker container, the command is:
+```
+docker run -it \
+     --env JAVA_HOME=/usr/lib/jvm/jre-1.8.0 \
+     --entrypoint "/bin/bash" \
+     apache/bookkeeper \
+     -c "/opt/bookkeeper/bin/bookkeeper localbookie 3"
+```
+Note: you can first start the container, and then execute "bin/bookkeeper localbookie 3" in the container.  
+After that, you can execute BookKeeper shell command(http://bookkeeper.apache.org/docs/latest/reference/cli/) to test the cluster, you need first log into the container, use command below:
+```
+docker exec -it <container id or name> bash
+```
+then run test command, such as:
+```
+ ./bin/bookkeeper shell listbookies -rw
+ 
+ ./bin/bookkeeper shell simpletest
+ 
+```
+## TL;DR -- BookKeeper cluster 
 
-## TL;DR
-
-If you just want to see things working, you can play with Makefile hosted in this project and check its targets for a fairly complex set up example:
+If you want to setup cluster, you can play with Makefile hosted in this project and check its targets for a fairly complex set up example:
 ```
 git clone https://github.com/apache/bookkeeper
 cd bookkeeper/docker
@@ -28,37 +48,38 @@ make run-dice
 make run-dice
 ```
 This will do all the following steps and start up a working ensemble with two dice applications.
+Note: If you want to restart from scratch the cluster, please remove all its data using `sudo rm -rf /tmp/test_bk`, else the Zookeeper connection maybe fail. 
 
 ## Step by step
 
 The simplest way to let Bookkeeper servers publish themselves with a name, which could be resolved consistently across container runs, is through creation of a [docker network](https://docs.docker.com/engine/reference/commandline/network_create/):
 ```
-docker network create "my-bookkeeper-network"
+docker network create "bk_network"
 ```
 Then we can start a Zookeeper (from [Zookeeper official image](https://hub.docker.com/_/zookeeper/)) server in standalone mode on that network:
 ```
 docker run -d \
-    --network "my-bookkeeper-network" \
-    --name "my-zookeeper" \
-    --hostname "my-zookeeper" \
+    --network "bk_network" \
+    --name "test_zookeeper" \
+    --hostname "test_zookeeper" \
     zookeeper
 ```
-And initialize the metadata store that bookies will use to store information:
+And initialize the metadata store that bookies will use to store information (This step is necessary when we setup the BookKeeper cluster first time, but is not necessary when using our current BookKeeper Docker image, because we have done this work when we start the first bookie):
 ```
 docker run -it --rm \
-    --network "my-bookkeeper-network" \
-    --env ZK_URL=my-zookeeper:2181 \
-    bookkeeper \
+    --network "bk_network" \
+    --env BK_zkServers=test_zookeeper:2181 \
+    apache/bookkeeper \
     bookkeeper shell metaformat
 ```
 Now we can start our Bookkeeper ensemble (e.g. with three bookies):
 ```
 docker run -it\
-    --network "my-bookkeeper-network" \
-    --env ZK_URL=my-zookeeper:2181 \
+    --network "bk_network" \
+    --env BK_zkServers=test_zookeeper:2181 \
     --name "bookie1" \
     --hostname "bookie1" \
-    bookkeeper
+    apache/bookkeeper
 ```
 And so on for "bookie2" and "bookie3". We have now our fully functional ensemble, ready to accept clients.
 
@@ -69,11 +90,10 @@ This application check if it can be leader, if yes start to roll a dice and book
 Start a dice application (you can run it several times to view the behavior in a concurrent environment):
 ```
 docker run -it --rm \
-    --network "my-bookkeeper-network" \
-    --env ZK_URL=my-zookeeper:2181 \
+    --network "bk_network" \
+    --env ZOOKEEPER_SERVERS=test_zookeeper:2181 \
     caiok/bookkeeper-tutorial
 ```
-
 ## Configuration
 
 Bookkeeper configuration is located in `/opt/bookkeeper/conf` in the docker container, it is a copy of [these files](https://github.com/apache/bookkeeper/tree/master/bookkeeper-server/conf) in Bookkeeper repo.
@@ -91,7 +111,7 @@ $ docker run --name bookie1 -d \
     -e BK_bookiePort=3181 \                             < == use 1st approach, set bookiePort
     -e BK_zkServers=zk-server1:2181,zk-server2:2181 \   < == use 1st approach, set zookeeper servers
     -e BK_journalPreAllocSizeMB=32 \                    < == use 1st approach, set journalPreAllocSizeMB in [bk_server.conf](https://github.com/apache/bookkeeper/blob/master/bookkeeper-server/conf/bk_server.conf)
-    bookkeeper
+    apache/bookkeeper
 ```
 
 ### Override rules for Bookkeeper configuration
