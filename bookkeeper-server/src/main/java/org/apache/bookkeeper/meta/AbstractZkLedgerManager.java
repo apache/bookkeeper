@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.meta;
 
 import com.google.common.base.Optional;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
@@ -29,7 +30,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
@@ -39,6 +39,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.AsyncCallback.DataCallback;
@@ -52,11 +53,9 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
+import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.apache.zookeeper.data.ACL;
 
 /**
  * Abstract ledger manager based on zookeeper, which provides common methods such as query zk nodes.
@@ -231,7 +230,7 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
             public void processResult(int rc, String path, Object ctx, String name) {
                 if (rc == Code.OK.intValue()) {
                     // update version
-                    metadata.setVersion(new ZkVersion(0));
+                    metadata.setVersion(new LongVersion(0));
                     ledgerCb.operationComplete(BKException.Code.OK, null);
                 } else if (rc == Code.NODEEXISTS.intValue()) {
                     LOG.warn("Failed to create ledger metadata for {} which already exist", ledgerId);
@@ -268,12 +267,12 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
             cb.operationComplete(BKException.Code.MetadataVersionException, (Void)null);
             return;
         } else if (Version.ANY != version) {
-            if (!(version instanceof ZkVersion)) {
+            if (!(version instanceof LongVersion)) {
                 LOG.info("Not an instance of ZKVersion: {}", ledgerId);
                 cb.operationComplete(BKException.Code.MetadataVersionException, (Void)null);
                 return;
             } else {
-                znodeVersion = ((ZkVersion)version).getZnodeVersion();
+                znodeVersion = (int) ((LongVersion) version).getLongVersion();
             }
         }
         
@@ -387,7 +386,7 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
                 }
                 LedgerMetadata metadata;
                 try {
-                    metadata = LedgerMetadata.parseConfig(data, new ZkVersion(stat.getVersion()), Optional.of(stat.getCtime()));
+                    metadata = LedgerMetadata.parseConfig(data, new LongVersion(stat.getVersion()), Optional.of(stat.getCtime()));
                 } catch (IOException e) {
                     LOG.error("Could not parse ledger metadata for ledger: " + ledgerId, e);
                     readCb.operationComplete(BKException.Code.ZKException, null);
@@ -402,13 +401,13 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
     public void writeLedgerMetadata(final long ledgerId, final LedgerMetadata metadata,
                                     final GenericCallback<Void> cb) {
         Version v = metadata.getVersion();
-        if (Version.NEW == v || !(v instanceof ZkVersion)) {
+        if (Version.NEW == v || !(v instanceof LongVersion)) {
             cb.operationComplete(BKException.Code.MetadataVersionException, null);
             return;
         }
-        final ZkVersion zv = (ZkVersion) v;
+        final LongVersion zv = (LongVersion) v;
         zk.setData(getLedgerPath(ledgerId),
-                   metadata.serialize(), zv.getZnodeVersion(),
+                   metadata.serialize(), (int) zv.getLongVersion(),
                    new StatCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx, Stat stat) {
@@ -416,7 +415,7 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
                     cb.operationComplete(BKException.Code.MetadataVersionException, null);
                 } else if (KeeperException.Code.OK.intValue() == rc) {
                     // update metadata version
-                    metadata.setVersion(zv.setZnodeVersion(stat.getVersion()));
+                    metadata.setVersion(zv.setLongVersion(stat.getVersion()));
                     cb.operationComplete(BKException.Code.OK, null);
                 } else {
                     LOG.warn("Conditional update ledger metadata failed: {}", KeeperException.Code.get(rc));

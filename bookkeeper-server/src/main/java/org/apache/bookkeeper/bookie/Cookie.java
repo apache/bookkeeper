@@ -41,11 +41,11 @@ import java.util.List;
 import java.util.Set;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.meta.ZkVersion;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.DataFormats.CookieFormat;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.CreateMode;
@@ -262,10 +262,10 @@ class Cookie {
             zk.create(zkPath, data,
                     zkAcls, CreateMode.PERSISTENT);
         } else {
-            if (!(version instanceof ZkVersion)) {
+            if (!(version instanceof LongVersion)) {
                 throw new IllegalArgumentException("Invalid version type, expected ZkVersion type");
             }
-            zk.setData(zkPath, data, ((ZkVersion) version).getZnodeVersion());
+            zk.setData(zkPath, data, (int) ((LongVersion) version).getLongVersion());
         }
     }
 
@@ -299,12 +299,12 @@ class Cookie {
     public void deleteFromZooKeeper(ZooKeeper zk, AbstractConfiguration conf,
                                     BookieSocketAddress address, Version version)
             throws KeeperException, InterruptedException, UnknownHostException {
-        if (!(version instanceof ZkVersion)) {
+        if (!(version instanceof LongVersion)) {
             throw new IllegalArgumentException("Invalid version type, expected ZkVersion type");
         }
 
         String zkPath = getZkPath(conf, address);
-        zk.delete(zkPath, ((ZkVersion) version).getZnodeVersion());
+        zk.delete(zkPath, (int) ((LongVersion) version).getLongVersion());
         LOG.info("Removed cookie from {} for bookie {}.", conf.getZkLedgersRootPath(), address);
     }
 
@@ -364,7 +364,7 @@ class Cookie {
             Builder builder = parse(reader);
             Cookie cookie = builder.build();
             // sets stat version from ZooKeeper
-            ZkVersion version = new ZkVersion(stat.getVersion());
+            LongVersion version = new LongVersion(stat.getVersion());
             return new Versioned<Cookie>(cookie, version);
         } finally {
             reader.close();
