@@ -84,11 +84,13 @@ public class LedgerMetadata {
     private boolean hasPassword = false;
     private LedgerMetadataFormat.DigestType digestType;
     private byte[] password;
+    private LedgerMetadataFormat.LedgerType ledgerType;
 
     private Map<String, byte[]> customMetadata = Maps.newHashMap();
 
     public LedgerMetadata(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
-                          BookKeeper.DigestType digestType, byte[] password, Map<String, byte[]> customMetadata) {
+                          BookKeeper.DigestType digestType, byte[] password, Map<String, byte[]> customMetadata,
+                          LedgerType ledgerType) {
         this.ensembleSize = ensembleSize;
         this.writeQuorumSize = writeQuorumSize;
         this.ackQuorumSize = ackQuorumSize;
@@ -102,7 +104,8 @@ public class LedgerMetadata {
         this.state = LedgerMetadataFormat.State.OPEN;
         this.lastEntryId = LedgerHandle.INVALID_ENTRY_ID;
         this.metadataFormatVersion = CURRENT_METADATA_FORMAT_VERSION;
-
+        this.ledgerType = ledgerType.equals(LedgerType.StrictDurability) ?
+            LedgerMetadataFormat.LedgerType.STRICT_DURABILITY : LedgerMetadataFormat.LedgerType.RELAXED_DURABILITY;
         this.digestType = digestType.equals(BookKeeper.DigestType.MAC) ?
             LedgerMetadataFormat.DigestType.HMAC : LedgerMetadataFormat.DigestType.CRC32;
         this.password = Arrays.copyOf(password, password.length);
@@ -114,7 +117,7 @@ public class LedgerMetadata {
 
     public LedgerMetadata(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
             BookKeeper.DigestType digestType, byte[] password) {
-        this(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, password, null);
+        this(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, password, null, LedgerType.StrictDurability);
     }
 
     /**
@@ -132,6 +135,7 @@ public class LedgerMetadata {
         this.version = other.version;
         this.hasPassword = other.hasPassword;
         this.digestType = other.digestType;
+        this.ledgerType = other.ledgerType;
         this.password = new byte[other.password.length];
         System.arraycopy(other.password, 0, this.password, 0, other.password.length);
         // copy the ensembles
@@ -181,6 +185,19 @@ public class LedgerMetadata {
 
     public int getAckQuorumSize() {
         return ackQuorumSize;
+    }
+
+    /**
+     * Defines the LedgerType
+     * @return the type of Ledeger
+     * @since 4.6
+     */
+    public LedgerType getLedgerType() {
+        if (ledgerType.equals(LedgerMetadataFormat.LedgerType.RELAXED_DURABILITY)) {
+            return LedgerType.RelaxedDurability;
+        } else {
+            return LedgerType.StrictDurability;
+        }
     }
 
     /**
@@ -315,6 +332,8 @@ public class LedgerMetadata {
             builder.addSegment(segmentBuilder.build());
         }
 
+        builder.setLedgerType(ledgerType);
+
         StringBuilder s = new StringBuilder();
         s.append(VERSION_KEY).append(tSplitter).append(CURRENT_METADATA_FORMAT_VERSION).append(lSplitter);
         s.append(TextFormat.printToString(builder.build()));
@@ -422,6 +441,11 @@ public class LedgerMetadata {
         } else {
             lc.ackQuorumSize = lc.writeQuorumSize;
         }
+        if (data.hasLedgerType()) {
+            lc.ledgerType = data.getLedgerType();
+        } else {
+            lc.ledgerType = LedgerMetadataFormat.LedgerType.STRICT_DURABILITY;
+        }
 
         lc.ensembleSize = data.getEnsembleSize();
         lc.length = data.getLength();
@@ -458,6 +482,7 @@ public class LedgerMetadata {
             lc.writeQuorumSize = lc.ackQuorumSize = Integer.parseInt(reader.readLine());
             lc.ensembleSize = Integer.parseInt(reader.readLine());
             lc.length = Long.parseLong(reader.readLine());
+            lc.ledgerType = LedgerMetadataFormat.LedgerType.STRICT_DURABILITY;
 
             String line = reader.readLine();
             while (line != null) {
@@ -572,6 +597,7 @@ public class LedgerMetadata {
             length != newMeta.length ||
             state != newMeta.state ||
             !digestType.equals(newMeta.digestType) ||
+            !ledgerType.equals(newMeta.ledgerType) ||
             !Arrays.equals(password, newMeta.password) ||
             !LedgerMetadata.areByteArrayValMapsEqual(customMetadata, newMeta.customMetadata)) {
             return true;

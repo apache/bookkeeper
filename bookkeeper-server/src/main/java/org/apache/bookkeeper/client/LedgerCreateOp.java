@@ -83,16 +83,17 @@ class LedgerCreateOp implements GenericCallback<Void> {
      *       preserve the order(e.g. sortedMap) upon later retireval.
      */
     LedgerCreateOp(BookKeeper bk, int ensembleSize, int writeQuorumSize, int ackQuorumSize, DigestType digestType,
-            byte[] passwd, CreateCallback cb, Object ctx, final Map<String, byte[]> customMetadata, boolean allowNoSyncWrites) {
+            byte[] passwd, CreateCallback cb, Object ctx, final Map<String, byte[]> customMetadata, LedgerType ledgerType) {
         this.bk = bk;
-        this.metadata = new LedgerMetadata(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, passwd, customMetadata);
+        this.metadata = new LedgerMetadata(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
+            customMetadata, ledgerType);
         this.digestType = digestType;
         this.passwd = passwd;
         this.cb = cb;
         this.ctx = ctx;
         this.startTime = MathUtils.nowInNano();
         this.createOpLogger = bk.getCreateOpLogger();
-        this.relaxDurability = allowNoSyncWrites;
+        this.relaxDurability = ledgerType == LedgerType.RelaxedDurability;
     }
 
     private boolean validate() {

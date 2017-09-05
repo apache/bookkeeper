@@ -58,6 +58,12 @@ message LedgerMetadataFormat {
         optional bytes value = 2;
     }
     repeated cMetadataMapEntry customMetadata = 11;
+
+    enum LedgerType {
+        STRICT_DURABILITY = 0;
+        RELAXED_DURABILITY = 1;
+    }
+    optional LedgerType ledgerType = 12;
 }
 
 message LedgerRereplicationLayoutFormat {
