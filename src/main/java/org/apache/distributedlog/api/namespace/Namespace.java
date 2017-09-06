@@ -17,20 +17,19 @@
  */
 package org.apache.distributedlog.api.namespace;
 
-import com.google.common.annotations.Beta;
-import com.google.common.base.Optional;
-import org.apache.distributedlog.DistributedLogConfiguration;
-import org.apache.distributedlog.api.DistributedLogManager;
-import org.apache.distributedlog.exceptions.LogNotFoundException;
-import org.apache.distributedlog.acl.AccessControlManager;
-import org.apache.distributedlog.callback.NamespaceListener;
-import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
-import org.apache.distributedlog.exceptions.InvalidStreamNameException;
-
 import java.io.IOException;
 import java.util.Iterator;
-
+import java.util.Optional;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.distributedlog.DistributedLogConfiguration;
+import org.apache.distributedlog.acl.AccessControlManager;
+import org.apache.distributedlog.api.DistributedLogManager;
+import org.apache.distributedlog.callback.NamespaceListener;
+import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
+import org.apache.distributedlog.exceptions.LogNotFoundException;
+import org.apache.distributedlog.exceptions.InvalidStreamNameException;
 import org.apache.distributedlog.namespace.NamespaceDriver;
 
 /**
@@ -68,7 +67,8 @@ import org.apache.distributedlog.namespace.NamespaceDriver;
  * @see DistributedLogManager
  * @since 0.3.32
  */
-@Beta
+@Public
+@Evolving
 public interface Namespace {
 
     /**

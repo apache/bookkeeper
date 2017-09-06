@@ -17,14 +17,15 @@
  */
 package org.apache.distributedlog.api;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.List;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.LogRecordWithDLSN;
 import org.apache.distributedlog.io.AsyncCloseable;
-
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.List;
 
 /**
  * <i>LogReader</i> is a `synchronous` reader reading records from a DL log.
@@ -163,6 +164,8 @@ import java.util.List;
  *
  * @see AsyncLogReader
  */
+@Public
+@Evolving
 public interface LogReader extends Closeable, AsyncCloseable {
 
     /**

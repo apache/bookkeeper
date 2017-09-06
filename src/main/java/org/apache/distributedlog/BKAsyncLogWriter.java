@@ -463,7 +463,8 @@ class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
         return writerFuture.thenCompose(writer -> writer.flushAndCommit());
     }
 
-    CompletableFuture<Long> markEndOfStream() {
+    @Override
+    public CompletableFuture<Long> markEndOfStream() {
         final Stopwatch stopwatch = Stopwatch.createStarted();
         CompletableFuture<BKLogSegmentWriter> logSegmentWriterFuture;
         synchronized (this) {

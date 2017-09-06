@@ -17,8 +17,16 @@
  */
 package org.apache.distributedlog;
 
-import com.google.common.base.Optional;
+import static org.apache.distributedlog.namespace.NamespaceDriver.Role.WRITER;
+import static org.apache.distributedlog.util.DLUtils.validateAndNormalizeName;
+
 import com.google.common.base.Ticker;
+import java.io.IOException;
+import java.net.URI;
+import java.util.Iterator;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.distributedlog.acl.AccessControlManager;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.namespace.Namespace;
@@ -28,7 +36,6 @@ import org.apache.distributedlog.exceptions.AlreadyClosedException;
 import org.apache.distributedlog.exceptions.InvalidStreamNameException;
 import org.apache.distributedlog.exceptions.LogNotFoundException;
 import org.apache.distributedlog.injector.AsyncFailureInjector;
-import org.apache.distributedlog.io.AsyncCloseable;
 import org.apache.distributedlog.logsegment.LogSegmentMetadataCache;
 import org.apache.distributedlog.namespace.NamespaceDriver;
 import org.apache.distributedlog.util.ConfUtils;
@@ -40,15 +47,6 @@ import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.net.URI;
-import java.util.Iterator;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.apache.distributedlog.namespace.NamespaceDriver.Role.WRITER;
-import static org.apache.distributedlog.util.DLUtils.validateAndNormalizeName;
 
 /**
  * BKDistributedLogNamespace is the default implementation of {@link Namespace}. It uses
@@ -155,15 +153,15 @@ public class BKDistributedLogNamespace implements Namespace {
             throws InvalidStreamNameException, LogNotFoundException, IOException {
         checkState();
         logName = validateAndNormalizeName(logName);
-        Optional<URI> uri = Utils.ioResult(driver.getLogMetadataStore().getLogLocation(logName));
+        com.google.common.base.Optional<URI> uri = Utils.ioResult(driver.getLogMetadataStore().getLogLocation(logName));
         if (!uri.isPresent()) {
             throw new LogNotFoundException("Log " + logName + " isn't found.");
         }
         DistributedLogManager dlm = openLogInternal(
                 uri.get(),
                 logName,
-                Optional.<DistributedLogConfiguration>absent(),
-                Optional.<DynamicDistributedLogConfiguration>absent());
+                Optional.empty(),
+                Optional.empty());
         dlm.delete();
     }
 
@@ -171,9 +169,9 @@ public class BKDistributedLogNamespace implements Namespace {
     public DistributedLogManager openLog(String logName)
             throws InvalidStreamNameException, IOException {
         return openLog(logName,
-                Optional.<DistributedLogConfiguration>absent(),
-                Optional.<DynamicDistributedLogConfiguration>absent(),
-                Optional.<StatsLogger>absent());
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty());
     }
 
     @Override
@@ -184,7 +182,7 @@ public class BKDistributedLogNamespace implements Namespace {
             throws InvalidStreamNameException, IOException {
         checkState();
         logName = validateAndNormalizeName(logName);
-        Optional<URI> uri = Utils.ioResult(driver.getLogMetadataStore().getLogLocation(logName));
+        com.google.common.base.Optional<URI> uri = Utils.ioResult(driver.getLogMetadataStore().getLogLocation(logName));
         if (!uri.isPresent()) {
             throw new LogNotFoundException("Log " + logName + " isn't found.");
         }
@@ -199,7 +197,7 @@ public class BKDistributedLogNamespace implements Namespace {
     public boolean logExists(String logName)
         throws IOException, IllegalArgumentException {
         checkState();
-        Optional<URI> uri = Utils.ioResult(driver.getLogMetadataStore().getLogLocation(logName));
+        com.google.common.base.Optional<URI> uri = Utils.ioResult(driver.getLogMetadataStore().getLogLocation(logName));
         if (uri.isPresent()) {
             try {
                 Utils.ioResult(driver.getLogStreamMetadataStore(WRITER)
@@ -281,7 +279,8 @@ public class BKDistributedLogNamespace implements Namespace {
                 failureInjector,                    /* Failure Injector */
                 statsLogger,                        /* Stats Logger */
                 perLogStatsLogger,                  /* Per Log Stats Logger */
-                Optional.<AsyncCloseable>absent()   /* shared resources, we don't need to close any resources in dlm */
+                com.google.common.base.Optional.absent()
+                                                    /* shared resources, we don't need to close any resources in dlm */
         );
     }
 

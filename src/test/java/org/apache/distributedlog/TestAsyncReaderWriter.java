@@ -316,12 +316,12 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
                 writer.write(DLMTestUtil.getLargeLogRecordInstance(txid++));
             }
             if (j % flushPerNumRecords == 0 ) {
-                writer.setReadyToFlush();
-                writer.flushAndSync();
+                writer.flush();
+                writer.commit();
             }
         }
-        writer.setReadyToFlush();
-        writer.flushAndSync();
+        writer.flush();
+        writer.commit();
         writer.close();
         return txid;
     }
@@ -1384,7 +1384,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
                                 for (int iter = 1; iter <= (2 * idleReaderErrorThreshold / threadSleepTime) ; iter++) {
                                     Thread.sleep(threadSleepTime);
                                     writer.write(DLMTestUtil.getLargeLogRecordInstance(txid, true));
-                                    writer.setReadyToFlush();
+                                    writer.flush();
                                 }
                                 Thread.sleep(threadSleepTime);
                             }
@@ -1994,9 +1994,9 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         // use customized configuration
         dlm = namespace.openLog(
                 name + "-custom",
-                Optional.<DistributedLogConfiguration>absent(),
-                Optional.of(dynConf),
-                Optional.<StatsLogger>absent());
+                java.util.Optional.empty(),
+                java.util.Optional.of(dynConf),
+                java.util.Optional.empty());
         writer = dlm.startAsyncLogSegmentNonPartitioned();
         Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(1L)));
         segments = dlm.getLogSegments();

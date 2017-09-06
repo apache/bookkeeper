@@ -995,7 +995,7 @@ class BKLogSegmentWriter implements LogSegmentWriter, AddCallback, Runnable, Siz
 
     /**
      * Transmit the current buffer to bookkeeper.
-     * Synchronised at the class. #write() and #setReadyToFlush()
+     * Synchronised at the class. #write() and #flush()
      * are never called at the same time.
      *
      * NOTE: This method should only throw known exceptions so that we don't accidentally

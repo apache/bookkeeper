@@ -20,7 +20,6 @@ package org.apache.distributedlog;
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import org.apache.distributedlog.exceptions.InvalidEnvelopedEntryException;
-import org.apache.distributedlog.io.TransmitListener;
 
 /**
  * Write representation of a {@link Entry}.

@@ -20,6 +20,10 @@ package org.apache.distributedlog;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Set;
 import org.apache.distributedlog.bk.QuorumConfig;
 import org.apache.distributedlog.feature.DefaultFeatureProvider;
 import org.apache.distributedlog.api.namespace.NamespaceBuilder;
@@ -39,13 +43,9 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Set;
-
 /**
  * DistributedLog Configuration.
+ *
  * <p>
  * DistributedLog configuration is basically a properties based configuration, which extends from
  * Apache commons {@link CompositeConfiguration}. All the DL settings are in camel case and prefixed
@@ -527,8 +527,22 @@ public class DistributedLogConfiguration extends CompositeConfiguration {
      * Load whitelisted stream configuration from another configuration object
      *
      * @param streamConfiguration stream configuration overrides
+     * @Deprecated since 0.5.0, in favor of using {@link #loadStreamConf(java.util.Optional)}
      */
     public void loadStreamConf(Optional<DistributedLogConfiguration> streamConfiguration) {
+        if (streamConfiguration.isPresent()) {
+            loadStreamConf(java.util.Optional.of(streamConfiguration.get()));
+        } else {
+            loadStreamConf(java.util.Optional.empty());
+        }
+    }
+
+    /**
+     * Load whitelisted stream configuration from another configuration object.
+     *
+     * @param streamConfiguration stream configuration overrides
+     */
+    public void loadStreamConf(java.util.Optional<DistributedLogConfiguration> streamConfiguration) {
         if (!streamConfiguration.isPresent()) {
             return;
         }

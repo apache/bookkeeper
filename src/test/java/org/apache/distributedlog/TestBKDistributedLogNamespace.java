@@ -105,7 +105,7 @@ public class TestBKDistributedLogNamespace extends TestDistributedLogBase {
         try {
             writer = dlm.startLogSegmentNonPartitioned();
             writer.write(DLMTestUtil.getLogRecordInstance(1L));
-            writer.flushAndSync();
+            writer.commit();
             fail("Should fail to write data if stream doesn't exist.");
         } catch (IOException ioe) {
             // expected

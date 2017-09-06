@@ -20,9 +20,13 @@ package org.apache.distributedlog.api;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.distributedlog.LogRecordWithDLSN;
 import org.apache.distributedlog.io.AsyncCloseable;
 
+@Public
+@Evolving
 public interface AsyncLogReader extends AsyncCloseable {
 
     /**

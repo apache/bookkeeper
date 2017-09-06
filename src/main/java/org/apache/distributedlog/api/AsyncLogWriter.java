@@ -19,11 +19,15 @@ package org.apache.distributedlog.api;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.LogRecord;
 import org.apache.distributedlog.io.AsyncAbortable;
 import org.apache.distributedlog.io.AsyncCloseable;
 
+@Public
+@Evolving
 public interface AsyncLogWriter extends AsyncCloseable, AsyncAbortable {
 
     /**
@@ -31,7 +35,7 @@ public interface AsyncLogWriter extends AsyncCloseable, AsyncAbortable {
      *
      * @return last committed transaction id.
      */
-    public long getLastTxId();
+    long getLastTxId();
 
     /**
      * Write a log record to the stream.
@@ -40,7 +44,7 @@ public interface AsyncLogWriter extends AsyncCloseable, AsyncAbortable {
      * @return A Future which contains a DLSN if the record was successfully written
      * or an exception if the write fails
      */
-    public CompletableFuture<DLSN> write(LogRecord record);
+    CompletableFuture<DLSN> write(LogRecord record);
 
     /**
      * Write log records to the stream in bulk. Each future in the list represents the result of
@@ -51,7 +55,7 @@ public interface AsyncLogWriter extends AsyncCloseable, AsyncAbortable {
      * @return A Future which contains a list of Future DLSNs if the record was successfully written
      * or an exception if the operation fails.
      */
-    public CompletableFuture<List<CompletableFuture<DLSN>>> writeBulk(List<LogRecord> record);
+    CompletableFuture<List<CompletableFuture<DLSN>>> writeBulk(List<LogRecord> record);
 
     /**
      * Truncate the log until <i>dlsn</i>.
@@ -61,10 +65,18 @@ public interface AsyncLogWriter extends AsyncCloseable, AsyncAbortable {
      * @return A Future indicates whether the operation succeeds or not, or an exception
      * if the truncation fails.
      */
-    public CompletableFuture<Boolean> truncate(DLSN dlsn);
+    CompletableFuture<Boolean> truncate(DLSN dlsn);
+
+    /**
+     * Seal the log stream.
+     *
+     * @return a future indicates whether the stream is sealed or not. The final transaction id is returned
+     *         if the stream is sealed, otherwise an exception is returned.
+     */
+    CompletableFuture<Long> markEndOfStream();
 
     /**
      * Get the name of the stream this writer writes data to
      */
-    public String getStreamName();
+    String getStreamName();
 }

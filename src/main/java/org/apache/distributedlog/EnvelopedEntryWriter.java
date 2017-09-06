@@ -45,7 +45,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * {@link org.apache.distributedlog.io.Buffer} based log record set writer.
+ * {@link ByteBuf} based log record set writer.
  */
 class EnvelopedEntryWriter implements Writer {
 

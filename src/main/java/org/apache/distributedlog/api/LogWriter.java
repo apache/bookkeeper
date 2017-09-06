@@ -17,17 +17,20 @@
  */
 package org.apache.distributedlog.api;
 
-import org.apache.distributedlog.LogRecord;
-import org.apache.distributedlog.io.Abortable;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
+import org.apache.distributedlog.LogRecord;
+import org.apache.distributedlog.io.Abortable;
 
 /*
 * A generic interface class to support writing log records into
 * a persistent distributed log.
 */
+@Public
+@Evolving
 public interface LogWriter extends Closeable, Abortable {
     /**
      * Write a log record to the stream.
@@ -52,19 +55,15 @@ public interface LogWriter extends Closeable, Abortable {
      * persistent storage.
      * The transmission is asynchronous and new data can be still written to the
      * stream while flushing is performed.
-     *
-     * TODO: rename this to flush()
      */
-    public long setReadyToFlush() throws IOException;
+    public long flush() throws IOException;
 
     /**
      * Flush and sync all data that is ready to be flush
-     * {@link #setReadyToFlush()} into underlying persistent store.
+     * {@link #flush()} into underlying persistent store.
      * @throws IOException
-     *
-     * TODO: rename this to commit()
      */
-    public long flushAndSync() throws IOException;
+    public long commit() throws IOException;
 
     /**
      * Flushes all the data up to this point,

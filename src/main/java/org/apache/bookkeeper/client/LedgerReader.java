@@ -35,14 +35,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Reader used for DL tools to read entries
- *
- * TODO: move this to bookkeeper project?
+ * Reader used for DL tools to read entries.
  */
 public class LedgerReader {
 
-    static final Logger logger = LoggerFactory.getLogger(LedgerReader.class);
+    private static final Logger logger = LoggerFactory.getLogger(LedgerReader.class);
 
+    /**
+     * Read Result Holder.
+     */
     public static class ReadResult<T> {
         final long entryId;
         final int rc;
@@ -79,7 +80,7 @@ public class LedgerReader {
         bookieClient = bkc.getBookieClient();
     }
 
-    static public SortedMap<Long, ArrayList<BookieSocketAddress>> bookiesForLedger(final LedgerHandle lh) {
+    public static SortedMap<Long, ArrayList<BookieSocketAddress>> bookiesForLedger(final LedgerHandle lh) {
         return lh.getLedgerMetadata().getEnsembles();
     }
 
@@ -102,7 +103,8 @@ public class LedgerReader {
                         ByteBuf toRet = Unpooled.copiedBuffer(content);
                         rr = new ReadResult<>(eid, BKException.Code.OK, toRet, bookieAddress.getSocketAddress());
                     } catch (BKException.BKDigestMatchException e) {
-                        rr = new ReadResult<>(eid, BKException.Code.DigestMatchException, null, bookieAddress.getSocketAddress());
+                        rr = new ReadResult<>(
+                            eid, BKException.Code.DigestMatchException, null, bookieAddress.getSocketAddress());
                     } finally {
                         buffer.release();
                     }
@@ -151,27 +153,24 @@ public class LedgerReader {
             }
         };
 
-        ReadLastConfirmedOp.LastConfirmedDataCallback readLACCallback = new ReadLastConfirmedOp.LastConfirmedDataCallback() {
-            @Override
-            public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData recoveryData) {
-                if (BKException.Code.OK != rc) {
-                    callback.operationComplete(rc, resultList);
-                    return;
-                }
+        ReadLastConfirmedOp.LastConfirmedDataCallback readLACCallback = (rc, recoveryData) -> {
+            if (BKException.Code.OK != rc) {
+                callback.operationComplete(rc, resultList);
+                return;
+            }
 
-                if (LedgerHandle.INVALID_ENTRY_ID >= recoveryData.lastAddConfirmed) {
-                    callback.operationComplete(BKException.Code.OK, resultList);
-                    return;
-                }
+            if (LedgerHandle.INVALID_ENTRY_ID >= recoveryData.lastAddConfirmed) {
+                callback.operationComplete(BKException.Code.OK, resultList);
+                return;
+            }
 
-                long entryId = recoveryData.lastAddConfirmed;
-                PendingReadOp readOp = new PendingReadOp(lh, lh.bk.scheduler, entryId, entryId, readCallback, entryId);
-                try {
-                    readOp.initiate();
-                } catch (Throwable t) {
-                    logger.error("Failed to initialize pending read entry {} for ledger {} : ",
-                                 new Object[] { entryId, lh.getLedgerMetadata(), t });
-                }
+            long entryId = recoveryData.lastAddConfirmed;
+            PendingReadOp readOp = new PendingReadOp(lh, lh.bk.scheduler, entryId, entryId, readCallback, entryId);
+            try {
+                readOp.initiate();
+            } catch (Throwable t) {
+                logger.error("Failed to initialize pending read entry {} for ledger {} : ",
+                             new Object[] { entryId, lh.getLedgerMetadata(), t });
             }
         };
         // Read Last AddConfirmed
@@ -183,25 +182,22 @@ public class LedgerReader {
         List<Integer> writeSet = lh.distributionSchedule.getWriteSet(eid);
         final AtomicInteger numBookies = new AtomicInteger(writeSet.size());
         final Set<ReadResult<Long>> readResults = new HashSet<ReadResult<Long>>();
-        ReadEntryCallback readEntryCallback = new ReadEntryCallback() {
-            @Override
-            public void readEntryComplete(int rc, long lid, long eid, ByteBuf buffer, Object ctx) {
-                InetSocketAddress bookieAddress = (InetSocketAddress) ctx;
-                ReadResult<Long> rr;
-                if (BKException.Code.OK != rc) {
-                    rr = new ReadResult<Long>(eid, rc, null, bookieAddress);
-                } else {
-                    try {
-                        DigestManager.RecoveryData data = lh.macManager.verifyDigestAndReturnLastConfirmed(buffer);
-                        rr = new ReadResult<Long>(eid, BKException.Code.OK, data.lastAddConfirmed, bookieAddress);
-                    } catch (BKException.BKDigestMatchException e) {
-                        rr = new ReadResult<Long>(eid, BKException.Code.DigestMatchException, null, bookieAddress);
-                    }
+        ReadEntryCallback readEntryCallback = (rc, lid, eid1, buffer, ctx) -> {
+            InetSocketAddress bookieAddress = (InetSocketAddress) ctx;
+            ReadResult<Long> rr;
+            if (BKException.Code.OK != rc) {
+                rr = new ReadResult<Long>(eid1, rc, null, bookieAddress);
+            } else {
+                try {
+                    DigestManager.RecoveryData data = lh.macManager.verifyDigestAndReturnLastConfirmed(buffer);
+                    rr = new ReadResult<Long>(eid1, BKException.Code.OK, data.lastAddConfirmed, bookieAddress);
+                } catch (BKException.BKDigestMatchException e) {
+                    rr = new ReadResult<Long>(eid1, BKException.Code.DigestMatchException, null, bookieAddress);
                 }
-                readResults.add(rr);
-                if (numBookies.decrementAndGet() == 0) {
-                    callback.operationComplete(BKException.Code.OK, readResults);
-                }
+            }
+            readResults.add(rr);
+            if (numBookies.decrementAndGet() == 0) {
+                callback.operationComplete(BKException.Code.OK, readResults);
             }
         };
 

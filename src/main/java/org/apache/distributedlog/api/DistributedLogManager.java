@@ -21,6 +21,8 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.distributedlog.AppendOnlyStreamReader;
 import org.apache.distributedlog.AppendOnlyStreamWriter;
 import org.apache.distributedlog.DLSN;
@@ -38,6 +40,8 @@ import org.apache.distributedlog.api.subscription.SubscriptionsStore;
  * each conceptual place of storage corresponds to exactly one instance of
  * this class, which is created when the EditLog is first opened.
  */
+@Public
+@Evolving
 public interface DistributedLogManager extends AsyncCloseable, Closeable {
 
     /**
@@ -52,6 +56,10 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
      * @return the namespace driver
      */
     public NamespaceDriver getNamespaceDriver();
+
+    //
+    // Log Segment Related Operations
+    //
 
     /**
      * Get log segments.
@@ -77,6 +85,10 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
      */
     public void unregisterListener(LogSegmentListener listener);
 
+    //
+    // Writer & Reader Operations
+    //
+
     /**
      * Open async log writer to write records to the log stream.
      *
@@ -85,9 +97,18 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
     public CompletableFuture<AsyncLogWriter> openAsyncLogWriter();
 
     /**
+     * Open sync log writer to write records to the log stream.
+     *
+     * @return sync log writer
+     * @throws IOException when fails to open a sync log writer.
+     */
+    public LogWriter openLogWriter() throws IOException;
+
+    /**
      * Begin writing to the log stream identified by the name
      *
      * @return the writer interface to generate log records
+     * @Deprecated since 0.5.0, in favor of using {@link #openLogWriter()}
      */
     public LogWriter startLogSegmentNonPartitioned() throws IOException;
 
@@ -95,35 +116,27 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
      * Begin writing to the log stream identified by the name
      *
      * @return the writer interface to generate log records
+     * @Deprecated since 0.5.0, in favor of using {@link #openAsyncLogWriter()}
      */
-    // @Deprecated
     public AsyncLogWriter startAsyncLogSegmentNonPartitioned() throws IOException;
 
     /**
-     * Begin appending to the end of the log stream which is being treated as a sequence of bytes
+     * Open an sync log reader to read records from a log starting from <code>fromTxnId</code>.
      *
-     * @return the writer interface to generate log records
+     * @param fromTxnId
+     *          transaction id to start reading from
+     * @return sync log reader
      */
-    public AppendOnlyStreamWriter getAppendOnlyStreamWriter() throws IOException;
+    public LogReader openLogReader(long fromTxnId) throws IOException;
 
     /**
-     * Get a reader to read a log stream as a sequence of bytes
+     * Open an async log reader to read records from a log starting from <code>fromDLSN</code>
      *
-     * @return the writer interface to generate log records
+     * @param fromDLSN
+     *          dlsn to start reading from
+     * @return async log reader
      */
-    public AppendOnlyStreamReader getAppendOnlyStreamReader() throws IOException;
-
-    /**
-     * Get the input stream starting with fromTxnId for the specified log
-     *
-     * @param fromTxnId - the first transaction id we want to read
-     * @return the stream starting with transaction fromTxnId
-     * @throws IOException if a stream cannot be found.
-     */
-    public LogReader getInputStream(long fromTxnId)
-        throws IOException;
-
-    public LogReader getInputStream(DLSN fromDLSN) throws IOException;
+    public LogReader openLogReader(DLSN fromDLSN) throws IOException;
 
     /**
      * Open an async log reader to read records from a log starting from <code>fromTxnId</code>.
@@ -143,17 +156,67 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
      */
     public CompletableFuture<AsyncLogReader> openAsyncLogReader(DLSN fromDLSN);
 
-    // @Deprecated
+    /**
+     * Get the input stream starting with fromTxnId for the specified log
+     *
+     * @param fromTxnId - the first transaction id we want to read
+     * @return the stream starting with transaction fromTxnId
+     * @throws IOException if a stream cannot be found.
+     * @Deprecated since 0.5.0, in favor of using {@link #openLogReader(long)}
+     */
+    public LogReader getInputStream(long fromTxnId)
+        throws IOException;
+
+    /**
+     * Get the input stream starting with fromTxnId for the specified log
+     *
+     * @param fromDLSN - the first DLSN we want to read
+     * @return the stream starting with DLSN
+     * @throws IOException if a stream cannot be found.
+     * @Deprecated since 0.5.0, in favor of using {@link #openLogReader(DLSN)}
+     */
+    public LogReader getInputStream(DLSN fromDLSN) throws IOException;
+
+    /**
+     * Get an async log reader to read records from a log starting from <code>fromTxnId</code>.
+     *
+     * @param fromTxnId
+     *          transaction id to start reading from
+     * @return async log reader
+     * @throws IOException when fails to open an async log reader.
+     * @see #openAsyncLogReader(long)
+     * @Deprecated it is deprecated since 0.5.0, in favor of using {@link #openAsyncLogReader(long)}
+     */
     public AsyncLogReader getAsyncLogReader(long fromTxnId) throws IOException;
 
-    // @Deprecated
+    /**
+     * Get an async log reader to read records from a log starting from <code>fromDLSN</code>.
+     *
+     * @param fromDLSN
+     *          dlsn to start reading from
+     * @return async log reader
+     * @throws IOException when fails to open an async log reader.
+     * @see #openAsyncLogReader(DLSN)
+     * @Deprecated it is deprecated since 0.5.0, in favor of using {@link #openAsyncLogReader(DLSN)}
+     */
     public AsyncLogReader getAsyncLogReader(DLSN fromDLSN) throws IOException;
 
+    /**
+     * Get a log reader with lock starting from <i>fromDLSN</i>.
+     *
+     * <p>If two readers tried to open using same subscriberId, one would succeed, while the other
+     * will be blocked until it gets the lock.
+     *
+     * @param fromDLSN
+     *          start dlsn
+     * @return async log reader
+     */
     public CompletableFuture<AsyncLogReader> getAsyncLogReaderWithLock(DLSN fromDLSN);
 
     /**
      * Get a log reader with lock starting from <i>fromDLSN</i> and using <i>subscriberId</i>.
-     * If two readers tried to open using same subscriberId, one would succeed, while the other
+     *
+     * <p>If two readers tried to open using same subscriberId, one would succeed, while the other
      * will be blocked until it gets the lock.
      *
      * @param fromDLSN
@@ -169,7 +232,7 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
      * its last commit position recorded in subscription store. If no last commit position found
      * in subscription store, it would start reading from head of the stream.
      *
-     * If the two readers tried to open using same subscriberId, one would succeed, while the other
+     * <p>If the two readers tried to open using same subscriberId, one would succeed, while the other
      * will be blocked until it gets the lock.
      *
      * @param subscriberId
@@ -177,6 +240,33 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
      * @return async log reader
      */
     public CompletableFuture<AsyncLogReader> getAsyncLogReaderWithLock(String subscriberId);
+
+    //
+    // Stream writer and reader
+    //
+
+    /**
+     * Begin appending to the end of the log stream which is being treated as a sequence of bytes
+     *
+     * @return the writer interface to generate log records
+     */
+    public AppendOnlyStreamWriter getAppendOnlyStreamWriter() throws IOException;
+
+    /**
+     * Get a reader to read a log stream as a sequence of bytes
+     *
+     * @return the writer interface to generate log records
+     */
+    public AppendOnlyStreamReader getAppendOnlyStreamReader() throws IOException;
+
+    //
+    // Metadata Operations:
+    //
+    // - retrieve head or tail records
+    // - get log record count
+    // - delete logs
+    // - recover logs
+    //
 
     /**
      * Get the {@link DLSN} of first log record whose transaction id is not less than <code>transactionId</code>.
@@ -197,6 +287,13 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
         throws IOException;
 
     /**
+     * Get Latest log record with DLSN in the log - async
+     *
+     * @return latest log record with DLSN
+     */
+    public CompletableFuture<LogRecordWithDLSN> getLastLogRecordAsync();
+
+    /**
      * Get the earliest Transaction Id available in the log
      *
      * @return earliest transaction id
@@ -213,21 +310,6 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
     public long getLastTxId() throws IOException;
 
     /**
-     * Get Latest DLSN in the log
-     *
-     * @return last dlsn
-     * @throws IOException
-     */
-    public DLSN getLastDLSN() throws IOException;
-
-    /**
-     * Get Latest log record with DLSN in the log - async
-     *
-     * @return latest log record with DLSN
-     */
-    public CompletableFuture<LogRecordWithDLSN> getLastLogRecordAsync();
-
-    /**
      * Get Latest Transaction Id in the log - async
      *
      * @return latest transaction id
@@ -240,6 +322,14 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
      * @return first dlsn in the stream
      */
     public CompletableFuture<DLSN> getFirstDLSNAsync();
+
+    /**
+     * Get Latest DLSN in the log
+     *
+     * @return last dlsn
+     * @throws IOException
+     */
+    public DLSN getLastDLSN() throws IOException;
 
     /**
      * Get Latest DLSN in the log - async
@@ -286,6 +376,8 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
      * Delete the log.
      *
      * @throws IOException if the deletion fails
+     * @Deprecated since 0.5.0, in favor of using
+     *             {@link org.apache.distributedlog.api.namespace.Namespace#deleteLog(String)}
      */
     public void delete() throws IOException;
 

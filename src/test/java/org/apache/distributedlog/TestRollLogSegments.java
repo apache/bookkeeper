@@ -357,8 +357,8 @@ public class TestRollLogSegments extends TestDistributedLogBase {
         final int numEntries = 5;
         for (int i = 1; i <= numEntries; i++) {
             writer.write(DLMTestUtil.getLogRecordInstance(i));
-            writer.setReadyToFlush();
-            writer.flushAndSync();
+            writer.flush();
+            writer.commit();
         }
 
         BKDistributedLogManager readDLM = (BKDistributedLogManager) createNewDLM(confLocal, name);
@@ -382,13 +382,13 @@ public class TestRollLogSegments extends TestDistributedLogBase {
 
         // write 6th record
         writer.write(DLMTestUtil.getLogRecordInstance(numEntries + 1));
-        writer.setReadyToFlush();
+        writer.flush();
         // Writer moved to lac = 10, while reader knows lac = 9 and moving to wait on 10
         checkAndWaitWriterReaderPosition(perStreamWriter, 10, reader, 10, readLh, 9);
 
         // write records without commit to simulate similar failure cases
         writer.write(DLMTestUtil.getLogRecordInstance(numEntries + 2));
-        writer.setReadyToFlush();
+        writer.flush();
         // Writer moved to lac = 11, while reader knows lac = 10 and moving to wait on 11
         checkAndWaitWriterReaderPosition(perStreamWriter, 11, reader, 11, readLh, 10);
 
@@ -415,8 +415,8 @@ public class TestRollLogSegments extends TestDistributedLogBase {
 
         BKSyncLogWriter anotherWriter = (BKSyncLogWriter) dlm.startLogSegmentNonPartitioned();
         anotherWriter.write(DLMTestUtil.getLogRecordInstance(numEntries + 3));
-        anotherWriter.setReadyToFlush();
-        anotherWriter.flushAndSync();
+        anotherWriter.flush();
+        anotherWriter.commit();
         anotherWriter.closeAndComplete();
 
         for (long i = numEntries + 1; i <= numEntries + 3; i++) {

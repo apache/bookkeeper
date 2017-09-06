@@ -104,8 +104,8 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         for (long j = 1; j <= DEFAULT_SEGMENT_SIZE / 2; j++) {
             writer.write(DLMTestUtil.getLogRecordInstance(txid++));
         }
-        writer.setReadyToFlush();
-        writer.flushAndSync();
+        writer.flush();
+        writer.commit();
         writer.close();
 
         LogReader reader = dlm.getInputStream(1);
@@ -183,8 +183,8 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
             LogRecord op = DLMTestUtil.getLogRecordInstance(txid++);
             out.write(op);
         }
-        out.setReadyToFlush();
-        out.flushAndSync();
+        out.flush();
+        out.commit();
         out.close();
         dlm.close();
 
@@ -326,8 +326,8 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
             LogRecord op = DLMTestUtil.getLogRecordInstance(txid++);
             out.write(op);
         }
-        out.setReadyToFlush();
-        out.flushAndSync();
+        out.flush();
+        out.commit();
         out.close();
 
         long numTrans = DLMTestUtil.getNumberofLogRecords(createNewDLM(conf, name), 1);
@@ -353,8 +353,8 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
             LogRecord op = DLMTestUtil.getLogRecordInstance(txid++);
             out.write(op);
         }
-        out.setReadyToFlush();
-        out.flushAndSync();
+        out.flush();
+        out.commit();
         out.close();
         dlm.close();
 
@@ -410,8 +410,8 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
             LogRecord op = DLMTestUtil.getLogRecordInstance(txid++);
             out.write(op);
         }
-        out.setReadyToFlush();
-        out.flushAndSync();
+        out.flush();
+        out.commit();
         out.close();
         dlm.close();
 
@@ -461,8 +461,8 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         for (long j = 1; j <= DEFAULT_SEGMENT_SIZE / 2; j++) {
             writer.write(DLMTestUtil.getLogRecordInstance(txid++));
         }
-        writer.setReadyToFlush();
-        writer.flushAndSync();
+        writer.flush();
+        writer.commit();
         writer.close();
         dlm.close();
 
@@ -834,8 +834,8 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         LogRecord op = DLMTestUtil.getLogRecordInstance(txid);
         op.setControl();
         out.write(op);
-        out.setReadyToFlush();
-        out.flushAndSync();
+        out.flush();
+        out.commit();
         out.abort();
         dlm.close();
 
