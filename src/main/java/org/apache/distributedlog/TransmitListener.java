@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,19 +15,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.distributedlog.io;
-
-import java.io.ByteArrayOutputStream;
+package org.apache.distributedlog;
 
 /**
- * {@link ByteArrayOutputStream} based buffer.
+ * Listener on transmit results.
  */
-public class Buffer extends ByteArrayOutputStream {
-    public Buffer(int initialCapacity) {
-        super(initialCapacity);
-    }
+interface TransmitListener {
 
-    public byte[] getData() {
-        return buf;
-    }
+    /**
+     * Finalize the transmit result and result the last
+     * {@link DLSN} in this transmit.
+     *
+     * @param lssn
+     *          log segment sequence number
+     * @param entryId
+     *          entry id
+     * @return last dlsn in this transmit
+     */
+    DLSN finalizeTransmit(long lssn, long entryId);
+
+    /**
+     * Complete the whole transmit.
+     *
+     * @param lssn
+     *          log segment sequence number
+     * @param entryId
+     *          entry id
+     */
+    void completeTransmit(long lssn, long entryId);
+
+    /**
+     * Abort the transmit.
+     *
+     * @param reason
+     *          reason to abort transmit
+     */
+    void abortTransmit(Throwable reason);
 }

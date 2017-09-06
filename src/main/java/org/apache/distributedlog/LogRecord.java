@@ -216,6 +216,12 @@ public class LogRecord {
         return ByteBufUtils.getArray(payload);
     }
 
+    /**
+     * Return the payload buf of this log record.
+     *
+     * @return payload buf of this record.
+     * @since 0.5.0
+     */
     public ByteBuf getPayloadBuf() {
         return payload.slice();
     }

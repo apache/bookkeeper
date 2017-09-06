@@ -38,13 +38,12 @@ import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.distributedlog.exceptions.LogRecordTooLongException;
 import org.apache.distributedlog.exceptions.WriteException;
-import org.apache.distributedlog.io.Buffer;
 import org.apache.distributedlog.io.CompressionCodec;
 import org.apache.distributedlog.io.CompressionCodec.Type;
 import org.apache.distributedlog.io.CompressionUtils;
 
 /**
- * {@link Buffer} based log record set writer.
+ * {@link ByteBuf} based log record set writer.
  */
 @Slf4j
 class EnvelopedRecordSetWriter implements LogRecordSet.Writer {
