@@ -18,13 +18,13 @@
  * under the License.
  *
  */
-
 package org.apache.bookkeeper.client;
 
 import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
 import com.google.common.collect.Sets;
+import java.util.Arrays;
 
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class RoundRobinDistributionScheduleTest {
+
     private final static Logger LOG = LoggerFactory.getLogger(RoundRobinDistributionScheduleTest.class);
 
     @Test
@@ -43,10 +44,10 @@ public class RoundRobinDistributionScheduleTest {
         assertEquals("Write set is wrong size", wSet.size(), 3);
 
         DistributionSchedule.AckSet ackSet = schedule.getAckSet();
-        assertFalse("Shouldn't ack yet", ackSet.completeBookieAndCheck(wSet.get(0)));
-        assertFalse("Shouldn't ack yet", ackSet.completeBookieAndCheck(wSet.get(0)));
-        assertTrue("Should ack after 2 unique", ackSet.completeBookieAndCheck(wSet.get(2)));
-        assertTrue("Should still be acking", ackSet.completeBookieAndCheck(wSet.get(1)));
+        assertFalse("Shouldn't ack yet", ackSet.completeBookieAndCheck(wSet.get(0), -1));
+        assertFalse("Shouldn't ack yet", ackSet.completeBookieAndCheck(wSet.get(0), -1));
+        assertTrue("Should ack after 2 unique", ackSet.completeBookieAndCheck(wSet.get(2), -1));
+        assertTrue("Should still be acking", ackSet.completeBookieAndCheck(wSet.get(1), -1));
     }
 
     /**
@@ -103,7 +104,7 @@ public class RoundRobinDistributionScheduleTest {
 
     private int testCoverageForConfiguration(int ensemble, int writeQuorum, int ackQuorum) {
         RoundRobinDistributionSchedule schedule = new RoundRobinDistributionSchedule(
-                writeQuorum, ackQuorum, ensemble);
+            writeQuorum, ackQuorum, ensemble);
         Set<Integer> indexes = new HashSet<Integer>();
         for (int i = 0; i < ensemble; i++) {
             indexes.add(i);
@@ -128,5 +129,23 @@ public class RoundRobinDistributionScheduleTest {
             }
         }
         return errors;
+    }
+
+    @Test
+    public void testCalculateLastAddSynced() throws Exception {
+        assertCalculateLastAddSynced(3, 1, 5, Arrays.asList(1L, 2L, 3L), 3);
+        assertCalculateLastAddSynced(3, 2, 5, Arrays.asList(1L, 2L, 3L), 2);
+        assertCalculateLastAddSynced(3, 3, 5, Arrays.asList(1L, 2L, 3L), 1);
+    }
+
+    private void assertCalculateLastAddSynced(int writeQuorumSize, int ackQuorumSize, int ensembleSize, List<Long> lastAddSynced, long expectedLastAddSynced) {
+        RoundRobinDistributionSchedule schedule = new RoundRobinDistributionSchedule(writeQuorumSize, ackQuorumSize, ensembleSize);
+        List<Integer> wSet = schedule.getWriteSet(1);
+        assertEquals("Write set is wrong size", wSet.size(), 3);
+        DistributionSchedule.AckSet ackSet = schedule.getAckSet();
+        for (int i = 0; i < lastAddSynced.size(); i++) {
+            ackSet.completeBookieAndCheck(wSet.get(i), lastAddSynced.get(i));
+        }
+        assertEquals(expectedLastAddSynced, ackSet.calculateCurrentLastAddSynced());
     }
 }

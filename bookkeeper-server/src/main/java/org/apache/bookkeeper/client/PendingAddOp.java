@@ -71,9 +71,7 @@ class PendingAddOp implements WriteCallback, TimerTask {
 
     OpStatsLogger addOpLogger;
     boolean callbackTriggered = false;
-
-    long lastAddSyncedEntry = -1;
-
+    
     PendingAddOp(LedgerHandle lh, AddCallback cb, Object ctx) {
         this.lh = lh;
         this.cb = cb;
@@ -221,19 +219,8 @@ class PendingAddOp implements WriteCallback, TimerTask {
         // must record all acks, even if complete (completion can be undone by an ensemble change)
         boolean ackQuorum = false;
         if (BKException.Code.OK == rc) {
-            ackQuorum = ackSet.completeBookieAndCheck(bookieIndex);
-
-            LOG.info("writeComplete lastAddSyncedEntry "+lastAddSyncedEntry);
-
-            if (lastAddSyncedEntry >= 0) {
-                if (this.lastAddSyncedEntry < 0) {
-                    // never heard about lastAddSyncedEntry from any bookie in the ensemble for this addEntry
-                    this.lastAddSyncedEntry = lastAddSyncedEntry;
-                } else {
-                    // we must keep the minimum lastAddSyncedEntry among the responses of the bookies in the ensemble
-                    this.lastAddSyncedEntry = Math.min(this.lastAddSyncedEntry, lastAddSyncedEntry);
-                }
-            }
+            ackQuorum = ackSet.completeBookieAndCheck(bookieIndex, lastAddSyncedEntry);
+            LOG.info("writeComplete lastAddSyncedEntry "+lastAddSyncedEntry);          
         }
 
         if (completed) {

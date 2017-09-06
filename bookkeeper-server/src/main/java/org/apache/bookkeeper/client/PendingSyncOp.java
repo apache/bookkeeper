@@ -50,8 +50,7 @@ class PendingSyncOp implements BookkeeperInternalCallbacks.SyncCallback {
     int lastSeenError = BKException.Code.WriteException;
 
     LedgerHandle lh;
-    OpStatsLogger syncOpLogger;
-    long minLastSyncedEntryId = -1;
+    OpStatsLogger syncOpLogger;    
 
     PendingSyncOp(LedgerHandle lh, long firstEntryId, long lastEntryId, SyncCallback cb, Object ctx) {
         this.lh = lh;
@@ -91,17 +90,12 @@ class PendingSyncOp implements BookkeeperInternalCallbacks.SyncCallback {
         // We got response.
         receivedResponseSet.remove(bookieIndex);
 
-        if (rc == BKException.Code.OK) {
-            if (minLastSyncedEntryId<0) {
-                minLastSyncedEntryId = lastSyncedEntryId;
-            } else {
-                minLastSyncedEntryId = Math.min(minLastSyncedEntryId, lastSyncedEntryId);
-            }
-            if (ackSet.completeBookieAndCheck(bookieIndex) && !completed) {                
+        if (rc == BKException.Code.OK) {            
+            if (ackSet.completeBookieAndCheck(bookieIndex, lastSyncedEntryId) && !completed) {
                 completed = true;
-                LOG.warn("Sync succeeded: Ledger {} minLastSyncedEntryId {}", new Object[] { ledgerId, minLastSyncedEntryId });
-                lh.syncCompleted(minLastSyncedEntryId);
-                cb.syncComplete(rc, lh, minLastSyncedEntryId, this.ctx);
+                long estimatedLastAddConfirmed = ackSet.calculateCurrentLastAddSynced();
+                lh.syncCompleted(estimatedLastAddConfirmed);
+                cb.syncComplete(rc, lh, estimatedLastAddConfirmed, this.ctx);
                 return;
             }
         } else {

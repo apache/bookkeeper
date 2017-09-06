@@ -1326,18 +1326,12 @@ public class LedgerHandle implements AutoCloseable {
             Preconditions.checkState(removed == pendingAddOp, "removed unexpected entry %s, expected %s",
                 removed.entryId, pendingAddOp.entryId);
 
-            LOG.info("pendingAddOp.lastAddSyncedEntry {}", pendingAddOp.lastAddSyncedEntry);
-            if (pendingAddOp.lastAddSyncedEntry >= 0) {
-                this.lastAddSynced = Math.max(lastAddSynced, pendingAddOp.lastAddSyncedEntry);
-                LOG.info("nosynchAdd lastAddSynced {}", lastAddSynced);
-            } else if (!pendingAddOp.isNosynchAdd) {
-                this.lastAddSynced = Math.max(lastAddSynced, pendingAddOp.entryId);
-                LOG.info("synchAdd lastAddSynced {}", lastAddSynced);
+            if (relaxDurability) {
+                this.lastAddSynced = pendingAddOp.ackSet.calculateCurrentLastAddSynced();
             } else {
-                LOG.warn("AddResponse did not carry lastAddSyncedEntry of a no-sync addEntry: {}", pendingAddOp.entryId);
+                this.lastAddSynced = Math.max(lastAddSynced, pendingAddOp.entryId);
             }
-            
-
+                        
             explicitLacFlushPolicy.updatePiggyBackedLac(lastAddConfirmed);
             lastAddConfirmed = this.lastAddSynced;
             

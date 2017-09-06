@@ -98,7 +98,7 @@ class PendingWriteLacOp implements WriteLacCallback {
         receivedResponseSet.remove(bookieIndex);
 
         if (rc == BKException.Code.OK) {
-            if (ackSet.completeBookieAndCheck(bookieIndex) && !completed) {
+            if (ackSet.completeBookieAndCheck(bookieIndex, -1) && !completed) {
                 completed = true;
                 cb.addLacComplete(rc, lh, ctx);
                 return;
