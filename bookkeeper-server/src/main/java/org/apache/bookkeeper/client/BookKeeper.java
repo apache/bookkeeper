@@ -700,7 +700,7 @@ public class BookKeeper implements AutoCloseable {
                                   final DigestType digestType, final byte[] passwd,
                                   final CreateCallback cb, final Object ctx, final Map<String, byte[]> customMetadata) {
         asyncCreateLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd, cb, ctx,
-            customMetadata, LedgerType.StrictDurability);
+            customMetadata, LedgerType.PD_JOURNAL);
     }
     public void asyncCreateLedger(final int ensSize, final int writeQuorumSize, final int ackQuorumSize,
                                   final DigestType digestType, final byte[] passwd,
@@ -798,7 +798,7 @@ public class BookKeeper implements AutoCloseable {
                                      DigestType digestType, byte passwd[], final Map<String, byte[]> customMetadata)
             throws InterruptedException, BKException {
         return createLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
-            customMetadata, LedgerType.StrictDurability);
+            customMetadata, LedgerType.PD_JOURNAL);
     }
     public LedgerHandle createLedger(int ensSize, int writeQuorumSize, int ackQuorumSize,
                                      DigestType digestType, byte passwd[], final Map<String, byte[]> customMetadata,
@@ -810,7 +810,7 @@ public class BookKeeper implements AutoCloseable {
          * Calls asynchronous version
          */
         asyncCreateLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
-                          new SyncCreateCallback(), counter, customMetadata, LedgerType.StrictDurability);
+                          new SyncCreateCallback(), counter, customMetadata, LedgerType.PD_JOURNAL);
 
         LedgerHandle lh = SynchCallbackUtils.waitForResult(counter);
         if (lh == null) {
@@ -863,7 +863,7 @@ public class BookKeeper implements AutoCloseable {
                                         DigestType digestType, byte passwd[], final Map<String, byte[]> customMetadata)
          throws InterruptedException, BKException {
         return createLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd, customMetadata,
-            LedgerType.StrictDurability);
+            LedgerType.PD_JOURNAL);
     }
 
     /**
@@ -941,7 +941,7 @@ public class BookKeeper implements AutoCloseable {
             final DigestType digestType, final byte[] passwd, final CreateCallback cb, final Object ctx,
             final Map<String, byte[]> customMetadata) {
         asyncCreateLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd, cb, ctx, customMetadata,
-            LedgerType.StrictDurability);
+            LedgerType.PD_JOURNAL);
     }
 
     /**
@@ -1090,7 +1090,7 @@ public class BookKeeper implements AutoCloseable {
                                      final Object ctx,
                                      final Map<String, byte[]> customMetadata) {
         asyncCreateLedgerAdv(ledgerId, ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd, cb, ctx,
-            customMetadata, LedgerType.StrictDurability);
+            customMetadata, LedgerType.PD_JOURNAL);
     }
 
     /**

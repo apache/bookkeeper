@@ -104,8 +104,8 @@ public class LedgerMetadata {
         this.state = LedgerMetadataFormat.State.OPEN;
         this.lastEntryId = LedgerHandle.INVALID_ENTRY_ID;
         this.metadataFormatVersion = CURRENT_METADATA_FORMAT_VERSION;
-        this.ledgerType = ledgerType.equals(LedgerType.StrictDurability) ?
-            LedgerMetadataFormat.LedgerType.STRICT_DURABILITY : LedgerMetadataFormat.LedgerType.RELAXED_DURABILITY;
+        this.ledgerType = ledgerType.equals(LedgerType.PD_JOURNAL) ?
+            LedgerMetadataFormat.LedgerType.PD_JOURNAL : LedgerMetadataFormat.LedgerType.VD_JOURNAL;
         this.digestType = digestType.equals(BookKeeper.DigestType.MAC) ?
             LedgerMetadataFormat.DigestType.HMAC : LedgerMetadataFormat.DigestType.CRC32;
         this.password = Arrays.copyOf(password, password.length);
@@ -117,7 +117,7 @@ public class LedgerMetadata {
 
     public LedgerMetadata(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
             BookKeeper.DigestType digestType, byte[] password) {
-        this(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, password, null, LedgerType.StrictDurability);
+        this(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, password, null, LedgerType.PD_JOURNAL);
     }
 
     /**
@@ -193,10 +193,10 @@ public class LedgerMetadata {
      * @since 4.6
      */
     public LedgerType getLedgerType() {
-        if (ledgerType.equals(LedgerMetadataFormat.LedgerType.RELAXED_DURABILITY)) {
-            return LedgerType.RelaxedDurability;
+        if (ledgerType.equals(LedgerMetadataFormat.LedgerType.VD_JOURNAL)) {
+            return LedgerType.VD_JOURNAL;
         } else {
-            return LedgerType.StrictDurability;
+            return LedgerType.PD_JOURNAL;
         }
     }
 
@@ -444,7 +444,7 @@ public class LedgerMetadata {
         if (data.hasLedgerType()) {
             lc.ledgerType = data.getLedgerType();
         } else {
-            lc.ledgerType = LedgerMetadataFormat.LedgerType.STRICT_DURABILITY;
+            lc.ledgerType = LedgerMetadataFormat.LedgerType.PD_JOURNAL;
         }
 
         lc.ensembleSize = data.getEnsembleSize();
@@ -482,7 +482,7 @@ public class LedgerMetadata {
             lc.writeQuorumSize = lc.ackQuorumSize = Integer.parseInt(reader.readLine());
             lc.ensembleSize = Integer.parseInt(reader.readLine());
             lc.length = Long.parseLong(reader.readLine());
-            lc.ledgerType = LedgerMetadataFormat.LedgerType.STRICT_DURABILITY;
+            lc.ledgerType = LedgerMetadataFormat.LedgerType.PD_JOURNAL;
 
             String line = reader.readLine();
             while (line != null) {

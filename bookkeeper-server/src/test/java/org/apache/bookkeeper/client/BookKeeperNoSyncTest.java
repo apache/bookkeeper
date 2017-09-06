@@ -53,7 +53,7 @@ public class BookKeeperNoSyncTest extends BookKeeperClusterTestCase {
         long ledgerId;
         try (BookKeeper bkc = new BookKeeper(confWriter)) {
             try (LedgerHandle lh = bkc.createLedger(1, 1, 1, digestType, "testPasswd".getBytes(),
-                null, LedgerType.RelaxedDurability)) {
+                null, LedgerType.VD_JOURNAL)) {
                 ledgerId = lh.getId();
                 for (int i = 0; i < numEntries - 1; i++) {
                     lh.addEntry(data);
@@ -80,7 +80,7 @@ public class BookKeeperNoSyncTest extends BookKeeperClusterTestCase {
             .setZkServers(zkUtil.getZooKeeperConnectString());
         long ledgerId;
         try (BookKeeper bkc = new BookKeeper(confWriter)) {
-            try (LedgerHandle lh = bkc.createLedgerAdv(1, 1, 1, digestType, "testPasswd".getBytes(), null, LedgerType.RelaxedDurability)) {
+            try (LedgerHandle lh = bkc.createLedgerAdv(1, 1, 1, digestType, "testPasswd".getBytes(), null, LedgerType.VD_JOURNAL)) {
                 ledgerId = lh.getId();
                 for (int i = 0; i < numEntries - 2; i++) {
                     lh.addEntry(i, data);
@@ -119,7 +119,7 @@ public class BookKeeperNoSyncTest extends BookKeeperClusterTestCase {
         long ledgerId;
         try (BookKeeper bkc = new BookKeeper(confWriter)) {
             try (LedgerHandle lh = bkc.createLedger(1, 1, 1, digestType, "testPasswd".getBytes(),
-                null, LedgerType.RelaxedDurability)) {
+                null, LedgerType.VD_JOURNAL)) {
                 ledgerId = lh.getId();
 
                 try {
@@ -157,7 +157,7 @@ public class BookKeeperNoSyncTest extends BookKeeperClusterTestCase {
         long ledgerId;
         try (BookKeeper bkc = new BookKeeper(confWriter)) {
             try (LedgerHandle lh = bkc.createLedger(1, 1, 1, digestType, "testPasswd".getBytes(),
-                null, LedgerType.RelaxedDurability)) {
+                null, LedgerType.VD_JOURNAL)) {
                 ledgerId = lh.getId();
 
                 try {

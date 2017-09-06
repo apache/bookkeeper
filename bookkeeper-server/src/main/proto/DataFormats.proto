@@ -60,8 +60,8 @@ message LedgerMetadataFormat {
     repeated cMetadataMapEntry customMetadata = 11;
 
     enum LedgerType {
-        STRICT_DURABILITY = 0;
-        RELAXED_DURABILITY = 1;
+        PD_JOURNAL = 0;
+        VD_JOURNAL = 1;
     }
     optional LedgerType ledgerType = 12;
 }

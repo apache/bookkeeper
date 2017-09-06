@@ -93,7 +93,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
         this.ctx = ctx;
         this.startTime = MathUtils.nowInNano();
         this.createOpLogger = bk.getCreateOpLogger();
-        this.relaxDurability = ledgerType == LedgerType.RelaxedDurability;
+        this.relaxDurability = ledgerType == LedgerType.VD_JOURNAL;
     }
 
     private boolean validate() {
