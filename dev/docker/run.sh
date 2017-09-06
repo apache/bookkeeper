@@ -65,7 +65,6 @@ docker run -i -t \
   -u "${USER}" \
   -v "${BOOKKEEPER_ROOT}:${BOOKKEEPER_ROOT}" \
   -v "${LOCAL_HOME}:/home/${USER_NAME}" \
-  -p 4000:4000 \
   ${IMAGE_NAME}-${USER_NAME} \
   bash -c "${CMD}"
 

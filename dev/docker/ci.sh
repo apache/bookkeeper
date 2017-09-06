@@ -56,7 +56,6 @@ docker run \
   -u "${USER}" \
   -v "${BOOKKEEPER_ROOT}:${BOOKKEEPER_ROOT}" \
   -v "${LOCAL_HOME}:/home/${USER_NAME}" \
-  -p 4000:4000 \
   -e MAVEN_OPTS='-Xmx4g -Xms2g' \
   ${IMAGE_NAME}-${USER_NAME} \
   bash -c "mvn clean apache-rat:check package findbugs:check"
