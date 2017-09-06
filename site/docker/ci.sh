@@ -56,7 +56,6 @@ docker run \
   -u "${USER}" \
   -v "${BOOKKEEPER_DOC_ROOT}:${BOOKKEEPER_DOC_ROOT}" \
   -v "${LOCAL_HOME}:/home/${USER_NAME}" \
-  -p 4000:4000 \
   -e JEKYLL_ENV='production' \
   ${IMAGE_NAME}-${USER_NAME} \
   bash -c "make setup && make apache"
