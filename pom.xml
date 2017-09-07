@@ -58,7 +58,7 @@
     <module>bookkeeper-stats-providers</module>
     <module>bookkeeper-http</module>
     <module>tests</module>
-    <module>all</module>
+    <module>bookkeeper-dist</module>
   </modules>
   <mailingLists>
     <mailingList>

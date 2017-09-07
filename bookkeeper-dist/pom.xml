@@ -28,8 +28,8 @@
         <relativePath>..</relativePath>
     </parent>
 
-    <artifactId>bookkeeper-all</artifactId>
-    <packaging>pom</packaging>
+    <artifactId>bookkeeper-dist</artifactId>
+    <packaging>jar</packaging>
     <name>Apache BookKeeper :: Dist</name>
 
     <dependencies>
@@ -54,6 +54,11 @@
         <dependency>
             <groupId>org.apache.bookkeeper.stats</groupId>
             <artifactId>prometheus-metrics-provider</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.bookkeeper.stats</groupId>
+            <artifactId>twitter-finagle-provider</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -116,6 +121,7 @@
                     <skip>true</skip>
                 </configuration>
             </plugin>
+
         </plugins>
     </build>
 </project>
