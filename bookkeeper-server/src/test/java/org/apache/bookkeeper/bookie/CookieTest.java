@@ -21,10 +21,6 @@
 
 package org.apache.bookkeeper.bookie;
 
-import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.test.PortManager;
-import org.apache.bookkeeper.util.IOUtils;
-
 import static org.apache.bookkeeper.bookie.UpgradeTest.newV1JournalDirectory;
 import static org.apache.bookkeeper.bookie.UpgradeTest.newV1LedgerDirectory;
 import static org.apache.bookkeeper.bookie.UpgradeTest.newV2JournalDirectory;
@@ -32,25 +28,25 @@ import static org.apache.bookkeeper.bookie.UpgradeTest.newV2LedgerDirectory;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.google.common.collect.Sets;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import org.junit.Assert;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
-import org.apache.bookkeeper.meta.ZkVersion;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.test.PortManager;
+import org.apache.bookkeeper.util.IOUtils;
+import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.io.FileUtils;
+import org.junit.Assert;
 import org.junit.Test;
-
-
-import com.google.common.collect.Sets;
 
 public class CookieTest extends BookKeeperClusterTestCase {
     final int bookiePort = PortManager.nextFreePort();
@@ -596,16 +592,19 @@ public class CookieTest extends BookKeeperClusterTestCase {
         b.shutdown();
         Versioned<Cookie> zkCookie = Cookie.readFromZooKeeper(zkc, conf);
         Version version1 = zkCookie.getVersion();
-        Assert.assertTrue("Invalid type expected ZkVersion type", version1 instanceof ZkVersion);
-        ZkVersion zkVersion1 = (ZkVersion) version1;
+        Assert.assertTrue("Invalid type expected ZkVersion type",
+            version1 instanceof LongVersion);
+        LongVersion zkVersion1 = (LongVersion) version1;
         Cookie cookie = zkCookie.getValue();
         cookie.writeToZooKeeper(zkc, conf, version1);
 
         zkCookie = Cookie.readFromZooKeeper(zkc, conf);
         Version version2 = zkCookie.getVersion();
-        Assert.assertTrue("Invalid type expected ZkVersion type", version2 instanceof ZkVersion);
-        ZkVersion zkVersion2 = (ZkVersion) version2;
-        Assert.assertEquals("Version mismatches!", zkVersion1.getZnodeVersion() + 1, zkVersion2.getZnodeVersion());
+        Assert.assertTrue("Invalid type expected ZkVersion type",
+            version2 instanceof LongVersion);
+        LongVersion zkVersion2 = (LongVersion) version2;
+        Assert.assertEquals("Version mismatches!",
+            zkVersion1.getLongVersion() + 1, zkVersion2.getLongVersion());
     }
 
     /**
