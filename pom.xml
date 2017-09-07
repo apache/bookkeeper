@@ -211,17 +211,10 @@
               <minimizeJar>true</minimizeJar>
               <artifactSet>
                 <includes>
-
-                  <include>commons-beanutils:commons-beanutils</include>
-                  <include>commons-beanutils:commons-beanutils-core</include>
                   <include>commons-codec:commons-codec</include>
                   <include>commons-cli:commons-cli</include>
-                  <include>commons-configuration:commons-configuration</include>
-                  <include>commons-collections:commons-collections</include>
-                  <include>commons-digester:commons-digester</include>
                   <include>commons-io:commons-io</include>
                   <include>commons-lang:commons-lang</include>
-                  <include>commons-logging:commons-logging</include>
                   <include>com.google.guava:guava</include>
                   <include>io.netty:netty</include>
                   <include>io.netty:netty-all</include>
@@ -253,8 +246,24 @@
               <relocations>
                 <!-- apache commons --> 
                 <relocation>
-                  <pattern>org.apache.commons</pattern>
-                  <shadedPattern>dlshade.org.apache.commons</shadedPattern>
+                  <pattern>org.apache.commons.cli</pattern>
+                  <shadedPattern>dlshade.org.apache.commons.cli</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache.commons.codec</pattern>
+                  <shadedPattern>dlshade.org.apache.commons.codec</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache.commons.lang</pattern>
+                  <shadedPattern>dlshade.org.apache.commons.lang</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache.commons.lang3</pattern>
+                  <shadedPattern>dlshade.org.apache.commons.lang3</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache.commons.io</pattern>
+                  <shadedPattern>dlshade.org.apache.commons.io</shadedPattern>
                 </relocation>
                 <!-- apache httpcomponents -->
                 <relocation>

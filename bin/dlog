@@ -55,7 +55,7 @@ shift
 
 case "${COMMAND}" in
   local)
-    exec java $OPTS $JMX_ARGS org.apache.distributedlog.LocalDLMEmulator $@
+    exec java $OPTS $JMX_ARGS -Dzookeeper.4lw.commands.whitelist='*' org.apache.distributedlog.LocalDLMEmulator $@
     ;;
   tool)
     exec java $OPTS org.apache.distributedlog.tools.Tool org.apache.distributedlog.tools.DistributedLogTool $@
