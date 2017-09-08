@@ -702,7 +702,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         long ledgerId;        
         try (BookKeeper bkc = new BookKeeper(confWriter)) {
             try (LedgerHandle lh = bkc.createLedgerAdv(1,1,1, digestType, "testPasswd".getBytes(), null,
-                SyncMode.JOURNAL_NOSYNC)) {
+                LedgerType.VD_JOURNAL)) {
                 ledgerId = lh.getId();                    
                 for (int i = 0; i < numEntries - 1; i++) {                        
                     lh.asyncAddEntry(i, data, new AddCallback() {
@@ -711,7 +711,23 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                         }
                     },null);                        
                 }                                        
-                lh.addEntry(numEntries-1, data);                    
+                lh.addEntry(numEntries-1, data);
+
+                // LastAddConfirmed is not advanced
+                try {
+                    lh.readEntries(0, numEntries -1);
+                    fail("should not be able to read");
+                } catch (BKException.BKReadException ok){
+                }
+                
+                lh.sync(numEntries-1);
+
+                Enumeration<LedgerEntry> entries = lh.readEntries(0, numEntries -1);
+                while (entries.hasMoreElements()) {
+                    LedgerEntry e = entries.nextElement();
+                    assertArrayEquals(data, e.getEntry());
+                }
+
             }
             try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
                 Enumeration<LedgerEntry> entries = lh.readEntries(0, numEntries -1);
