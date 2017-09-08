@@ -352,14 +352,16 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
 
                 // Notify the waiters that the force write succeeded
                 for (QueueEntry e : this.forceWriteWaiters) {                    
-                    if (e.ledgerId >= 0 && e.entryId >= 0) {                        
+                    if (e.ledgerId >= 0 && e.entryId >= 0) {
                         handleLastAddSynced(e);
                         if (e.isSyncLedgerMetaEntry()) {
                             e.lastAddSyncedEntry = lastAddSynched.getOrDefault(e.ledgerId, Long.valueOf(-1));
                         }
                     }
                     LOG.info("entry "+e.ledgerId+", "+e.entryId+" syncmeta "+e.isSyncLedgerMetaEntry()+" written/sync to journal, e.lastAddSyncedEntry:"+e.lastAddSyncedEntry);
-                    cbThreadPool.execute(e);
+                    if (!e.volatileDurability) {
+                        cbThreadPool.execute(e);
+                    }
                 }
 
                 return this.forceWriteWaiters.size();
@@ -843,8 +845,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
     @Override
     public void run() {
         LOG.info("Starting journal on {}", journalDirectory);
-        LinkedList<QueueEntry> toFlush = new LinkedList<QueueEntry>();
-        ArrayList<QueueEntry> volatileEntries = new ArrayList<QueueEntry>();
+        LinkedList<QueueEntry> toFlush = new LinkedList<QueueEntry>();        
         ByteBuffer lenBuff = ByteBuffer.allocate(4);
         ByteBuffer paddingBuff = ByteBuffer.allocate(2 * conf.getJournalAlignmentSize());
         ZeroBuffer.put(paddingBuff);
@@ -889,14 +890,14 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
                         journalProcessTimeStats.registerSuccessfulEvent(MathUtils.elapsedNanos(dequeueStartTime),
                                 TimeUnit.NANOSECONDS);
                     }
-                    LOG.info("one round...toFlush"+toFlush+", volatileEntries:"+volatileEntries);
-                    if (toFlush.isEmpty() && volatileEntries.isEmpty()) {
+                    
+                    if (toFlush.isEmpty()) {
                         qe = queue.take();
                         dequeueStartTime = MathUtils.nowInNano();
                         journalQueueStats.registerSuccessfulEvent(MathUtils.elapsedNanos(qe.enqueueTime),
                                 TimeUnit.NANOSECONDS);
                     } else {
-                        QueueEntry first = toFlush.isEmpty() ? volatileEntries.get(0) : toFlush.getFirst();
+                        QueueEntry first = toFlush.getFirst();
                         long pollWaitTimeNanos =
                                 maxGroupWaitInNanos - MathUtils.elapsedNanos(first.enqueueTime);
                         if (flushWhenQueueEmpty || pollWaitTimeNanos < 0) {
@@ -928,7 +929,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
                             shouldFlush = true;
                             flushMaxWaitCounter.inc();
                         } else if (qe != null
-                                && ((bufferedEntriesThreshold > 0 && toFlush.size()+volatileEntries.size() > bufferedEntriesThreshold)
+                                && ((bufferedEntriesThreshold > 0 && toFlush.size() > bufferedEntriesThreshold)
                                 || (bc.position() > lastFlushPosition + bufferedWritesThreshold))) {
                             // 2. If we have buffered more than the buffWriteThreshold or bufferedEntriesThreshold
                             shouldFlush = true;
@@ -950,13 +951,14 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
                             journalFlushWatcher.reset().start();
                             bc.flush(false);
 
-                            for (QueueEntry ve : volatileEntries) {
-                                ve.lastAddSyncedEntry = lastAddSynched.getOrDefault(ve.ledgerId, Long.valueOf(-1));
-                                LOG.info("volatile entry "+ve.ledgerId+" - "+ve.entryId+" flushed"
-                                    + " to disk piggy back lastAddSyncedEntry:"+ve.lastAddSyncedEntry);
-                                cbThreadPool.execute(ve);
-                            }
-                            volatileEntries.clear();
+                            for (QueueEntry ve : toFlush) {
+                                if (ve.volatileDurability) {
+                                    ve.lastAddSyncedEntry = lastAddSynched.getOrDefault(ve.ledgerId, Long.valueOf(-1));
+                                    LOG.info("volatile entry "+ve.ledgerId+" - "+ve.entryId+" flushed"
+                                        + " to disk piggy back lastAddSyncedEntry:"+ve.lastAddSyncedEntry);
+                                    cbThreadPool.execute(ve);
+                                }
+                            }                            
                             
                             lastFlushPosition = bc.position();
                             journalFlushStats.registerSuccessfulEvent(
@@ -970,7 +972,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
                                 }
                             }
 
-                            forceWriteBatchEntriesStats.registerSuccessfulValue(toFlush.size()+volatileEntries.size());
+                            forceWriteBatchEntriesStats.registerSuccessfulValue(toFlush.size());
                             forceWriteBatchBytesStats.registerSuccessfulValue(batchSize);
 
                             forceWriteRequests.put(new ForceWriteRequest(logFile, logId, lastFlushPosition, toFlush,
@@ -1014,15 +1016,10 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
                     // logFile.write(new ByteBuffer[] { lenBuff, qe.entry });
                     bc.write(lenBuff);
                     bc.write(qe.entry.nioBuffer());
-                    qe.entry.release();
-                    if (qe.volatileDurability) {
-                        volatileEntries.add(qe);
-                    } else {
-                        toFlush.add(qe);
-                    }
-                } else {
-                    toFlush.add(qe);
+                    qe.entry.release();                                        
                 }
+                toFlush.add(qe);
+                
                 qe = null;
             }
             logFile.close();

@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 import static org.junit.Assert.*;
 
 /**
- * Tests of the main BookKeeper client using no-synch
+ * Tests of the main BookKeeper client using VD_JOURNAL
  */
 public class BookKeeperNoSyncTest extends BookKeeperClusterTestCase {
 
@@ -83,10 +83,12 @@ public class BookKeeperNoSyncTest extends BookKeeperClusterTestCase {
             try (LedgerHandle lh = bkc.createLedgerAdv(1, 1, 1, digestType, "testPasswd".getBytes(), null, LedgerType.VD_JOURNAL)) {
                 ledgerId = lh.getId();
                 for (int i = 0; i < numEntries - 2; i++) {
-                    lh.addEntry(i, data);
-                }
-                // LAC must not advance on no-sync writes
-                assertEquals(-1, lh.getLastAddConfirmed());
+                    long entryId = lh.addEntry(i, data);
+                    assertEquals(i, entryId);
+                    // LAC must not advance on VD writes, it may advance because of grouping/flushQueueNotEmpty
+                    // but in this test it should not advance till the given entry id
+                    assertTrue(lh.getLastAddConfirmed() < entryId);
+                }                
                 
                 long entryId = lh.addEntry(numEntries - 2, data);
                 assertEquals(numEntries - 2, entryId);
@@ -124,10 +126,12 @@ public class BookKeeperNoSyncTest extends BookKeeperClusterTestCase {
                 LedgerType.VD_JOURNAL)) {
                 ledgerId = lh.getId();
                 for (int i = 0; i < numEntries - 2; i++) {
-                    lh.addEntry(data);
+                    long entryId = lh.addEntry(data);
+                    // LAC must not advance on VD writes, it may advance because of grouping/flushQueueNotEmpty
+                    // but in this test it should not advance till the given entry id
+                    assertTrue(lh.getLastAddConfirmed() < entryId);
                 }
-                // LAC must not advance on no-sync writes
-                assertEquals(-1, lh.getLastAddConfirmed());
+                
 
                 long entryId = lh.addEntry(data);
                 assertEquals(numEntries - 2, entryId);
@@ -139,18 +143,18 @@ public class BookKeeperNoSyncTest extends BookKeeperClusterTestCase {
                      lh2.addEntry(data);
                 }
 
-                // LAC will be able to advance just be adding an entry, but it won't advance to the lastAddPushed
-                long lastAddSynced1 = lh.getLastAddSynced();
-                assertEquals(-1, lastAddSynced1);
-                LOG.info("THIS TEST IS FAILING. NEED TO IMPLEMENT SYNCCURSOR ON JOURNAL");
+                // LAC will be able to advance just be adding an entry,
+                // but it won't advance to the lastAddSynced
                 long entryIdNotYetSynced = lh.addEntry(data);
                 assertEquals(numEntries - 1, entryIdNotYetSynced);
                 long lastAddSynced2 = lh.getLastAddSynced();
                 assertEquals(entryIdNotYetSynced-1, lastAddSynced2);
                 long lastAddConfirmed = lh.getLastAddConfirmed();
                 assertEquals(lastAddConfirmed, lastAddSynced2);
+
+                // datum on bookies will reflect the last piggybacked value sent, not the client-side value
                 long readAddConfirmed = lh.readLastConfirmed();
-                assertEquals(lastAddConfirmed, readAddConfirmed);
+                assertEquals(lastAddConfirmed-1, readAddConfirmed);
                 
             }
             try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
