@@ -810,7 +810,7 @@ public class BookKeeper implements AutoCloseable {
          * Calls asynchronous version
          */
         asyncCreateLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
-                          new SyncCreateCallback(), counter, customMetadata, LedgerType.PD_JOURNAL);
+                          new SyncCreateCallback(), counter, customMetadata, ledgerType);
 
         LedgerHandle lh = SynchCallbackUtils.waitForResult(counter);
         if (lh == null) {
@@ -1127,8 +1127,6 @@ public class BookKeeper implements AutoCloseable {
      *          optional control object
      * @param customMetadata
      *          optional customMetadata that holds user specified metadata
-     * @param noSynch
-     *          do not require an fsynch on journal of Bookies. This option will relax durability guarantees
      */
     public void asyncCreateLedgerAdv(final long ledgerId,
                                      final int ensSize,

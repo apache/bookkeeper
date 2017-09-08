@@ -1428,7 +1428,7 @@ public class Bookie extends BookieCriticalThread {
     /**
      * Add an entry to a ledger as specified by handle.
      */
-    private void addEntryInternal(LedgerDescriptor handle, ByteBuf entry, boolean noSynch, WriteCallback cb, Object ctx)
+    private void addEntryInternal(LedgerDescriptor handle, ByteBuf entry, boolean volatileDurability, WriteCallback cb, Object ctx)
             throws IOException, BookieException {
         long ledgerId = handle.getLedgerId();
         long entryId = handle.addEntry(entry);
@@ -1438,7 +1438,7 @@ public class Bookie extends BookieCriticalThread {
         if (LOG.isTraceEnabled()) {
             LOG.trace("Adding {}@{}", entryId, ledgerId);
         }
-        getJournal(ledgerId).logAddEntry(entry, noSynch, cb, ctx);
+        getJournal(ledgerId).logAddEntry(entry, volatileDurability, cb, ctx);
     }
 
     private void syncInternal(LedgerDescriptor handle, long firstEntryId, long lastEntryId, SyncCallback cb)
@@ -1515,7 +1515,7 @@ public class Bookie extends BookieCriticalThread {
      * Add entry to a ledger.
      * @throws BookieException.LedgerFencedException if the ledger is fenced
      */
-    public void addEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey, boolean noSynch)
+    public void addEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey, boolean volatileDurability)
             throws IOException, BookieException.LedgerFencedException, BookieException {
         long requestNanos = MathUtils.nowInNano();
         boolean success = false;
@@ -1528,7 +1528,7 @@ public class Bookie extends BookieCriticalThread {
                             .create(BookieException.Code.LedgerFencedException);
                 }
                 entrySize = entry.readableBytes();
-                addEntryInternal(handle, entry, noSynch, cb, ctx);
+                addEntryInternal(handle, entry, volatileDurability, cb, ctx);
             }
             success = true;
         } catch (NoWritableLedgerDirException e) {

@@ -57,7 +57,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
     OpStatsLogger createOpLogger;
     boolean adv = false;
     boolean generateLedgerId = true;    
-    final boolean relaxDurability;
+    final boolean volatileDurability;
 
     /**
      * Constructor
@@ -93,13 +93,13 @@ class LedgerCreateOp implements GenericCallback<Void> {
         this.ctx = ctx;
         this.startTime = MathUtils.nowInNano();
         this.createOpLogger = bk.getCreateOpLogger();
-        this.relaxDurability = ledgerType == LedgerType.VD_JOURNAL;
+        this.volatileDurability = ledgerType == LedgerType.VD_JOURNAL;
     }
 
     private boolean validate() {
-        if (relaxDurability) {
+        if (volatileDurability) {
             if (metadata.getEnsembleSize() > metadata.getWriteQuorumSize()) {
-                LOG.error("Cannot created a ledger with ensembleSize > writeQuorumSize and allowNoSyncWrites = true");
+                LOG.error("Cannot created a ledger with ensembleSize > writeQuorumSize and volatileDurability = true");
                 return false;
             }
         }
@@ -190,9 +190,9 @@ class LedgerCreateOp implements GenericCallback<Void> {
 
         try {
             if (adv) {
-                lh = new LedgerHandleAdv(bk, ledgerId, metadata, digestType, passwd, relaxDurability);
+                lh = new LedgerHandleAdv(bk, ledgerId, metadata, digestType, passwd, volatileDurability);
             } else {
-                lh = new LedgerHandle(bk, ledgerId, metadata, digestType, passwd, relaxDurability);
+                lh = new LedgerHandle(bk, ledgerId, metadata, digestType, passwd, volatileDurability);
             }
         } catch (GeneralSecurityException e) {
             LOG.error("Security exception while creating ledger: " + ledgerId, e);

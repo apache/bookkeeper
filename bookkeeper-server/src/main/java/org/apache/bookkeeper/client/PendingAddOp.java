@@ -63,7 +63,7 @@ class PendingAddOp implements WriteCallback, TimerTask {
 
     LedgerHandle lh;
     boolean isRecoveryAdd = false;
-    boolean isNosynchAdd = false;
+    boolean isVolatileDurablityAdd = false;
     long requestTimeNanos;
 
     final int timeoutSec;
@@ -91,8 +91,8 @@ class PendingAddOp implements WriteCallback, TimerTask {
         return this;
     }
 
-    void enableNosynch() {
-        isNosynchAdd = true;
+    void enableVolatileDurability() {
+        isVolatileDurablityAdd = true;
     }
 
     void setEntryId(long entryId) {
@@ -106,7 +106,7 @@ class PendingAddOp implements WriteCallback, TimerTask {
 
     void sendWriteRequest(int bookieIndex) {
         int flags = isRecoveryAdd ? BookieProtocol.FLAG_RECOVERY_ADD :
-            isNosynchAdd ? BookieProtocol.FLAG_NOSYNCH_ADD :
+            isVolatileDurablityAdd ? BookieProtocol.FLAG_VOLATILE_DURABILITY :
             BookieProtocol.FLAG_NONE;
 
         lh.bk.bookieClient.addEntry(lh.metadata.currentEnsemble.get(bookieIndex), lh.ledgerId, lh.ledgerKey, entryId, toSend,

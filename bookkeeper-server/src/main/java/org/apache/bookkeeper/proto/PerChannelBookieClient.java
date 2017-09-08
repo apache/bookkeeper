@@ -628,8 +628,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 addBuilder.setFlag(AddRequest.Flag.RECOVERY_ADD);
             }
 
-            if (((short) options & BookieProtocol.FLAG_NOSYNCH_ADD) == BookieProtocol.FLAG_NOSYNCH_ADD) {
-                addBuilder.setFlag(AddRequest.Flag.NOSYNCH_ADD);
+            if (((short) options & BookieProtocol.FLAG_VOLATILE_DURABILITY) == BookieProtocol.FLAG_VOLATILE_DURABILITY) {
+                addBuilder.setFlag(AddRequest.Flag.VOLATILE_DURABILITY);
             }
 
             request = Request.newBuilder()

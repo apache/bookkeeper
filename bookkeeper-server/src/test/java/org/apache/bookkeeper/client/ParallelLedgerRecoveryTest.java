@@ -453,7 +453,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public void addEntry(ByteBuf entry, final WriteCallback cb, Object ctx, byte[] masterKey, boolean nosync)
+        public void addEntry(ByteBuf entry, final WriteCallback cb, Object ctx, byte[] masterKey, boolean volatileDurability)
                 throws IOException, BookieException {
             super.addEntry(entry, new WriteCallback() {
                 @Override

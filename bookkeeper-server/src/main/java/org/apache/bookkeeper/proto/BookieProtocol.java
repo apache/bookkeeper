@@ -175,7 +175,7 @@ public interface BookieProtocol {
     public static final short FLAG_NONE = 0x0;
     public static final short FLAG_DO_FENCING = 0x0001;
     public static final short FLAG_RECOVERY_ADD = 0x0002;
-    public static final short FLAG_NOSYNCH_ADD = 0x0004;
+    public static final short FLAG_VOLATILE_DURABILITY = 0x0004;
 
     static class Request {
 
@@ -253,8 +253,8 @@ public interface BookieProtocol {
             return (flags & FLAG_RECOVERY_ADD) == FLAG_RECOVERY_ADD;
         }
 
-        boolean isNoSynchAdd() {
-            return (flags & FLAG_NOSYNCH_ADD) == FLAG_NOSYNCH_ADD;
+        boolean isVolatileDurabilityAdd() {
+            return (flags & FLAG_VOLATILE_DURABILITY) == FLAG_VOLATILE_DURABILITY;
         }
 
         void release() {

@@ -694,7 +694,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testAddEntryNosynch() throws Exception {
+    public void testAddEntryVolatileDurability() throws Exception {
         int numEntries = 10000;
         byte[] data = "foobar".getBytes();        
         ClientConfiguration confWriter = new ClientConfiguration()

@@ -100,7 +100,7 @@ public class LedgerHandle implements AutoCloseable {
     final RateLimiter throttler;
     final LoadingCache<BookieSocketAddress, Long> bookieFailureHistory;
     final boolean enableParallelRecoveryRead;
-    final boolean relaxDurability;
+    final boolean volatileDurability;
     final int recoveryReadBatchSize;    
 
     /**
@@ -135,7 +135,7 @@ public class LedgerHandle implements AutoCloseable {
             throws GeneralSecurityException, NumberFormatException {
         this.bk = bk;
         this.metadata = metadata;
-        this.relaxDurability = relaxDurability;
+        this.volatileDurability = relaxDurability;
         this.pendingAddOps = new ConcurrentLinkedQueue<PendingAddOp>();
         this.enableParallelRecoveryRead = bk.getConf().getEnableParallelRecoveryRead();
         this.recoveryReadBatchSize = bk.getConf().getRecoveryReadBatchSize();        
@@ -395,7 +395,7 @@ public class LedgerHandle implements AutoCloseable {
      */
     void doAsyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc, final boolean firstCall) {
 
-        if (relaxDurability
+        if (volatileDurability
             && firstCall
             && this.lastAddPushed >= 0
             && this.lastAddPushed != this.lastAddConfirmed) {
@@ -849,8 +849,8 @@ public class LedgerHandle implements AutoCloseable {
         if (throttler != null) {
             throttler.acquire();
         }
-        if (this.relaxDurability) {
-            op.enableNosynch();            
+        if (this.volatileDurability) {
+            op.enableVolatileDurability();
         }
 
         final long entryId;
@@ -1091,7 +1091,8 @@ public class LedgerHandle implements AutoCloseable {
     }
 
     synchronized void syncCompleted(long minLastSyncedEntryId) {
-        LOG.info("syncCompleted {}", minLastSyncedEntryId);
+        LOG.info("syncCompleted minLastSyncedEntryId {} lastAddSynced {} lastAddConfirmed{}", minLastSyncedEntryId,
+            lastAddSynced, lastAddConfirmed);
         if (lastAddSynced < minLastSyncedEntryId) {
             lastAddSynced = minLastSyncedEntryId;
             if (lastAddConfirmed < lastAddSynced) {
@@ -1326,7 +1327,7 @@ public class LedgerHandle implements AutoCloseable {
             Preconditions.checkState(removed == pendingAddOp, "removed unexpected entry %s, expected %s",
                 removed.entryId, pendingAddOp.entryId);
 
-            if (relaxDurability) {
+            if (volatileDurability) {
                 this.lastAddSynced = pendingAddOp.ackSet.calculateCurrentLastAddSynced();
             } else {
                 this.lastAddSynced = Math.max(lastAddSynced, pendingAddOp.entryId);
@@ -1830,11 +1831,11 @@ public class LedgerHandle implements AutoCloseable {
         doAsyncSync(firstEntryIdInEnsembleForEntry, entryId, cb, ctx);
     }
 
-    public void sync(final long entryId) throws InterruptedException, BKException {
+    public long sync(final long entryId) throws InterruptedException, BKException {
         CompletableFuture<Long> counter = new CompletableFuture<>();
         SyncSyncCallback callback = new SyncSyncCallback();
         asyncSync(entryId, callback, counter);
-        SynchCallbackUtils.waitForResult(counter);
+        return SynchCallbackUtils.waitForResult(counter);
     }
 
     /**
@@ -1942,7 +1943,7 @@ public class LedgerHandle implements AutoCloseable {
         @Override
         @SuppressWarnings("unchecked")
         public void syncComplete(int rc, LedgerHandle lh, long lastAddSyncedEntryId, Object ctx) {
-            SynchCallbackUtils.finish(rc, null, (CompletableFuture<Long>)ctx);
+            SynchCallbackUtils.finish(rc, lastAddSyncedEntryId, (CompletableFuture<Long>)ctx);
         }
     }
 

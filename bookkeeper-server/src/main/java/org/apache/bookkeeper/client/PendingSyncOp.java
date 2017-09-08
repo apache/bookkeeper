@@ -102,8 +102,8 @@ class PendingSyncOp implements BookkeeperInternalCallbacks.SyncCallback {
             LOG.warn("Sync did not succeed: Ledger {} on {}", new Object[] { ledgerId, addr });
         }
         
-        if(receivedResponseSet.isEmpty()){
-            completed = true;
+        if (receivedResponseSet.isEmpty()){
+            completed = true;            
             cb.syncComplete(lastSeenError, lh, BookieProtocol.INVALID_ENTRY_ID, this.ctx);
         }
     }

@@ -107,7 +107,7 @@ message ReadRequest {
 message AddRequest {
     enum Flag {
         RECOVERY_ADD = 1;
-        NOSYNCH_ADD = 4;
+        VOLATILE_DURABILITY = 4;
     }
     optional Flag flag = 100;
     required int64 ledgerId = 1;

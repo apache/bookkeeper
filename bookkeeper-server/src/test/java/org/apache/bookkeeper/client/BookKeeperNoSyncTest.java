@@ -44,7 +44,7 @@ public class BookKeeperNoSyncTest extends BookKeeperClusterTestCase {
         this.digestType = DigestType.CRC32;
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testAddEntryNosynch() throws Exception {
         int numEntries = 100;
         byte[] data = "foobar".getBytes();
@@ -72,8 +72,8 @@ public class BookKeeperNoSyncTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout = 60000)
-    public void testPiggyBackLastAddSyncedEntry() throws Exception {
+    @Test
+    public void testPiggyBackLastAddSyncedEntryOnSync() throws Exception {
         int numEntries = 100;
         byte[] data = "foobar".getBytes();
         ClientConfiguration confWriter = new ClientConfiguration()
@@ -87,12 +87,14 @@ public class BookKeeperNoSyncTest extends BookKeeperClusterTestCase {
                 }
                 // LAC must not advance on no-sync writes
                 assertEquals(-1, lh.getLastAddConfirmed());
-                // forcing a sync, LAC will be able to advance at the next addEntry
+                
                 long entryId = lh.addEntry(numEntries - 2, data);
                 assertEquals(numEntries - 2, entryId);
                 assertEquals(entryId, lh.getLastAddPushed());
-                lh.sync(entryId);
-                assertEquals(numEntries - 2, lh.getLastAddConfirmed());
+                // forcing a sync, LAC will be able to advance                
+                long lastAddSynced = lh.sync(entryId);                
+                assertEquals(entryId, lastAddSynced);
+                assertEquals(lh.getLastAddConfirmed(), lastAddSynced);                
                 long lastEntryId = lh.addEntry(numEntries - 1, data);
                 assertEquals(numEntries - 1, lastEntryId);
                 assertEquals(lastEntryId, lh.getLastAddPushed());
@@ -110,7 +112,58 @@ public class BookKeeperNoSyncTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout = 60000)
+     @Test
+    public void testPiggyBackLastAddSyncedEntryOnWriteToSameJournalFromOtherLedger() throws Exception {
+        int numEntries = 100;
+        byte[] data = "foobar".getBytes();
+        ClientConfiguration confWriter = new ClientConfiguration()
+            .setZkServers(zkUtil.getZooKeeperConnectString());
+        long ledgerId;
+        try (BookKeeper bkc = new BookKeeper(confWriter)) {
+            try (LedgerHandle lh = bkc.createLedger(1, 1, 1, digestType, "testPasswd".getBytes(), null,
+                LedgerType.VD_JOURNAL)) {
+                ledgerId = lh.getId();
+                for (int i = 0; i < numEntries - 2; i++) {
+                    lh.addEntry(data);
+                }
+                // LAC must not advance on no-sync writes
+                assertEquals(-1, lh.getLastAddConfirmed());
+
+                long entryId = lh.addEntry(data);
+                assertEquals(numEntries - 2, entryId);
+                assertEquals(entryId, lh.getLastAddPushed());
+
+                // write a sync'd entry, we are using one single journal, it will force an fsync
+                try (LedgerHandle lh2 = bkc.createLedger(1, 1, 1, digestType, "testPasswd".getBytes(), null,
+                     LedgerType.PD_JOURNAL)) {
+                     lh2.addEntry(data);
+                }
+
+                // LAC will be able to advance just be adding an entry, but it won't advance to the lastAddPushed
+                long lastAddSynced1 = lh.getLastAddSynced();
+                assertEquals(-1, lastAddSynced1);
+                LOG.info("THIS TEST IS FAILING. NEED TO IMPLEMENT SYNCCURSOR ON JOURNAL");
+                long entryIdNotYetSynced = lh.addEntry(data);
+                assertEquals(numEntries - 1, entryIdNotYetSynced);
+                long lastAddSynced2 = lh.getLastAddSynced();
+                assertEquals(entryIdNotYetSynced-1, lastAddSynced2);
+                long lastAddConfirmed = lh.getLastAddConfirmed();
+                assertEquals(lastAddConfirmed, lastAddSynced2);
+                long readAddConfirmed = lh.readLastConfirmed();
+                assertEquals(lastAddConfirmed, readAddConfirmed);
+                
+            }
+            try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                Enumeration<LedgerEntry> entries = lh.readEntries(0, numEntries - 1);
+                while (entries.hasMoreElements()) {
+                    LedgerEntry e = entries.nextElement();
+                    assertArrayEquals(data, e.getEntry());
+                }
+            }
+        }
+    }
+
+    @Test
     public void testSync() throws Exception {
         int numEntries = 100;
         byte[] data = "foobar".getBytes();
@@ -148,7 +201,7 @@ public class BookKeeperNoSyncTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testAutoSyncOnClose() throws Exception {
         int numEntries = 100;
         byte[] data = "foobar".getBytes();

@@ -249,10 +249,6 @@ class JournalChannel implements Closeable {
         fc.close();
     }
 
-    public void flushNoSync() throws IOException {
-        bc.flush(false);
-    }
-
     public void forceWrite(boolean forceMetadata) throws IOException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Journal ForceWrite");

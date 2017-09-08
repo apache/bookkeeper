@@ -169,8 +169,8 @@ public class LedgerHandleAdv extends LedgerHandle {
         if (throttler != null) {
             throttler.acquire();
         }
-        if (relaxDurability) {
-            op.enableNosynch();            
+        if (volatileDurability) {
+            op.enableVolatileDurability();            
         }
         final long currentLength;
         boolean wasClosed = false;

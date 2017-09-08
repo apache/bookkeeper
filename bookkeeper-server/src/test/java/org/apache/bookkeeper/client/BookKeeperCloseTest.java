@@ -88,7 +88,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
                 @Override
                 public void addEntry(ByteBuf entry, WriteCallback cb,
-                                     Object ctx, byte[] masterKey, boolean nosync)
+                                     Object ctx, byte[] masterKey, boolean volatileDurability)
                         throws IOException, BookieException {
                     try {
                         Thread.sleep(5000);
@@ -97,7 +97,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
                         // and an exception would spam the logs
                         Thread.currentThread().interrupt();
                     }
-                    super.addEntry(entry, cb, ctx, masterKey, nosync);
+                    super.addEntry(entry, cb, ctx, masterKey, volatileDurability);
                 }
 
                 @Override
