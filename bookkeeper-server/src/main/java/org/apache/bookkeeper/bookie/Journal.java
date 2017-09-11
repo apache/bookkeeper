@@ -51,7 +51,6 @@ import org.apache.bookkeeper.util.DaemonThreadFactory;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.ZeroBuffer;
-import org.apache.bookkeeper.util.collections.EnsureLongIncrementAccumulator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -355,7 +354,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
                     if (e.ledgerId >= 0 && e.entryId >= 0) {
                         handleLastAddSynced(e);
                         if (e.isSyncLedgerMetaEntry()) {
-                            e.lastAddSyncedEntry = lastAddSynched.getOrDefault(e.ledgerId, Long.valueOf(-1));
+                            e.lastAddSyncedEntry = lastAddSynched.computeIfAbsent(e.ledgerId, s->new SyncCursor()).getCurrentMinAddSynced();
                         }
                     }
                     LOG.info("entry "+e.ledgerId+", "+e.entryId+" syncmeta "+e.isSyncLedgerMetaEntry()+" written/sync to journal, e.lastAddSyncedEntry:"+e.lastAddSyncedEntry);
@@ -389,7 +388,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
     private void handleLastAddSynced(QueueEntry e) {
         updateLastAddSynced(e.ledgerId, e.entryId);
         // DEBUG to be dropped
-        Long actualLastAddSynced = lastAddSynched.get(e.ledgerId);
+        Long actualLastAddSynced = lastAddSynched.computeIfAbsent(e.ledgerId, s -> new SyncCursor()).getCurrentMinAddSynced();
         if (e.isSyncLedgerMetaEntry()) {            
             LOG.info("sync - lastAddSynced for {} is {}", e.ledgerId, actualLastAddSynced);
         } else {            
@@ -398,7 +397,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
     }
 
     void updateLastAddSynced(long ledgerId, long entryId) {        
-        lastAddSynched.merge(ledgerId, entryId, EnsureLongIncrementAccumulator.INSTANCE);
+        lastAddSynched.computeIfAbsent(ledgerId, s -> new SyncCursor()).update(entryId);
     }
 
     /**
@@ -549,7 +548,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
     // journal entry queue to commit
     final LinkedBlockingQueue<QueueEntry> queue = new LinkedBlockingQueue<QueueEntry>();
     final LinkedBlockingQueue<ForceWriteRequest> forceWriteRequests = new LinkedBlockingQueue<ForceWriteRequest>();
-    final ConcurrentHashMap<Long, Long> lastAddSynched = new ConcurrentHashMap<>();
+    final ConcurrentHashMap<Long, SyncCursor> lastAddSynched = new ConcurrentHashMap<>();
 
     volatile boolean running = true;
     private final LedgerDirsManager ledgerDirsManager;
@@ -953,7 +952,8 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
 
                             for (QueueEntry ve : toFlush) {
                                 if (ve.volatileDurability) {
-                                    ve.lastAddSyncedEntry = lastAddSynched.getOrDefault(ve.ledgerId, Long.valueOf(-1));
+                                    ve.lastAddSyncedEntry = lastAddSynched
+                                        .computeIfAbsent(ve.ledgerId, s-> new SyncCursor()).getCurrentMinAddSynced();
                                     LOG.info("volatile entry "+ve.ledgerId+" - "+ve.entryId+" flushed"
                                         + " to disk piggy back lastAddSyncedEntry:"+ve.lastAddSyncedEntry);
                                     cbThreadPool.execute(ve);
