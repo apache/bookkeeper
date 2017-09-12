@@ -197,7 +197,7 @@ public class LedgerMetadata {
         return Arrays.copyOf(password, password.length);
     }
 
-    BookKeeper.DigestType getDigestType() {
+    public BookKeeper.DigestType getDigestType() {
         if (digestType.equals(LedgerMetadataFormat.DigestType.HMAC)) {
             return BookKeeper.DigestType.MAC;
         } else {

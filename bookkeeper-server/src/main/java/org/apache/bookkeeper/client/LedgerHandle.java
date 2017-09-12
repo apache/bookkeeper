@@ -33,6 +33,7 @@ import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
@@ -51,6 +52,7 @@ import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.api.WriteHandler;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
@@ -68,7 +70,7 @@ import org.slf4j.LoggerFactory;
  * Ledger handle contains ledger metadata and is used to access the read and
  * write operations to a ledger.
  */
-public class LedgerHandle implements AutoCloseable {
+public class LedgerHandle implements AutoCloseable, WriteHandler {
     final static Logger LOG = LoggerFactory.getLogger(LedgerHandle.class);
 
     final byte[] ledgerKey;
@@ -611,6 +613,57 @@ public class LedgerHandle implements AutoCloseable {
 
         asyncReadEntriesInternal(firstEntry, lastEntry, cb, ctx);
     }
+
+    /**
+     * Read a sequence of entries asynchronously.
+     *
+     * @param firstEntry
+     *          id of first entry of sequence
+     * @param lastEntry
+     *          id of last entry of sequence
+     */
+    @Override
+    public CompletableFuture<Iterable<LedgerEntry>> asyncReadEntries(long firstEntry, long lastEntry) {
+        CompletableFuture<Enumeration<LedgerEntry>> counter = new CompletableFuture<>();
+        asyncReadEntries(firstEntry, lastEntry, new SyncReadCallback(), counter);
+        return counter.thenApply(en->Collections.list(en));
+    }
+
+    @Override
+    /**
+     * Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.
+     * <br>This is the same of
+     * {@link #asyncReadEntries(long, long, org.apache.bookkeeper.client.AsyncCallback.ReadCallback, java.lang.Object) }
+     * but it lets the client read without checking the local value of LastAddConfirmed, so that it is possibile to
+     * read entries for which the writer has not received the acknowledge yet. <br>
+     * For entries which are within the range 0..LastAddConfirmed BookKeeper guarantees that the writer has successfully
+     * received the acknowledge.<br>
+     * For entries outside that range it is possible that the writer never received the acknowledge
+     * and so there is the risk that the reader is seeing entries before the writer and this could result in a consistency
+     * issue in some cases.<br>
+     * With this method you can even read entries before the LastAddConfirmed and entries after it with one call,
+     * the expected consistency will be as described above for each subrange of ids.
+     *
+     * @param firstEntry
+     *          id of first entry of sequence
+     * @param lastEntry
+     *          id of last entry of sequence
+     * @param cb
+     *          object implementing read callback interface
+     * @param ctx
+     *          control object
+     *
+     * @see #asyncReadEntries(long, long, org.apache.bookkeeper.client.AsyncCallback.ReadCallback, java.lang.Object)
+     * @see #asyncReadLastConfirmed(org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback, java.lang.Object)
+     * @see #readUnconfirmedEntries(long, long)
+     */
+    public CompletableFuture<Iterable<LedgerEntry>> asyncReadUnconfirmedEntries(long firstEntry, long lastEntry) {
+        CompletableFuture<Enumeration<LedgerEntry>> counter = new CompletableFuture<>();
+        asyncReadUnconfirmedEntries(firstEntry, lastEntry, new SyncReadCallback(), counter);
+        return counter.thenApply(en->Collections.list(en));
+    }
+
+
 
     void asyncReadEntriesInternal(long firstEntry, long lastEntry, ReadCallback cb, Object ctx) {
         new PendingReadOp(this, bk.scheduler,
