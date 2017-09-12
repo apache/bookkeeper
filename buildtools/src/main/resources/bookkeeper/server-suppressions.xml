@@ -36,7 +36,6 @@
     <suppress checks=".*" files=".*[\\/]streaming[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]tools[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]util[\\/].*"/>
-    <suppress checks=".*" files=".*[\\/]versioning[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]zookeeper[\\/].*"/>
 
     <!-- suppress all checks in the generated directories -->
