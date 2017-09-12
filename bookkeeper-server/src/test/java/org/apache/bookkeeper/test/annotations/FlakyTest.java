@@ -25,6 +25,13 @@ import java.lang.annotation.RetentionPolicy;
  * Intended for marking a test case as flaky.
  */
 @Documented
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.SOURCE)
 public @interface FlakyTest {
+
+    /**
+     * Context information such as links to discussion thread, tracking issues etc.
+     *
+     * @return context information about this flaky test.
+     */
+    String value();
 }

@@ -445,8 +445,6 @@ public class GarbageCollectorThread extends SafeRunnable {
 
         for (EntryLogMetadata meta : logsToCompact) {
             if (meta.getUsage() >= threshold) {
-                LOG.info("Skip compacting entry log {} : usage = {}, threshold = {}",
-                    new Object[] { meta.getEntryLogId(), meta.getUsage(), threshold });
                 break;
             }
 
