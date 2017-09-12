@@ -24,6 +24,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.slf4j.Logger;
@@ -258,6 +259,61 @@ public class OrderedSafeExecutor extends org.apache.bookkeeper.common.util.Order
                             return String.format("Callback(key=%s, name=%s)",
                                                  orderingKey,
                                                  OrderedSafeGenericCallback.this);
+                        }
+                    });
+                } catch (RejectedExecutionException re) {
+                    LOG.warn("Failed to submit callback for {} : ", orderingKey, re);
+                }
+            }
+        }
+
+        public abstract void safeOperationComplete(int rc, T result);
+    }
+
+    public static abstract class DeferredOrderOrderedSafeGenericCallback<T>
+            implements GenericCallback<T> {
+        private static final Logger LOG = LoggerFactory.getLogger(OrderedSafeGenericCallback.class);
+
+        private final OrderedSafeExecutor executor;
+        private long orderingKey =  Long.MIN_VALUE;
+
+        /**
+         * @param executor The executor on which to run the callback
+         * @param orderingKey Key used to decide which thread the callback
+         *                    should run on.
+         */
+        public DeferredOrderOrderedSafeGenericCallback(OrderedSafeExecutor executor) {
+            this.executor = executor;
+        }
+
+        public void setOrderingKey(long orderingKey) {
+            this.orderingKey = orderingKey;
+        }
+
+        @Override
+        public final void operationComplete(final int rc, final T result) {
+            if (orderingKey == Long.MIN_VALUE) {
+                 safeOperationComplete(BKException.Code.IllegalOpException, result);
+                 return;
+            }
+            // during closing, callbacks that are error out might try to submit to
+            // the scheduler again. if the submission will go to same thread, we
+            // don't need to submit to executor again. this is also an optimization for
+            // callback submission
+            if (Thread.currentThread().getId() == executor.getThreadID(orderingKey)) {
+                safeOperationComplete(rc, result);
+            } else {
+                try {
+                    executor.submitOrdered(orderingKey, new SafeRunnable() {
+                        @Override
+                        public void safeRun() {
+                            safeOperationComplete(rc, result);
+                        }
+                        @Override
+                        public String toString() {
+                            return String.format("Callback(key=%s, name=%s)",
+                                                 orderingKey,
+                                                 DeferredOrderOrderedSafeGenericCallback.this);
                         }
                     });
                 } catch (RejectedExecutionException re) {

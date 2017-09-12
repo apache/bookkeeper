@@ -37,13 +37,14 @@ import org.slf4j.LoggerFactory;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import org.apache.bookkeeper.client.api.WriteAdvHandler;
 
 /**
  * Ledger Advanced handle extends {@link LedgerHandle} to provide API to add entries with
  * user supplied entryIds. Through this interface Ledger Length may not be accurate while the
  * ledger being written.
  */
-public class LedgerHandleAdv extends LedgerHandle {
+public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandler {
     final static Logger LOG = LoggerFactory.getLogger(LedgerHandleAdv.class);
 
     static class PendingOpsComparator implements Comparator<PendingAddOp>, Serializable {
@@ -156,6 +157,18 @@ public class LedgerHandleAdv extends LedgerHandle {
             return;
         }
         doAsyncAddEntry(op, Unpooled.wrappedBuffer(data, offset, length), cb, ctx);
+    }
+
+    public void asyncAddEntry(final long entryId, final ByteBuf data, final AddCallback cb, final Object ctx) {
+        PendingAddOp op = new PendingAddOp(this, cb, ctx);
+        op.setEntryId(entryId);
+        if ((entryId <= this.lastAddConfirmed) || pendingAddOps.contains(op)) {
+            LOG.error("Trying to re-add duplicate entryid:{}", entryId);
+            cb.addComplete(BKException.Code.DuplicateEntryIdException,
+                    LedgerHandleAdv.this, entryId, ctx);
+            return;
+        }
+        doAsyncAddEntry(op, data, cb, ctx);
     }
 
     /**

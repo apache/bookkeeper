@@ -24,10 +24,14 @@ package org.apache.bookkeeper.client;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.security.GeneralSecurityException;
+import java.util.concurrent.CompletableFuture;
 
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.BookKeeper.SyncOpenCallback;
+import org.apache.bookkeeper.client.api.OpenBuilder;
+import org.apache.bookkeeper.client.api.ReadHandler;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
@@ -39,21 +43,21 @@ import org.slf4j.LoggerFactory;
  * Encapsulates the ledger open operation
  *
  */
-class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
+class LedgerOpenOp implements GenericCallback<LedgerMetadata>, OpenBuilder {
     static final Logger LOG = LoggerFactory.getLogger(LedgerOpenOp.class);
 
     final BookKeeper bk;
-    final long ledgerId;
-    final OpenCallback cb;
-    final Object ctx;
+    long ledgerId;
+    OpenCallback cb;
+    Object ctx;
     LedgerHandle lh;
-    final byte[] passwd;
+    byte[] passwd;
     boolean doRecovery = true;
     boolean administrativeOpen = false;
     long startTime;
     OpStatsLogger openOpLogger;
     
-    final DigestType suggestedDigestType;
+    DigestType suggestedDigestType;
     final boolean enableDigestAutodetection;
 
     /**
@@ -211,4 +215,53 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
         }
         cb.openComplete(rc, lh, ctx);
     }
+
+    @Override
+    public OpenBuilder withRecovery(boolean recovery) {
+        this.doRecovery = recovery;
+        return this;
+    }
+
+    @Override
+    public OpenBuilder withPassword(byte[] password) {
+        this.passwd = password;
+        return this;
+    }
+
+    @Override
+    public OpenBuilder withDigestType(DigestType digestType) {
+        this.suggestedDigestType = digestType;
+        return this;
+    }
+
+    @Override
+    public CompletableFuture<ReadHandler> execute(long ledgerId) {
+         CompletableFuture<ReadHandler> counter = new CompletableFuture<>();
+         open(ledgerId, new SyncOpenCallback(), counter);
+         return counter;
+    }
+
+    @Override
+    public void open(long ledgerId, OpenCallback cb, Object ctx) {
+        this.cb = cb;
+        this.ctx = ctx;
+        this.ledgerId = ledgerId;
+
+        bk.closeLock.readLock().lock();
+        try {
+            if (bk.closed) {
+                cb.openComplete(BKException.Code.ClientClosedException, null, ctx);
+                return;
+            }
+            initiate();
+        } finally {
+            bk.closeLock.readLock().unlock();
+        }
+    }
+
+    @Override
+    public ReadHandler open(long ledgerId) throws BKException, InterruptedException {
+         return SynchCallbackUtils.waitForResult(execute(ledgerId));
+    }
+
 }

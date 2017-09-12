@@ -21,12 +21,15 @@
 
 package org.apache.bookkeeper.client;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
+import org.apache.bookkeeper.client.api.DeleteBuilder;
+import org.apache.bookkeeper.client.api.ReadHandler;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
-import org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallback;
+import org.apache.bookkeeper.util.OrderedSafeExecutor.DeferredOrderOrderedSafeGenericCallback;
 import org.apache.bookkeeper.versioning.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +38,7 @@ import org.slf4j.LoggerFactory;
  * Encapsulates asynchronous ledger delete operation
  *
  */
-class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
+class LedgerDeleteOp extends DeferredOrderOrderedSafeGenericCallback<Void> implements DeleteBuilder {
 
     static final Logger LOG = LoggerFactory.getLogger(LedgerDeleteOp.class);
 
@@ -59,12 +62,19 @@ class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
      *            optional control object
      */
     LedgerDeleteOp(BookKeeper bk, long ledgerId, DeleteCallback cb, Object ctx) {
-        super(bk.mainWorkerPool, ledgerId);
+        super(bk.mainWorkerPool);
+        setOrderingKey(this.ledgerId);
         this.bk = bk;
         this.ledgerId = ledgerId;
         this.cb = cb;
         this.ctx = ctx;
         this.startTime = MathUtils.nowInNano();
+        this.deleteOpLogger = bk.getDeleteOpLogger();
+    }
+
+    LedgerDeleteOp(BookKeeper bk) {
+        super(bk.mainWorkerPool);
+        this.bk = bk;
         this.deleteOpLogger = bk.getDeleteOpLogger();
     }
 
@@ -94,4 +104,41 @@ class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
     public String toString() {
         return String.format("LedgerDeleteOp(%d)", ledgerId);
     }
+
+    @Override
+    public CompletableFuture<?> execute(long ledgerId) {
+        CompletableFuture<Void> counter = new CompletableFuture<>();
+        delete(ledgerId, new BookKeeper.SyncDeleteCallback(), counter);
+        return counter;
+    }
+
+    @Override
+    public void delete(long ledgerId, AsyncCallback.DeleteCallback cb, Object ctx) {
+        bk.closeLock.readLock().lock();
+        try {
+            if (bk.closed) {
+                cb.deleteComplete(BKException.Code.ClientClosedException, ctx);
+                return;
+            }
+            this.cb = cb;
+            this.ctx = ctx;
+            this.ledgerId = ledgerId;
+            setOrderingKey(ledgerId);
+            this.startTime = MathUtils.nowInNano();
+
+            this.initiate();
+        } finally {
+            bk.closeLock.readLock().unlock();
+        }
+    }
+
+    @Override
+    public void delete(long ledgerId) throws BKException, InterruptedException {
+        CompletableFuture<Void> counter = new CompletableFuture<>();
+        delete(ledgerId, new BookKeeper.SyncDeleteCallback(), counter);
+
+        SynchCallbackUtils.waitForResult(counter);
+    }
+
+
 }

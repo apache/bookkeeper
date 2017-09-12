@@ -43,6 +43,13 @@ import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.IsClosedCallback;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
+import org.apache.bookkeeper.client.api.CreateAdvBuilder;
+import org.apache.bookkeeper.client.api.CreateBuilder;
+import org.apache.bookkeeper.client.api.DeleteBuilder;
+import org.apache.bookkeeper.client.api.OpenBuilder;
+import org.apache.bookkeeper.client.api.ReadHandler;
+import org.apache.bookkeeper.client.api.WriteAdvHandler;
+import org.apache.bookkeeper.client.api.WriteHandler;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.FeatureProvider;
@@ -82,7 +89,7 @@ import org.slf4j.LoggerFactory;
  * <p>The exceptions resulting from synchronous calls and error code resulting from
  * asynchronous calls can be found in the class {@link BKException}.
  */
-public class BookKeeper implements AutoCloseable {
+public class BookKeeper implements AutoCloseable, org.apache.bookkeeper.client.api.BookKeeper {
 
     static final Logger LOG = LoggerFactory.getLogger(BookKeeper.class);
 
@@ -1320,7 +1327,7 @@ public class BookKeeper implements AutoCloseable {
         }
     }
 
-    private static class SyncCreateCallback implements CreateCallback {
+    static class SyncCreateCallback implements CreateCallback {
         /**
          * Create callback implementation for synchronous create call.
          *
@@ -1356,7 +1363,7 @@ public class BookKeeper implements AutoCloseable {
         }
     }
 
-    private static class SyncDeleteCallback implements DeleteCallback {
+    static class SyncDeleteCallback implements DeleteCallback {
         /**
          * Delete callback implementation for synchronous delete call.
          *
@@ -1415,4 +1422,23 @@ public class BookKeeper implements AutoCloseable {
             return new NioEventLoopGroup(numThreads, threadFactory);
         }
     }
+
+    private static final byte[] EMPTY_PASSWORD = new byte[0];
+
+    @Override
+    public CreateBuilder createLedger() {
+        return new LedgerCreateOp(this);
+    }
+
+    @Override
+    public OpenBuilder openLedger() {
+        return new LedgerOpenOp(this, -1, DigestType.CRC32, EMPTY_PASSWORD, null, null);
+    }
+
+    @Override
+    public DeleteBuilder deleteLedger() {
+        return new LedgerDeleteOp(this);
+    }
+
+
 }
