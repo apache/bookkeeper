@@ -22,32 +22,31 @@ package org.apache.bookkeeper.http;
 
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import com.google.common.base.Preconditions;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.http.service.Service;
-import org.apache.bookkeeper.http.service.ServiceRequest;
-import org.apache.bookkeeper.http.service.ServiceResponse;
+import org.apache.bookkeeper.http.service.HttpService;
+import org.apache.bookkeeper.http.service.HttpServiceRequest;
+import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.util.JsonUtil;
 
 /**
- * Service that handle Bookkeeper Configuration related http request.
+ * HttpService that handle Bookkeeper Configuration related http request.
  */
-public class ConfigurationService implements Service {
+public class HttpConfigurationService implements HttpService {
 
     protected ServerConfiguration conf;
 
-    public ConfigurationService(ServerConfiguration conf) {
+    public HttpConfigurationService(ServerConfiguration conf) {
         Preconditions.checkNotNull(conf);
         this.conf = conf;
     }
 
     @Override
-    public ServiceResponse handle(ServiceRequest request) throws Exception {
-        ServiceResponse response = new ServiceResponse();
+    public HttpServiceResponse handle(HttpServiceRequest request) throws Exception {
+        HttpServiceResponse response = new HttpServiceResponse();
         Map<String, Object> configMap = toMap(conf);
         String jsonResponse = JsonUtil.toJson(configMap);
         response.setBody(jsonResponse);

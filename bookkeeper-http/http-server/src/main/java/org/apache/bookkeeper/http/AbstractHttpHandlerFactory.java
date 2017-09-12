@@ -18,40 +18,31 @@
  * under the License.
  *
  */
-package org.apache.bookkeeper.http.service;
-
-import org.apache.bookkeeper.http.HttpServer;
+package org.apache.bookkeeper.http;
 
 /**
- * A wrapper class that wrap the result from service, which
- * can then be parsed into http response.
+ * Abstract handler factory which provide interface
+ * to create handlers for bookkeeper http endpoints.
  */
-public class ServiceResponse {
-    private String body;
-    private HttpServer.StatusCode code = HttpServer.StatusCode.OK;
+public abstract class AbstractHttpHandlerFactory<Handler> {
+    private HttpServiceProvider httpServiceProvider;
 
-    public ServiceResponse() {}
-
-    public ServiceResponse(String body, HttpServer.StatusCode code) {
-        this.body = body;
-        this.code = code;
+    public AbstractHttpHandlerFactory(HttpServiceProvider httpServiceProvider) {
+        this.httpServiceProvider = httpServiceProvider;
     }
 
-    public String getBody() {
-        return body;
+    public HttpServiceProvider getHttpServiceProvider() {
+        return httpServiceProvider;
     }
 
-    public int getStatusCode() {
-        return code.getValue();
-    }
+    /**
+     * Create a handler for heartbeat api.
+     */
+    public abstract Handler newHeartbeatHandler();
 
-    public ServiceResponse setBody(String body) {
-        this.body = body;
-        return this;
-    }
+    /**
+     * Create a handler for server configuration api.
+     */
+    public abstract Handler newConfigurationHandler();
 
-    public ServiceResponse setCode(HttpServer.StatusCode code) {
-        this.code = code;
-        return this;
-    }
 }

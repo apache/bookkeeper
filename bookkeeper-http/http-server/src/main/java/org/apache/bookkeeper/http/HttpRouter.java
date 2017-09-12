@@ -31,11 +31,11 @@ public abstract class HttpRouter<Handler> {
 
   // Define endpoints here.
   public static final String HEARTBEAT                    = "/heartbeat";
-  public static final String SERVER_CONFIG                = "/api/config/serverConfig";
+  public static final String SERVER_CONFIG                = "/api/v1/config/server_config";
 
   private final Map<String, Handler> endpointHandlers = new HashMap<>();
 
-  public HttpRouter(AbstractHandlerFactory<Handler> handlerFactory) {
+  public HttpRouter(AbstractHttpHandlerFactory<Handler> handlerFactory) {
     this.endpointHandlers.put(HEARTBEAT, handlerFactory.newHeartbeatHandler());
     this.endpointHandlers.put(SERVER_CONFIG, handlerFactory.newConfigurationHandler());
   }

@@ -33,7 +33,7 @@ import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.bookie.ReadOnlyBookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.http.BKServiceProvider;
+import org.apache.bookkeeper.http.BKHttpServiceProvider;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.HttpServerLoader;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -139,7 +139,7 @@ public class BookieServer {
             this.autoRecoveryMain.start();
         }
         if (conf.isHttpServerEnabled()) {
-            BKServiceProvider serviceProvider = new BKServiceProvider.Builder()
+            BKHttpServiceProvider serviceProvider = new BKHttpServiceProvider.Builder()
                 .setBookieServer(this)
                 .setServerConfiguration(conf)
                 .build();

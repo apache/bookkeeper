@@ -22,8 +22,8 @@ package org.apache.bookkeeper.http;
 
 import java.util.Map;
 
-import org.apache.bookkeeper.http.service.Service;
-import org.apache.bookkeeper.http.service.ServiceResponse;
+import org.apache.bookkeeper.http.service.HttpService;
+import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.JsonUtil;
 import org.junit.Test;
@@ -32,11 +32,11 @@ import static org.junit.Assert.assertEquals;
 
 public class TestHttpService extends BookKeeperClusterTestCase {
 
-    private BKServiceProvider serviceProvider;
+    private BKHttpServiceProvider bkHttpServiceProvider;
 
     public TestHttpService() {
         super(0);
-        this.serviceProvider = new BKServiceProvider.Builder()
+        this.bkHttpServiceProvider = new BKHttpServiceProvider.Builder()
             .setServerConfiguration(baseConf)
             .build();
     }
@@ -44,8 +44,8 @@ public class TestHttpService extends BookKeeperClusterTestCase {
     @Test
     public void testHeartbeatService() throws Exception {
         // test heartbeat service
-        Service heartbeatService = serviceProvider.provideHeartbeatService();
-        ServiceResponse response = heartbeatService.handle(null);
+        HttpService heartbeatService = bkHttpServiceProvider.provideHeartbeatService();
+        HttpServiceResponse response = heartbeatService.handle(null);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response.getStatusCode());
         assertEquals("OK\n", response.getBody());
     }
@@ -56,8 +56,8 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         String testProperty = "TEST_PROPERTY";
         String testValue = "TEST_VALUE";
         baseConf.setProperty(testProperty, testValue);
-        Service configService = serviceProvider.provideConfigurationService();
-        ServiceResponse response = configService.handle(null);
+        HttpService configService = bkHttpServiceProvider.provideConfigurationService();
+        HttpServiceResponse response = configService.handle(null);
         Map configMap = JsonUtil.fromJson(
             response.getBody(),
             Map.class

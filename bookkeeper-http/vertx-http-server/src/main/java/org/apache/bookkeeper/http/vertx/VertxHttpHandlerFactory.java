@@ -23,17 +23,17 @@ package org.apache.bookkeeper.http.vertx;
 
 import io.vertx.ext.web.RoutingContext;
 
-import org.apache.bookkeeper.http.AbstractHandlerFactory;
-import org.apache.bookkeeper.http.ServiceProvider;
+import org.apache.bookkeeper.http.AbstractHttpHandlerFactory;
+import org.apache.bookkeeper.http.HttpServiceProvider;
 
 /**
  * Factory which provide http handlers for Vertx based Http Server.
  */
-public class VertxHandlerFactory extends AbstractHandlerFactory<VertxAbstractHandler> {
+public class VertxHttpHandlerFactory extends AbstractHttpHandlerFactory<VertxAbstractHandler> {
 
 
-    public VertxHandlerFactory(ServiceProvider serviceProvider) {
-        super(serviceProvider);
+    public VertxHttpHandlerFactory(HttpServiceProvider httpServiceProvider) {
+        super(httpServiceProvider);
     }
 
     @Override
@@ -41,7 +41,7 @@ public class VertxHandlerFactory extends AbstractHandlerFactory<VertxAbstractHan
         return new VertxAbstractHandler() {
             @Override
             public void handle(RoutingContext context) {
-                processRequest(getServiceProvider().provideHeartbeatService(), context);
+                processRequest(getHttpServiceProvider().provideHeartbeatService(), context);
             }
         };
     }
@@ -51,7 +51,7 @@ public class VertxHandlerFactory extends AbstractHandlerFactory<VertxAbstractHan
         return new VertxAbstractHandler() {
             @Override
             public void handle(RoutingContext context) {
-                processRequest(getServiceProvider().provideConfigurationService(), context);
+                processRequest(getHttpServiceProvider().provideConfigurationService(), context);
             }
         };
     }

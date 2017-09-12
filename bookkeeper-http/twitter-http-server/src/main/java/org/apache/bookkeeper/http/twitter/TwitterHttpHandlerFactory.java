@@ -24,18 +24,18 @@ import com.twitter.finagle.http.Request;
 import com.twitter.finagle.http.Response;
 import com.twitter.util.Future;
 
-import org.apache.bookkeeper.http.AbstractHandlerFactory;
-import org.apache.bookkeeper.http.ServiceProvider;
+import org.apache.bookkeeper.http.AbstractHttpHandlerFactory;
+import org.apache.bookkeeper.http.HttpServiceProvider;
 
 
 
 /**
  * Factory which provide http handlers for TwitterServer based Http Server.
  */
-public class TwitterHandlerFactory extends AbstractHandlerFactory<TwitterAbstractHandler> {
+public class TwitterHttpHandlerFactory extends AbstractHttpHandlerFactory<TwitterAbstractHandler> {
 
-    public TwitterHandlerFactory(ServiceProvider serviceProvider) {
-        super(serviceProvider);
+    public TwitterHttpHandlerFactory(HttpServiceProvider httpServiceProvider) {
+        super(httpServiceProvider);
     }
 
     @Override
@@ -43,7 +43,7 @@ public class TwitterHandlerFactory extends AbstractHandlerFactory<TwitterAbstrac
         return new TwitterAbstractHandler() {
             @Override
             public Future<Response> apply(Request request) {
-                return processRequest(getServiceProvider().provideHeartbeatService(), request);
+                return processRequest(getHttpServiceProvider().provideHeartbeatService(), request);
             }
         };
     }
@@ -52,7 +52,7 @@ public class TwitterHandlerFactory extends AbstractHandlerFactory<TwitterAbstrac
         return new TwitterAbstractHandler() {
             @Override
             public Future<Response> apply(Request request) {
-                return processRequest(getServiceProvider().provideConfigurationService(), request);
+                return processRequest(getHttpServiceProvider().provideConfigurationService(), request);
             }
         };
     }

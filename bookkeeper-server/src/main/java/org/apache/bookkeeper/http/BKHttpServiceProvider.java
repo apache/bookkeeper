@@ -22,44 +22,44 @@ package org.apache.bookkeeper.http;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.http.service.ErrorService;
+import org.apache.bookkeeper.http.service.ErrorHttpService;
 import org.apache.bookkeeper.http.service.HeartbeatService;
-import org.apache.bookkeeper.http.service.Service;
+import org.apache.bookkeeper.http.service.HttpService;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
 
 /**
- * Bookkeeper based implementation of ServiceProvider,
+ * Bookkeeper based implementation of HttpServiceProvider,
  * which provide bookkeeper services to handle http requests
  * from different http endpoints.
  */
-public class BKServiceProvider implements ServiceProvider {
+public class BKHttpServiceProvider implements HttpServiceProvider {
 
     private final BookieServer bookieServer;
     private final AutoRecoveryMain autoRecovery;
     private final ServerConfiguration serverConf;
 
-    private BKServiceProvider(BookieServer bookieServer,
-                             AutoRecoveryMain autoRecovery,
-                             ServerConfiguration serverConf) {
+    private BKHttpServiceProvider(BookieServer bookieServer,
+                                  AutoRecoveryMain autoRecovery,
+                                  ServerConfiguration serverConf) {
         this.bookieServer = bookieServer;
         this.autoRecovery = autoRecovery;
         this.serverConf = serverConf;
     }
 
     @Override
-    public Service provideHeartbeatService() {
+    public HttpService provideHeartbeatService() {
         return new HeartbeatService();
     }
 
     @Override
-    public Service provideConfigurationService() {
+    public HttpService provideConfigurationService() {
         ServerConfiguration configuration = getServerConf();
         if (configuration == null) {
-            return new ErrorService();
+            return new ErrorHttpService();
         }
-        return new ConfigurationService(configuration);
+        return new HttpConfigurationService(configuration);
     }
 
     private ServerConfiguration getServerConf() {
@@ -75,7 +75,7 @@ public class BKServiceProvider implements ServiceProvider {
     }
 
     /**
-     * Builder for ServiceProvider.
+     * Builder for HttpServiceProvider.
      */
     public static class Builder {
 
@@ -98,8 +98,8 @@ public class BKServiceProvider implements ServiceProvider {
             return this;
         }
 
-        public BKServiceProvider build() {
-            return new BKServiceProvider(
+        public BKHttpServiceProvider build() {
+            return new BKHttpServiceProvider(
                 bookieServer,
                 autoRecovery,
                 serverConf

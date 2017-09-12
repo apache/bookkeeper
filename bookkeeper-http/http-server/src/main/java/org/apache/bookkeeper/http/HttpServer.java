@@ -60,7 +60,7 @@ public interface HttpServer {
     /**
      * Initialize the HTTP server with underline service provider.
      */
-    void initialize(ServiceProvider serviceProvider);
+    void initialize(HttpServiceProvider httpServiceProvider);
 
     /**
      * Start the HTTP server on given port.

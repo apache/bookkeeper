@@ -31,7 +31,7 @@ import java.net.InetSocketAddress;
 
 import org.apache.bookkeeper.http.HttpRouter;
 import org.apache.bookkeeper.http.HttpServer;
-import org.apache.bookkeeper.http.ServiceProvider;
+import org.apache.bookkeeper.http.HttpServiceProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,11 +45,11 @@ public class TwitterHttpServer extends AbstractTwitterServer implements HttpServ
     private ListeningServer server;
     private boolean isRunning;
     private int port;
-    private ServiceProvider serviceProvider;
+    private HttpServiceProvider httpServiceProvider;
 
     @Override
-    public void initialize(ServiceProvider serviceProvider) {
-        this.serviceProvider = serviceProvider;
+    public void initialize(HttpServiceProvider httpServiceProvider) {
+        this.httpServiceProvider = httpServiceProvider;
     }
 
     @Override
@@ -82,7 +82,7 @@ public class TwitterHttpServer extends AbstractTwitterServer implements HttpServ
     @Override
     public void main() throws Throwable {
         LOG.info("Starting Twitter HTTP server on port {}", port);
-        TwitterHandlerFactory handlerFactory = new TwitterHandlerFactory(serviceProvider);
+        TwitterHttpHandlerFactory handlerFactory = new TwitterHttpHandlerFactory(httpServiceProvider);
         HttpRouter<TwitterAbstractHandler> requestRouter = new HttpRouter<TwitterAbstractHandler>(handlerFactory) {
             @Override
             public void bindHandler(String endpoint, TwitterAbstractHandler handler) {

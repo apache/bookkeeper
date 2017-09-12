@@ -31,7 +31,7 @@ import java.util.concurrent.ExecutionException;
 
 import org.apache.bookkeeper.http.HttpRouter;
 import org.apache.bookkeeper.http.HttpServer;
-import org.apache.bookkeeper.http.ServiceProvider;
+import org.apache.bookkeeper.http.HttpServiceProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,21 +44,21 @@ public class VertxHttpServer implements HttpServer {
 
     private Vertx vertx;
     private boolean isRunning;
-    private ServiceProvider serviceProvider;
+    private HttpServiceProvider httpServiceProvider;
 
     public VertxHttpServer() {
         this.vertx = Vertx.vertx();
     }
 
     @Override
-    public void initialize(ServiceProvider serviceProvider) {
-        this.serviceProvider = serviceProvider;
+    public void initialize(HttpServiceProvider httpServiceProvider) {
+        this.httpServiceProvider = httpServiceProvider;
     }
 
     @Override
     public boolean startServer(int port) {
         CompletableFuture<AsyncResult> future = new CompletableFuture<>();
-        VertxHandlerFactory handlerFactory = new VertxHandlerFactory(serviceProvider);
+        VertxHttpHandlerFactory handlerFactory = new VertxHttpHandlerFactory(httpServiceProvider);
         Router router = Router.router(vertx);
         HttpRouter<VertxAbstractHandler> requestRouter = new HttpRouter<VertxAbstractHandler>(handlerFactory) {
             @Override

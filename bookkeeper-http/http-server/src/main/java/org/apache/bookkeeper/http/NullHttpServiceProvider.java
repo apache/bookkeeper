@@ -18,14 +18,32 @@
  * under the License.
  *
  */
-package org.apache.bookkeeper.http.service;
+package org.apache.bookkeeper.http;
+
+import org.apache.bookkeeper.http.service.HeartbeatService;
+import org.apache.bookkeeper.http.service.HttpService;
+import org.apache.bookkeeper.http.service.NullHttpService;
 
 /**
- * Service that return empty content.
+ * HttpService provider which provide service that do nothing.
  */
-public class NullService implements Service {
+public class NullHttpServiceProvider implements HttpServiceProvider {
+
+    private static final NullHttpServiceProvider NULL_HTTP_SERVICE_PROVIDER = new NullHttpServiceProvider();
+
+    static final HttpService NULL_HTTP_SERVICE = new NullHttpService();
+
     @Override
-    public ServiceResponse handle(ServiceRequest request) {
-        return new ServiceResponse();
+    public HttpService provideHeartbeatService() {
+        return new HeartbeatService();
+    }
+
+    @Override
+    public HttpService provideConfigurationService() {
+        return NULL_HTTP_SERVICE;
+    }
+
+    public static NullHttpServiceProvider getInstance() {
+        return NULL_HTTP_SERVICE_PROVIDER;
     }
 }

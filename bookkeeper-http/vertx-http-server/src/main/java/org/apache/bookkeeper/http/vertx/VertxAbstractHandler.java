@@ -30,10 +30,10 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.bookkeeper.http.HttpServer;
-import org.apache.bookkeeper.http.service.ErrorService;
-import org.apache.bookkeeper.http.service.Service;
-import org.apache.bookkeeper.http.service.ServiceRequest;
-import org.apache.bookkeeper.http.service.ServiceResponse;
+import org.apache.bookkeeper.http.service.ErrorHttpService;
+import org.apache.bookkeeper.http.service.HttpService;
+import org.apache.bookkeeper.http.service.HttpServiceRequest;
+import org.apache.bookkeeper.http.service.HttpServiceResponse;
 
 /**
  * Http Handler for Vertx based Http Server.
@@ -41,20 +41,20 @@ import org.apache.bookkeeper.http.service.ServiceResponse;
 public abstract class VertxAbstractHandler implements Handler<RoutingContext> {
 
     /**
-     * Process the request using the given service.
+     * Process the request using the given httpService.
      */
-    void processRequest(Service service, RoutingContext context) {
+    void processRequest(HttpService httpService, RoutingContext context) {
         HttpServerRequest httpRequest = context.request();
         HttpServerResponse httpResponse = context.response();
-        ServiceRequest request = new ServiceRequest()
+        HttpServiceRequest request = new HttpServiceRequest()
             .setMethod(convertMethod(httpRequest))
             .setParams(convertParams(httpRequest))
             .setBody(context.getBodyAsString());
-        ServiceResponse response = null;
+        HttpServiceResponse response = null;
         try {
-            response = service.handle(request);
+            response = httpService.handle(request);
         } catch (Exception e) {
-            response = new ErrorService().handle(request);
+            response = new ErrorHttpService().handle(request);
         }
         httpResponse.setStatusCode(response.getStatusCode());
         httpResponse.end(response.getBody());
