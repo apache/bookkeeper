@@ -116,6 +116,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     // Replication parameters
     protected static final String AUDITOR_PERIODIC_CHECK_INTERVAL = "auditorPeriodicCheckInterval";
     protected static final String AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL = "auditorPeriodicBookieCheckInterval";
+    protected final static String AUDITOR_LEDGER_VERIFICATION_PERCENTAGE = "auditorLedgerVerificationPercentage";
     protected static final String AUTO_RECOVERY_DAEMON_ENABLED = "autoRecoveryDaemonEnabled";
     protected static final String LOST_BOOKIE_RECOVERY_DELAY = "lostBookieRecoveryDelay";
     protected static final String RW_REREPLICATE_BACKOFF_MS = "rwRereplicateBackoffMs";
@@ -1802,6 +1803,24 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public long getAuditorPeriodicBookieCheckInterval() {
         return getLong(AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL, 86400);
+    }
+
+    /**
+     * Set what percentage of a ledger (fragment)'s entries will be verified
+     *
+     * @param auditorLedgerVerificationPercentage The verification proportion as a percentage
+     */
+    public void setAuditorLedgerVerificationPercentage(long auditorLedgerVerificationPercentage) {
+        setProperty(AUDITOR_LEDGER_VERIFICATION_PERCENTAGE, auditorLedgerVerificationPercentage);
+    }
+
+    /**
+     * Get what percentage of a ledger (fragment)'s entries will be verified
+     * @see #setAuditorLedgerVerificationPercentage(long)
+     * @return percentage of a ledger (fragment)'s entries will be verifie. Default is 100%
+     */
+    public long getAuditorLedgerVerificationPercentage() {
+        return getLong(AUDITOR_LEDGER_VERIFICATION_PERCENTAGE, 100);
     }
 
     /**

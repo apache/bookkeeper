@@ -500,7 +500,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
             throws InterruptedException {
         LedgerChecker checker = new LedgerChecker(bkc);
         CheckerCallback cb = new CheckerCallback();
-        checker.checkLedger(lh, cb);
+        checker.checkLedger(lh, cb, (long) 100.0);
         Set<LedgerFragment> result = cb.waitAndGetResult();
         return result;
     }
