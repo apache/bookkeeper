@@ -45,4 +45,110 @@ public abstract class AbstractHttpHandlerFactory<Handler> {
      */
     public abstract Handler newConfigurationHandler();
 
+    //
+    // bookkeeper
+    //
+
+    /**
+     * Create a handler for list bookies api.
+     */
+    public abstract Handler newListBookiesHandler();
+
+    /**
+     * Create a handler for update cookie api.
+     */
+    public abstract Handler newUpdataCookieHandler();
+
+    //
+    // ledger
+    //
+
+    /**
+     * Create a handler for delete ledger api.
+     */
+    public abstract Handler newDeleteLedgerHandler();
+
+    /**
+     * Create a handler for list ledger api.
+     */
+    public abstract Handler newListLedgerHandler();
+
+    /**
+     * Create a handler for delete ledger api.
+     */
+    public abstract Handler newGetLedgerMetaHandler();
+
+    /**
+     * Create a handler for read ledger entries api.
+     */
+    public abstract Handler newReadLedgerEntryHandler();
+
+    //
+    // bookie
+    //
+
+    /**
+     * Create a handler for list bookie disk usage api.
+     */
+    public abstract Handler newListBookieInfoHandler();
+
+    /**
+     * Create a handler for get last log mark api.
+     */
+    public abstract Handler newGetLastLogMarkHandler();
+
+    /**
+     * Create a handler for list bookie disk files api.
+     */
+    public abstract Handler newListDiskFileHandler();
+
+    /**
+     * Create a handler for read entry log api.
+     */
+    public abstract Handler newReadEntryLogHandler();
+
+    /**
+     * Create a handler for read journal file api.
+     */
+    public abstract Handler newReadJournalFileHandler();
+
+    /**
+     * Create a handler for expend bookie storage api.
+     */
+    public abstract Handler newExpendStorageHandler();
+
+    //
+    // autorecovery
+    //
+
+    /**
+     * Create a handler for auto recovery failed bookie api.
+     */
+    public abstract Handler newAutoRecoveryBookieHandler();
+
+    /**
+     * Create a handler for get auditor api.
+     */
+    public abstract Handler newWhoIsAuditorHandler();
+
+    /**
+     * Create a handler for list under replicated ledger api.
+     */
+    public abstract Handler newListUnderReplicatedLedgerHandler();
+
+    /**
+     * Create a handler for trigger audit api.
+     */
+    public abstract Handler newTriggerAuditHandler();
+
+    /**
+     * Create a handler for set/get lostBookieRecoveryDelay api.
+     */
+    public abstract Handler newLostBookieRecoveryDelayHandler();
+
+    /**
+     * Create a handler for decommission bookie api.
+     */
+    public abstract Handler newDecommissionHandler();
+
 }

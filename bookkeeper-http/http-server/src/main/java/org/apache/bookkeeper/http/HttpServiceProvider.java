@@ -32,9 +32,119 @@ public interface HttpServiceProvider {
      */
     HttpService provideHeartbeatService();
 
+    //
+    // config
+    //
+
     /**
      * Provide service for configuration api.
      */
     HttpService provideConfigurationService();
+
+    //
+    // bookkeeper
+    //
+
+    /**
+     * Provide service for list bookies api.
+     */
+    HttpService provideListBookiesService();
+
+    /**
+     * Provide service for update cookie api.
+     */
+    HttpService provideUpdataCookieService();
+
+    //
+    // ledger
+    //
+
+    /**
+     * Provide service for delete ledger api.
+     */
+    HttpService provideDeleteLedgerService();
+
+    /**
+     * Provide service for list ledger api.
+     */
+    HttpService provideListLedgerService();
+
+    /**
+     * Provide service for delete ledger api.
+     */
+    HttpService provideGetLedgerMetaService();
+
+    /**
+     * Provide service for read ledger entries api.
+     */
+    HttpService provideReadLedgerEntryService();
+
+    //
+    // bookie
+    //
+
+    /**
+     * Provide service for list bookie disk usage api.
+     */
+    HttpService provideListBookieInfoService();
+
+    /**
+     * Provide service for get last log mark api.
+     */
+    HttpService provideGetLastLogMarkService();
+
+    /**
+     * Provide service for list bookie disk files api.
+     */
+    HttpService provideListDiskFileService();
+
+    /**
+     * Provide service for read entry log api.
+     */
+    HttpService provideReadEntryLogService();
+
+    /**
+     * Provide service for read journal file api.
+     */
+    HttpService provideReadJournalFileService();
+
+    /**
+     * Provide service for expend bookie storage api.
+     */
+    HttpService provideExpendStorageService();
+
+    //
+    // autorecovery
+    //
+
+    /**
+     * Provide service for auto recovery failed bookie api.
+     */
+    HttpService provideAutoRecoveryBookieService();
+
+    /**
+     * Provide service for get auditor api.
+     */
+    HttpService provideWhoIsAuditorService();
+
+    /**
+     * Provide service for list under replicated ledger api.
+     */
+    HttpService provideListUnderReplicatedLedgerService();
+
+    /**
+     * Provide service for trigger audit api.
+     */
+    HttpService provideTriggerAuditService();
+
+    /**
+     * Provide service for set/get lostBookieRecoveryDelay api.
+     */
+    HttpService provideLostBookieRecoveryDelayService();
+
+    /**
+     * Provide service for decommission bookie api.
+     */
+    HttpService provideDecommissionService();
 
 }

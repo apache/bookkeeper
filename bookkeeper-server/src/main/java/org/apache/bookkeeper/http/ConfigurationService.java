@@ -34,11 +34,11 @@ import org.apache.bookkeeper.util.JsonUtil;
 /**
  * HttpService that handle Bookkeeper Configuration related http request.
  */
-public class HttpConfigurationService implements HttpService {
+public class ConfigurationService implements HttpService {
 
     protected ServerConfiguration conf;
 
-    public HttpConfigurationService(ServerConfiguration conf) {
+    public ConfigurationService(ServerConfiguration conf) {
         Preconditions.checkNotNull(conf);
         this.conf = conf;
     }
