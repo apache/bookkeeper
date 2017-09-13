@@ -214,12 +214,8 @@ public class LedgerChecker {
                         entriesToBeVerified.add(rand.nextInt((lengthOfBucket)) + index);
                     }
                 }
-                if (!entriesToBeVerified.contains(firstStored)) {
-                    entriesToBeVerified.add(firstStored);
-                }
-                if (!entriesToBeVerified.contains(lastStored)) {
-                    entriesToBeVerified.add(lastStored);
-                }
+                entriesToBeVerified.add(firstStored);
+                entriesToBeVerified.add(lastStored);
 
             } else {
                 // Verify the entire fragment
@@ -302,7 +298,7 @@ public class LedgerChecker {
      */
     public void checkLedger(final LedgerHandle lh,
                             final GenericCallback<Set<LedgerFragment>> cb) {
-        checkLedger(lh, cb, (long) 0);
+        checkLedger(lh, cb, 0L);
     }
 
     public void checkLedger(final LedgerHandle lh,

@@ -22,11 +22,12 @@ package org.apache.bookkeeper.client;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -69,7 +70,6 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
      */
     @Test
     public void testChecker() throws Exception {
-
         LedgerHandle lh = bkc.createLedger(BookKeeper.DigestType.CRC32,
                 TEST_LEDGER_PASSWORD);
         startNewBookie();
@@ -91,14 +91,15 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
         for (LedgerFragment r : result) {
             LOG.info("unreplicated fragment: {}", r);
         }
-        assertEquals("Should have one missing fragment", 1, result.size());
-        assertEquals("There should be 1 fragments. But returned fragments are "
-            + result, 1, result.size());
-        LedgerFragment lf = result.iterator().next();
-        assertEquals("There should be 1 failed bookies in first fragment " + lf,
-            1, lf.getBookiesIndexes().size());
-        assertEquals("Fragment should be missing from first replica",
-            lf.getAddress(0), replicaToKill);
+
+        assertEquals("Should have six missing fragments", 6, result.size());
+
+        Set<BookieSocketAddress> bookies = new HashSet<>();
+
+        for(LedgerFragment lf : result) {
+            bookies.addAll(lf.getAddresses());
+        }
+        assertTrue(bookies.contains(replicaToKill));
 
         BookieSocketAddress replicaToKill2 = lh.getLedgerMetadata()
                 .getEnsembles().get(0L).get(1);
@@ -500,7 +501,7 @@ public class TestLedgerChecker extends BookKeeperClusterTestCase {
             throws InterruptedException {
         LedgerChecker checker = new LedgerChecker(bkc);
         CheckerCallback cb = new CheckerCallback();
-        checker.checkLedger(lh, cb, (long) 100.0);
+        checker.checkLedger(lh, cb, 100L);
         Set<LedgerFragment> result = cb.waitAndGetResult();
         return result;
     }
