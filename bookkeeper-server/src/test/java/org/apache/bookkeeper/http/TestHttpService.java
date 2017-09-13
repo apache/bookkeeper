@@ -109,4 +109,16 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         assertEquals("2", configMap.get("TEST_PROPERTY2"));
         assertEquals("true", configMap.get("TEST_PROPERTY3"));
     }
+
+    @Test
+    public void testListBookiesService() throws Exception {
+        // test config service
+        HttpService listBookiesService = bkHttpServiceProvider.provideListBookiesService();
+
+        // null parameters, should print rw bookies, without hostname
+        HttpServiceRequest postRequest1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        // TODO: add test zkutil zkserver into config
+        HttpServiceResponse postResponse1 = listBookiesService.handle(postRequest1);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), postResponse1.getStatusCode());
+    }
 }
