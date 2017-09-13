@@ -717,8 +717,6 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                 for (Enumeration<LedgerEntry> readEntries = lh.readEntries(0, numEntries - 1);
                     readEntries.hasMoreElements();) {
                     LedgerEntry entry = readEntries.nextElement();
-                    assertTrue(entry.data.getClass().getName(),
-                        entry.data.getClass().getName().contains("PooledNonRetainedSlicedByteBuf"));
                     try {
                         entry.data.release();
                     } catch (IllegalReferenceCountException ok) {
@@ -739,8 +737,6 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                 for (Enumeration<LedgerEntry> readEntries = lh.readEntries(0, numEntries - 1);
                     readEntries.hasMoreElements();) {
                     LedgerEntry entry = readEntries.nextElement();
-                    assertTrue(entry.data.getClass().getName(),
-                        entry.data.getClass().getName().contains("UnpooledSlicedByteBuf"));
                     try {
                         entry.data.release();
                     } catch (IllegalReferenceCountException e) {
@@ -761,8 +757,6 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                 for (Enumeration<LedgerEntry> readEntries = lh.readEntries(0, numEntries - 1);
                     readEntries.hasMoreElements();) {
                     LedgerEntry entry = readEntries.nextElement();
-                    assertTrue(entry.data.getClass().getName(),
-                        entry.data.getClass().getName().contains("UnpooledSlicedByteBuf"));
                     assertTrue("Can't release entry " + entry.getEntryId() + ": ref = " + entry.data.refCnt(),
                         entry.data.release());
                     try {
@@ -787,8 +781,6 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                     readEntries.hasMoreElements();) {
                     LedgerEntry entry = readEntries.nextElement();
                     // ButeBufs not reference counter
-                    assertTrue(entry.data.getClass().getName(),
-                        entry.data.getClass().getName().contains("UnpooledSlicedByteBuf"));
                     assertTrue("Can't release entry " + entry.getEntryId() + ": ref = " + entry.data.refCnt(),
                         entry.data.release());
                     try {
