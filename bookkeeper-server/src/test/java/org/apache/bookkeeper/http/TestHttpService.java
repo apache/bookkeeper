@@ -23,14 +23,19 @@ package org.apache.bookkeeper.http;
 import java.util.Map;
 
 import org.apache.bookkeeper.http.service.HttpService;
+import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.JsonUtil;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.junit.Assert.assertEquals;
 
 public class TestHttpService extends BookKeeperClusterTestCase {
+
+    static final Logger LOG = LoggerFactory.getLogger(BookKeeperClusterTestCase.class);
 
     private BKHttpServiceProvider bkHttpServiceProvider;
 
@@ -51,13 +56,14 @@ public class TestHttpService extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testConfigService() throws Exception {
+    public void testConfigServiceGet() throws Exception {
         // test config service
         String testProperty = "TEST_PROPERTY";
         String testValue = "TEST_VALUE";
         baseConf.setProperty(testProperty, testValue);
         HttpService configService = bkHttpServiceProvider.provideConfigurationService();
-        HttpServiceResponse response = configService.handle(null);
+        HttpServiceRequest getRequest = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response = configService.handle(getRequest);
         Map configMap = JsonUtil.fromJson(
             response.getBody(),
             Map.class
@@ -66,4 +72,41 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         assertEquals(testValue, configMap.get(testProperty));
     }
 
+    @Test
+    public void testConfigServicePost() throws Exception {
+        // test config service
+        HttpService configService = bkHttpServiceProvider.provideConfigurationService();
+        // properties to be set
+        String postBody = "{\"TEST_PROPERTY1\": \"TEST_VALUE1\", \"TEST_PROPERTY2\": 2,  \"TEST_PROPERTY3\": true }";
+
+        // null body, should return NOT_FOUND
+        HttpServiceRequest postRequest1 = new HttpServiceRequest(null, HttpServer.Method.POST, null);
+        HttpServiceResponse postResponse1 = configService.handle(postRequest1);
+        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), postResponse1.getStatusCode());
+
+        // Method DELETE, should return NOT_FOUND
+        HttpServiceRequest postRequest2 = new HttpServiceRequest(postBody, HttpServer.Method.DELETE, null);
+        HttpServiceResponse postResponse2 = configService.handle(postRequest2);
+        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), postResponse2.getStatusCode());
+
+        // Normal POST, should success, then verify using get method
+        HttpServiceRequest postRequest3 = new HttpServiceRequest(postBody, HttpServer.Method.POST, null);
+        HttpServiceResponse postResponse3 = configService.handle(postRequest3);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), postResponse3.getStatusCode());
+
+        // Get all the config
+        HttpServiceRequest getRequest = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response = configService.handle(getRequest);
+        Map configMap = JsonUtil.fromJson(
+          response.getBody(),
+          Map.class
+        );
+
+        // verify response code
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response.getStatusCode());
+        // verify response body
+        assertEquals("TEST_VALUE1", configMap.get("TEST_PROPERTY1"));
+        assertEquals("2", configMap.get("TEST_PROPERTY2"));
+        assertEquals("true", configMap.get("TEST_PROPERTY3"));
+    }
 }

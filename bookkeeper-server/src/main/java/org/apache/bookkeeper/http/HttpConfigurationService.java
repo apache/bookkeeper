@@ -20,11 +20,10 @@
  */
 package org.apache.bookkeeper.http;
 
+import com.google.common.base.Preconditions;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-
-import com.google.common.base.Preconditions;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.service.HttpService;
@@ -47,10 +46,35 @@ public class HttpConfigurationService implements HttpService {
     @Override
     public HttpServiceResponse handle(HttpServiceRequest request) throws Exception {
         HttpServiceResponse response = new HttpServiceResponse();
-        Map<String, Object> configMap = toMap(conf);
-        String jsonResponse = JsonUtil.toJson(configMap);
-        response.setBody(jsonResponse);
-        return response;
+        // GET
+        if (HttpServer.Method.GET == request.getMethod()) {
+            Map<String, Object> configMap = toMap(conf);
+            String jsonResponse = JsonUtil.toJson(configMap);
+            response.setBody(jsonResponse);
+            return response;
+        } else if (HttpServer.Method.PUT == request.getMethod() ||
+                   HttpServer.Method.POST == request.getMethod()) {
+            String requestBody = request.getBody();
+            if(null == requestBody) {
+                response.setCode(HttpServer.StatusCode.NOT_FOUND);
+                response.setBody("Request body not found. should contains k-v pairs");
+                return response;
+            }
+            @SuppressWarnings("unchecked")
+            HashMap<String, Object> configMap = JsonUtil.fromJson(requestBody, HashMap.class);
+            for(Map.Entry<String, Object> entry: configMap.entrySet()) {
+                conf.setProperty(entry.getKey(), entry.getValue());
+            }
+
+            response.setCode(HttpServer.StatusCode.OK);
+            response.setBody("Success set server config.");
+            return response;
+        } else {
+            response.setCode(HttpServer.StatusCode.NOT_FOUND);
+            response.setBody("Request body not found. should contains k-v pairs");
+            return response;
+        }
+
     }
 
     private Map<String, Object> toMap(ServerConfiguration conf) {
