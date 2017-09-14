@@ -20,10 +20,14 @@
  */
 package org.apache.bookkeeper.http;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import com.google.common.collect.Maps;
 import java.util.HashMap;
 import java.util.Map;
-
+import org.apache.bookkeeper.client.BookKeeper;
+import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.http.service.HttpService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
@@ -32,9 +36,6 @@ import org.apache.bookkeeper.util.JsonUtil;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 public class TestHttpService extends BookKeeperClusterTestCase {
 
@@ -166,6 +167,63 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         for (int i = 0; i < 3; i++) {
             assertEquals(true, respBody3.containsKey(getBookie(i).toString()));
             assertNotNull(respBody3.get(getBookie(i).toString()));
+        }
+    }
+
+    /**
+     * create ledgers, then test ListLedgerService
+     */
+    @Test
+    public void testListLedgerService() throws Exception {
+        baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        BookKeeper.DigestType digestType = BookKeeper.DigestType.CRC32;
+        int numLedgers = 4;
+        int numMsgs = 100;
+        LedgerHandle[] lh = new LedgerHandle[numLedgers];
+        // create ledgers
+        for (int i = 0; i < numLedgers; i++) {
+            lh[i] = bkc.createLedger(digestType, "".getBytes());
+        }
+        String content = "Apache BookKeeper is cool!";
+        // add entries
+        for (int i = 0; i < numMsgs; i++) {
+            for (int j = 0; j < numLedgers; j++) {
+                lh[j].addEntry(content.getBytes());
+            }
+        }
+        // close ledgers
+        for (int i = 0; i < numLedgers; i++) {
+            lh[i].close();
+        }
+
+        HttpService listBookiesService = bkHttpServiceProvider.provideListLedgerService();
+
+        //1,  null parameters, should print ledger ids, without metadata
+        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response1 = listBookiesService.handle(request1);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response1.getStatusCode());
+        // get response , expected get 4 ledgers, and without metadata
+        @SuppressWarnings("unchecked")
+        HashMap<String, String> respBody = JsonUtil.fromJson(response1.getBody(), HashMap.class);
+        assertEquals(4, respBody.size());
+        for (int i = 0; i < 4; i++) {
+            assertEquals(true, respBody.containsKey(Long.valueOf(lh[i].getId()).toString()));
+            assertEquals(null, respBody.get(Long.valueOf(lh[i].getId()).toString()));
+        }
+
+        //2, parameter: print_metadata=true, should print ledger ids, with metadata
+        HashMap<String, String> params = Maps.newHashMap();
+        params.put("print_metadata", "true");
+        HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.GET, params);
+        HttpServiceResponse response2 = listBookiesService.handle(request2);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response2.getStatusCode());
+        // get response, expected get 4 ledgers, and with metadata
+        @SuppressWarnings("unchecked")
+        HashMap<String, String> respBody2 = JsonUtil.fromJson(response2.getBody(), HashMap.class);
+        assertEquals(4, respBody2.size());
+        for (int i = 0; i < 4; i++) {
+            assertEquals(true, respBody2.containsKey(Long.valueOf(lh[i].getId()).toString()));
+            assertNotNull(respBody2.get(Long.valueOf(lh[i].getId()).toString()));
         }
     }
 }

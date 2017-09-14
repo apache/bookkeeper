@@ -24,8 +24,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -44,7 +42,6 @@ import org.slf4j.LoggerFactory;
 public class ListBookiesService implements HttpService {
 
     static final Logger LOG = LoggerFactory.getLogger(ListBookiesService.class);
-
 
     protected ServerConfiguration conf;
 
@@ -87,7 +84,9 @@ public class ListBookiesService implements HttpService {
                 LOG.debug("bookie: " + b.toString() + " hostname:" + b.getHostName());
             }
             String jsonResponse = JsonUtil.toJson(output);
-
+            if (bka != null) {
+                bka.close();
+            }
             response.setBody(jsonResponse);
             response.setCode(HttpServer.StatusCode.OK);
             return response;

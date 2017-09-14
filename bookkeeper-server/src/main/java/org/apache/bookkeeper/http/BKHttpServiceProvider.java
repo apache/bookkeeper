@@ -152,7 +152,11 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
      */
     @Override
     public HttpService provideListLedgerService() {
-        return NULL_HTTP_SERVICE;
+        ServerConfiguration configuration = getServerConf();
+        if (configuration == null) {
+            return new ErrorHttpService();
+        }
+        return new ListLedgerService(configuration);
     }
 
     /**
