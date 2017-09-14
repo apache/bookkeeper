@@ -62,7 +62,7 @@ public class ListLedgerService implements HttpService {
 
     static final int LIST_LEDGER_BATCH_SIZE = 1000;
 
-    static class ReadLedgerMetadataCallback extends AbstractFuture<LedgerMetadata>
+    public static class ReadLedgerMetadataCallback extends AbstractFuture<LedgerMetadata>
       implements BookkeeperInternalCallbacks.GenericCallback<LedgerMetadata> {
         final long ledgerId;
 

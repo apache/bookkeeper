@@ -282,4 +282,45 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HashMap<String, String> respBody = JsonUtil.fromJson(response4.getBody(), HashMap.class);
         assertEquals(3, respBody.size());
     }
+
+    @Test
+    public void testGetLedgerMetaService() throws Exception {
+        baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        BookKeeper.DigestType digestType = BookKeeper.DigestType.CRC32;
+        int numLedgers = 4;
+        int numMsgs = 100;
+        LedgerHandle[] lh = new LedgerHandle[numLedgers];
+        // create ledgers
+        for (int i = 0; i < numLedgers; i++) {
+            lh[i] = bkc.createLedger(digestType, "".getBytes());
+        }
+        String content = "Apache BookKeeper is cool!";
+        // add entries
+        for (int i = 0; i < numMsgs; i++) {
+            for (int j = 0; j < numLedgers; j++) {
+                lh[j].addEntry(content.getBytes());
+            }
+        }
+        // close ledgers
+        for (int i = 0; i < numLedgers; i++) {
+            lh[i].close();
+        }
+        HttpService getLedgerMetaService = bkHttpServiceProvider.provideGetLedgerMetaService();
+
+        //1,  null parameters of GET, should return NOT_FOUND
+        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response1 = getLedgerMetaService.handle(request1);
+        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
+
+        //2,  parameters for GET first ledger, should return OK, and contains metadata
+        HashMap<String, String> params = Maps.newHashMap();
+        Long ledgerId = Long.valueOf(lh[0].getId());
+        params.put("ledger_id", ledgerId.toString());
+        HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.GET, params);
+        HttpServiceResponse response2 = getLedgerMetaService.handle(request2);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response2.getStatusCode());
+        @SuppressWarnings("unchecked")
+        HashMap<String, String> respBody = JsonUtil.fromJson(response2.getBody(), HashMap.class);
+        assertEquals(1, respBody.size());
+    }
 }
