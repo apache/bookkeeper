@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.http;
 
+import com.google.common.collect.Maps;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.bookkeeper.http.service.HttpService;
@@ -32,15 +34,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public class TestHttpService extends BookKeeperClusterTestCase {
 
-    static final Logger LOG = LoggerFactory.getLogger(BookKeeperClusterTestCase.class);
+    static final Logger LOG = LoggerFactory.getLogger(TestHttpService.class);
 
     private BKHttpServiceProvider bkHttpServiceProvider;
 
     public TestHttpService() {
-        super(0);
+        super(3);
         this.bkHttpServiceProvider = new BKHttpServiceProvider.Builder()
             .setServerConfiguration(baseConf)
             .build();
@@ -112,13 +115,57 @@ public class TestHttpService extends BookKeeperClusterTestCase {
 
     @Test
     public void testListBookiesService() throws Exception {
-        // test config service
+        baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
         HttpService listBookiesService = bkHttpServiceProvider.provideListBookiesService();
 
-        // null parameters, should print rw bookies, without hostname
-        HttpServiceRequest postRequest1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
-        // TODO: add test zkutil zkserver into config
-        HttpServiceResponse postResponse1 = listBookiesService.handle(postRequest1);
-        assertEquals(HttpServer.StatusCode.OK.getValue(), postResponse1.getStatusCode());
+        //1,  null parameters, should print rw bookies, without hostname
+        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response1 = listBookiesService.handle(request1);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response1.getStatusCode());
+        // get response , expected get 3 bookies, and without hostname
+        @SuppressWarnings("unchecked")
+        HashMap<String, String> respBody = JsonUtil.fromJson(response1.getBody(), HashMap.class);
+        assertEquals(3, respBody.size());
+        for (int i = 0; i < 3; i++) {
+            assertEquals(true, respBody.containsKey(getBookie(i).toString()));
+            assertEquals(null, respBody.get(getBookie(i).toString()));
+        }
+
+        //2, parameter: type=rw&print_hostnames=true, should print rw bookies with hostname
+        HashMap<String, String> params = Maps.newHashMap();
+        params.put("type", "rw");
+        params.put("print_hostnames", "true");
+        HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.GET, params);
+        HttpServiceResponse response2 = listBookiesService.handle(request2);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response2.getStatusCode());
+        // get response , expected get 3 bookies, and with hostname
+        @SuppressWarnings("unchecked")
+        HashMap<String, String> respBody2 = JsonUtil.fromJson(response2.getBody(), HashMap.class);
+        assertEquals(3, respBody2.size());
+        for (int i = 0; i < 3; i++) {
+            assertEquals(true, respBody2.containsKey(getBookie(i).toString()));
+            assertNotNull(respBody2.get(getBookie(i).toString()));
+        }
+
+        //3, parameter: type=ro&print_hostnames=true, should print ro bookies with hostname
+        // turn bookie to ro, get
+        for (int i = 0; i < 3; i++) {
+            setBookieToReadOnly(getBookie(i));
+        }
+        LOG.info("turn all 3 bookies into RO");
+        HashMap<String, String> params3 = Maps.newHashMap();
+        params3.put("type", "ro");
+        params3.put("print_hostnames", "true");
+        HttpServiceRequest request3 = new HttpServiceRequest(null, HttpServer.Method.GET, params3);
+        HttpServiceResponse response3 = listBookiesService.handle(request3);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response3.getStatusCode());
+        // get response , expected get 3 ro bookies, and with hostname
+        @SuppressWarnings("unchecked")
+        HashMap<String, String> respBody3 = JsonUtil.fromJson(response3.getBody(), HashMap.class);
+        assertEquals(3, respBody3.size());
+        for (int i = 0; i < 3; i++) {
+            assertEquals(true, respBody3.containsKey(getBookie(i).toString()));
+            assertNotNull(respBody3.get(getBookie(i).toString()));
+        }
     }
 }

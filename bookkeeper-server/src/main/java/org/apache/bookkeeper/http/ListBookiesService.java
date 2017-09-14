@@ -35,11 +35,16 @@ import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.util.JsonUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * HttpService that handle Bookkeeper Configuration related http request.
  */
 public class ListBookiesService implements HttpService {
+
+    static final Logger LOG = LoggerFactory.getLogger(ListBookiesService.class);
+
 
     protected ServerConfiguration conf;
 
@@ -79,8 +84,10 @@ public class ListBookiesService implements HttpService {
             Map<String, String> output = Maps.newHashMap();
             for (BookieSocketAddress b : bookies) {
                 output.putIfAbsent(b.toString(), printHostname ? b.getHostName() : null);
+                LOG.debug("bookie: " + b.toString() + " hostname:" + b.getHostName());
             }
             String jsonResponse = JsonUtil.toJson(output);
+
             response.setBody(jsonResponse);
             response.setCode(HttpServer.StatusCode.OK);
             return response;
