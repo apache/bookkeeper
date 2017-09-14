@@ -196,11 +196,11 @@ public class TestHttpService extends BookKeeperClusterTestCase {
             lh[i].close();
         }
 
-        HttpService listBookiesService = bkHttpServiceProvider.provideListLedgerService();
+        HttpService listLedgerService = bkHttpServiceProvider.provideListLedgerService();
 
         //1,  null parameters, should print ledger ids, without metadata
         HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
-        HttpServiceResponse response1 = listBookiesService.handle(request1);
+        HttpServiceResponse response1 = listLedgerService.handle(request1);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response1.getStatusCode());
         // get response , expected get 4 ledgers, and without metadata
         @SuppressWarnings("unchecked")
@@ -215,7 +215,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HashMap<String, String> params = Maps.newHashMap();
         params.put("print_metadata", "true");
         HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.GET, params);
-        HttpServiceResponse response2 = listBookiesService.handle(request2);
+        HttpServiceResponse response2 = listLedgerService.handle(request2);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response2.getStatusCode());
         // get response, expected get 4 ledgers, and with metadata
         @SuppressWarnings("unchecked")
@@ -225,5 +225,61 @@ public class TestHttpService extends BookKeeperClusterTestCase {
             assertEquals(true, respBody2.containsKey(Long.valueOf(lh[i].getId()).toString()));
             assertNotNull(respBody2.get(Long.valueOf(lh[i].getId()).toString()));
         }
+    }
+
+    /**
+     * create ledgers, then test Delete Ledger service
+     */
+    @Test
+    public void testDeleteLedgerService() throws Exception {
+        baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        BookKeeper.DigestType digestType = BookKeeper.DigestType.CRC32;
+        int numLedgers = 4;
+        int numMsgs = 100;
+        LedgerHandle[] lh = new LedgerHandle[numLedgers];
+        // create ledgers
+        for (int i = 0; i < numLedgers; i++) {
+            lh[i] = bkc.createLedger(digestType, "".getBytes());
+        }
+        String content = "Apache BookKeeper is cool!";
+        // add entries
+        for (int i = 0; i < numMsgs; i++) {
+            for (int j = 0; j < numLedgers; j++) {
+                lh[j].addEntry(content.getBytes());
+            }
+        }
+        // close ledgers
+        for (int i = 0; i < numLedgers; i++) {
+            lh[i].close();
+        }
+
+        HttpService deleteLedgerService = bkHttpServiceProvider.provideDeleteLedgerService();
+
+        //1,  null parameters of GET, should return NOT_FOUND
+        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response1 = deleteLedgerService.handle(request1);
+        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
+
+        //2,  null parameters of DELETE, should return NOT_FOUND
+        HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.DELETE, null);
+        HttpServiceResponse response2 = deleteLedgerService.handle(request2);
+        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response2.getStatusCode());
+
+        //3,  delete first ledger, should return OK, and should only get 3 ledgers after delete.
+        HashMap<String, String> params = Maps.newHashMap();
+        Long ledgerId = Long.valueOf(lh[0].getId());
+        params.put("ledger_id", ledgerId.toString());
+        HttpServiceRequest request3 = new HttpServiceRequest(null, HttpServer.Method.DELETE, params);
+        HttpServiceResponse response3 = deleteLedgerService.handle(request3);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response3.getStatusCode());
+        // use list Ledger to verify left 3 ledger
+        HttpService listLedgerService = bkHttpServiceProvider.provideListLedgerService();
+        HttpServiceRequest request4 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response4 = listLedgerService.handle(request4);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response4.getStatusCode());
+        // get response , expected get 3 ledgers
+        @SuppressWarnings("unchecked")
+        HashMap<String, String> respBody = JsonUtil.fromJson(response4.getBody(), HashMap.class);
+        assertEquals(3, respBody.size());
     }
 }

@@ -92,8 +92,6 @@ public class ListLedgerService implements HttpService {
         HttpServiceResponse response = new HttpServiceResponse();
         // GET
         if (HttpServer.Method.GET == request.getMethod()) {
-            Collection<BookieSocketAddress> bookies = new ArrayList<BookieSocketAddress>();
-
             Map<String, String> params = request.getParams();
             // default not print metadata
             boolean printMeta = (params != null) &&
