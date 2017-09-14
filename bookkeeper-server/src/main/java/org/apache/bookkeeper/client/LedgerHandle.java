@@ -1404,7 +1404,7 @@ public class LedgerHandle implements AutoCloseable {
     void handleBookieFailure(final Map<Integer, BookieSocketAddress> failedBookies) {
         int curBlockAddCompletions = blockAddCompletions.incrementAndGet();
 
-        if (bk.disableEnsembleChangeFeature.isAvailable()) {
+        if (bk.disableEnsembleChangeFeature.isAvailable() || volatileDurability) {
             blockAddCompletions.decrementAndGet();
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Ensemble change is disabled. Retry sending to failed bookies {} for ledger {}.",
