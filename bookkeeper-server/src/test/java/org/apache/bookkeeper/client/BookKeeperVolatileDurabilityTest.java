@@ -33,13 +33,13 @@ import static org.junit.Assert.*;
 /**
  * Tests of the main BookKeeper client using VD_JOURNAL
  */
-public class BookKeeperNoSyncTest extends BookKeeperClusterTestCase {
+public class BookKeeperVolatileDurabilityTest extends BookKeeperClusterTestCase {
 
-    private final static Logger LOG = LoggerFactory.getLogger(BookKeeperNoSyncTest.class);
+    private final static Logger LOG = LoggerFactory.getLogger(BookKeeperVolatileDurabilityTest.class);
 
     private final DigestType digestType;
 
-    public BookKeeperNoSyncTest() {
+    public BookKeeperVolatileDurabilityTest() {
         super(4);
         this.digestType = DigestType.CRC32;
     }

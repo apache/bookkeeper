@@ -27,6 +27,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 
 import java.io.IOException;
 import java.util.Arrays;
+import org.apache.bookkeeper.client.LedgerType;
 
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -76,7 +77,8 @@ class LoopbackClient implements WriteCallback {
         byte[] passwd = new byte[20];
         Arrays.fill(passwd, (byte) 'a');
 
-        client.addEntry(addr, ledgerId, passwd, entry, Unpooled.wrappedBuffer(data), cb, ctx, BookieProtocol.FLAG_NONE);
+        client.addEntry(addr, ledgerId, passwd, entry, Unpooled.wrappedBuffer(data), cb, ctx,
+            BookieProtocol.FLAG_NONE, LedgerType.PD_JOURNAL);
     }
 
     @Override

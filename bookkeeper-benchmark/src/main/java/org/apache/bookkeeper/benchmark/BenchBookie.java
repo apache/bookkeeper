@@ -28,6 +28,7 @@ import java.io.IOException;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.client.LedgerType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
@@ -175,7 +176,7 @@ public class BenchBookie {
             toSend.writeLong(entry);
             toSend.writerIndex(toSend.capacity());
             bc.addEntry(new BookieSocketAddress(addr, port), ledger, new byte[20],
-                        entry, toSend, tc, null, BookieProtocol.FLAG_NONE);
+                        entry, toSend, tc, null, BookieProtocol.FLAG_NONE, LedgerType.PD_JOURNAL);
         }
         LOG.info("Waiting for warmup");
         tc.waitFor(warmUpCount);
@@ -193,7 +194,7 @@ public class BenchBookie {
             toSend.writerIndex(toSend.capacity());
             lc.resetComplete();
             bc.addEntry(new BookieSocketAddress(addr, port), ledger, new byte[20],
-                        entry, toSend, lc, null, BookieProtocol.FLAG_NONE);
+                        entry, toSend, lc, null, BookieProtocol.FLAG_NONE, LedgerType.PD_JOURNAL);
             lc.waitForComplete();
         }
         long endTime = System.nanoTime();
@@ -213,7 +214,7 @@ public class BenchBookie {
             toSend.writeLong(entry);
             toSend.writerIndex(toSend.capacity());
             bc.addEntry(new BookieSocketAddress(addr, port), ledger, new byte[20],
-                        entry, toSend, tc, null, BookieProtocol.FLAG_NONE);
+                        entry, toSend, tc, null, BookieProtocol.FLAG_NONE, LedgerType.PD_JOURNAL);
         }
         tc.waitFor(entryCount);
         endTime = System.currentTimeMillis();

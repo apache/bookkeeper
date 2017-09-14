@@ -369,7 +369,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
                     addSuccess.set(BKException.Code.OK == rc);
                     addLatch.countDown();
                 }
-            }, 0, BookieProtocol.FLAG_NONE);
+            }, 0, BookieProtocol.FLAG_NONE, LedgerType.PD_JOURNAL);
         addLatch.await();
         assertTrue("add entry 14 should succeed", addSuccess.get());
 

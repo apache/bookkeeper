@@ -110,7 +110,7 @@ class PendingAddOp implements WriteCallback, TimerTask {
             BookieProtocol.FLAG_NONE;
 
         lh.bk.bookieClient.addEntry(lh.metadata.currentEnsemble.get(bookieIndex), lh.ledgerId, lh.ledgerKey, entryId, toSend,
-                this, bookieIndex, flags);
+                this, bookieIndex, flags, lh.ledgerType);
     }
 
     @Override

@@ -112,7 +112,8 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
             if (addRequest.hasFlag() && addRequest.getFlag().equals(AddRequest.Flag.RECOVERY_ADD)) {
                 requestProcessor.bookie.recoveryAddEntry(entryToAdd, wcb, channel, masterKey);
             } else {
-                boolean volatileDurability = addRequest.hasFlag()  && addRequest.getFlag().equals(AddRequest.Flag.VOLATILE_DURABILITY);
+                boolean volatileDurability = addRequest.hasLedgerType()
+                    && addRequest.getLedgerType().equals(AddRequest.LedgerType.VD_JOURNAL);
                 requestProcessor.bookie.addEntry(entryToAdd, wcb, channel, masterKey, volatileDurability);
             }
             status = StatusCode.EOK;

@@ -100,6 +100,7 @@ public class LedgerHandle implements AutoCloseable {
     final RateLimiter throttler;
     final LoadingCache<BookieSocketAddress, Long> bookieFailureHistory;
     final boolean enableParallelRecoveryRead;
+    final LedgerType ledgerType;
     final boolean volatileDurability;
     final int recoveryReadBatchSize;    
 
@@ -131,11 +132,12 @@ public class LedgerHandle implements AutoCloseable {
 
 
     LedgerHandle(BookKeeper bk, long ledgerId, LedgerMetadata metadata,
-                 DigestType digestType, byte[] password, boolean relaxDurability)
+                 DigestType digestType, byte[] password, LedgerType ledgerType)
             throws GeneralSecurityException, NumberFormatException {
         this.bk = bk;
         this.metadata = metadata;
-        this.volatileDurability = relaxDurability;
+        this.ledgerType = ledgerType;
+        this.volatileDurability = this.ledgerType.equals(LedgerType.VD_JOURNAL);
         this.pendingAddOps = new ConcurrentLinkedQueue<PendingAddOp>();
         this.enableParallelRecoveryRead = bk.getConf().getEnableParallelRecoveryRead();
         this.recoveryReadBatchSize = bk.getConf().getRecoveryReadBatchSize();        

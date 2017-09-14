@@ -54,9 +54,9 @@ public class LedgerHandleAdv extends LedgerHandle {
     }
 
     LedgerHandleAdv(BookKeeper bk, long ledgerId, LedgerMetadata metadata, DigestType digestType,
-        byte[] password, boolean relaxDurability)
+        byte[] password, LedgerType ledgerType)
             throws GeneralSecurityException, NumberFormatException {
-        super(bk, ledgerId, metadata, digestType, password, relaxDurability);
+        super(bk, ledgerId, metadata, digestType, password, ledgerType);
         pendingAddOps = new PriorityBlockingQueue<PendingAddOp>(10, new PendingOpsComparator());
     }
 

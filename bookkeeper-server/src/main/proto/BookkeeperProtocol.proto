@@ -106,14 +106,18 @@ message ReadRequest {
 
 message AddRequest {
     enum Flag {
-        RECOVERY_ADD = 1;
-        VOLATILE_DURABILITY = 4;
+        RECOVERY_ADD = 1;        
     }
     optional Flag flag = 100;
     required int64 ledgerId = 1;
     required int64 entryId = 2;
     required bytes masterKey = 3;
     required bytes body = 4;
+    enum LedgerType {
+        PD_JOURNAL = 0;
+        VD_JOURNAL = 1;
+    }
+    optional LedgerType ledgerType = 5;
 }
 
 message StartTLSRequest {

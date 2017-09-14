@@ -117,9 +117,8 @@ import java.util.Arrays;
 import java.util.List;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import org.apache.bookkeeper.auth.BookKeeperPrincipal;
+import org.apache.bookkeeper.client.LedgerType;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.SyncCallback;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.SyncRequest;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.SyncResponse;
 
 /**
  * This class manages all details of connection to a particular bookie. It also
@@ -539,7 +538,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 .setVersion(ProtocolVersion.VERSION_THREE)
                 .setOperation(OperationType.SYNC)
                 .setTxnId(txnId);
-        SyncRequest.Builder requestBuilder = SyncRequest.newBuilder()
+        BookkeeperProtocol.SyncRequest.Builder requestBuilder = BookkeeperProtocol.SyncRequest.newBuilder()
                 .setLedgerId(ledgerId)
                 .setFirstEntryId(firstEntryId)
                 .setLastEntryId(lastEntryId)
@@ -600,7 +599,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
      *          Add options
      */
     void addEntry(final long ledgerId, byte[] masterKey, final long entryId, ByteBuf toSend, WriteCallback cb,
-                  Object ctx, final int options) {
+                  Object ctx, final int options, final LedgerType ledgerType) {
         Object request = null;
         CompletionKey completion = null;
         if (useV2WireProtocol) {
@@ -628,9 +627,16 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 addBuilder.setFlag(AddRequest.Flag.RECOVERY_ADD);
             }
 
-            if (((short) options & BookieProtocol.FLAG_VOLATILE_DURABILITY) == BookieProtocol.FLAG_VOLATILE_DURABILITY) {
-                addBuilder.setFlag(AddRequest.Flag.VOLATILE_DURABILITY);
+
+            switch (ledgerType) {
+                case VD_JOURNAL:
+                    addBuilder.setLedgerType(AddRequest.LedgerType.VD_JOURNAL);
+                    break;
+                case PD_JOURNAL:
+                    // nothing, this is the default
+                    break;
             }
+            
 
             request = Request.newBuilder()
                     .setHeader(headerBuilder)
@@ -1516,7 +1522,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                             break;
                         }
                         case SYNC: {
-                            SyncResponse addResponse = response.getSyncResponse();
+                            BookkeeperProtocol.SyncResponse addResponse = response.getSyncResponse();
                             StatusCode status = response.getStatus() == StatusCode.EOK ? addResponse.getStatus() : response.getStatus();
                             long lastAddSynced = addResponse.getLastPersistedEntryId();
                             handleSyncResponse(addResponse.getLedgerId(), lastAddSynced, status, completionValue);

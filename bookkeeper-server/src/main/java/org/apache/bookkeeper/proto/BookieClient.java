@@ -63,6 +63,7 @@ import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
 import org.apache.bookkeeper.client.AsyncCallback;
+import org.apache.bookkeeper.client.LedgerType;
 
 /**
  * Implements the client-side part of the BookKeeper protocol.
@@ -280,7 +281,8 @@ public class BookieClient implements PerChannelBookieClientFactory {
                          final ByteBuf toSend,
                          final WriteCallback cb,
                          final Object ctx,
-                         final int options) {
+                         final int options,
+                         final LedgerType ledgerType) {
         closeLock.readLock().lock();
         try {
             final PerChannelBookieClientPool client = lookupClient(addr, entryId);
@@ -300,7 +302,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                     if (rc != BKException.Code.OK) {
                         completeAdd(rc, ledgerId, entryId, BookieProtocol.INVALID_ENTRY_ID, addr, cb, ctx);
                     } else {
-                        pcbc.addEntry(ledgerId, masterKey, entryId, toSend, cb, ctx, options);
+                        pcbc.addEntry(ledgerId, masterKey, entryId, toSend, cb, ctx, options, ledgerType);
                     }
                     toSend.release();
                 }
@@ -568,7 +570,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
 
         for (int i = 0; i < 100000; i++) {
             counter.inc();
-            bc.addEntry(addr, ledger, new byte[0], i, Unpooled.wrappedBuffer(hello), cb, counter, 0);
+            bc.addEntry(addr, ledger, new byte[0], i, Unpooled.wrappedBuffer(hello), cb, counter, 0, LedgerType.PD_JOURNAL);
         }
         counter.wait(0);
         System.out.println("Total = " + counter.total());
