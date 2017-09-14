@@ -323,4 +323,60 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HashMap<String, String> respBody = JsonUtil.fromJson(response2.getBody(), HashMap.class);
         assertEquals(1, respBody.size());
     }
+
+    @Test
+    public void testReadLedgerEntryService() throws Exception {
+        baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        BookKeeper.DigestType digestType = BookKeeper.DigestType.CRC32;
+        int numLedgers = 1;
+        int numMsgs = 100;
+        LedgerHandle[] lh = new LedgerHandle[numLedgers];
+        // create ledgers
+        for (int i = 0; i < numLedgers; i++) {
+            lh[i] = bkc.createLedger(digestType, "".getBytes());
+        }
+        String content = "Apache BookKeeper is cool!";
+        // add entries
+        for (int i = 0; i < numMsgs; i++) {
+            for (int j = 0; j < numLedgers; j++) {
+                lh[j].addEntry(content.getBytes());
+            }
+        }
+        // close ledgers
+        for (int i = 0; i < numLedgers; i++) {
+            lh[i].close();
+        }
+        HttpService readLedgerEntryService = bkHttpServiceProvider.provideReadLedgerEntryService();
+
+        //1,  null parameters of GET, should return NOT_FOUND
+        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response1 = readLedgerEntryService.handle(request1);
+        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
+
+        //2,  parameters for GET first ledger, should return OK
+        // no start/end entry id, so return all the 100 entries.
+        HashMap<String, String> params = Maps.newHashMap();
+        Long ledgerId = Long.valueOf(lh[0].getId());
+        params.put("ledger_id", ledgerId.toString());
+        HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.GET, params);
+        HttpServiceResponse response2 = readLedgerEntryService.handle(request2);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response2.getStatusCode());
+        @SuppressWarnings("unchecked")
+        HashMap<String, String> respBody = JsonUtil.fromJson(response2.getBody(), HashMap.class);
+        // default return all the entries. so should have 100 entries return
+        assertEquals(100, respBody.size());
+
+        //2,  parameters for GET first ledger, should return OK
+        // start_entry_id=1, end_entry_id=77, so return 77 entries.
+        HashMap<String, String> params3 = Maps.newHashMap();
+        params3.put("ledger_id", ledgerId.toString());
+        params3.put("start_entry_id", "1");
+        params3.put("end_entry_id", "77");
+        HttpServiceRequest request3 = new HttpServiceRequest(null, HttpServer.Method.GET, params3);
+        HttpServiceResponse response3 = readLedgerEntryService.handle(request3);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response3.getStatusCode());
+        @SuppressWarnings("unchecked")
+        HashMap<String, String> respBody3 = JsonUtil.fromJson(response3.getBody(), HashMap.class);
+        assertEquals(77, respBody3.size());
+    }
 }
