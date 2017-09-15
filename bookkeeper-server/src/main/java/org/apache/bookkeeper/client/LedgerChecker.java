@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -176,7 +177,7 @@ public class LedgerChecker {
     private void verifyLedgerFragment(LedgerFragment fragment,
                                       int bookieIndex,
                                       GenericCallback<LedgerFragment> cb,
-                                      Long percentageOfLedgerFragmentToBeVerified)
+                                      long percentageOfLedgerFragmentToBeVerified)
             throws InvalidFragmentException {
         long firstStored = fragment.getFirstStoredEntryId(bookieIndex);
         long lastStored = fragment.getLastStoredEntryId(bookieIndex);
@@ -198,20 +199,24 @@ public class LedgerChecker {
             bookieClient.readEntry(bookie, fragment
                     .getLedgerId(), firstStored, manycb, null);
         } else {
+            assert lastStored > firstStored;
             long lengthOfLedgerFragment = lastStored - firstStored + 1;
 
             int numberOfEntriesToBeVerified =
                 (int) (lengthOfLedgerFragment * (percentageOfLedgerFragmentToBeVerified / 100.0));
 
-            HashSet<Long> entriesToBeVerified = new HashSet<Long>();
+            TreeSet<Long> entriesToBeVerified = new TreeSet<Long>();
 
-            if (numberOfEntriesToBeVerified != lengthOfLedgerFragment) {
+            if (numberOfEntriesToBeVerified < lengthOfLedgerFragment) {
                 // Evenly pick random entries over the length of the fragment
                 if (numberOfEntriesToBeVerified != 0) {
                     int lengthOfBucket = (int) (lengthOfLedgerFragment / numberOfEntriesToBeVerified);
                     Random rand = new Random();
-                    for (long index = firstStored; index < (lastStored - lengthOfBucket - 1); index += lengthOfBucket) {
-                        entriesToBeVerified.add(rand.nextInt((lengthOfBucket)) + index);
+                    for (long index = firstStored; index < (lastStored - lengthOfBucket -1); index += lengthOfBucket) {
+                        long potentialEntryId = rand.nextInt((lengthOfBucket)) + index;
+                        if (fragment.isStoredEntryId(potentialEntryId, bookieIndex)) {
+                            entriesToBeVerified.add(potentialEntryId);
+                        }
                     }
                 }
                 entriesToBeVerified.add(firstStored);
@@ -219,8 +224,10 @@ public class LedgerChecker {
 
             } else {
                 // Verify the entire fragment
-                while (firstStored <= lastStored) {
-                    entriesToBeVerified.add(firstStored);
+                while(firstStored <= lastStored) {
+                    if (fragment.isStoredEntryId(firstStored, bookieIndex)) {
+                        entriesToBeVerified.add(firstStored);
+                    }
                     firstStored++;
                 }
             }
@@ -298,12 +305,12 @@ public class LedgerChecker {
      */
     public void checkLedger(final LedgerHandle lh,
                             final GenericCallback<Set<LedgerFragment>> cb) {
-        checkLedger(lh, cb, 0L);
+        checkLedger(lh, cb, 100L);
     }
 
     public void checkLedger(final LedgerHandle lh,
                             final GenericCallback<Set<LedgerFragment>> cb,
-                            Long percentageOfLedgerFragmentToBeVerified) {
+                            long percentageOfLedgerFragmentToBeVerified) {
         // build a set of all fragment replicas
         final Set<LedgerFragment> fragments = new HashSet<LedgerFragment>();
 
@@ -382,7 +389,7 @@ public class LedgerChecker {
 
     private void checkFragments(Set<LedgerFragment> fragments,
                                 GenericCallback<Set<LedgerFragment>> cb,
-                                Long percentageOfLedgerFragmentToBeVerified) {
+                                long percentageOfLedgerFragmentToBeVerified) {
         if (fragments.size() == 0) { // no fragments to verify
             cb.operationComplete(BKException.Code.OK, fragments);
             return;

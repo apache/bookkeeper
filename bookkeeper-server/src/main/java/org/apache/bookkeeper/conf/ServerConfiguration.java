@@ -1807,7 +1807,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     /**
      * Set what percentage of a ledger (fragment)'s entries will be verified.
-     *
+     * 0 - only the first and entry of each ledger fragment would be verified
+     * 100 - the entire ledger fragment would be verified
+     * anything else - randomly picked entries from over the fragment would be verifiec
      * @param auditorLedgerVerificationPercentage The verification proportion as a percentage
      */
     public void setAuditorLedgerVerificationPercentage(long auditorLedgerVerificationPercentage) {
