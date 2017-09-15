@@ -5,7 +5,7 @@
  * licenses this file to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ *pa
  * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
@@ -16,41 +16,18 @@
  */
 package org.apache.bookkeeper.client.api;
 
-import org.apache.bookkeeper.client.BKException;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * This is the entry point for BookKeeper client side API
+ * Base interface for builders
  */
-public interface BookKeeper extends AutoCloseable {
+public interface OpBuilder<T> {
 
     /**
-     * Start the creation of a new ledger
+     * Start the operation and return an handle to the result
      *
-     * @return a builder for the new ledger
+     * @return an handle to access the result of the operation
      */
-    CreateBuilder createLedgerOp();
-
-    /**
-     * Open an existing ledger
-     *
-     * @return a builder useful to create a readable handler for an existing ledger
-     */
-    OpenBuilder openLedgerOp();
-
-    /**
-     * Delete an existing ledger
-     *
-     * @return a builder useful to delete an existing ledger
-     */
-    DeleteBuilder deleteLedgerOp();
-
-    /**
-     * Close the client and release every resource
-     *
-     * @throws BKException
-     * @throws InterruptedException
-     */
-    @Override
-    void close() throws BKException, InterruptedException;
+    public CompletableFuture<T> execute();
 
 }

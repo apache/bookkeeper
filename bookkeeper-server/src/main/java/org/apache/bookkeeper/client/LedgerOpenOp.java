@@ -94,6 +94,15 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata>, OpenBuilder {
     }
 
     /**
+     * for CreateLedgerBuilder interface
+     * @param bk
+     */
+    public LedgerOpenOp(BookKeeper bk)  {
+        this.bk = bk;
+        this.enableDigestAutodetection = bk.conf.getEnableDigestTypeAutodetection();
+    }
+
+    /**
      * Inititates the ledger open operation
      */
     public void initiate() {
@@ -216,21 +225,26 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata>, OpenBuilder {
         cb.openComplete(rc, lh, ctx);
     }
 
+    private static final byte[] EMPTY_PASSWORD = new byte[0];
+    private boolean builderRecovery = true;
+    private byte[] builderPassword = EMPTY_PASSWORD;
+    private DigestType builderDigestType = DigestType.CRC32;
+
     @Override
     public OpenBuilder withRecovery(boolean recovery) {
-        this.doRecovery = recovery;
+        this.builderRecovery = recovery;
         return this;
     }
 
     @Override
     public OpenBuilder withPassword(byte[] password) {
-        this.passwd = password;
+        this.builderPassword = password;
         return this;
     }
 
     @Override
     public OpenBuilder withDigestType(DigestType digestType) {
-        this.suggestedDigestType = digestType;
+        this.builderDigestType = digestType;
         return this;
     }
 
@@ -246,6 +260,9 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata>, OpenBuilder {
         this.cb = cb;
         this.ctx = ctx;
         this.ledgerId = ledgerId;
+        this.suggestedDigestType = builderDigestType;
+        this.doRecovery = builderRecovery;
+        this.passwd = builderPassword;
 
         bk.closeLock.readLock().lock();
         try {

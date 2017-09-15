@@ -1426,17 +1426,17 @@ public class BookKeeper implements AutoCloseable, org.apache.bookkeeper.client.a
     private static final byte[] EMPTY_PASSWORD = new byte[0];
 
     @Override
-    public CreateBuilder createLedger() {
+    public CreateBuilder createLedgerOp() {
         return new LedgerCreateOp(this);
     }
 
     @Override
-    public OpenBuilder openLedger() {
+    public OpenBuilder openLedgerOp() {
         return new LedgerOpenOp(this, -1, DigestType.CRC32, EMPTY_PASSWORD, null, null);
     }
 
     @Override
-    public DeleteBuilder deleteLedger() {
+    public DeleteBuilder deleteLedgerOp() {
         return new LedgerDeleteOp(this);
     }
 
