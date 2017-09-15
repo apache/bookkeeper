@@ -99,7 +99,7 @@ class LedgerCreateOp implements GenericCallback<Void>, CreateBuilder {
     }
 
     /**
-     * // for CreateLedgerBuilder interface
+     * for CreateLedgerBuilder interface
      * @param bk
      */
     LedgerCreateOp(BookKeeper bk) {
