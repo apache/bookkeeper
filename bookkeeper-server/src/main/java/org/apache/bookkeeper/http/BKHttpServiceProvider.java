@@ -284,7 +284,11 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
      */
     @Override
     public HttpService provideListUnderReplicatedLedgerService() {
-        return NULL_HTTP_SERVICE;
+        ServerConfiguration configuration = getServerConf();
+        if (configuration == null) {
+            return new ErrorHttpService();
+        }
+        return new ListUnderReplicatedLedgerService(configuration);
     }
 
     /**
@@ -292,7 +296,11 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
      */
     @Override
     public HttpService provideTriggerAuditService() {
-        return NULL_HTTP_SERVICE;
+        ServerConfiguration configuration = getServerConf();
+        if (configuration == null) {
+            return new ErrorHttpService();
+        }
+        return new TriggerAuditService(configuration);
     }
 
     /**
@@ -300,7 +308,11 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
      */
     @Override
     public HttpService provideLostBookieRecoveryDelayService() {
-        return NULL_HTTP_SERVICE;
+        ServerConfiguration configuration = getServerConf();
+        if (configuration == null) {
+            return new ErrorHttpService();
+        }
+        return new LostBookieRecoveryDelayService(configuration);
     }
 
     /**
@@ -308,7 +320,11 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
      */
     @Override
     public HttpService provideDecommissionService() {
-        return NULL_HTTP_SERVICE;
+        ServerConfiguration configuration = getServerConf();
+        if (configuration == null) {
+            return new ErrorHttpService();
+        }
+        return new DecommissionService(configuration);
     }
 
 }

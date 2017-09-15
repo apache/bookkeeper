@@ -496,14 +496,95 @@ public class TestHttpService extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testWhoIsAuditorService() throws Exception {
+    public void testTriggerAuditService() throws Exception {
         baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
 
-        HttpService listDiskFileService = bkHttpServiceProvider.provideWhoIsAuditorService();
+        HttpService triggerAuditService = bkHttpServiceProvider.provideTriggerAuditService();
 
         //1,  GET, should return error
         HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
-        HttpServiceResponse response1 = listDiskFileService.handle(request1);
+        HttpServiceResponse response1 = triggerAuditService.handle(request1);
         assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
+
+        //2,  POST, should return error for no auditor node.
+        HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.POST, null);
+        HttpServiceResponse response2 = triggerAuditService.handle(request2);
+        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response2.getStatusCode());
+    }
+
+    @Test
+    public void testWhoIsAuditorService() throws Exception {
+        baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+
+        HttpService whoIsAuditorService = bkHttpServiceProvider.provideWhoIsAuditorService();
+
+        //1,  GET, should return error
+        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response1 = whoIsAuditorService.handle(request1);
+        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
+    }
+
+    @Test
+    public void testListUnderReplicatedLedgerService() throws Exception {
+        baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+
+        HttpService listUnderReplicatedLedgerService = bkHttpServiceProvider.provideListUnderReplicatedLedgerService();
+
+        //1,  POST, should return error, because only support GET.
+        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.POST, null);
+        HttpServiceResponse response1 = listUnderReplicatedLedgerService.handle(request1);
+        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
+
+        //2,  GET, should return error, because no underreplicated ledger currently.
+        HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response2 = listUnderReplicatedLedgerService.handle(request2);
+        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response2.getStatusCode());
+    }
+
+    @Test
+    public void testLostBookieRecoveryDelayService() throws Exception {
+        baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+
+        HttpService lostBookieRecoveryDelayService = bkHttpServiceProvider.provideLostBookieRecoveryDelayService();
+
+        //1,  POST with null, should return error, because should contains {"delay_seconds": <delay_seconds>}.
+        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.POST, null);
+        HttpServiceResponse response1 = lostBookieRecoveryDelayService.handle(request1);
+        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
+
+        //2,  GET, should meet exception when get delay seconds
+        HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response2 = lostBookieRecoveryDelayService.handle(request2);
+        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response2.getStatusCode());
+
+        //3, POST, with body, should success
+        String postBody3 = "{\"delay_seconds\": 17 }";
+        HttpServiceRequest request3 = new HttpServiceRequest(postBody3, HttpServer.Method.POST, null);
+        HttpServiceResponse response3 = lostBookieRecoveryDelayService.handle(request3);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response3.getStatusCode());
+    }
+
+    @Test
+    public void testDecommissionService() throws Exception {
+        baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+
+        HttpService lostBookieRecoveryDelayService = bkHttpServiceProvider.provideDecommissionService();
+
+        //1,  POST with null, should return error, because should contains {"bookie_src": <bookie_address>}.
+        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.POST, null);
+        HttpServiceResponse response1 = lostBookieRecoveryDelayService.handle(request1);
+        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
+
+        //2,  GET, should fail for not support get
+        HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response2 = lostBookieRecoveryDelayService.handle(request2);
+        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response2.getStatusCode());
+
+        //3, POST, with body
+        String postBody3 = "{\"bookie_src\": \"" + getBookie(0).toString() + "\"}";
+        killBookie(0);
+        HttpServiceRequest request3 = new HttpServiceRequest(postBody3, HttpServer.Method.POST, null);
+        HttpServiceResponse response3 = lostBookieRecoveryDelayService.handle(request3);
+        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response3.getStatusCode());
     }
 }
