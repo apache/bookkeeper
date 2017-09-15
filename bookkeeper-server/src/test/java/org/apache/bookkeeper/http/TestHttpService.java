@@ -454,4 +454,56 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HashMap<String, String> respBody2 = JsonUtil.fromJson(response2.getBody(), HashMap.class);
         assertEquals(1, respBody2.size());
     }
+
+    @Test
+    public void testRecoveryBookieService() throws Exception {
+        baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+
+        HttpService recoveryBookieService = bkHttpServiceProvider.provideRecoveryBookieService();
+
+        //1,  null body of GET, should return error
+        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response1 = recoveryBookieService.handle(request1);
+        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
+
+        //2,  null body of POST, should return error
+        HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.POST, null);
+        HttpServiceResponse response2 = recoveryBookieService.handle(request2);
+        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response2.getStatusCode());
+
+        //3, body with bookie_src, bookie_dest and delete_cookie of POST, should success.
+        String bookieSrc = getBookie(0).toString();
+        String bookieDest = getBookie(1).toString();
+        String postBody = "{\"bookie_src\": [ \"" + bookieSrc + "\" ],"
+          + "\"bookie_dest\": [ \"" + bookieDest + "\" ],"
+          + "\"delete_cookie\": true }";
+        HttpServiceRequest request3 = new HttpServiceRequest(postBody, HttpServer.Method.POST, null);
+        HttpServiceResponse response3 = recoveryBookieService.handle(request3);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response3.getStatusCode());
+
+        //4, body with bookie_src, and delete_cookie of POST, should success.
+        String postBody4 = "{\"bookie_src\": [ \"" + bookieSrc + "\" ],"
+          + "\"delete_cookie\": false }";
+        HttpServiceRequest request4 = new HttpServiceRequest(postBody4, HttpServer.Method.POST, null);
+        HttpServiceResponse response4 = recoveryBookieService.handle(request4);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response4.getStatusCode());
+
+        //5, body with bookie_src of POST, should success.
+        String postBody5 = "{\"bookie_src\": [ \"" + bookieSrc + "\" ] }";
+        HttpServiceRequest request5 = new HttpServiceRequest(postBody5, HttpServer.Method.POST, null);
+        HttpServiceResponse response5 = recoveryBookieService.handle(request5);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response5.getStatusCode());
+    }
+
+    @Test
+    public void testWhoIsAuditorService() throws Exception {
+        baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+
+        HttpService listDiskFileService = bkHttpServiceProvider.provideWhoIsAuditorService();
+
+        //1,  GET, should return error
+        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response1 = listDiskFileService.handle(request1);
+        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
+    }
 }

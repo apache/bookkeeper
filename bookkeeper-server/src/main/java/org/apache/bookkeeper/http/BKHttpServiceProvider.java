@@ -240,11 +240,15 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
     }
 
     /**
-     * Provide service for expend bookie storage api.
+     * Provide service for expand bookie storage api.
      */
     @Override
-    public HttpService provideExpendStorageService() {
-        return NULL_HTTP_SERVICE;
+    public HttpService provideExpandStorageService() {
+        ServerConfiguration configuration = getServerConf();
+        if (configuration == null) {
+            return new ErrorHttpService();
+        }
+        return new ExpandStorageService(configuration);
     }
 
     //
@@ -255,8 +259,12 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
      * Provide service for auto recovery failed bookie api.
      */
     @Override
-    public HttpService provideAutoRecoveryBookieService() {
-        return NULL_HTTP_SERVICE;
+    public HttpService provideRecoveryBookieService() {
+        ServerConfiguration configuration = getServerConf();
+        if (configuration == null) {
+            return new ErrorHttpService();
+        }
+        return new RecoveryBookieService(configuration);
     }
 
     /**
@@ -264,7 +272,11 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
      */
     @Override
     public HttpService provideWhoIsAuditorService() {
-        return NULL_HTTP_SERVICE;
+        ServerConfiguration configuration = getServerConf();
+        if (configuration == null) {
+            return new ErrorHttpService();
+        }
+        return new WhoIsAuditorService(configuration);
     }
 
     /**

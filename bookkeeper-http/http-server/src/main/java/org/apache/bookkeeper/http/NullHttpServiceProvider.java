@@ -148,10 +148,10 @@ public class NullHttpServiceProvider implements HttpServiceProvider {
     }
 
     /**
-     * Provide service for expend bookie storage api.
+     * Provide service for expand bookie storage api.
      */
     @Override
-    public HttpService provideExpendStorageService() {
+    public HttpService provideExpandStorageService() {
         return NULL_HTTP_SERVICE;
     }
 
@@ -163,7 +163,7 @@ public class NullHttpServiceProvider implements HttpServiceProvider {
      * Provide service for auto recovery failed bookie api.
      */
     @Override
-    public HttpService provideAutoRecoveryBookieService() {
+    public HttpService provideRecoveryBookieService() {
         return NULL_HTTP_SERVICE;
     }
 

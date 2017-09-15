@@ -113,9 +113,9 @@ public abstract class AbstractHttpHandlerFactory<Handler> {
     public abstract Handler newReadJournalFileHandler();
 
     /**
-     * Create a handler for expend bookie storage api.
+     * Create a handler for expand bookie storage api.
      */
-    public abstract Handler newExpendStorageHandler();
+    public abstract Handler newExpandStorageHandler();
 
     //
     // autorecovery
@@ -124,7 +124,7 @@ public abstract class AbstractHttpHandlerFactory<Handler> {
     /**
      * Create a handler for auto recovery failed bookie api.
      */
-    public abstract Handler newAutoRecoveryBookieHandler();
+    public abstract Handler newRecoveryBookieHandler();
 
     /**
      * Create a handler for get auditor api.

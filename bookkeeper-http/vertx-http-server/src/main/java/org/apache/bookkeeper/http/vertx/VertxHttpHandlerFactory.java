@@ -212,14 +212,14 @@ public class VertxHttpHandlerFactory extends AbstractHttpHandlerFactory<VertxAbs
     }
 
     /**
-     * Create a handler for expend bookie storage api.
+     * Create a handler for expand bookie storage api.
      */
     @Override
-    public VertxAbstractHandler newExpendStorageHandler() {
+    public VertxAbstractHandler newExpandStorageHandler() {
         return new VertxAbstractHandler() {
             @Override
             public void handle(RoutingContext context){
-                processRequest(getHttpServiceProvider().provideExpendStorageService(), context);
+                processRequest(getHttpServiceProvider().provideExpandStorageService(), context);
             }
         };
     }
@@ -232,11 +232,11 @@ public class VertxHttpHandlerFactory extends AbstractHttpHandlerFactory<VertxAbs
      * Create a handler for auto recovery failed bookie api.
      */
     @Override
-    public VertxAbstractHandler newAutoRecoveryBookieHandler() {
+    public VertxAbstractHandler newRecoveryBookieHandler() {
         return new VertxAbstractHandler() {
             @Override
             public void handle(RoutingContext context){
-                processRequest(getHttpServiceProvider().provideAutoRecoveryBookieService(), context);
+                processRequest(getHttpServiceProvider().provideRecoveryBookieService(), context);
             }
         };
     }

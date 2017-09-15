@@ -214,14 +214,14 @@ public class TwitterHttpHandlerFactory extends AbstractHttpHandlerFactory<Twitte
     }
 
     /**
-     * Create a handler for expend bookie storage api.
+     * Create a handler for expand bookie storage api.
      */
     @Override
-    public TwitterAbstractHandler newExpendStorageHandler() {
+    public TwitterAbstractHandler newExpandStorageHandler() {
         return new TwitterAbstractHandler() {
             @Override
             public Future<Response> apply(Request request) {
-                return processRequest(getHttpServiceProvider().provideExpendStorageService(), request);
+                return processRequest(getHttpServiceProvider().provideExpandStorageService(), request);
             }
         };
     }
@@ -234,11 +234,11 @@ public class TwitterHttpHandlerFactory extends AbstractHttpHandlerFactory<Twitte
      * Create a handler for auto recovery failed bookie api.
      */
     @Override
-    public TwitterAbstractHandler newAutoRecoveryBookieHandler() {
+    public TwitterAbstractHandler newRecoveryBookieHandler() {
         return new TwitterAbstractHandler() {
             @Override
             public Future<Response> apply(Request request) {
-                return processRequest(getHttpServiceProvider().provideAutoRecoveryBookieService(), request);
+                return processRequest(getHttpServiceProvider().provideRecoveryBookieService(), request);
             }
         };
     }

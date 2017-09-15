@@ -109,9 +109,9 @@ public interface HttpServiceProvider {
     HttpService provideReadJournalFileService();
 
     /**
-     * Provide service for expend bookie storage api.
+     * Provide service for expand bookie storage api.
      */
-    HttpService provideExpendStorageService();
+    HttpService provideExpandStorageService();
 
     //
     // autorecovery
@@ -120,7 +120,7 @@ public interface HttpServiceProvider {
     /**
      * Provide service for auto recovery failed bookie api.
      */
-    HttpService provideAutoRecoveryBookieService();
+    HttpService provideRecoveryBookieService();
 
     /**
      * Provide service for get auditor api.

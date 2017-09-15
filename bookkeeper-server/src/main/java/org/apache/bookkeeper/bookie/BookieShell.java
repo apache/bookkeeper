@@ -234,7 +234,7 @@ public class BookieShell implements Tool {
             opts.addOption("f", "force", false,
                     "If [nonInteractive] is specified, then whether"
                             + " to force delete the old data without prompt..?");
-            opts.addOption("d", "deleteCookie", false, "Delete its cookie on zookeeper");
+            opts.addOption("d", "delete_cookie", false, "Delete its cookie on zookeeper");
         }
 
         @Override
@@ -249,7 +249,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "bookieformat [-nonInteractive] [-force] [-deleteCookie]";
+            return "bookieformat [-nonInteractive] [-force] [-delete_cookie]";
         }
 
         @Override
@@ -287,7 +287,7 @@ public class BookieShell implements Tool {
 
         public RecoverCmd() {
             super(CMD_RECOVER);
-            opts.addOption("d", "deleteCookie", false, "Delete cookie node for the bookie.");
+            opts.addOption("d", "delete_cookie", false, "Delete cookie node for the bookie.");
         }
 
         @Override
@@ -302,7 +302,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "recover [-deleteCookie] <bookieSrc> [bookieDest]";
+            return "recover [-delete_cookie] <bookieSrc> [bookieDest]";
         }
 
         @Override

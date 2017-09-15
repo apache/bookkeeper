@@ -46,9 +46,9 @@ public abstract class HttpRouter<Handler> {
   public static final String LIST_DISK_FILE               = "/api/v1/bookie/list_disk_file";
   public static final String READ_ENTRY_LOG               = "/api/v1/bookie/read_entry_log";
   public static final String READ_JOURNAL_FILE            = "/api/v1/bookie/read_journal_file";
-  public static final String EXPEND_STORAGE               = "/api/v1/bookie/expend_storage";
+  public static final String EXPAND_STORAGE               = "/api/v1/bookie/expand_storage";
   // autorecovery
-  public static final String AUTO_RECOVERY_BOOKIE         = "/api/v1/autorecovery/bookie";
+  public static final String RECOVERY_BOOKIE              = "/api/v1/autorecovery/bookie";
   public static final String LIST_UNDER_REPLICAETD_LEDGER = "/api/v1/autorecovery/list_under_replicated_ledger";
   public static final String WHO_IS_AUDITOR               = "/api/v1/autorecovery/who_is_auditor";
   public static final String TRIGGER_AUDIT                = "/api/v1/autorecovery/trigger_audit";
@@ -78,10 +78,10 @@ public abstract class HttpRouter<Handler> {
     this.endpointHandlers.put(LIST_DISK_FILE, handlerFactory.newListDiskFileHandler());
     this.endpointHandlers.put(READ_ENTRY_LOG, handlerFactory.newReadEntryLogHandler());
     this.endpointHandlers.put(READ_JOURNAL_FILE, handlerFactory.newReadJournalFileHandler());
-    this.endpointHandlers.put(EXPEND_STORAGE, handlerFactory.newExpendStorageHandler());
+    this.endpointHandlers.put(EXPAND_STORAGE, handlerFactory.newExpandStorageHandler());
 
     // autorecovery
-    this.endpointHandlers.put(AUTO_RECOVERY_BOOKIE, handlerFactory.newAutoRecoveryBookieHandler());
+    this.endpointHandlers.put(RECOVERY_BOOKIE, handlerFactory.newRecoveryBookieHandler());
     this.endpointHandlers.put(LIST_UNDER_REPLICAETD_LEDGER, handlerFactory.newListUnderReplicatedLedgerHandler());
     this.endpointHandlers.put(WHO_IS_AUDITOR, handlerFactory.newWhoIsAuditorHandler());
     this.endpointHandlers.put(TRIGGER_AUDIT, handlerFactory.newTriggerAuditHandler());

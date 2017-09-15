@@ -68,7 +68,7 @@ import org.slf4j.LoggerFactory;
  * but the bookie would be up, so the client would think that everything is ok
  * with the cluster. It's better to fail early and obviously.
  */
-class Cookie {
+public class Cookie {
     private static final Logger LOG = LoggerFactory.getLogger(Cookie.class);
 
     static final int CURRENT_COOKIE_LAYOUT_VERSION = 4;
@@ -336,7 +336,7 @@ class Cookie {
      * @throws IOException
      * @throws UnknownHostException
      */
-    static Versioned<Cookie> readFromZooKeeper(ZooKeeper zk, ServerConfiguration conf)
+    public static Versioned<Cookie> readFromZooKeeper(ZooKeeper zk, ServerConfiguration conf)
             throws KeeperException, InterruptedException, IOException, UnknownHostException {
         return readFromZooKeeper(zk, conf, Bookie.getBookieAddress(conf));
     }
@@ -353,7 +353,7 @@ class Cookie {
      * @throws IOException
      * @throws UnknownHostException
      */
-    static Versioned<Cookie> readFromZooKeeper(ZooKeeper zk, AbstractConfiguration conf, BookieSocketAddress address)
+    public static Versioned<Cookie> readFromZooKeeper(ZooKeeper zk, AbstractConfiguration conf, BookieSocketAddress address)
             throws KeeperException, InterruptedException, IOException, UnknownHostException {
         String zkPath = getZkPath(conf, address);
 

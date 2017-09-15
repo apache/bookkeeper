@@ -21,59 +21,69 @@
 package org.apache.bookkeeper.http;
 
 import com.google.common.base.Preconditions;
-import java.util.Map;
-import org.apache.bookkeeper.client.BookKeeper;
-import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.service.HttpService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
-import org.apache.bookkeeper.util.JsonUtil;
+import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.replication.AuditorElector;
+import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
+import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * HttpService that handle Bookkeeper Configuration related http request.
  */
-public class DeleteLedgerService implements HttpService {
+public class WhoIsAuditorService implements HttpService {
 
-    static final Logger LOG = LoggerFactory.getLogger(DeleteLedgerService.class);
+    static final Logger LOG = LoggerFactory.getLogger(WhoIsAuditorService.class);
 
     protected ServerConfiguration conf;
 
-    public DeleteLedgerService(ServerConfiguration conf) {
+    public WhoIsAuditorService(ServerConfiguration conf) {
         Preconditions.checkNotNull(conf);
         this.conf = conf;
     }
 
+    /*
+     * Print the node which holds the auditor lock.
+     */
     @Override
     public HttpServiceResponse handle(HttpServiceRequest request) throws Exception {
         HttpServiceResponse response = new HttpServiceResponse();
-        // only handle DELETE method
-        if (HttpServer.Method.DELETE == request.getMethod()) {
-            Map<String, String> params = request.getParams();
-            if (params != null && params.containsKey("ledger_id")) {
-                ClientConfiguration clientConf = new ClientConfiguration();
-                clientConf.addConfiguration(conf);
-                BookKeeper bk = new BookKeeper(clientConf);
-                Long ledgerId = Long.parseLong(params.get("ledger_id"));
 
-                bk.deleteLedger(ledgerId);
+        if (HttpServer.Method.GET == request.getMethod()) {
+            ZooKeeper zk = ZooKeeperClient.newBuilder()
+                .connectString(conf.getZkServers())
+                .sessionTimeoutMs(conf.getZkTimeout())
+                .build();
+            BookieSocketAddress bookieId = null;
+            try {
+                bookieId = AuditorElector.getCurrentAuditor(conf, zk);
 
-                String output = "Deleted ledger: " + ledgerId;
-                String jsonResponse = JsonUtil.toJson(output);
-                LOG.debug("output body:" + jsonResponse);
-                response.setBody(jsonResponse);
-                response.setCode(HttpServer.StatusCode.OK);
-                return response;
-            } else {
+                if (bookieId == null) {
+                    response.setCode(HttpServer.StatusCode.NOT_FOUND);
+                    response.setBody("No auditor elected");
+                    return response;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
                 response.setCode(HttpServer.StatusCode.NOT_FOUND);
-                response.setBody("Not ledger found. Should provide ledger_id=<id>");
+                response.setBody("Exception when get." + e.getMessage());
                 return response;
             }
+
+            response.setCode(HttpServer.StatusCode.OK);
+            response.setBody("Auditor: "
+                + bookieId.getSocketAddress().getAddress().getCanonicalHostName() + "/"
+                + bookieId.getSocketAddress().getAddress().getHostAddress() + ":"
+                + bookieId.getSocketAddress().getPort());
+            LOG.debug("response body:" + response.getBody());
+            return response;
         } else {
             response.setCode(HttpServer.StatusCode.NOT_FOUND);
-            response.setBody("Not found method. Should be DELETE method");
+            response.setBody("Not found method. Should be GET method");
             return response;
         }
     }
