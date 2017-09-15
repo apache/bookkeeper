@@ -196,7 +196,11 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
      */
     @Override
     public HttpService provideListBookieInfoService() {
-        return NULL_HTTP_SERVICE;
+        ServerConfiguration configuration = getServerConf();
+        if (configuration == null) {
+            return new ErrorHttpService();
+        }
+        return new ListBookieInfoService(configuration);
     }
 
     /**
@@ -212,7 +216,11 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
      */
     @Override
     public HttpService provideListDiskFileService() {
-        return NULL_HTTP_SERVICE;
+        ServerConfiguration configuration = getServerConf();
+        if (configuration == null) {
+            return new ErrorHttpService();
+        }
+        return new ListDiskFilesService(configuration);
     }
 
     /**

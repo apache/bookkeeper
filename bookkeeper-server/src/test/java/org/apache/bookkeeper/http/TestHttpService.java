@@ -24,6 +24,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import com.google.common.collect.Maps;
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -45,9 +46,17 @@ public class TestHttpService extends BookKeeperClusterTestCase {
 
     public TestHttpService() {
         super(3);
-        this.bkHttpServiceProvider = new BKHttpServiceProvider.Builder()
-            .setServerConfiguration(baseConf)
-            .build();
+        try {
+            File tmpDir = createTempDir("bookie_http", "test");
+            baseConf.setJournalDirName(tmpDir.getPath())
+              .setLedgerDirNames(
+                new String[]{tmpDir.getPath()});
+            this.bkHttpServiceProvider = new BKHttpServiceProvider.Builder()
+              .setServerConfiguration(baseConf)
+              .build();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Test
@@ -69,8 +78,8 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceRequest getRequest = new HttpServiceRequest(null, HttpServer.Method.GET, null);
         HttpServiceResponse response = configService.handle(getRequest);
         Map configMap = JsonUtil.fromJson(
-            response.getBody(),
-            Map.class
+          response.getBody(),
+          Map.class
         );
         assertEquals(HttpServer.StatusCode.OK.getValue(), response.getStatusCode());
         assertEquals(testValue, configMap.get(testProperty));
@@ -378,5 +387,71 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         @SuppressWarnings("unchecked")
         HashMap<String, String> respBody3 = JsonUtil.fromJson(response3.getBody(), HashMap.class);
         assertEquals(77, respBody3.size());
+    }
+
+    @Test
+    public void testListBookieInfoService() throws Exception {
+        baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        HttpService listBookieInfoService = bkHttpServiceProvider.provideListBookieInfoService();
+
+        //1,  PUT method, should return NOT_FOUND
+        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.PUT, null);
+        HttpServiceResponse response1 = listBookieInfoService.handle(request1);
+        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
+
+        //2, GET method, expected get 3 bookies info and the cluster total info
+        HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response2 = listBookieInfoService.handle(request2);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response2.getStatusCode());
+        @SuppressWarnings("unchecked")
+        HashMap<String, String> respBody = JsonUtil.fromJson(response2.getBody(), HashMap.class);
+        assertEquals(4, respBody.size());
+        for (int i = 0; i < 3; i++) {
+            assertEquals(true, respBody.containsKey(getBookie(i).toString()));
+        }
+    }
+
+    @Test
+    public void testListDiskFilesService() throws Exception {
+        baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        BookKeeper.DigestType digestType = BookKeeper.DigestType.CRC32;
+        int numLedgers = 4;
+        int numMsgs = 100;
+        LedgerHandle[] lh = new LedgerHandle[numLedgers];
+        // create ledgers
+        for (int i = 0; i < numLedgers; i++) {
+            lh[i] = bkc.createLedger(digestType, "".getBytes());
+        }
+        String content = "Apache BookKeeper is cool!";
+        // add entries
+        for (int i = 0; i < numMsgs; i++) {
+            for (int j = 0; j < numLedgers; j++) {
+                lh[j].addEntry(content.getBytes());
+            }
+        }
+        // close ledgers
+        for (int i = 0; i < numLedgers; i++) {
+            lh[i].close();
+        }
+
+        HttpService listDiskFileService = bkHttpServiceProvider.provideListDiskFileService();
+
+        //1,  null parameters of GET, should return 3 kind of files: journal, entrylog and index files
+        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response1 = listDiskFileService.handle(request1);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response1.getStatusCode());
+        @SuppressWarnings("unchecked")
+        HashMap<String, String> respBody = JsonUtil.fromJson(response1.getBody(), HashMap.class);
+        assertEquals(3, respBody.size());
+
+        //2,  parameters of GET journal file, should return journal files
+        HashMap<String, String> params = Maps.newHashMap();
+        params.put("file_type", "journal");
+        HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.GET, params);
+        HttpServiceResponse response2 = listDiskFileService.handle(request2);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response2.getStatusCode());
+        @SuppressWarnings("unchecked")
+        HashMap<String, String> respBody2 = JsonUtil.fromJson(response2.getBody(), HashMap.class);
+        assertEquals(1, respBody2.size());
     }
 }
