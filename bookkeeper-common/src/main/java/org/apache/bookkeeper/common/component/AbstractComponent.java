@@ -21,7 +21,7 @@ package org.apache.bookkeeper.common.component;
 import org.apache.bookkeeper.common.conf.ComponentConfiguration;
 
 /**
- * The base class represents a component in zstream.
+ * The base class represents a component.
  */
 public abstract class AbstractComponent<ConfT extends ComponentConfiguration> implements AutoCloseable {
 

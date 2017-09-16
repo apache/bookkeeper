@@ -31,7 +31,7 @@ import org.junit.Test;
  */
 public class TestComponentStarter {
 
-  @Test(timeout = 10000)
+  @Test
   public void testStartComponent() {
     LifecycleComponent component = mock(LifecycleComponent.class);
     CountDownLatch latch = new CountDownLatch(1);
@@ -40,7 +40,7 @@ public class TestComponentStarter {
     verify(component).start();
   }
 
-  @Test(timeout = 10000)
+  @Test
   public void testComponentShutdownHook() throws Exception {
     LifecycleComponent component = mock(LifecycleComponent.class);
     CountDownLatch latch = new CountDownLatch(1);
