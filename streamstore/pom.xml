@@ -30,6 +30,7 @@
   <name>Apache DistributedLog :: Stream</name>
   <modules>
     <module>protocol</module>
+    <module>api</module>
   </modules>
   <build>
     <plugins>
