@@ -358,8 +358,8 @@ public class IndexPersistenceMgr {
     void removeLedger(Long ledgerId) throws IOException {
         // Delete the ledger's index file and close the FileInfo
         FileInfo fi = null;
+        fileInfoLock.writeLock().lock();
         try {
-            fileInfoLock.writeLock().lock();
             fi = getFileInfo(ledgerId, null);
             // Don't force flush. There's no need since we're deleting the ledger
             // anyway, and recreating the file at this point, although safe, will
@@ -367,17 +367,19 @@ public class IndexPersistenceMgr {
             fi.close(false);
             fi.delete();
         } finally {
-            // should release use count
-            // otherwise the file channel would not be closed.
-            if (null != fi) {
-                fi.release();
-                // Remove it from the active ledger manager
-                activeLedgers.remove(ledgerId);
-                // Now remove it from cache
-                writeFileInfoCache.invalidate(ledgerId);
-                readFileInfoCache.invalidate(ledgerId);
+            try {
+                if (fi != null) {
+                    // should release use count
+                    fi.release();
+                    // Remove it from the active ledger manager
+                    activeLedgers.remove(ledgerId);
+                    // Now remove it from cache
+                    writeFileInfoCache.invalidate(ledgerId);
+                    readFileInfoCache.invalidate(ledgerId);
+                }
+            } finally {
+                fileInfoLock.writeLock().unlock();
             }
-            fileInfoLock.writeLock().unlock();
         }
     }
 
