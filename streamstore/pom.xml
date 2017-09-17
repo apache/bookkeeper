@@ -31,6 +31,7 @@
   <modules>
     <module>protocol</module>
     <module>api</module>
+    <module>client</module>
   </modules>
   <build>
     <plugins>

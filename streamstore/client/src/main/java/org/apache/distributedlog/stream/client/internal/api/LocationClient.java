@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,24 +15,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.bookkeeper.common.util;
+
+package org.apache.distributedlog.stream.client.internal.api;
+
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import org.apache.bookkeeper.common.util.Revisioned;
+import org.apache.distributedlog.stream.proto.rangeservice.OneStorageContainerEndpointResponse;
 
 /**
- * Revisioned object.
- *
- * <p>Operations like updating offsets, updating metadata that modifies states
- * will be assigned with increasing revision number. The revision number can be used for
- * cas (compare-and-set) operation to guarantee consistent operations.
+ * A client that talks to location servers to find locations of ranges and storage containers.
  */
-public interface IRevisioned {
-
-  long ANY_REVISION = -1L;
+public interface LocationClient extends AutoCloseable {
 
   /**
-   * Return the revision associated with the value.
+   * Get the locations for a list of storage container ids.
    *
-   * @return the revision associated with the value.
+   * @param storageContainerIds a list of storage container ids.
+   * @return list of storage container endpoints.
    */
-  long getRevision();
+  CompletableFuture<List<OneStorageContainerEndpointResponse>> locateStorageContainers(
+    List<Revisioned<Long>> storageContainerIds);
+
+  void close();
 
 }

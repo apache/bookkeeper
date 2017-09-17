@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,24 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.bookkeeper.common.util;
+
+package org.apache.bookkeeper.common.exceptions;
 
 /**
- * Revisioned object.
- *
- * <p>Operations like updating offsets, updating metadata that modifies states
- * will be assigned with increasing revision number. The revision number can be used for
- * cas (compare-and-set) operation to guarantee consistent operations.
+ * Exception thrown when accessing a closed object.
  */
-public interface IRevisioned {
+public class ObjectClosedException extends Exception {
 
-  long ANY_REVISION = -1L;
+    private static final long serialVersionUID = -1391878869646819824L;
 
-  /**
-   * Return the revision associated with the value.
-   *
-   * @return the revision associated with the value.
-   */
-  long getRevision();
-
+    public ObjectClosedException(String name) {
+        super(name + " is already closed.");
+    }
 }

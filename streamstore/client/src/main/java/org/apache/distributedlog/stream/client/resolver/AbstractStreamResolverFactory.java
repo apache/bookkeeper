@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,24 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.bookkeeper.common.util;
+
+package org.apache.distributedlog.stream.client.resolver;
+
+import io.grpc.NameResolver;
 
 /**
- * Revisioned object.
+ * The abstract zstream name resolver factory.
  *
- * <p>Operations like updating offsets, updating metadata that modifies states
- * will be assigned with increasing revision number. The revision number can be used for
- * cas (compare-and-set) operation to guarantee consistent operations.
+ * <p>The name resolver is responsible for creating specific name resolver
+ * which provides addresses for {@link io.grpc.LoadBalancer}.
  */
-public interface IRevisioned {
-
-  long ANY_REVISION = -1L;
+public abstract class AbstractStreamResolverFactory extends NameResolver.Factory {
 
   /**
-   * Return the revision associated with the value.
+   * Gets name of the name resolver factory.
    *
-   * @return the revision associated with the value.
+   * @return name of the name resolver factory.
    */
-  long getRevision();
+  public abstract String name();
 
 }

@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,24 +15,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.bookkeeper.common.util;
+
+package org.apache.distributedlog.stream.client.exceptions;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestName;
 
 /**
- * Revisioned object.
- *
- * <p>Operations like updating offsets, updating metadata that modifies states
- * will be assigned with increasing revision number. The revision number can be used for
- * cas (compare-and-set) operation to guarantee consistent operations.
+ * Test Case of {@link InvalidStreamNameException}.
  */
-public interface IRevisioned {
+public class InvalidStreamNameExceptionTest {
 
-  long ANY_REVISION = -1L;
+  @Rule
+  public TestName name = new TestName();
 
-  /**
-   * Return the revision associated with the value.
-   *
-   * @return the revision associated with the value.
-   */
-  long getRevision();
+  @Test
+  public void testGetMessage() {
+    InvalidStreamNameException icne = new InvalidStreamNameException(name.getMethodName());
+    assertEquals("Invalid stream name : " + name.getMethodName(), icne.getMessage());
+    assertNull(icne.getCause());
+  }
 
 }

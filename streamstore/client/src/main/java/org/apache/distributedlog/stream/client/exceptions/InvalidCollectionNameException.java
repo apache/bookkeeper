@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,24 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.bookkeeper.common.util;
+
+package org.apache.distributedlog.stream.client.exceptions;
 
 /**
- * Revisioned object.
- *
- * <p>Operations like updating offsets, updating metadata that modifies states
- * will be assigned with increasing revision number. The revision number can be used for
- * cas (compare-and-set) operation to guarantee consistent operations.
+ * Exception is thrown when the collection name is invalid.
  */
-public interface IRevisioned {
+public class InvalidCollectionNameException extends ClientException {
 
-  long ANY_REVISION = -1L;
+  private static final long serialVersionUID = -7753743605040374222L;
 
-  /**
-   * Return the revision associated with the value.
-   *
-   * @return the revision associated with the value.
-   */
-  long getRevision();
-
+  public InvalidCollectionNameException(String colName) {
+    super("Invalid collection name : " + colName);
+  }
 }

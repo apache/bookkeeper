@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,24 +15,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.bookkeeper.common.util;
+
+package org.apache.distributedlog.stream.client.internal.api;
+
+import java.util.concurrent.CompletableFuture;
+import org.apache.distributedlog.stream.proto.StreamProperties;
 
 /**
- * Revisioned object.
+ * A meta range client that talks to meta range.
  *
- * <p>Operations like updating offsets, updating metadata that modifies states
- * will be assigned with increasing revision number. The revision number can be used for
- * cas (compare-and-set) operation to guarantee consistent operations.
+ * <p>It is an internal client to get stream specific metadata.
  */
-public interface IRevisioned {
+public interface MetaRangeClient {
 
-  long ANY_REVISION = -1L;
+  StreamProperties getStreamProps();
+
+  //
+  // KeyRange Related Operations
+  //
 
   /**
-   * Return the revision associated with the value.
+   * Retrieve the current active {@link org.apache.distributedlog.stream.protocol.RangeId}s from
+   * a particular stream {@code streamId}.
    *
-   * @return the revision associated with the value.
+   * @return the current active ranges for a given stream.
    */
-  long getRevision();
+  CompletableFuture<HashStreamRanges> getActiveDataRanges();
 
 }

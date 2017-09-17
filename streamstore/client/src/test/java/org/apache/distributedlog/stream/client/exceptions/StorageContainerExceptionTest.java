@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,24 +15,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.bookkeeper.common.util;
+
+package org.apache.distributedlog.stream.client.exceptions;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
+import org.apache.distributedlog.stream.proto.rangeservice.StatusCode;
+import org.junit.Test;
 
 /**
- * Revisioned object.
- *
- * <p>Operations like updating offsets, updating metadata that modifies states
- * will be assigned with increasing revision number. The revision number can be used for
- * cas (compare-and-set) operation to guarantee consistent operations.
+ * Unit test for {@link StorageContainerException}.
  */
-public interface IRevisioned {
+public class StorageContainerExceptionTest {
 
-  long ANY_REVISION = -1L;
-
-  /**
-   * Return the revision associated with the value.
-   *
-   * @return the revision associated with the value.
-   */
-  long getRevision();
+  @Test
+  public void testGetMessage() {
+    StatusCode code = StatusCode.STALE_GROUP_INFO;
+    StorageContainerException exception = new StorageContainerException(code, "test-get-message");
+    assertEquals(code, exception.getCode());
+    assertEquals("StorageContainerError : StatusCode = " + code + ", Error = test-get-message", exception.getMessage());
+    assertNull(exception.getCause());
+  }
 
 }
