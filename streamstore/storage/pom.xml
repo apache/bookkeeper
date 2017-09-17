@@ -21,32 +21,13 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
-    <artifactId>bookkeeper</artifactId>
+    <artifactId>stream-parent</artifactId>
     <version>4.6.0-SNAPSHOT</version>
   </parent>
-  <groupId>org.apache.bookkeeper</groupId>
-  <artifactId>stream-parent</artifactId>
-  <name>Apache BookKeeper :: Stream Store</name>
+  <artifactId>stream-storage-parent</artifactId>
+  <name>Apache BookKeeper :: Stream Store :: Storage</name>
   <modules>
-    <module>protocol</module>
     <module>api</module>
-    <module>client</module>
-    <module>storage</module>
+    <module>impl</module>
   </modules>
-  <build>
-    <plugins>
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>${maven-compiler-plugin.version}</version>
-        <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
-          <compilerArgs>
-            <compilerArg>-Xlint:deprecation</compilerArg>
-            <compilerArg>-Xlint:unchecked</compilerArg>
-	  </compilerArgs>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
 </project>

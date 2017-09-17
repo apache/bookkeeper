@@ -19,41 +19,23 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.apache.distributedlog</groupId>
+    <groupId>org.apache.bookkeeper</groupId>
     <artifactId>stream-parent</artifactId>
-    <version>0.6.0-SNAPSHOT</version>
+    <version>4.6.0-SNAPSHOT</version>
   </parent>
   <artifactId>stream-client</artifactId>
-  <name>Apache DistributedLog :: Stream :: Client</name>
+  <name>Apache BookKeeper :: Stream Store :: Client</name>
 
   <dependencies>
     <dependency>
-      <groupId>org.apache.distributedlog</groupId>
+      <groupId>org.apache.bookkeeper</groupId>
       <artifactId>stream-protocol</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.distributedlog</groupId>
+      <groupId>org.apache.bookkeeper</groupId>
       <artifactId>stream-api</artifactId>
       <version>${project.parent.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>${junit.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-log4j12</artifactId>
-      <version>${slf4j.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-      <version>${mockito-core.version}</version>
-      <scope>test</scope>
     </dependency>
   </dependencies>
   <build>
@@ -102,7 +84,7 @@
           <dependency>
             <groupId>org.apache.bookkeeper</groupId>
             <artifactId>buildtools</artifactId>
-            <version>${buildtools.version}</version>
+            <version>${project.parent.version}</version>
           </dependency>
         </dependencies>
         <configuration>

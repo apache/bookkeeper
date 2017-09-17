@@ -19,43 +19,18 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.apache.distributedlog</groupId>
+    <groupId>org.apache.bookkeeper</groupId>
     <artifactId>stream-parent</artifactId>
-    <version>0.6.0-SNAPSHOT</version>
+    <version>4.6.0-SNAPSHOT</version>
   </parent>
   <artifactId>stream-protocol</artifactId>
-  <name>Apache DistributedLog :: Stream :: Protocol</name>
+  <name>Apache BookKeeper :: Stream Store :: Protocol</name>
 
   <dependencies>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>${slf4j.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
-      <version>${commons-lang3.version}</version>
-    </dependency>
     <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-buffer</artifactId>
       <version>${netty-buffer.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.projectlombok</groupId>
-      <artifactId>lombok</artifactId>
-      <version>${lombok.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>${guava.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.inferred</groupId>
-      <artifactId>freebuilder</artifactId>
-      <version>${freebuilder.version}</version>
     </dependency>
     <dependency>
       <groupId>io.grpc</groupId>
@@ -65,25 +40,7 @@
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-common</artifactId>
-      <version>4.6.0-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>${junit.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-log4j12</artifactId>
-      <version>${slf4j.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-      <version>${mockito-core.version}</version>
-      <scope>test</scope>
+      <version>${project.parent.version}</version>
     </dependency>
   </dependencies>
 
@@ -158,7 +115,7 @@
           <dependency>
             <groupId>org.apache.bookkeeper</groupId>
             <artifactId>buildtools</artifactId>
-            <version>${buildtools.version}</version>
+            <version>${project.parent.version}</version>
           </dependency>
         </dependencies>
         <configuration>

@@ -20,25 +20,51 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
-    <artifactId>stream-parent</artifactId>
+    <artifactId>stream-storage-parent</artifactId>
     <version>4.6.0-SNAPSHOT</version>
   </parent>
-  <artifactId>stream-api</artifactId>
-  <name>Apache BookKeeper :: Stream Store :: Api</name>
+  <artifactId>stream-storage-impl</artifactId>
+  <name>Apache BookKeeper :: Stream Store :: Storage :: Impl</name>
 
   <dependencies>
     <dependency>
-      <groupId>org.inferred</groupId>
-      <artifactId>freebuilder</artifactId>
-      <version>${freebuilder.version}</version>
+      <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>stream-storage-api</artifactId>
+      <version>${project.parent.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
-      <artifactId>stream-protocol</artifactId>
+      <artifactId>stream-client</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.distributedlog</groupId>
+      <artifactId>distributedlog-core</artifactId>
+      <version>${distributedlog.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.helix</groupId>
+      <artifactId>helix-core</artifactId>
+      <version>${helix-core.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>log4j</groupId>
+          <artifactId>log4j</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.distributedlog</groupId>
+      <artifactId>distributedlog-core</artifactId>
+      <version>${distributedlog.version}</version>
+      <classifier>tests</classifier>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
-
   <build>
     <plugins>
       <plugin>
