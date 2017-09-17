@@ -1,0 +1,309 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+syntax = "proto3";
+
+import "common.proto";
+import "stream.proto";
+import "kv_rpc.proto";
+
+package distributedlog.proto.rangeservice;
+
+option java_multiple_files = true;
+option java_package = "org.apache.distributedlog.stream.proto.rangeservice";
+
+//
+// Requests
+//
+
+enum StatusCode {
+    SUCCESS                     = 0;
+    FAILURE                     = 1;
+
+    // 4xx: client errors
+    BAD_REQUEST                 = 400;
+
+    // 5xx: server errors
+    INTERNAL_SERVER_ERROR       = 500;
+    NOT_IMPLEMENTED             = 501;
+
+    // 6xx: unexpected
+    UNEXPECTED                  = 600;
+
+    // 9xx: revisions, versions 
+    BAD_VERSION                 = 900;
+    BAD_REVISION                = 901;
+
+    // ROOT and META RANGE related
+
+    // 20xx: Collection Related
+    INVALID_COLLECTION_NAME     = 2000;
+    COLLECTION_EXISTS           = 2001;
+    COLLECTION_NOT_FOUND        = 2002;
+
+    // 21xx: Stream Related
+    INVALID_STREAM_NAME         = 2100;
+    STREAM_EXISTS               = 2101;
+    STREAM_NOT_FOUND            = 2102;
+    INVALID_STREAMSNAPSHOT_NAME = 2103;
+    STREAMSNAPSHOT_EXISTS       = 2104;
+    STREAMSNAPSHOT_NOT_FOUND    = 2105;
+
+    // 3xxx: GROUP related
+    WRONG_GROUP_LOCATION        = 3000;
+    INVALID_GROUP_ID            = 3001;
+    GROUP_EXISTS                = 3002;
+    GROUP_NOT_FOUND             = 3003;
+    STALE_GROUP_INFO            = 3004;
+
+    // 6xxx: Table related
+    INVALID_KEY                 = 6000;
+    KEY_EXISTS                  = 6001;
+    KEY_NOT_FOUND               = 6002;
+}
+
+//
+// Meta Range Service
+//
+
+message GetActiveRangesRequest {
+    int64 stream_id     = 1;
+}
+
+message GetActiveRangesResponse {
+    repeated RelatedRanges ranges       = 1;
+}
+
+enum RelationType {
+    CHILDREN                = 0;
+    PARENTS                 = 1;
+    CHILDREN_PARENTS        = 2;
+}
+
+message RelatedRanges {
+    stream.RangeProperties props        = 1;
+    RelationType type                   = 2;
+    repeated int64 related_ranges       = 3;
+}
+
+// public service for other operations in range server
+service MetaRangeService {
+    rpc GetActiveRanges(StorageContainerRequest)        returns (StorageContainerResponse);
+}
+
+//
+// Root Range Services
+//
+
+message CreateCollectionRequest {
+    string name                                 = 1;
+    stream.CollectionConfiguration col_conf     = 2;
+}
+
+message CreateCollectionResponse {
+    StatusCode code                             = 1;
+    stream.CollectionProperties col_props       = 2;
+}
+
+message DeleteCollectionRequest {
+    string name = 1;
+}
+
+message DeleteCollectionResponse {
+    StatusCode code = 1;
+}
+
+message GetCollectionRequest {
+    string name = 1;
+}
+
+message GetCollectionResponse {
+    StatusCode code = 1;
+    stream.CollectionProperties col_props = 2;
+}
+
+message CreateStreamRequest {
+    string col_name                        = 1;
+    string name                            = 2;
+    stream.StreamConfiguration stream_conf = 3;
+}
+
+message CreateStreamResponse {
+    StatusCode code                      = 1;
+    stream.StreamProperties stream_props = 2;
+}
+
+message DeleteStreamRequest {
+    string col_name                      = 1;
+    string name                          = 2;
+}
+
+message DeleteStreamResponse {
+    StatusCode code                      = 1;
+}
+
+message GetStreamRequest {
+    oneof id {
+        stream.StreamName stream_name   = 1;
+        int64 stream_id                 = 2;
+    }
+}
+
+message GetStreamResponse {
+    StatusCode code                      = 1;
+    stream.StreamProperties stream_props = 2;
+}
+
+// public service for metadata services
+service RootRangeService {
+    //
+    // Collection Methods
+    //
+    rpc CreateCollection(CreateCollectionRequest) returns (CreateCollectionResponse);
+    rpc DeleteCollection(DeleteCollectionRequest) returns (DeleteCollectionResponse);
+    rpc GetCollection(GetCollectionRequest) returns (GetCollectionResponse);
+
+    //
+    // Stream Methods
+    //
+    rpc CreateStream(CreateStreamRequest) returns (CreateStreamResponse);
+    rpc DeleteStream(DeleteStreamRequest) returns (DeleteStreamResponse);
+    rpc GetStream(GetStreamRequest) returns (GetStreamResponse);
+}
+
+//
+// KV Service
+//
+
+service TableService {
+    rpc Range(StorageContainerRequest) returns (StorageContainerResponse) {}
+    rpc Put(StorageContainerRequest) returns (StorageContainerResponse) {}
+    rpc Delete(StorageContainerRequest) returns (StorageContainerResponse) {}
+    rpc Watch(StorageContainerRequest) returns (StorageContainerResponse) {}
+}
+
+//
+// StorageContainerService
+//
+
+message StorageContainerEndpoint {
+    int64 storage_container_id                 = 1;
+    int64 revision                       = 2;
+    common.Endpoint rw_endpoint          = 3;
+    repeated common.Endpoint ro_endpoint = 4;
+}
+
+message OneStorageContainerEndpointRequest {
+    int64 storage_container   = 1;
+    int64 revision      = 2;
+}
+
+message GetStorageContainerEndpointRequest {
+    repeated OneStorageContainerEndpointRequest requests = 1;
+}
+
+message OneStorageContainerEndpointResponse {
+    StatusCode status_code      = 1;
+    StorageContainerEndpoint endpoint = 2;
+}
+
+message GetStorageContainerEndpointResponse {
+    StatusCode status_code                           = 1;
+    repeated OneStorageContainerEndpointResponse responses = 2;
+}
+
+message AddStreamRequest {
+    stream.StreamProperties props       = 1;
+}
+
+message RemoveStreamRequest {
+    stream.StreamProperties props       = 1;
+}
+
+message AddStreamResponse {
+}
+
+message RemoveStreamResponse {
+}
+
+// A general range server service
+service StorageContainerService {
+    // Get the storage container endpoints
+    rpc GetStorageContainerEndpoint(GetStorageContainerEndpointRequest) returns (GetStorageContainerEndpointResponse);
+    // Add Stream Properties
+    rpc AddStream(StorageContainerRequest)                              returns (StorageContainerResponse);
+    // Remove Stream Properties
+    rpc RemoveStream(StorageContainerRequest)                           returns (StorageContainerResponse);
+}
+
+message StorageContainerRequest {
+
+    enum Type {
+        NONE                    = 0;
+
+        // group operations
+        ADD_STREAM              = 10;
+        REMOVE_STREAM           = 11;
+
+        // namespace operations
+
+        // stream metadata operations
+        GET_ACTIVE_RANGES       = 200;
+
+        // K/V operations
+        KV_RANGE                = 400;
+        KV_PUT                  = 401;
+        KV_DELETE               = 402;
+    }
+
+    int64 sc_id                 = 1;
+    Type type                   = 2;
+
+    oneof request {
+        // group operations
+        AddStreamRequest add_stream_req                         = 10;
+        RemoveStreamRequest remove_stream_req                   = 11;
+
+        // stream metadata operations
+        GetActiveRangesRequest get_active_ranges_req            = 200;
+
+        // kv operations
+        kv.rpc.RangeRequest kv_range_req                        = 400;
+        kv.rpc.PutRequest kv_put_req                            = 401;
+        kv.rpc.DeleteRangeRequest kv_delete_req                 = 402;
+        kv.rpc.WatchRequest kv_watch_req                        = 410;
+    }
+}
+
+message StorageContainerResponse {
+    StatusCode code             = 1;
+
+    oneof response {
+        // group operations
+        AddStreamResponse add_stream_resp                       = 10;
+        RemoveStreamResponse remove_stream_resp                 = 11;
+
+        // stream metadata operations
+        GetActiveRangesResponse get_active_ranges_resp          = 200;
+
+        // kv operations
+        kv.rpc.RangeResponse kv_range_resp                      = 400;
+        kv.rpc.PutResponse kv_put_resp                          = 401;
+        kv.rpc.DeleteRangeResponse kv_delete_resp               = 402;
+        kv.rpc.WatchResponse kv_watch_resp                      = 410;
+    }
+}
