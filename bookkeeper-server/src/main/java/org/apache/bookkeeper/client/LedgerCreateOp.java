@@ -304,8 +304,7 @@ class LedgerCreateOp implements GenericCallback<Void>, CreateBuilder {
         }
     }
 
-    @Override
-    public void create(CreateCallback cb, Object ctx) {
+    private void create(CreateCallback cb, Object ctx) {
         applyDefaults();
         if (builderWriteQuorumSize < builderAckQuorumSize) {
             throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
@@ -363,8 +362,7 @@ class LedgerCreateOp implements GenericCallback<Void>, CreateBuilder {
             return counter;
         }
 
-        @Override
-        public void create(CreateCallback cb, Object ctx) {
+        private void create(CreateCallback cb, Object ctx) {
             applyDefaults();
             if (builderWriteQuorumSize < builderAckQuorumSize) {
                 throw new IllegalArgumentException("Write quorum must be larger than ack quorum");

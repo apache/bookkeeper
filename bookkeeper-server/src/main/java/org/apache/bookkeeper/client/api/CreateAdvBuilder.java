@@ -17,7 +17,6 @@
 package org.apache.bookkeeper.client.api;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.BKException;
 
 /**
@@ -31,7 +30,5 @@ public interface CreateAdvBuilder extends OpBuilder<WriteAdvHandler> {
 
     @Override
     CompletableFuture<WriteAdvHandler> execute();
-
-    void create(CreateCallback cb, Object ctx);
 
 }

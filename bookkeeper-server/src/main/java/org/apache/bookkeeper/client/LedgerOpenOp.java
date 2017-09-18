@@ -255,8 +255,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata>, OpenBuilder {
          return counter;
     }
 
-    @Override
-    public void open(long ledgerId, OpenCallback cb, Object ctx) {
+    private void open(long ledgerId, OpenCallback cb, Object ctx) {
         this.cb = cb;
         this.ctx = ctx;
         this.ledgerId = ledgerId;

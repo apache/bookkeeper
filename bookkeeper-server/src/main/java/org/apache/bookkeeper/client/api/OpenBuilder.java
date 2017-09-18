@@ -17,7 +17,6 @@
 package org.apache.bookkeeper.client.api;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.BKException;
 
 /**
@@ -32,8 +31,6 @@ public interface OpenBuilder {
     OpenBuilder withDigestType(org.apache.bookkeeper.client.BookKeeper.DigestType digestType);
 
     CompletableFuture<ReadHandler> execute(long ledgerId);
-
-    void open(long ledgerId, OpenCallback cb, Object ctx);
 
     ReadHandler open(long ledgerId) throws BKException, InterruptedException;
 
