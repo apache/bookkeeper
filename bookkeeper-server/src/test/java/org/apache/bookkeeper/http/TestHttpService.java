@@ -26,14 +26,30 @@ import static org.junit.Assert.assertNotNull;
 import com.google.common.collect.Maps;
 import java.io.File;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.client.LedgerHandleAdapter;
+import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.http.service.HttpService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
+import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
+import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieServer;
+import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.test.TestCallbacks;
 import org.apache.bookkeeper.util.JsonUtil;
+import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
+import org.apache.zookeeper.ZooKeeper;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -495,9 +511,30 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         assertEquals(HttpServer.StatusCode.OK.getValue(), response5.getStatusCode());
     }
 
+    ZooKeeper auditorZookeeper;
+    AuditorElector auditorElector;
+    private void startAuditorElector() throws Exception {
+        auditorZookeeper = ZooKeeperClient.newBuilder()
+          .connectString(zkUtil.getZooKeeperConnectString())
+          .sessionTimeoutMs(10000)
+          .build();
+        String addr = bs.get(0).getLocalAddress().toString();
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setAuditorPeriodicBookieCheckInterval(1);
+        auditorElector = new AuditorElector(addr, conf,
+          auditorZookeeper);
+        auditorElector.start();
+    }
+
+    private void stopAuditorElector() throws Exception {
+        auditorElector.shutdown();
+        auditorZookeeper.close();
+    }
+
     @Test
     public void testTriggerAuditService() throws Exception {
         baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        startAuditorElector();
 
         HttpService triggerAuditService = bkHttpServiceProvider.provideTriggerAuditService();
 
@@ -506,27 +543,34 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceResponse response1 = triggerAuditService.handle(request1);
         assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
 
-        //2,  POST, should return error for no auditor node.
+        //2,  POST, should success.
+        killBookie(1);
+        Thread.sleep(500);
         HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.POST, null);
         HttpServiceResponse response2 = triggerAuditService.handle(request2);
-        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response2.getStatusCode());
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response2.getStatusCode());
+        stopAuditorElector();
     }
 
     @Test
     public void testWhoIsAuditorService() throws Exception {
         baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        startAuditorElector();
 
         HttpService whoIsAuditorService = bkHttpServiceProvider.provideWhoIsAuditorService();
 
-        //1,  GET, should return error
+        //1,  GET, should return success
         HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
         HttpServiceResponse response1 = whoIsAuditorService.handle(request1);
-        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response1.getStatusCode());
+        LOG.info(response1.getBody());
+        stopAuditorElector();
     }
 
     @Test
     public void testListUnderReplicatedLedgerService() throws Exception {
         baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        startAuditorElector();
 
         HttpService listUnderReplicatedLedgerService = bkHttpServiceProvider.provideListUnderReplicatedLedgerService();
 
@@ -535,10 +579,35 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceResponse response1 = listUnderReplicatedLedgerService.handle(request1);
         assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
 
-        //2,  GET, should return error, because no underreplicated ledger currently.
+
+        //2,  GET, should return success.
+        // first put ledger into rereplicate. then use api to list ur ledger.
+        LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(bsConfs.get(0), zkc);
+        LedgerManager ledgerManager = mFactory.newLedgerManager();
+        final LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
+
+        LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32, "passwd".getBytes());
+        LedgerMetadata md = LedgerHandleAdapter.getLedgerMetadata(lh);
+        List<BookieSocketAddress> ensemble = md.getEnsembles().get(0L);
+        ensemble.set(0, new BookieSocketAddress("1.1.1.1", 1000));
+
+        TestCallbacks.GenericCallbackFuture<Void> cb = new TestCallbacks.GenericCallbackFuture<Void>();
+        ledgerManager.writeLedgerMetadata(lh.getId(), md, cb);
+        cb.get();
+
+        long underReplicatedLedger = -1;
+        for (int i = 0; i < 10; i++) {
+            underReplicatedLedger = underReplicationManager.pollLedgerToRereplicate();
+            if (underReplicatedLedger != -1) {
+                break;
+            }
+            Thread.sleep(1000);
+        }
+
         HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
         HttpServiceResponse response2 = listUnderReplicatedLedgerService.handle(request2);
-        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response2.getStatusCode());
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response2.getStatusCode());
+        stopAuditorElector();
     }
 
     @Test
@@ -568,23 +637,24 @@ public class TestHttpService extends BookKeeperClusterTestCase {
     public void testDecommissionService() throws Exception {
         baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
 
-        HttpService lostBookieRecoveryDelayService = bkHttpServiceProvider.provideDecommissionService();
+        HttpService decommissionService = bkHttpServiceProvider.provideDecommissionService();
 
         //1,  POST with null, should return error, because should contains {"bookie_src": <bookie_address>}.
         HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.POST, null);
-        HttpServiceResponse response1 = lostBookieRecoveryDelayService.handle(request1);
+        HttpServiceResponse response1 = decommissionService.handle(request1);
         assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
 
         //2,  GET, should fail for not support get
         HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
-        HttpServiceResponse response2 = lostBookieRecoveryDelayService.handle(request2);
+        HttpServiceResponse response2 = decommissionService.handle(request2);
         assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response2.getStatusCode());
 
         //3, POST, with body
         String postBody3 = "{\"bookie_src\": \"" + getBookie(0).toString() + "\"}";
         killBookie(0);
         HttpServiceRequest request3 = new HttpServiceRequest(postBody3, HttpServer.Method.POST, null);
-        HttpServiceResponse response3 = lostBookieRecoveryDelayService.handle(request3);
+        HttpServiceResponse response3 = decommissionService.handle(request3);
         assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response3.getStatusCode());
     }
+
 }

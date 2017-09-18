@@ -112,30 +112,6 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
     // TODO
 
     //
-    // bookkeeper
-    //
-
-    /**
-     * Provide service for list bookies api.
-     */
-    @Override
-    public HttpService provideListBookiesService() {
-        ServerConfiguration configuration = getServerConf();
-        if (configuration == null) {
-            return new ErrorHttpService();
-        }
-        return new ListBookiesService(configuration);
-    }
-
-    /**
-     * Provide service for update cookie api.
-     */
-    @Override
-    public HttpService provideUpdataCookieService() {
-        return NULL_HTTP_SERVICE;
-    }
-
-    //
     // ledger
     //
 
@@ -190,6 +166,18 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
     //
     // bookie
     //
+
+    /**
+     * Provide service for list bookies api.
+     */
+    @Override
+    public HttpService provideListBookiesService() {
+        ServerConfiguration configuration = getServerConf();
+        if (configuration == null) {
+            return new ErrorHttpService();
+        }
+        return new ListBookiesService(configuration);
+    }
 
     /**
      * Provide service for list bookie disk usage api.

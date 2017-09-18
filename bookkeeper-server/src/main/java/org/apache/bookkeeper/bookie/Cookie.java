@@ -215,7 +215,7 @@ public class Cookie {
         return cBuilder;
     }
 
-    void writeToDirectory(File directory) throws IOException {
+    public void writeToDirectory(File directory) throws IOException {
         File versionFile = new File(directory,
                 BookKeeperConstants.VERSION_FILENAME);
 
@@ -242,7 +242,7 @@ public class Cookie {
      * @throws InterruptedException
      * @throws UnknownHostException
      */
-    void writeToZooKeeper(ZooKeeper zk, ServerConfiguration conf, Version version)
+    public void writeToZooKeeper(ZooKeeper zk, ServerConfiguration conf, Version version)
             throws KeeperException, InterruptedException, UnknownHostException {
         List<ACL> zkAcls = ZkUtils.getACLs(conf);
         String bookieCookiePath = conf.getZkLedgersRootPath() + "/"
@@ -378,7 +378,7 @@ public class Cookie {
      * @return cookie object
      * @throws IOException
      */
-    static Cookie readFromDirectory(File directory) throws IOException {
+    public static Cookie readFromDirectory(File directory) throws IOException {
         File versionFile = new File(directory, BookKeeperConstants.VERSION_FILENAME);
         BufferedReader reader = new BufferedReader(
                 new InputStreamReader(new FileInputStream(versionFile), UTF_8));
@@ -495,7 +495,7 @@ public class Cookie {
      *
      * @return cookie builder
      */
-    static Builder newBuilder() {
+    public static Builder newBuilder() {
         return new Builder();
     }
 
@@ -505,7 +505,7 @@ public class Cookie {
      * @param oldCookie build new cookie from this cookie
      * @return cookie builder
      */
-    static Builder newBuilder(Cookie oldCookie) {
+    public static Builder newBuilder(Cookie oldCookie) {
         return new Builder(oldCookie.layoutVersion, oldCookie.bookieHost, oldCookie.journalDirs, oldCookie.ledgerDirs,
                 oldCookie.instanceId);
     }

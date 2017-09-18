@@ -42,20 +42,6 @@ public interface HttpServiceProvider {
     HttpService provideConfigurationService();
 
     //
-    // bookkeeper
-    //
-
-    /**
-     * Provide service for list bookies api.
-     */
-    HttpService provideListBookiesService();
-
-    /**
-     * Provide service for update cookie api.
-     */
-    HttpService provideUpdataCookieService();
-
-    //
     // ledger
     //
 
@@ -82,6 +68,11 @@ public interface HttpServiceProvider {
     //
     // bookie
     //
+
+    /**
+     * Provide service for list bookies api.
+     */
+    HttpService provideListBookiesService();
 
     /**
      * Provide service for list bookie disk usage api.

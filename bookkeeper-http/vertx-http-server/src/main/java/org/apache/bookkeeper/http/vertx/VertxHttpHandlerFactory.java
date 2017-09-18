@@ -56,35 +56,6 @@ public class VertxHttpHandlerFactory extends AbstractHttpHandlerFactory<VertxAbs
         };
     }
 
-    //
-    // bookkeeper
-    //
-
-    /**
-     * Create a handler for list bookies api.
-     */
-    @Override
-    public VertxAbstractHandler newListBookiesHandler() {
-        return new VertxAbstractHandler() {
-            @Override
-            public void handle(RoutingContext context){
-                processRequest(getHttpServiceProvider().provideListBookiesService(), context);
-            }
-        };
-    }
-
-    /**
-     * Create a handler for update cookie api.
-     */
-    @Override
-    public VertxAbstractHandler newUpdataCookieHandler() {
-        return new VertxAbstractHandler() {
-            @Override
-            public void handle(RoutingContext context){
-                processRequest(getHttpServiceProvider().provideUpdataCookieService(), context);
-            }
-        };
-    }
 
     //
     // ledger
@@ -145,6 +116,19 @@ public class VertxHttpHandlerFactory extends AbstractHttpHandlerFactory<VertxAbs
     //
     // bookie
     //
+
+    /**
+     * Create a handler for list bookies api.
+     */
+    @Override
+    public VertxAbstractHandler newListBookiesHandler() {
+        return new VertxAbstractHandler() {
+            @Override
+            public void handle(RoutingContext context){
+                processRequest(getHttpServiceProvider().provideListBookiesService(), context);
+            }
+        };
+    }
 
     /**
      * Create a handler for list bookie disk usage api.

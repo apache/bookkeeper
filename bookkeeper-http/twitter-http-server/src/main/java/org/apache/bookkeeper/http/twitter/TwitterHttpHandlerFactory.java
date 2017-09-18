@@ -59,36 +59,6 @@ public class TwitterHttpHandlerFactory extends AbstractHttpHandlerFactory<Twitte
     }
 
     //
-    // bookkeeper
-    //
-
-    /**
-     * Create a handler for list bookies api.
-     */
-    @Override
-    public TwitterAbstractHandler newListBookiesHandler() {
-        return new TwitterAbstractHandler() {
-            @Override
-            public Future<Response> apply(Request request) {
-                return processRequest(getHttpServiceProvider().provideListBookiesService(), request);
-            }
-        };
-    }
-
-    /**
-     * Create a handler for update cookie api.
-     */
-    @Override
-    public TwitterAbstractHandler newUpdataCookieHandler() {
-        return new TwitterAbstractHandler() {
-            @Override
-            public Future<Response> apply(Request request) {
-                return processRequest(getHttpServiceProvider().provideUpdataCookieService(), request);
-            }
-        };
-    }
-
-    //
     // ledger
     //
 
@@ -147,6 +117,19 @@ public class TwitterHttpHandlerFactory extends AbstractHttpHandlerFactory<Twitte
     //
     // bookie
     //
+
+    /**
+     * Create a handler for list bookies api.
+     */
+    @Override
+    public TwitterAbstractHandler newListBookiesHandler() {
+        return new TwitterAbstractHandler() {
+            @Override
+            public Future<Response> apply(Request request) {
+                return processRequest(getHttpServiceProvider().provideListBookiesService(), request);
+            }
+        };
+    }
 
     /**
      * Create a handler for list bookie disk usage api.

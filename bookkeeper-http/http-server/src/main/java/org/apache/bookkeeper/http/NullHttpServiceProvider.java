@@ -48,26 +48,6 @@ public class NullHttpServiceProvider implements HttpServiceProvider {
     }
 
     //
-    // bookkeeper
-    //
-
-    /**
-     * Provide service for list bookies api.
-     */
-    @Override
-    public HttpService provideListBookiesService() {
-        return NULL_HTTP_SERVICE;
-    }
-
-    /**
-     * Provide service for update cookie api.
-     */
-    @Override
-    public HttpService provideUpdataCookieService() {
-        return NULL_HTTP_SERVICE;
-    }
-
-    //
     // ledger
     //
 
@@ -106,6 +86,14 @@ public class NullHttpServiceProvider implements HttpServiceProvider {
     //
     // bookie
     //
+
+    /**
+     * Provide service for list bookies api.
+     */
+    @Override
+    public HttpService provideListBookiesService() {
+        return NULL_HTTP_SERVICE;
+    }
 
     /**
      * Provide service for list bookie disk usage api.

@@ -46,20 +46,6 @@ public abstract class AbstractHttpHandlerFactory<Handler> {
     public abstract Handler newConfigurationHandler();
 
     //
-    // bookkeeper
-    //
-
-    /**
-     * Create a handler for list bookies api.
-     */
-    public abstract Handler newListBookiesHandler();
-
-    /**
-     * Create a handler for update cookie api.
-     */
-    public abstract Handler newUpdataCookieHandler();
-
-    //
     // ledger
     //
 
@@ -86,6 +72,11 @@ public abstract class AbstractHttpHandlerFactory<Handler> {
     //
     // bookie
     //
+
+    /**
+     * Create a handler for list bookies api.
+     */
+    public abstract Handler newListBookiesHandler();
 
     /**
      * Create a handler for list bookie disk usage api.
