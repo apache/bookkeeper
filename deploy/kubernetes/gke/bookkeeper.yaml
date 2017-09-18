@@ -71,7 +71,7 @@ spec:
                   limits:
                     memory: "5Gi"
                     cpu: "2000m"
-                command: [ "/bin/bash", "/opt/bookkeeper/bin/entrypoint.sh" ]
+                command: [ "/bin/bash", "/opt/bookkeeper/entrypoint.sh" ]
                 args: ["/opt/bookkeeper/bin/bookkeeper", "bookie"]
                 ports:
                   - name: client
