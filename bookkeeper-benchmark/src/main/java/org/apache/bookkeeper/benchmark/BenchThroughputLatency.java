@@ -441,7 +441,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
                 LOG.error("Couldn't connect to zookeeper at " + servers);
                 throw new IOException("Couldn't connect to zookeeper " + servers);
             }
-            bookies = zk.getChildren(bookieRegistrationPath, false).size();
+            bookies = zk.getChildren(bookieRegistrationPath, false).size() - 1;
         } finally {
             if (zk != null) {
                 zk.close();

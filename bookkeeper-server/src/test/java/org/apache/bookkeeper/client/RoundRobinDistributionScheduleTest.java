@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
 public class RoundRobinDistributionScheduleTest {
     private final static Logger LOG = LoggerFactory.getLogger(RoundRobinDistributionScheduleTest.class);
 
-    @Test(timeout=60000)
+    @Test
     public void testDistributionSchedule() throws Exception {
         RoundRobinDistributionSchedule schedule = new RoundRobinDistributionSchedule(3, 2, 5);
 
@@ -53,7 +53,7 @@ public class RoundRobinDistributionScheduleTest {
      * Test that coverage sets only respond as covered when it has
      * heard from enough bookies that no ack quorum can exist without these bookies.
      */
-    @Test(timeout=60000)
+    @Test
     public void testCoverageSets() {
         int errors = 0;
         for (int e = 6; e > 0; e--) {

@@ -21,8 +21,8 @@
 # */
 
 
-VERSION ?= centos
-IMAGE ?= bookkeeper/bookie:$(VERSION)
+VERSION ?= latest
+IMAGE ?= apache/bookkeeper:$(VERSION)
 BOOKIE ?= 1
 DOCKER_NETWORK ?= bk_network
 

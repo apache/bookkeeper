@@ -55,7 +55,7 @@ public class AdvertisedAddressTest extends BookKeeperClusterTestCase {
     /**
      * Test starting bookie with clean state.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testSetAdvertisedAddress() throws Exception {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
                 .setZkServers(zkUtil.getZooKeeperConnectString()).setJournalDirName(newDirectory(false))
@@ -84,7 +84,7 @@ public class AdvertisedAddressTest extends BookKeeperClusterTestCase {
     /**
      * When advertised address is specified, it should override the use
      */
-    @Test(timeout = 60000)
+    @Test
     public void testBothUseHostnameAndAdvertisedAddress() throws Exception {
         ServerConfiguration conf = new ServerConfiguration().setBookiePort(bookiePort);
 

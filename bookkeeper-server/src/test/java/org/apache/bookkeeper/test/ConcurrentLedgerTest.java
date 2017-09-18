@@ -125,7 +125,7 @@ public class ConcurrentLedgerTest {
             iterationStep = Integer.parseInt(iterationsString);
         }
     }
-    @Test(timeout=60000)
+    @Test
     public void testConcurrentWrite() throws IOException, InterruptedException, BookieException {
         int size = 1024;
         int totalwrites = 128;

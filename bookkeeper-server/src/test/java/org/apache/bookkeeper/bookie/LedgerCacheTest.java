@@ -136,7 +136,7 @@ public class LedgerCacheTest {
         flushThread.start();
     }
 
-    @Test(timeout=30000)
+    @Test
     public void testAddEntryException() throws IOException {
         // set page limitation
         conf.setPageLimit(10);
@@ -157,7 +157,7 @@ public class LedgerCacheTest {
         }
     }
 
-    @Test(timeout=30000)
+    @Test
     public void testLedgerEviction() throws Exception {
         int numEntries = 10;
         // limit open files & pages
@@ -180,7 +180,7 @@ public class LedgerCacheTest {
         }
     }
 
-    @Test(timeout=30000)
+    @Test
     public void testDeleteLedger() throws Exception {
         int numEntries = 10;
         // limit open files & pages
@@ -215,7 +215,7 @@ public class LedgerCacheTest {
         }
     }
 
-    @Test(timeout=30000)
+    @Test
     public void testPageEviction() throws Exception {
         int numLedgers = 10;
         byte[] masterKey = "blah".getBytes();
@@ -266,7 +266,7 @@ public class LedgerCacheTest {
     /**
      * Test Ledger Cache flush failure
      */
-    @Test(timeout=30000)
+    @Test
     public void testLedgerCacheFlushFailureOnDiskFull() throws Exception {
         File ledgerDir1 = createTempDir("bkTest", ".dir");
         File ledgerDir2 = createTempDir("bkTest", ".dir");
@@ -313,7 +313,7 @@ public class LedgerCacheTest {
      * entries in the entrylogger have been persisted to disk.
      * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-447}
      */
-    @Test(timeout=30000)
+    @Test
     public void testIndexPageEvictionWriteOrder() throws Exception {
         final int numLedgers = 10;
         File journalDir = createTempDir("bookie", "journal");
@@ -370,7 +370,7 @@ public class LedgerCacheTest {
      *
      * @throws IOException
      */
-    @Test(timeout=30000)
+    @Test
     public void testSyncThreadNPE() throws IOException {
         newLedgerCache();
         try {
@@ -386,7 +386,7 @@ public class LedgerCacheTest {
      * the wrong time.
      * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-604}
      */
-    @Test(timeout=60000)
+    @Test
     public void testFlushDeleteRace() throws Exception {
         newLedgerCache();
         final AtomicInteger rc = new AtomicInteger(0);
@@ -495,7 +495,7 @@ public class LedgerCacheTest {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testEntryMemTableFlushFailure() throws Exception {
         File tmpDir = createTempDir("bkTest", ".dir");
         File curDir = Bookie.getCurrentDirectory(tmpDir);

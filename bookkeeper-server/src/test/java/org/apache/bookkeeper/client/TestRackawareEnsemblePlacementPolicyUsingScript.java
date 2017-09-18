@@ -96,7 +96,7 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
         Assume.assumeTrue(!Shell.WINDOWS);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReplaceBookieWithEnoughBookiesInSameRack() throws Exception {
         ignoreTestIfItIsWindowsOS();
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
@@ -116,7 +116,7 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
         assertEquals(addr3, replacedBookie);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReplaceBookieWithEnoughBookiesInDifferentRack() throws Exception {
         ignoreTestIfItIsWindowsOS();
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
@@ -140,7 +140,7 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
         assertTrue(addr3.equals(replacedBookie) || addr4.equals(replacedBookie));
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReplaceBookieWithNotEnoughBookies() throws Exception {
         ignoreTestIfItIsWindowsOS();
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
@@ -176,7 +176,7 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
      * 
      * This case adds node with non-default rack, then adds nodes with one on default rack.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testReplaceBookieWithScriptMappingError() throws Exception {
         ignoreTestIfItIsWindowsOS();
         BookieSocketAddress addr0 = new BookieSocketAddress("127.0.0.0", 3181); // error mapping to rack here
@@ -214,7 +214,7 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
      * This case adds node with default rack, then adds nodes with non-default rack.
      * Almost the same as testReplaceBookieWithScriptMappingError but different order of addition.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testReplaceBookieWithScriptMappingError2() throws Exception {
         ignoreTestIfItIsWindowsOS();
         BookieSocketAddress addr0 = new BookieSocketAddress("127.0.0.0", 3181); // error mapping to rack here
@@ -243,7 +243,7 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
         assertTrue(addr0.equals(replacedBookie));
     }
     
-    @Test(timeout = 60000)
+    @Test
     public void testNewEnsembleWithSingleRack() throws Exception {
         ignoreTestIfItIsWindowsOS();
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
@@ -267,7 +267,7 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNewEnsembleWithMultipleRacks() throws Exception {
         ignoreTestIfItIsWindowsOS();
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
@@ -293,7 +293,7 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
         }
     }
 
-    @Test(timeout = 90000)
+    @Test
     public void testNewEnsembleWithEnoughRacks() throws Exception {
         ignoreTestIfItIsWindowsOS();
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack
@@ -329,7 +329,7 @@ public class TestRackawareEnsemblePlacementPolicyUsingScript {
      * Test for BOOKKEEPER-633
      */
 
-    @Test(timeout = 60000)
+    @Test
     public void testRemoveBookieFromCluster() {
         ignoreTestIfItIsWindowsOS();
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181); // /1 rack

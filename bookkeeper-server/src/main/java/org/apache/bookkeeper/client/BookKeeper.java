@@ -562,7 +562,8 @@ public class BookKeeper implements AutoCloseable {
         }
     }
 
-    LedgerManager getLedgerManager() {
+    @VisibleForTesting
+    public LedgerManager getLedgerManager() {
         return ledgerManager;
     }
 

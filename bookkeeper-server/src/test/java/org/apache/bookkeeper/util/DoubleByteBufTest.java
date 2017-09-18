@@ -29,14 +29,14 @@ import io.netty.buffer.Unpooled;
 
 public class DoubleByteBufTest {
 
-    @Test(timeout = 30000)
+    @Test
     public void testGetBytes() {
         ByteBuf b1 = Unpooled.wrappedBuffer(new byte[] { 1, 2, 3 });
         ByteBuf b2 = Unpooled.wrappedBuffer(new byte[] { 4, 5, 6 });
         doTest(b1, b2);
     }
 
-    @Test(timeout = 30000)
+    @Test
     public void testGetBytesWithDoubleByteBufAssource() {
         ByteBuf b1 = Unpooled.wrappedBuffer(new byte[] { 1, 2 });
         ByteBuf b2 = Unpooled.wrappedBuffer(new byte[] { 3, 4 });
@@ -46,7 +46,7 @@ public class DoubleByteBufTest {
         doTest(b1, b23);
     }
 
-    @Test(timeout = 30000)
+    @Test
     public void testGetBytesWithIndex() {
         ByteBuf b1 = Unpooled.wrappedBuffer(new byte[] { 1, 2, 3 });
         ByteBuf b2 = Unpooled.wrappedBuffer(new byte[] { 9, 9, 4, 5, 6 });
@@ -95,7 +95,7 @@ public class DoubleByteBufTest {
         assertEquals(Unpooled.wrappedBuffer(new byte[] { 0, 4, 5, 6, 0, 0 }), dst5);
     }
 
-    @Test(timeout = 30000)
+    @Test
     public void testCopyToArray() {
         ByteBuf b1 = Unpooled.wrappedBuffer(new byte[] { 1, 2 });
         ByteBuf b2 = Unpooled.wrappedBuffer(new byte[] { 3, 4 });
@@ -110,7 +110,7 @@ public class DoubleByteBufTest {
         assertArrayEquals(new byte[] { 2, 3, 4 }, a2);
     }
 
-    @Test(timeout = 30000)
+    @Test
     public void testToByteBuffer() {
         ByteBuf b1 = Unpooled.wrappedBuffer(new byte[] { 1, 2 });
         ByteBuf b2 = Unpooled.wrappedBuffer(new byte[] { 3, 4 });

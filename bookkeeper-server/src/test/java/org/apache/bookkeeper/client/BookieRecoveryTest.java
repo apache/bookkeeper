@@ -241,12 +241,12 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
      *
      * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-667}
      */
-    @Test(timeout = 60000)
+    @Test
     public void testMetadataConflictWithRecovery() throws Exception {
         metadataConflictWithRecovery(bkc);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testMetadataConflictWhenDelayingEnsembleChange() throws Exception {
         ClientConfiguration newConf = new ClientConfiguration(baseClientConf);
         newConf.setZkServers(zkUtil.getZooKeeperConnectString());
@@ -298,7 +298,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
      *
      * @throws Exception
      */
-    @Test(timeout=60000)
+    @Test
     public void testAsyncBookieRecoveryToSpecificBookie() throws Exception {
         // Create the ledgers
         int numLedgers = 3;
@@ -354,7 +354,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
      *
      * @throws Exception
      */
-    @Test(timeout=60000)
+    @Test
     public void testAsyncBookieRecoveryToRandomBookies() throws Exception {
         // Create the ledgers
         int numLedgers = 3;
@@ -410,7 +410,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
      *
      * @throws Exception
      */
-    @Test(timeout=60000)
+    @Test
     public void testSyncBookieRecoveryToSpecificBookie() throws Exception {
         // Create the ledgers
         int numLedgers = 3;
@@ -456,7 +456,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
      *
      * @throws Exception
      */
-    @Test(timeout=60000)
+    @Test
     public void testSyncBookieRecoveryToRandomBookies() throws Exception {
         // Create the ledgers
         int numLedgers = 3;
@@ -625,7 +625,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
     /**
      * Test recoverying the closed ledgers when the failed bookie server is in the last ensemble
      */
-    @Test(timeout=60000)
+    @Test
     public void testBookieRecoveryOnClosedLedgers() throws Exception {
         // Create the ledgers
         int numLedgers = 3;
@@ -657,7 +657,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testBookieRecoveryOnOpenedLedgers() throws Exception {
         // Create the ledgers
         int numLedgers = 3;
@@ -694,7 +694,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testBookieRecoveryOnInRecoveryLedger() throws Exception {
         int numMsgs = 10;
         // Create the ledgers
@@ -756,7 +756,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
 
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testAsyncBookieRecoveryToRandomBookiesNotEnoughBookies() throws Exception {
         // Create the ledgers
         int numLedgers = 3;
@@ -787,7 +787,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testSyncBookieRecoveryToRandomBookiesCheckForDupes() throws Exception {
         Random r = new Random();
 
@@ -831,7 +831,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void recoverWithoutPasswordInConf() throws Exception {
         byte[] passwdCorrect = "AAAAAA".getBytes();
         byte[] passwdBad = "BBBBBB".getBytes();
@@ -895,127 +895,4 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         lh.close();
     }
 
-    /**
-     * Test that when we try to recover a ledger which doesn't have
-     * the password stored in the configuration, we don't succeed
-     */
-    @Test(timeout=60000)
-    public void ensurePasswordUsedForOldLedgers() throws Exception {
-        // This test bases on creating old ledgers in version 4.1.0, which only
-        // supports ZooKeeper based flat and hierarchical LedgerManagerFactory.
-        // So we ignore it for MSLedgerManagerFactory and LongHierarchicalLedgerManagerFactory.
-        if (MSLedgerManagerFactory.class.getName().equals(ledgerManagerFactory)) {
-            return;
-        }
-        if (LongHierarchicalLedgerManagerFactory.class.getName().equals(ledgerManagerFactory)) {
-            return;
-        }
-
-        // stop all bookies
-        // and wipe the ledger layout so we can use an old client
-        zkUtil.getZooKeeperClient().delete("/ledgers/LAYOUT", -1);
-
-        byte[] passwdCorrect = "AAAAAA".getBytes();
-        byte[] passwdBad = "BBBBBB".getBytes();
-        DigestType digestCorrect = digestType;
-        DigestType digestBad = digestCorrect == DigestType.MAC ? DigestType.CRC32 : DigestType.MAC;
-
-        org.apache.bk_v4_1_0.bookkeeper.client.BookKeeper.DigestType digestCorrect410
-            = org.apache.bk_v4_1_0.bookkeeper.client.BookKeeper.DigestType.valueOf(digestType.toString());
-
-        org.apache.bk_v4_1_0.bookkeeper.conf.ClientConfiguration c
-            = new org.apache.bk_v4_1_0.bookkeeper.conf.ClientConfiguration();
-        c.setZkServers(zkUtil.getZooKeeperConnectString())
-            .setLedgerManagerType(
-                    ledgerManagerFactory.equals("org.apache.bookkeeper.meta.FlatLedgerManagerFactory") ?
-                    "flat" : "hierarchical");
-
-        // create client to set up layout, close it, restart bookies, and open a new client.
-        // the new client is necessary to ensure that it has all the restarted bookies in the
-        // its available bookie list
-        org.apache.bk_v4_1_0.bookkeeper.client.BookKeeper bkc41
-            = new org.apache.bk_v4_1_0.bookkeeper.client.BookKeeper(c);
-        bkc41.close();
-        restartBookies();
-        bkc41 = new org.apache.bk_v4_1_0.bookkeeper.client.BookKeeper(c);
-
-        org.apache.bk_v4_1_0.bookkeeper.client.LedgerHandle lh41
-            = bkc41.createLedger(3, 2, digestCorrect410, passwdCorrect);
-        long ledgerId = lh41.getId();
-        for (int i = 0; i < 100; i++) {
-            lh41.addEntry("foobar".getBytes());
-        }
-        lh41.close();
-        bkc41.close();
-
-        // Startup a new bookie server
-        startNewBookie();
-        int removeIndex = 0;
-        BookieSocketAddress bookieSrc = bs.get(removeIndex).getLocalAddress();
-        bs.get(removeIndex).shutdown();
-        bs.remove(removeIndex);
-
-        // Check that entries are missing
-        LedgerHandle lh = bkc.openLedgerNoRecovery(ledgerId, digestCorrect, passwdCorrect);
-        assertFalse("Should be entries missing", verifyFullyReplicated(lh, 100));
-        lh.close();
-
-        // Try to recover with bad password in conf
-        // if the digest type is MAC
-        // for CRC32, the password is only checked
-        // when adding new entries, which recovery will
-        // never do
-        ClientConfiguration adminConf;
-        BookKeeperAdmin bka;
-        if (digestCorrect == DigestType.MAC) {
-            adminConf = new ClientConfiguration();
-            adminConf.setZkServers(zkUtil.getZooKeeperConnectString());
-            adminConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
-            adminConf.setBookieRecoveryDigestType(digestCorrect);
-            adminConf.setBookieRecoveryPasswd(passwdBad);
-
-            bka = new BookKeeperAdmin(adminConf);
-            try {
-                bka.recoverBookieData(bookieSrc, null);
-                fail("Shouldn't be able to recover with wrong password");
-            } catch (BKException bke) {
-                // correct behaviour
-            } finally {
-                bka.close();
-            }
-        }
-
-        // Try to recover with bad digest in conf
-        adminConf = new ClientConfiguration();
-        adminConf.setZkServers(zkUtil.getZooKeeperConnectString());
-        adminConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
-        adminConf.setBookieRecoveryDigestType(digestBad);
-        adminConf.setBookieRecoveryPasswd(passwdCorrect);
-
-        bka = new BookKeeperAdmin(adminConf);
-        try {
-            bka.recoverBookieData(bookieSrc, null);
-            fail("Shouldn't be able to recover with wrong digest");
-        } catch (BKException bke) {
-            // correct behaviour
-        } finally {
-            bka.close();
-        }
-
-        // Check that entries are still missing
-        lh = bkc.openLedgerNoRecovery(ledgerId, digestCorrect, passwdCorrect);
-        assertFalse("Should be entries missing", verifyFullyReplicated(lh, 100));
-        lh.close();
-
-        adminConf.setBookieRecoveryDigestType(digestCorrect);
-        adminConf.setBookieRecoveryPasswd(passwdCorrect);
-
-        bka = new BookKeeperAdmin(adminConf);
-        bka.recoverBookieData(bookieSrc, null);
-        bka.close();
-
-        lh = bkc.openLedgerNoRecovery(ledgerId, digestCorrect, passwdCorrect);
-        assertTrue("Should have recovered everything", verifyFullyReplicated(lh, 100));
-        lh.close();
-    }
 }

@@ -50,7 +50,7 @@ public class TestReadTimeout extends BookKeeperClusterTestCase {
     }
 
     @SuppressWarnings("deprecation")
-    @Test(timeout=60000)
+    @Test
     public void testReadTimeout() throws Exception {
         final AtomicBoolean completed = new AtomicBoolean(false);
 

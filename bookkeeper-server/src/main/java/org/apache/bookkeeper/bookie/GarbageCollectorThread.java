@@ -57,7 +57,7 @@ public class GarbageCollectorThread extends SafeRunnable {
     // Maps entry log files to the set of ledgers that comprise the file and the size usage per ledger
     private Map<Long, EntryLogMetadata> entryLogMetaMap = new ConcurrentHashMap<Long, EntryLogMetadata>();
 
-    ScheduledExecutorService gcExecutor;
+    private final ScheduledExecutorService gcExecutor;
     Future<?> scheduledFuture = null;
 
     // This is how often we want to run the Garbage Collector Thread (in milliseconds).
@@ -67,15 +67,14 @@ public class GarbageCollectorThread extends SafeRunnable {
     boolean enableMinorCompaction = false;
     final double minorCompactionThreshold;
     final long minorCompactionInterval;
+    long lastMinorCompactionTime;
 
     boolean enableMajorCompaction = false;
     final double majorCompactionThreshold;
     final long majorCompactionInterval;
+    long lastMajorCompactionTime;
 
     final boolean isForceGCAllowWhenNoSpace;
-
-    long lastMinorCompactionTime;
-    long lastMajorCompactionTime;
 
     final boolean isThrottleByBytes;
     final int maxOutstandingRequests;

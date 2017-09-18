@@ -53,12 +53,12 @@ public class TestDisableEnsembleChange extends BookKeeperClusterTestCase {
         super(4);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testDisableEnsembleChange() throws Exception {
         disableEnsembleChangeTest(true);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testDisableEnsembleChangeNotEnoughBookies() throws Exception {
         disableEnsembleChangeTest(false);
     }
@@ -165,7 +165,7 @@ public class TestDisableEnsembleChange extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
     public void testRetryFailureBookie() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         conf.setZkServers(zkUtil.getZooKeeperConnectString())
@@ -210,7 +210,7 @@ public class TestDisableEnsembleChange extends BookKeeperClusterTestCase {
         assertEquals(res.get(), BKException.Code.OK);
     }
 
-    @Test(timeout=20000)
+    @Test
     public void testRetrySlowBookie() throws Exception {
         final int readTimeout = 2;
 

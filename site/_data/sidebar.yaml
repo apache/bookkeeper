@@ -15,8 +15,8 @@ groups:
     endpoint: manual
   - name: BookKeeper on DC/OS
     endpoint: dcos
-  #- name: BookKeeper on Kubernetes
-  #  endpoint: kubernetes
+  - name: BookKeeper on Kubernetes
+    endpoint: kubernetes
 - name: Administration
   dir: admin
   docs:

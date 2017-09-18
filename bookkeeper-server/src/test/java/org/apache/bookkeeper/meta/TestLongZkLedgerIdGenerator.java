@@ -75,7 +75,7 @@ public class TestLongZkLedgerIdGenerator extends TestCase {
         super.tearDown();
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testGenerateLedgerId() throws Exception {
         // Create *nThread* threads each generate *nLedgers* ledger id,
         // and then check there is no identical ledger id.
@@ -128,7 +128,7 @@ public class TestLongZkLedgerIdGenerator extends TestCase {
         }
 
         assertTrue("Wait ledger id generation threads to stop timeout : ",
-                countDownLatch.await(30, TimeUnit.SECONDS));
+                countDownLatch.await(120, TimeUnit.SECONDS));
         LOG.info("Number of generated ledger id: {}, time used: {}", ledgerIds.size(),
                 System.currentTimeMillis() - start);
         assertEquals("Error occur during ledger id generation : ", 0, errCount.get());

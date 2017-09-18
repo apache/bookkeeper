@@ -51,7 +51,7 @@ public class TestAutoRecoveryAlongWithBookieServers extends
     }
 
     /** Tests that the auto recovery service along with Bookie servers itself */
-    @Test(timeout = 60000)
+    @Test
     public void testAutoRecoveryAlongWithBookieServers() throws Exception {
         LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32,
                 "testpasswd".getBytes());

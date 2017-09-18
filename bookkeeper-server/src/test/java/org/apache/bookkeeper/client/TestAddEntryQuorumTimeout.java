@@ -72,7 +72,7 @@ public class TestAddEntryQuorumTimeout extends BookKeeperClusterTestCase impleme
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testBasicTimeout() throws Exception {
         BookKeeperTestClient bkc = new BookKeeperTestClient(baseClientConf);
         LedgerHandle lh = bkc.createLedger(3, 3, 3, digestType, testPasswd);
@@ -96,7 +96,7 @@ public class TestAddEntryQuorumTimeout extends BookKeeperClusterTestCase impleme
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testTimeoutWithPendingOps() throws Exception {
         BookKeeperTestClient bkc = new BookKeeperTestClient(baseClientConf);
         LedgerHandle lh = bkc.createLedger(3, 3, 3, digestType, testPasswd);
@@ -121,7 +121,7 @@ public class TestAddEntryQuorumTimeout extends BookKeeperClusterTestCase impleme
         Assert.assertEquals(BKException.Code.AddEntryQuorumTimeoutException, syncObj3.rc);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerClosedAfterTimeout() throws Exception {
         BookKeeperTestClient bkc = new BookKeeperTestClient(baseClientConf);
         LedgerHandle lh = bkc.createLedger(3, 3, 3, digestType, testPasswd);

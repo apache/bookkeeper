@@ -14,9 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+syntax = "proto2";
 
- option java_package = "org.apache.bookkeeper.proto";
- option optimize_for = SPEED;
+option java_package = "org.apache.bookkeeper.proto";
+option optimize_for = SPEED;
 
 /**
  * Protocol Versions.

@@ -40,7 +40,7 @@ public class LedgerLayoutTest extends BookKeeperClusterTestCase {
         super(0);
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testLedgerLayout() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         conf.setLedgerManagerFactoryClass(HierarchicalLedgerManagerFactory.class);
@@ -77,7 +77,7 @@ public class LedgerLayoutTest extends BookKeeperClusterTestCase {
         layout.store(zkc, ledgersRootPath, ZooDefs.Ids.OPEN_ACL_UNSAFE);
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testBadVersionLedgerLayout() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         // write bad version ledger layout
@@ -94,7 +94,7 @@ public class LedgerLayoutTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testAbsentLedgerManagerLayout() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         String ledgersLayout = conf.getZkLedgersRootPath() + "/"
@@ -113,7 +113,7 @@ public class LedgerLayoutTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testBaseLedgerManagerLayout() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         String rootPath = conf.getZkLedgersRootPath();
@@ -134,7 +134,7 @@ public class LedgerLayoutTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testReadV1LedgerManagerLayout() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         // write v1 ledger layout

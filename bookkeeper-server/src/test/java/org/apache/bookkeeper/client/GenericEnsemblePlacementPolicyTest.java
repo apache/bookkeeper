@@ -78,7 +78,7 @@ public class GenericEnsemblePlacementPolicyTest extends BookKeeperClusterTestCas
         customMetadataOnReplaceBookieStack.clear();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNewEnsemble() throws Exception {
         numBookies = 1;
         startBKCluster();
@@ -95,7 +95,7 @@ public class GenericEnsemblePlacementPolicyTest extends BookKeeperClusterTestCas
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNewEnsembleWithNotEnoughtBookies() throws Exception {
         numBookies = 0;
         try {
@@ -115,7 +115,7 @@ public class GenericEnsemblePlacementPolicyTest extends BookKeeperClusterTestCas
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReplaceBookie() throws Exception {
         numBookies = 3;
         startBKCluster();

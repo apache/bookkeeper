@@ -1,5 +1,5 @@
 ---
-title: Apache BookKeeper 4.6.0-SNAPSHOT Documentation 
+title: Apache BookKeeper&trade; 4.6.0-SNAPSHOT Documentation 
 ---
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
@@ -22,17 +22,16 @@ under the License.
 
 This documentation is for Apache BookKeeper version **{{ site.latest_version }}**.
 
-Apache BookKeeper is a scalable, fault-tolerant, and low-latency storage service optimized for realtime workloads.
-It offers durability, replication, and strong consistency as essentials for building reliable real-time applications.
+Apache BookKeeper is a scalable, fault-tolerant, and low-latency log storage service optimized for real-time workloads. It offers durability, replication, and strong consistency as essentials for building reliable real-time applications.
 
 BookKeeper is ideally suited for scenarios like:
 
-- [WAL](https://en.wikipedia.org/wiki/Write-ahead_logging) (Write-ahead logging), for example the HDFS [namenode](https://hadoop.apache.org/docs/r2.5.2/hadoop-project-dist/hadoop-hdfs/HDFSHighAvailabilityWithNFS.html#BookKeeper_as_a_Shared_storage_EXPERIMENTAL)
-- Message Store, for example [Apache Pulsar](https://pulsar.incubator.apache.org/) (incubating)
+- [Write-ahead logging](https://en.wikipedia.org/wiki/Write-ahead_logging) (WAL), for example the HDFS [NameNode](https://hadoop.apache.org/docs/r2.5.2/hadoop-project-dist/hadoop-hdfs/HDFSHighAvailabilityWithNFS.html#BookKeeper_as_a_Shared_storage_EXPERIMENTAL)
+- Durable storage for messaging systems, for example [Apache Pulsar](https://pulsar.incubator.apache.org/) (incubating)
 - Offset/cursor store, for example Apache Pulsar
 - Object/blob Store, for example storing snapshots to replicated state machines
 
-Learn more about Apache BookKeeper and what it can do for your organization:
+Learn more about Apache BookKeeper&trade; and what it can do for your organization:
 
 - [Apache BookKeeper {{ site.latest_version }} Release Notes](../releaseNotes)
 - [Java API docs](../../api/javadoc)
@@ -43,7 +42,7 @@ Or start using Apache BookKeeper today.
 
 You can find a full index of the BookKeeper documentation in the sidebar on the left. But if you're not sure where to start:
 
-### BookKeeper users 
+### BookKeeper users
 
 - **Concepts** --- Start with the [concepts and architecture](../../getting-started/concepts) documentation. This will help you to fully understand
     other parts of the documentation, including the setup, integration, and operations guides.

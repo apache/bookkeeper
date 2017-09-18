@@ -76,7 +76,7 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
         return Arrays.asList(new Object[][] { { FlatLedgerManagerFactory.class } });
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testGcOverreplicatedLedger() throws Exception {
         LedgerHandle lh = bkc.createLedger(2, 2, DigestType.MAC, "".getBytes());
         activeLedgers.put(lh.getId(), true);
@@ -123,7 +123,7 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
         Assert.assertFalse(activeLedgers.containsKey(lh.getId()));
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNoGcOfLedger() throws Exception {
         LedgerHandle lh = bkc.createLedger(2, 2, DigestType.MAC, "".getBytes());
         activeLedgers.put(lh.getId(), true);
@@ -174,7 +174,7 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
         Assert.assertTrue(activeLedgers.containsKey(lh.getId()));
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNoGcIfLedgerBeingReplicated() throws Exception {
         LedgerHandle lh = bkc.createLedger(2, 2, DigestType.MAC, "".getBytes());
         activeLedgers.put(lh.getId(), true);

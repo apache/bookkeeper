@@ -17,20 +17,18 @@
  */
 package org.apache.bookkeeper.conf;
 
-import java.net.URL;
-import javax.net.ssl.SSLEngine;
+import static org.apache.bookkeeper.conf.ClientConfiguration.CLIENT_AUTH_PROVIDER_FACTORY_CLASS;
 
+import java.net.URL;
+import java.util.Iterator;
+import javax.net.ssl.SSLEngine;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.util.ReflectionUtils;
-import static org.apache.bookkeeper.conf.ClientConfiguration.CLIENT_AUTH_PROVIDER_FACTORY_CLASS;
-
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -116,9 +114,13 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      * @param confURL
      *          Configuration URL
      */
+    @SuppressWarnings("unchecked")
     public void loadConf(URL confURL) throws ConfigurationException {
         PropertiesConfiguration loadedConf = new PropertiesConfiguration(confURL);
-        addConfiguration((Configuration)loadedConf.clone());
+        for (Iterator<String> iter = loadedConf.getKeys(); iter.hasNext(); ) {
+            String key = iter.next();
+            setProperty(key, loadedConf.getProperty(key));
+        }
     }
 
     /**
@@ -127,8 +129,12 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      * @param baseConf
      *          Other Configuration
      */
+    @SuppressWarnings("unchecked")
     public void loadConf(CompositeConfiguration baseConf) {
-        addConfiguration((CompositeConfiguration)baseConf.clone());
+        for (Iterator<String> iter = baseConf.getKeys(); iter.hasNext(); ) {
+            String key = iter.next();
+            setProperty(key, baseConf.getProperty(key));
+        }
     }
 
     /**

@@ -183,7 +183,7 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
         b = null;
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testUpgradeV1toCurrent() throws Exception {
         File journalDir = newV1JournalDirectory();
         tmpDirs.add(journalDir);
@@ -192,7 +192,7 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
         testUpgradeProceedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(), ledgerDir.getPath());
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testUpgradeV2toCurrent() throws Exception {
         File journalDir = newV2JournalDirectory();
         tmpDirs.add(journalDir);
@@ -201,7 +201,7 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
         testUpgradeProceedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(), ledgerDir.getPath());
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testUpgradeCurrent() throws Exception {
         File journalDir = newV2JournalDirectory();
         tmpDirs.add(journalDir);
@@ -221,7 +221,7 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
         b.shutdown();
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testCommandLine() throws Exception {
         PrintStream origerr = System.err;
         PrintStream origout = System.out;

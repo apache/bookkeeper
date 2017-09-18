@@ -108,7 +108,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         super.tearDown();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNotReorderReadIfInDefaultRack() throws Exception {
         repp.uninitalize();
         updateMyRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
@@ -121,7 +121,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         assertEquals(writeSet, reorderSet);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNodeInSameRegion() throws Exception {
         repp.uninitalize();
         updateMyRack("/r1/rack3");
@@ -147,7 +147,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         assertEquals(expectedSet, reoderSet);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNodeNotInSameRegions() throws Exception {
         repp.uninitalize();
         updateMyRack("/r2/rack1");
@@ -161,7 +161,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         assertEquals(writeSet, reoderSet);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNodeDown() throws Exception {
         repp.uninitalize();
         updateMyRack("/r1/rack1");
@@ -190,7 +190,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         assertEquals(expectedSet, reoderSet);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNodeReadOnly() throws Exception {
         repp.uninitalize();
         updateMyRack("/r1/rack1");
@@ -221,7 +221,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         assertEquals(expectedSet, reoderSet);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testTwoNodesDown() throws Exception {
         repp.uninitalize();
         updateMyRack("/r1/rack1");
@@ -251,7 +251,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         assertEquals(expectedSet, reoderSet);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReplaceBookieWithEnoughBookiesInSameRegion() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);
@@ -274,7 +274,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         assertEquals(addr3, replacedBookie);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReplaceBookieWithEnoughBookiesInDifferentRegion() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);
@@ -301,7 +301,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         assertTrue(addr3.equals(replacedBookie) || addr4.equals(replacedBookie));
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNewEnsembleBookieWithNotEnoughBookies() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);
@@ -328,7 +328,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReplaceBookieWithNotEnoughBookies() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);
@@ -359,7 +359,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNewEnsembleWithSingleRegion() throws Exception {
         repp.uninitalize();
         repp = new RegionAwareEnsemblePlacementPolicy();
@@ -390,7 +390,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNewEnsembleWithMultipleRegions() throws Exception {
         repp.uninitalize();
         repp = new RegionAwareEnsemblePlacementPolicy();
@@ -428,7 +428,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNewEnsembleWithEnoughRegions() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);
@@ -468,7 +468,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNewEnsembleWithThreeRegions() throws Exception {
         repp.uninitalize();
         repp = new RegionAwareEnsemblePlacementPolicy();
@@ -533,7 +533,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNewEnsembleWithThreeRegionsWithDisable() throws Exception {
         FeatureProvider featureProvider = new SettableFeatureProvider("", 0);
         repp.uninitalize();
@@ -612,7 +612,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
     }
 
 
-    @Test(timeout = 60000)
+    @Test
     public void testNewEnsembleWithFiveRegions() throws Exception {
         repp.uninitalize();
         repp = new RegionAwareEnsemblePlacementPolicy();
@@ -690,22 +690,22 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testEnsembleWithThreeRegionsReplace() throws Exception {
         testEnsembleWithThreeRegionsReplaceInternal(3, false, false);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testEnsembleWithThreeRegionsReplaceDisableOneRegion() throws Exception {
         testEnsembleWithThreeRegionsReplaceInternal(2, false, true);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testEnsembleWithThreeRegionsReplaceMinDurabilityOne() throws Exception {
         testEnsembleWithThreeRegionsReplaceInternal(1, false, false);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testEnsembleWithThreeRegionsReplaceDisableDurability() throws Exception {
         testEnsembleWithThreeRegionsReplaceInternal(1, true, false);
     }
@@ -838,12 +838,12 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testEnsembleMinDurabilityOne() throws Exception {
         testEnsembleDurabilityDisabledInternal(1, false);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testEnsembleDisableDurability() throws Exception {
         testEnsembleDurabilityDisabledInternal(2, true);
     }
@@ -918,7 +918,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNewEnsembleFailWithFiveRegions() throws Exception {
         repp.uninitalize();
         repp = new RegionAwareEnsemblePlacementPolicy();
@@ -1013,12 +1013,12 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testBasicReorderReadSequenceWithLocalRegion() throws Exception {
         basicReorderReadSequenceWithLocalRegionTest("region2", false);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testBasicReorderReadLACSequenceWithLocalRegion() throws Exception {
         basicReorderReadSequenceWithLocalRegionTest("region2", true);
     }
@@ -1064,12 +1064,12 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testBasicReorderReadSequenceWithRemoteRegion() throws Exception {
         basicReorderReadSequenceWithRemoteRegionTest("region4", false);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testBasicReorderReadLACSequenceWithRemoteRegion() throws Exception {
         basicReorderReadSequenceWithRemoteRegionTest("region4", true);
     }
@@ -1099,12 +1099,12 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReorderReadSequenceWithUnavailableOrReadOnlyBookies() throws Exception {
         reorderReadSequenceWithUnavailableOrReadOnlyBookiesTest(false);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReorderReadLACSequenceWithUnavailableOrReadOnlyBookies() throws Exception {
         reorderReadSequenceWithUnavailableOrReadOnlyBookiesTest(true);
     }
@@ -1202,7 +1202,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         return numCoveredWriteQuorums;
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNodeWithFailures() throws Exception {
         repp.uninitalize();
         updateMyRack("/r2/rack1");

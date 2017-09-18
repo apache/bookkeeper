@@ -119,7 +119,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
      * Test verifies publish urLedger by Auditor and replication worker is
      * picking up the entries and finishing the rereplication of open ledger
      */
-    @Test(timeout = 90000)
+    @Test
     public void testOpenLedgers() throws Exception {
         List<LedgerHandle> listOfLedgerHandle = createLedgersAndAddEntries(1, 5);
         LedgerHandle lh = listOfLedgerHandle.get(0);
@@ -166,7 +166,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
      * Test verifies publish urLedger by Auditor and replication worker is
      * picking up the entries and finishing the rereplication of closed ledgers
      */
-    @Test(timeout = 90000)
+    @Test
     public void testClosedLedgers() throws Exception {
         List<Integer> listOfReplicaIndex = new ArrayList<Integer>();
         List<LedgerHandle> listOfLedgerHandle = createLedgersAndAddEntries(1, 5);
@@ -227,7 +227,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
      * when there is an exception will shutdown Auditor and RW processes. After
      * restarting should be able to finish the re-replication activities
      */
-    @Test(timeout = 90000)
+    @Test
     public void testStopWhileReplicationInProgress() throws Exception {
         int numberOfLedgers = 2;
         List<Integer> listOfReplicaIndex = new ArrayList<Integer>();
@@ -306,7 +306,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
      * deleted after publishing as urledgers by Auditor) should be cleared off
      * by the newly selected replica bookie
      */
-    @Test(timeout = 30000)
+    @Test
     public void testNoSuchLedgerExists() throws Exception {
         List<LedgerHandle> listOfLedgerHandle = createLedgersAndAddEntries(2, 5);
         CountDownLatch latch = new CountDownLatch(listOfLedgerHandle.size());
@@ -350,7 +350,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
      * Test that if a empty ledger loses the bookie not in the quorum for entry 0, it will
      * still be openable when it loses enough bookies to lose a whole quorum.
      */
-    @Test(timeout=10000)
+    @Test
     public void testEmptyLedgerLosesQuorumEventually() throws Exception {
         LedgerHandle lh = bkc.createLedger(3, 2, 2, DigestType.CRC32, PASSWD);
         CountDownLatch latch = new CountDownLatch(1);
@@ -395,7 +395,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
      * Test verifies bookie recovery, the host (recorded via ipaddress in
      * ledgermetadata)
      */
-    @Test(timeout = 90000)
+    @Test
     public void testLedgerMetadataContainsIpAddressAsBookieID()
             throws Exception {
         stopBKCluster();
@@ -473,7 +473,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
      * Test verifies bookie recovery, the host (recorded via useHostName in
      * ledgermetadata)
      */
-    @Test(timeout = 90000)
+    @Test
     public void testLedgerMetadataContainsHostNameAsBookieID()
             throws Exception {
         stopBKCluster();

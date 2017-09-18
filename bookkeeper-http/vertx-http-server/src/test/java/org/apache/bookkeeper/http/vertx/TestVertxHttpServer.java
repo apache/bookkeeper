@@ -39,7 +39,7 @@ public class TestVertxHttpServer {
 
     private int port = 8080;
 
-    @Test(timeout = 60000)
+    @Test
     public void testStartBasicHttpServer() throws Exception {
         VertxHttpServer httpServer = new VertxHttpServer();
         ServiceProvider serviceProvider = NullServiceProvider.getInstance();
