@@ -26,10 +26,12 @@ metadata:
 data:
     BK_BOOKIE_EXTRA_OPTS: "\"-Xms1g -Xmx1g -XX:MaxDirectMemorySize=1g -XX:+UseG1GC  -XX:MaxGCPauseMillis=10 -XX:+ParallelRefProcEnabled -XX:+UnlockExperimentalVMOptions -XX:+AggressiveOpts -XX:+DoEscapeAnalysis -XX:ParallelGCThreads=32 -XX:ConcGCThreads=32 -XX:G1NewSizePercent=50 -XX:+DisableExplicitGC -XX:-ResizePLAB\""
     BK_bookiePort: "3181"
-    BK_journalDirectory: "/data/bookkeeper/journal"
+    BK_journalDirectory: "/bookkeeper/data/journal"
     BK_ledgerDirectories: "/bookkeeper/data/ledgers"
     BK_indexDirectories: "/bookkeeper/data/ledgers"
-    BK_zkServers: zk-0.zookeeper,zk-1.zookeeper,zk-2.zookeeper
+    BK_zkServers: zookeeper
+    # the default manager is flat, which is not good for supporting large number of ledgers
+    BK_ledgerManagerType: "hierarchical"
     # TODO: Issue 458: https://github.com/apache/bookkeeper/issues/458
     #BK_statsProviderClass: org.apache.bookkeeper.stats.PrometheusMetricsProvider
 ---
@@ -61,7 +63,8 @@ spec:
         spec:
             containers:
               - name: bookie
-                image: apache/bookkeeper:latest
+                image: apachedistributedlog/distributedlog:0.5.0
+                # image: apache/bookkeeper:latest
                 resources:
                   requests:
                     memory: "3Gi"
@@ -69,14 +72,24 @@ spec:
                   limits:
                     memory: "5Gi"
                     cpu: "2000m"
-                command: [ "/bin/bash", "/opt/bookkeeper/entrypoint.sh" ]
+                # use the patched entrypoint.sh - it will automatically created the desired distributedlog namespace
+                command: [ "/bin/bash", "/opt/distributedlog/bin/entrypoint.sh" ]
                 args: ["/opt/bookkeeper/bin/bookkeeper", "bookie"]
                 ports:
-                  - containerPort: 3181
-                    name: client
+                  - name: client
+                    containerPort: 3181
+                    # we are using `status.hostIP` for the bookie's advertised address. export 3181 as the hostPort,
+                    # so that the containers are able to access the host port
+                    hostPort: 3181
                 envFrom:
                   - configMapRef:
                         name: bookie-config
+                env:
+                  - name: BK_advertisedAddress
+                    valueFrom:
+                      fieldRef:
+                        fieldPath: status.hostIP
+                        
 
                 volumeMounts:
                   - name: journal-disk
