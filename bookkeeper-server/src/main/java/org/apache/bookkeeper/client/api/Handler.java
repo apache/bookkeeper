@@ -16,7 +16,7 @@
  */
 package org.apache.bookkeeper.client.api;
 
-import org.apache.bookkeeper.client.AsyncCallback;
+import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.client.BKException;
 
 /**
@@ -24,7 +24,7 @@ import org.apache.bookkeeper.client.BKException;
  */
 public interface Handler extends AutoCloseable {
 
-     /**
+    /**
      * Get the id of the current ledger
      *
      * @return the id of the ledger
@@ -45,9 +45,7 @@ public interface Handler extends AutoCloseable {
      * Closing a ledger will ensure that all clients agree on what the last entry of the ledger is. This ensures that,
      * once the ledger has been closed, all reads from the ledger will return the same set of entries.
      *
-     * @param cb callback implementation
-     * @param ctx control object
      */
-    void asyncClose(AsyncCallback.CloseCallback cb, Object ctx);
+    CompletableFuture<?> asyncClose();
 
 }

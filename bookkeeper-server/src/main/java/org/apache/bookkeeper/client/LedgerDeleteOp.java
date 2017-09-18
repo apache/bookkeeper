@@ -112,8 +112,7 @@ class LedgerDeleteOp extends DeferredOrderOrderedSafeGenericCallback<Void> imple
         return counter;
     }
 
-    @Override
-    public void delete(long ledgerId, AsyncCallback.DeleteCallback cb, Object ctx) {
+    private void delete(long ledgerId, AsyncCallback.DeleteCallback cb, Object ctx) {
         bk.closeLock.readLock().lock();
         try {
             if (bk.closed) {

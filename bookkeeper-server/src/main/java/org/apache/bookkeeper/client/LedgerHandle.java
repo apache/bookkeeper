@@ -327,6 +327,16 @@ public class LedgerHandle implements AutoCloseable, WriteHandler {
         SynchCallbackUtils.waitForResult(counter);
     }
 
+    @Override
+    public CompletableFuture<?> asyncClose() {
+        CompletableFuture<Void> counter = new CompletableFuture<>();
+
+        asyncClose(new SyncCloseCallback(), counter);
+
+        explicitLacFlushPolicy.stopExplicitLacFlush();
+        return counter;
+    }
+
     /**
      * Asynchronous close, any adds in flight will return errors.
      *

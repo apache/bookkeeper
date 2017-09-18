@@ -17,7 +17,6 @@
 package org.apache.bookkeeper.client.api;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.BKException;
 
 /**
@@ -26,8 +25,6 @@ import org.apache.bookkeeper.client.BKException;
 public interface DeleteBuilder {
 
     CompletableFuture<?> execute(long ledgerId);
-
-    void delete(long ledgerId, DeleteCallback cb, Object ctx);
 
     void delete(long ledgerId) throws BKException, InterruptedException;
 
