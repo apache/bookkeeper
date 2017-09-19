@@ -58,6 +58,12 @@ public class BookKeeperBuildersTest extends BookKeeperClusterTestCase {
         return (LedgerMetadata) method.invoke(object);
     }
 
+    private static org.apache.bookkeeper.client.BookKeeper.DigestType getDigestType(LedgerMetadata object) throws Exception {
+        Method method = LedgerHandle.class.getDeclaredMethod("getDigestType");
+        method.setAccessible(true);
+        return (org.apache.bookkeeper.client.BookKeeper.DigestType) method.invoke(object);
+    }
+
     @Test
     public void testCreateLedgerDefaults() throws Exception {
         ClientConfiguration conf = new ClientConfiguration()
@@ -73,7 +79,7 @@ public class BookKeeperBuildersTest extends BookKeeperClusterTestCase {
                     assertEquals(3, metadata.getEnsembleSize());
                     assertEquals(3, metadata.getWriteQuorumSize());
                     assertEquals(3, metadata.getAckQuorumSize());
-                    assertEquals(org.apache.bookkeeper.client.BookKeeper.DigestType.CRC32, metadata.getDigestType());
+                    assertEquals(org.apache.bookkeeper.client.BookKeeper.DigestType.CRC32, getDigestType(metadata));
                     assertArrayEquals(MacDigestManager.genDigest("ledger", new byte[0]), ((LedgerHandle) writer).getLedgerKey());
                     assertTrue(metadata.getCustomMetadata().isEmpty());
                 }
@@ -104,7 +110,7 @@ public class BookKeeperBuildersTest extends BookKeeperClusterTestCase {
                     assertEquals(3, metadata.getEnsembleSize());
                     assertEquals(2, metadata.getWriteQuorumSize());
                     assertEquals(1, metadata.getAckQuorumSize());
-                    assertEquals(org.apache.bookkeeper.client.BookKeeper.DigestType.MAC, metadata.getDigestType());
+                    assertEquals(org.apache.bookkeeper.client.BookKeeper.DigestType.MAC, getDigestType(metadata));
                     assertArrayEquals("test".getBytes(StandardCharsets.UTF_8),
                         metadata.getCustomMetadata().get("test"));
                     assertArrayEquals(MacDigestManager.genDigest("ledger", "password".getBytes(StandardCharsets.UTF_8)),
@@ -147,7 +153,7 @@ public class BookKeeperBuildersTest extends BookKeeperClusterTestCase {
                     assertEquals(3, metadata.getEnsembleSize());
                     assertEquals(2, metadata.getWriteQuorumSize());
                     assertEquals(1, metadata.getAckQuorumSize());
-                    assertEquals(org.apache.bookkeeper.client.BookKeeper.DigestType.MAC, metadata.getDigestType());
+                    assertEquals(org.apache.bookkeeper.client.BookKeeper.DigestType.MAC, getDigestType(metadata));
                     assertArrayEquals("test".getBytes(StandardCharsets.UTF_8),
                         metadata.getCustomMetadata().get("test"));
                     assertArrayEquals(MacDigestManager.genDigest("ledger", "password".getBytes(StandardCharsets.UTF_8)),
@@ -192,7 +198,7 @@ public class BookKeeperBuildersTest extends BookKeeperClusterTestCase {
                     assertEquals(3, metadata.getEnsembleSize());
                     assertEquals(2, metadata.getWriteQuorumSize());
                     assertEquals(1, metadata.getAckQuorumSize());
-                    assertEquals(org.apache.bookkeeper.client.BookKeeper.DigestType.MAC, metadata.getDigestType());
+                    assertEquals(org.apache.bookkeeper.client.BookKeeper.DigestType.MAC, getDigestType(metadata));
                     assertArrayEquals("test".getBytes(StandardCharsets.UTF_8),
                         metadata.getCustomMetadata().get("test"));
                     assertEquals(1234, writer.getId());
