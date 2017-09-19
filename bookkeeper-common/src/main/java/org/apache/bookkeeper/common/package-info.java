@@ -18,7 +18,5 @@
 
 /**
  * Common functions and utils used across the project.
- *
- * <p>NOTE: refactor this package to bookkeeper-common module after 4.5</p>
  */
 package org.apache.bookkeeper.common;
