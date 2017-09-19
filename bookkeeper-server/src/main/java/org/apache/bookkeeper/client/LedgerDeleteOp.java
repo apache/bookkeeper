@@ -26,13 +26,13 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.api.DeleteBuilder;
-import org.apache.bookkeeper.client.api.ReadHandler;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.OrderedSafeExecutor.DeferredOrderOrderedSafeGenericCallback;
 import org.apache.bookkeeper.versioning.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.bookkeeper.client.api.ReadHandle;
 
 /**
  * Encapsulates asynchronous ledger delete operation

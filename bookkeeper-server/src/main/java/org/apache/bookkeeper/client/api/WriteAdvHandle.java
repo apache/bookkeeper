@@ -28,7 +28,7 @@ import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
  *
  * @see WriteHandler
  */
-public interface WriteAdvHandler extends ReadHandler {
+public interface WriteAdvHandle extends ReadHandle {
 
     /**
      * Add entry asynchronously to an open ledger
