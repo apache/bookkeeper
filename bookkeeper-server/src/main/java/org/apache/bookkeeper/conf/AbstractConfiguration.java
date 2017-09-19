@@ -24,6 +24,8 @@ import java.util.Iterator;
 import javax.net.ssl.SSLEngine;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.RegistrationManager;
+import org.apache.bookkeeper.meta.ZkRegistrationManager;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
@@ -98,6 +100,8 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
 
     // Kluge for compatibility testing. Never set this outside tests.
     public final static String LEDGER_MANAGER_FACTORY_DISABLE_CLASS_CHECK = "ledgerManagerFactoryDisableClassCheck";
+
+    protected final static String REGISTRATION_MANAGER_CLASS = "registrationManagerClass";
 
     protected AbstractConfiguration() {
         super();
@@ -484,5 +488,28 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      */
     public String getTLSEnabledProtocols() {
         return getString(TLS_ENABLED_PROTOCOLS, null);
+    }
+
+    /**
+     * Set registration manager class
+     *
+     * @param registration
+     *            ManagerClass
+     */
+    public void setRegistrationManagerClass(
+            Class<? extends RegistrationManager> regManagerClass) {
+        setProperty(REGISTRATION_MANAGER_CLASS, regManagerClass);
+    }
+
+    /**
+     * Get Registration Manager Class.
+     *
+     * @return registration manager class.
+     */
+    public Class<? extends RegistrationManager> getRegistrationManagerClass()
+            throws ConfigurationException {
+        return ReflectionUtils.getClass(this, REGISTRATION_MANAGER_CLASS,
+                ZkRegistrationManager.class, RegistrationManager.class,
+                defaultLoader);
     }
 }
