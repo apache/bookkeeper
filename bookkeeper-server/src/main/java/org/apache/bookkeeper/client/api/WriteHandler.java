@@ -18,7 +18,6 @@ package org.apache.bookkeeper.client.api;
 
 import io.netty.buffer.ByteBuf;
 import java.util.concurrent.CompletableFuture;
-import org.apache.bookkeeper.client.BKException;
 
 /**
  * Provide write access to a ledger

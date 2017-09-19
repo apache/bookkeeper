@@ -227,8 +227,15 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata>, OpenBuilder {
 
     private static final byte[] EMPTY_PASSWORD = new byte[0];
     private boolean builderRecovery = true;
+    private long builderLedgerId = -1;
     private byte[] builderPassword = EMPTY_PASSWORD;
     private DigestType builderDigestType = DigestType.CRC32;
+
+    @Override
+    public OpenBuilder withLedgerId(long ledgerId) {
+        this.builderLedgerId = ledgerId;
+        return this;
+    }
 
     @Override
     public OpenBuilder withRecovery(boolean recovery) {
@@ -249,16 +256,16 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata>, OpenBuilder {
     }
 
     @Override
-    public CompletableFuture<ReadHandler> execute(long ledgerId) {
+    public CompletableFuture<ReadHandler> execute() {
          CompletableFuture<ReadHandler> counter = new CompletableFuture<>();
-         open(ledgerId, new SyncOpenCallback(), counter);
+         open(new SyncOpenCallback(), counter);
          return counter;
     }
 
-    private void open(long ledgerId, OpenCallback cb, Object ctx) {
+    private void open(OpenCallback cb, Object ctx) {
         this.cb = cb;
         this.ctx = ctx;
-        this.ledgerId = ledgerId;
+        this.ledgerId = builderLedgerId;
         this.suggestedDigestType = builderDigestType;
         this.doRecovery = builderRecovery;
         this.passwd = builderPassword;
@@ -276,8 +283,8 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata>, OpenBuilder {
     }
 
     @Override
-    public ReadHandler open(long ledgerId) throws BKException, InterruptedException {
-         return SynchCallbackUtils.waitForResult(execute(ledgerId));
+    public ReadHandler open() throws BKException, InterruptedException {
+         return SynchCallbackUtils.waitForResult(execute());
     }
 
 }

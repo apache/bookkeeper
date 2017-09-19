@@ -17,8 +17,6 @@
 package org.apache.bookkeeper.client.api;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.bookkeeper.client.AsyncCallback;
-import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerEntry;
 
 /**

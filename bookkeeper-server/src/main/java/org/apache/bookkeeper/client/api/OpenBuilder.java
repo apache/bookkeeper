@@ -22,7 +22,9 @@ import org.apache.bookkeeper.client.BKException;
 /**
  * Builder-style interface to open exiting ledgers
  */
-public interface OpenBuilder {
+public interface OpenBuilder extends OpBuilder<ReadHandler> {
+
+    OpenBuilder withLedgerId(long ledgerId);
 
     OpenBuilder withRecovery(boolean recovery);
 
@@ -30,8 +32,8 @@ public interface OpenBuilder {
 
     OpenBuilder withDigestType(org.apache.bookkeeper.client.BookKeeper.DigestType digestType);
 
-    CompletableFuture<ReadHandler> execute(long ledgerId);
+    CompletableFuture<ReadHandler> execute();
 
-    ReadHandler open(long ledgerId) throws BKException, InterruptedException;
+    ReadHandler open() throws BKException, InterruptedException;
 
 }

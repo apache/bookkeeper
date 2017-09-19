@@ -21,8 +21,11 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Builder-style interface to delete exiting ledgers
  */
-public interface DeleteBuilder {
+public interface DeleteBuilder extends OpBuilder {
 
-    CompletableFuture<?> execute(long ledgerId);
+    DeleteBuilder withLedgerId(long ledgerId);
+
+    @Override
+    CompletableFuture<?> execute();
 
 }
