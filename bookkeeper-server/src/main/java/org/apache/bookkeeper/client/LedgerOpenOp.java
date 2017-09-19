@@ -31,13 +31,13 @@ import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BookKeeper.SyncOpenCallback;
 import org.apache.bookkeeper.client.api.OpenBuilder;
-import org.apache.bookkeeper.client.api.ReadHandler;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.bookkeeper.client.api.ReadHandle;
 
 /**
  * Encapsulates the ledger open operation
@@ -256,8 +256,8 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata>, OpenBuilder {
     }
 
     @Override
-    public CompletableFuture<ReadHandler> execute() {
-         CompletableFuture<ReadHandler> counter = new CompletableFuture<>();
+    public CompletableFuture<ReadHandle> execute() {
+         CompletableFuture<ReadHandle> counter = new CompletableFuture<>();
          open(new SyncOpenCallback(), counter);
          return counter;
     }
@@ -283,7 +283,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata>, OpenBuilder {
     }
 
     @Override
-    public ReadHandler open() throws BKException, InterruptedException {
+    public ReadHandle open() throws BKException, InterruptedException {
          return SynchCallbackUtils.waitForResult(execute());
     }
 

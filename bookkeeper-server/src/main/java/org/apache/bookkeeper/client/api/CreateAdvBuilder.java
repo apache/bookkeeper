@@ -22,13 +22,13 @@ import org.apache.bookkeeper.client.BKException;
 /**
  * Builder-style interface to create new ledgers
  */
-public interface CreateAdvBuilder extends OpBuilder<WriteAdvHandler> {
+public interface CreateAdvBuilder extends OpBuilder<WriteAdvHandle> {
 
     CreateAdvBuilder withLedgerId(int ledgerId);
 
-    WriteAdvHandler create() throws BKException, InterruptedException;
+    WriteAdvHandle create() throws BKException, InterruptedException;
 
     @Override
-    CompletableFuture<WriteAdvHandler> execute();
+    CompletableFuture<WriteAdvHandle> execute();
 
 }

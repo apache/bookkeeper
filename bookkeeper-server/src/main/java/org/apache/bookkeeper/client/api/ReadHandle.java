@@ -22,7 +22,7 @@ import org.apache.bookkeeper.client.LedgerEntry;
 /**
  * Provide read access to a ledger
  */
-public interface ReadHandler extends Handler {
+public interface ReadHandle extends Handle {
 
     /**
      * Read a sequence of entries asynchronously.

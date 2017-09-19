@@ -32,8 +32,6 @@ import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.CreateAdvBuilder;
 import org.apache.bookkeeper.client.api.CreateBuilder;
-import org.apache.bookkeeper.client.api.WriteAdvHandler;
-import org.apache.bookkeeper.client.api.WriteHandler;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -41,6 +39,8 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.bookkeeper.client.api.WriteAdvHandle;
+import org.apache.bookkeeper.client.api.WriteHandle;
 
 /**
  * Encapsulates asynchronous ledger create operation
@@ -272,7 +272,7 @@ class LedgerCreateOp implements GenericCallback<Void>, CreateBuilder {
     private CreateAdvBuilder advBuilder;
 
     @Override
-    public WriteHandler create() throws BKException, InterruptedException {
+    public WriteHandle create() throws BKException, InterruptedException {
         CompletableFuture<LedgerHandle> counter = new CompletableFuture<>();
 
         create(new BookKeeper.SyncCreateCallback(), counter);
@@ -286,8 +286,8 @@ class LedgerCreateOp implements GenericCallback<Void>, CreateBuilder {
     }
 
     @Override
-    public CompletableFuture<WriteHandler> execute() {
-        CompletableFuture<WriteHandler> counter = new CompletableFuture<>();
+    public CompletableFuture<WriteHandle> execute() {
+        CompletableFuture<WriteHandle> counter = new CompletableFuture<>();
         create(new BookKeeper.SyncCreateCallback(), counter);
         return counter;
     }
@@ -342,7 +342,7 @@ class LedgerCreateOp implements GenericCallback<Void>, CreateBuilder {
         }
 
         @Override
-        public WriteAdvHandler create() throws BKException, InterruptedException {
+        public WriteAdvHandle create() throws BKException, InterruptedException {
             CompletableFuture<LedgerHandleAdv> counter = new CompletableFuture<>();
 
             create(new BookKeeper.SyncCreateCallback(), counter);
@@ -356,8 +356,8 @@ class LedgerCreateOp implements GenericCallback<Void>, CreateBuilder {
         }
 
         @Override
-        public CompletableFuture<WriteAdvHandler> execute() {
-            CompletableFuture<WriteAdvHandler> counter = new CompletableFuture<>();
+        public CompletableFuture<WriteAdvHandle> execute() {
+            CompletableFuture<WriteAdvHandle> counter = new CompletableFuture<>();
             create(new BookKeeper.SyncCreateCallback(), counter);
             return counter;
         }

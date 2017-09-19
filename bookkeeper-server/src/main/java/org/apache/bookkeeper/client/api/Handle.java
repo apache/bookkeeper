@@ -20,9 +20,9 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.client.BKException;
 
 /**
- * Handle a Ledger
+ * Handle to manage an open ledger
  */
-public interface Handler extends AutoCloseable {
+public interface Handle extends AutoCloseable {
 
     /**
      * Get the id of the current ledger

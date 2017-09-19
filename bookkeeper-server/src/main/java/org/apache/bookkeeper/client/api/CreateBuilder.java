@@ -23,7 +23,7 @@ import org.apache.bookkeeper.client.BKException;
 /**
  * Builder-style interface to create new ledgers
  */
-public interface CreateBuilder extends OpBuilder<WriteHandler> {
+public interface CreateBuilder extends OpBuilder<WriteHandle> {
 
     CreateBuilder withEnsembleSize(int ackQuorumSize);
 
@@ -39,9 +39,9 @@ public interface CreateBuilder extends OpBuilder<WriteHandler> {
 
     CreateAdvBuilder makeAdv();
 
-    WriteHandler create() throws BKException, InterruptedException;
+    WriteHandle create() throws BKException, InterruptedException;
 
     @Override
-    CompletableFuture<WriteHandler> execute();
+    CompletableFuture<WriteHandle> execute();
 
 }
