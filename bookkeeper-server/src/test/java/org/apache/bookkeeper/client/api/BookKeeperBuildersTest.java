@@ -240,7 +240,8 @@ public class BookKeeperBuildersTest extends BookKeeperClusterTestCase {
                 try (ReadHandler reader = bkc.openLedgerOp()
                     .withDigestType(org.apache.bookkeeper.client.BookKeeper.DigestType.MAC)
                     .withPassword("bad-password".getBytes(StandardCharsets.UTF_8))
-                    .open(lId)) {
+                    .withLedgerId(lId)
+                    .open()) {
                     fail("should not open ledger, bad password");
                 } catch (BKUnauthorizedAccessException ok) {
                 }
@@ -248,16 +249,31 @@ public class BookKeeperBuildersTest extends BookKeeperClusterTestCase {
                 try (ReadHandler reader = bkc.openLedgerOp()
                     .withDigestType(org.apache.bookkeeper.client.BookKeeper.DigestType.CRC32)
                     .withPassword("password".getBytes(StandardCharsets.UTF_8))
-                    .open(lId)) {
+                    .withLedgerId(lId)
+                    .open()) {
                     fail("should not open ledger, bad digest");
                 } catch (BKDigestMatchException ok) {
                 }
+
+                try {
+                    FutureUtils.result(bkc.openLedgerOp().execute());
+                    fail("should not open ledger, no id");
+                } catch (BKNoSuchLedgerExistsException ok) {
+                }
+
+                try {
+                    FutureUtils.result(bkc.openLedgerOp().withLedgerId(Long.MAX_VALUE-1).execute());
+                    fail("should not open ledger, bad id");
+                } catch (BKNoSuchLedgerExistsException ok) {
+                }
+
 
                 try (ReadHandler reader = bkc.openLedgerOp()
                     .withDigestType(org.apache.bookkeeper.client.BookKeeper.DigestType.MAC)
                     .withPassword("password".getBytes(StandardCharsets.UTF_8))
                     .withRecovery(false)
-                    .open(lId)) {
+                    .withLedgerId(lId)
+                    .open()) {
                     assertEquals(2, reader.getLastAddConfirmed());
                     assertEquals(2, reader.readLastConfirmedEntryId().get().intValue());
                     assertEquals(2, reader.tryReadLastConfirmedEntryId().get().intValue());
@@ -299,7 +315,8 @@ public class BookKeeperBuildersTest extends BookKeeperClusterTestCase {
                         .withDigestType(org.apache.bookkeeper.client.BookKeeper.DigestType.MAC)
                         .withPassword("password".getBytes(StandardCharsets.UTF_8))
                         .withRecovery(true)
-                        .open(lId)) {
+                        .withLedgerId(lId)
+                        .open()) {
                     }
 
                     try {
@@ -312,7 +329,8 @@ public class BookKeeperBuildersTest extends BookKeeperClusterTestCase {
                     .withDigestType(org.apache.bookkeeper.client.BookKeeper.DigestType.MAC)
                     .withPassword("password".getBytes(StandardCharsets.UTF_8))
                     .withRecovery(false)
-                    .open(lId)) {
+                    .withLedgerId(lId)
+                    .open()) {
                     assertEquals(1, reader.getLastAddConfirmed());
                     assertEquals(1, reader.readLastConfirmedEntryId().get().intValue());
                     checkEntries(reader.read(0, reader.getLastAddConfirmed()).get(), data);
@@ -348,16 +366,18 @@ public class BookKeeperBuildersTest extends BookKeeperClusterTestCase {
                 try (ReadHandler opened = bkc.openLedgerOp()
                     .withDigestType(org.apache.bookkeeper.client.BookKeeper.DigestType.MAC)
                     .withPassword("password".getBytes(StandardCharsets.UTF_8))
-                    .open(lId);) {
+                    .withLedgerId(lId)
+                    .open();) {
                 }
 
-                bkc.deleteLedgerOp().execute(lId).get();
+                bkc.deleteLedgerOp().withLedgerId(lId).execute().get();
 
                 try {
                     bkc.openLedgerOp()
                         .withDigestType(org.apache.bookkeeper.client.BookKeeper.DigestType.MAC)
                         .withPassword("password".getBytes(StandardCharsets.UTF_8))
-                        .open(lId);
+                        .withLedgerId(lId)
+                        .open();
                     fail("ledger cannot be open if delete succeeded");
                 } catch (BKNoSuchLedgerExistsException ok) {
                 }
@@ -367,13 +387,24 @@ public class BookKeeperBuildersTest extends BookKeeperClusterTestCase {
                     lId = writer.getId();
                 }
                 try (ReadHandler opened = bkc.openLedgerOp()
-                    .open(lId);) {
+                    .withLedgerId(lId)
+                    .open();) {
                 }
 
-                bkc.deleteLedgerOp().execute(lId).get();
+                bkc.deleteLedgerOp().withLedgerId(lId).execute().get();
+
                 try {
                     bkc.openLedgerOp()
-                        .open(lId);
+                        .withLedgerId(lId)
+                        .open();
+                    fail("ledger cannot be open if delete succeeded");
+                } catch (BKNoSuchLedgerExistsException ok) {
+                }
+
+                try {
+                    FutureUtils.result(bkc.openLedgerOp()
+                        .withLedgerId(lId)
+                        .execute());
                     fail("ledger cannot be open if delete succeeded");
                 } catch (BKNoSuchLedgerExistsException ok) {
                 }
@@ -383,20 +414,29 @@ public class BookKeeperBuildersTest extends BookKeeperClusterTestCase {
                     lId = writer.getId();
                 }
                 try (ReadHandler opened = bkc.openLedgerOp()
-                    .open(lId);) {
+                    .withLedgerId(lId)
+                    .open();) {
                 }
 
-                bkc.deleteLedgerOp().execute(lId).get();
+                bkc.deleteLedgerOp().withLedgerId(lId).execute().get();
 
                 try {
                     bkc.openLedgerOp()
-                        .open(lId);
+                        .withLedgerId(lId)
+                        .open();
                     fail("ledger cannot be open if delete succeeded");
                 } catch (BKNoSuchLedgerExistsException ok) {
                 }
 
                 try {
-                    FutureUtils.result(bkc.deleteLedgerOp().execute(lId));
+                    FutureUtils.result(bkc.deleteLedgerOp().withLedgerId(lId).execute());
+                    fail("ledger cannot be deleted twice");;
+                } catch (BKNoSuchLedgerExistsException ok) {
+                }
+
+                try {
+                    FutureUtils.result(bkc.deleteLedgerOp().execute());
+                    fail("ledger cannot be deleted, no id");
                 } catch (BKNoSuchLedgerExistsException ok) {
                 }
             }

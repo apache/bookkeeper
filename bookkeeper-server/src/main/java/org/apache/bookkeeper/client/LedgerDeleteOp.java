@@ -105,10 +105,18 @@ class LedgerDeleteOp extends DeferredOrderOrderedSafeGenericCallback<Void> imple
         return String.format("LedgerDeleteOp(%d)", ledgerId);
     }
 
+    private long builderLedgerId = -1;
+
     @Override
-    public CompletableFuture<?> execute(long ledgerId) {
+    public DeleteBuilder withLedgerId(long ledgerId) {
+        this. builderLedgerId = ledgerId;
+        return this;
+    }
+
+    @Override
+    public CompletableFuture<?> execute() {
         CompletableFuture<Void> counter = new CompletableFuture<>();
-        delete(ledgerId, new BookKeeper.SyncDeleteCallback(), counter);
+        delete(builderLedgerId, new BookKeeper.SyncDeleteCallback(), counter);
         return counter;
     }
 
