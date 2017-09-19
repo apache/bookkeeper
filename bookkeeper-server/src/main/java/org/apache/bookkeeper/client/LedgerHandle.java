@@ -25,6 +25,7 @@ import com.google.common.base.Objects;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.RateLimiter;
 import io.netty.buffer.ByteBuf;
@@ -33,7 +34,6 @@ import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
@@ -636,7 +636,9 @@ public class LedgerHandle implements AutoCloseable, WriteHandler {
     public CompletableFuture<Iterable<LedgerEntry>> read(long firstEntry, long lastEntry) {
         CompletableFuture<Enumeration<LedgerEntry>> counter = new CompletableFuture<>();
         asyncReadEntries(firstEntry, lastEntry, new SyncReadCallback(), counter);
-        return counter.thenApply(en->Collections.list(en));
+        return counter.thenApply(en-> {
+            return () -> Iterators.forEnumeration(en);
+        });
     }
 
     /**
@@ -657,10 +659,6 @@ public class LedgerHandle implements AutoCloseable, WriteHandler {
      *          id of first entry of sequence
      * @param lastEntry
      *          id of last entry of sequence
-     * @param cb
-     *          object implementing read callback interface
-     * @param ctx
-     *          control object
      *
      * @see #asyncReadEntries(long, long, org.apache.bookkeeper.client.AsyncCallback.ReadCallback, java.lang.Object)
      * @see #asyncReadLastConfirmed(org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback, java.lang.Object)
@@ -670,7 +668,9 @@ public class LedgerHandle implements AutoCloseable, WriteHandler {
     public CompletableFuture<Iterable<LedgerEntry>> readUnconfirmed(long firstEntry, long lastEntry) {
         CompletableFuture<Enumeration<LedgerEntry>> counter = new CompletableFuture<>();
         asyncReadUnconfirmedEntries(firstEntry, lastEntry, new SyncReadCallback(), counter);
-        return counter.thenApply(en->Collections.list(en));
+        return counter.thenApply(en-> {
+            return () -> Iterators.forEnumeration(en);
+        });
     }
 
 
