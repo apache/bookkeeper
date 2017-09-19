@@ -119,23 +119,7 @@ public class NullHttpServiceProvider implements HttpServiceProvider {
         return NULL_HTTP_SERVICE;
     }
 
-    /**
-     * Provide service for read entry log api.
-     */
-    @Override
-    public HttpService provideReadEntryLogService() {
-        return NULL_HTTP_SERVICE;
-    }
-
-    /**
-     * Provide service for read journal file api.
-     */
-    @Override
-    public HttpService provideReadJournalFileService() {
-        return NULL_HTTP_SERVICE;
-    }
-
-    /**
+  /**
      * Provide service for expand bookie storage api.
      */
     @Override

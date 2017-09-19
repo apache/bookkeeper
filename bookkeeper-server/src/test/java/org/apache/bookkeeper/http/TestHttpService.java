@@ -432,6 +432,45 @@ public class TestHttpService extends BookKeeperClusterTestCase {
     }
 
     @Test
+    public void testGetLastLogMarkService() throws Exception {
+        baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        BookKeeper.DigestType digestType = BookKeeper.DigestType.CRC32;
+        int numLedgers = 4;
+        int numMsgs = 100;
+        LedgerHandle[] lh = new LedgerHandle[numLedgers];
+        // create ledgers
+        for (int i = 0; i < numLedgers; i++) {
+            lh[i] = bkc.createLedger(digestType, "".getBytes());
+        }
+        String content = "Apache BookKeeper is cool!";
+        // add entries
+        for (int i = 0; i < numMsgs; i++) {
+            for (int j = 0; j < numLedgers; j++) {
+                lh[j].addEntry(content.getBytes());
+            }
+        }
+        // close ledgers
+        for (int i = 0; i < numLedgers; i++) {
+            lh[i].close();
+        }
+
+        HttpService getLastLogMarkService = bkHttpServiceProvider.provideGetLastLogMarkService();
+
+        //1,  null parameters of POST, should fail
+        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.POST, null);
+        HttpServiceResponse response1 = getLastLogMarkService.handle(request1);
+        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
+
+        //2,  null parameters of GET, should return 1 file
+        HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
+        HttpServiceResponse response2 = getLastLogMarkService.handle(request2);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response2.getStatusCode());
+        @SuppressWarnings("unchecked")
+        HashMap<String, String> respBody = JsonUtil.fromJson(response2.getBody(), HashMap.class);
+        assertEquals(1, respBody.size());
+    }
+
+    @Test
     public void testListDiskFilesService() throws Exception {
         baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
         BookKeeper.DigestType digestType = BookKeeper.DigestType.CRC32;

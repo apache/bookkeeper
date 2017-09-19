@@ -54,7 +54,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Provide journal related management.
  */
-class Journal extends BookieCriticalThread implements CheckpointSource {
+public class Journal extends BookieCriticalThread implements CheckpointSource {
 
     private static final Logger LOG = LoggerFactory.getLogger(Journal.class);
 
@@ -140,7 +140,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
     /**
      * Last Log Mark.
      */
-    class LastLogMark {
+    public class LastLogMark {
         private final LogMark curMark;
 
         LastLogMark(long logId, long logPosition) {
@@ -155,7 +155,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
             return new LastLogMark(curMark.getLogFileId(), curMark.getLogFileOffset());
         }
 
-        LogMark getCurMark() {
+        public LogMark getCurMark() {
             return curMark;
         }
 
@@ -587,7 +587,7 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
         return journalDirectory;
     }
 
-    LastLogMark getLastLogMark() {
+    public LastLogMark getLastLogMark() {
         return lastLogMark;
     }
 

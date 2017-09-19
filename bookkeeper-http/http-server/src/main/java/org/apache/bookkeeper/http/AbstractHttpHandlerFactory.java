@@ -94,16 +94,6 @@ public abstract class AbstractHttpHandlerFactory<Handler> {
     public abstract Handler newListDiskFileHandler();
 
     /**
-     * Create a handler for read entry log api.
-     */
-    public abstract Handler newReadEntryLogHandler();
-
-    /**
-     * Create a handler for read journal file api.
-     */
-    public abstract Handler newReadJournalFileHandler();
-
-    /**
      * Create a handler for expand bookie storage api.
      */
     public abstract Handler newExpandStorageHandler();

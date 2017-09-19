@@ -171,32 +171,6 @@ public class TwitterHttpHandlerFactory extends AbstractHttpHandlerFactory<Twitte
     }
 
     /**
-     * Create a handler for read entry log api.
-     */
-    @Override
-    public TwitterAbstractHandler newReadEntryLogHandler() {
-        return new TwitterAbstractHandler() {
-            @Override
-            public Future<Response> apply(Request request) {
-                return processRequest(getHttpServiceProvider().provideReadEntryLogService(), request);
-            }
-        };
-    }
-
-    /**
-     * Create a handler for read journal file api.
-     */
-    @Override
-    public TwitterAbstractHandler newReadJournalFileHandler() {
-        return new TwitterAbstractHandler() {
-            @Override
-            public Future<Response> apply(Request request) {
-                return processRequest(getHttpServiceProvider().provideReadJournalFileService(), request);
-            }
-        };
-    }
-
-    /**
      * Create a handler for expand bookie storage api.
      */
     @Override

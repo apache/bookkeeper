@@ -170,32 +170,6 @@ public class VertxHttpHandlerFactory extends AbstractHttpHandlerFactory<VertxAbs
     }
 
     /**
-     * Create a handler for read entry log api.
-     */
-    @Override
-    public VertxAbstractHandler newReadEntryLogHandler() {
-        return new VertxAbstractHandler() {
-            @Override
-            public void handle(RoutingContext context){
-                processRequest(getHttpServiceProvider().provideReadEntryLogService(), context);
-            }
-        };
-    }
-
-    /**
-     * Create a handler for read journal file api.
-     */
-    @Override
-    public VertxAbstractHandler newReadJournalFileHandler() {
-        return new VertxAbstractHandler() {
-            @Override
-            public void handle(RoutingContext context){
-                processRequest(getHttpServiceProvider().provideReadJournalFileService(), context);
-            }
-        };
-    }
-
-    /**
      * Create a handler for expand bookie storage api.
      */
     @Override

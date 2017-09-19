@@ -196,7 +196,11 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
      */
     @Override
     public HttpService provideGetLastLogMarkService() {
-        return NULL_HTTP_SERVICE;
+        ServerConfiguration configuration = getServerConf();
+        if (configuration == null) {
+            return new ErrorHttpService();
+        }
+        return new GetLastLogMarkService(configuration);
     }
 
     /**
@@ -209,22 +213,6 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
             return new ErrorHttpService();
         }
         return new ListDiskFilesService(configuration);
-    }
-
-    /**
-     * Provide service for read entry log api.
-     */
-    @Override
-    public HttpService provideReadEntryLogService() {
-        return NULL_HTTP_SERVICE;
-    }
-
-    /**
-     * Provide service for read journal file api.
-     */
-    @Override
-    public HttpService provideReadJournalFileService() {
-        return NULL_HTTP_SERVICE;
     }
 
     /**

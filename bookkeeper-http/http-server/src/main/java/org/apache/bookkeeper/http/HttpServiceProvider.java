@@ -90,16 +90,6 @@ public interface HttpServiceProvider {
     HttpService provideListDiskFileService();
 
     /**
-     * Provide service for read entry log api.
-     */
-    HttpService provideReadEntryLogService();
-
-    /**
-     * Provide service for read journal file api.
-     */
-    HttpService provideReadJournalFileService();
-
-    /**
      * Provide service for expand bookie storage api.
      */
     HttpService provideExpandStorageService();
