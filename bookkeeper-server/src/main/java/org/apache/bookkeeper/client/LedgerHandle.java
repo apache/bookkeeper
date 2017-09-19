@@ -633,13 +633,12 @@ public class LedgerHandle implements AutoCloseable, WriteHandler {
      *          id of last entry of sequence
      */
     @Override
-    public CompletableFuture<Iterable<LedgerEntry>> asyncReadEntries(long firstEntry, long lastEntry) {
+    public CompletableFuture<Iterable<LedgerEntry>> read(long firstEntry, long lastEntry) {
         CompletableFuture<Enumeration<LedgerEntry>> counter = new CompletableFuture<>();
         asyncReadEntries(firstEntry, lastEntry, new SyncReadCallback(), counter);
         return counter.thenApply(en->Collections.list(en));
     }
 
-    @Override
     /**
      * Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.
      * <br>This is the same of
@@ -667,7 +666,8 @@ public class LedgerHandle implements AutoCloseable, WriteHandler {
      * @see #asyncReadLastConfirmed(org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback, java.lang.Object)
      * @see #readUnconfirmedEntries(long, long)
      */
-    public CompletableFuture<Iterable<LedgerEntry>> asyncReadUnconfirmedEntries(long firstEntry, long lastEntry) {
+    @Override
+    public CompletableFuture<Iterable<LedgerEntry>> readUnconfirmed(long firstEntry, long lastEntry) {
         CompletableFuture<Enumeration<LedgerEntry>> counter = new CompletableFuture<>();
         asyncReadUnconfirmedEntries(firstEntry, lastEntry, new SyncReadCallback(), counter);
         return counter.thenApply(en->Collections.list(en));
@@ -689,6 +689,36 @@ public class LedgerHandle implements AutoCloseable, WriteHandler {
      */
     public long addEntry(byte[] data) throws InterruptedException, BKException {
         return addEntry(data, 0, data.length);
+    }
+
+    @Override
+    public CompletableFuture<Long> append(byte[] data) {
+        return append(data, 0, data.length);
+    }
+
+    @Override
+    public CompletableFuture<Long> append(byte[] data, int offset, int length) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Adding entry {}", data);
+        }
+
+        CompletableFuture<Long> counter = new CompletableFuture<>();
+
+        SyncAddCallback callback = new SyncAddCallback();
+        asyncAddEntry(data, offset, length, callback, counter);
+
+        return counter;
+    }
+
+    @Override
+    public CompletableFuture<Long> append(ByteBuf data) {
+        data.retain();
+        CompletableFuture<Long> counter = new CompletableFuture<>();
+
+        SyncAddCallback callback = new SyncAddCallback();
+        PendingAddOp op = new PendingAddOp(LedgerHandle.this, callback, counter);
+        doAsyncAddEntry(op, data, callback, counter);
+        return counter;
     }
 
     /**
@@ -1029,6 +1059,28 @@ public class LedgerHandle implements AutoCloseable, WriteHandler {
             }
         };
         new TryReadLastConfirmedOp(this, innercb, getLastAddConfirmed()).initiate();
+    }
+
+    @Override
+    public CompletableFuture<Long> tryReadLastConfirmedEntryId() {
+        CompletableFuture<Long> counter = new CompletableFuture<>();
+
+        ReadLastConfirmedCallback callback = (int rc, long lastConfirmed, Object ctx) -> {
+            SynchCallbackUtils.finish(rc, lastConfirmed, counter);
+        };
+        asyncTryReadLastConfirmed(callback, counter);
+        return counter;
+    }
+
+    @Override
+    public CompletableFuture<Long> readLastConfirmedEntryId() {
+        CompletableFuture<Long> counter = new CompletableFuture<>();
+
+        ReadLastConfirmedCallback callback = (int rc, long lastConfirmed, Object ctx) -> {
+            SynchCallbackUtils.finish(rc, lastConfirmed, counter);
+        };
+        asyncReadLastConfirmed(callback, counter);
+        return counter;
     }
 
 

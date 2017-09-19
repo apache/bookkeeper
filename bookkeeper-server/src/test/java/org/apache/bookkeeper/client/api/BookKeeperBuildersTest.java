@@ -23,15 +23,9 @@ package org.apache.bookkeeper.client.api;
 import io.netty.buffer.Unpooled;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
@@ -40,6 +34,7 @@ import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.client.MacDigestManager;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import static org.junit.Assert.assertArrayEquals;
@@ -116,42 +111,13 @@ public class BookKeeperBuildersTest extends BookKeeperClusterTestCase {
                         ((LedgerHandle) writer).getLedgerKey());
 
                     byte[] data = "foo".getBytes(StandardCharsets.UTF_8);
-                    writer.addEntry(data);
-                    writer.addEntry(data, 0, data.length);
-                    {
-                        CountDownLatch wait = new CountDownLatch(1);
-                        writer.asyncAddEntry(Unpooled.wrappedBuffer(data), (int rc, LedgerHandle lh,
-                            long entryId, Object ctx) -> {
-                            if (rc == BKException.Code.OK) {
-                                wait.countDown();
-                            }
-                        }, null);
-                        assertTrue(wait.await(10, TimeUnit.SECONDS));
-                    }
-                    AtomicLong expectedEntryId = new AtomicLong();
-                    {
-                        CountDownLatch wait = new CountDownLatch(1);
-                        writer.asyncAddEntry(data, (int rc, LedgerHandle lh, long entryId, Object ctx) -> {
-                            if (rc == BKException.Code.OK) {
-                                wait.countDown();
-                            }
-                        }, null);
-                        assertTrue(wait.await(10, TimeUnit.SECONDS));
-                    }
-                    {
-                        CountDownLatch wait = new CountDownLatch(1);
-                        writer.asyncAddEntry(data, 0, data.length, new AsyncCallback.AddCallback() {
-                            @Override
-                            public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-                                if (rc == BKException.Code.OK) {
-                                    expectedEntryId.set(entryId);
-                                    wait.countDown();
-                                }
-                            }
-                        }, null);
-                        assertTrue(wait.await(10, TimeUnit.SECONDS));
-                    }
-                    assertEquals(expectedEntryId.get(), writer.getLastAddConfirmed());
+                    writer.append(data).get();
+                    writer.append(data, 0, data.length).get();
+                    writer.append(Unpooled.wrappedBuffer(data)).get();
+
+                    writer.append(data).get();
+                    long expectedEntryId = writer.append(data).get();
+                    assertEquals(expectedEntryId, writer.getLastAddConfirmed());
                 }
             }
     }
@@ -189,47 +155,13 @@ public class BookKeeperBuildersTest extends BookKeeperClusterTestCase {
 
                     long entryId = 0;
                     byte[] data = "foo".getBytes(StandardCharsets.UTF_8);
-                    writer.addEntry(entryId++, data);
-                    writer.addEntry(entryId++, data, 0, data.length);
-                    {
-                        CountDownLatch wait = new CountDownLatch(1);
-                        writer.asyncAddEntry(entryId++, Unpooled.wrappedBuffer(data), new AsyncCallback.AddCallback() {
-                            @Override
-                            public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-                                if (rc == BKException.Code.OK) {
-                                    wait.countDown();
-                                }
-                            }
-                        }, null);
-                        assertTrue(wait.await(10, TimeUnit.SECONDS));
-                    }
-                    AtomicLong expectedEntryId = new AtomicLong();
-                    {
-                        CountDownLatch wait = new CountDownLatch(1);
-                        writer.asyncAddEntry(entryId++, data, new AsyncCallback.AddCallback() {
-                            @Override
-                            public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-                                if (rc == BKException.Code.OK) {
-                                    wait.countDown();
-                                }
-                            }
-                        }, null);
-                        assertTrue(wait.await(10, TimeUnit.SECONDS));
-                    }
-                    {
-                        CountDownLatch wait = new CountDownLatch(1);
-                        writer.asyncAddEntry(entryId++, data, 0, data.length, new AsyncCallback.AddCallback() {
-                            @Override
-                            public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-                                if (rc == BKException.Code.OK) {
-                                    expectedEntryId.set(entryId);
-                                    wait.countDown();
-                                }
-                            }
-                        }, null);
-                        assertTrue(wait.await(10, TimeUnit.SECONDS));
-                    }
-                    assertEquals(expectedEntryId.get(), writer.getLastAddConfirmed());
+                    writer.write(entryId++, data).get();
+                    writer.write(entryId++, data, 0, data.length).get();
+                    writer.write(entryId++, Unpooled.wrappedBuffer(data)).get(1, TimeUnit.MINUTES);
+
+                    writer.write(entryId++, data).get(1, TimeUnit.MINUTES);
+                    long expectedEntryId = writer.write(entryId++, data).get(1, TimeUnit.MINUTES);
+                    assertEquals(expectedEntryId, writer.getLastAddConfirmed());
                 }
             }
     }
@@ -267,47 +199,12 @@ public class BookKeeperBuildersTest extends BookKeeperClusterTestCase {
 
                     long entryId = 0;
                     byte[] data = "foo".getBytes(StandardCharsets.UTF_8);
-                    writer.addEntry(entryId++, data);
-                    writer.addEntry(entryId++, data, 0, data.length);
-                    {
-                        CountDownLatch wait = new CountDownLatch(1);
-                        writer.asyncAddEntry(entryId++, Unpooled.wrappedBuffer(data), new AsyncCallback.AddCallback() {
-                            @Override
-                            public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-                                if (rc == BKException.Code.OK) {
-                                    wait.countDown();
-                                }
-                            }
-                        }, null);
-                        assertTrue(wait.await(10, TimeUnit.SECONDS));
-                    }
-                    AtomicLong expectedEntryId = new AtomicLong();
-                    {
-                        CountDownLatch wait = new CountDownLatch(1);
-                        writer.asyncAddEntry(entryId++, data, new AsyncCallback.AddCallback() {
-                            @Override
-                            public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-                                if (rc == BKException.Code.OK) {
-                                    wait.countDown();
-                                }
-                            }
-                        }, null);
-                        assertTrue(wait.await(10, TimeUnit.SECONDS));
-                    }
-                    {
-                        CountDownLatch wait = new CountDownLatch(1);
-                        writer.asyncAddEntry(entryId++, data, 0, data.length, new AsyncCallback.AddCallback() {
-                            @Override
-                            public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-                                if (rc == BKException.Code.OK) {
-                                    expectedEntryId.set(entryId);
-                                    wait.countDown();
-                                }
-                            }
-                        }, null);
-                        assertTrue(wait.await(10, TimeUnit.SECONDS));
-                    }
-                    assertEquals(expectedEntryId.get(), writer.getLastAddConfirmed());
+                    writer.write(entryId++, data).get();
+                    writer.write(entryId++, data, 0, data.length).get();
+                    writer.write(entryId++, Unpooled.wrappedBuffer(data)).get();
+                    writer.write(entryId++, data).get();
+                    long expectedEntryId = writer.write(entryId++, data).get();
+                    assertEquals(expectedEntryId, writer.getLastAddConfirmed());
                 }
             }
     }
@@ -336,9 +233,9 @@ public class BookKeeperBuildersTest extends BookKeeperClusterTestCase {
                     .create();) {
                     lId = writer.getId();
 
-                    writer.addEntry(data);
-                    writer.addEntry(data);
-                    writer.addEntry(data);
+                    writer.append(data);
+                    writer.append(data);
+                    writer.append(data).get();
                 }
                 try (ReadHandler reader = bkc.openLedgerOp()
                     .withDigestType(org.apache.bookkeeper.client.BookKeeper.DigestType.MAC)
@@ -362,37 +259,11 @@ public class BookKeeperBuildersTest extends BookKeeperClusterTestCase {
                     .withRecovery(false)
                     .open(lId)) {
                     assertEquals(2, reader.getLastAddConfirmed());
-                    assertEquals(2, reader.readLastConfirmed());
+                    assertEquals(2, reader.readLastConfirmedEntryId().get().intValue());
+                    assertEquals(2, reader.tryReadLastConfirmedEntryId().get().intValue());
 
-                    checkEntries(Collections.list(reader.readEntries(0, reader.getLastAddConfirmed())), data);
-                    checkEntries(reader.asyncReadEntries(0, reader.getLastAddConfirmed()).get(), data);
-                    CompletableFuture<Enumeration<LedgerEntry>> result = new CompletableFuture<>();
-                    reader.asyncReadEntries(0, 2, new AsyncCallback.ReadCallback() {
-                        @Override
-                        public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
-                            if (rc == BKException.Code.OK) {
-                                result.complete(seq);
-                            } else {
-                                result.completeExceptionally(BKException.create(rc));
-                            }
-                        }
-                    }, null);
-                    checkEntries(Collections.list(result.get()), data);
-
-                    checkEntries(Collections.list(reader.readUnconfirmedEntries(0, reader.getLastAddConfirmed())), data);
-                    checkEntries(reader.asyncReadUnconfirmedEntries(0, reader.getLastAddConfirmed()).get(), data);
-                    CompletableFuture<Enumeration<LedgerEntry>> result2 = new CompletableFuture<>();
-                    reader.asyncReadUnconfirmedEntries(0, 2, new AsyncCallback.ReadCallback() {
-                        @Override
-                        public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
-                            if (rc == BKException.Code.OK) {
-                                result2.complete(seq);
-                            } else {
-                                result2.completeExceptionally(BKException.create(rc));
-                            }
-                        }
-                    }, null);
-                    checkEntries(Collections.list(result2.get()), data);
+                    checkEntries(reader.read(0, reader.getLastAddConfirmed()).get(), data);
+                    checkEntries(reader.readUnconfirmed(0, reader.getLastAddConfirmed()).get(), data);
                 }
             }
     }
@@ -421,8 +292,8 @@ public class BookKeeperBuildersTest extends BookKeeperClusterTestCase {
                     .create();) {
                     lId = writer.getId();
 
-                    writer.addEntry(data);
-                    writer.addEntry(data);
+                    writer.append(data).get();
+                    writer.append(data).get();
 
                     try (ReadHandler reader = bkc.openLedgerOp()
                         .withDigestType(org.apache.bookkeeper.client.BookKeeper.DigestType.MAC)
@@ -432,10 +303,9 @@ public class BookKeeperBuildersTest extends BookKeeperClusterTestCase {
                     }
 
                     try {
-                        writer.addEntry(data);
+                        FutureUtils.result(writer.append(data));
                         fail("should not be able to write");
-                    } catch (BKException ok) {
-                        ok.printStackTrace();
+                    } catch (BKException.BKLedgerFencedException ok) {
                     }
                 }
                 try (ReadHandler reader = bkc.openLedgerOp()
@@ -444,9 +314,8 @@ public class BookKeeperBuildersTest extends BookKeeperClusterTestCase {
                     .withRecovery(false)
                     .open(lId)) {
                     assertEquals(1, reader.getLastAddConfirmed());
-                    assertEquals(1, reader.readLastConfirmed());
-
-                    checkEntries(Collections.list(reader.readEntries(0, reader.getLastAddConfirmed())), data);
+                    assertEquals(1, reader.readLastConfirmedEntryId().get().intValue());
+                    checkEntries(reader.read(0, reader.getLastAddConfirmed()).get(), data);
                 }
             }
     }
@@ -482,7 +351,7 @@ public class BookKeeperBuildersTest extends BookKeeperClusterTestCase {
                     .open(lId);) {
                 }
 
-                bkc.deleteLedgerOp().delete(lId);
+                bkc.deleteLedgerOp().execute(lId).get();
 
                 try {
                     bkc.openLedgerOp()
@@ -517,23 +386,17 @@ public class BookKeeperBuildersTest extends BookKeeperClusterTestCase {
                     .open(lId);) {
                 }
 
-                CompletableFuture<Object> result = new CompletableFuture<>();
-                bkc.deleteLedgerOp().delete(lId, new AsyncCallback.DeleteCallback() {
-                    @Override
-                    public void deleteComplete(int rc, Object ctx) {
-                        if (rc == BKException.Code.OK) {
-                            result.complete(ctx);
-                        } else {
-                            result.completeExceptionally(BKException.create(rc));
-                        }
-                    }
-                }, null);
-                result.get();
+                bkc.deleteLedgerOp().execute(lId).get();
 
                 try {
                     bkc.openLedgerOp()
                         .open(lId);
                     fail("ledger cannot be open if delete succeeded");
+                } catch (BKNoSuchLedgerExistsException ok) {
+                }
+
+                try {
+                    FutureUtils.result(bkc.deleteLedgerOp().execute(lId));
                 } catch (BKNoSuchLedgerExistsException ok) {
                 }
             }
