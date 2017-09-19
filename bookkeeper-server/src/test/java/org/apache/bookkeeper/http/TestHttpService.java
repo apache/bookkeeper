@@ -22,14 +22,18 @@ package org.apache.bookkeeper.http;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 import com.google.common.collect.Maps;
 import java.io.File;
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
+import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerHandleAdapter;
 import org.apache.bookkeeper.client.LedgerMetadata;
@@ -43,7 +47,6 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestCallbacks;
@@ -59,9 +62,10 @@ public class TestHttpService extends BookKeeperClusterTestCase {
     static final Logger LOG = LoggerFactory.getLogger(TestHttpService.class);
 
     private BKHttpServiceProvider bkHttpServiceProvider;
+    private static final int numberOfBookies = 6;
 
     public TestHttpService() {
-        super(3);
+        super(numberOfBookies);
         try {
             File tmpDir = createTempDir("bookie_http", "test");
             baseConf.setJournalDirName(tmpDir.getPath())
@@ -151,8 +155,8 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         // get response , expected get 3 bookies, and without hostname
         @SuppressWarnings("unchecked")
         HashMap<String, String> respBody = JsonUtil.fromJson(response1.getBody(), HashMap.class);
-        assertEquals(3, respBody.size());
-        for (int i = 0; i < 3; i++) {
+        assertEquals(numberOfBookies, respBody.size());
+        for (int i = 0; i < numberOfBookies; i++) {
             assertEquals(true, respBody.containsKey(getBookie(i).toString()));
             assertEquals(null, respBody.get(getBookie(i).toString()));
         }
@@ -164,32 +168,32 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.GET, params);
         HttpServiceResponse response2 = listBookiesService.handle(request2);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response2.getStatusCode());
-        // get response , expected get 3 bookies, and with hostname
+        // get response , expected get numberOfBookies bookies, and with hostname
         @SuppressWarnings("unchecked")
         HashMap<String, String> respBody2 = JsonUtil.fromJson(response2.getBody(), HashMap.class);
-        assertEquals(3, respBody2.size());
-        for (int i = 0; i < 3; i++) {
+        assertEquals(numberOfBookies, respBody2.size());
+        for (int i = 0; i < numberOfBookies; i++) {
             assertEquals(true, respBody2.containsKey(getBookie(i).toString()));
             assertNotNull(respBody2.get(getBookie(i).toString()));
         }
 
         //3, parameter: type=ro&print_hostnames=true, should print ro bookies with hostname
         // turn bookie to ro, get
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < numberOfBookies; i++) {
             setBookieToReadOnly(getBookie(i));
         }
-        LOG.info("turn all 3 bookies into RO");
+        LOG.info("turn all 6 bookies into RO");
         HashMap<String, String> params3 = Maps.newHashMap();
         params3.put("type", "ro");
         params3.put("print_hostnames", "true");
         HttpServiceRequest request3 = new HttpServiceRequest(null, HttpServer.Method.GET, params3);
         HttpServiceResponse response3 = listBookiesService.handle(request3);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response3.getStatusCode());
-        // get response , expected get 3 ro bookies, and with hostname
+        // get response , expected get 6 ro bookies, and with hostname
         @SuppressWarnings("unchecked")
         HashMap<String, String> respBody3 = JsonUtil.fromJson(response3.getBody(), HashMap.class);
-        assertEquals(3, respBody3.size());
-        for (int i = 0; i < 3; i++) {
+        assertEquals(numberOfBookies, respBody3.size());
+        for (int i = 0; i < numberOfBookies; i++) {
             assertEquals(true, respBody3.containsKey(getBookie(i).toString()));
             assertNotNull(respBody3.get(getBookie(i).toString()));
         }
@@ -415,14 +419,14 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceResponse response1 = listBookieInfoService.handle(request1);
         assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
 
-        //2, GET method, expected get 3 bookies info and the cluster total info
+        //2, GET method, expected get 6 bookies info and the cluster total info
         HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
         HttpServiceResponse response2 = listBookieInfoService.handle(request2);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response2.getStatusCode());
         @SuppressWarnings("unchecked")
         HashMap<String, String> respBody = JsonUtil.fromJson(response2.getBody(), HashMap.class);
-        assertEquals(4, respBody.size());
-        for (int i = 0; i < 3; i++) {
+        assertEquals(numberOfBookies + 1, respBody.size());
+        for (int i = 0; i < numberOfBookies; i++) {
             assertEquals(true, respBody.containsKey(getBookie(i).toString()));
         }
     }
@@ -636,6 +640,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
     @Test
     public void testDecommissionService() throws Exception {
         baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        startAuditorElector();
 
         HttpService decommissionService = bkHttpServiceProvider.provideDecommissionService();
 
@@ -649,12 +654,17 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceResponse response2 = decommissionService.handle(request2);
         assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response2.getStatusCode());
 
-        //3, POST, with body
-        String postBody3 = "{\"bookie_src\": \"" + getBookie(0).toString() + "\"}";
-        killBookie(0);
+        //3, POST, with body, before bookie kill, should fail; after bookie kill, should success.
+        String postBody3 = "{\"bookie_src\": \"" + getBookie(1).toString() + "\"}";
         HttpServiceRequest request3 = new HttpServiceRequest(postBody3, HttpServer.Method.POST, null);
+        // before bookie kill, request should fail
         HttpServiceResponse response3 = decommissionService.handle(request3);
         assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response3.getStatusCode());
+        // after bookie kill, request should success
+        killBookie(1);
+        response3 = decommissionService.handle(request3);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response3.getStatusCode());
+        stopAuditorElector();
     }
 
 }
