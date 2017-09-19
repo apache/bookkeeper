@@ -17,7 +17,7 @@
 package org.apache.bookkeeper.client.api;
 
 import io.netty.buffer.ByteBuf;
-import org.apache.bookkeeper.client.AsyncCallback;
+import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.client.BKException;
 
 /**
@@ -27,71 +27,30 @@ import org.apache.bookkeeper.client.BKException;
  */
 public interface WriteHandler extends ReadHandler {
 
-     /**
-     * Add entry synchronously to an open ledger.
-     *
-     * @param data
-     *         array of bytes to be written to the ledger
-     * @return the entryId of the new inserted entry
-     */
-    public long addEntry(byte[] data) throws InterruptedException, BKException;
-
     /**
-     * Add entry synchronously to an open ledger.
+     * Add entry asynchronously to an open ledger.
      *
-     * @param data
-     *         array of bytes to be written to the ledger
-     * @param offset
-     *          offset from which to take bytes from data
-     * @param length
-     *          number of bytes to take from data
-     * @return the entryId of the new inserted entry
+     * @param data array of bytes to be written to the ledger
+     * @return an handle to the result, in case of success it will return the id of the newly appended entry
      */
-    public long addEntry(byte[] data, int offset, int length)
-            throws InterruptedException, BKException;
+    public CompletableFuture<Long> append(byte[] data);
 
     /**
      * Add entry asynchronously to an open ledger.
      *
-     * @param data
-     *          array of bytes to be written
-     * @param cb
-     *          object implementing callbackinterface
-     * @param ctx
-     *          some control object
+     * @param data array of bytes to be written to the ledger
+     * @param offset offset from which to take bytes from data
+     * @param length number of bytes to take from data
+     * @return an handle to the result, in case of success it will return the id of the newly appended entry
      */
-    public void asyncAddEntry(final byte[] data, final AsyncCallback.AddCallback cb,
-                              final Object ctx);
-
-    /**
-     * Add entry asynchronously to an open ledger, using an offset and range.
-     *
-     * @param data
-     *          array of bytes to be written
-     * @param offset
-     *          offset from which to take bytes from data
-     * @param length
-     *          number of bytes to take from data
-     * @param cb
-     *          object implementing callbackinterface
-     * @param ctx
-     *          some control object
-     * @throws ArrayIndexOutOfBoundsException if offset or length is negative or
-     *          offset and length sum to a value higher than the length of data.
-     */
-    public void asyncAddEntry(final byte[] data, final int offset, final int length,
-                              final AsyncCallback.AddCallback cb, final Object ctx);
+    public CompletableFuture<Long> append(byte[] data, int offset, int length);
 
     /**
      * Add entry asynchronously to an open ledger.
      *
-     * @param data
-     *          array of bytes to be written
-     * @param cb
-     *          object implementing callbackinterface
-     * @param ctx
-     *          some control object
+     * @param data array of bytes to be written
+     * @return an handle to the result, in case of success it will return the id of the newly appended entry
      */
-    public void asyncAddEntry(ByteBuf data, final AsyncCallback.AddCallback cb, final Object ctx);
+    public CompletableFuture<Long> append(ByteBuf data);
 
 }

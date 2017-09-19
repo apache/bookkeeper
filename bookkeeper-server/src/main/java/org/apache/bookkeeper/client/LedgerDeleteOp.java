@@ -131,13 +131,4 @@ class LedgerDeleteOp extends DeferredOrderOrderedSafeGenericCallback<Void> imple
         }
     }
 
-    @Override
-    public void delete(long ledgerId) throws BKException, InterruptedException {
-        CompletableFuture<Void> counter = new CompletableFuture<>();
-        delete(ledgerId, new BookKeeper.SyncDeleteCallback(), counter);
-
-        SynchCallbackUtils.waitForResult(counter);
-    }
-
-
 }

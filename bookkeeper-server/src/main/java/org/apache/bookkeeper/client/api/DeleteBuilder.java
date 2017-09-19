@@ -17,7 +17,6 @@
 package org.apache.bookkeeper.client.api;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.bookkeeper.client.BKException;
 
 /**
  * Builder-style interface to delete exiting ledgers
@@ -25,7 +24,5 @@ import org.apache.bookkeeper.client.BKException;
 public interface DeleteBuilder {
 
     CompletableFuture<?> execute(long ledgerId);
-
-    void delete(long ledgerId) throws BKException, InterruptedException;
 
 }

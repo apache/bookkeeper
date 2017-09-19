@@ -238,6 +238,36 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandler {
         }
     }
 
+    @Override
+    public CompletableFuture<Long> write(long entryId, byte[] data) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Adding entry {}", data);
+        }
+        CompletableFuture<Long> counter = new CompletableFuture<>();
+        SyncAddCallback callback = new SyncAddCallback();
+        asyncAddEntry(entryId, data, 0, data.length, callback, counter);
+        return counter;
+    }
+
+    @Override
+    public CompletableFuture<Long> write(long entryId, byte[] data, int offset, int length) {
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Adding entry {}", data);
+        }
+        CompletableFuture<Long> counter = new CompletableFuture<>();
+        SyncAddCallback callback = new SyncAddCallback();
+        asyncAddEntry(entryId, data, offset, length, callback, counter);
+        return counter;
+    }
+
+    @Override
+    public CompletableFuture<Long> write(long entryId, ByteBuf data) {
+        CompletableFuture<Long> counter = new CompletableFuture<>();
+        SyncAddCallback callback = new SyncAddCallback();
+        asyncAddEntry(entryId, data, callback, counter);
+        return counter;
+    }
+
     /**
      * LedgerHandleAdv will not allow addEntry without providing an entryId
      */

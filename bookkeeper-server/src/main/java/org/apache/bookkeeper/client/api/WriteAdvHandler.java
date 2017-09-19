@@ -17,8 +17,7 @@
 package org.apache.bookkeeper.client.api;
 
 import io.netty.buffer.ByteBuf;
-import org.apache.bookkeeper.client.AsyncCallback;
-import org.apache.bookkeeper.client.BKException;
+import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.client.LedgerHandleAdv;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
 
@@ -30,27 +29,24 @@ import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
 public interface WriteAdvHandler extends ReadHandler {
 
     /**
-     * Add entry synchronously to an open ledger
+     * Add entry asynchronously to an open ledger
      *
      * @param entryId entryId to be added
      * @param data array of bytes to be written to the ledger
-     * @return the entryId of the new inserted entry
+     * @return an handle to the result, in case of success it will return the same value of param entryId
      */
-    public long addEntry(final long entryId, byte[] data) throws InterruptedException, BKException;
+    public CompletableFuture<Long> write(final long entryId, byte[] data);
 
     /**
-     * Add entry synchronously to an open ledger. This can be used only with {@link LedgerHandleAdv} returned through
-     * ledgers created with {@link
-     * BookKeeper#createLedgerAdv(int, int, int, DigestType, byte[])}.
+     * Add entry asynchronously to an open ledger
      *
      * @param entryId entryId to be added.
      * @param data array of bytes to be written to the ledger
      * @param offset offset from which to take bytes from data
      * @param length number of bytes to take from data
-     * @return entryId
+     * @return an handle to the result, in case of success it will return the same value of param entryId
      */
-    public long addEntry(final long entryId, byte[] data, int offset, int length) throws InterruptedException,
-        BKException;
+    public CompletableFuture<Long> write(final long entryId, byte[] data, int offset, int length);
 
     /**
      * Add entry asynchronously to an open ledger. This can be used only with {@link LedgerHandleAdv} returned through
@@ -59,38 +55,8 @@ public interface WriteAdvHandler extends ReadHandler {
      *
      * @param entryId entryId to be added
      * @param data array of bytes to be written
-     * @param cb object implementing callbackinterface
-     * @param ctx some control object
+     * @return an handle to the result, in case of success it will return the same value of param entryId
      */
-    public void asyncAddEntry(final long entryId, final byte[] data, final AsyncCallback.AddCallback cb, final Object ctx);
-
-    /**
-     * Add entry asynchronously to an open ledger, using an offset and range. This can be used only with
-     * {@link LedgerHandleAdv} returned through ledgers created with
-     * {@link BookKeeper#createLedgerAdv(int, int, int, DigestType, byte[])}.
-     *
-     * @param entryId entryId of the entry to add.
-     * @param data array of bytes to be written
-     * @param offset offset from which to take bytes from data
-     * @param length number of bytes to take from data
-     * @param cb object implementing callbackinterface
-     * @param ctx some control object
-     * @throws ArrayIndexOutOfBoundsException if offset or length is negative or offset and length sum to a value higher
-     * than the length of data.
-     */
-    public void asyncAddEntry(final long entryId, final byte[] data, final int offset, final int length,
-        final AsyncCallback.AddCallback cb, final Object ctx) throws BKException;
-
-    /**
-     * Add entry asynchronously to an open ledger. This can be used only with {@link LedgerHandleAdv} returned through
-     * ledgers created with {@link
-     * BookKeeper#createLedgerAdv(int, int, int, DigestType, byte[])}.
-     *
-     * @param entryId entryId to be added
-     * @param data array of bytes to be written
-     * @param cb object implementing callbackinterface
-     * @param ctx some control object
-     */
-    public void asyncAddEntry(final long entryId, final ByteBuf data, final AsyncCallback.AddCallback cb, final Object ctx);
+    public CompletableFuture<Long> write(final long entryId, final ByteBuf data);
 
 }
