@@ -59,6 +59,7 @@
     <module>bookkeeper-stats-providers</module>
     <module>bookkeeper-http</module>
     <module>tests</module>
+    <module>bookkeeper-dist</module>
   </modules>
   <mailingLists>
     <mailingList>
@@ -119,6 +120,7 @@
     <maven-shade-plugin.version>2.4.3</maven-shade-plugin.version>
     <maven-source-plugin.version>2.2.1</maven-source-plugin.version>
     <maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
+    <maven-assembly-plugin.version>2.2.1</maven-assembly-plugin.version>
   </properties>
 
   <!-- dependencies for all modules -->
@@ -255,7 +257,7 @@
       </plugin>
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
-        <version>2.2.1</version>
+        <version>${maven-assembly-plugin.version}</version>
         <configuration>
 	  <tarLongFileMode>gnu</tarLongFileMode>
           <descriptors>
