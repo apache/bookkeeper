@@ -22,18 +22,13 @@ package org.apache.bookkeeper.http;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 
 import com.google.common.collect.Maps;
 import java.io.File;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import org.apache.bookkeeper.bookie.Bookie;
-import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
-import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerHandleAdapter;
 import org.apache.bookkeeper.client.LedgerMetadata;
@@ -45,7 +40,6 @@ import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
