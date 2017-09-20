@@ -57,6 +57,7 @@
     <module>bookkeeper-server</module>
     <module>bookkeeper-benchmark</module>
     <module>bookkeeper-stats-providers</module>
+    <module>bookkeeper-dist</module>
   </modules>
   <mailingLists>
     <mailingList>
@@ -105,9 +106,12 @@
     <!-- plugin dependencies -->
     <findbugs-maven-plugin.version>3.0.4</findbugs-maven-plugin.version>
     <puppycrawl.checkstyle.version>6.19</puppycrawl.checkstyle.version>
+    <maven-assembly-plugin.version>2.2.1</maven-assembly-plugin.version>
     <maven-checkstyle-plugin.version>2.17</maven-checkstyle-plugin.version>
+    <maven-deploy-plugin.version>2.7</maven-deploy-plugin.version>
     <maven-javadoc-plugin.version>2.10.4</maven-javadoc-plugin.version>
     <maven-source-plugin.version>2.2.1</maven-source-plugin.version>
+    <maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
   </properties>
 
   <!-- dependencies for all modules -->
@@ -230,7 +234,7 @@
       </plugin>
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
-        <version>2.2.1</version>
+        <version>${maven-assembly-plugin.version}</version>
         <configuration>
 	  <tarLongFileMode>gnu</tarLongFileMode>
           <descriptors>

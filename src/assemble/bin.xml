@@ -31,11 +31,13 @@
       </includes>
     </fileSet>
     <fileSet>
-      <directory>conf</directory>
+      <directory>../bookkeeper-server/conf</directory>
+      <outputDirectory>/conf</outputDirectory>
     </fileSet>
     <fileSet>
-      <directory>bin</directory>
+      <directory>../bookkeeper-server/bin</directory>
       <fileMode>755</fileMode>
+      <outputDirectory>/bin</outputDirectory>
     </fileSet>
     <fileSet>
       <fileMode>644</fileMode>
@@ -51,13 +53,13 @@
       <fileMode>644</fileMode>
     </file>
     <file>
-      <source>${basedir}/src/main/resources/LICENSE.bin.txt</source>
+      <source>../src/main/resources/LICENSE.bin.txt</source>
       <outputDirectory>/</outputDirectory>
       <destName>LICENSE</destName>
       <fileMode>644</fileMode>
     </file>
     <file>
-      <source>${basedir}/src/main/resources/NOTICE.bin.txt</source>
+      <source>../src/main/resources//NOTICE.bin.txt</source>
       <outputDirectory>/</outputDirectory>
       <destName>NOTICE</destName>
       <fileMode>644</fileMode>
