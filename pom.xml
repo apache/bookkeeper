@@ -111,8 +111,9 @@
     <netty-boringssl.version>2.0.3.Final</netty-boringssl.version>
     <slf4j.version>1.7.25</slf4j.version>
     <zookeeper.version>3.5.3-beta</zookeeper.version>
+    <findbugs-jsr305.version>3.0.0</findbugs-jsr305.version>
     <!-- plugin dependencies -->
-    <findbugs-maven-plugin.version>3.0.4</findbugs-maven-plugin.version>
+    <findbugs-maven-plugin.version>3.0.5</findbugs-maven-plugin.version>
     <puppycrawl.checkstyle.version>6.19</puppycrawl.checkstyle.version>
     <maven-checkstyle-plugin.version>2.17</maven-checkstyle-plugin.version>
     <maven-compiler-plugin.version>3.5.1</maven-compiler-plugin.version>

@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.bookkeeper.common.concurrent;
 
 import com.google.common.base.Stopwatch;
@@ -43,7 +42,8 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 @Slf4j
 public final class FutureUtils {
 
-    private FutureUtils() {}
+    private FutureUtils() {
+    }
 
     private static final Function<Throwable, Exception> DEFAULT_EXCEPTION_HANDLER = cause -> {
         if (cause instanceof Exception) {
@@ -119,7 +119,7 @@ public final class FutureUtils {
     }
 
     public static <T> void complete(CompletableFuture<T> result,
-                                    T value) {
+        T value) {
         if (null == result) {
             return;
         }
@@ -127,7 +127,7 @@ public final class FutureUtils {
     }
 
     public static <T> void completeExceptionally(CompletableFuture<T> result,
-                                                 Throwable cause) {
+        Throwable cause) {
         if (null == result) {
             return;
         }
@@ -156,15 +156,15 @@ public final class FutureUtils {
     public static <T> CompletableFuture<List<T>> collect(List<CompletableFuture<T>> futureList) {
         CompletableFuture<Void> finalFuture =
             CompletableFuture.allOf(futureList.toArray(new CompletableFuture[futureList.size()]));
-        return finalFuture.thenApply(result ->
-            futureList
+        return finalFuture.thenApply(result
+            -> futureList
                 .stream()
                 .map(CompletableFuture::join)
                 .collect(Collectors.toList()));
     }
 
     public static <T> void proxyTo(CompletableFuture<T> src,
-                                   CompletableFuture<T> target) {
+        CompletableFuture<T> target) {
         src.whenComplete((value, cause) -> {
             if (null == cause) {
                 target.complete(value);
@@ -331,14 +331,14 @@ public final class FutureUtils {
     }
 
     public static <T> CompletableFuture<T> ensure(CompletableFuture<T> future,
-                                                  Runnable ensureBlock) {
+        Runnable ensureBlock) {
         return future.whenComplete((value, cause) -> {
             ensureBlock.run();
         });
     }
 
     public static <T> CompletableFuture<T> rescue(CompletableFuture<T> future,
-                                                  Function<Throwable, CompletableFuture<T>> rescueFuc) {
+        Function<Throwable, CompletableFuture<T>> rescueFuc) {
         CompletableFuture<T> result = FutureUtils.createFuture();
         future.whenComplete((value, cause) -> {
             if (null == cause) {
