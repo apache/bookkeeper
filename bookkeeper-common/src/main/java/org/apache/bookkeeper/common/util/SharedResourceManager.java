@@ -31,7 +31,7 @@ import java.util.function.Supplier;
 /**
  * A holder for shared resource singletons.
  *
- * <p>Components like clients and servers need cetain resources, e.g. a scheduler,
+ * <p>Components like clients and servers need certain resources, e.g. a scheduler,
  * to run. If the user has not provided such resources, these components will use
  * a default one, which is shared as a static resource. This class holds these default
  * resources and manages their lifecycles.
@@ -54,7 +54,7 @@ public class SharedResourceManager {
 
     public static SharedResourceManager create() {
         return create(() -> Executors.newSingleThreadScheduledExecutor(
-            ExecutorUtils.getThreadFactory("zstream-shared-destroyer-%d", true)));
+            ExecutorUtils.getThreadFactory("bookkeeper-shared-destroyer-%d", true)));
     }
 
     public static SharedResourceManager create(Supplier<ScheduledExecutorService> destroyerFactory) {
