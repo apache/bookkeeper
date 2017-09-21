@@ -20,12 +20,14 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.client.BKException;
 
 /**
- * Handle to manage an open ledger
+ * Handle to manage an open ledger.
+ *
+ * @since 4.6
  */
 public interface Handle extends AutoCloseable {
 
     /**
-     * Get the id of the current ledger
+     * Get the id of the current ledger.
      *
      * @return the id of the ledger
      */
@@ -42,8 +44,9 @@ public interface Handle extends AutoCloseable {
     /**
      * Asynchronous close, any adds in flight will return errors.
      *
-     * Closing a ledger will ensure that all clients agree on what the last entry of the ledger is. This ensures that,
-     * once the ledger has been closed, all reads from the ledger will return the same set of entries.
+     * <p>Closing a ledger will ensure that all clients agree on what the last
+     * entry of the ledger is. This ensures that, once the ledger has been closed,
+     * all reads from the ledger will return the same set of entries.
      *
      */
     CompletableFuture<?> asyncClose();

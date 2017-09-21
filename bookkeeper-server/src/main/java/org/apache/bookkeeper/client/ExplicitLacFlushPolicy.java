@@ -24,12 +24,12 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.bookkeeper.client.LedgerHandle.LastAddConfirmedCallback;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.netty.buffer.ByteBuf;
+import org.apache.bookkeeper.client.SyncCallbackUtils.LastAddConfirmedCallback;
 
 interface ExplicitLacFlushPolicy {
     void stopExplicitLacFlush();

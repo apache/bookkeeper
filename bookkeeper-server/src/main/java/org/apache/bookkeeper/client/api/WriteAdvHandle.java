@@ -18,8 +18,6 @@ package org.apache.bookkeeper.client.api;
 
 import io.netty.buffer.ByteBuf;
 import java.util.concurrent.CompletableFuture;
-import org.apache.bookkeeper.client.LedgerHandleAdv;
-import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
 
 /**
  * Provide write access to a ledger. Using WriteAdvHandler the writer MUST explictly set an entryId.
@@ -27,20 +25,22 @@ import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
  * been acknowledged too (expected from entryId 0)
  *
  * @see WriteHandler
+ *
+ * @since 4.6
  */
 public interface WriteAdvHandle extends ReadHandle {
 
     /**
-     * Add entry asynchronously to an open ledger
+     * Add entry asynchronously to an open ledger.
      *
      * @param entryId entryId to be added
      * @param data array of bytes to be written to the ledger
      * @return an handle to the result, in case of success it will return the same value of param entryId
      */
-    public CompletableFuture<Long> write(final long entryId, byte[] data);
+    CompletableFuture<Long> write(final long entryId, byte[] data);
 
     /**
-     * Add entry asynchronously to an open ledger
+     * Add entry asynchronously to an open ledger.
      *
      * @param entryId entryId to be added.
      * @param data array of bytes to be written to the ledger
@@ -48,17 +48,15 @@ public interface WriteAdvHandle extends ReadHandle {
      * @param length number of bytes to take from data
      * @return an handle to the result, in case of success it will return the same value of param entryId
      */
-    public CompletableFuture<Long> write(final long entryId, byte[] data, int offset, int length);
+    CompletableFuture<Long> write(final long entryId, byte[] data, int offset, int length);
 
     /**
-     * Add entry asynchronously to an open ledger. This can be used only with {@link LedgerHandleAdv} returned through
-     * ledgers created with {@link
-     * BookKeeper#createLedgerAdv(int, int, int, DigestType, byte[])}.
+     * Add entry asynchronously to an open ledger.
      *
      * @param entryId entryId to be added
      * @param data array of bytes to be written
      * @return an handle to the result, in case of success it will return the same value of param entryId
      */
-    public CompletableFuture<Long> write(final long entryId, final ByteBuf data);
+    CompletableFuture<Long> write(final long entryId, final ByteBuf data);
 
 }

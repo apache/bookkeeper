@@ -591,7 +591,11 @@ public class BookKeeper implements AutoCloseable, org.apache.bookkeeper.client.a
      * report fake bytes with a mathching MAC unless it knows the password
      */
     public enum DigestType {
-        MAC, CRC32
+        MAC, CRC32;
+
+        public static DigestType fromApiDigestType(org.apache.bookkeeper.client.api.DigestType digestType) {
+            return digestType == org.apache.bookkeeper.client.api.DigestType.MAC ? MAC : CRC32;
+        }
     }
 
     ZooKeeper getZkHandle() {
@@ -1388,6 +1392,5 @@ public class BookKeeper implements AutoCloseable, org.apache.bookkeeper.client.a
     public DeleteBuilder deleteLedgerOp() {
         return new LedgerDeleteOp.DeleteBuilderImpl(this);
     }
-
 
 }

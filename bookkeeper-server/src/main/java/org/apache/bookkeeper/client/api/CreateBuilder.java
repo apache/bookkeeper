@@ -18,10 +18,11 @@ package org.apache.bookkeeper.client.api;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import org.apache.bookkeeper.client.BKException;
 
 /**
- * Builder-style interface to create new ledgers
+ * Builder-style interface to create new ledgers.
+ *
+ * @since 4.6
  */
 public interface CreateBuilder extends OpBuilder<WriteHandle> {
 
@@ -35,7 +36,7 @@ public interface CreateBuilder extends OpBuilder<WriteHandle> {
 
     CreateBuilder withCustomMetadata(Map<String, byte[]> customMetadata);
 
-    CreateBuilder withDigestType(org.apache.bookkeeper.client.BookKeeper.DigestType digestType);
+    CreateBuilder withDigestType(DigestType digestType);
 
     CreateAdvBuilder makeAdv();
 

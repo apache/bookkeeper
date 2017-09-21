@@ -80,6 +80,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.util.concurrent.AbstractFuture;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncOpenCallback;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadCallback;
 
 /**
  * Admin client for BookKeeper clusters
@@ -404,7 +405,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                 try {
                     CompletableFuture<Enumeration<LedgerEntry>> counter = new CompletableFuture<>();
 
-                    handle.asyncReadEntriesInternal(nextEntryId, nextEntryId, new LedgerHandle.SyncReadCallback(),
+                    handle.asyncReadEntriesInternal(nextEntryId, nextEntryId, new SyncReadCallback(),
                             counter);
 
                     currentEntry = SyncCallbackUtils.waitForResult(counter).nextElement();
