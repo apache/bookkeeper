@@ -39,8 +39,6 @@ public interface CreateBuilder extends OpBuilder<WriteHandle> {
 
     CreateAdvBuilder makeAdv();
 
-    WriteHandle create() throws BKException, InterruptedException;
-
     @Override
     CompletableFuture<WriteHandle> execute();
 

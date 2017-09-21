@@ -32,8 +32,7 @@ public interface OpenBuilder extends OpBuilder<ReadHandle> {
 
     OpenBuilder withDigestType(org.apache.bookkeeper.client.BookKeeper.DigestType digestType);
 
+    @Override
     CompletableFuture<ReadHandle> execute();
-
-    ReadHandle open() throws BKException, InterruptedException;
 
 }

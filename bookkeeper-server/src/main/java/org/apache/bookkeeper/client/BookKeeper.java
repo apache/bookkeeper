@@ -801,9 +801,9 @@ public class BookKeeper implements AutoCloseable, org.apache.bookkeeper.client.a
          * Calls asynchronous version
          */
         asyncCreateLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
-                          new SyncCreateCallback(), counter, customMetadata);
+                          new SyncCallbackUtils.SyncCreateCallback(), counter, customMetadata);
 
-        LedgerHandle lh = SynchCallbackUtils.waitForResult(counter);
+        LedgerHandle lh = SyncCallbackUtils.waitForResult(counter);
         if (lh == null) {
             LOG.error("Unexpected condition : no ledger handle returned for a success ledger creation");
             throw BKException.create(BKException.Code.UnexpectedConditionException);
@@ -823,7 +823,7 @@ public class BookKeeper implements AutoCloseable, org.apache.bookkeeper.client.a
      * @param ackQuorumSize
      * @param digestType
      * @param passwd
-     * @param customMetadata
+     *
      * @return a handle to the newly created ledger
      * @throws InterruptedException
      * @throws BKException
@@ -860,9 +860,9 @@ public class BookKeeper implements AutoCloseable, org.apache.bookkeeper.client.a
          * Calls asynchronous version
          */
         asyncCreateLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
-                             new SyncCreateCallback(), counter, customMetadata);
+                             new SyncCallbackUtils.SyncCreateCallback(), counter, customMetadata);
 
-        LedgerHandle lh = SynchCallbackUtils.waitForResult(counter);
+        LedgerHandle lh = SyncCallbackUtils.waitForResult(counter);
         if (lh == null) {
             LOG.error("Unexpected condition : no ledger handle returned for a success ledger creation");
             throw BKException.create(BKException.Code.UnexpectedConditionException);
@@ -951,9 +951,9 @@ public class BookKeeper implements AutoCloseable, org.apache.bookkeeper.client.a
          * Calls asynchronous version
          */
         asyncCreateLedgerAdv(ledgerId, ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
-                             new SyncCreateCallback(), counter, customMetadata);
+                             new SyncCallbackUtils.SyncCreateCallback(), counter, customMetadata);
 
-        LedgerHandle lh = SynchCallbackUtils.waitForResult(counter);
+        LedgerHandle lh = SyncCallbackUtils.waitForResult(counter);
         if (lh == null) {
             LOG.error("Unexpected condition : no ledger handle returned for a success ledger creation");
             throw BKException.create(BKException.Code.UnexpectedConditionException);
@@ -1135,9 +1135,9 @@ public class BookKeeper implements AutoCloseable, org.apache.bookkeeper.client.a
         /*
          * Calls async open ledger
          */
-        asyncOpenLedger(lId, digestType, passwd, new SyncOpenCallback(), counter);
+        asyncOpenLedger(lId, digestType, passwd, new SyncCallbackUtils.SyncOpenCallback(), counter);
 
-        return SynchCallbackUtils.waitForResult(counter);
+        return SyncCallbackUtils.waitForResult(counter);
     }
 
     /**
@@ -1163,9 +1163,9 @@ public class BookKeeper implements AutoCloseable, org.apache.bookkeeper.client.a
          * Calls async open ledger
          */
         asyncOpenLedgerNoRecovery(lId, digestType, passwd,
-                                  new SyncOpenCallback(), counter);
+                                  new SyncCallbackUtils.SyncOpenCallback(), counter);
 
-        return SynchCallbackUtils.waitForResult(counter);
+        return SyncCallbackUtils.waitForResult(counter);
     }
 
     /**
@@ -1205,9 +1205,9 @@ public class BookKeeper implements AutoCloseable, org.apache.bookkeeper.client.a
     public void deleteLedger(long lId) throws InterruptedException, BKException {
         CompletableFuture<Void> counter = new CompletableFuture<>();
         // Call asynchronous version
-        asyncDeleteLedger(lId, new SyncDeleteCallback(), counter);
+        asyncDeleteLedger(lId, new SyncCallbackUtils.SyncDeleteCallback(), counter);
 
-        SynchCallbackUtils.waitForResult(counter);
+        SyncCallbackUtils.waitForResult(counter);
     }
 
     /**
@@ -1327,57 +1327,8 @@ public class BookKeeper implements AutoCloseable, org.apache.bookkeeper.client.a
         }
     }
 
-    static class SyncCreateCallback implements CreateCallback {
-        /**
-         * Create callback implementation for synchronous create call.
-         *
-         * @param rc
-         *          return code
-         * @param lh
-         *          ledger handle object
-         * @param ctx
-         *          optional control object
-         */
-        @Override
-        @SuppressWarnings("unchecked")
-        public void createComplete(int rc, LedgerHandle lh, Object ctx) {
-            SynchCallbackUtils.finish(rc, lh, (CompletableFuture<LedgerHandle>) ctx);
-        }
-    }
 
-    static class SyncOpenCallback implements OpenCallback {
-        /**
-         * Callback method for synchronous open operation
-         *
-         * @param rc
-         *          return code
-         * @param lh
-         *          ledger handle
-         * @param ctx
-         *          optional control object
-         */
-        @Override
-        @SuppressWarnings("unchecked")
-        public void openComplete(int rc, LedgerHandle lh, Object ctx) {
-            SynchCallbackUtils.finish(rc, lh, (CompletableFuture<LedgerHandle>) ctx);
-        }
-    }
-
-    static class SyncDeleteCallback implements DeleteCallback {
-        /**
-         * Delete callback implementation for synchronous delete call.
-         *
-         * @param rc
-         *            return code
-         * @param ctx
-         *            optional control object
-         */
-        @Override
-        @SuppressWarnings("unchecked")
-        public void deleteComplete(int rc, Object ctx) {
-            SynchCallbackUtils.finish(rc, null, (CompletableFuture<Void>) ctx);
-        }
-    }
+    
 
     private final void initOpLoggers(StatsLogger stats) {
         createOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.CREATE_OP);
@@ -1423,21 +1374,19 @@ public class BookKeeper implements AutoCloseable, org.apache.bookkeeper.client.a
         }
     }
 
-    private static final byte[] EMPTY_PASSWORD = new byte[0];
-
     @Override
     public CreateBuilder createLedgerOp() {
-        return new LedgerCreateOp(this);
+        return new LedgerCreateOp.CreateBuilderImpl(this);
     }
 
     @Override
     public OpenBuilder openLedgerOp() {
-        return new LedgerOpenOp(this, -1, DigestType.CRC32, EMPTY_PASSWORD, null, null);
+        return new LedgerOpenOp.OpenBuilderImpl(this);
     }
 
     @Override
     public DeleteBuilder deleteLedgerOp() {
-        return new LedgerDeleteOp(this);
+        return new LedgerDeleteOp.DeleteBuilderImpl(this);
     }
 
 

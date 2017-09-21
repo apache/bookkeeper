@@ -43,10 +43,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
 
-import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
-import org.apache.bookkeeper.client.BookKeeper.SyncOpenCallback;
 import org.apache.bookkeeper.client.LedgerFragmentReplicator.SingleFragmentCallback;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -81,6 +79,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.util.concurrent.AbstractFuture;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncOpenCallback;
 
 /**
  * Admin client for BookKeeper clusters
@@ -297,7 +296,7 @@ public class BookKeeperAdmin implements AutoCloseable {
 
         new LedgerOpenOp(bkc, lId, new SyncOpenCallback(), counter).initiate();
 
-        return SynchCallbackUtils.waitForResult(counter);
+        return SyncCallbackUtils.waitForResult(counter);
     }
 
     /**
@@ -334,7 +333,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         new LedgerOpenOp(bkc, lId, new SyncOpenCallback(), counter)
                 .initiateWithoutRecovery();
 
-        return SynchCallbackUtils.waitForResult(counter);
+        return SyncCallbackUtils.waitForResult(counter);
     }
 
     /**
@@ -408,7 +407,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                     handle.asyncReadEntriesInternal(nextEntryId, nextEntryId, new LedgerHandle.SyncReadCallback(),
                             counter);
 
-                    currentEntry = SynchCallbackUtils.waitForResult(counter).nextElement();
+                    currentEntry = SyncCallbackUtils.waitForResult(counter).nextElement();
 
                     return true;
                 } catch (Exception e) {
@@ -888,7 +887,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         asyncRecoverLedgerFragment(lh, ledgerFragment, cb, targetBookieAddress);
 
         try {
-            SynchCallbackUtils.waitForResult(counter);
+            SyncCallbackUtils.waitForResult(counter);
         } catch (BKException err) {
             throw BKException.create(bkc.getReturnRc(err.getCode()));
         }
@@ -905,7 +904,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         @Override
         @SuppressWarnings("unchecked")
         public void processResult(int rc, String s, Object ctx) {
-            SynchCallbackUtils.finish(rc, null, sync);
+            SyncCallbackUtils.finish(rc, null, sync);
         }
     }
 

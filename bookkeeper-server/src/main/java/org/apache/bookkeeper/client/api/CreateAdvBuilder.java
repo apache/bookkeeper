@@ -26,8 +26,6 @@ public interface CreateAdvBuilder extends OpBuilder<WriteAdvHandle> {
 
     CreateAdvBuilder withLedgerId(int ledgerId);
 
-    WriteAdvHandle create() throws BKException, InterruptedException;
-
     @Override
     CompletableFuture<WriteAdvHandle> execute();
 
