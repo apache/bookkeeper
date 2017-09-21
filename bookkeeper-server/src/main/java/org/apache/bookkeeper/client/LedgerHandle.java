@@ -47,11 +47,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
-import org.apache.bookkeeper.client.AsyncCallback.AddLacCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.SyncCallbackUtils.FutureReadCallback;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncAddCallback;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCloseCallback;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadCallback;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadLastConfirmedCallback;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
@@ -633,12 +637,10 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
      *          id of last entry of sequence
      */
     @Override
-    public CompletableFuture<Iterable<LedgerEntry>> read(long firstEntry, long lastEntry) {
-        CompletableFuture<Enumeration<LedgerEntry>> counter = new CompletableFuture<>();
-        asyncReadEntries(firstEntry, lastEntry, new SyncReadCallback(), counter);
-        return counter.thenApply(en-> {
-            return () -> Iterators.forEnumeration(en);
-        });
+    public CompletableFuture<Iterable<org.apache.bookkeeper.client.api.LedgerEntry>> read(long firstEntry, long lastEntry) {
+        FutureReadCallback result = new FutureReadCallback();
+        asyncReadEntries(firstEntry, lastEntry, result, null);
+        return result;
     }
 
     /**
@@ -665,15 +667,11 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
      * @see #readUnconfirmedEntries(long, long)
      */
     @Override
-    public CompletableFuture<Iterable<LedgerEntry>> readUnconfirmed(long firstEntry, long lastEntry) {
-        CompletableFuture<Enumeration<LedgerEntry>> counter = new CompletableFuture<>();
-        asyncReadUnconfirmedEntries(firstEntry, lastEntry, new SyncReadCallback(), counter);
-        return counter.thenApply(en-> {
-            return () -> Iterators.forEnumeration(en);
-        });
+    public CompletableFuture<Iterable<org.apache.bookkeeper.client.api.LedgerEntry>> readUnconfirmed(long firstEntry, long lastEntry) {
+        FutureReadCallback result = new FutureReadCallback();
+        asyncReadUnconfirmedEntries(firstEntry, lastEntry, result, null);
+        return result;
     }
-
-
 
     void asyncReadEntriesInternal(long firstEntry, long lastEntry, ReadCallback cb, Object ctx) {
         new PendingReadOp(this, bk.scheduler,
@@ -1872,100 +1870,4 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
         }
     }
 
-    static class LastAddConfirmedCallback implements AddLacCallback {
-        static final LastAddConfirmedCallback INSTANCE = new LastAddConfirmedCallback();
-        /**
-         * Implementation of callback interface for synchronous read method.
-         *
-         * @param rc
-         *          return code
-         * @param lh
-         *          ledger identifier
-         * @param ctx
-         *          control object
-         */
-        @Override
-        public void addLacComplete(int rc, LedgerHandle lh, Object ctx) {
-            if (rc != BKException.Code.OK) {
-                LOG.warn("LastAddConfirmedUpdate failed: {} ", BKException.getMessage(rc));
-            } else {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Callback LAC Updated for: {} ", lh.getId());
-                }
-            }
-        }
-    }
-
-    static class SyncReadCallback implements ReadCallback {
-        /**
-         * Implementation of callback interface for synchronous read method.
-         *
-         * @param rc
-         *          return code
-         * @param lh
-         *          ledger handle
-         * @param seq
-         *          sequence of entries
-         * @param ctx
-         *          control object
-         */
-        @Override
-        @SuppressWarnings("unchecked")
-        public void readComplete(int rc, LedgerHandle lh,
-                                 Enumeration<LedgerEntry> seq, Object ctx) {
-            SyncCallbackUtils.finish(rc, seq, (CompletableFuture<Enumeration<LedgerEntry>>)ctx);
-        }
-    }
-
-    static class SyncAddCallback implements AddCallback {
-
-        /**
-         * Implementation of callback interface for synchronous read method.
-         *
-         * @param rc
-         *          return code
-         * @param lh
-         *          ledger handle
-         * @param entry
-         *          entry identifier
-         * @param ctx
-         *          control object
-         */
-        @Override
-        @SuppressWarnings("unchecked")
-        public void addComplete(int rc, LedgerHandle lh, long entry, Object ctx) {
-            SyncCallbackUtils.finish(rc, entry, (CompletableFuture<Long>)ctx);
-        }
-    }
-
-    static class SyncReadLastConfirmedCallback implements ReadLastConfirmedCallback {
-        /**
-         * Implementation of  callback interface for synchronous read last confirmed method.
-         */
-        @Override
-        public void readLastConfirmedComplete(int rc, long lastConfirmed, Object ctx) {
-            LastConfirmedCtx lcCtx = (LastConfirmedCtx) ctx;
-
-            synchronized(lcCtx) {
-                lcCtx.setRC(rc);
-                lcCtx.setLastConfirmed(lastConfirmed);
-                lcCtx.notify();
-            }
-        }
-    }
-
-    static class SyncCloseCallback implements CloseCallback {
-        /**
-         * Close callback method
-         *
-         * @param rc
-         * @param lh
-         * @param ctx
-         */
-        @Override
-        @SuppressWarnings("unchecked")
-        public void closeComplete(int rc, LedgerHandle lh, Object ctx) {
-            SyncCallbackUtils.finish(rc, null, (CompletableFuture<Void>)ctx);
-        }
-    }
 }

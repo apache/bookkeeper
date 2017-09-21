@@ -17,10 +17,11 @@
 package org.apache.bookkeeper.client.api;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.bookkeeper.client.BKException;
 
 /**
- * Builder-style interface to create new ledgers
+ * Builder-style interface to create new ledgers.
+ *
+ * @since 4.6
  */
 public interface CreateAdvBuilder extends OpBuilder<WriteAdvHandle> {
 

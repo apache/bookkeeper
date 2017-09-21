@@ -5,7 +5,7 @@
  * licenses this file to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *pa
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
@@ -16,24 +16,17 @@
  */
 package org.apache.bookkeeper.client.api;
 
-import java.util.concurrent.CompletableFuture;
-
 /**
- * Builder-style interface to open exiting ledgers.
- *
- * @since 4.6
+ * Digest type.
  */
-public interface OpenBuilder extends OpBuilder<ReadHandle> {
+public enum DigestType {
 
-    OpenBuilder withLedgerId(long ledgerId);
-
-    OpenBuilder withRecovery(boolean recovery);
-
-    OpenBuilder withPassword(byte[] password);
-
-    OpenBuilder withDigestType(DigestType digestType);
-
-    @Override
-    CompletableFuture<ReadHandle> execute();
-
+    /**
+     * Entries are verified by applied CRC32 algorithm.
+     */
+    CRC32,
+    /**
+     * Entries are verified by applied MAC algorithm.
+     */
+    MAC
 }

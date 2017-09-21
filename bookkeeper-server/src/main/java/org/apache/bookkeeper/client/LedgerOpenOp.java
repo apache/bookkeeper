@@ -222,7 +222,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata>  {
         private boolean builderRecovery = true;
         private long builderLedgerId = -1;
         private byte[] builderPassword = EMPTY_PASSWORD;
-        private DigestType builderDigestType = DigestType.CRC32;
+        private org.apache.bookkeeper.client.api.DigestType builderDigestType = org.apache.bookkeeper.client.api.DigestType.CRC32;
         private final BookKeeper bk;
 
         public OpenBuilderImpl(BookKeeper bookkeeper) {
@@ -248,7 +248,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata>  {
         }
 
         @Override
-        public OpenBuilder withDigestType(DigestType digestType) {
+        public OpenBuilder withDigestType(org.apache.bookkeeper.client.api.DigestType digestType) {
             this.builderDigestType = digestType;
             return this;
         }
@@ -261,7 +261,8 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata>  {
         }
 
         private void open(OpenCallback cb, Object ctx) {
-            LedgerOpenOp op = new LedgerOpenOp(bk, builderLedgerId, builderDigestType, builderPassword, cb, ctx);
+            LedgerOpenOp op = new LedgerOpenOp(bk, builderLedgerId, DigestType.fromApiDigestType(builderDigestType),
+                builderPassword, cb, ctx);
             bk.closeLock.readLock().lock();
             try {
                 if (bk.closed) {

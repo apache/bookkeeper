@@ -19,33 +19,35 @@ package org.apache.bookkeeper.client.api;
 import org.apache.bookkeeper.client.BKException;
 
 /**
- * This is the entry point for BookKeeper client side API
+ * This is the entry point for BookKeeper client side API.
+ *
+ * @since 4.6
  */
 public interface BookKeeper extends AutoCloseable {
 
     /**
-     * Start the creation of a new ledger
+     * Start the creation of a new ledger.
      *
      * @return a builder for the new ledger
      */
     CreateBuilder createLedgerOp();
 
     /**
-     * Open an existing ledger
+     * Open an existing ledger.
      *
      * @return a builder useful to create a readable handler for an existing ledger
      */
     OpenBuilder openLedgerOp();
 
     /**
-     * Delete an existing ledger
+     * Delete an existing ledger.
      *
      * @return a builder useful to delete an existing ledger
      */
     DeleteBuilder deleteLedgerOp();
 
     /**
-     * Close the client and release every resource
+     * Close the client and release every resource.
      *
      * @throws BKException
      * @throws InterruptedException

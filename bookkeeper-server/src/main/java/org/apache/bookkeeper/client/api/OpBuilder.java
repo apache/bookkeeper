@@ -19,15 +19,17 @@ package org.apache.bookkeeper.client.api;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Base interface for builders
+ * Base interface for builders.
+ *
+ * @since 4.6
  */
 public interface OpBuilder<T> {
 
     /**
-     * Start the operation and return an handle to the result
+     * Start the operation and return an handle to the result.
      *
      * @return an handle to access the result of the operation
      */
-    public CompletableFuture<T> execute();
+    CompletableFuture<T> execute();
 
 }

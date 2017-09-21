@@ -19,7 +19,9 @@ package org.apache.bookkeeper.client.api;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Builder-style interface to delete exiting ledgers
+ * Builder-style interface to delete exiting ledgers.
+ *
+ * @since 4.6
  */
 public interface DeleteBuilder extends OpBuilder {
 

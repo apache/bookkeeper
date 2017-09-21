@@ -17,10 +17,11 @@
 package org.apache.bookkeeper.client.api;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.bookkeeper.client.LedgerEntry;
 
 /**
- * Provide read access to a ledger
+ * Provide read access to a ledger.
+ *
+ * @since 4.6
  */
 public interface ReadHandle extends Handle {
 
@@ -44,8 +45,8 @@ public interface ReadHandle extends Handle {
      * For entries which are within the range 0..LastAddConfirmed BookKeeper guarantees that the writer has successfully
      * received the acknowledge.<br>
      * For entries outside that range it is possible that the writer never received the acknowledge
-     * and so there is the risk that the reader is seeing entries before the writer and this could result in a consistency
-     * issue in some cases.<br>
+     * and so there is the risk that the reader is seeing entries before the writer and this could
+     * result in a consistency issue in some cases.<br>
      * With this method you can even read entries before the LastAddConfirmed and entries after it with one call,
      * the expected consistency will be as described above for each subrange of ids.
      *
@@ -73,13 +74,10 @@ public interface ReadHandle extends Handle {
      * @see #getLastAddConfirmed()
      *
      */
-
     CompletableFuture<Long> readLastConfirmedEntryId();
 
     /**
-     * Obtains asynchronously the last confirmed write from a quorum of bookies.
-     * It is similar as
-     * {@link #asyncTryReadLastConfirmed(org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback, Object)},
+     * Obtains asynchronously the last confirmed write from a quorum of bookies
      * but it doesn't wait all the responses from the quorum. It would callback
      * immediately if it received a LAC which is larger than current LAC.
      *
@@ -90,7 +88,8 @@ public interface ReadHandle extends Handle {
     CompletableFuture<Long> tryReadLastConfirmedEntryId();
 
     /**
-     * Get the local value for LastAddConfirmed
+     * Get the local value for LastAddConfirmed.
+     *
      * @return the local value for LastAddConfirmed
      */
     long getLastAddConfirmed();

@@ -21,5 +21,7 @@
 
 /**
  * BookKeeper Client Public API.
+ *
+ * @since 4.6
  */
 package org.apache.bookkeeper.client.api;

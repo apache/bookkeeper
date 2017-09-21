@@ -246,7 +246,8 @@ class LedgerCreateOp implements GenericCallback<Void>  {
         private int builderAckQuorumSize = 2;
         private int builderWriteQuorumSize = 2;
         private byte[] builderPassword = EMPTY_PASSWORD;
-        private DigestType builderDigestType = DigestType.CRC32;
+        private org.apache.bookkeeper.client.api.DigestType builderDigestType
+            = org.apache.bookkeeper.client.api.DigestType.CRC32;
         private Map<String, byte[]> builderCustomMetadata;
 
         public CreateBuilderImpl(BookKeeper bk) {
@@ -284,7 +285,7 @@ class LedgerCreateOp implements GenericCallback<Void>  {
         }
 
         @Override
-        public CreateBuilder withDigestType(DigestType digestType) {
+        public CreateBuilder withDigestType(org.apache.bookkeeper.client.api.DigestType digestType) {
             this.builderDigestType = digestType;
             return this;
         }
@@ -307,15 +308,15 @@ class LedgerCreateOp implements GenericCallback<Void>  {
         }
 
         private void create(CreateCallback cb, Object ctx) {
+            LedgerCreateOp op = new LedgerCreateOp(bk, builderEnsembleSize,
+                builderWriteQuorumSize, builderAckQuorumSize, DigestType.fromApiDigestType(builderDigestType),
+                builderPassword, cb, ctx, builderCustomMetadata);
             bk.closeLock.readLock().lock();
             try {
                 if (bk.closed) {
                     cb.createComplete(BKException.Code.ClientClosedException, null, ctx);
                     return;
                 }
-                LedgerCreateOp op = new LedgerCreateOp(bk, builderEnsembleSize,
-                    builderWriteQuorumSize, builderAckQuorumSize, builderDigestType,
-                    builderPassword, cb, ctx, builderCustomMetadata);
                 op.initiate();
             } finally {
                 bk.closeLock.readLock().unlock();
@@ -331,7 +332,7 @@ class LedgerCreateOp implements GenericCallback<Void>  {
         private final int builderWriteQuorumSize;
         private final byte[] builderPassword;
         private final Map<String, byte[]> builderCustomMetadata;
-        private final DigestType builderDigestType;
+        private final org.apache.bookkeeper.client.api.DigestType builderDigestType;
         private final BookKeeper bk;
 
          private CreateAdvBuilderImpl(CreateBuilderImpl other) {
@@ -358,15 +359,15 @@ class LedgerCreateOp implements GenericCallback<Void>  {
         }
 
         private void create(CreateCallback cb, Object ctx) {
+            LedgerCreateOp op = new LedgerCreateOp(bk, builderEnsembleSize,
+                    builderWriteQuorumSize, builderAckQuorumSize, DigestType.fromApiDigestType(builderDigestType),
+                    builderPassword, cb, ctx, builderCustomMetadata);
             bk.closeLock.readLock().lock();
             try {
                 if (bk.closed) {
                     cb.createComplete(BKException.Code.ClientClosedException, null, ctx);
                     return;
                 }
-                LedgerCreateOp op = new LedgerCreateOp(bk, builderEnsembleSize,
-                    builderWriteQuorumSize, builderAckQuorumSize, builderDigestType,
-                    builderPassword, cb, ctx, builderCustomMetadata);
                 op.initiateAdv(builderLedgerId);
             } finally {
                 bk.closeLock.readLock().unlock();

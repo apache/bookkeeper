@@ -20,9 +20,11 @@ import io.netty.buffer.ByteBuf;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Provide write access to a ledger
+ * Provide write access to a ledger.
  *
  * @see WriteAdvHandler
+ *
+ * @since 4.6
  */
 public interface WriteHandle extends ReadHandle {
 
@@ -32,7 +34,7 @@ public interface WriteHandle extends ReadHandle {
      * @param data array of bytes to be written to the ledger
      * @return an handle to the result, in case of success it will return the id of the newly appended entry
      */
-    public CompletableFuture<Long> append(byte[] data);
+    CompletableFuture<Long> append(byte[] data);
 
     /**
      * Add entry asynchronously to an open ledger.
@@ -42,7 +44,7 @@ public interface WriteHandle extends ReadHandle {
      * @param length number of bytes to take from data
      * @return an handle to the result, in case of success it will return the id of the newly appended entry
      */
-    public CompletableFuture<Long> append(byte[] data, int offset, int length);
+    CompletableFuture<Long> append(byte[] data, int offset, int length);
 
     /**
      * Add entry asynchronously to an open ledger.
@@ -50,6 +52,6 @@ public interface WriteHandle extends ReadHandle {
      * @param data array of bytes to be written
      * @return an handle to the result, in case of success it will return the id of the newly appended entry
      */
-    public CompletableFuture<Long> append(ByteBuf data);
+    CompletableFuture<Long> append(ByteBuf data);
 
 }
