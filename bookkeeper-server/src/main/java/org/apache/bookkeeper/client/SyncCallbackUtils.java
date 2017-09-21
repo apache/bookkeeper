@@ -22,9 +22,9 @@ import java.util.concurrent.ExecutionException;
 
 /**
  * Utility for callbacks
- * 
+ *
  */
-class SynchCallbackUtils {
+class SyncCallbackUtils {
 
     /**
      * Wait for a result. This is convenience method to implement callbacks
@@ -53,16 +53,68 @@ class SynchCallbackUtils {
 
     /**
      * Handle the Response Code and transform it to a BKException
+     *
      * @param <T>
      * @param rc
      * @param result
-     * @param future 
+     * @param future
      */
     public static <T> void finish(int rc, T result, CompletableFuture<T> future) {
         if (rc != BKException.Code.OK) {
             future.completeExceptionally(BKException.create(rc).fillInStackTrace());
         } else {
             future.complete(result);
+        }
+    }
+
+    public static class SyncCreateCallback implements AsyncCallback.CreateCallback {
+
+        /**
+         * Create callback implementation for synchronous create call.
+         *
+         * @param rc return code
+         * @param lh ledger handle object
+         * @param ctx optional control object
+         */
+        @Override
+        @SuppressWarnings(value = "unchecked")
+        public void createComplete(int rc, LedgerHandle lh, Object ctx) {
+            SyncCallbackUtils.finish(rc, lh, (CompletableFuture<LedgerHandle>) ctx);
+        }
+
+    }
+
+    public  static class SyncOpenCallback implements AsyncCallback.OpenCallback {
+        /**
+         * Callback method for synchronous open operation
+         *
+         * @param rc
+         *          return code
+         * @param lh
+         *          ledger handle
+         * @param ctx
+         *          optional control object
+         */
+        @Override
+        @SuppressWarnings("unchecked")
+        public void openComplete(int rc, LedgerHandle lh, Object ctx) {
+            SyncCallbackUtils.finish(rc, lh, (CompletableFuture<LedgerHandle>) ctx);
+        }
+    }
+
+    public static class SyncDeleteCallback implements AsyncCallback.DeleteCallback {
+        /**
+         * Delete callback implementation for synchronous delete call.
+         *
+         * @param rc
+         *            return code
+         * @param ctx
+         *            optional control object
+         */
+        @Override
+        @SuppressWarnings("unchecked")
+        public void deleteComplete(int rc, Object ctx) {
+            SyncCallbackUtils.finish(rc, null, (CompletableFuture<Void>) ctx);
         }
     }
 

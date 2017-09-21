@@ -25,20 +25,20 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncDeleteCallback;
 import org.apache.bookkeeper.client.api.DeleteBuilder;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
-import org.apache.bookkeeper.util.OrderedSafeExecutor.DeferredOrderOrderedSafeGenericCallback;
+import org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallback;
 import org.apache.bookkeeper.versioning.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.bookkeeper.client.api.ReadHandle;
 
 /**
  * Encapsulates asynchronous ledger delete operation
  *
  */
-class LedgerDeleteOp extends DeferredOrderOrderedSafeGenericCallback<Void> implements DeleteBuilder {
+class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
 
     static final Logger LOG = LoggerFactory.getLogger(LedgerDeleteOp.class);
 
@@ -62,19 +62,12 @@ class LedgerDeleteOp extends DeferredOrderOrderedSafeGenericCallback<Void> imple
      *            optional control object
      */
     LedgerDeleteOp(BookKeeper bk, long ledgerId, DeleteCallback cb, Object ctx) {
-        super(bk.mainWorkerPool);
-        setOrderingKey(this.ledgerId);
+        super(bk.mainWorkerPool, ledgerId);
         this.bk = bk;
         this.ledgerId = ledgerId;
         this.cb = cb;
         this.ctx = ctx;
         this.startTime = MathUtils.nowInNano();
-        this.deleteOpLogger = bk.getDeleteOpLogger();
-    }
-
-    LedgerDeleteOp(BookKeeper bk) {
-        super(bk.mainWorkerPool);
-        this.bk = bk;
         this.deleteOpLogger = bk.getDeleteOpLogger();
     }
 
@@ -105,37 +98,40 @@ class LedgerDeleteOp extends DeferredOrderOrderedSafeGenericCallback<Void> imple
         return String.format("LedgerDeleteOp(%d)", ledgerId);
     }
 
-    private long builderLedgerId = -1;
+    public static class DeleteBuilderImpl  implements DeleteBuilder {
 
-    @Override
-    public DeleteBuilder withLedgerId(long ledgerId) {
-        this. builderLedgerId = ledgerId;
-        return this;
-    }
+        private long builderLedgerId = -1;
+        private final BookKeeper bk;
 
-    @Override
-    public CompletableFuture<?> execute() {
-        CompletableFuture<Void> counter = new CompletableFuture<>();
-        delete(builderLedgerId, new BookKeeper.SyncDeleteCallback(), counter);
-        return counter;
-    }
+        public DeleteBuilderImpl(BookKeeper bk) {
+            this.bk = bk;
+        }
 
-    private void delete(long ledgerId, AsyncCallback.DeleteCallback cb, Object ctx) {
-        bk.closeLock.readLock().lock();
-        try {
-            if (bk.closed) {
-                cb.deleteComplete(BKException.Code.ClientClosedException, ctx);
-                return;
+        @Override
+        public DeleteBuilder withLedgerId(long ledgerId) {
+            this.builderLedgerId = ledgerId;
+            return this;
+        }
+
+        @Override
+        public CompletableFuture<?> execute() {
+            CompletableFuture<Void> counter = new CompletableFuture<>();
+            delete(builderLedgerId, new SyncDeleteCallback(), counter);
+            return counter;
+        }
+
+        private void delete(long ledgerId, AsyncCallback.DeleteCallback cb, Object ctx) {
+            LedgerDeleteOp op = new LedgerDeleteOp(bk, ledgerId, cb, ctx);
+            bk.closeLock.readLock().lock();
+            try {
+                if (bk.closed) {
+                    cb.deleteComplete(BKException.Code.ClientClosedException, ctx);
+                    return;
+                }
+                op.initiate();
+            } finally {
+                bk.closeLock.readLock().unlock();
             }
-            this.cb = cb;
-            this.ctx = ctx;
-            this.ledgerId = ledgerId;
-            setOrderingKey(ledgerId);
-            this.startTime = MathUtils.nowInNano();
-
-            this.initiate();
-        } finally {
-            bk.closeLock.readLock().unlock();
         }
     }
 

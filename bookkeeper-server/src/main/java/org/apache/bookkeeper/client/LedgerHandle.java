@@ -324,7 +324,7 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
 
         explicitLacFlushPolicy.stopExplicitLacFlush();
 
-        SynchCallbackUtils.waitForResult(counter);
+        SyncCallbackUtils.waitForResult(counter);
     }
 
     @Override
@@ -528,7 +528,7 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
 
         asyncReadEntries(firstEntry, lastEntry, new SyncReadCallback(), counter);
 
-        return SynchCallbackUtils.waitForResult(counter);
+        return SyncCallbackUtils.waitForResult(counter);
     }
 
     /**
@@ -551,7 +551,7 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
 
         asyncReadUnconfirmedEntries(firstEntry, lastEntry, new SyncReadCallback(), counter);
 
-        return SynchCallbackUtils.waitForResult(counter);
+        return SyncCallbackUtils.waitForResult(counter);
     }
 
     /**
@@ -760,7 +760,7 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
         SyncAddCallback callback = new SyncAddCallback();
         asyncAddEntry(data, offset, length, callback, counter);
 
-        return SynchCallbackUtils.waitForResult(counter);
+        return SyncCallbackUtils.waitForResult(counter);
     }
 
     /**
@@ -1066,7 +1066,7 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
         CompletableFuture<Long> counter = new CompletableFuture<>();
 
         ReadLastConfirmedCallback callback = (int rc, long lastConfirmed, Object ctx) -> {
-            SynchCallbackUtils.finish(rc, lastConfirmed, counter);
+            SyncCallbackUtils.finish(rc, lastConfirmed, counter);
         };
         asyncTryReadLastConfirmed(callback, counter);
         return counter;
@@ -1077,7 +1077,7 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
         CompletableFuture<Long> counter = new CompletableFuture<>();
 
         ReadLastConfirmedCallback callback = (int rc, long lastConfirmed, Object ctx) -> {
-            SynchCallbackUtils.finish(rc, lastConfirmed, counter);
+            SyncCallbackUtils.finish(rc, lastConfirmed, counter);
         };
         asyncReadLastConfirmed(callback, counter);
         return counter;
@@ -1913,7 +1913,7 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
         @SuppressWarnings("unchecked")
         public void readComplete(int rc, LedgerHandle lh,
                                  Enumeration<LedgerEntry> seq, Object ctx) {
-            SynchCallbackUtils.finish(rc, seq, (CompletableFuture<Enumeration<LedgerEntry>>)ctx);
+            SyncCallbackUtils.finish(rc, seq, (CompletableFuture<Enumeration<LedgerEntry>>)ctx);
         }
     }
 
@@ -1934,7 +1934,7 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
         @Override
         @SuppressWarnings("unchecked")
         public void addComplete(int rc, LedgerHandle lh, long entry, Object ctx) {
-            SynchCallbackUtils.finish(rc, entry, (CompletableFuture<Long>)ctx);
+            SyncCallbackUtils.finish(rc, entry, (CompletableFuture<Long>)ctx);
         }
     }
 
@@ -1965,7 +1965,7 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
         @Override
         @SuppressWarnings("unchecked")
         public void closeComplete(int rc, LedgerHandle lh, Object ctx) {
-            SynchCallbackUtils.finish(rc, null, (CompletableFuture<Void>)ctx);
+            SyncCallbackUtils.finish(rc, null, (CompletableFuture<Void>)ctx);
         }
     }
 }

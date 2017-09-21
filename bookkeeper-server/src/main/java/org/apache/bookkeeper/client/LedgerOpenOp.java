@@ -29,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.client.BookKeeper.SyncOpenCallback;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncOpenCallback;
 import org.apache.bookkeeper.client.api.OpenBuilder;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -43,7 +43,7 @@ import org.apache.bookkeeper.client.api.ReadHandle;
  * Encapsulates the ledger open operation
  *
  */
-class LedgerOpenOp implements GenericCallback<LedgerMetadata>, OpenBuilder {
+class LedgerOpenOp implements GenericCallback<LedgerMetadata>  {
     static final Logger LOG = LoggerFactory.getLogger(LedgerOpenOp.class);
 
     final BookKeeper bk;
@@ -91,15 +91,6 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata>, OpenBuilder {
         this.administrativeOpen = true;
         this.enableDigestAutodetection = false;
         this.suggestedDigestType = bk.conf.getBookieRecoveryDigestType();
-    }
-
-    /**
-     * for CreateLedgerBuilder interface
-     * @param bk
-     */
-    public LedgerOpenOp(BookKeeper bk)  {
-        this.bk = bk;
-        this.enableDigestAutodetection = bk.conf.getEnableDigestTypeAutodetection();
     }
 
     /**
@@ -225,66 +216,67 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata>, OpenBuilder {
         cb.openComplete(rc, lh, ctx);
     }
 
-    private static final byte[] EMPTY_PASSWORD = new byte[0];
-    private boolean builderRecovery = true;
-    private long builderLedgerId = -1;
-    private byte[] builderPassword = EMPTY_PASSWORD;
-    private DigestType builderDigestType = DigestType.CRC32;
+    public static final class OpenBuilderImpl implements OpenBuilder {
 
-    @Override
-    public OpenBuilder withLedgerId(long ledgerId) {
-        this.builderLedgerId = ledgerId;
-        return this;
-    }
+        private static final byte[] EMPTY_PASSWORD = new byte[0];
+        private boolean builderRecovery = true;
+        private long builderLedgerId = -1;
+        private byte[] builderPassword = EMPTY_PASSWORD;
+        private DigestType builderDigestType = DigestType.CRC32;
+        private final BookKeeper bk;
 
-    @Override
-    public OpenBuilder withRecovery(boolean recovery) {
-        this.builderRecovery = recovery;
-        return this;
-    }
-
-    @Override
-    public OpenBuilder withPassword(byte[] password) {
-        this.builderPassword = password;
-        return this;
-    }
-
-    @Override
-    public OpenBuilder withDigestType(DigestType digestType) {
-        this.builderDigestType = digestType;
-        return this;
-    }
-
-    @Override
-    public CompletableFuture<ReadHandle> execute() {
-         CompletableFuture<ReadHandle> counter = new CompletableFuture<>();
-         open(new SyncOpenCallback(), counter);
-         return counter;
-    }
-
-    private void open(OpenCallback cb, Object ctx) {
-        this.cb = cb;
-        this.ctx = ctx;
-        this.ledgerId = builderLedgerId;
-        this.suggestedDigestType = builderDigestType;
-        this.doRecovery = builderRecovery;
-        this.passwd = builderPassword;
-
-        bk.closeLock.readLock().lock();
-        try {
-            if (bk.closed) {
-                cb.openComplete(BKException.Code.ClientClosedException, null, ctx);
-                return;
-            }
-            initiate();
-        } finally {
-            bk.closeLock.readLock().unlock();
+        public OpenBuilderImpl(BookKeeper bookkeeper) {
+            this.bk = bookkeeper;
         }
-    }
 
-    @Override
-    public ReadHandle open() throws BKException, InterruptedException {
-         return SynchCallbackUtils.waitForResult(execute());
+        @Override
+        public OpenBuilder withLedgerId(long ledgerId) {
+            this.builderLedgerId = ledgerId;
+            return this;
+        }
+
+        @Override
+        public OpenBuilder withRecovery(boolean recovery) {
+            this.builderRecovery = recovery;
+            return this;
+        }
+
+        @Override
+        public OpenBuilder withPassword(byte[] password) {
+            this.builderPassword = password;
+            return this;
+        }
+
+        @Override
+        public OpenBuilder withDigestType(DigestType digestType) {
+            this.builderDigestType = digestType;
+            return this;
+        }
+
+        @Override
+        public CompletableFuture<ReadHandle> execute() {
+             CompletableFuture<ReadHandle> counter = new CompletableFuture<>();
+             open(new SyncOpenCallback(), counter);
+             return counter;
+        }
+
+        private void open(OpenCallback cb, Object ctx) {
+            LedgerOpenOp op = new LedgerOpenOp(bk, builderLedgerId, builderDigestType, builderPassword, cb, ctx);
+            bk.closeLock.readLock().lock();
+            try {
+                if (bk.closed) {
+                    cb.openComplete(BKException.Code.ClientClosedException, null, ctx);
+                    return;
+                }
+                if (builderRecovery) {
+                    op.initiate();
+                } else {
+                    op.initiateWithoutRecovery();
+                }
+            } finally {
+                bk.closeLock.readLock().unlock();
+            }
+        }
     }
 
 }

@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCreateCallback;
 import org.apache.bookkeeper.client.api.CreateAdvBuilder;
 import org.apache.bookkeeper.client.api.CreateBuilder;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
@@ -46,7 +47,7 @@ import org.apache.bookkeeper.client.api.WriteHandle;
  * Encapsulates asynchronous ledger create operation
  *
  */
-class LedgerCreateOp implements GenericCallback<Void>, CreateBuilder {
+class LedgerCreateOp implements GenericCallback<Void>  {
 
     static final Logger LOG = LoggerFactory.getLogger(LedgerCreateOp.class);
 
@@ -99,18 +100,20 @@ class LedgerCreateOp implements GenericCallback<Void>, CreateBuilder {
     }
 
     /**
-     * for CreateLedgerBuilder interface
-     * @param bk
-     */
-    LedgerCreateOp(BookKeeper bk) {
-        this.bk=bk;
-        this.createOpLogger = bk.getCreateOpLogger();
-    }
-
-    /**
      * Initiates the operation
      */
     public void initiate() {
+
+        if (metadata.getWriteQuorumSize() > metadata.getEnsembleSize()) {
+            cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
+            return;
+        }
+
+        if (!this.generateLedgerId && (ledgerId == null || ledgerId <= 0)) {
+            cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
+            return;
+        }
+
         // allocate ensemble first
 
         /*
@@ -214,126 +217,112 @@ class LedgerCreateOp implements GenericCallback<Void>, CreateBuilder {
         cb.createComplete(rc, lh, ctx);
     }
 
-    // Builder interface methods
-
     private static final byte[] EMPTY_PASSWORD = new byte[0];
-    private int builderEnsembleSize;
-    private int builderAckQuorumSize;
-    private int builderWriteQuorumSize;
-    private long builderLedgerId = -1L;
-    private byte[] builderPassword = EMPTY_PASSWORD;
-    private DigestType builderDigestType = DigestType.CRC32;
-    private Map<String, byte[]> builderCustomMetadata;
 
-    @Override
-    public CreateBuilder withEnsembleSize(int ensembleSize) {
-        this.builderEnsembleSize = ensembleSize;
-        return this;
-    }
+    public static final class CreateBuilderImpl implements CreateBuilder {
+        
+        private final BookKeeper bk;
+        private int builderEnsembleSize = 3;
+        private int builderAckQuorumSize = 2;
+        private int builderWriteQuorumSize = 2;
+        private byte[] builderPassword = EMPTY_PASSWORD;
+        private DigestType builderDigestType = DigestType.CRC32;
+        private Map<String, byte[]> builderCustomMetadata;
 
-    @Override
-    public CreateBuilder withWriteQuorumSize(int writeQuorumSize) {
-        this.builderWriteQuorumSize = writeQuorumSize;
-        return this;
-    }
-
-    @Override
-    public CreateBuilder withAckQuorumSize(int ackQuorumSize) {
-        this.builderAckQuorumSize = ackQuorumSize;
-        return this;
-    }
-
-    @Override
-    public CreateBuilder withPassword(byte[] password) {
-        this.builderPassword = password;
-        return this;
-    }
-
-    @Override
-    public CreateBuilder withCustomMetadata(Map<String, byte[]> customMetadata) {
-        this.builderCustomMetadata = customMetadata;
-        return this;
-    }
-
-    @Override
-    public CreateBuilder withDigestType(DigestType digestType) {
-        this.builderDigestType = digestType;
-        return this;
-    }
-
-    @Override
-    public CreateAdvBuilder makeAdv() {
-        if(advBuilder == null) {
-            advBuilder = new CreateAdvBuilderImpl();
+        public CreateBuilderImpl(BookKeeper bk) {
+            this.bk = bk;
         }
-        return advBuilder;
-    }
 
-    private CreateAdvBuilder advBuilder;
-
-    @Override
-    public WriteHandle create() throws BKException, InterruptedException {
-        CompletableFuture<LedgerHandle> counter = new CompletableFuture<>();
-
-        create(new BookKeeper.SyncCreateCallback(), counter);
-
-        LedgerHandle lh = SynchCallbackUtils.waitForResult(counter);
-        if (lh == null) {
-            LOG.error("Unexpected condition : no ledger handle returned for a success ledger creation");
-            throw BKException.create(BKException.Code.UnexpectedConditionException);
+        @Override
+        public CreateBuilder withEnsembleSize(int ensembleSize) {
+            this.builderEnsembleSize = ensembleSize;
+            return this;
         }
-        return lh;
-    }
 
-    @Override
-    public CompletableFuture<WriteHandle> execute() {
-        CompletableFuture<WriteHandle> counter = new CompletableFuture<>();
-        create(new BookKeeper.SyncCreateCallback(), counter);
-        return counter;
-    }
+        @Override
+        public CreateBuilder withWriteQuorumSize(int writeQuorumSize) {
+            this.builderWriteQuorumSize = writeQuorumSize;
+            return this;
+        }
 
-    private void applyDefaults() {
-        if (builderEnsembleSize == 0){
-            builderEnsembleSize = 3;
+        @Override
+        public CreateBuilder withAckQuorumSize(int ackQuorumSize) {
+            this.builderAckQuorumSize = ackQuorumSize;
+            return this;
         }
-        if (builderWriteQuorumSize == 0) {
-            builderWriteQuorumSize = builderEnsembleSize;
-        }
-        if (builderAckQuorumSize == 0) {
-            builderAckQuorumSize = builderWriteQuorumSize;
-        }
-    }
 
-    private void create(CreateCallback cb, Object ctx) {
-        applyDefaults();
-        if (builderWriteQuorumSize < builderAckQuorumSize) {
-            throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
+        @Override
+        public CreateBuilder withPassword(byte[] password) {
+            this.builderPassword = password;
+            return this;
         }
-        bk.closeLock.readLock().lock();
-        try {
-            if (bk.closed) {
-                cb.createComplete(BKException.Code.ClientClosedException, null, ctx);
-                return;
+
+        @Override
+        public CreateBuilder withCustomMetadata(Map<String, byte[]> customMetadata) {
+            this.builderCustomMetadata = customMetadata;
+            return this;
+        }
+
+        @Override
+        public CreateBuilder withDigestType(DigestType digestType) {
+            this.builderDigestType = digestType;
+            return this;
+        }
+
+        @Override
+        public CreateAdvBuilder makeAdv() {
+            if(advBuilder == null) {
+                advBuilder = new CreateAdvBuilderImpl(this);
             }
+            return advBuilder;
+        }
 
-            this.metadata = new LedgerMetadata(builderEnsembleSize,
-                builderWriteQuorumSize,
-                builderAckQuorumSize,
-                builderDigestType,
-                builderPassword,
-                builderCustomMetadata);
-            this.digestType = builderDigestType;
-            this.passwd = builderPassword;
-            this.cb = cb;
-            this.ctx = ctx;
-            this.startTime = MathUtils.nowInNano();
-            initiate();
-        } finally {
-            bk.closeLock.readLock().unlock();
+        private CreateAdvBuilder advBuilder;
+
+        @Override
+        public CompletableFuture<WriteHandle> execute() {
+            CompletableFuture<WriteHandle> counter = new CompletableFuture<>();
+            create(new SyncCreateCallback(), counter);
+            return counter;
+        }
+
+        private void create(CreateCallback cb, Object ctx) {
+            bk.closeLock.readLock().lock();
+            try {
+                if (bk.closed) {
+                    cb.createComplete(BKException.Code.ClientClosedException, null, ctx);
+                    return;
+                }
+                LedgerCreateOp op = new LedgerCreateOp(bk, builderEnsembleSize,
+                    builderWriteQuorumSize, builderAckQuorumSize, builderDigestType,
+                    builderPassword, cb, ctx, builderCustomMetadata);
+                op.initiate();
+            } finally {
+                bk.closeLock.readLock().unlock();
+            }
         }
     }
 
-    private class CreateAdvBuilderImpl implements CreateAdvBuilder {
+    private static class CreateAdvBuilderImpl implements CreateAdvBuilder {
+
+        private long builderLedgerId = -1L;
+        private final int builderEnsembleSize;
+        private final int builderAckQuorumSize;
+        private final int builderWriteQuorumSize;
+        private final byte[] builderPassword;
+        private final Map<String, byte[]> builderCustomMetadata;
+        private final DigestType builderDigestType;
+        private final BookKeeper bk;
+
+         private CreateAdvBuilderImpl(CreateBuilderImpl other) {
+            this.builderEnsembleSize = other.builderEnsembleSize;
+            this.builderAckQuorumSize = other.builderAckQuorumSize;
+            this.builderWriteQuorumSize = other.builderWriteQuorumSize;
+            this.builderPassword = other.builderPassword;
+            this.builderDigestType = other.builderDigestType;
+            this.builderCustomMetadata = other.builderCustomMetadata;
+            this.bk = other.bk;
+        }
 
         @Override
         public CreateAdvBuilder withLedgerId(int ledgerId) {
@@ -342,53 +331,26 @@ class LedgerCreateOp implements GenericCallback<Void>, CreateBuilder {
         }
 
         @Override
-        public WriteAdvHandle create() throws BKException, InterruptedException {
-            CompletableFuture<LedgerHandleAdv> counter = new CompletableFuture<>();
-
-            create(new BookKeeper.SyncCreateCallback(), counter);
-
-            LedgerHandleAdv lh = SynchCallbackUtils.waitForResult(counter);
-            if (lh == null) {
-                LOG.error("Unexpected condition : no ledger handle returned for a success ledger creation");
-                throw BKException.create(BKException.Code.UnexpectedConditionException);
-            }
-            return lh;
-        }
-
-        @Override
         public CompletableFuture<WriteAdvHandle> execute() {
             CompletableFuture<WriteAdvHandle> counter = new CompletableFuture<>();
-            create(new BookKeeper.SyncCreateCallback(), counter);
+            create(new SyncCreateCallback(), counter);
             return counter;
         }
 
         private void create(CreateCallback cb, Object ctx) {
-            applyDefaults();
-            if (builderWriteQuorumSize < builderAckQuorumSize) {
-                throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
-            }
             bk.closeLock.readLock().lock();
             try {
                 if (bk.closed) {
                     cb.createComplete(BKException.Code.ClientClosedException, null, ctx);
                     return;
                 }
-                LedgerCreateOp.this.metadata = new LedgerMetadata(builderEnsembleSize,
-                    builderWriteQuorumSize,
-                    builderAckQuorumSize,
-                    builderDigestType,
-                    builderPassword,
-                    builderCustomMetadata);
-                LedgerCreateOp.this.digestType = builderDigestType;
-                LedgerCreateOp.this.passwd = builderPassword;
-                LedgerCreateOp.this.cb = cb;
-                LedgerCreateOp.this.ctx = ctx;
-                LedgerCreateOp.this.startTime = MathUtils.nowInNano();
-                initiateAdv(LedgerCreateOp.this.builderLedgerId);
+                LedgerCreateOp op = new LedgerCreateOp(bk, builderEnsembleSize,
+                    builderWriteQuorumSize, builderAckQuorumSize, builderDigestType,
+                    builderPassword, cb, ctx, builderCustomMetadata);
+                op.initiateAdv(builderLedgerId);
             } finally {
                 bk.closeLock.readLock().unlock();
             }
         }
     }
-
 }
