@@ -108,6 +108,26 @@ class LedgerCreateOp implements GenericCallback<Void>  {
             cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
             return;
         }
+        
+        if (metadata.getAckQuorumSize() > metadata.getWriteQuorumSize()) {
+            cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
+            return;
+        }
+        
+        if (metadata.getAckQuorumSize() < 0) {
+            cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
+            return;
+        }
+        
+        if (metadata.getPassword() == null) {
+            cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
+            return;
+        }
+
+        if (metadata.getCustomMetadata() == null) {
+            cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
+            return;
+        }
 
         if (!this.generateLedgerId && (ledgerId == null || ledgerId <= 0)) {
             cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
