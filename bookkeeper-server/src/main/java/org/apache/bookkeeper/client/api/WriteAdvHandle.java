@@ -17,6 +17,7 @@
 package org.apache.bookkeeper.client.api;
 
 import io.netty.buffer.ByteBuf;
+import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -34,21 +35,10 @@ public interface WriteAdvHandle extends ReadHandle {
      * Add entry asynchronously to an open ledger.
      *
      * @param entryId entryId to be added
-     * @param data array of bytes to be written to the ledger
+     * @param data array of bytes to be written
      * @return an handle to the result, in case of success it will return the same value of param entryId
      */
-    CompletableFuture<Long> write(final long entryId, byte[] data);
-
-    /**
-     * Add entry asynchronously to an open ledger.
-     *
-     * @param entryId entryId to be added.
-     * @param data array of bytes to be written to the ledger
-     * @param offset offset from which to take bytes from data
-     * @param length number of bytes to take from data
-     * @return an handle to the result, in case of success it will return the same value of param entryId
-     */
-    CompletableFuture<Long> write(final long entryId, byte[] data, int offset, int length);
+    CompletableFuture<Long> write(final long entryId, final ByteBuf data);
 
     /**
      * Add entry asynchronously to an open ledger.
@@ -57,6 +47,6 @@ public interface WriteAdvHandle extends ReadHandle {
      * @param data array of bytes to be written
      * @return an handle to the result, in case of success it will return the same value of param entryId
      */
-    CompletableFuture<Long> write(final long entryId, final ByteBuf data);
+    CompletableFuture<Long> write(final long entryId, final ByteBuffer data);
 
 }

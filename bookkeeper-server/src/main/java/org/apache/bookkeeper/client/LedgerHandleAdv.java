@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import java.nio.ByteBuffer;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncAddCallback;
 import org.apache.bookkeeper.client.api.WriteAdvHandle;
 
@@ -240,25 +241,8 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
     }
 
     @Override
-    public CompletableFuture<Long> write(long entryId, byte[] data) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Adding entry {}", data);
-        }
-        CompletableFuture<Long> counter = new CompletableFuture<>();
-        SyncAddCallback callback = new SyncAddCallback();
-        asyncAddEntry(entryId, data, 0, data.length, callback, counter);
-        return counter;
-    }
-
-    @Override
-    public CompletableFuture<Long> write(long entryId, byte[] data, int offset, int length) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Adding entry {}", data);
-        }
-        CompletableFuture<Long> counter = new CompletableFuture<>();
-        SyncAddCallback callback = new SyncAddCallback();
-        asyncAddEntry(entryId, data, offset, length, callback, counter);
-        return counter;
+    public CompletableFuture<Long> write(long entryId, ByteBuffer data) {
+        return write(entryId, Unpooled.wrappedBuffer(data));
     }
 
     @Override

@@ -22,6 +22,7 @@ package org.apache.bookkeeper.client.api;
 
 import io.netty.buffer.Unpooled;
 import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -67,155 +68,155 @@ public class BookKeeperBuildersTest extends BookKeeperClusterTestCase {
     @Test
     public void testCreateLedgerDefaults() throws Exception {
         ClientConfiguration conf = new ClientConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString())
-            .setZkTimeout(20000);
+                .setZkServers(zkUtil.getZooKeeperConnectString())
+                .setZkTimeout(20000);
         try (org.apache.bookkeeper.client.api.BookKeeper bkc
-            = org.apache.bookkeeper.client.BookKeeper
-                .forConfig(conf)
-                .build();) {
-                try (WriteHandle writer = FutureUtils.result(bkc.createLedgerOp().execute())) {
-                    LedgerMetadata metadata = getMetadata(writer);
-                    assertEquals(3, metadata.getEnsembleSize());
-                    assertEquals(2, metadata.getWriteQuorumSize());
-                    assertEquals(2, metadata.getAckQuorumSize());
-                    assertEquals(org.apache.bookkeeper.client.BookKeeper.DigestType.CRC32, getDigestType(metadata));
-                    assertArrayEquals(MacDigestManager.genDigest("ledger", new byte[0]), ((LedgerHandle) writer).getLedgerKey());
-                    assertTrue(metadata.getCustomMetadata().isEmpty());
+                = org.apache.bookkeeper.client.BookKeeper
+                        .forConfig(conf)
+                        .build();) {
+                    try (WriteHandle writer = FutureUtils.result(bkc.createLedgerOp().execute())) {
+                        LedgerMetadata metadata = getMetadata(writer);
+                        assertEquals(3, metadata.getEnsembleSize());
+                        assertEquals(2, metadata.getWriteQuorumSize());
+                        assertEquals(2, metadata.getAckQuorumSize());
+                        assertEquals(org.apache.bookkeeper.client.BookKeeper.DigestType.CRC32, getDigestType(metadata));
+                        assertArrayEquals(MacDigestManager.genDigest("ledger", new byte[0]), ((LedgerHandle) writer).getLedgerKey());
+                        assertTrue(metadata.getCustomMetadata().isEmpty());
+                    }
                 }
-            }
     }
 
     @Test
     public void testCreateLedger() throws Exception {
         ClientConfiguration conf = new ClientConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString())
-            .setZkTimeout(20000);
+                .setZkServers(zkUtil.getZooKeeperConnectString())
+                .setZkTimeout(20000);
         try (org.apache.bookkeeper.client.api.BookKeeper bkc
-            = org.apache.bookkeeper.client.BookKeeper
-                .forConfig(conf)
-                .build();) {
-                Map<String, byte[]> customMetadata = new HashMap<>();
-                customMetadata.put("test", "test".getBytes(StandardCharsets.UTF_8));
-                try (WriteHandle writer
-                    = FutureUtils.result(
-                        bkc.createLedgerOp()
-                            .withAckQuorumSize(1)
-                            .withWriteQuorumSize(2)
-                            .withEnsembleSize(3)
-                            .withDigestType(DigestType.MAC)
-                            .withCustomMetadata(customMetadata)
-                            .withPassword("password".getBytes(StandardCharsets.UTF_8))
-                            .execute());) {
+                = org.apache.bookkeeper.client.BookKeeper
+                        .forConfig(conf)
+                        .build();) {
+                    Map<String, byte[]> customMetadata = new HashMap<>();
+                    customMetadata.put("test", "test".getBytes(StandardCharsets.UTF_8));
+                    try (WriteHandle writer
+                            = FutureUtils.result(
+                                    bkc.createLedgerOp()
+                                            .withAckQuorumSize(1)
+                                            .withWriteQuorumSize(2)
+                                            .withEnsembleSize(3)
+                                            .withDigestType(DigestType.MAC)
+                                            .withCustomMetadata(customMetadata)
+                                            .withPassword("password".getBytes(StandardCharsets.UTF_8))
+                                            .execute());) {
 
-                    LedgerMetadata metadata = getMetadata(writer);
-                    assertEquals(3, metadata.getEnsembleSize());
-                    assertEquals(2, metadata.getWriteQuorumSize());
-                    assertEquals(1, metadata.getAckQuorumSize());
-                    assertEquals(org.apache.bookkeeper.client.BookKeeper.DigestType.MAC, getDigestType(metadata));
-                    assertArrayEquals("test".getBytes(StandardCharsets.UTF_8),
-                        metadata.getCustomMetadata().get("test"));
-                    assertArrayEquals(MacDigestManager.genDigest("ledger", "password".getBytes(StandardCharsets.UTF_8)),
-                        ((LedgerHandle) writer).getLedgerKey());
+                        LedgerMetadata metadata = getMetadata(writer);
+                        assertEquals(3, metadata.getEnsembleSize());
+                        assertEquals(2, metadata.getWriteQuorumSize());
+                        assertEquals(1, metadata.getAckQuorumSize());
+                        assertEquals(org.apache.bookkeeper.client.BookKeeper.DigestType.MAC, getDigestType(metadata));
+                        assertArrayEquals("test".getBytes(StandardCharsets.UTF_8),
+                                metadata.getCustomMetadata().get("test"));
+                        assertArrayEquals(MacDigestManager.genDigest("ledger", "password".getBytes(StandardCharsets.UTF_8)),
+                                ((LedgerHandle) writer).getLedgerKey());
 
-                    byte[] data = "foo".getBytes(StandardCharsets.UTF_8);
-                    writer.append(data).get();
-                    writer.append(data, 0, data.length).get();
-                    writer.append(Unpooled.wrappedBuffer(data)).get();
+                        byte[] data = "foo".getBytes(StandardCharsets.UTF_8);
+                        writer.append(ByteBuffer.wrap(data)).get();
+                        writer.append(ByteBuffer.wrap(data)).get();
+                        writer.append(Unpooled.wrappedBuffer(data)).get();
 
-                    writer.append(data).get();
-                    long expectedEntryId = writer.append(data).get();
-                    assertEquals(expectedEntryId, writer.getLastAddConfirmed());
+                        writer.append(ByteBuffer.wrap(data)).get();
+                        long expectedEntryId = writer.append(ByteBuffer.wrap(data)).get();
+                        assertEquals(expectedEntryId, writer.getLastAddConfirmed());
+                    }
                 }
-            }
     }
 
     @Test
     public void testCreateAdvLedger() throws Exception {
         ClientConfiguration conf = new ClientConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString())
-            .setZkTimeout(20000);
+                .setZkServers(zkUtil.getZooKeeperConnectString())
+                .setZkTimeout(20000);
         try (org.apache.bookkeeper.client.api.BookKeeper bkc
-            = org.apache.bookkeeper.client.BookKeeper
-                .forConfig(conf)
-                .build();) {
-                Map<String, byte[]> customMetadata = new HashMap<>();
-                customMetadata.put("test", "test".getBytes(StandardCharsets.UTF_8));
-                try (WriteAdvHandle writer
-                    = FutureUtils.result(bkc.createLedgerOp()
-                        .withAckQuorumSize(1)
-                        .withWriteQuorumSize(2)
-                        .withEnsembleSize(3)
-                        .withDigestType(DigestType.MAC)
-                        .withCustomMetadata(customMetadata)
-                        .withPassword("password".getBytes(StandardCharsets.UTF_8))
-                        .makeAdv()
-                        .execute());) {
+                = org.apache.bookkeeper.client.BookKeeper
+                        .forConfig(conf)
+                        .build();) {
+                    Map<String, byte[]> customMetadata = new HashMap<>();
+                    customMetadata.put("test", "test".getBytes(StandardCharsets.UTF_8));
+                    try (WriteAdvHandle writer
+                            = FutureUtils.result(bkc.createLedgerOp()
+                                    .withAckQuorumSize(1)
+                                    .withWriteQuorumSize(2)
+                                    .withEnsembleSize(3)
+                                    .withDigestType(DigestType.MAC)
+                                    .withCustomMetadata(customMetadata)
+                                    .withPassword("password".getBytes(StandardCharsets.UTF_8))
+                                    .makeAdv()
+                                    .execute());) {
 
-                    LedgerMetadata metadata = getMetadata(writer);
-                    assertEquals(3, metadata.getEnsembleSize());
-                    assertEquals(2, metadata.getWriteQuorumSize());
-                    assertEquals(1, metadata.getAckQuorumSize());
-                    assertEquals(org.apache.bookkeeper.client.BookKeeper.DigestType.MAC, getDigestType(metadata));
-                    assertArrayEquals("test".getBytes(StandardCharsets.UTF_8),
-                        metadata.getCustomMetadata().get("test"));
-                    assertArrayEquals(MacDigestManager.genDigest("ledger", "password".getBytes(StandardCharsets.UTF_8)),
-                        ((LedgerHandle) writer).getLedgerKey());
+                        LedgerMetadata metadata = getMetadata(writer);
+                        assertEquals(3, metadata.getEnsembleSize());
+                        assertEquals(2, metadata.getWriteQuorumSize());
+                        assertEquals(1, metadata.getAckQuorumSize());
+                        assertEquals(org.apache.bookkeeper.client.BookKeeper.DigestType.MAC, getDigestType(metadata));
+                        assertArrayEquals("test".getBytes(StandardCharsets.UTF_8),
+                                metadata.getCustomMetadata().get("test"));
+                        assertArrayEquals(MacDigestManager.genDigest("ledger", "password".getBytes(StandardCharsets.UTF_8)),
+                                ((LedgerHandle) writer).getLedgerKey());
 
-                    long entryId = 0;
-                    byte[] data = "foo".getBytes(StandardCharsets.UTF_8);
-                    writer.write(entryId++, data).get();
-                    writer.write(entryId++, data, 0, data.length).get();
-                    writer.write(entryId++, Unpooled.wrappedBuffer(data)).get(1, TimeUnit.MINUTES);
+                        long entryId = 0;
+                        byte[] data = "foo".getBytes(StandardCharsets.UTF_8);
+                        writer.write(entryId++, ByteBuffer.wrap(data)).get();
+                        writer.write(entryId++, ByteBuffer.wrap(data)).get();
+                        writer.write(entryId++, Unpooled.wrappedBuffer(data)).get(1, TimeUnit.MINUTES);
 
-                    writer.write(entryId++, data).get(1, TimeUnit.MINUTES);
-                    long expectedEntryId = writer.write(entryId++, data).get(1, TimeUnit.MINUTES);
-                    assertEquals(expectedEntryId, writer.getLastAddConfirmed());
+                        writer.write(entryId++, ByteBuffer.wrap(data)).get(1, TimeUnit.MINUTES);
+                        long expectedEntryId = writer.write(entryId++, ByteBuffer.wrap(data)).get(1, TimeUnit.MINUTES);
+                        assertEquals(expectedEntryId, writer.getLastAddConfirmed());
+                    }
                 }
-            }
     }
 
     @Test
     public void testCreateAdvLedgerWithFixedId() throws Exception {
         ClientConfiguration conf = new ClientConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString())
-            .setZkTimeout(20000);
+                .setZkServers(zkUtil.getZooKeeperConnectString())
+                .setZkTimeout(20000);
         try (org.apache.bookkeeper.client.api.BookKeeper bkc
-            = org.apache.bookkeeper.client.BookKeeper
-                .forConfig(conf)
-                .build();) {
-                Map<String, byte[]> customMetadata = new HashMap<>();
-                customMetadata.put("test", "test".getBytes(StandardCharsets.UTF_8));
-                try (WriteAdvHandle writer
-                    = FutureUtils.result(bkc.createLedgerOp()
-                        .withAckQuorumSize(1)
-                        .withWriteQuorumSize(2)
-                        .withEnsembleSize(3)
-                        .withDigestType(DigestType.MAC)
-                        .withCustomMetadata(customMetadata)
-                        .withPassword("password".getBytes(StandardCharsets.UTF_8))
-                        .makeAdv()
-                        .withLedgerId(1234)
-                        .execute());) {
+                = org.apache.bookkeeper.client.BookKeeper
+                        .forConfig(conf)
+                        .build();) {
+                    Map<String, byte[]> customMetadata = new HashMap<>();
+                    customMetadata.put("test", "test".getBytes(StandardCharsets.UTF_8));
+                    try (WriteAdvHandle writer
+                            = FutureUtils.result(bkc.createLedgerOp()
+                                    .withAckQuorumSize(1)
+                                    .withWriteQuorumSize(2)
+                                    .withEnsembleSize(3)
+                                    .withDigestType(DigestType.MAC)
+                                    .withCustomMetadata(customMetadata)
+                                    .withPassword("password".getBytes(StandardCharsets.UTF_8))
+                                    .makeAdv()
+                                    .withLedgerId(1234)
+                                    .execute());) {
 
-                    LedgerMetadata metadata = getMetadata(writer);
-                    assertEquals(3, metadata.getEnsembleSize());
-                    assertEquals(2, metadata.getWriteQuorumSize());
-                    assertEquals(1, metadata.getAckQuorumSize());
-                    assertEquals(org.apache.bookkeeper.client.BookKeeper.DigestType.MAC, getDigestType(metadata));
-                    assertArrayEquals("test".getBytes(StandardCharsets.UTF_8),
-                        metadata.getCustomMetadata().get("test"));
-                    assertEquals(1234, writer.getId());
+                        LedgerMetadata metadata = getMetadata(writer);
+                        assertEquals(3, metadata.getEnsembleSize());
+                        assertEquals(2, metadata.getWriteQuorumSize());
+                        assertEquals(1, metadata.getAckQuorumSize());
+                        assertEquals(org.apache.bookkeeper.client.BookKeeper.DigestType.MAC, getDigestType(metadata));
+                        assertArrayEquals("test".getBytes(StandardCharsets.UTF_8),
+                                metadata.getCustomMetadata().get("test"));
+                        assertEquals(1234, writer.getId());
 
-                    long entryId = 0;
-                    byte[] data = "foo".getBytes(StandardCharsets.UTF_8);
-                    writer.write(entryId++, data).get();
-                    writer.write(entryId++, data, 0, data.length).get();
-                    writer.write(entryId++, Unpooled.wrappedBuffer(data)).get();
-                    writer.write(entryId++, data).get();
-                    long expectedEntryId = writer.write(entryId++, data).get();
-                    assertEquals(expectedEntryId, writer.getLastAddConfirmed());
+                        long entryId = 0;
+                        byte[] data = "foo".getBytes(StandardCharsets.UTF_8);
+                        writer.write(entryId++, ByteBuffer.wrap(data)).get();
+                        writer.write(entryId++, ByteBuffer.wrap(data)).get();
+                        writer.write(entryId++, Unpooled.wrappedBuffer(data)).get();
+                        writer.write(entryId++, ByteBuffer.wrap(data)).get();
+                        long expectedEntryId = writer.write(entryId++, ByteBuffer.wrap(data)).get();
+                        assertEquals(expectedEntryId, writer.getLastAddConfirmed());
+                    }
                 }
-            }
     }
 
     @Test
@@ -223,75 +224,79 @@ public class BookKeeperBuildersTest extends BookKeeperClusterTestCase {
         byte[] data = "foo".getBytes(StandardCharsets.UTF_8);
 
         ClientConfiguration conf = new ClientConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString())
-            .setZkTimeout(20000);
+                .setZkServers(zkUtil.getZooKeeperConnectString())
+                .setZkTimeout(20000);
         long lId;
         try (org.apache.bookkeeper.client.api.BookKeeper bkc
-            = org.apache.bookkeeper.client.BookKeeper
-                .forConfig(conf)
-                .build();) {
-                Map<String, byte[]> customMetadata = new HashMap<>();
-                customMetadata.put("test", "test".getBytes(StandardCharsets.UTF_8));
-                try (WriteHandle writer
-                    = FutureUtils.result(bkc.createLedgerOp()
-                        .withAckQuorumSize(1)
-                        .withWriteQuorumSize(2)
-                        .withEnsembleSize(3)
-                        .withDigestType(DigestType.MAC)
-                        .withCustomMetadata(customMetadata)
-                        .withPassword("password".getBytes(StandardCharsets.UTF_8))
-                        .execute());) {
-                    lId = writer.getId();
+                = org.apache.bookkeeper.client.BookKeeper
+                        .forConfig(conf)
+                        .build();) {
+                    Map<String, byte[]> customMetadata = new HashMap<>();
+                    customMetadata.put("test", "test".getBytes(StandardCharsets.UTF_8));
+                    try (WriteHandle writer
+                            = FutureUtils.result(bkc.createLedgerOp()
+                                    .withAckQuorumSize(1)
+                                    .withWriteQuorumSize(2)
+                                    .withEnsembleSize(3)
+                                    .withDigestType(DigestType.MAC)
+                                    .withCustomMetadata(customMetadata)
+                                    .withPassword("password".getBytes(StandardCharsets.UTF_8))
+                                    .execute());) {
+                        lId = writer.getId();
 
-                    writer.append(data);
-                    writer.append(data);
-                    writer.append(data).get();
-                }
-                try (ReadHandle reader
-                    = FutureUtils.result(bkc.openLedgerOp()
-                        .withDigestType(DigestType.MAC)
-                        .withPassword("bad-password".getBytes(StandardCharsets.UTF_8))
-                        .withLedgerId(lId)
-                        .execute())) {
-                    fail("should not open ledger, bad password");
-                } catch (BKUnauthorizedAccessException ok) {
-                }
+                        writer.append(ByteBuffer.wrap(data));
+                        writer.append(ByteBuffer.wrap(data));
+                        writer.append(ByteBuffer.wrap(data)).get();
+                    }
+                    try (ReadHandle reader
+                            = FutureUtils.result(bkc.openLedgerOp()
+                                    .withDigestType(DigestType.MAC)
+                                    .withPassword("bad-password".getBytes(StandardCharsets.UTF_8))
+                                    .withLedgerId(lId)
+                                    .execute())) {
+                        fail("should not open ledger, bad password");
+                    }
+                    catch (BKUnauthorizedAccessException ok) {
+                    }
 
-                try (ReadHandle reader = FutureUtils.result(bkc.openLedgerOp()
-                    .withDigestType(DigestType.CRC32)
-                    .withPassword("password".getBytes(StandardCharsets.UTF_8))
-                    .withLedgerId(lId)
-                    .execute())) {
-                    fail("should not open ledger, bad digest");
-                } catch (BKDigestMatchException ok) {
-                }
+                    try (ReadHandle reader = FutureUtils.result(bkc.openLedgerOp()
+                            .withDigestType(DigestType.CRC32)
+                            .withPassword("password".getBytes(StandardCharsets.UTF_8))
+                            .withLedgerId(lId)
+                            .execute())) {
+                        fail("should not open ledger, bad digest");
+                    }
+                    catch (BKDigestMatchException ok) {
+                    }
 
-                try {
-                    FutureUtils.result(bkc.openLedgerOp().execute());
-                    fail("should not open ledger, no id");
-                } catch (BKNoSuchLedgerExistsException ok) {
-                }
+                    try {
+                        FutureUtils.result(bkc.openLedgerOp().execute());
+                        fail("should not open ledger, no id");
+                    }
+                    catch (BKNoSuchLedgerExistsException ok) {
+                    }
 
-                try {
-                    FutureUtils.result(bkc.openLedgerOp().withLedgerId(Long.MAX_VALUE - 1).execute());
-                    fail("should not open ledger, bad id");
-                } catch (BKNoSuchLedgerExistsException ok) {
-                }
+                    try {
+                        FutureUtils.result(bkc.openLedgerOp().withLedgerId(Long.MAX_VALUE - 1).execute());
+                        fail("should not open ledger, bad id");
+                    }
+                    catch (BKNoSuchLedgerExistsException ok) {
+                    }
 
-                try (ReadHandle reader = FutureUtils.result(bkc.openLedgerOp()
-                    .withDigestType(DigestType.MAC)
-                    .withPassword("password".getBytes(StandardCharsets.UTF_8))
-                    .withRecovery(false)
-                    .withLedgerId(lId)
-                    .execute())) {
-                    assertEquals(2, reader.getLastAddConfirmed());
-                    assertEquals(2, reader.readLastConfirmedEntryId().get().intValue());
-                    assertEquals(2, reader.tryReadLastConfirmedEntryId().get().intValue());
+                    try (ReadHandle reader = FutureUtils.result(bkc.openLedgerOp()
+                            .withDigestType(DigestType.MAC)
+                            .withPassword("password".getBytes(StandardCharsets.UTF_8))
+                            .withRecovery(false)
+                            .withLedgerId(lId)
+                            .execute())) {
+                        assertEquals(2, reader.getLastAddConfirmed());
+                        assertEquals(2, reader.readLastConfirmedEntryId().get().intValue());
+                        assertEquals(2, reader.tryReadLastConfirmedEntryId().get().intValue());
 
-                    checkEntries(reader.read(0, reader.getLastAddConfirmed()).get(), data);
-                    checkEntries(reader.readUnconfirmed(0, reader.getLastAddConfirmed()).get(), data);
+                        checkEntries(reader.read(0, reader.getLastAddConfirmed()).get(), data);
+                        checkEntries(reader.readUnconfirmed(0, reader.getLastAddConfirmed()).get(), data);
+                    }
                 }
-            }
     }
 
     @Test
@@ -299,53 +304,54 @@ public class BookKeeperBuildersTest extends BookKeeperClusterTestCase {
         byte[] data = "foo".getBytes(StandardCharsets.UTF_8);
 
         ClientConfiguration conf = new ClientConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString())
-            .setZkTimeout(20000);
+                .setZkServers(zkUtil.getZooKeeperConnectString())
+                .setZkTimeout(20000);
         long lId;
         try (org.apache.bookkeeper.client.api.BookKeeper bkc
-            = org.apache.bookkeeper.client.BookKeeper
-                .forConfig(conf)
-                .build();) {
-                Map<String, byte[]> customMetadata = new HashMap<>();
-                customMetadata.put("test", "test".getBytes(StandardCharsets.UTF_8));
-                try (WriteHandle writer = FutureUtils.result(bkc.createLedgerOp()
-                    .withAckQuorumSize(1)
-                    .withWriteQuorumSize(2)
-                    .withEnsembleSize(3)
-                    .withDigestType(DigestType.MAC)
-                    .withCustomMetadata(customMetadata)
-                    .withPassword("password".getBytes(StandardCharsets.UTF_8))
-                    .execute());) {
-                    lId = writer.getId();
+                = org.apache.bookkeeper.client.BookKeeper
+                        .forConfig(conf)
+                        .build();) {
+                    Map<String, byte[]> customMetadata = new HashMap<>();
+                    customMetadata.put("test", "test".getBytes(StandardCharsets.UTF_8));
+                    try (WriteHandle writer = FutureUtils.result(bkc.createLedgerOp()
+                            .withAckQuorumSize(1)
+                            .withWriteQuorumSize(2)
+                            .withEnsembleSize(3)
+                            .withDigestType(DigestType.MAC)
+                            .withCustomMetadata(customMetadata)
+                            .withPassword("password".getBytes(StandardCharsets.UTF_8))
+                            .execute());) {
+                        lId = writer.getId();
 
-                    writer.append(data).get();
-                    writer.append(data).get();
+                        writer.append(ByteBuffer.wrap(data)).get();
+                        writer.append(ByteBuffer.wrap(data)).get();
 
+                        try (ReadHandle reader = FutureUtils.result(bkc.openLedgerOp()
+                                .withDigestType(DigestType.MAC)
+                                .withPassword("password".getBytes(StandardCharsets.UTF_8))
+                                .withRecovery(true)
+                                .withLedgerId(lId)
+                                .execute())) {
+                        }
+
+                        try {
+                            FutureUtils.result(writer.append(ByteBuffer.wrap(data)));
+                            fail("should not be able to write");
+                        }
+                        catch (BKException.BKLedgerFencedException ok) {
+                        }
+                    }
                     try (ReadHandle reader = FutureUtils.result(bkc.openLedgerOp()
-                        .withDigestType(DigestType.MAC)
-                        .withPassword("password".getBytes(StandardCharsets.UTF_8))
-                        .withRecovery(true)
-                        .withLedgerId(lId)
-                        .execute())) {
-                    }
-
-                    try {
-                        FutureUtils.result(writer.append(data));
-                        fail("should not be able to write");
-                    } catch (BKException.BKLedgerFencedException ok) {
+                            .withDigestType(DigestType.MAC)
+                            .withPassword("password".getBytes(StandardCharsets.UTF_8))
+                            .withRecovery(false)
+                            .withLedgerId(lId)
+                            .execute())) {
+                        assertEquals(1, reader.getLastAddConfirmed());
+                        assertEquals(1, reader.readLastConfirmedEntryId().get().intValue());
+                        checkEntries(reader.read(0, reader.getLastAddConfirmed()).get(), data);
                     }
                 }
-                try (ReadHandle reader = FutureUtils.result(bkc.openLedgerOp()
-                    .withDigestType(DigestType.MAC)
-                    .withPassword("password".getBytes(StandardCharsets.UTF_8))
-                    .withRecovery(false)
-                    .withLedgerId(lId)
-                    .execute())) {
-                    assertEquals(1, reader.getLastAddConfirmed());
-                    assertEquals(1, reader.readLastConfirmedEntryId().get().intValue());
-                    checkEntries(reader.read(0, reader.getLastAddConfirmed()).get(), data);
-                }
-            }
     }
 
     @Test
@@ -353,107 +359,113 @@ public class BookKeeperBuildersTest extends BookKeeperClusterTestCase {
         byte[] data = "foo".getBytes(StandardCharsets.UTF_8);
 
         ClientConfiguration conf = new ClientConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString())
-            .setZkTimeout(20000);
+                .setZkServers(zkUtil.getZooKeeperConnectString())
+                .setZkTimeout(20000);
         long lId;
         try (org.apache.bookkeeper.client.api.BookKeeper bkc
-            = org.apache.bookkeeper.client.BookKeeper
-                .forConfig(conf)
-                .build();) {
-                Map<String, byte[]> customMetadata = new HashMap<>();
-                customMetadata.put("test", "test".getBytes(StandardCharsets.UTF_8));
-                try (WriteHandle writer = FutureUtils.result(bkc.createLedgerOp()
-                    .withAckQuorumSize(1)
-                    .withWriteQuorumSize(2)
-                    .withEnsembleSize(3)
-                    .withCustomMetadata(customMetadata)
-                    .withDigestType(DigestType.MAC)
-                    .withPassword("password".getBytes(StandardCharsets.UTF_8))
-                    .execute());) {
-                    lId = writer.getId();
-                }
+                = org.apache.bookkeeper.client.BookKeeper
+                        .forConfig(conf)
+                        .build();) {
+                    Map<String, byte[]> customMetadata = new HashMap<>();
+                    customMetadata.put("test", "test".getBytes(StandardCharsets.UTF_8));
+                    try (WriteHandle writer = FutureUtils.result(bkc.createLedgerOp()
+                            .withAckQuorumSize(1)
+                            .withWriteQuorumSize(2)
+                            .withEnsembleSize(3)
+                            .withCustomMetadata(customMetadata)
+                            .withDigestType(DigestType.MAC)
+                            .withPassword("password".getBytes(StandardCharsets.UTF_8))
+                            .execute());) {
+                        lId = writer.getId();
+                    }
 
-                try (ReadHandle opened = FutureUtils.result(bkc.openLedgerOp()
-                    .withDigestType(DigestType.MAC)
-                    .withPassword("password".getBytes(StandardCharsets.UTF_8))
-                    .withLedgerId(lId)
-                    .execute());) {
-                }
+                    try (ReadHandle opened = FutureUtils.result(bkc.openLedgerOp()
+                            .withDigestType(DigestType.MAC)
+                            .withPassword("password".getBytes(StandardCharsets.UTF_8))
+                            .withLedgerId(lId)
+                            .execute());) {
+                    }
 
-                bkc.deleteLedgerOp().withLedgerId(lId).execute().get();
+                    bkc.deleteLedgerOp().withLedgerId(lId).execute().get();
 
-                try {
-                    FutureUtils.result(bkc.openLedgerOp()
-                        .withDigestType(DigestType.MAC)
-                        .withPassword("password".getBytes(StandardCharsets.UTF_8))
-                        .withLedgerId(lId)
-                        .execute());
-                    fail("ledger cannot be open if delete succeeded");
-                } catch (BKNoSuchLedgerExistsException ok) {
-                }
+                    try {
+                        FutureUtils.result(bkc.openLedgerOp()
+                                .withDigestType(DigestType.MAC)
+                                .withPassword("password".getBytes(StandardCharsets.UTF_8))
+                                .withLedgerId(lId)
+                                .execute());
+                        fail("ledger cannot be open if delete succeeded");
+                    }
+                    catch (BKNoSuchLedgerExistsException ok) {
+                    }
 
-                try (WriteHandle writer = FutureUtils.result(bkc.createLedgerOp()
-                    .execute());) {
-                    lId = writer.getId();
-                }
-                try (ReadHandle opened = FutureUtils.result(bkc.openLedgerOp()
-                    .withLedgerId(lId)
-                    .execute());) {
-                }
+                    try (WriteHandle writer = FutureUtils.result(bkc.createLedgerOp()
+                            .execute());) {
+                        lId = writer.getId();
+                    }
+                    try (ReadHandle opened = FutureUtils.result(bkc.openLedgerOp()
+                            .withLedgerId(lId)
+                            .execute());) {
+                    }
 
-                bkc.deleteLedgerOp().withLedgerId(lId).execute().get();
+                    bkc.deleteLedgerOp().withLedgerId(lId).execute().get();
 
-                try {
-                    FutureUtils.result(bkc.openLedgerOp()
-                        .withLedgerId(lId)
-                        .execute());
-                    fail("ledger cannot be open if delete succeeded");
-                } catch (BKNoSuchLedgerExistsException ok) {
-                }
+                    try {
+                        FutureUtils.result(bkc.openLedgerOp()
+                                .withLedgerId(lId)
+                                .execute());
+                        fail("ledger cannot be open if delete succeeded");
+                    }
+                    catch (BKNoSuchLedgerExistsException ok) {
+                    }
 
-                try {
-                    FutureUtils.result(bkc.openLedgerOp()
-                        .withLedgerId(lId)
-                        .execute());
-                    fail("ledger cannot be open if delete succeeded");
-                } catch (BKNoSuchLedgerExistsException ok) {
-                }
+                    try {
+                        FutureUtils.result(bkc.openLedgerOp()
+                                .withLedgerId(lId)
+                                .execute());
+                        fail("ledger cannot be open if delete succeeded");
+                    }
+                    catch (BKNoSuchLedgerExistsException ok) {
+                    }
 
-                try (WriteHandle writer = FutureUtils.result(bkc.createLedgerOp()
-                    .execute());) {
-                    lId = writer.getId();
-                }
-                try (ReadHandle opened = FutureUtils.result(bkc.openLedgerOp()
-                    .withLedgerId(lId)
-                    .execute());) {
-                }
+                    try (WriteHandle writer = FutureUtils.result(bkc.createLedgerOp()
+                            .execute());) {
+                        lId = writer.getId();
+                    }
+                    try (ReadHandle opened = FutureUtils.result(bkc.openLedgerOp()
+                            .withLedgerId(lId)
+                            .execute());) {
+                    }
 
-                bkc.deleteLedgerOp().withLedgerId(lId).execute().get();
+                    bkc.deleteLedgerOp().withLedgerId(lId).execute().get();
 
-                try {
-                    FutureUtils.result(bkc.openLedgerOp()
-                        .withLedgerId(lId)
-                        .execute());
-                    fail("ledger cannot be open if delete succeeded");
-                } catch (BKNoSuchLedgerExistsException ok) {
-                }
+                    try {
+                        FutureUtils.result(bkc.openLedgerOp()
+                                .withLedgerId(lId)
+                                .execute());
+                        fail("ledger cannot be open if delete succeeded");
+                    }
+                    catch (BKNoSuchLedgerExistsException ok) {
+                    }
 
-                try {
-                    FutureUtils.result(bkc.deleteLedgerOp().withLedgerId(lId).execute());
-                    fail("ledger cannot be deleted twice");;
-                } catch (BKNoSuchLedgerExistsException ok) {
-                }
+                    try {
+                        FutureUtils.result(bkc.deleteLedgerOp().withLedgerId(lId).execute());
+                        fail("ledger cannot be deleted twice");;
+                    }
+                    catch (BKNoSuchLedgerExistsException ok) {
+                    }
 
-                try {
-                    FutureUtils.result(bkc.deleteLedgerOp().execute());
-                    fail("ledger cannot be deleted, no id");
-                } catch (BKNoSuchLedgerExistsException ok) {
+                    try {
+                        FutureUtils.result(bkc.deleteLedgerOp().execute());
+                        fail("ledger cannot be deleted, no id");
+                    }
+                    catch (BKNoSuchLedgerExistsException ok) {
+                    }
                 }
-            }
     }
 
     private static void checkEntries(Iterable<org.apache.bookkeeper.client.api.LedgerEntry> entries, byte[] data)
-        throws InterruptedException, BKException {
+            throws InterruptedException, BKException {
         for (org.apache.bookkeeper.client.api.LedgerEntry le : entries) {
             assertArrayEquals(le.getEntry(), data);
         }
