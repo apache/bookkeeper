@@ -30,6 +30,7 @@ import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.RateLimiter;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -690,22 +691,8 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
     }
 
     @Override
-    public CompletableFuture<Long> append(byte[] data) {
-        return append(data, 0, data.length);
-    }
-
-    @Override
-    public CompletableFuture<Long> append(byte[] data, int offset, int length) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Adding entry {}", data);
-        }
-
-        CompletableFuture<Long> counter = new CompletableFuture<>();
-
-        SyncAddCallback callback = new SyncAddCallback();
-        asyncAddEntry(data, offset, length, callback, counter);
-
-        return counter;
+    public CompletableFuture<Long> append(ByteBuffer data) {
+        return append(Unpooled.wrappedBuffer(data));
     }
 
     @Override
