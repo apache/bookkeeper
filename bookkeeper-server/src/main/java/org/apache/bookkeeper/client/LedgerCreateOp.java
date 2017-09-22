@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
@@ -142,7 +143,7 @@ class LedgerCreateOp implements GenericCallback<Void>  {
 
         ArrayList<BookieSocketAddress> ensemble;
         try {
-            ensemble = bk.bookieWatcher
+            ensemble = bk.getBookieWatcher()
                     .newEnsemble(metadata.getEnsembleSize(),
                             metadata.getWriteQuorumSize(),
                             metadata.getAckQuorumSize(),
@@ -239,7 +240,7 @@ class LedgerCreateOp implements GenericCallback<Void>  {
 
     private static final byte[] EMPTY_PASSWORD = new byte[0];
 
-    public static final class CreateBuilderImpl implements CreateBuilder {
+    public static class CreateBuilderImpl implements CreateBuilder {
         
         private final BookKeeper bk;
         private int builderEnsembleSize = 3;
@@ -311,15 +312,16 @@ class LedgerCreateOp implements GenericCallback<Void>  {
             LedgerCreateOp op = new LedgerCreateOp(bk, builderEnsembleSize,
                 builderWriteQuorumSize, builderAckQuorumSize, DigestType.fromApiDigestType(builderDigestType),
                 builderPassword, cb, ctx, builderCustomMetadata);
-            bk.closeLock.readLock().lock();
+            ReentrantReadWriteLock closeLock = bk.getCloseLock();
+            closeLock.readLock().lock();
             try {
-                if (bk.closed) {
+                if (bk.isClosed()) {
                     cb.createComplete(BKException.Code.ClientClosedException, null, ctx);
                     return;
                 }
                 op.initiate();
             } finally {
-                bk.closeLock.readLock().unlock();
+                closeLock.readLock().unlock();
             }
         }
     }
