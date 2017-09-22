@@ -1393,4 +1393,18 @@ public class BookKeeper implements AutoCloseable, org.apache.bookkeeper.client.a
         return new LedgerDeleteOp.DeleteBuilderImpl(this);
     }
 
+    ReentrantReadWriteLock getCloseLock() {
+        return closeLock;
+    }
+
+    boolean isClosed() {
+        return closed;
+    }
+
+    BookieWatcher getBookieWatcher() {
+        return bookieWatcher;
+    }
+
+
+
 }
