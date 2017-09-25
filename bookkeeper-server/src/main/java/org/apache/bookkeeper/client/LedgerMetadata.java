@@ -103,7 +103,7 @@ public class LedgerMetadata {
         this.lastEntryId = LedgerHandle.INVALID_ENTRY_ID;
         this.metadataFormatVersion = CURRENT_METADATA_FORMAT_VERSION;
 
-        this.digestType = digestType.equals(BookKeeper.DigestType.MAC) ?
+        this.digestType = BookKeeper.DigestType.MAC.equals(BookKeeper.DigestType.MAC) ?
             LedgerMetadataFormat.DigestType.HMAC : LedgerMetadataFormat.DigestType.CRC32;
         this.password = Arrays.copyOf(password, password.length);
         this.hasPassword = true;

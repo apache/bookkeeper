@@ -121,7 +121,7 @@ public class BookKeeper implements AutoCloseable, org.apache.bookkeeper.client.a
     final BookieClient bookieClient;
     final BookieWatcher bookieWatcher;
 
-    final OrderedSafeExecutor mainWorkerPool;
+    final private OrderedSafeExecutor mainWorkerPool;
     final ScheduledExecutorService scheduler;
     final HashedWheelTimer requestTimer;
     final boolean ownTimer;
@@ -1280,6 +1280,7 @@ public class BookKeeper implements AutoCloseable, org.apache.bookkeeper.client.a
      * Shuts down client.
      *
      */
+    @Override
     public void close() throws InterruptedException, BKException {
         closeLock.writeLock().lock();
         try {
@@ -1405,6 +1406,20 @@ public class BookKeeper implements AutoCloseable, org.apache.bookkeeper.client.a
         return bookieWatcher;
     }
 
+    OrderedSafeExecutor getMainWorkerPool() {
+        return mainWorkerPool;
+    }
 
+    ScheduledExecutorService getScheduler() {
+        return scheduler;
+    }
+
+    EnsemblePlacementPolicy getPlacementPolicy() {
+        return placementPolicy;
+    }
+
+    boolean isReorderReadSequence() {
+        return reorderReadSequence;
+    }
 
 }

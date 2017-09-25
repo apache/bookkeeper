@@ -117,7 +117,7 @@ interface ExplicitLacFlushPolicy {
                 }
             };
             try {
-                scheduledFuture = lh.bk.mainWorkerPool.scheduleAtFixedRateOrdered(lh.getId(), updateLacTask,
+                scheduledFuture = lh.bk.getMainWorkerPool().scheduleAtFixedRateOrdered(lh.getId(), updateLacTask,
                         explicitLacIntervalInMs, explicitLacIntervalInMs, TimeUnit.MILLISECONDS);
             } catch (RejectedExecutionException re) {
                 LOG.error("Scheduling of ExplictLastAddConfirmedFlush for ledger: {} has failed because of {}",
@@ -136,7 +136,7 @@ interface ExplicitLacFlushPolicy {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Sending Explicit LAC: {}", explicitLac);
                 }
-                lh.bk.mainWorkerPool.submit(new SafeRunnable() {
+                lh.bk.getMainWorkerPool().submit(new SafeRunnable() {
                     @Override
                     public void safeRun() {
                         ByteBuf toSend = lh.macManager.computeDigestAndPackageForSendingLac(lh.getLastAddConfirmed());

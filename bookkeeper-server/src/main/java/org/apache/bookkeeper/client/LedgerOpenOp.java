@@ -77,7 +77,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata>  {
         this.passwd = passwd;
         this.cb = cb;
         this.ctx = ctx;
-        this.enableDigestAutodetection = bk.conf.getEnableDigestTypeAutodetection();
+        this.enableDigestAutodetection = bk.getConf().getEnableDigestTypeAutodetection();
         this.suggestedDigestType = digestType;
     }
 
@@ -174,7 +174,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata>  {
         }
 
         if (doRecovery) {
-            lh.recover(new OrderedSafeGenericCallback<Void>(bk.mainWorkerPool, ledgerId) {
+            lh.recover(new OrderedSafeGenericCallback<Void>(bk.getMainWorkerPool(), ledgerId) {
                 @Override
                 public void safeOperationComplete(int rc, Void result) {
                     if (rc == BKException.Code.OK) {
@@ -260,12 +260,25 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata>  {
              return counter;
         }
 
+        private boolean validate(OpenCallback cb, Object ctx) {
+            if (builderLedgerId < 0) {
+                cb.openComplete(BKException.Code.NoSuchLedgerExistsException, null, ctx);
+                return false;
+            }
+            return true;
+        }
+
         private void open(OpenCallback cb, Object ctx) {
+
+            if (!validate(cb, ctx)) {
+                return;
+            }
+
             LedgerOpenOp op = new LedgerOpenOp(bk, builderLedgerId, DigestType.fromApiDigestType(builderDigestType),
                 builderPassword, cb, ctx);
-            bk.closeLock.readLock().lock();
+            bk.getCloseLock().readLock().lock();
             try {
-                if (bk.closed) {
+                if (bk.isClosed()) {
                     cb.openComplete(BKException.Code.ClientClosedException, null, ctx);
                     return;
                 }
@@ -275,7 +288,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata>  {
                     op.initiateWithoutRecovery();
                 }
             } finally {
-                bk.closeLock.readLock().unlock();
+                bk.getCloseLock().readLock().unlock();
             }
         }
     }

@@ -420,7 +420,7 @@ public class LedgerFragmentReplicator {
                 // such as (addEnsemble) would update it too.
                 lh
                         .rereadMetadata(new OrderedSafeGenericCallback<LedgerMetadata>(
-                                lh.bk.mainWorkerPool, lh.getId()) {
+                                lh.bk.getMainWorkerPool(), lh.getId()) {
                             @Override
                             public void safeOperationComplete(int rc,
                                     LedgerMetadata newMeta) {

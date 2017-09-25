@@ -202,7 +202,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
         if (wasClosed) {
             // make sure the callback is triggered in main worker pool
             try {
-                bk.mainWorkerPool.submit(new SafeRunnable() {
+                bk.getMainWorkerPool().submit(new SafeRunnable() {
                     @Override
                     public void safeRun() {
                         LOG.warn("Attempt to add to closed ledger: {}", ledgerId);
@@ -222,7 +222,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
         }
 
         try {
-            bk.mainWorkerPool.submit(new SafeRunnable() {
+            bk.getMainWorkerPool().submit(new SafeRunnable() {
                 @Override
                 public void safeRun() {
                     ByteBuf toSend = macManager.computeDigestAndPackageForSending(op.getEntryId(), lastAddConfirmed,

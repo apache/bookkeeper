@@ -387,7 +387,7 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
      * @param rc
      */
     void doAsyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc) {
-        bk.mainWorkerPool.submitOrdered(ledgerId, new SafeRunnable() {
+        bk.getMainWorkerPool().submitOrdered(ledgerId, new SafeRunnable() {
             @Override
             public void safeRun() {
                 final long prevLastEntryId;
@@ -447,13 +447,13 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
 
                 final class CloseCb extends OrderedSafeGenericCallback<Void> {
                     CloseCb() {
-                        super(bk.mainWorkerPool, ledgerId);
+                        super(bk.getMainWorkerPool(), ledgerId);
                     }
 
                     @Override
                     public void safeOperationComplete(final int rc, Void result) {
                         if (rc == BKException.Code.MetadataVersionException) {
-                            rereadMetadata(new OrderedSafeGenericCallback<LedgerMetadata>(bk.mainWorkerPool,
+                            rereadMetadata(new OrderedSafeGenericCallback<LedgerMetadata>(bk.getMainWorkerPool(),
                                                                                           ledgerId) {
                                 @Override
                                 public void safeOperationComplete(int newrc, LedgerMetadata newMeta) {
@@ -907,7 +907,7 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
         if (wasClosed) {
             // make sure the callback is triggered in main worker pool
             try {
-                bk.mainWorkerPool.submit(new SafeRunnable() {
+                bk.getMainWorkerPool().submit(new SafeRunnable() {
                     @Override
                     public void safeRun() {
                         LOG.warn("Attempt to add to closed ledger: {}", ledgerId);
@@ -928,7 +928,7 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
         }
 
         try {
-            bk.mainWorkerPool.submitOrdered(ledgerId, new SafeRunnable() {
+            bk.getMainWorkerPool().submitOrdered(ledgerId, new SafeRunnable() {
                 @Override
                 public void safeRun() {
                     ByteBuf toSend = macManager.computeDigestAndPackageForSending(entryId, lastAddConfirmed,
@@ -1500,7 +1500,7 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
         ChangeEnsembleCb(EnsembleInfo ensembleInfo,
                          int curBlockAddCompletions,
                          int ensembleChangeIdx) {
-            super(bk.mainWorkerPool, ledgerId);
+            super(bk.getMainWorkerPool(), ledgerId);
             this.ensembleInfo = ensembleInfo;
             this.curBlockAddCompletions = curBlockAddCompletions;
             this.ensembleChangeIdx = ensembleChangeIdx;
@@ -1560,7 +1560,7 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
                                EnsembleInfo ensembleInfo,
                                int curBlockAddCompletions,
                                int ensembleChangeIdx) {
-            super(bk.mainWorkerPool, ledgerId);
+            super(bk.getMainWorkerPool(), ledgerId);
             this.rc = rc;
             this.ensembleInfo = ensembleInfo;
             this.curBlockAddCompletions = curBlockAddCompletions;
@@ -1802,11 +1802,11 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
             return;
         }
 
-        writeLedgerConfig(new OrderedSafeGenericCallback<Void>(bk.mainWorkerPool, ledgerId) {
+        writeLedgerConfig(new OrderedSafeGenericCallback<Void>(bk.getMainWorkerPool(), ledgerId) {
             @Override
             public void safeOperationComplete(final int rc, Void result) {
                 if (rc == BKException.Code.MetadataVersionException) {
-                    rereadMetadata(new OrderedSafeGenericCallback<LedgerMetadata>(bk.mainWorkerPool,
+                    rereadMetadata(new OrderedSafeGenericCallback<LedgerMetadata>(bk.getMainWorkerPool(),
                                                                                   ledgerId) {
                         @Override
                         public void safeOperationComplete(int rc, LedgerMetadata newMeta) {
