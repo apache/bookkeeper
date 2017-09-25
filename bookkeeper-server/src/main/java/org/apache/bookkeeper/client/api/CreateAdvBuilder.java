@@ -25,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface CreateAdvBuilder extends OpBuilder<WriteAdvHandle> {
 
-    CreateAdvBuilder withLedgerId(int ledgerId);
+    CreateAdvBuilder withLedgerId(long ledgerId);
 
     @Override
     CompletableFuture<WriteAdvHandle> execute();

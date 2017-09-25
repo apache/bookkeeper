@@ -547,7 +547,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
             ReplicationVerificationCallback cb = new ReplicationVerificationCallback(numRequests);
             for (long i = startEntryId; i < endEntryId; i++) {
                 for (BookieSocketAddress addr : e.getValue()) {
-                    bkc.bookieClient.readEntry(addr, lh.getId(), i, cb, addr);
+                    bkc.getBookieClient().readEntry(addr, lh.getId(), i, cb, addr);
                 }
             }
 

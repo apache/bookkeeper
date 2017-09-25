@@ -62,7 +62,7 @@ class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
      *            optional control object
      */
     LedgerDeleteOp(BookKeeper bk, long ledgerId, DeleteCallback cb, Object ctx) {
-        super(bk.mainWorkerPool, ledgerId);
+        super(bk.getMainWorkerPool(), ledgerId);
         this.bk = bk;
         this.ledgerId = ledgerId;
         this.cb = cb;
@@ -122,15 +122,15 @@ class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
 
         private void delete(long ledgerId, AsyncCallback.DeleteCallback cb, Object ctx) {
             LedgerDeleteOp op = new LedgerDeleteOp(bk, ledgerId, cb, ctx);
-            bk.closeLock.readLock().lock();
+            bk.getCloseLock().readLock().lock();
             try {
-                if (bk.closed) {
+                if (bk.isClosed()) {
                     cb.deleteComplete(BKException.Code.ClientClosedException, ctx);
                     return;
                 }
                 op.initiate();
             } finally {
-                bk.closeLock.readLock().unlock();
+                bk.getCloseLock().readLock().unlock();
             }
         }
     }
