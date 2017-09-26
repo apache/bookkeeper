@@ -89,7 +89,7 @@ import org.apache.bookkeeper.client.api.WriteHandle;
  * <p>The exceptions resulting from synchronous calls and error code resulting from
  * asynchronous calls can be found in the class {@link BKException}.
  */
-public class BookKeeper implements AutoCloseable, org.apache.bookkeeper.client.api.BookKeeper {
+public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
     static final Logger LOG = LoggerFactory.getLogger(BookKeeper.class);
 
@@ -386,7 +386,7 @@ public class BookKeeper implements AutoCloseable, org.apache.bookkeeper.client.a
     /**
      * Constructor for use with the builder. Other constructors also use it.
      */
-    private BookKeeper(ClientConfiguration conf,
+    BookKeeper(ClientConfiguration conf,
                        ZooKeeper zkc,
                        EventLoopGroup eventLoopGroup,
                        StatsLogger statsLogger,
