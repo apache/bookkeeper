@@ -168,7 +168,7 @@ public class ConcurrentLedgerTest {
         WriteCallback cb = new WriteCallback() {
             @Override
             public void writeComplete(int rc, long ledgerId, long entryId,
-                    BookieSocketAddress addr, Object ctx) {
+                    long lastAddSyncedEntry, BookieSocketAddress addr, Object ctx) {
                 AtomicInteger counter = (AtomicInteger)ctx;
                 counter.getAndIncrement();
                 throttle.release();
@@ -187,7 +187,7 @@ public class ConcurrentLedgerTest {
                 bytes.position(0);
                 bytes.limit(bytes.capacity());
                 throttle.acquire();
-                bookie.addEntry(Unpooled.wrappedBuffer(bytes), cb, counter, zeros);
+                bookie.addEntry(Unpooled.wrappedBuffer(bytes), cb, counter, zeros, false);
             }
         }
         long finish = System.currentTimeMillis();

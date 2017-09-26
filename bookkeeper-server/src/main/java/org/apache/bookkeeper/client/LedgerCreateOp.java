@@ -56,7 +56,8 @@ class LedgerCreateOp implements GenericCallback<Void> {
     long startTime;
     OpStatsLogger createOpLogger;
     boolean adv = false;
-    boolean generateLedgerId = true;
+    boolean generateLedgerId = true;    
+    LedgerType ledgerType;
 
     /**
      * Constructor
@@ -82,21 +83,37 @@ class LedgerCreateOp implements GenericCallback<Void> {
      *       preserve the order(e.g. sortedMap) upon later retireval.
      */
     LedgerCreateOp(BookKeeper bk, int ensembleSize, int writeQuorumSize, int ackQuorumSize, DigestType digestType,
-            byte[] passwd, CreateCallback cb, Object ctx, final Map<String, byte[]> customMetadata) {
+            byte[] passwd, CreateCallback cb, Object ctx, final Map<String, byte[]> customMetadata, LedgerType ledgerType) {
         this.bk = bk;
-        this.metadata = new LedgerMetadata(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, passwd, customMetadata);
+        this.metadata = new LedgerMetadata(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
+            customMetadata, ledgerType);
         this.digestType = digestType;
         this.passwd = passwd;
         this.cb = cb;
         this.ctx = ctx;
         this.startTime = MathUtils.nowInNano();
         this.createOpLogger = bk.getCreateOpLogger();
+        this.ledgerType = ledgerType;
+    }
+
+    private boolean validate() {
+        if (ledgerType.equals(LedgerType.VD_JOURNAL)) {
+            if (metadata.getEnsembleSize() > metadata.getWriteQuorumSize()) {
+                LOG.error("Cannot created a ledger with ensembleSize > writeQuorumSize and volatileDurability = true");
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
      * Initiates the operation
      */
     public void initiate() {
+        if (!validate()) {
+            cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
+            return;
+        }
         // allocate ensemble first
 
         /*
@@ -173,9 +190,9 @@ class LedgerCreateOp implements GenericCallback<Void> {
 
         try {
             if (adv) {
-                lh = new LedgerHandleAdv(bk, ledgerId, metadata, digestType, passwd);
+                lh = new LedgerHandleAdv(bk, ledgerId, metadata, digestType, passwd, ledgerType);
             } else {
-                lh = new LedgerHandle(bk, ledgerId, metadata, digestType, passwd);
+                lh = new LedgerHandle(bk, ledgerId, metadata, digestType, passwd, ledgerType);
             }
         } catch (GeneralSecurityException e) {
             LOG.error("Security exception while creating ledger: " + ledgerId, e);

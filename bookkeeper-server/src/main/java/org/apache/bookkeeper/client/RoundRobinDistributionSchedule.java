@@ -23,8 +23,12 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.function.Function;
 
 /**
  * A specific {@link DistributionSchedule} that places entries in round-robin
@@ -56,34 +60,11 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
 
     @Override
     public AckSet getAckSet() {
-        final HashSet<Integer> ackSet = new HashSet<Integer>();
+        final HashSet<Integer> ackSet = new HashSet<>();
         final HashMap<Integer, BookieSocketAddress> failureMap =
-                new HashMap<Integer, BookieSocketAddress>();
-        return new AckSet() {
-            public boolean completeBookieAndCheck(int bookieIndexHeardFrom) {
-                failureMap.remove(bookieIndexHeardFrom);
-                ackSet.add(bookieIndexHeardFrom);
-                return ackSet.size() >= ackQuorumSize;
-            }
-
-            @Override
-            public boolean failBookieAndCheck(int bookieIndexHeardFrom, BookieSocketAddress address) {
-                ackSet.remove(bookieIndexHeardFrom);
-                failureMap.put(bookieIndexHeardFrom, address);
-                return failureMap.size() > (writeQuorumSize - ackQuorumSize);
-            }
-
-            @Override
-            public Map<Integer, BookieSocketAddress> getFailedBookies() {
-                return ImmutableMap.copyOf(failureMap);
-            }
-
-            public boolean removeBookieAndCheck(int bookie) {
-                ackSet.remove(bookie);
-                failureMap.remove(bookie);
-                return ackSet.size() >= ackQuorumSize;
-            }
-        };
+                new HashMap<>();
+        final HashMap<Integer, Long> lastAddSyncedMap = new HashMap<>();
+        return new AckSetImpl(failureMap, ackSet, lastAddSyncedMap);
     }
 
     private class RRQuorumCoverageSet implements QuorumCoverageSet {
@@ -137,5 +118,65 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
     @Override
     public boolean hasEntry(long entryId, int bookieIndex) {
         return getWriteSet(entryId).contains(bookieIndex);
+    }
+
+    private class AckSetImpl implements AckSet {
+
+        private final HashMap<Integer, BookieSocketAddress> failureMap;
+        private final HashSet<Integer> ackSet;
+        private final HashMap<Integer, Long> lastAddSyncedMap;
+
+        public AckSetImpl(HashMap<Integer, BookieSocketAddress> failureMap, HashSet<Integer> ackSet,
+            HashMap<Integer, Long> lastAddSyncedMap) {
+            this.failureMap = failureMap;
+            this.ackSet = ackSet;
+            this.lastAddSyncedMap = lastAddSyncedMap;
+        }
+
+        @Override
+        public boolean completeBookieAndCheck(int bookieIndexHeardFrom, long lastAddSynced) {
+            failureMap.remove(bookieIndexHeardFrom);
+            lastAddSyncedMap.put(bookieIndexHeardFrom, lastAddSynced);
+            ackSet.add(bookieIndexHeardFrom);
+            return ackSet.size() >= ackQuorumSize;
+        }
+
+        @Override
+        public long calculateCurrentLastAddSynced() {
+            /*
+                Sort the ensemble by its `LastAddSynced` in ascending order
+                LastAddConfirmed = max(ensemble[0..(write_quorum_size - ack_quorum_size)])
+            */            
+            List<Long> sorted = new ArrayList<>(lastAddSyncedMap.values());
+            sorted.sort(Comparator.naturalOrder());
+            int maxIndex = writeQuorumSize - ackQuorumSize;
+            long max = -1;
+            for (int i  = 0; i <= maxIndex; i++) {
+                long value =sorted.get(i);
+                if (max < value) {
+                    max = value;
+                }
+            }
+            return max;
+        }
+
+        @Override
+        public boolean failBookieAndCheck(int bookieIndexHeardFrom, BookieSocketAddress address) {
+            ackSet.remove(bookieIndexHeardFrom);
+            failureMap.put(bookieIndexHeardFrom, address);
+            return failureMap.size() > (writeQuorumSize - ackQuorumSize);
+        }
+
+        @Override
+        public Map<Integer, BookieSocketAddress> getFailedBookies() {
+            return ImmutableMap.copyOf(failureMap);
+        }
+
+        @Override
+        public boolean removeBookieAndCheck(int bookie) {
+            ackSet.remove(bookie);
+            failureMap.remove(bookie);
+            return ackSet.size() >= ackQuorumSize;
+        }
     }
 }

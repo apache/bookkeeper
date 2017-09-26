@@ -21,8 +21,11 @@
 package org.apache.bookkeeper.client;
 
 import io.netty.util.IllegalReferenceCountException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -691,6 +694,52 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
     }
 
     @Test
+    public void testAddEntryVolatileDurability() throws Exception {
+        int numEntries = 10000;
+        byte[] data = "foobar".getBytes();        
+        ClientConfiguration confWriter = new ClientConfiguration()
+            .setZkServers(zkUtil.getZooKeeperConnectString());                        
+        long ledgerId;        
+        try (BookKeeper bkc = new BookKeeper(confWriter)) {
+            try (LedgerHandle lh = bkc.createLedgerAdv(1,1,1, digestType, "testPasswd".getBytes(), null,
+                LedgerType.VD_JOURNAL)) {
+                ledgerId = lh.getId();                    
+                for (int i = 0; i < numEntries - 1; i++) {                        
+                    lh.asyncAddEntry(i, data, new AddCallback() {
+                        @Override
+                        public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {                                
+                        }
+                    },null);                        
+                }                                        
+                lh.addEntry(numEntries-1, data);
+
+                // LastAddConfirmed is not advanced
+                try {
+                    lh.readEntries(0, numEntries -1);
+                    fail("should not be able to read");
+                } catch (BKException.BKReadException ok){
+                }
+                
+                lh.sync(numEntries-1);
+
+                Enumeration<LedgerEntry> entries = lh.readEntries(0, numEntries -1);
+                while (entries.hasMoreElements()) {
+                    LedgerEntry e = entries.nextElement();
+                    assertArrayEquals(data, e.getEntry());
+                }
+
+            }
+            try (LedgerHandle lh = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                Enumeration<LedgerEntry> entries = lh.readEntries(0, numEntries -1);
+                while (entries.hasMoreElements()) {
+                    LedgerEntry e = entries.nextElement();
+                    assertArrayEquals(data, e.getEntry());
+                }
+            }
+        }        
+    }
+
+    @Test(timeout = 60000)
     public void testReadEntryReleaseByteBufs() throws Exception {
         ClientConfiguration confWriter = new ClientConfiguration()
             .setZkServers(zkUtil.getZooKeeperConnectString());

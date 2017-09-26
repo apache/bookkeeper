@@ -105,7 +105,7 @@ class AuthHandler {
                     ctx.channel().writeAndFlush(
                             new BookieProtocol.AddResponse(
                                     req.getProtocolVersion(), BookieProtocol.EUA,
-                                    req.getLedgerId(), req.getEntryId()));
+                                    req.getLedgerId(), req.getEntryId(), BookieProtocol.INVALID_ENTRY_ID));
                 } else if (req.getOpCode() == BookieProtocol.READENTRY) {
                     ctx.channel().writeAndFlush(
                             new BookieProtocol.ReadResponse(

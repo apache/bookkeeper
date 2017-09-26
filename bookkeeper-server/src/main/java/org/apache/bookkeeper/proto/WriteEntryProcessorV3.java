@@ -70,8 +70,9 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
 
         BookkeeperInternalCallbacks.WriteCallback wcb = new BookkeeperInternalCallbacks.WriteCallback() {
             @Override
-            public void writeComplete(int rc, long ledgerId, long entryId,
+            public void writeComplete(int rc, long ledgerId, long entryId, long lastAddSyncedEntry,
                                       BookieSocketAddress addr, Object ctx) {
+                logger.info("writeComplete ledg "+ledgerId+", entryId "+entryId+" lastAddSyncedEntry:"+lastAddSyncedEntry);
                 if (BookieProtocol.EOK == rc) {
                     requestProcessor.addEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
                             TimeUnit.NANOSECONDS);
@@ -93,6 +94,9 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
                         break;
                 }
                 addResponse.setStatus(status);
+                if (lastAddSyncedEntry >= 0) {
+                    addResponse.setLastAddSynced(lastAddSyncedEntry);
+                }
                 Response.Builder response = Response.newBuilder()
                         .setHeader(getHeader())
                         .setStatus(addResponse.getStatus())
@@ -108,7 +112,9 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
             if (addRequest.hasFlag() && addRequest.getFlag().equals(AddRequest.Flag.RECOVERY_ADD)) {
                 requestProcessor.bookie.recoveryAddEntry(entryToAdd, wcb, channel, masterKey);
             } else {
-                requestProcessor.bookie.addEntry(entryToAdd, wcb, channel, masterKey);
+                boolean volatileDurability = addRequest.hasLedgerType()
+                    && addRequest.getLedgerType().equals(AddRequest.LedgerType.VD_JOURNAL);
+                requestProcessor.bookie.addEntry(entryToAdd, wcb, channel, masterKey, volatileDurability);
             }
             status = StatusCode.EOK;
         } catch (IOException e) {

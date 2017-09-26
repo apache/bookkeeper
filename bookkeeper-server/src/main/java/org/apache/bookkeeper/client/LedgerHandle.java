@@ -22,6 +22,7 @@ package org.apache.bookkeeper.client;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -76,7 +77,22 @@ public class LedgerHandle implements AutoCloseable {
     final BookKeeper bk;
     final long ledgerId;
     long lastAddPushed;
+    /**
+     * Last entryId which has been confirmed to be written durably to the bookies.
+     * This value is used by readers, the the LAC protocol
+     */
     volatile long lastAddConfirmed;
+    /**
+     * Last entryId which has been confirmed to be written durably to the bookies,
+     * this is an internal variable used to track the status of entries and to handle correcly the lastAddConfirmed
+     * value
+     */
+    volatile long lastAddSynced;
+    /**
+     * Next entryId which is expected to move forward during {@link #sendAddSuccessCallbacks() }. This is important
+     * in order to have an ordered sequence of addEntry ackknowledged to the writer
+     */
+    volatile long pendingAddsSequenceHead;
 
     long length;
     final DigestManager macManager;
@@ -84,7 +100,9 @@ public class LedgerHandle implements AutoCloseable {
     final RateLimiter throttler;
     final LoadingCache<BookieSocketAddress, Long> bookieFailureHistory;
     final boolean enableParallelRecoveryRead;
-    final int recoveryReadBatchSize;
+    final LedgerType ledgerType;
+    final boolean volatileDurability;
+    final int recoveryReadBatchSize;    
 
     /**
      * Invalid entry id. This value is returned from methods which
@@ -99,7 +117,7 @@ public class LedgerHandle implements AutoCloseable {
 
     final Counter ensembleChangeCounter;
     final Counter lacUpdateHitsCounter;
-    final Counter lacUpdateMissesCounter;
+    final Counter lacUpdateMissesCounter;    
 
     // This empty master key is used when an empty password is provided which is the hash of an empty string
     private final static byte[] emptyLedgerKey;
@@ -111,15 +129,19 @@ public class LedgerHandle implements AutoCloseable {
         }
     }
 
+
+
     LedgerHandle(BookKeeper bk, long ledgerId, LedgerMetadata metadata,
-                 DigestType digestType, byte[] password)
+                 DigestType digestType, byte[] password, LedgerType ledgerType)
             throws GeneralSecurityException, NumberFormatException {
         this.bk = bk;
         this.metadata = metadata;
+        this.ledgerType = ledgerType;
+        this.volatileDurability = this.ledgerType.equals(LedgerType.VD_JOURNAL);
         this.pendingAddOps = new ConcurrentLinkedQueue<PendingAddOp>();
         this.enableParallelRecoveryRead = bk.getConf().getEnableParallelRecoveryRead();
-        this.recoveryReadBatchSize = bk.getConf().getRecoveryReadBatchSize();
-
+        this.recoveryReadBatchSize = bk.getConf().getRecoveryReadBatchSize();        
+        this.lastAddSynced = INVALID_ENTRY_ID;
         if (metadata.isClosed()) {
             lastAddConfirmed = lastAddPushed = metadata.getLastEntryId();
             length = metadata.getLength();
@@ -127,7 +149,7 @@ public class LedgerHandle implements AutoCloseable {
             lastAddConfirmed = lastAddPushed = INVALID_ENTRY_ID;
             length = 0;
         }
-
+        this.pendingAddsSequenceHead = lastAddConfirmed + 1;
         this.ledgerId = ledgerId;
 
         if (bk.getConf().getThrottleValue() > 0) {
@@ -199,10 +221,6 @@ public class LedgerHandle implements AutoCloseable {
         return lastAddConfirmed;
     }
 
-    synchronized void setLastAddConfirmed(long lac) {
-        this.lastAddConfirmed = lac;
-    }
-
     /**
      * Get the entry id of the last entry that has been enqueued for addition (but
      * may not have possibly been persited to the ledger)
@@ -211,6 +229,14 @@ public class LedgerHandle implements AutoCloseable {
      */
     synchronized public long getLastAddPushed() {
         return lastAddPushed;
+    }
+
+    /**
+     * Last entry which is known to have been written durably
+     * @return the id of the last entry pushed and confirmed to have been stored durable
+     */
+    synchronized long getLastAddSynced() {
+        return lastAddSynced;
     }
 
     /**
@@ -350,7 +376,7 @@ public class LedgerHandle implements AutoCloseable {
 
     void asyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc) {
         try {
-            doAsyncCloseInternal(cb, ctx, rc);
+            doAsyncCloseInternal(cb, ctx, rc, true);
         } catch (RejectedExecutionException re) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Failed to close ledger {} : ", ledgerId, re);
@@ -369,7 +395,26 @@ public class LedgerHandle implements AutoCloseable {
      * @param ctx
      * @param rc
      */
-    void doAsyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc) {
+    void doAsyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc, final boolean firstCall) {
+
+        if (volatileDurability
+            && firstCall
+            && this.lastAddPushed >= 0
+            && this.lastAddPushed != this.lastAddConfirmed) {
+            LOG.info("need to sync up to lastAddPushed {} before closing ledger, lastAddConfirmed is {}", lastAddPushed, lastAddConfirmed);
+            asyncSync(this.lastAddPushed, new AsyncCallback.SyncCallback() {
+                @Override
+                public void syncComplete(int rc, LedgerHandle lh, long lastSyncedEntryId, Object ctx) {
+                    if (rc != BKException.Code.OK) {
+                        cb.closeComplete(rc, lh, ctx);
+                    } else {
+                        doAsyncCloseInternal(cb, ctx, rc, false);
+                    }
+                }
+            }, ctx);
+            return;
+        }
+
         bk.mainWorkerPool.submitOrdered(ledgerId, new SafeRunnable() {
             @Override
             public void safeRun() {
@@ -641,7 +686,6 @@ public class LedgerHandle implements AutoCloseable {
      * @return the entryId of the new inserted entry
      */
     public long addEntry(final long entryId, byte[] data) throws InterruptedException, BKException {
-        LOG.error("To use this feature Ledger must be created with createLedgerAdv interface.");
         throw BKException.create(BKException.Code.IllegalOpException);
     }
 
@@ -656,7 +700,7 @@ public class LedgerHandle implements AutoCloseable {
      *          number of bytes to take from data
      * @return the entryId of the new inserted entry
      */
-    public long addEntry(byte[] data, int offset, int length)
+    public long addEntry(byte[] data, int offset, int length)    
             throws InterruptedException, BKException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Adding entry {}", data);
@@ -742,21 +786,21 @@ public class LedgerHandle implements AutoCloseable {
      *          offset and length sum to a value higher than the length of data.
      */
     public void asyncAddEntry(final byte[] data, final int offset, final int length,
-                              final AddCallback cb, final Object ctx) {
+                              final AddCallback cb, final Object ctx) {        
         if (offset < 0 || length < 0
                 || (offset + length) > data.length) {
             throw new ArrayIndexOutOfBoundsException(
                     "Invalid values for offset("+offset
                     +") or length("+length+")");
-        }
+        }        
 
-        PendingAddOp op = new PendingAddOp(LedgerHandle.this, cb, ctx);
+        PendingAddOp op = new PendingAddOp(LedgerHandle.this, cb, ctx);        
         doAsyncAddEntry(op, Unpooled.wrappedBuffer(data, offset, length), cb, ctx);
     }
 
-    public void asyncAddEntry(ByteBuf data, final AddCallback cb, final Object ctx) {
+    public void asyncAddEntry(ByteBuf data, final AddCallback cb, final Object ctx) {        
         data.retain();
-        PendingAddOp op = new PendingAddOp(LedgerHandle.this, cb, ctx);
+        PendingAddOp op = new PendingAddOp(LedgerHandle.this, cb, ctx);        
         doAsyncAddEntry(op, data, cb, ctx);
     }
 
@@ -802,9 +846,13 @@ public class LedgerHandle implements AutoCloseable {
         doAsyncAddEntry(op, Unpooled.wrappedBuffer(data, offset, length), cb, ctx);
     }
 
-    protected void doAsyncAddEntry(final PendingAddOp op, final ByteBuf data, final AddCallback cb, final Object ctx) {
+    protected void doAsyncAddEntry(final PendingAddOp op, final ByteBuf data, final AddCallback cb,
+        final Object ctx) {
         if (throttler != null) {
             throttler.acquire();
+        }
+        if (this.volatileDurability) {
+            op.enableVolatileDurability();
         }
 
         final long entryId;
@@ -880,6 +928,7 @@ public class LedgerHandle implements AutoCloseable {
             lacUpdateMissesCounter.inc();
         }
         lastAddPushed = Math.max(lastAddPushed, lac);
+        lastAddSynced = Math.max(lastAddSynced, lac);
         length = Math.max(length, len);
     }
 
@@ -1041,6 +1090,17 @@ public class LedgerHandle implements AutoCloseable {
             }
         };
         new ReadLastConfirmedAndEntryOp(this, innercb, entryId - 1, timeOutInMillis, bk.scheduler).parallelRead(parallel).initiate();
+    }
+
+    synchronized void syncCompleted(long minLastSyncedEntryId) {
+        LOG.info("syncCompleted minLastSyncedEntryId {} lastAddSynced {} lastAddConfirmed{}", minLastSyncedEntryId,
+            lastAddSynced, lastAddConfirmed);
+        if (lastAddSynced < minLastSyncedEntryId) {
+            lastAddSynced = minLastSyncedEntryId;
+            if (lastAddConfirmed < lastAddSynced) {
+                lastAddConfirmed = lastAddSynced;
+            }
+        }
     }
 
     /**
@@ -1255,19 +1315,32 @@ public class LedgerHandle implements AutoCloseable {
                     LOG.debug("pending add not completed: {}", pendingAddOp);
                 }
                 return;
-            }
+            }          
             // Check if it is the next entry in the sequence.
-            if (pendingAddOp.entryId != 0 && pendingAddOp.entryId != lastAddConfirmed + 1) {
+            if (pendingAddOp.entryId != 0 && pendingAddOp.entryId != pendingAddsSequenceHead) {                
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Head of the queue entryId: {} is not lac: {} + 1", pendingAddOp.entryId,
-                            lastAddConfirmed);
+                    LOG.debug("Head of the queue entryId: {} is not the expected value: {}", pendingAddOp.entryId,
+                            pendingAddsSequenceHead);
                 }
                 return;
             }
 
-            pendingAddOps.remove();
+            PendingAddOp removed = pendingAddOps.remove();
+            Preconditions.checkState(removed == pendingAddOp, "removed unexpected entry %s, expected %s",
+                removed.entryId, pendingAddOp.entryId);
+
+            if (volatileDurability) {
+                this.lastAddSynced = pendingAddOp.ackSet.calculateCurrentLastAddSynced();
+            } else {
+                this.lastAddSynced = Math.max(lastAddSynced, pendingAddOp.entryId);
+            }
+                        
             explicitLacFlushPolicy.updatePiggyBackedLac(lastAddConfirmed);
-            lastAddConfirmed = pendingAddOp.entryId;
+            lastAddConfirmed = this.lastAddSynced;
+            
+            LOG.info("new lastAddConfirmed {}", lastAddConfirmed);
+            
+            pendingAddsSequenceHead = pendingAddOp.entryId + 1;
 
             pendingAddOp.submitCallback(BKException.Code.OK);
         }
@@ -1331,7 +1404,7 @@ public class LedgerHandle implements AutoCloseable {
     void handleBookieFailure(final Map<Integer, BookieSocketAddress> failedBookies) {
         int curBlockAddCompletions = blockAddCompletions.incrementAndGet();
 
-        if (bk.disableEnsembleChangeFeature.isAvailable()) {
+        if (bk.disableEnsembleChangeFeature.isAvailable() || volatileDurability) {
             blockAddCompletions.decrementAndGet();
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Ensemble change is disabled. Retry sending to failed bookies {} for ledger {}.",
@@ -1745,6 +1818,50 @@ public class LedgerHandle implements AutoCloseable {
         });
     }
 
+    public void asyncSync(final long entryId,
+                              final AsyncCallback.SyncCallback cb, final Object ctx) {
+        if (entryId > lastAddPushed) {
+            cb.syncComplete(BKException.Code.IncorrectParameterException, this, BookieProtocol.INVALID_ENTRY_ID, ctx);
+            return;
+        } else if (entryId <= lastAddSynced || entryId <= lastAddConfirmed) {
+            // no need to ask to bookies
+            cb.syncComplete(BKException.Code.OK, this, lastAddSynced, ctx);
+            return;
+        }
+        // TODO: compute the start entry of the ensemble which contains entry
+        final long firstEntryIdInEnsembleForEntry = 0;
+        doAsyncSync(firstEntryIdInEnsembleForEntry, entryId, cb, ctx);
+    }
+
+    public long sync(final long entryId) throws InterruptedException, BKException {
+        CompletableFuture<Long> counter = new CompletableFuture<>();
+        SyncSyncCallback callback = new SyncSyncCallback();
+        asyncSync(entryId, callback, counter);
+        return SynchCallbackUtils.waitForResult(counter);
+    }
+
+    /**
+     * Make a Sync request.
+     * @since 4.6
+     */
+    private void doAsyncSync(final long firstEntryId, final long lastEntryId, AsyncCallback.SyncCallback cb, Object ctx) {
+        
+        final PendingSyncOp op = new PendingSyncOp(this, firstEntryId, lastEntryId, cb, ctx);
+        try {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Sending Sync: {}", lastEntryId);
+            }
+            bk.mainWorkerPool.submit(new SafeRunnable() {
+                @Override
+                public void safeRun() {                    
+                    op.initiate();
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            cb.syncComplete(bk.getReturnRc(BKException.Code.InterruptedException), this, BookieProtocol.INVALID_ENTRY_ID, ctx);
+        }
+    }
+
     static class NoopCloseCallback implements CloseCallback {
         static NoopCloseCallback instance = new NoopCloseCallback();
 
@@ -1820,6 +1937,15 @@ public class LedgerHandle implements AutoCloseable {
         @SuppressWarnings("unchecked")
         public void addComplete(int rc, LedgerHandle lh, long entry, Object ctx) {
             SynchCallbackUtils.finish(rc, entry, (CompletableFuture<Long>)ctx);
+        }
+    }
+
+    static class SyncSyncCallback implements AsyncCallback.SyncCallback {
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public void syncComplete(int rc, LedgerHandle lh, long lastAddSyncedEntryId, Object ctx) {
+            SynchCallbackUtils.finish(rc, lastAddSyncedEntryId, (CompletableFuture<Long>)ctx);
         }
     }
 
