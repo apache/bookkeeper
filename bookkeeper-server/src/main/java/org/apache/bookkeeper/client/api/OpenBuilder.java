@@ -17,6 +17,7 @@
 package org.apache.bookkeeper.client.api;
 
 import java.util.concurrent.CompletableFuture;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 
 /**
  * Builder-style interface to open exiting ledgers.
@@ -25,14 +26,52 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface OpenBuilder extends OpBuilder<ReadHandle> {
 
+    /**
+     * Set the id of the ledger to be opened.
+     *
+     * @param ledgerId
+     *
+     * @return the builder itself
+     */
     OpenBuilder withLedgerId(long ledgerId);
 
+    /**
+     * Define to open the ledger in recovery mode or in readonly mode. In recovery mode the ledger will be fenced and
+     * the writer of the ledger will be prevented from issuing other writes to the ledger. It defaults to 'true'
+     *
+     * @param recovery recovery mode
+     *
+     * @return the builder itself
+     */
     OpenBuilder withRecovery(boolean recovery);
 
+    /**
+     * Sets the password to be used to open the ledger. It defauls to an empty password
+     *
+     * @param password the password to unlock the ledger
+     *
+     * @return the builder itself
+     */
     OpenBuilder withPassword(byte[] password);
 
+    /**
+     * Sets the expected digest type used to check the contents of the ledger. It defaults to {@link DigestType#CRC32}.
+     * If {@link ClientConfiguration#setEnableDigestTypeAutodetection(boolean) } is set to true this value is ignored
+     * and the digest type is read directly from metadata
+     *
+     * @param digestType the type of digest
+     *
+     * @return the builder itself
+     */
     OpenBuilder withDigestType(DigestType digestType);
 
+    /**
+     * Starts the operation, check the result of the returned CompletableFuture.
+     *
+     * @return an handle to the result of the operation
+     *
+     * @see FutureUtils#result(java.util.concurrent.CompletableFuture) to have a simple method to access the result
+     */
     @Override
     CompletableFuture<ReadHandle> execute();
 

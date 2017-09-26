@@ -25,8 +25,22 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface DeleteBuilder extends OpBuilder {
 
+    /**
+     * Set the id of the ledger to be deleted.
+     *
+     * @param ledgerId
+     *
+     * @return the builder itself
+     */
     DeleteBuilder withLedgerId(long ledgerId);
 
+    /**
+     * Starts the deletion of the ledger, check the result of the returned CompletableFuture.
+     *
+     * @return an handle to the result of the operation
+     *
+     * @see FutureUtils#result(java.util.concurrent.CompletableFuture) to have a simple method to access the result
+     */
     @Override
     CompletableFuture<?> execute();
 

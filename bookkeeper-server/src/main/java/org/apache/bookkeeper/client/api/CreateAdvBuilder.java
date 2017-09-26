@@ -22,11 +22,26 @@ import java.util.concurrent.CompletableFuture;
  * Builder-style interface to create new ledgers.
  *
  * @since 4.6
+ * @see BookKeeper#newCreateLedgerOp()
  */
 public interface CreateAdvBuilder extends OpBuilder<WriteAdvHandle> {
 
+    /**
+     * Set a fixed ledgerId for the newly created ledger. If no explicit ledgerId is passed a new ledger id will be
+     * assigned automatically
+     *
+     * @param ledgerId
+     * @return
+     */
     CreateAdvBuilder withLedgerId(long ledgerId);
 
+    /**
+     * Starts the creation of the ledger, check the result of the returned CompletableFuture.
+     *
+     * @return an handle to the result of the operation
+     *
+     * @see FutureUtils#result(java.util.concurrent.CompletableFuture) to have a simple method to access the result
+     */
     @Override
     CompletableFuture<WriteAdvHandle> execute();
 

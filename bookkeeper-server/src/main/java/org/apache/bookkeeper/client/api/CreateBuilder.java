@@ -18,28 +18,88 @@ package org.apache.bookkeeper.client.api;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 
 /**
  * Builder-style interface to create new ledgers.
  *
  * @since 4.6
+ * @see BookKeeper#newCreateLedgerOp()
  */
 public interface CreateBuilder extends OpBuilder<WriteHandle> {
 
-    CreateBuilder withEnsembleSize(int ackQuorumSize);
+    /**
+     * Set the number of bookies which will receive data for this ledger. It defaults to 3.
+     *
+     * @param ensembleSize the number of bookies
+     *
+     * @return the builder itself
+     */
+    CreateBuilder withEnsembleSize(int ensembleSize);
 
-    CreateBuilder withWriteQuorumSize(int ackQuorumSize);
+    /**
+     * Set the number of bookies which receive every single entry. In case of ensembleSize > writeQuorumSize data will
+     * be striped across a number of ensembleSize bookies. It defaults to 2.
+     *
+     * @param writeQuorumSize the replication factor for each entry
+     *
+     * @return the builder itself
+     */
+    CreateBuilder withWriteQuorumSize(int writeQuorumSize);
 
+    /**
+     * Set the number of acknowledgements to wait before considering a write to be completed with success. This value
+     * can be less or equals to writeQuorumSize. It defaults to 2.
+     *
+     * @param ackQuorumSize the number of acknowledgements to wait for
+     *
+     * @return the builder itself
+     */
     CreateBuilder withAckQuorumSize(int ackQuorumSize);
 
+    /**
+     * Set a password for the ledger. It defaults to empty password
+     *
+     * @param password the password
+     *
+     * @return the builder itself
+     */
     CreateBuilder withPassword(byte[] password);
 
+    /**
+     * Set a map a custom data to be attached to the ledger. The application is responsible for the semantics of these
+     * data.
+     *
+     * @param customMetadata the ledger metadata
+     *
+     * @return the builder itself
+     */
     CreateBuilder withCustomMetadata(Map<String, byte[]> customMetadata);
 
+    /**
+     * Set the Digest type used to guard data against corruption. It defaults to {@link DigestType#CRC32}
+     *
+     * @param digestType the type of digest
+     *
+     * @return the builder itself
+     */
     CreateBuilder withDigestType(DigestType digestType);
 
+    /**
+     * Switch the ledger into 'Advanced' mode. A ledger used in Advanced mode will explicitly generate the sequence of
+     * entry identifiers. Advanced ledgers can be created with a client side defined ledgerId
+     *
+     * @return a new {@link CreateAdvBuilder} builder
+     */
     CreateAdvBuilder makeAdv();
 
+    /**
+     * Starts the creation of the ledger, check the result of the returned CompletableFuture.
+     *
+     * @return an handle to the result of the operation
+     *
+     * @see FutureUtils#result(java.util.concurrent.CompletableFuture) to have a simple method to access the result
+     */
     @Override
     CompletableFuture<WriteHandle> execute();
 

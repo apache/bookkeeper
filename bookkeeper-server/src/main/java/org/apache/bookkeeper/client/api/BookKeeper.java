@@ -34,7 +34,7 @@ public interface BookKeeper extends AutoCloseable {
      * @param clientConfiguration the configuration for the client
      * @return a builder
      */
-    public static BookKeeperBuilder newBuilder(final ClientConfiguration clientConfiguration) {
+    static BookKeeperBuilder newBuilder(final ClientConfiguration clientConfiguration) {
         return new BookKeeperBuilderImpl(clientConfiguration);
     }
 
@@ -43,21 +43,21 @@ public interface BookKeeper extends AutoCloseable {
      *
      * @return a builder for the new ledger
      */
-    CreateBuilder createLedgerOp();
+    CreateBuilder newCreateLedgerOp();
 
     /**
      * Open an existing ledger.
      *
      * @return a builder useful to create a readable handler for an existing ledger
      */
-    OpenBuilder openLedgerOp();
+    OpenBuilder newOpenLedgerOp();
 
     /**
      * Delete an existing ledger.
      *
      * @return a builder useful to delete an existing ledger
      */
-    DeleteBuilder deleteLedgerOp();
+    DeleteBuilder newDeleteLedgerOp();
 
     /**
      * Close the client and release every resource.

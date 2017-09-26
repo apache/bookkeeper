@@ -273,31 +273,37 @@ class LedgerCreateOp implements GenericCallback<Void>  {
 
         private boolean validate(CreateCallback cb, Object ctx) {
             if (builderWriteQuorumSize > builderEnsembleSize) {
+                LOG.error("invalid writeQuorumSize {} > ensembleSize {}", builderWriteQuorumSize, builderEnsembleSize);
                 cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
                 return false;
             }
 
             if (builderAckQuorumSize > builderWriteQuorumSize) {
+                LOG.error("invalid ackQuorumSize {} > writeQuorumSize {}", builderAckQuorumSize, builderWriteQuorumSize);
                 cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
                 return false;
             }
 
             if (builderAckQuorumSize <= 0) {
+                LOG.error("invalid ackQuorumSize {} <= 0", builderAckQuorumSize);
                 cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
                 return false;
             }
 
             if (builderPassword == null) {
+                LOG.error("invalid null password");
                 cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
                 return false;
             }
 
             if (builderDigestType == null) {
+                LOG.error("invalid null digestType");
                 cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
                 return false;
             }
 
             if (builderCustomMetadata == null) {
+                LOG.error("invalid null customMetadata");
                 cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
                 return false;
             }
@@ -368,37 +374,44 @@ class LedgerCreateOp implements GenericCallback<Void>  {
         }
 
         private boolean validateAdv(CreateCallback cb, Object ctx) {
-             if (builderLedgerId != null && builderLedgerId < 0) {
+            if (builderLedgerId != null && builderLedgerId < 0) {
+                LOG.error("invalid ledgerId {} < 0. Do not set en explicit value if you want automatic generation", builderLedgerId);
                 cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
                 return false;
             }
 
             if (builderWriteQuorumSize > builderEnsembleSize) {
+                LOG.error("invalid writeQuorumSize {} > ensembleSize {}", builderWriteQuorumSize, builderEnsembleSize);
                 cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
                 return false;
             }
 
             if (builderAckQuorumSize > builderWriteQuorumSize) {
+                LOG.error("invalid ackQuorumSize {} > writeQuorumSize {}", builderAckQuorumSize, builderWriteQuorumSize);
                 cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
                 return false;
             }
 
             if (builderAckQuorumSize <= 0) {
+                LOG.error("invalid ackQuorumSize {} <= 0", builderAckQuorumSize);
                 cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
                 return false;
             }
 
             if (builderPassword == null) {
+                LOG.error("invalid null password");
                 cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
                 return false;
             }
 
             if (builderDigestType == null) {
+                LOG.error("invalid null digestType");
                 cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
                 return false;
             }
 
             if (builderCustomMetadata == null) {
+                LOG.error("invalid null customMetadata");
                 cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
                 return false;
             }
