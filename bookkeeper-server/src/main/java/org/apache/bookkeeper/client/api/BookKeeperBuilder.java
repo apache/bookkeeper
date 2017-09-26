@@ -15,7 +15,6 @@
  */
 package org.apache.bookkeeper.client.api;
 
-import java.io.IOException;
 import org.apache.bookkeeper.client.BKException;
 
 /**
@@ -31,8 +30,15 @@ public interface BookKeeperBuilder {
      * @return client builder.
      *
      */
-    public BookKeeperBuilder with(Object component);
+    BookKeeperBuilder with(Object component);
 
-    public BookKeeper build() throws BKException, InterruptedException;
+    /**
+     * Boot a new BookKeeper client.
+     *
+     * @return
+     * @throws BKException
+     * @throws InterruptedException
+     */
+    BookKeeper build() throws BKException, InterruptedException;
 
 }

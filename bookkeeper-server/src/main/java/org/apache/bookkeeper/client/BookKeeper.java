@@ -43,7 +43,7 @@ import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.IsClosedCallback;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
-import org.apache.bookkeeper.client.api.CreateAdvBuilder;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCreateCallback;
 import org.apache.bookkeeper.client.api.CreateBuilder;
 import org.apache.bookkeeper.client.api.DeleteBuilder;
 import org.apache.bookkeeper.client.api.OpenBuilder;
@@ -73,9 +73,6 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.bookkeeper.client.api.ReadHandle;
-import org.apache.bookkeeper.client.api.WriteAdvHandle;
-import org.apache.bookkeeper.client.api.WriteHandle;
 
 
 /**
@@ -805,7 +802,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
          * Calls asynchronous version
          */
         asyncCreateLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
-                          new SyncCallbackUtils.SyncCreateCallback(), counter, customMetadata);
+                          new SyncCreateCallback(), counter, customMetadata);
 
         LedgerHandle lh = SyncCallbackUtils.waitForResult(counter);
         if (lh == null) {
@@ -864,7 +861,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
          * Calls asynchronous version
          */
         asyncCreateLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
-                             new SyncCallbackUtils.SyncCreateCallback(), counter, customMetadata);
+                             new SyncCreateCallback(), counter, customMetadata);
 
         LedgerHandle lh = SyncCallbackUtils.waitForResult(counter);
         if (lh == null) {
@@ -955,7 +952,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
          * Calls asynchronous version
          */
         asyncCreateLedgerAdv(ledgerId, ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
-                             new SyncCallbackUtils.SyncCreateCallback(), counter, customMetadata);
+                             new SyncCreateCallback(), counter, customMetadata);
 
         LedgerHandle lh = SyncCallbackUtils.waitForResult(counter);
         if (lh == null) {
@@ -1380,17 +1377,17 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     }
 
     @Override
-    public CreateBuilder createLedgerOp() {
+    public CreateBuilder newCreateLedgerOp() {
         return new LedgerCreateOp.CreateBuilderImpl(this);
     }
 
     @Override
-    public OpenBuilder openLedgerOp() {
+    public OpenBuilder newOpenLedgerOp() {
         return new LedgerOpenOp.OpenBuilderImpl(this);
     }
 
     @Override
-    public DeleteBuilder deleteLedgerOp() {
+    public DeleteBuilder newDeleteLedgerOp() {
         return new LedgerDeleteOp.DeleteBuilderImpl(this);
     }
 

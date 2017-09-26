@@ -29,6 +29,8 @@ public interface OpBuilder<T> {
      * Start the operation and return an handle to the result.
      *
      * @return an handle to access the result of the operation
+     *
+     * @see FutureUtils#result(java.util.concurrent.CompletableFuture) to have a simple method to access the result
      */
     CompletableFuture<T> execute();
 
