@@ -17,6 +17,8 @@
 package org.apache.bookkeeper.client.api;
 
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BookKeeperBuilderImpl;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 
 /**
  * This is the entry point for BookKeeper client side API.
@@ -24,6 +26,17 @@ import org.apache.bookkeeper.client.BKException;
  * @since 4.6
  */
 public interface BookKeeper extends AutoCloseable {
+
+    /**
+     * Create a new builder which can be used to boot a new BookKeeper client. Additional contextual components can be
+     * injected to the client using {@link BookKeeperBuilder#with(java.lang.Object) } method.
+     *
+     * @param clientConfiguration the configuration for the client
+     * @return a builder
+     */
+    public static BookKeeperBuilder newBuilder(final ClientConfiguration clientConfiguration) {
+        return new BookKeeperBuilderImpl(clientConfiguration);
+    }
 
     /**
      * Start the creation of a new ledger.
