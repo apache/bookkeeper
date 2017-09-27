@@ -29,7 +29,7 @@ import java.util.List;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.http.service.HttpService;
+import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
@@ -38,9 +38,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * HttpService that handle Bookkeeper Configuration related http request.
+ * HttpEndpointService that handle Bookkeeper Configuration related http request.
  */
-public class ExpandStorageService implements HttpService {
+public class ExpandStorageService implements HttpEndpointService {
 
     static final Logger LOG = LoggerFactory.getLogger(ExpandStorageService.class);
 

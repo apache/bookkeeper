@@ -24,20 +24,16 @@ import com.google.common.base.Preconditions;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.http.service.HttpService;
+import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
-import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.replication.AuditorElector;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
-import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * HttpService that handle Bookkeeper Configuration related http request.
+ * HttpEndpointService that handle Bookkeeper Configuration related http request.
  */
-public class TriggerAuditService implements HttpService {
+public class TriggerAuditService implements HttpEndpointService {
 
     static final Logger LOG = LoggerFactory.getLogger(TriggerAuditService.class);
 

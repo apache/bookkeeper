@@ -27,7 +27,7 @@ import com.google.common.collect.Maps;
 import java.util.Map;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.http.service.HttpService;
+import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -39,9 +39,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * HttpService that handle Bookkeeper Configuration related http request.
+ * HttpEndpointService that handle Bookkeeper Configuration related http request.
  */
-public class GetLedgerMetaService implements HttpService {
+public class GetLedgerMetaService implements HttpEndpointService {
 
     static final Logger LOG = LoggerFactory.getLogger(GetLedgerMetaService.class);
 

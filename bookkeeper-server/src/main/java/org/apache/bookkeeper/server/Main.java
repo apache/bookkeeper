@@ -30,7 +30,7 @@ import org.apache.bookkeeper.common.component.ComponentStarter;
 import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.common.component.LifecycleComponentStack;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.http.BKServiceProvider;
+import org.apache.bookkeeper.http.BKHttpServiceProvider;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.server.service.AutoRecoveryService;
 import org.apache.bookkeeper.server.service.BookieService;
@@ -294,7 +294,7 @@ public class Main {
 
             // 4. build http service
             if (conf.getServerConf().isHttpServerEnabled()) {
-                BKServiceProvider provider = new BKServiceProvider.Builder()
+                BKHttpServiceProvider provider = new BKHttpServiceProvider.Builder()
                     .setBookieServer(bookieService.getServer())
                     .setServerConfiguration(conf.getServerConf())
                     .build();

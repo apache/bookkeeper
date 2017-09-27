@@ -23,9 +23,9 @@ package org.apache.bookkeeper.http.service;
 import org.apache.bookkeeper.http.HttpServer;
 
 /**
- * HttpService that return internal server error.
+ * HttpEndpointService that return internal server error.
  */
-public class ErrorHttpService implements HttpService {
+public class ErrorHttpService implements HttpEndpointService {
 
     private HttpServer.StatusCode statusCode = HttpServer.StatusCode.INTERNAL_ERROR;
 

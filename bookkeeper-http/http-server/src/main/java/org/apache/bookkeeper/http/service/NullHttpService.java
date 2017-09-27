@@ -21,9 +21,9 @@
 package org.apache.bookkeeper.http.service;
 
 /**
- * HttpService that return empty content.
+ * HttpEndpointService that return empty content.
  */
-public class NullHttpService implements HttpService {
+public class NullHttpService implements HttpEndpointService {
     @Override
     public HttpServiceResponse handle(HttpServiceRequest request) {
         return new HttpServiceResponse();

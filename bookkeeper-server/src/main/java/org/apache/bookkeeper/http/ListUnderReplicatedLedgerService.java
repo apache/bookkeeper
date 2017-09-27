@@ -27,13 +27,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.http.service.HttpService;
+import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.util.JsonUtil;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.commons.lang.StringUtils;
@@ -42,9 +40,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * HttpService that handle Bookkeeper Configuration related http request.
+ * HttpEndpointService that handle Bookkeeper Configuration related http request.
  */
-public class ListUnderReplicatedLedgerService implements HttpService {
+public class ListUnderReplicatedLedgerService implements HttpEndpointService {
 
     static final Logger LOG = LoggerFactory.getLogger(ListUnderReplicatedLedgerService.class);
 

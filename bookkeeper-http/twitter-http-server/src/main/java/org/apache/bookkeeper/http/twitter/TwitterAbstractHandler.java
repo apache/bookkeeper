@@ -30,7 +30,7 @@ import java.util.Map;
 
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.ErrorHttpService;
-import org.apache.bookkeeper.http.service.HttpService;
+import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 
@@ -40,16 +40,16 @@ import org.apache.bookkeeper.http.service.HttpServiceResponse;
 public abstract class TwitterAbstractHandler extends Service<Request, Response> {
 
     /**
-     * Process the request using the given httpService.
+     * Process the request using the given httpEndpointService.
      */
-    Future<Response> processRequest(HttpService httpService, Request request) {
+    Future<Response> processRequest(HttpEndpointService httpEndpointService, Request request) {
         HttpServiceRequest httpServiceRequest = new HttpServiceRequest()
             .setMethod(convertMethod(request))
             .setParams(convertParams(request))
             .setBody(request.contentString());
         HttpServiceResponse httpServiceResponse = null;
         try {
-            httpServiceResponse = httpService.handle(httpServiceRequest);
+            httpServiceResponse = httpEndpointService.handle(httpServiceRequest);
         } catch (Exception e) {
             httpServiceResponse = new ErrorHttpService().handle(httpServiceRequest);
         }

@@ -23,9 +23,9 @@ package org.apache.bookkeeper.http.service;
 import org.apache.bookkeeper.http.HttpServer;
 
 /**
- * HttpService that serve heartbeat request.
+ * HttpEndpointService that serve heartbeat request.
  */
-public class HeartbeatService implements HttpService {
+public class HeartbeatService implements HttpEndpointService {
 
     public static final String HEARTBEAT = "OK\n";
 

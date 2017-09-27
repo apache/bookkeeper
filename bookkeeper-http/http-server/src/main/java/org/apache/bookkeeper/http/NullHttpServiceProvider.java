@@ -21,29 +21,29 @@
 package org.apache.bookkeeper.http;
 
 import org.apache.bookkeeper.http.service.HeartbeatService;
-import org.apache.bookkeeper.http.service.HttpService;
+import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.NullHttpService;
 
 /**
- * HttpService provider which provide service that do nothing.
+ * HttpEndpointService provider which provide service that do nothing.
  */
 public class NullHttpServiceProvider implements HttpServiceProvider {
 
     private static final NullHttpServiceProvider NULL_HTTP_SERVICE_PROVIDER = new NullHttpServiceProvider();
 
-    static final HttpService NULL_HTTP_SERVICE = new NullHttpService();
+    static final HttpEndpointService NULL_HTTP_SERVICE = new NullHttpService();
 
     public static NullHttpServiceProvider getInstance() {
         return NULL_HTTP_SERVICE_PROVIDER;
     }
 
     @Override
-    public HttpService provideHeartbeatService() {
+    public HttpEndpointService provideHeartbeatService() {
         return new HeartbeatService();
     }
 
     @Override
-    public HttpService provideConfigurationService() {
+    public HttpEndpointService provideConfigurationService() {
         return NULL_HTTP_SERVICE;
     }
 
@@ -55,7 +55,7 @@ public class NullHttpServiceProvider implements HttpServiceProvider {
      * Provide service for delete ledger api.
      */
     @Override
-    public HttpService provideDeleteLedgerService() {
+    public HttpEndpointService provideDeleteLedgerService() {
         return NULL_HTTP_SERVICE;
     }
 
@@ -63,7 +63,7 @@ public class NullHttpServiceProvider implements HttpServiceProvider {
      * Provide service for list ledger api.
      */
     @Override
-    public HttpService provideListLedgerService() {
+    public HttpEndpointService provideListLedgerService() {
         return NULL_HTTP_SERVICE;
     }
 
@@ -71,7 +71,7 @@ public class NullHttpServiceProvider implements HttpServiceProvider {
      * Provide service for delete ledger api.
      */
     @Override
-    public HttpService provideGetLedgerMetaService() {
+    public HttpEndpointService provideGetLedgerMetaService() {
         return NULL_HTTP_SERVICE;
     }
 
@@ -79,7 +79,7 @@ public class NullHttpServiceProvider implements HttpServiceProvider {
      * Provide service for read ledger entries api.
      */
     @Override
-    public HttpService provideReadLedgerEntryService() {
+    public HttpEndpointService provideReadLedgerEntryService() {
         return NULL_HTTP_SERVICE;
     }
 
@@ -91,7 +91,7 @@ public class NullHttpServiceProvider implements HttpServiceProvider {
      * Provide service for list bookies api.
      */
     @Override
-    public HttpService provideListBookiesService() {
+    public HttpEndpointService provideListBookiesService() {
         return NULL_HTTP_SERVICE;
     }
 
@@ -99,7 +99,7 @@ public class NullHttpServiceProvider implements HttpServiceProvider {
      * Provide service for list bookie disk usage api.
      */
     @Override
-    public HttpService provideListBookieInfoService() {
+    public HttpEndpointService provideListBookieInfoService() {
         return NULL_HTTP_SERVICE;
     }
 
@@ -107,7 +107,7 @@ public class NullHttpServiceProvider implements HttpServiceProvider {
      * Provide service for get last log mark api.
      */
     @Override
-    public HttpService provideGetLastLogMarkService() {
+    public HttpEndpointService provideGetLastLogMarkService() {
         return NULL_HTTP_SERVICE;
     }
 
@@ -115,7 +115,7 @@ public class NullHttpServiceProvider implements HttpServiceProvider {
      * Provide service for list bookie disk files api.
      */
     @Override
-    public HttpService provideListDiskFileService() {
+    public HttpEndpointService provideListDiskFileService() {
         return NULL_HTTP_SERVICE;
     }
 
@@ -123,7 +123,7 @@ public class NullHttpServiceProvider implements HttpServiceProvider {
      * Provide service for expand bookie storage api.
      */
     @Override
-    public HttpService provideExpandStorageService() {
+    public HttpEndpointService provideExpandStorageService() {
         return NULL_HTTP_SERVICE;
     }
 
@@ -135,7 +135,7 @@ public class NullHttpServiceProvider implements HttpServiceProvider {
      * Provide service for auto recovery failed bookie api.
      */
     @Override
-    public HttpService provideRecoveryBookieService() {
+    public HttpEndpointService provideRecoveryBookieService() {
         return NULL_HTTP_SERVICE;
     }
 
@@ -143,7 +143,7 @@ public class NullHttpServiceProvider implements HttpServiceProvider {
      * Provide service for get auditor api.
      */
     @Override
-    public HttpService provideWhoIsAuditorService() {
+    public HttpEndpointService provideWhoIsAuditorService() {
         return NULL_HTTP_SERVICE;
     }
 
@@ -151,7 +151,7 @@ public class NullHttpServiceProvider implements HttpServiceProvider {
      * Provide service for list under replicated ledger api.
      */
     @Override
-    public HttpService provideListUnderReplicatedLedgerService() {
+    public HttpEndpointService provideListUnderReplicatedLedgerService() {
         return NULL_HTTP_SERVICE;
     }
 
@@ -159,7 +159,7 @@ public class NullHttpServiceProvider implements HttpServiceProvider {
      * Provide service for trigger audit api.
      */
     @Override
-    public HttpService provideTriggerAuditService() {
+    public HttpEndpointService provideTriggerAuditService() {
         return NULL_HTTP_SERVICE;
     }
 
@@ -167,7 +167,7 @@ public class NullHttpServiceProvider implements HttpServiceProvider {
      * Provide service for set/get lostBookieRecoveryDelay api.
      */
     @Override
-    public HttpService provideLostBookieRecoveryDelayService() {
+    public HttpEndpointService provideLostBookieRecoveryDelayService() {
         return NULL_HTTP_SERVICE;
     }
 
@@ -175,7 +175,7 @@ public class NullHttpServiceProvider implements HttpServiceProvider {
      * Provide service for decommission bookie api.
      */
     @Override
-    public HttpService provideDecommissionService() {
+    public HttpEndpointService provideDecommissionService() {
         return NULL_HTTP_SERVICE;
     }
 }

@@ -26,15 +26,15 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.http.service.HttpService;
+import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.util.JsonUtil;
 
 /**
- * HttpService that handle Bookkeeper Configuration related http request.
+ * HttpEndpointService that handle Bookkeeper Configuration related http request.
  */
-public class ConfigurationService implements HttpService {
+public class ConfigurationService implements HttpEndpointService {
 
     protected ServerConfiguration conf;
 

@@ -31,7 +31,7 @@ import java.util.Map;
 
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.ErrorHttpService;
-import org.apache.bookkeeper.http.service.HttpService;
+import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 
@@ -41,9 +41,9 @@ import org.apache.bookkeeper.http.service.HttpServiceResponse;
 public abstract class VertxAbstractHandler implements Handler<RoutingContext> {
 
     /**
-     * Process the request using the given httpService.
+     * Process the request using the given httpEndpointService.
      */
-    void processRequest(HttpService httpService, RoutingContext context) {
+    void processRequest(HttpEndpointService httpEndpointService, RoutingContext context) {
         HttpServerRequest httpRequest = context.request();
         HttpServerResponse httpResponse = context.response();
         HttpServiceRequest request = new HttpServiceRequest()
@@ -52,7 +52,7 @@ public abstract class VertxAbstractHandler implements Handler<RoutingContext> {
             .setBody(context.getBodyAsString());
         HttpServiceResponse response = null;
         try {
-            response = httpService.handle(request);
+            response = httpEndpointService.handle(request);
         } catch (Exception e) {
             response = new ErrorHttpService().handle(request);
         }

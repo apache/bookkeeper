@@ -21,10 +21,10 @@
 package org.apache.bookkeeper.http.service;
 
 /**
- * HttpService provides the abstraction for how to handle the logic
+ * HttpEndpointService provides the abstraction for how to handle the logic
  * for a specific endpoint.
  */
-public interface HttpService {
+public interface HttpEndpointService {
 
     HttpServiceResponse handle(HttpServiceRequest request) throws Exception;
 }

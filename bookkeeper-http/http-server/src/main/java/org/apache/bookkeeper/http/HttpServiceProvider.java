@@ -20,7 +20,7 @@
  */
 package org.apache.bookkeeper.http;
 
-import org.apache.bookkeeper.http.service.HttpService;
+import org.apache.bookkeeper.http.service.HttpEndpointService;
 
 /**
  * Provider to provide services for different http endpoint handlers.
@@ -30,7 +30,7 @@ public interface HttpServiceProvider {
     /**
      * Provide heartbeat service for heartbeat api.
      */
-    HttpService provideHeartbeatService();
+    HttpEndpointService provideHeartbeatService();
 
     //
     // config
@@ -39,7 +39,7 @@ public interface HttpServiceProvider {
     /**
      * Provide service for configuration api.
      */
-    HttpService provideConfigurationService();
+    HttpEndpointService provideConfigurationService();
 
     //
     // ledger
@@ -48,22 +48,22 @@ public interface HttpServiceProvider {
     /**
      * Provide service for delete ledger api.
      */
-    HttpService provideDeleteLedgerService();
+    HttpEndpointService provideDeleteLedgerService();
 
     /**
      * Provide service for list ledger api.
      */
-    HttpService provideListLedgerService();
+    HttpEndpointService provideListLedgerService();
 
     /**
      * Provide service for delete ledger api.
      */
-    HttpService provideGetLedgerMetaService();
+    HttpEndpointService provideGetLedgerMetaService();
 
     /**
      * Provide service for read ledger entries api.
      */
-    HttpService provideReadLedgerEntryService();
+    HttpEndpointService provideReadLedgerEntryService();
 
     //
     // bookie
@@ -72,27 +72,27 @@ public interface HttpServiceProvider {
     /**
      * Provide service for list bookies api.
      */
-    HttpService provideListBookiesService();
+    HttpEndpointService provideListBookiesService();
 
     /**
      * Provide service for list bookie disk usage api.
      */
-    HttpService provideListBookieInfoService();
+    HttpEndpointService provideListBookieInfoService();
 
     /**
      * Provide service for get last log mark api.
      */
-    HttpService provideGetLastLogMarkService();
+    HttpEndpointService provideGetLastLogMarkService();
 
     /**
      * Provide service for list bookie disk files api.
      */
-    HttpService provideListDiskFileService();
+    HttpEndpointService provideListDiskFileService();
 
     /**
      * Provide service for expand bookie storage api.
      */
-    HttpService provideExpandStorageService();
+    HttpEndpointService provideExpandStorageService();
 
     //
     // autorecovery
@@ -101,31 +101,31 @@ public interface HttpServiceProvider {
     /**
      * Provide service for auto recovery failed bookie api.
      */
-    HttpService provideRecoveryBookieService();
+    HttpEndpointService provideRecoveryBookieService();
 
     /**
      * Provide service for get auditor api.
      */
-    HttpService provideWhoIsAuditorService();
+    HttpEndpointService provideWhoIsAuditorService();
 
     /**
      * Provide service for list under replicated ledger api.
      */
-    HttpService provideListUnderReplicatedLedgerService();
+    HttpEndpointService provideListUnderReplicatedLedgerService();
 
     /**
      * Provide service for trigger audit api.
      */
-    HttpService provideTriggerAuditService();
+    HttpEndpointService provideTriggerAuditService();
 
     /**
      * Provide service for set/get lostBookieRecoveryDelay api.
      */
-    HttpService provideLostBookieRecoveryDelayService();
+    HttpEndpointService provideLostBookieRecoveryDelayService();
 
     /**
      * Provide service for decommission bookie api.
      */
-    HttpService provideDecommissionService();
+    HttpEndpointService provideDecommissionService();
 
 }

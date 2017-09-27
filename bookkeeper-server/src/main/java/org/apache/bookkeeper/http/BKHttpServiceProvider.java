@@ -20,13 +20,11 @@
  */
 package org.apache.bookkeeper.http;
 
-import static org.apache.bookkeeper.http.NullHttpServiceProvider.NULL_HTTP_SERVICE;
-
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.service.ErrorHttpService;
 import org.apache.bookkeeper.http.service.HeartbeatService;
-import org.apache.bookkeeper.http.service.HttpService;
+import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
@@ -96,12 +94,12 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
     }
 
     @Override
-    public HttpService provideHeartbeatService() {
+    public HttpEndpointService provideHeartbeatService() {
         return new HeartbeatService();
     }
 
     @Override
-    public HttpService provideConfigurationService() {
+    public HttpEndpointService provideConfigurationService() {
         ServerConfiguration configuration = getServerConf();
         if (configuration == null) {
             return new ErrorHttpService();
@@ -119,7 +117,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
      * Provide service for delete ledger api.
      */
     @Override
-    public HttpService provideDeleteLedgerService() {
+    public HttpEndpointService provideDeleteLedgerService() {
         ServerConfiguration configuration = getServerConf();
         if (configuration == null) {
             return new ErrorHttpService();
@@ -131,7 +129,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
      * Provide service for list ledger api.
      */
     @Override
-    public HttpService provideListLedgerService() {
+    public HttpEndpointService provideListLedgerService() {
         ServerConfiguration configuration = getServerConf();
         if (configuration == null) {
             return new ErrorHttpService();
@@ -143,7 +141,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
      * Provide service for delete ledger api.
      */
     @Override
-    public HttpService provideGetLedgerMetaService() {
+    public HttpEndpointService provideGetLedgerMetaService() {
         ServerConfiguration configuration = getServerConf();
         if (configuration == null) {
             return new ErrorHttpService();
@@ -155,7 +153,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
      * Provide service for read ledger entries api.
      */
     @Override
-    public HttpService provideReadLedgerEntryService() {
+    public HttpEndpointService provideReadLedgerEntryService() {
         ServerConfiguration configuration = getServerConf();
         if (configuration == null) {
             return new ErrorHttpService();
@@ -171,7 +169,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
      * Provide service for list bookies api.
      */
     @Override
-    public HttpService provideListBookiesService() {
+    public HttpEndpointService provideListBookiesService() {
         ServerConfiguration configuration = getServerConf();
         if (configuration == null) {
             return new ErrorHttpService();
@@ -183,7 +181,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
      * Provide service for list bookie disk usage api.
      */
     @Override
-    public HttpService provideListBookieInfoService() {
+    public HttpEndpointService provideListBookieInfoService() {
         ServerConfiguration configuration = getServerConf();
         if (configuration == null) {
             return new ErrorHttpService();
@@ -195,7 +193,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
      * Provide service for get last log mark api.
      */
     @Override
-    public HttpService provideGetLastLogMarkService() {
+    public HttpEndpointService provideGetLastLogMarkService() {
         ServerConfiguration configuration = getServerConf();
         if (configuration == null) {
             return new ErrorHttpService();
@@ -207,7 +205,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
      * Provide service for list bookie disk files api.
      */
     @Override
-    public HttpService provideListDiskFileService() {
+    public HttpEndpointService provideListDiskFileService() {
         ServerConfiguration configuration = getServerConf();
         if (configuration == null) {
             return new ErrorHttpService();
@@ -219,7 +217,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
      * Provide service for expand bookie storage api.
      */
     @Override
-    public HttpService provideExpandStorageService() {
+    public HttpEndpointService provideExpandStorageService() {
         ServerConfiguration configuration = getServerConf();
         if (configuration == null) {
             return new ErrorHttpService();
@@ -235,7 +233,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
      * Provide service for auto recovery failed bookie api.
      */
     @Override
-    public HttpService provideRecoveryBookieService() {
+    public HttpEndpointService provideRecoveryBookieService() {
         ServerConfiguration configuration = getServerConf();
         if (configuration == null) {
             return new ErrorHttpService();
@@ -247,7 +245,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
      * Provide service for get auditor api.
      */
     @Override
-    public HttpService provideWhoIsAuditorService() {
+    public HttpEndpointService provideWhoIsAuditorService() {
         ServerConfiguration configuration = getServerConf();
         if (configuration == null) {
             return new ErrorHttpService();
@@ -259,7 +257,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
      * Provide service for list under replicated ledger api.
      */
     @Override
-    public HttpService provideListUnderReplicatedLedgerService() {
+    public HttpEndpointService provideListUnderReplicatedLedgerService() {
         ServerConfiguration configuration = getServerConf();
         if (configuration == null) {
             return new ErrorHttpService();
@@ -271,7 +269,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
      * Provide service for trigger audit api.
      */
     @Override
-    public HttpService provideTriggerAuditService() {
+    public HttpEndpointService provideTriggerAuditService() {
         ServerConfiguration configuration = getServerConf();
         if (configuration == null) {
             return new ErrorHttpService();
@@ -283,7 +281,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
      * Provide service for set/get lostBookieRecoveryDelay api.
      */
     @Override
-    public HttpService provideLostBookieRecoveryDelayService() {
+    public HttpEndpointService provideLostBookieRecoveryDelayService() {
         ServerConfiguration configuration = getServerConf();
         if (configuration == null) {
             return new ErrorHttpService();
@@ -295,7 +293,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
      * Provide service for decommission bookie api.
      */
     @Override
-    public HttpService provideDecommissionService() {
+    public HttpEndpointService provideDecommissionService() {
         ServerConfiguration configuration = getServerConf();
         if (configuration == null) {
             return new ErrorHttpService();
