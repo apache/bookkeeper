@@ -83,7 +83,7 @@ public class GetLastLogMarkService implements HttpService {
                 }
 
                 String jsonResponse = JsonUtil.toJson(output);
-                LOG.info("output body:" + jsonResponse);
+                LOG.debug("output body:" + jsonResponse);
                 response.setBody(jsonResponse);
                 response.setCode(HttpServer.StatusCode.OK);
                 return response;

@@ -92,7 +92,7 @@ public class LostBookieRecoveryDelayService implements HttpService {
                 return response;
             } catch (Exception e) {
                 // may get noNode exception
-                e.printStackTrace();
+                LOG.error("Exception got: ", e);
                 response.setCode(HttpServer.StatusCode.NOT_FOUND);
                 response.setBody("Exception when get lostBookieRecoveryDelay." + e.getMessage());
                 return response;
