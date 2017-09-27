@@ -75,13 +75,9 @@ public class GetLedgerMetaService implements HttpEndpointService {
             LedgerMetadata md = cb.get();
             output.put(ledgerId.toString(), new String(md.serialize(), UTF_8));
 
-            if (manager != null) {
-                manager.close();
-                mFactory.uninitialize();
-            }
-            if (zk != null) {
-                zk.close();
-            }
+            manager.close();
+            mFactory.uninitialize();
+            zk.close();
 
             String jsonResponse = JsonUtil.toJson(output);
             LOG.debug("output body:" + jsonResponse);
