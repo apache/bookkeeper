@@ -42,7 +42,7 @@ public class AuditorRollingRestartTest extends BookKeeperClusterTestCase {
     public AuditorRollingRestartTest() {
         super(3, 600);
         // run the daemon within the bookie
-        baseConf.setAutoRecoveryDaemonEnabled(true);
+        setAutoRecoveryEnabled(true);
     }
 
     /**

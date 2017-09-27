@@ -1,5 +1,5 @@
 ---
-title: Apache BookKeeper 4.6.0-SNAPSHOT Documentation 
+title: Apache BookKeeper&trade; 4.6.0-SNAPSHOT Documentation 
 ---
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
@@ -20,9 +20,9 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-This documentation is for Apache BookKeeper version `{{ site.latest_version }}`.
+This documentation is for Apache BookKeeper&trade; version `{{ site.latest_version }}`.
 
-Apache BookKeeper is a scalable, fault tolerant and low latency storage service optimized for realtime workloads.
+Apache BookKeeper&trade; is a scalable, fault tolerant and low latency storage service optimized for realtime workloads.
 It offers `durability`, `replication` and `strong consistency` as essentials for building reliable real-time applications.
 
 It is suitable for being used in following scenerios:
@@ -32,7 +32,7 @@ It is suitable for being used in following scenerios:
 - Offset/Cursor Store, e.g. Apache Pulsar.
 - Object/Blob Store, e.g. storing snapshots to replicated state machines.
 
-Learn more about Apache BookKeeper and what it can do for your organization:
+Learn more about Apache BookKeeper&trade; and what it can do for your organization:
 
 - [Apache BookKeeper {{ site.latest_version }} Release Notes](../releaseNotes)
 - [Java API docs](../../api/javadoc)

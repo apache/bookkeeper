@@ -33,7 +33,7 @@
     <plugins>
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
-        <version>2.2.1</version>
+        <version>${maven-assembly-plugin.version}</version>
         <configuration>
 	  <skipAssembly>true</skipAssembly>
         </configuration>
@@ -131,6 +131,11 @@
       <artifactId>netty-all</artifactId>
       <version>${netty.version}</version>
       <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>${guava.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>

@@ -1,5 +1,5 @@
 ---
-title: Apache BookKeeper Releases
+title: Apache BookKeeper&trade; Releases
 layout: community
 ---
 
