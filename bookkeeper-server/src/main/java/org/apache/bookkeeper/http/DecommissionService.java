@@ -54,7 +54,7 @@ public class DecommissionService implements HttpEndpointService {
     public HttpServiceResponse handle(HttpServiceRequest request) throws Exception {
         HttpServiceResponse response = new HttpServiceResponse();
 
-        if (HttpServer.Method.PUT == request.getMethod() || HttpServer.Method.POST == request.getMethod()) {
+        if (HttpServer.Method.PUT == request.getMethod()) {
             ClientConfiguration adminConf = new ClientConfiguration(conf);
             BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
             String requestBody = request.getBody();
@@ -81,7 +81,7 @@ public class DecommissionService implements HttpEndpointService {
                     return response;
                 } catch (Exception e) {
                     admin.close();
-                    e.printStackTrace();
+                    LOG.error("Meet Exception: ", e);
                     response.setCode(HttpServer.StatusCode.NOT_FOUND);
                     response.setBody("Exception when do decommission." + e.getMessage());
                     return response;
@@ -94,7 +94,7 @@ public class DecommissionService implements HttpEndpointService {
             }
         } else {
             response.setCode(HttpServer.StatusCode.NOT_FOUND);
-            response.setBody("Not found method. Should be PUT/POST method");
+            response.setBody("Not found method. Should be PUT method");
             return response;
         }
     }

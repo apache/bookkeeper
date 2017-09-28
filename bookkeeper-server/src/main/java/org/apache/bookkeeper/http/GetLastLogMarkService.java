@@ -88,7 +88,7 @@ public class GetLastLogMarkService implements HttpEndpointService {
                 response.setCode(HttpServer.StatusCode.OK);
                 return response;
             } catch (Exception e) {
-                e.printStackTrace();
+                LOG.error("Meet Exception: ", e);
                 response.setCode(HttpServer.StatusCode.NOT_FOUND);
                 response.setBody("ERROR handling request: " + e.getMessage());
                 return response;

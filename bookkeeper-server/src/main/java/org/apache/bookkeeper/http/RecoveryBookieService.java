@@ -83,18 +83,18 @@ public class RecoveryBookieService implements HttpEndpointService {
 
         try {
             requestJsonBody = JsonUtil.fromJson(requestBody, RecoveryRequestJsonBody.class);
-            LOG.debug("bookie_src: " + requestJsonBody.bookie_src.get(0)
-                + " bookie_dest: "
+            LOG.debug("bookie_src: [" + requestJsonBody.bookie_src.get(0)
+                + "],  bookie_dest: ["
                 + ((requestJsonBody.bookie_dest == null) ? "null" : requestJsonBody.bookie_dest.get(0))
-                + " delete_cookie: " + requestJsonBody.delete_cookie);
+                + "],  delete_cookie: [" + requestJsonBody.delete_cookie + "]");
         } catch (JsonUtil.ParseJsonException e) {
-            e.printStackTrace();
+            LOG.error("Meet Exception: ", e);
             response.setCode(HttpServer.StatusCode.NOT_FOUND);
-            response.setBody("ERROR parameters" + e.getMessage());
+            response.setBody("ERROR parameters: " + e.getMessage());
             return response;
         }
 
-        if ((HttpServer.Method.POST == request.getMethod() || HttpServer.Method.PUT == request.getMethod()) &&
+        if (HttpServer.Method.PUT == request.getMethod() &&
             !requestJsonBody.bookie_src.isEmpty()) {
             ClientConfiguration adminConf = new ClientConfiguration(conf);
             BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
@@ -126,7 +126,7 @@ public class RecoveryBookieService implements HttpEndpointService {
             return response;
         } else {
             response.setCode(HttpServer.StatusCode.NOT_FOUND);
-            response.setBody("Not found method. Should be POST/PUT method");
+            response.setBody("Not found method. Should be PUT method");
             return response;
         }
     }

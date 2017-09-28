@@ -41,7 +41,6 @@ public class JsonUtil {
         try {
             return mapper.readValue(jsonStr, valueType);
         }  catch (Exception e) {
-            e.printStackTrace();
             throw new ParseJsonException("Failed to deserialize Object from Json string");
         }
     }

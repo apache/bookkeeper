@@ -22,10 +22,12 @@ package org.apache.bookkeeper.http;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import com.google.common.collect.Maps;
 import java.io.File;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -100,26 +102,26 @@ public class TestHttpService extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testConfigServicePost() throws Exception {
+    public void testConfigServicePut() throws Exception {
         // test config service
         HttpEndpointService configService = bkHttpServiceProvider.provideConfigurationService();
         // properties to be set
-        String postBody = "{\"TEST_PROPERTY1\": \"TEST_VALUE1\", \"TEST_PROPERTY2\": 2,  \"TEST_PROPERTY3\": true }";
+        String putBody = "{\"TEST_PROPERTY1\": \"TEST_VALUE1\", \"TEST_PROPERTY2\": 2,  \"TEST_PROPERTY3\": true }";
 
         // null body, should return NOT_FOUND
-        HttpServiceRequest postRequest1 = new HttpServiceRequest(null, HttpServer.Method.POST, null);
-        HttpServiceResponse postResponse1 = configService.handle(postRequest1);
-        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), postResponse1.getStatusCode());
+        HttpServiceRequest putRequest1 = new HttpServiceRequest(null, HttpServer.Method.PUT, null);
+        HttpServiceResponse putResponse1 = configService.handle(putRequest1);
+        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), putResponse1.getStatusCode());
 
         // Method DELETE, should return NOT_FOUND
-        HttpServiceRequest postRequest2 = new HttpServiceRequest(postBody, HttpServer.Method.DELETE, null);
-        HttpServiceResponse postResponse2 = configService.handle(postRequest2);
-        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), postResponse2.getStatusCode());
+        HttpServiceRequest putRequest2 = new HttpServiceRequest(putBody, HttpServer.Method.DELETE, null);
+        HttpServiceResponse putResponse2 = configService.handle(putRequest2);
+        assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), putResponse2.getStatusCode());
 
-        // Normal POST, should success, then verify using get method
-        HttpServiceRequest postRequest3 = new HttpServiceRequest(postBody, HttpServer.Method.POST, null);
-        HttpServiceResponse postResponse3 = configService.handle(postRequest3);
-        assertEquals(HttpServer.StatusCode.OK.getValue(), postResponse3.getStatusCode());
+        // Normal PUT, should success, then verify using get method
+        HttpServiceRequest putRequest3 = new HttpServiceRequest(putBody, HttpServer.Method.PUT, null);
+        HttpServiceResponse putResponse3 = configService.handle(putRequest3);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), putResponse3.getStatusCode());
 
         // Get all the config
         HttpServiceRequest getRequest = new HttpServiceRequest(null, HttpServer.Method.GET, null);
@@ -172,10 +174,8 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         }
 
         //3, parameter: type=ro&print_hostnames=true, should print ro bookies with hostname
-        // turn bookie to ro, get
-        for (int i = 0; i < numberOfBookies; i++) {
-            setBookieToReadOnly(getBookie(i));
-        }
+        // turn bookie 1 into ro, get it
+        setBookieToReadOnly(getBookie(1));
         LOG.info("turn all 6 bookies into RO");
         HashMap<String, String> params3 = Maps.newHashMap();
         params3.put("type", "ro");
@@ -183,14 +183,11 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceRequest request3 = new HttpServiceRequest(null, HttpServer.Method.GET, params3);
         HttpServiceResponse response3 = listBookiesService.handle(request3);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response3.getStatusCode());
-        // get response , expected get 6 ro bookies, and with hostname
+        // get response , expected get 1 ro bookies, and with hostname
         @SuppressWarnings("unchecked")
         HashMap<String, String> respBody3 = JsonUtil.fromJson(response3.getBody(), HashMap.class);
-        assertEquals(numberOfBookies, respBody3.size());
-        for (int i = 0; i < numberOfBookies; i++) {
-            assertEquals(true, respBody3.containsKey(getBookie(i).toString()));
-            assertNotNull(respBody3.get(getBookie(i).toString()));
-        }
+        assertEquals(1, respBody3.size());
+        assertEquals(true, respBody3.containsKey(getBookie(1).toString()));
     }
 
     /**
@@ -200,23 +197,11 @@ public class TestHttpService extends BookKeeperClusterTestCase {
     public void testListLedgerService() throws Exception {
         baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
         BookKeeper.DigestType digestType = BookKeeper.DigestType.CRC32;
-        int numLedgers = 4;
-        int numMsgs = 100;
+        int numLedgers = 430;
         LedgerHandle[] lh = new LedgerHandle[numLedgers];
         // create ledgers
         for (int i = 0; i < numLedgers; i++) {
-            lh[i] = bkc.createLedger(digestType, "".getBytes());
-        }
-        String content = "Apache BookKeeper is cool!";
-        // add entries
-        for (int i = 0; i < numMsgs; i++) {
-            for (int j = 0; j < numLedgers; j++) {
-                lh[j].addEntry(content.getBytes());
-            }
-        }
-        // close ledgers
-        for (int i = 0; i < numLedgers; i++) {
-            lh[i].close();
+            lh[i] = bkc.createLedger(digestType, "password".getBytes());
         }
 
         HttpEndpointService listLedgerService = bkHttpServiceProvider.provideListLedgerService();
@@ -225,11 +210,11 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, null);
         HttpServiceResponse response1 = listLedgerService.handle(request1);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response1.getStatusCode());
-        // get response , expected get 4 ledgers, and without metadata
+        // get response , expected get all ledgers, and without metadata
         @SuppressWarnings("unchecked")
-        HashMap<String, String> respBody = JsonUtil.fromJson(response1.getBody(), HashMap.class);
-        assertEquals(4, respBody.size());
-        for (int i = 0; i < 4; i++) {
+        LinkedHashMap<String, String> respBody = JsonUtil.fromJson(response1.getBody(), LinkedHashMap.class);
+        assertEquals(numLedgers, respBody.size());
+        for (int i = 0; i < numLedgers; i++) {
             assertEquals(true, respBody.containsKey(Long.valueOf(lh[i].getId()).toString()));
             assertEquals(null, respBody.get(Long.valueOf(lh[i].getId()).toString()));
         }
@@ -240,13 +225,31 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.GET, params);
         HttpServiceResponse response2 = listLedgerService.handle(request2);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response2.getStatusCode());
-        // get response, expected get 4 ledgers, and with metadata
+        // get response, expected get all ledgers, and with metadata
         @SuppressWarnings("unchecked")
-        HashMap<String, String> respBody2 = JsonUtil.fromJson(response2.getBody(), HashMap.class);
-        assertEquals(4, respBody2.size());
-        for (int i = 0; i < 4; i++) {
+        LinkedHashMap<String, String> respBody2 = JsonUtil.fromJson(response2.getBody(), LinkedHashMap.class);
+        assertEquals(numLedgers, respBody2.size());
+        for (int i = 0; i < numLedgers; i++) {
             assertEquals(true, respBody2.containsKey(Long.valueOf(lh[i].getId()).toString()));
             assertNotNull(respBody2.get(Long.valueOf(lh[i].getId()).toString()));
+        }
+
+        //3, parameter: print_metadata=true&page=5,
+        // since each page contains 100 ledgers, page=5 should print ledger ids, with metadata for(400--430)
+        HashMap<String, String> params3 = Maps.newHashMap();
+        params3.put("print_metadata", "true");
+        params3.put("page", "5");
+
+        HttpServiceRequest request3 = new HttpServiceRequest(null, HttpServer.Method.GET, params3);
+        HttpServiceResponse response3 = listLedgerService.handle(request3);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response3.getStatusCode());
+        // get response, expected get 4 ledgers, and with metadata
+        @SuppressWarnings("unchecked")
+        LinkedHashMap<String, String> respBody3 = JsonUtil.fromJson(response3.getBody(), LinkedHashMap.class);
+        assertEquals(31, respBody3.size());
+        for (int i = 400; i < 430; i++) {
+            assertEquals(true, respBody3.containsKey(Long.valueOf(lh[i].getId()).toString()));
+            assertNotNull(respBody3.get(Long.valueOf(lh[i].getId()).toString()));
         }
     }
 
@@ -302,7 +305,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         assertEquals(HttpServer.StatusCode.OK.getValue(), response4.getStatusCode());
         // get response , expected get 3 ledgers
         @SuppressWarnings("unchecked")
-        HashMap<String, String> respBody = JsonUtil.fromJson(response4.getBody(), HashMap.class);
+        LinkedHashMap<String, String> respBody = JsonUtil.fromJson(response4.getBody(), LinkedHashMap.class);
         assertEquals(3, respBody.size());
     }
 
@@ -315,7 +318,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         LedgerHandle[] lh = new LedgerHandle[numLedgers];
         // create ledgers
         for (int i = 0; i < numLedgers; i++) {
-            lh[i] = bkc.createLedger(digestType, "".getBytes());
+            lh[i] = bkc.createLedger(digestType, "password".getBytes());
         }
         String content = "Apache BookKeeper is cool!";
         // add entries
@@ -345,6 +348,9 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         @SuppressWarnings("unchecked")
         HashMap<String, String> respBody = JsonUtil.fromJson(response2.getBody(), HashMap.class);
         assertEquals(1, respBody.size());
+        // verify LedgerMetadata content is equal
+        assertTrue(respBody.get(ledgerId.toString()).toString()
+          .equals(new String(lh[0].getLedgerMetadata().serialize())));
     }
 
     @Test
@@ -401,6 +407,8 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         @SuppressWarnings("unchecked")
         HashMap<String, String> respBody3 = JsonUtil.fromJson(response3.getBody(), HashMap.class);
         assertEquals(77, respBody3.size());
+        // Verify the entry content that we got.
+        assertTrue(respBody.get("17").equals(content));
     }
 
     @Test
@@ -418,7 +426,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceResponse response2 = listBookieInfoService.handle(request2);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response2.getStatusCode());
         @SuppressWarnings("unchecked")
-        HashMap<String, String> respBody = JsonUtil.fromJson(response2.getBody(), HashMap.class);
+        LinkedHashMap<String, String> respBody = JsonUtil.fromJson(response2.getBody(), LinkedHashMap.class);
         assertEquals(numberOfBookies + 1, respBody.size());
         for (int i = 0; i < numberOfBookies; i++) {
             assertEquals(true, respBody.containsKey(getBookie(i).toString()));
@@ -450,8 +458,8 @@ public class TestHttpService extends BookKeeperClusterTestCase {
 
         HttpEndpointService getLastLogMarkService = bkHttpServiceProvider.provideGetLastLogMarkService();
 
-        //1,  null parameters of POST, should fail
-        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.POST, null);
+        //1,  null parameters of PUT, should fail
+        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.PUT, null);
         HttpServiceResponse response1 = getLastLogMarkService.handle(request1);
         assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
 
@@ -519,31 +527,31 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceResponse response1 = recoveryBookieService.handle(request1);
         assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
 
-        //2,  null body of POST, should return error
-        HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.POST, null);
+        //2,  null body of PUT, should return error
+        HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.PUT, null);
         HttpServiceResponse response2 = recoveryBookieService.handle(request2);
         assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response2.getStatusCode());
 
-        //3, body with bookie_src, bookie_dest and delete_cookie of POST, should success.
+        //3, body with bookie_src, bookie_dest and delete_cookie of PUT, should success.
         String bookieSrc = getBookie(0).toString();
         String bookieDest = getBookie(1).toString();
-        String postBody = "{\"bookie_src\": [ \"" + bookieSrc + "\" ],"
+        String putBody = "{\"bookie_src\": [ \"" + bookieSrc + "\" ],"
           + "\"bookie_dest\": [ \"" + bookieDest + "\" ],"
           + "\"delete_cookie\": true }";
-        HttpServiceRequest request3 = new HttpServiceRequest(postBody, HttpServer.Method.POST, null);
+        HttpServiceRequest request3 = new HttpServiceRequest(putBody, HttpServer.Method.PUT, null);
         HttpServiceResponse response3 = recoveryBookieService.handle(request3);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response3.getStatusCode());
 
-        //4, body with bookie_src, and delete_cookie of POST, should success.
-        String postBody4 = "{\"bookie_src\": [ \"" + bookieSrc + "\" ],"
+        //4, body with bookie_src, and delete_cookie of PUT, should success.
+        String putBody4 = "{\"bookie_src\": [ \"" + bookieSrc + "\" ],"
           + "\"delete_cookie\": false }";
-        HttpServiceRequest request4 = new HttpServiceRequest(postBody4, HttpServer.Method.POST, null);
+        HttpServiceRequest request4 = new HttpServiceRequest(putBody4, HttpServer.Method.PUT, null);
         HttpServiceResponse response4 = recoveryBookieService.handle(request4);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response4.getStatusCode());
 
-        //5, body with bookie_src of POST, should success.
-        String postBody5 = "{\"bookie_src\": [ \"" + bookieSrc + "\" ] }";
-        HttpServiceRequest request5 = new HttpServiceRequest(postBody5, HttpServer.Method.POST, null);
+        //5, body with bookie_src of PUT, should success.
+        String putBody5 = "{\"bookie_src\": [ \"" + bookieSrc + "\" ] }";
+        HttpServiceRequest request5 = new HttpServiceRequest(putBody5, HttpServer.Method.PUT, null);
         HttpServiceResponse response5 = recoveryBookieService.handle(request5);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response5.getStatusCode());
     }
@@ -580,10 +588,10 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceResponse response1 = triggerAuditService.handle(request1);
         assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
 
-        //2,  POST, should success.
+        //2,  PUT, should success.
         killBookie(1);
         Thread.sleep(500);
-        HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.POST, null);
+        HttpServiceRequest request2 = new HttpServiceRequest(null, HttpServer.Method.PUT, null);
         HttpServiceResponse response2 = triggerAuditService.handle(request2);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response2.getStatusCode());
         stopAuditorElector();
@@ -611,8 +619,8 @@ public class TestHttpService extends BookKeeperClusterTestCase {
 
         HttpEndpointService listUnderReplicatedLedgerService = bkHttpServiceProvider.provideListUnderReplicatedLedgerService();
 
-        //1,  POST, should return error, because only support GET.
-        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.POST, null);
+        //1,  PUT, should return error, because only support GET.
+        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.PUT, null);
         HttpServiceResponse response1 = listUnderReplicatedLedgerService.handle(request1);
         assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
 
@@ -653,8 +661,8 @@ public class TestHttpService extends BookKeeperClusterTestCase {
 
         HttpEndpointService lostBookieRecoveryDelayService = bkHttpServiceProvider.provideLostBookieRecoveryDelayService();
 
-        //1,  POST with null, should return error, because should contains {"delay_seconds": <delay_seconds>}.
-        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.POST, null);
+        //1,  PUT with null, should return error, because should contains {"delay_seconds": <delay_seconds>}.
+        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.PUT, null);
         HttpServiceResponse response1 = lostBookieRecoveryDelayService.handle(request1);
         assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
 
@@ -663,9 +671,9 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceResponse response2 = lostBookieRecoveryDelayService.handle(request2);
         assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response2.getStatusCode());
 
-        //3, POST, with body, should success
-        String postBody3 = "{\"delay_seconds\": 17 }";
-        HttpServiceRequest request3 = new HttpServiceRequest(postBody3, HttpServer.Method.POST, null);
+        //3, PUT, with body, should success
+        String putBody3 = "{\"delay_seconds\": 17 }";
+        HttpServiceRequest request3 = new HttpServiceRequest(putBody3, HttpServer.Method.PUT, null);
         HttpServiceResponse response3 = lostBookieRecoveryDelayService.handle(request3);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response3.getStatusCode());
     }
@@ -677,8 +685,8 @@ public class TestHttpService extends BookKeeperClusterTestCase {
 
         HttpEndpointService decommissionService = bkHttpServiceProvider.provideDecommissionService();
 
-        //1,  POST with null, should return error, because should contains {"bookie_src": <bookie_address>}.
-        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.POST, null);
+        //1,  PUT with null, should return error, because should contains {"bookie_src": <bookie_address>}.
+        HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.PUT, null);
         HttpServiceResponse response1 = decommissionService.handle(request1);
         assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response1.getStatusCode());
 
@@ -687,9 +695,9 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceResponse response2 = decommissionService.handle(request2);
         assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response2.getStatusCode());
 
-        //3, POST, with body, before bookie kill, should fail; after bookie kill, should success.
-        String postBody3 = "{\"bookie_src\": \"" + getBookie(1).toString() + "\"}";
-        HttpServiceRequest request3 = new HttpServiceRequest(postBody3, HttpServer.Method.POST, null);
+        //3, PUT, with body, before bookie kill, should fail; after bookie kill, should success.
+        String putBody3 = "{\"bookie_src\": \"" + getBookie(1).toString() + "\"}";
+        HttpServiceRequest request3 = new HttpServiceRequest(putBody3, HttpServer.Method.PUT, null);
         // before bookie kill, request should fail
         HttpServiceResponse response3 = decommissionService.handle(request3);
         assertEquals(HttpServer.StatusCode.NOT_FOUND.getValue(), response3.getStatusCode());

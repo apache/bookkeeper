@@ -32,7 +32,6 @@ public abstract class HttpRouter<Handler> {
   // Define endpoints here.
   public static final String HEARTBEAT                    = "/heartbeat";
   public static final String SERVER_CONFIG                = "/api/v1/config/server_config";
-  // bookkeeper
 
   // ledger
   public static final String DELETE_LEDGER                = "/api/v1/ledger/delete";
@@ -47,7 +46,7 @@ public abstract class HttpRouter<Handler> {
   public static final String EXPAND_STORAGE               = "/api/v1/bookie/expand_storage";
   // autorecovery
   public static final String RECOVERY_BOOKIE              = "/api/v1/autorecovery/bookie";
-  public static final String LIST_UNDER_REPLICAETD_LEDGER = "/api/v1/autorecovery/list_under_replicated_ledger";
+  public static final String LIST_UNDER_REPLICATED_LEDGER = "/api/v1/autorecovery/list_under_replicated_ledger";
   public static final String WHO_IS_AUDITOR               = "/api/v1/autorecovery/who_is_auditor";
   public static final String TRIGGER_AUDIT                = "/api/v1/autorecovery/trigger_audit";
   public static final String LOST_BOOKIE_RECOVERY_DELAY   = "/api/v1/autorecovery/lost_bookie_recovery_delay";
@@ -75,7 +74,7 @@ public abstract class HttpRouter<Handler> {
 
     // autorecovery
     this.endpointHandlers.put(RECOVERY_BOOKIE, handlerFactory.newRecoveryBookieHandler());
-    this.endpointHandlers.put(LIST_UNDER_REPLICAETD_LEDGER, handlerFactory.newListUnderReplicatedLedgerHandler());
+    this.endpointHandlers.put(LIST_UNDER_REPLICATED_LEDGER, handlerFactory.newListUnderReplicatedLedgerHandler());
     this.endpointHandlers.put(WHO_IS_AUDITOR, handlerFactory.newWhoIsAuditorHandler());
     this.endpointHandlers.put(TRIGGER_AUDIT, handlerFactory.newTriggerAuditHandler());
     this.endpointHandlers.put(LOST_BOOKIE_RECOVERY_DELAY, handlerFactory.newLostBookieRecoveryDelayHandler());

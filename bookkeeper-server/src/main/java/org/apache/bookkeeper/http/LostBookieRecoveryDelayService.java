@@ -56,7 +56,7 @@ public class LostBookieRecoveryDelayService implements HttpEndpointService {
         ClientConfiguration adminConf = new ClientConfiguration(conf);
         BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
 
-        if (HttpServer.Method.PUT == request.getMethod() || HttpServer.Method.POST == request.getMethod()) {
+        if (HttpServer.Method.PUT == request.getMethod()) {
             // request body as {"delay_seconds": <delay_seconds>}
             String requestBody = request.getBody();
 
@@ -100,7 +100,7 @@ public class LostBookieRecoveryDelayService implements HttpEndpointService {
         } else {
             admin.close();
             response.setCode(HttpServer.StatusCode.NOT_FOUND);
-            response.setBody("Not found method. Should be PUT/POST method");
+            response.setBody("Not found method. Should be PUT method");
             return response;
         }
     }

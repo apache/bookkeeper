@@ -24,6 +24,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookieInfoReader;
@@ -85,25 +86,25 @@ public class ListBookieInfoService implements HttpEndpointService {
             /**
              * output:
              *  {
-             *    "bookieAddress" : "free: xxx \t total: xxx \n",
-             *    "bookieAddress" : "free: xxx \t total: xxx \n",
+             *    "bookieAddress" : {free: xxx, total: xxx}",
+             *    "bookieAddress" : {free: xxx, total: xxx},
              *    ...
-             *    "clusterInfo" : "total free: xxx \t total: xxx \n"
+             *    "clusterInfo" : {total_free: xxx, total: xxx}"
              *  }
              */
-            Map<String, String> output = Maps.newHashMap();
+            LinkedHashMap<String, String> output = Maps.newLinkedHashMapWithExpectedSize(map.size());
             Long totalFree = 0L, total = 0L;
             for (Map.Entry<BookieSocketAddress, BookieInfoReader.BookieInfo> infoEntry : map.entrySet()) {
                 BookieInfoReader.BookieInfo bInfo = infoEntry.getValue();
                 output.put(infoEntry.getKey().toString(),
-                    "\tFree: " + bInfo.getFreeDiskSpace() + getReadable(bInfo.getFreeDiskSpace())
-                    + "\tTotal: " + bInfo.getTotalDiskSpace() + getReadable(bInfo.getTotalDiskSpace()));
+                    ": {Free: " + bInfo.getFreeDiskSpace() + getReadable(bInfo.getFreeDiskSpace())
+                    + ", Total: " + bInfo.getTotalDiskSpace() + getReadable(bInfo.getTotalDiskSpace()) + "},");
                 totalFree += bInfo.getFreeDiskSpace();
                 total += bInfo.getTotalDiskSpace();
             }
-            output.put("ClusterInfo",
-                "\tFree: " + totalFree + getReadable(totalFree)
-                + "\tTotal: " + total + getReadable(total));
+            output.put("ClusterInfo: ",
+                "{Free: " + totalFree + getReadable(totalFree)
+                + ", Total: " + total + getReadable(total) + "}");
 
             bk.close();
 

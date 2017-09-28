@@ -22,7 +22,6 @@ package org.apache.bookkeeper.http;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
-import com.google.protobuf.ByteString;
 import java.util.Iterator;
 import java.util.Map;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -66,17 +65,16 @@ public class ReadLedgerEntryService implements HttpEndpointService {
                 endEntryId = Long.parseLong(params.get("end_entry_id"));
             }
 
-            ClientConfiguration clientconf = new ClientConfiguration(conf)
+            ClientConfiguration clientConfiguration = new ClientConfiguration(conf)
               .setZkServers(conf.getZkServers());
 
             // output <entryid: entry_content>
             Map<String, String> output = Maps.newHashMap();
-            BookKeeperAdmin bka = new BookKeeperAdmin(clientconf);
+            BookKeeperAdmin bka = new BookKeeperAdmin(clientConfiguration);
             Iterator<LedgerEntry> entries = bka.readEntries(ledgerId, startEntryId, endEntryId).iterator();
             while (entries.hasNext()) {
                 LedgerEntry entry = entries.next();
-                output.put(Long.valueOf(entry.getEntryId()).toString(),
-                  ByteString.copyFrom(entry.getEntry()).toStringUtf8());
+                output.put(Long.valueOf(entry.getEntryId()).toString(), new String(entry.getEntry()));
             }
 
             if (bka != null) {

@@ -51,7 +51,7 @@ public class TriggerAuditService implements HttpEndpointService {
     public HttpServiceResponse handle(HttpServiceRequest request) throws Exception {
         HttpServiceResponse response = new HttpServiceResponse();
 
-        if (HttpServer.Method.PUT == request.getMethod() || HttpServer.Method.POST == request.getMethod()) {
+        if (HttpServer.Method.PUT == request.getMethod()) {
             ClientConfiguration adminConf = new ClientConfiguration(conf);
             BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
 
@@ -70,7 +70,7 @@ public class TriggerAuditService implements HttpEndpointService {
             return response;
         } else {
             response.setCode(HttpServer.StatusCode.NOT_FOUND);
-            response.setBody("Not found method. Should be PUT/POST method");
+            response.setBody("Not found method. Should be PUT method");
             return response;
         }
     }

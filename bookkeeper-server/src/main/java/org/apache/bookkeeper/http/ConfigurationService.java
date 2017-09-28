@@ -52,8 +52,7 @@ public class ConfigurationService implements HttpEndpointService {
             String jsonResponse = JsonUtil.toJson(configMap);
             response.setBody(jsonResponse);
             return response;
-        } else if (HttpServer.Method.PUT == request.getMethod() ||
-                   HttpServer.Method.POST == request.getMethod()) {
+        } else if (HttpServer.Method.PUT == request.getMethod()) {
             String requestBody = request.getBody();
             if(null == requestBody) {
                 response.setCode(HttpServer.StatusCode.NOT_FOUND);

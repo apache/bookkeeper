@@ -59,8 +59,7 @@ public class ExpandStorageService implements HttpEndpointService {
     public HttpServiceResponse handle(HttpServiceRequest request) throws Exception {
         HttpServiceResponse response = new HttpServiceResponse();
 
-        if (HttpServer.Method.POST == request.getMethod() ||
-            HttpServer.Method.PUT == request.getMethod()) {
+        if (HttpServer.Method.PUT == request.getMethod()) {
 
             ZooKeeper zk = ZooKeeperClient.newBuilder()
               .connectString(conf.getZkServers())
@@ -104,7 +103,7 @@ public class ExpandStorageService implements HttpEndpointService {
             return response;
         } else {
             response.setCode(HttpServer.StatusCode.NOT_FOUND);
-            response.setBody("Not found method. Should be POST/PUT method");
+            response.setBody("Not found method. Should be PUT method");
             return response;
         }
     }
