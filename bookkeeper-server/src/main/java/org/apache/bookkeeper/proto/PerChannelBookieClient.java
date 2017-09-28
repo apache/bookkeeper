@@ -477,7 +477,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     void writeLac(final long ledgerId, final byte[] masterKey, final long lac, ByteBuf toSend, WriteLacCallback cb,
             Object ctx) {
         final long txnId = getTxnId();
-        final CompletionKey completionKey = new V3CompletionKey(txnId, OperationType.WRITE_LAC);
+        final CompletionKey completionKey = new V3CompletionKey(txnId,
+                                                                OperationType.WRITE_LAC);
         // writeLac is mostly like addEntry hence uses addEntryTimeout
         completionObjects.put(completionKey,
                               new WriteLacCompletion(completionKey, cb,
@@ -501,7 +502,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         final Channel c = channel;
         if (c == null) {
-            errorOutWriteLacKey(completionKey);
+            errorOut(completionKey);
             return;
         }
         try {
@@ -519,13 +520,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                             LOG.warn("Writing Lac(lid={} to channel {} failed : ",
                                     new Object[] { ledgerId, c, future.cause() });
                         }
-                        errorOutWriteLacKey(completionKey);
+                        errorOut(completionKey);
                     }
                 }
             });
         } catch (Throwable e) {
             LOG.warn("writeLac operation failed", e);
-            errorOutWriteLacKey(completionKey);
+            errorOut(completionKey);
         }
     }
 
@@ -594,7 +595,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         final Channel c = channel;
         if (c == null) {
-            errorOutAddKey(completionKey);
+            errorOut(completionKey);
             toSend.release();
             return;
         }
@@ -614,13 +615,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                             LOG.warn("Writing addEntry(lid={}, eid={}) to channel {} failed : ",
                                     new Object[] { ledgerId, entryId, c, future.cause() });
                         }
-                        errorOutAddKey(completionKey);
+                        errorOut(completionKey);
                     }
                 }
             });
         } catch (Throwable e) {
             LOG.warn("Add entry operation failed", e);
-            errorOutAddKey(completionKey);
+            errorOut(completionKey);
         }
     }
 
@@ -667,7 +668,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         final Channel c = channel;
         if (c == null) {
-            errorOutReadKey(completionKey);
+            errorOut(completionKey);
             return;
         }
 
@@ -687,13 +688,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                 LOG.warn("Writing readEntryAndFenceLedger(lid={}, eid={}) to channel {} failed : ",
                                         new Object[] { ledgerId, entryId, c, future.cause() });
                             }
-                            errorOutReadKey(completionKey);
+                            errorOut(completionKey);
                         }
                     }
                 });
         } catch(Throwable e) {
             LOG.warn("Read entry operation {} failed", completionKey, e);
-            errorOutReadKey(completionKey);
+            errorOut(completionKey);
         }
     }
 
@@ -728,7 +729,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                                     ctx, ledgerId));
         final Channel c = channel;
         if (c == null) {
-            errorOutReadLacKey(completionKey);
+            errorOut(completionKey);
             return;
         }
 
@@ -746,13 +747,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                             LOG.warn("Writing readLac(lid = {}) to channel {} failed : ",
                                     new Object[] { ledgerId, c, future.cause() });
                         }
-                        errorOutReadLacKey(completionKey);
+                        errorOut(completionKey);
                     }
                 }
             });
         } catch(Throwable e) {
             LOG.warn("Read LAC operation {} failed", readLacRequest, e);
-            errorOutReadLacKey(completionKey);
+            errorOut(completionKey);
         }
     }
 
@@ -843,7 +844,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                                  ctx, ledgerId, entryId));
         final Channel c = channel;
         if (c == null) {
-            errorOutReadKey(completionKey);
+            errorOut(completionKey);
             return;
         }
 
@@ -862,13 +863,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                             LOG.warn("Writing readEntry(lid={}, eid={}) to channel {} failed : ",
                                     new Object[] { ledgerId, entryId, c, future.cause() });
                         }
-                        errorOutReadKey(completionKey);
+                        errorOut(completionKey);
                     }
                 }
             });
         } catch(Throwable e) {
             LOG.warn("Read entry operation {} failed", readRequest, e);
-            errorOutReadKey(completionKey);
+            errorOut(completionKey);
         }
     }
 
@@ -895,7 +896,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         final Channel c = channel;
         if (c == null) {
-            errorOutGetBookieInfoKey(completionKey);
+            errorOut(completionKey);
             return;
         }
 
@@ -914,13 +915,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                             LOG.warn("Writing GetBookieInfoRequest(flags={}) to channel {} failed : ",
                                     new Object[] { requested, c, future.cause() });
                         }
-                        errorOutGetBookieInfoKey(completionKey);
+                        errorOut(completionKey);
                     }
                 }
             });
         } catch(Throwable e) {
             LOG.warn("Get metadata operation {} failed", getBookieInfoRequest, e);
-            errorOutGetBookieInfoKey(completionKey);
+            errorOut(completionKey);
         }
     }
 
@@ -984,163 +985,24 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         return c.close();
     }
 
-    void errorStartTLS(int rc) {
-        failTLS(rc);
-    }
-
-    void errorOutReadKey(final CompletionKey key) {
-        errorOutReadKey(key, BKException.Code.BookieHandleNotAvailableException);
-    }
-
-    void errorOutReadKey(final CompletionKey key, final int rc) {
+    void errorOut(final CompletionKey key) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Removing completion key: {}", key);
         }
-        final ReadCompletion readCompletion = (ReadCompletion)completionObjects.remove(key);
-        if (null == readCompletion) {
-            return;
+        CompletionValue completion = completionObjects.remove(key);
+        if (completion != null) {
+            completion.errorOut();
         }
-        executor.submitOrdered(readCompletion.ledgerId, new SafeRunnable() {
-            @Override
-            public void safeRun() {
-                String bAddress = "null";
-                Channel c = channel;
-                if (c != null && c.remoteAddress() != null) {
-                    bAddress = c.remoteAddress().toString();
-                }
-
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Could not write request for reading entry: {} ledger-id: {} bookie: {} rc: {}",
-                            new Object[] { readCompletion.entryId, readCompletion.ledgerId, bAddress, rc });
-                }
-
-                readCompletion.cb.readEntryComplete(rc, readCompletion.ledgerId, readCompletion.entryId,
-                                                    null, readCompletion.ctx);
-            }
-
-            @Override
-            public String toString() {
-                return String.format("ErrorOutReadKey(%s)", key);
-            }
-        });
     }
 
-    void errorOutWriteLacKey(final CompletionKey key) {
-        errorOutWriteLacKey(key, BKException.Code.BookieHandleNotAvailableException);
-    }
-
-    void errorOutWriteLacKey(final CompletionKey key, final int rc) {
+    void errorOut(final CompletionKey key, final int rc) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Removing completion key: {}", key);
         }
-        final WriteLacCompletion writeLacCompletion = (WriteLacCompletion)completionObjects.remove(key);
-        if (null == writeLacCompletion) {
-            return;
+        CompletionValue completion = completionObjects.remove(key);
+        if (completion != null) {
+            completion.errorOut(rc);
         }
-        executor.submitOrdered(writeLacCompletion.ledgerId, new SafeRunnable() {
-            @Override
-            public void safeRun() {
-                String bAddress = "null";
-                Channel c = channel;
-                if (c != null) {
-                    bAddress = c.remoteAddress().toString();
-                }
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Could not write request writeLac for ledgerId: {} bookie: {}",
-                            writeLacCompletion.ledgerId, bAddress);
-                }
-                writeLacCompletion.cb.writeLacComplete(rc, writeLacCompletion.ledgerId, addr, writeLacCompletion.ctx);
-            }
-        });
-    }
-
-    void errorOutReadLacKey(final CompletionKey key) {
-        errorOutReadLacKey(key, BKException.Code.BookieHandleNotAvailableException);
-    }
-
-    void errorOutReadLacKey(final CompletionKey key, final int rc) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Removing completion key: {}", key);
-        }
-        final ReadLacCompletion readLacCompletion = (ReadLacCompletion)completionObjects.remove(key);
-        if (null == readLacCompletion) {
-            return;
-        }
-        executor.submitOrdered(readLacCompletion.ledgerId, new SafeRunnable() {
-            @Override
-            public void safeRun() {
-                String bAddress = "null";
-                Channel c = channel;
-                if (c != null) {
-                    bAddress = c.remoteAddress().toString();
-                }
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Could not write request readLac for ledgerId: {} bookie: {}", readLacCompletion.ledgerId,
-                            bAddress);
-                }
-                readLacCompletion.cb.readLacComplete(rc, readLacCompletion.ledgerId, null, null, readLacCompletion.ctx);
-            }
-        });
-    }
-
-    void errorOutAddKey(final CompletionKey key) {
-        errorOutAddKey(key, BKException.Code.BookieHandleNotAvailableException);
-    }
-
-    void errorOutAddKey(final CompletionKey key, final int rc) {
-        final AddCompletion addCompletion = (AddCompletion)completionObjects.remove(key);
-        if (null == addCompletion) {
-            return;
-        }
-        executor.submitOrdered(addCompletion.ledgerId, new SafeRunnable() {
-            @Override
-            public void safeRun() {
-                String bAddress = "null";
-                Channel c = channel;
-                if (c != null && c.remoteAddress() != null) {
-                    bAddress = c.remoteAddress().toString();
-                }
-
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Could not write request for adding entry: {} ledger-id: {} bookie: {} rc: {}",
-                            new Object[] { addCompletion.entryId, addCompletion.ledgerId, bAddress, rc });
-                }
-
-                addCompletion.cb.writeComplete(rc, addCompletion.ledgerId, addCompletion.entryId,
-                                               addr, addCompletion.ctx);
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Invoked callback method: {}", addCompletion.entryId);
-                }
-            }
-
-            @Override
-            public String toString() {
-                return String.format("ErrorOutAddKey(%s)", key);
-            }
-        });
-    }
-
-    void errorOutGetBookieInfoKey(final CompletionKey key) {
-        errorOutGetBookieInfoKey(key, BKException.Code.BookieHandleNotAvailableException);
-    }
-
-    void errorOutGetBookieInfoKey(final CompletionKey key, final int rc) {
-        final GetBookieInfoCompletion getBookieInfoCompletion = (GetBookieInfoCompletion)completionObjects.remove(key);
-        if (null == getBookieInfoCompletion) {
-            return;
-        }
-        executor.submit(new SafeRunnable() {
-            @Override
-            public void safeRun() {
-                String bAddress = "null";
-                Channel c = channel;
-                if (c != null) {
-                    bAddress = c.remoteAddress().toString();
-                }
-                LOG.debug("Could not write getBookieInfo request for bookie: {}", new Object[] {bAddress});
-                getBookieInfoCompletion.cb.getBookieInfoComplete(rc, new BookieInfo(), getBookieInfoCompletion.ctx);
-            }
-        });
     }
 
     /**
@@ -1159,22 +1021,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         // successfully removes the key from the map is the one responsible for
         // calling the application callback.
         for (CompletionKey key : completionObjects.keySet()) {
-            switch (key.operationType) {
-                case ADD_ENTRY:
-                    errorOutAddKey(key, rc);
-                    break;
-                case READ_ENTRY:
-                    errorOutReadKey(key, rc);
-                    break;
-                case GET_BOOKIE_INFO:
-                    errorOutGetBookieInfoKey(key, rc);
-                    break;
-                case START_TLS:
-                    errorStartTLS(rc);
-                    break;
-                default:
-                    break;
-            }
+            errorOut(key, rc);
         }
     }
 
@@ -1706,6 +1553,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 recordError();
             }
         }
+
+        public abstract void errorOut();
+        public abstract void errorOut(final int rc);
     }
 
     // visible for testing
@@ -1730,6 +1580,31 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     }
                 };
         }
+
+        @Override
+        public void errorOut() {
+            errorOut(BKException.Code.BookieHandleNotAvailableException);
+        }
+
+        @Override
+        public void errorOut(final int rc) {
+            executor.submitOrdered(ledgerId,
+                    new SafeRunnable() {
+                        @Override
+                        public void safeRun() {
+                            String bAddress = "null";
+                            Channel c = channel;
+                            if (c != null) {
+                                bAddress = c.remoteAddress().toString();
+                            }
+                            if (LOG.isDebugEnabled()) {
+                                LOG.debug("Could not write request writeLac for ledgerId: {} bookie: {}",
+                                          ledgerId, bAddress);
+                            }
+                            cb.writeLacComplete(rc, ledgerId, addr, ctx);
+                        }
+                    });
+        }
     }
 
     // visible for testing
@@ -1753,6 +1628,32 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                 rc, ledgerId, lacBuffer, lastEntryBuffer, ctx);
                     }
                 };
+        }
+
+        @Override
+        public void errorOut() {
+            errorOut(BKException.Code.BookieHandleNotAvailableException);
+        }
+
+        @Override
+        public void errorOut(final int rc) {
+            executor.submitOrdered(ledgerId,
+                    new SafeRunnable() {
+                        @Override
+                        public void safeRun() {
+                            String bAddress = "null";
+                            Channel c = channel;
+                            if (c != null) {
+                                bAddress = c.remoteAddress().toString();
+                            }
+                            if (LOG.isDebugEnabled()) {
+                                LOG.debug("Could not write request readLac for ledgerId: {} bookie: {}",
+                                          ledgerId, bAddress);
+                            }
+                            cb.readLacComplete(rc, ledgerId,
+                                               null, null, ctx);
+                        }
+                    });
         }
     }
 
@@ -1779,6 +1680,34 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     }
                 };
         }
+
+        @Override
+        public void errorOut() {
+            errorOut(BKException.Code.BookieHandleNotAvailableException);
+        }
+
+        @Override
+        public void errorOut(final int rc) {
+            executor.submitOrdered(ledgerId,
+                    new SafeRunnable() {
+                        @Override
+                        public void safeRun() {
+                            String bAddress = "null";
+                            Channel c = channel;
+                            if (c != null && c.remoteAddress() != null) {
+                                bAddress = c.remoteAddress().toString();
+                            }
+
+                            if (LOG.isDebugEnabled()) {
+                                LOG.debug("Could not write request for reading entry: {} ledger-id: {} bookie: {} rc: {}",
+                                          new Object[] { entryId, ledgerId, bAddress, rc });
+                            }
+
+                            cb.readEntryComplete(rc, ledgerId, entryId,
+                                                 null, ctx);
+                        }
+                    });
+        }
     }
 
     class StartTLSCompletion extends CompletionValue {
@@ -1793,6 +1722,16 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     cancelTimeoutAndLogOp(rc);
                 }
             };
+        }
+
+        @Override
+        public void errorOut() {
+            errorOut(BKException.Code.BookieHandleNotAvailableException);
+        }
+
+        @Override
+        public void errorOut(final int rc) {
+            failTLS(rc);
         }
     }
 
@@ -1813,6 +1752,28 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     origCallback.getBookieInfoComplete(rc, bInfo, origCtx);
                 }
             };
+        }
+
+        @Override
+        public void errorOut() {
+            errorOut(BKException.Code.BookieHandleNotAvailableException);
+        }
+
+        @Override
+        public void errorOut(final int rc) {
+            executor.submit(new SafeRunnable() {
+                    @Override
+                    public void safeRun() {
+                        String bAddress = "null";
+                        Channel c = channel;
+                        if (c != null) {
+                            bAddress = c.remoteAddress().toString();
+                        }
+                        LOG.debug("Could not write getBookieInfo request for bookie: {}",
+                                  bAddress);
+                        cb.getBookieInfoComplete(rc, new BookieInfo(), ctx);
+                    }
+                });
         }
     }
 
@@ -1836,6 +1797,36 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                                    addr, originalCtx);
                 }
             };
+        }
+
+        @Override
+        public void errorOut() {
+            errorOut(BKException.Code.BookieHandleNotAvailableException);
+        }
+
+        @Override
+        public void errorOut(final int rc) {
+            executor.submitOrdered(ledgerId, new SafeRunnable() {
+                    @Override
+                    public void safeRun() {
+                        String bAddress = "null";
+                        Channel c = channel;
+                        if (c != null && c.remoteAddress() != null) {
+                            bAddress = c.remoteAddress().toString();
+                        }
+
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Could not write request for adding entry: {} ledger-id: {} bookie: {} rc: {}",
+                            new Object[] { entryId, ledgerId, bAddress, rc });
+                        }
+
+                        cb.writeComplete(rc, ledgerId, entryId,
+                                         addr, ctx);
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Invoked callback method: {}", entryId);
+                        }
+                    }
+                });
         }
     }
 
@@ -1900,24 +1891,24 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 return;
             }
             if (OperationType.ADD_ENTRY == operationType) {
-                errorOutAddKey(this, BKException.Code.TimeoutException);
+                errorOut(this, BKException.Code.TimeoutException);
                 addTimeoutOpLogger.registerSuccessfulEvent(elapsedTime(), TimeUnit.NANOSECONDS);
             } else if (OperationType.READ_ENTRY == operationType) {
-                errorOutReadKey(this, BKException.Code.TimeoutException);
+                errorOut(this, BKException.Code.TimeoutException);
                 readTimeoutOpLogger.registerSuccessfulEvent(elapsedTime(), TimeUnit.NANOSECONDS);
             } else if (OperationType.WRITE_LAC == operationType) {
-                errorOutWriteLacKey(this, BKException.Code.TimeoutException);
+                errorOut(this, BKException.Code.TimeoutException);
                 writeLacTimeoutOpLogger.registerSuccessfulEvent(elapsedTime(), TimeUnit.NANOSECONDS);
             } else if (OperationType.READ_LAC == operationType) {
-                errorOutReadLacKey(this, BKException.Code.TimeoutException);
+                errorOut(this, BKException.Code.TimeoutException);
                 readLacTimeoutOpLogger.registerSuccessfulEvent(elapsedTime(), TimeUnit.NANOSECONDS);
             } else if (OperationType.GET_BOOKIE_INFO == operationType) {
-                errorOutGetBookieInfoKey(this, BKException.Code.TimeoutException);
+                errorOut(this, BKException.Code.TimeoutException);
                 getBookieInfoTimeoutOpLogger.registerSuccessfulEvent(elapsedTime(), TimeUnit.NANOSECONDS);
             } else if (OperationType.START_TLS == operationType) {
-                errorStartTLS(BKException.Code.TimeoutException);
+                failTLS(BKException.Code.TimeoutException);
             } else {
-                errorOutGetBookieInfoKey(this, BKException.Code.TimeoutException);
+                errorOut(this, BKException.Code.TimeoutException);
                 getBookieInfoTimeoutOpLogger.registerSuccessfulEvent(elapsedTime(), TimeUnit.NANOSECONDS);
             }
         }
@@ -2087,6 +2078,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             }
         });
     }
+
     private void failTLS(int rc) {
         LOG.error("TLS failure on: {}, rc: {}", channel, rc);
         Queue<GenericCallback<PerChannelBookieClient>> oldPendingOps;
