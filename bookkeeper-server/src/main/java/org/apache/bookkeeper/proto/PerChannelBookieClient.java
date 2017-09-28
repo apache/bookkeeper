@@ -480,7 +480,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         final CompletionKey completionKey = new V3CompletionKey(txnId, OperationType.WRITE_LAC);
         // writeLac is mostly like addEntry hence uses addEntryTimeout
         completionObjects.put(completionKey,
-                new WriteLacCompletion(writeLacOpLogger, cb, ctx, lac, scheduleTimeout(completionKey, addEntryTimeout)));
+                              new WriteLacCompletion(completionKey, cb,
+                                                     ctx, lac));
 
         // Build the request
         BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
@@ -585,8 +586,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         final Object addRequest = request;
         final CompletionKey completionKey = completion;
 
-        completionObjects.put(completionKey, new AddCompletion(this,
-                addEntryOpLogger, cb, ctx, ledgerId, entryId, scheduleTimeout(completion, addEntryTimeout)));
+        completionObjects.put(completionKey,
+                              new AddCompletion(completionKey,
+                                                cb, ctx, ledgerId, entryId));
 
         final int entrySize = toSend.readableBytes();
 
@@ -654,8 +656,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
 
         final CompletionKey completionKey = completion;
-        if (completionObjects.putIfAbsent(completionKey, new ReadCompletion(this, readEntryOpLogger, cb,
-                ctx, ledgerId, entryId, scheduleTimeout(completionKey, readEntryTimeout))) != null) {
+        if (completionObjects.putIfAbsent(
+                    completionKey, new ReadCompletion(completionKey,
+                                                      cb, ctx,
+                                                      ledgerId, entryId)) != null) {
             // We cannot have more than 1 pending read on the same ledger/entry in the v2 protocol
             cb.readEntryComplete(BKException.Code.BookieHandleNotAvailableException, ledgerId, entryId, null, ctx);
             return;
@@ -720,8 +724,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         final CompletionKey completionKey = completion;
 
         completionObjects.put(completionKey,
-                new ReadLacCompletion(readLacOpLogger, cb, ctx, ledgerId,
-                        scheduleTimeout(completionKey, readEntryTimeout)));
+                              new ReadLacCompletion(completionKey, cb,
+                                                    ctx, ledgerId));
         final Channel c = channel;
         if (c == null) {
             errorOutReadLacKey(completionKey);
@@ -835,8 +839,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         final CompletionKey completionKey = completion;
 
         completionObjects.put(completionKey,
-                new ReadCompletion(this, readEntryOpLogger, cb, ctx, ledgerId, entryId,
-                        scheduleTimeout(completionKey, readEntryTimeout)));
+                              new ReadCompletion(completionKey, cb,
+                                                 ctx, ledgerId, entryId));
         final Channel c = channel;
         if (c == null) {
             errorOutReadKey(completionKey);
@@ -872,8 +876,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         final long txnId = getTxnId();
         final CompletionKey completionKey = new V3CompletionKey(txnId, OperationType.GET_BOOKIE_INFO);
         completionObjects.put(completionKey,
-                new GetBookieInfoCompletion(this, getBookieInfoOpLogger, cb, ctx,
-                                   scheduleTimeout(completionKey, getBookieInfoTimeout)));
+                              new GetBookieInfoCompletion(
+                                      completionKey, cb, ctx));
 
         // Build the request and calculate the total size to be included in the packet.
         BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
@@ -1666,228 +1670,170 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
      */
 
     // visible for testing
-    static abstract class CompletionValue {
+    abstract class CompletionValue {
         final Object ctx;
         protected final long ledgerId;
         protected final long entryId;
+        private final long startTime;
+        private final OpStatsLogger opLogger;
         protected final Timeout timeout;
 
-        public CompletionValue(Object ctx, long ledgerId, long entryId,
-                               Timeout timeout) {
+        public CompletionValue(Object ctx,
+                               long ledgerId, long entryId,
+                               OpStatsLogger opLogger, Timeout timeout) {
             this.ctx = ctx;
             this.ledgerId = ledgerId;
             this.entryId = entryId;
+            this.startTime = MathUtils.nowInNano();
+            this.opLogger = opLogger;
             this.timeout = timeout;
         }
 
-        void cancelTimeout() {
+        void cancelTimeoutAndLogOp(int rc) {
             if (null != timeout) {
                 timeout.cancel();
+            }
+
+            long latency = MathUtils.elapsedNanos(startTime);
+            if (rc != BKException.Code.OK) {
+                opLogger.registerFailedEvent(latency, TimeUnit.NANOSECONDS);
+            } else {
+                opLogger.registerSuccessfulEvent(latency, TimeUnit.NANOSECONDS);
+            }
+
+            if (rc != BKException.Code.OK
+                && !expectedBkOperationErrors.contains(rc)) {
+                recordError();
             }
         }
     }
 
     // visible for testing
-    static class WriteLacCompletion extends CompletionValue {
+    class WriteLacCompletion extends CompletionValue {
         final WriteLacCallback cb;
 
-        public WriteLacCompletion(WriteLacCallback cb, Object ctx, long ledgerId) {
-            this(null, cb, ctx, ledgerId, null);
-        }
-
-        public WriteLacCompletion(final OpStatsLogger writeLacOpLogger, final WriteLacCallback originalCallback,
-                final Object originalCtx, final long ledgerId, final Timeout timeout) {
-            super(originalCtx, ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, timeout);
-            final long startTime = MathUtils.nowInNano();
-            this.cb = null == writeLacOpLogger ? originalCallback : new WriteLacCallback() {
-                @Override
-                public void writeLacComplete(int rc, long ledgerId, BookieSocketAddress addr, Object ctx) {
-                    cancelTimeout();
-                    long latency = MathUtils.elapsedNanos(startTime);
-                    if (rc != BKException.Code.OK) {
-                        writeLacOpLogger.registerFailedEvent(latency, TimeUnit.NANOSECONDS);
-                    } else {
-                        writeLacOpLogger.registerSuccessfulEvent(latency, TimeUnit.NANOSECONDS);
+        public WriteLacCompletion(CompletionKey key,
+                                  final WriteLacCallback originalCallback,
+                                  final Object originalCtx,
+                                  final long ledgerId) {
+            super(originalCtx, ledgerId, BookieProtocol.LAST_ADD_CONFIRMED,
+                  writeLacOpLogger,
+                  scheduleTimeout(key, addEntryTimeout));
+            this.cb = new WriteLacCallback() {
+                    @Override
+                    public void writeLacComplete(int rc, long ledgerId,
+                                                 BookieSocketAddress addr,
+                                                 Object ctx) {
+                        cancelTimeoutAndLogOp(rc);
+                        originalCallback.writeLacComplete(rc, ledgerId,
+                                                          addr, originalCtx);
                     }
-                    originalCallback.writeLacComplete(rc, ledgerId, addr, originalCtx);
-                }
-            };
-
+                };
         }
     }
 
     // visible for testing
-    static class ReadLacCompletion extends CompletionValue {
+    class ReadLacCompletion extends CompletionValue {
         final ReadLacCallback cb;
 
-        public ReadLacCompletion(ReadLacCallback cb, Object ctx, long ledgerId) {
-            this (null, cb, ctx, ledgerId, null);
-        }
-
-        public ReadLacCompletion(final OpStatsLogger readLacOpLogger, final ReadLacCallback originalCallback,
-                final Object ctx, final long ledgerId, final Timeout timeout) {
-            super(ctx, ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, timeout);
-            final long startTime = MathUtils.nowInNano();
-            this.cb = null == readLacOpLogger ? originalCallback : new ReadLacCallback() {
-                @Override
-                public void readLacComplete(int rc, long ledgerId, ByteBuf lacBuffer, ByteBuf lastEntryBuffer,
-                        Object ctx) {
-                    cancelTimeout();
-                    long latency = MathUtils.elapsedNanos(startTime);
-                    if (rc != BKException.Code.OK) {
-                        readLacOpLogger.registerFailedEvent(latency, TimeUnit.NANOSECONDS);
-                    } else {
-                        readLacOpLogger.registerSuccessfulEvent(latency, TimeUnit.NANOSECONDS);
+        public ReadLacCompletion(CompletionKey key,
+                                 ReadLacCallback originalCallback,
+                                 final Object ctx, final long ledgerId) {
+            super(ctx, ledgerId, BookieProtocol.LAST_ADD_CONFIRMED,
+                  readLacOpLogger,
+                  scheduleTimeout(key, readEntryTimeout));
+            this.cb = new ReadLacCallback() {
+                    @Override
+                    public void readLacComplete(int rc, long ledgerId,
+                                                ByteBuf lacBuffer,
+                                                ByteBuf lastEntryBuffer,
+                                                Object ctx) {
+                        cancelTimeoutAndLogOp(rc);
+                        originalCallback.readLacComplete(
+                                rc, ledgerId, lacBuffer, lastEntryBuffer, ctx);
                     }
-                    originalCallback.readLacComplete(rc, ledgerId, lacBuffer, lastEntryBuffer, ctx);
-                }
-            };
+                };
         }
     }
 
     // visible for testing
-    static class ReadCompletion extends CompletionValue {
+    class ReadCompletion extends CompletionValue {
         final ReadEntryCallback cb;
 
-        public ReadCompletion(final PerChannelBookieClient pcbc, ReadEntryCallback cb, Object ctx,
-                              long ledgerId, long entryId) {
-            this(pcbc, null, cb, ctx, ledgerId, entryId, null);
-        }
-
-        public ReadCompletion(final PerChannelBookieClient pcbc, final OpStatsLogger readEntryOpLogger,
+        public ReadCompletion(CompletionKey key,
                               final ReadEntryCallback originalCallback,
-                              final Object originalCtx, final long ledgerId, final long entryId,
-                              final Timeout timeout) {
-            super(originalCtx, ledgerId, entryId, timeout);
-            final long startTime = MathUtils.nowInNano();
+                              final Object originalCtx,
+                              long ledgerId, final long entryId) {
+            super(originalCtx, ledgerId, entryId, readEntryOpLogger,
+                  scheduleTimeout(key, readEntryTimeout));
+
             this.cb = new ReadEntryCallback() {
-                @Override
-                public void readEntryComplete(int rc, long ledgerId, long entryId, ByteBuf buffer, Object ctx) {
-                    cancelTimeout();
-                    if (readEntryOpLogger != null) {
-                        long latency = MathUtils.elapsedNanos(startTime);
-                        if (rc != BKException.Code.OK) {
-                            readEntryOpLogger.registerFailedEvent(latency, TimeUnit.NANOSECONDS);
-                        } else {
-                            readEntryOpLogger.registerSuccessfulEvent(latency, TimeUnit.NANOSECONDS);
-                        }
+                    @Override
+                    public void readEntryComplete(int rc, long ledgerId,
+                                                  long entryId, ByteBuf buffer,
+                                                  Object ctx) {
+                        cancelTimeoutAndLogOp(rc);
+                        originalCallback.readEntryComplete(rc,
+                                                           ledgerId, entryId,
+                                                           buffer, originalCtx);
                     }
-
-                    if (rc != BKException.Code.OK && !expectedBkOperationErrors.contains(rc)) {
-                        pcbc.recordError();
-                    }
-
-                    originalCallback.readEntryComplete(rc, ledgerId, entryId, buffer, originalCtx);
-                }
-            };
+                };
         }
     }
 
-    static class StartTLSCompletion extends CompletionValue {
+    class StartTLSCompletion extends CompletionValue {
         final StartTLSCallback cb;
 
-        public StartTLSCompletion(final PerChannelBookieClient pcbc, StartTLSCallback cb, Object ctx) {
-            this(pcbc, null, cb, ctx, null);
-        }
-
-        public StartTLSCompletion(final PerChannelBookieClient pcbc, final OpStatsLogger startTLSOpLogger,
-                                  final StartTLSCallback originalCallback, final Object originalCtx, final Timeout timeout) {
-            super(originalCtx, -1, -1, timeout);
-            final long startTime = MathUtils.nowInNano();
+        public StartTLSCompletion(CompletionKey key) {
+            super(null, -1, -1, startTLSOpLogger,
+                  scheduleTimeout(key, startTLSTimeout));
             this.cb = new StartTLSCallback() {
                 @Override
                 public void startTLSComplete(int rc, Object ctx) {
-                    cancelTimeout();
-                    if (startTLSOpLogger != null) {
-                        long latency = MathUtils.elapsedNanos(startTime);
-                        if (rc != BKException.Code.OK) {
-                            startTLSOpLogger.registerFailedEvent(latency, TimeUnit.NANOSECONDS);
-                        } else {
-                            startTLSOpLogger.registerSuccessfulEvent(latency, TimeUnit.NANOSECONDS);
-                        }
-                    }
-
-                    if (rc != BKException.Code.OK && !expectedBkOperationErrors.contains(rc)) {
-                        pcbc.recordError();
-                    }
-
-                    if (originalCallback != null) {
-                        originalCallback.startTLSComplete(rc, originalCtx);
-                    }
+                    cancelTimeoutAndLogOp(rc);
                 }
             };
         }
     }
 
     // visible for testing
-    static class GetBookieInfoCompletion extends CompletionValue {
+    class GetBookieInfoCompletion extends CompletionValue {
         final GetBookieInfoCallback cb;
 
-        public GetBookieInfoCompletion(final PerChannelBookieClient pcbc, GetBookieInfoCallback cb, Object ctx) {
-            this(pcbc, null, cb, ctx, null);
-        }
-
-        public GetBookieInfoCompletion(final PerChannelBookieClient pcbc, final OpStatsLogger getBookieInfoOpLogger,
-                              final GetBookieInfoCallback originalCallback,
-                              final Object originalCtx, final Timeout timeout) {
-            super(originalCtx, 0L, 0L, timeout);
-            final long startTime = MathUtils.nowInNano();
-            this.cb = (null == getBookieInfoOpLogger) ? originalCallback : new GetBookieInfoCallback() {
+        public GetBookieInfoCompletion(CompletionKey key,
+                                       final GetBookieInfoCallback origCallback,
+                                       final Object origCtx) {
+            super(origCtx, 0L, 0L, getBookieInfoOpLogger,
+                  scheduleTimeout(key, getBookieInfoTimeout));
+            this.cb = new GetBookieInfoCallback() {
                 @Override
-                public void getBookieInfoComplete(int rc, BookieInfo bInfo, Object ctx) {
-                    cancelTimeout();
-                    if (getBookieInfoOpLogger != null) {
-                        long latency = MathUtils.elapsedNanos(startTime);
-                        if (rc != BKException.Code.OK) {
-                            getBookieInfoOpLogger.registerFailedEvent(latency, TimeUnit.NANOSECONDS);
-                        } else {
-                            getBookieInfoOpLogger.registerSuccessfulEvent(latency, TimeUnit.NANOSECONDS);
-                        }
-                    }
-
-                    if (rc != BKException.Code.OK && !expectedBkOperationErrors.contains(rc)) {
-                        pcbc.recordError();
-                    }
-
-                    originalCallback.getBookieInfoComplete(rc, bInfo, originalCtx);
+                public void getBookieInfoComplete(int rc, BookieInfo bInfo,
+                                                  Object ctx) {
+                    cancelTimeoutAndLogOp(rc);
+                    origCallback.getBookieInfoComplete(rc, bInfo, origCtx);
                 }
             };
         }
     }
 
     // visible for testing
-    static class AddCompletion extends CompletionValue {
+    class AddCompletion extends CompletionValue {
         final WriteCallback cb;
 
-        public AddCompletion(final PerChannelBookieClient pcbc, WriteCallback cb, Object ctx,
-                             long ledgerId, long entryId) {
-            this(pcbc, null, cb, ctx, ledgerId, entryId, null);
-        }
-
-        public AddCompletion(final PerChannelBookieClient pcbc, final OpStatsLogger addEntryOpLogger,
+        public AddCompletion(CompletionKey key,
                              final WriteCallback originalCallback,
-                             final Object originalCtx, final long ledgerId, final long entryId,
-                             final Timeout timeout) {
-            super(originalCtx, ledgerId, entryId, timeout);
-            final long startTime = MathUtils.nowInNano();
-            this.cb = null == addEntryOpLogger ? originalCallback : new WriteCallback() {
+                             final Object originalCtx,
+                             final long ledgerId, final long entryId) {
+            super(originalCtx, ledgerId, entryId, addEntryOpLogger,
+                  scheduleTimeout(key, addEntryTimeout));
+            this.cb = new WriteCallback() {
                 @Override
-                public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
-                    cancelTimeout();
-                    if (pcbc.addEntryOpLogger != null) {
-                        long latency = MathUtils.elapsedNanos(startTime);
-                        if (rc != BKException.Code.OK) {
-                            pcbc.addEntryOpLogger.registerFailedEvent(latency, TimeUnit.NANOSECONDS);
-                        } else {
-                            pcbc.addEntryOpLogger.registerSuccessfulEvent(latency, TimeUnit.NANOSECONDS);
-                        }
-                    }
-
-                    if (rc != BKException.Code.OK && !expectedBkOperationErrors.contains(rc)) {
-                        pcbc.recordError();
-                    }
-
-                    originalCallback.writeComplete(rc, ledgerId, entryId, addr, originalCtx);
+                public void writeComplete(int rc, long ledgerId, long entryId,
+                                          BookieSocketAddress addr,
+                                          Object ctx) {
+                    cancelTimeoutAndLogOp(rc);
+                    originalCallback.writeComplete(rc, ledgerId, entryId,
+                                                   addr, originalCtx);
                 }
             };
         }
@@ -2051,7 +1997,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             return String.format("%d:%d %s", ledgerId, entryId, operationType);
         }
     }
-    
+
     public class ConnectionFutureListener implements ChannelFutureListener {
         @Override
         public void operationComplete(ChannelFuture future) throws Exception {
@@ -2121,8 +2067,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         assert state == ConnectionState.CONNECTING;
         final long txnId = getTxnId();
         final CompletionKey completionKey = new V3CompletionKey(txnId, OperationType.START_TLS);
-        completionObjects.put(completionKey, new StartTLSCompletion(this, startTLSOpLogger, null, null,
-                scheduleTimeout(completionKey, startTLSTimeout)));
+        completionObjects.put(completionKey,
+                              new StartTLSCompletion(completionKey));
         BookkeeperProtocol.Request.Builder h = BookkeeperProtocol.Request.newBuilder();
         BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
                 .setVersion(ProtocolVersion.VERSION_THREE)
