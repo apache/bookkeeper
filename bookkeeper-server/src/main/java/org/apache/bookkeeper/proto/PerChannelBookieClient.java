@@ -499,35 +499,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 .setHeader(headerBuilder)
                 .setWriteLacRequest(writeLacBuilder)
                 .build();
-
-        final Channel c = channel;
-        if (c == null) {
-            errorOut(completionKey);
-            return;
-        }
-        try {
-            ChannelFuture future = c.writeAndFlush(writeLacRequest);
-            future.addListener(new ChannelFutureListener() {
-                @Override
-                public void operationComplete(ChannelFuture future) throws Exception {
-                    if (future.isSuccess()) {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("Successfully wrote request for writeLac LedgerId: {} bookie: {}",
-                                    ledgerId, c.remoteAddress());
-                        }
-                    } else {
-                        if (!(future.cause() instanceof ClosedChannelException)) {
-                            LOG.warn("Writing Lac(lid={} to channel {} failed : ",
-                                    new Object[] { ledgerId, c, future.cause() });
-                        }
-                        errorOut(completionKey);
-                    }
-                }
-            });
-        } catch (Throwable e) {
-            LOG.warn("writeLac operation failed", e);
-            errorOut(completionKey);
-        }
+        writeAndFlush(channel, completionKey, writeLacRequest);
     }
 
     /**
@@ -552,14 +524,14 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     void addEntry(final long ledgerId, byte[] masterKey, final long entryId, ByteBuf toSend, WriteCallback cb,
                   Object ctx, final int options) {
         Object request = null;
-        CompletionKey completion = null;
+        CompletionKey completionKey = null;
         if (useV2WireProtocol) {
-            completion = new V2CompletionKey(ledgerId, entryId, OperationType.ADD_ENTRY);
+            completionKey = new V2CompletionKey(ledgerId, entryId, OperationType.ADD_ENTRY);
             request = new BookieProtocol.AddRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId, entryId,
                     (short) options, masterKey, toSend);
         } else {
             final long txnId = getTxnId();
-            completion = new V3CompletionKey(txnId, OperationType.ADD_ENTRY);
+            completionKey = new V3CompletionKey(txnId, OperationType.ADD_ENTRY);
             // Build the request and calculate the total size to be included in the packet.
             BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
                     .setVersion(ProtocolVersion.VERSION_THREE)
@@ -584,44 +556,18 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     .build();
         }
 
-        final Object addRequest = request;
-        final CompletionKey completionKey = completion;
-
         completionObjects.put(completionKey,
                               new AddCompletion(completionKey,
                                                 cb, ctx, ledgerId, entryId));
-
-        final int entrySize = toSend.readableBytes();
-
         final Channel c = channel;
         if (c == null) {
+            // usually checked in writeAndFlush, but we have extra check
+            // because we need to release toSend.
             errorOut(completionKey);
             toSend.release();
             return;
-        }
-        try {
-            ChannelFuture future = c.writeAndFlush(addRequest);
-            future.addListener(new ChannelFutureListener() {
-                @Override
-                public void operationComplete(ChannelFuture future) throws Exception {
-                    if (future.isSuccess()) {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("Successfully wrote request for adding entry: " + entryId + " ledger-id: " + ledgerId
-                                                            + " bookie: " + c.remoteAddress() + " entry length: " + entrySize);
-                        }
-                        // totalBytesOutstanding.addAndGet(entrySize);
-                    } else {
-                        if (!(future.cause() instanceof ClosedChannelException)) {
-                            LOG.warn("Writing addEntry(lid={}, eid={}) to channel {} failed : ",
-                                    new Object[] { ledgerId, entryId, c, future.cause() });
-                        }
-                        errorOut(completionKey);
-                    }
-                }
-            });
-        } catch (Throwable e) {
-            LOG.warn("Add entry operation failed", e);
-            errorOut(completionKey);
+        } else {
+            writeAndFlush(c, completionKey, request);
         }
     }
 
@@ -629,14 +575,14 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                         final long entryId,
                                         ReadEntryCallback cb, Object ctx) {
         Object request = null;
-        CompletionKey completion = null;
+        CompletionKey completionKey = null;
         if (useV2WireProtocol) {
-            completion = new V2CompletionKey(ledgerId, entryId, OperationType.READ_ENTRY);
+            completionKey = new V2CompletionKey(ledgerId, entryId, OperationType.READ_ENTRY);
             request = new BookieProtocol.ReadRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId, entryId,
                     BookieProtocol.FLAG_DO_FENCING, masterKey);
         } else {
             final long txnId = getTxnId();
-            completion = new V3CompletionKey(txnId, OperationType.READ_ENTRY);
+            completionKey = new V3CompletionKey(txnId, OperationType.READ_ENTRY);
 
             // Build the request and calculate the total size to be included in the packet.
             BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
@@ -656,7 +602,6 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     .build();
         }
 
-        final CompletionKey completionKey = completion;
         if (completionObjects.putIfAbsent(
                     completionKey, new ReadCompletion(completionKey,
                                                       cb, ctx,
@@ -666,48 +611,19 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             return;
         }
 
-        final Channel c = channel;
-        if (c == null) {
-            errorOut(completionKey);
-            return;
-        }
-
-        final Object readRequest = request;
-        try {
-            ChannelFuture future = c.writeAndFlush(readRequest);
-            future.addListener(new ChannelFutureListener() {
-                    @Override
-                    public void operationComplete(ChannelFuture future) throws Exception {
-                        if (future.isSuccess()) {
-                            if (LOG.isDebugEnabled()) {
-                                LOG.debug("Successfully wrote request {} to {}",
-                                          readRequest, c.remoteAddress());
-                            }
-                        } else {
-                            if (!(future.cause() instanceof ClosedChannelException)) {
-                                LOG.warn("Writing readEntryAndFenceLedger(lid={}, eid={}) to channel {} failed : ",
-                                        new Object[] { ledgerId, entryId, c, future.cause() });
-                            }
-                            errorOut(completionKey);
-                        }
-                    }
-                });
-        } catch(Throwable e) {
-            LOG.warn("Read entry operation {} failed", completionKey, e);
-            errorOut(completionKey);
-        }
+        writeAndFlush(channel, completionKey, request);
     }
 
     public void readLac(final long ledgerId, ReadLacCallback cb, Object ctx) {
         Object request = null;
-        CompletionKey completion = null;
+        CompletionKey completionKey = null;
         if (useV2WireProtocol) {
             request = new BookieProtocol.ReadRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION,
                     ledgerId, 0, (short) 0);
-            completion = new V2CompletionKey(ledgerId, 0, OperationType.READ_LAC);
+            completionKey = new V2CompletionKey(ledgerId, 0, OperationType.READ_LAC);
         } else {
             final long txnId = getTxnId();
-            completion = new V3CompletionKey(txnId, OperationType.READ_LAC);
+            completionKey = new V3CompletionKey(txnId, OperationType.READ_LAC);
 
             // Build the request and calculate the total size to be included in the packet.
             BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
@@ -721,40 +637,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     .setReadLacRequest(readLacBuilder)
                     .build();
         }
-        final Object readLacRequest = request;
-        final CompletionKey completionKey = completion;
-
         completionObjects.put(completionKey,
                               new ReadLacCompletion(completionKey, cb,
                                                     ctx, ledgerId));
-        final Channel c = channel;
-        if (c == null) {
-            errorOut(completionKey);
-            return;
-        }
-
-        try {
-            ChannelFuture future = c.writeAndFlush(readLacRequest);
-            future.addListener(new ChannelFutureListener() {
-                @Override
-                public void operationComplete(ChannelFuture future) throws Exception {
-                    if (future.isSuccess()) {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("Succssfully wrote request {} to {}", readLacRequest, c.remoteAddress());
-                        }
-                    } else {
-                        if (!(future.cause() instanceof ClosedChannelException)) {
-                            LOG.warn("Writing readLac(lid = {}) to channel {} failed : ",
-                                    new Object[] { ledgerId, c, future.cause() });
-                        }
-                        errorOut(completionKey);
-                    }
-                }
-            });
-        } catch(Throwable e) {
-            LOG.warn("Read LAC operation {} failed", readLacRequest, e);
-            errorOut(completionKey);
-        }
+        writeAndFlush(channel, completionKey, request);
     }
 
     /**
@@ -788,14 +674,14 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                    final ReadEntryCallback cb,
                                    final Object ctx) {
         Object request = null;
-        CompletionKey completion = null;
+        CompletionKey completionKey = null;
         if (useV2WireProtocol) {
             request = new BookieProtocol.ReadRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION,
                     ledgerId, entryId, (short) 0);
-            completion = new V2CompletionKey(ledgerId, entryId, OperationType.READ_ENTRY);
+            completionKey = new V2CompletionKey(ledgerId, entryId, OperationType.READ_ENTRY);
         } else {
             final long txnId = getTxnId();
-            completion = new V3CompletionKey(txnId, OperationType.READ_ENTRY);
+            completionKey = new V3CompletionKey(txnId, OperationType.READ_ENTRY);
 
             // Build the request and calculate the total size to be included in the packet.
             BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
@@ -836,41 +722,11 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     .setReadRequest(readBuilder)
                     .build();
         }
-        final Object readRequest = request;
-        final CompletionKey completionKey = completion;
 
         completionObjects.put(completionKey,
                               new ReadCompletion(completionKey, cb,
                                                  ctx, ledgerId, entryId));
-        final Channel c = channel;
-        if (c == null) {
-            errorOut(completionKey);
-            return;
-        }
-
-        try{
-            ChannelFuture future = c.writeAndFlush(readRequest);
-            future.addListener(new ChannelFutureListener() {
-                @Override
-                public void operationComplete(ChannelFuture future) throws Exception {
-                    if (future.isSuccess()) {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("Successfully wrote request {} to {}",
-                                      readRequest, c.remoteAddress());
-                        }
-                    } else {
-                        if (!(future.cause() instanceof ClosedChannelException)) {
-                            LOG.warn("Writing readEntry(lid={}, eid={}) to channel {} failed : ",
-                                    new Object[] { ledgerId, entryId, c, future.cause() });
-                        }
-                        errorOut(completionKey);
-                    }
-                }
-            });
-        } catch(Throwable e) {
-            LOG.warn("Read entry operation {} failed", readRequest, e);
-            errorOut(completionKey);
-        }
+        writeAndFlush(channel, completionKey, request);
     }
 
     public void getBookieInfo(final long requested, GetBookieInfoCallback cb, Object ctx) {
@@ -894,35 +750,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 .setGetBookieInfoRequest(getBookieInfoBuilder)
                 .build();
 
-        final Channel c = channel;
-        if (c == null) {
-            errorOut(completionKey);
-            return;
-        }
-
-        try{
-            ChannelFuture future = c.writeAndFlush(getBookieInfoRequest);
-            future.addListener(new ChannelFutureListener() {
-                @Override
-                public void operationComplete(ChannelFuture future) throws Exception {
-                    if (future.isSuccess()) {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("Successfully wrote request {} to {}",
-                                    getBookieInfoRequest, c.remoteAddress());
-                        }
-                    } else {
-                        if (!(future.cause() instanceof ClosedChannelException)) {
-                            LOG.warn("Writing GetBookieInfoRequest(flags={}) to channel {} failed : ",
-                                    new Object[] { requested, c, future.cause() });
-                        }
-                        errorOut(completionKey);
-                    }
-                }
-            });
-        } catch(Throwable e) {
-            LOG.warn("Get metadata operation {} failed", getBookieInfoRequest, e);
-            errorOut(completionKey);
-        }
+        writeAndFlush(channel, completionKey, getBookieInfoRequest);
     }
 
     /**
@@ -985,6 +813,54 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         return c.close();
     }
 
+    private void writeAndFlush(final Channel channel,
+                               final CompletionKey key,
+                               final Object request) {
+        if (channel == null) {
+            errorOut(key);
+            return;
+        }
+
+        try{
+            channel.writeAndFlush(request)
+                .addListener(new ChannelFutureListener() {
+                        @Override
+                        public void operationComplete(ChannelFuture future)
+                                throws Exception {
+                            if (future.isSuccess()) {
+                                if (LOG.isDebugEnabled()) {
+                                    LOG.debug("Successfully wrote request {} to {}",
+                                              requestToString(request),
+                                              channel.remoteAddress());
+                                }
+                            } else {
+                                if (!(future.cause()
+                                      instanceof ClosedChannelException)) {
+                                    LOG.warn("Writing request {} to {} failed : ",
+                                             requestToString(request),
+                                             channel, future.cause());
+                                }
+                                errorOut(key);
+                            }
+                        }
+                    });
+        } catch(Throwable e) {
+            LOG.warn("Operation {} failed", requestToString(request), e);
+            errorOut(key);
+        }
+    }
+
+    private static String requestToString(Object request) {
+        if (request instanceof BookkeeperProtocol.Request) {
+            BookkeeperProtocol.BKPacketHeader header
+                = ((BookkeeperProtocol.Request)request).getHeader();
+            return String.format("Req(txnId=%d,op=%s,version=%s)",
+                                 header.getTxnId(), header.getOperation(),
+                                 header.getVersion());
+        } else {
+            return request.toString();
+        }
+    }
     void errorOut(final CompletionKey key) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Removing completion key: {}", key);
@@ -2068,15 +1944,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         h.setHeader(headerBuilder.build());
         h.setStartTLSRequest(BookkeeperProtocol.StartTLSRequest.newBuilder().build());
         state = ConnectionState.START_TLS;
-        channel.writeAndFlush(h.build()).addListener(new ChannelFutureListener() {
-            @Override
-            public void operationComplete(ChannelFuture future) throws Exception {
-                if (!future.isSuccess()) {
-                    LOG.error("Failed to send START_TLS request");
-                    failTLS(BKException.Code.SecurityException);
-                }
-            }
-        });
+        writeAndFlush(channel, completionKey, h.build());
     }
 
     private void failTLS(int rc) {
