@@ -170,6 +170,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     private final OpStatsLogger getBookieInfoOpLogger;
     private final OpStatsLogger getBookieInfoTimeoutOpLogger;
     private final OpStatsLogger startTLSOpLogger;
+    private final OpStatsLogger startTLSTimeoutOpLogger;
 
     private final boolean useV2WireProtocol;
 
@@ -269,6 +270,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         readLacTimeoutOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_TIMEOUT_READ_LAC);
         getBookieInfoTimeoutOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.TIMEOUT_GET_BOOKIE_INFO);
         startTLSOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_START_TLS_OP);
+        startTLSTimeoutOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_TIMEOUT_START_TLS_OP);
 
         this.pcbcPool = pcbcPool;
 
@@ -1399,17 +1401,25 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         protected final long entryId;
         private final long startTime;
         private final OpStatsLogger opLogger;
+        private final OpStatsLogger timeoutOpLogger;
         protected final Timeout timeout;
 
         public CompletionValue(Object ctx,
                                long ledgerId, long entryId,
-                               OpStatsLogger opLogger, Timeout timeout) {
+                               OpStatsLogger opLogger,
+                               OpStatsLogger timeoutOpLogger,
+                               Timeout timeout) {
             this.ctx = ctx;
             this.ledgerId = ledgerId;
             this.entryId = entryId;
             this.startTime = MathUtils.nowInNano();
             this.opLogger = opLogger;
+            this.timeoutOpLogger = timeoutOpLogger;
             this.timeout = timeout;
+        }
+
+        private long latency() {
+            return MathUtils.elapsedNanos(startTime);
         }
 
         void cancelTimeoutAndLogOp(int rc) {
@@ -1417,17 +1427,22 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 timeout.cancel();
             }
 
-            long latency = MathUtils.elapsedNanos(startTime);
             if (rc != BKException.Code.OK) {
-                opLogger.registerFailedEvent(latency, TimeUnit.NANOSECONDS);
+                opLogger.registerFailedEvent(latency(), TimeUnit.NANOSECONDS);
             } else {
-                opLogger.registerSuccessfulEvent(latency, TimeUnit.NANOSECONDS);
+                opLogger.registerSuccessfulEvent(latency(), TimeUnit.NANOSECONDS);
             }
 
             if (rc != BKException.Code.OK
                 && !expectedBkOperationErrors.contains(rc)) {
                 recordError();
             }
+        }
+
+        void timeout() {
+            errorOut(BKException.Code.TimeoutException);
+            timeoutOpLogger.registerSuccessfulEvent(latency(),
+                                                    TimeUnit.NANOSECONDS);
         }
 
         public abstract void errorOut();
@@ -1443,7 +1458,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                   final Object originalCtx,
                                   final long ledgerId) {
             super(originalCtx, ledgerId, BookieProtocol.LAST_ADD_CONFIRMED,
-                  writeLacOpLogger,
+                  writeLacOpLogger, writeLacTimeoutOpLogger,
                   scheduleTimeout(key, addEntryTimeout));
             this.cb = new WriteLacCallback() {
                     @Override
@@ -1491,7 +1506,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                  ReadLacCallback originalCallback,
                                  final Object ctx, final long ledgerId) {
             super(ctx, ledgerId, BookieProtocol.LAST_ADD_CONFIRMED,
-                  readLacOpLogger,
+                  readLacOpLogger, readLacTimeoutOpLogger,
                   scheduleTimeout(key, readEntryTimeout));
             this.cb = new ReadLacCallback() {
                     @Override
@@ -1541,7 +1556,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                               final ReadEntryCallback originalCallback,
                               final Object originalCtx,
                               long ledgerId, final long entryId) {
-            super(originalCtx, ledgerId, entryId, readEntryOpLogger,
+            super(originalCtx, ledgerId, entryId,
+                  readEntryOpLogger, readTimeoutOpLogger,
                   scheduleTimeout(key, readEntryTimeout));
 
             this.cb = new ReadEntryCallback() {
@@ -1590,7 +1606,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         final StartTLSCallback cb;
 
         public StartTLSCompletion(CompletionKey key) {
-            super(null, -1, -1, startTLSOpLogger,
+            super(null, -1, -1, startTLSOpLogger, startTLSTimeoutOpLogger,
                   scheduleTimeout(key, startTLSTimeout));
             this.cb = new StartTLSCallback() {
                 @Override
@@ -1618,7 +1634,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         public GetBookieInfoCompletion(CompletionKey key,
                                        final GetBookieInfoCallback origCallback,
                                        final Object origCtx) {
-            super(origCtx, 0L, 0L, getBookieInfoOpLogger,
+            super(origCtx, 0L, 0L,
+                  getBookieInfoOpLogger, getBookieInfoTimeoutOpLogger,
                   scheduleTimeout(key, getBookieInfoTimeout));
             this.cb = new GetBookieInfoCallback() {
                 @Override
@@ -1661,7 +1678,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                              final WriteCallback originalCallback,
                              final Object originalCtx,
                              final long ledgerId, final long entryId) {
-            super(originalCtx, ledgerId, entryId, addEntryOpLogger,
+            super(originalCtx, ledgerId, entryId,
+                  addEntryOpLogger, addTimeoutOpLogger,
                   scheduleTimeout(key, addEntryTimeout));
             this.cb = new WriteCallback() {
                 @Override
@@ -1749,16 +1767,11 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     abstract class CompletionKey implements TimerTask {
         final long txnId;
         final OperationType operationType;
-        final long requestAt;
 
-        CompletionKey(long txnId, OperationType operationType) {
+        CompletionKey(long txnId,
+                      OperationType operationType) {
             this.txnId = txnId;
             this.operationType = operationType;
-            this.requestAt = MathUtils.nowInNano();
-        }
-
-        private long elapsedTime() {
-            return MathUtils.elapsedNanos(requestAt);
         }
 
         @Override
@@ -1766,26 +1779,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             if (timeout.isCancelled()) {
                 return;
             }
-            if (OperationType.ADD_ENTRY == operationType) {
-                errorOut(this, BKException.Code.TimeoutException);
-                addTimeoutOpLogger.registerSuccessfulEvent(elapsedTime(), TimeUnit.NANOSECONDS);
-            } else if (OperationType.READ_ENTRY == operationType) {
-                errorOut(this, BKException.Code.TimeoutException);
-                readTimeoutOpLogger.registerSuccessfulEvent(elapsedTime(), TimeUnit.NANOSECONDS);
-            } else if (OperationType.WRITE_LAC == operationType) {
-                errorOut(this, BKException.Code.TimeoutException);
-                writeLacTimeoutOpLogger.registerSuccessfulEvent(elapsedTime(), TimeUnit.NANOSECONDS);
-            } else if (OperationType.READ_LAC == operationType) {
-                errorOut(this, BKException.Code.TimeoutException);
-                readLacTimeoutOpLogger.registerSuccessfulEvent(elapsedTime(), TimeUnit.NANOSECONDS);
-            } else if (OperationType.GET_BOOKIE_INFO == operationType) {
-                errorOut(this, BKException.Code.TimeoutException);
-                getBookieInfoTimeoutOpLogger.registerSuccessfulEvent(elapsedTime(), TimeUnit.NANOSECONDS);
-            } else if (OperationType.START_TLS == operationType) {
-                failTLS(BKException.Code.TimeoutException);
-            } else {
-                errorOut(this, BKException.Code.TimeoutException);
-                getBookieInfoTimeoutOpLogger.registerSuccessfulEvent(elapsedTime(), TimeUnit.NANOSECONDS);
+            CompletionValue completion = completionObjects.remove(this);
+            if (completion != null) {
+                completion.timeout();
             }
         }
     }
