@@ -990,7 +990,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             Response response = (Response) msg;
             readV3Response(response);
         } else {
-        	ctx.fireChannelRead(msg);
+            ctx.fireChannelRead(msg);
         }
     }
 
@@ -1013,28 +1013,12 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             long orderingKey = completionValue.ledgerId;
 
             executor.submitOrdered(orderingKey, new SafeRunnable() {
-                @Override
-                public void safeRun() {
-                    switch (operationType) {
-                        case ADD_ENTRY: {
-                            handleAddResponse(ledgerId, entryId, status, completionValue);
-                            break;
-                        }
-                        case READ_ENTRY: {
-                            BookieProtocol.ReadResponse readResponse = (BookieProtocol.ReadResponse) response;
-                            ByteBuf data = null;
-                            if (readResponse.hasData()) {
-                              data = readResponse.getData();
-                            }
-                            handleReadResponse(ledgerId, entryId, status, data, INVALID_ENTRY_ID, -1L, completionValue);
-                            break;
-                        }
-                        default:
-                            LOG.error("Unexpected response, type:{} received from bookie:{}, ignoring", operationType, addr);
-                            break;
+                    @Override
+                    public void safeRun() {
+                        completionValue.handleV2Response(ledgerId, entryId,
+                                                         status, response);
                     }
-                }
-            });
+                });
         }
     }
 
@@ -1099,71 +1083,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             executor.submitOrdered(orderingKey, new SafeRunnable() {
                 @Override
                 public void safeRun() {
-                    OperationType type = header.getOperation();
-                    switch (type) {
-                        case ADD_ENTRY: {
-                            AddResponse addResponse = response.getAddResponse();
-                            StatusCode status = response.getStatus() == StatusCode.EOK ? addResponse.getStatus() : response.getStatus();
-                            handleAddResponse(addResponse.getLedgerId(), addResponse.getEntryId(), status, completionValue);
-                            break;
-                        }
-                        case READ_ENTRY: {
-                            ReadResponse readResponse = response.getReadResponse();
-                            StatusCode status = response.getStatus() == StatusCode.EOK ? readResponse.getStatus() : response.getStatus();
-                            ByteBuf buffer = Unpooled.EMPTY_BUFFER;
-                            if (readResponse.hasBody()) {
-                                buffer = Unpooled.wrappedBuffer(readResponse.getBody().asReadOnlyByteBuffer());
-                            }
-                            long maxLAC = INVALID_ENTRY_ID;
-                            if (readResponse.hasMaxLAC()) {
-                                maxLAC = readResponse.getMaxLAC();
-                            }
-                            long lacUpdateTimestamp = -1L;
-                            if (readResponse.hasLacUpdateTimestamp()) {
-                                lacUpdateTimestamp = readResponse.getLacUpdateTimestamp();
-                            }
-                            handleReadResponse(readResponse.getLedgerId(), readResponse.getEntryId(), status, buffer, maxLAC, lacUpdateTimestamp, completionValue);
-                            break;
-                        }
-                        case WRITE_LAC: {
-                            WriteLacResponse writeLacResponse = response.getWriteLacResponse();
-                            StatusCode status = response.getStatus() == StatusCode.EOK ? writeLacResponse.getStatus() : response.getStatus();
-                            handleWriteLacResponse(writeLacResponse.getLedgerId(), status, completionValue);
-                            break;
-                        }
-                        case READ_LAC: {
-                            ReadLacResponse readLacResponse = response.getReadLacResponse();
-                            ByteBuf lacBuffer = Unpooled.EMPTY_BUFFER;
-                            ByteBuf lastEntryBuffer = Unpooled.EMPTY_BUFFER;
-                            StatusCode status = response.getStatus() == StatusCode.EOK ? readLacResponse.getStatus() : response.getStatus();
-                            // Thread.dumpStack();
-
-                            if (readLacResponse.hasLacBody()) {
-                                lacBuffer = Unpooled.wrappedBuffer(readLacResponse.getLacBody().asReadOnlyByteBuffer());
-                            }
-
-                            if (readLacResponse.hasLastEntryBody()) {
-                                lastEntryBuffer = Unpooled.wrappedBuffer(readLacResponse.getLastEntryBody().asReadOnlyByteBuffer());
-                            }
-                            handleReadLacResponse(readLacResponse.getLedgerId(), status, lacBuffer, lastEntryBuffer, completionValue);
-                            break;
-                        }
-                        case GET_BOOKIE_INFO: {
-                            GetBookieInfoResponse getBookieInfoResponse = response.getGetBookieInfoResponse();
-                            StatusCode status = response.getStatus() == StatusCode.EOK ? getBookieInfoResponse.getStatus() : response.getStatus();
-                            handleGetBookieInfoResponse(getBookieInfoResponse.getFreeDiskSpace(), getBookieInfoResponse.getTotalDiskCapacity(), status, completionValue);
-                            break;
-                        }
-                        case START_TLS: {
-                            StatusCode status = response.getStatus();
-                            handleStartTLSResponse(status, completionValue);
-                            break;
-                        }
-                        default:
-                            LOG.error("Unexpected response, type:{} received from bookie:{}, ignoring",
-                                      type, addr);
-                            break;
-                    }
+                    completionValue.handleV3Response(response);
                 }
 
                 @Override
@@ -1176,37 +1096,12 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
     }
 
-    void handleStartTLSResponse(StatusCode status, CompletionValue completionValue) {
-        StartTLSCompletion tlsCompletion = (StartTLSCompletion) completionValue;
-
-        // convert to BKException code because thats what the upper
-        // layers expect. This is UGLY, there should just be one set of
-        // error codes.
-        Integer rcToRet = statusCodeToExceptionCode(status);
-        if (null == rcToRet) {
-            LOG.error("START_TLS failed on bookie:{}", addr);
-            rcToRet = BKException.Code.SecurityException;
-        } else {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Received START_TLS response from {} rc: {}", addr, rcToRet);
-            }
-        }
-
-        // Cancel START_TLS request timeout
-        tlsCompletion.cb.startTLSComplete(rcToRet, tlsCompletion.ctx);
-
-        if (state != ConnectionState.START_TLS) {
-            LOG.error("Connection state changed before TLS response received");
-            failTLS(BKException.Code.BookieHandleNotAvailableException);
-        } else if (status != StatusCode.EOK) {
-            LOG.error("Client received error {} during TLS negotiation", status);
-            failTLS(BKException.Code.SecurityException);
-        } else {
-            // create TLS handler
-            PerChannelBookieClient parentObj = PerChannelBookieClient.this;
-            SslHandler handler = parentObj.shFactory.newTLSHandler();
-            channel.pipeline().addFirst(parentObj.shFactory.getHandlerName(), handler);
-            handler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
+    void initTLSHandshake() {
+        // create TLS handler
+        PerChannelBookieClient parentObj = PerChannelBookieClient.this;
+        SslHandler handler = parentObj.shFactory.newTLSHandler();
+        channel.pipeline().addFirst(parentObj.shFactory.getHandlerName(), handler);
+        handler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
                 @Override
                 public void operationComplete(Future<Channel> future) throws Exception {
                     int rc;
@@ -1265,128 +1160,6 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     }
                 }
             });
-        }
-    }
-
-    void handleWriteLacResponse(long ledgerId, StatusCode status, CompletionValue completionValue) {
-        // The completion value should always be an instance of an WriteLacCompletion object when we reach here.
-        WriteLacCompletion plc = (WriteLacCompletion)completionValue;
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Got response for writeLac request from bookie: " + addr + " for ledger: " + ledgerId + " rc: "
-                    + status);
-        }
-
-        // convert to BKException code
-        Integer rcToRet = statusCodeToExceptionCode(status);
-        if (null == rcToRet) {
-            LOG.error("writeLac for ledger: " + ledgerId + " failed on bookie: " + addr
-                        + " with code:" + status);
-            rcToRet = BKException.Code.WriteException;
-        }
-        plc.cb.writeLacComplete(rcToRet, ledgerId, addr, plc.ctx);
-    }
-
- void handleAddResponse(long ledgerId, long entryId, StatusCode status, CompletionValue completionValue) {
-        // The completion value should always be an instance of an AddCompletion object when we reach here.
-        AddCompletion ac = (AddCompletion)completionValue;
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Got response for add request from bookie: " + addr + " for ledger: " + ledgerId + " entry: "
-                    + entryId + " rc: " + status);
-        }
-        // convert to BKException code because thats what the upper
-        // layers expect. This is UGLY, there should just be one set of
-        // error codes.
-        Integer rcToRet = statusCodeToExceptionCode(status);
-        if (null == rcToRet) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Add for ledger: " + ledgerId + ", entry: " + entryId + " failed on bookie: " + addr
-                        + " with code:" + status);
-            }
-            rcToRet = BKException.Code.WriteException;
-        }
-        ac.cb.writeComplete(rcToRet, ledgerId, entryId, addr, ac.ctx);
-    }
-
-    void handleReadLacResponse(long ledgerId, StatusCode status, ByteBuf lacBuffer, ByteBuf lastEntryBuffer, CompletionValue completionValue) {
-        // The completion value should always be an instance of an WriteLacCompletion object when we reach here.
-        ReadLacCompletion glac = (ReadLacCompletion)completionValue;
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Got response for readLac request from bookie: " + addr + " for ledger: " + ledgerId + " rc: "
-                    + status);
-        }
-        // convert to BKException code
-        Integer rcToRet = statusCodeToExceptionCode(status);
-        if (null == rcToRet) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("readLac for ledger: " + ledgerId + " failed on bookie: " + addr + " with code:" + status);
-            }
-            rcToRet = BKException.Code.ReadException;
-        }
-        glac.cb.readLacComplete(rcToRet, ledgerId, lacBuffer.slice(), lastEntryBuffer.slice(), glac.ctx);
-    }
-
-    void handleReadResponse(long ledgerId,
-                            long entryId,
-                            StatusCode status,
-                            ByteBuf buffer,
-                            long maxLAC, // max known lac piggy-back from bookies
-                            long lacUpdateTimestamp, // the timestamp when the lac is updated.
-                            CompletionValue completionValue) {
-        // The completion value should always be an instance of a ReadCompletion object when we reach here.
-        ReadCompletion rc = (ReadCompletion)completionValue;
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Got response for read request from bookie: " + addr + " for ledger: " + ledgerId + " entry: "
-                    + entryId + " rc: " + rc + " entry length: " + buffer.readableBytes());
-        }
-
-        // convert to BKException code because thats what the uppper
-        // layers expect. This is UGLY, there should just be one set of
-        // error codes.
-        Integer rcToRet = statusCodeToExceptionCode(status);
-        if (null == rcToRet) {
-            LOG.error("Read entry for ledger:{}, entry:{} failed on bookie:{} with code:{}",
-                      new Object[] { ledgerId, entryId, addr, status });
-            rcToRet = BKException.Code.ReadException;
-        }
-        if(buffer != null) {
-            buffer = buffer.slice();
-        }
-        if (maxLAC > INVALID_ENTRY_ID && (rc.ctx instanceof ReadEntryCallbackCtx)) {
-            ((ReadEntryCallbackCtx) rc.ctx).setLastAddConfirmed(maxLAC);
-        }
-        if (lacUpdateTimestamp > -1L && (rc.ctx instanceof ReadLastConfirmedAndEntryContext)) {
-            ((ReadLastConfirmedAndEntryContext) rc.ctx).setLacUpdateTimestamp(lacUpdateTimestamp);
-        }
-        rc.cb.readEntryComplete(rcToRet, ledgerId, entryId, buffer, rc.ctx);
-    }
-
-    void handleGetBookieInfoResponse(long freeDiskSpace, long totalDiskCapacity,  StatusCode status, CompletionValue completionValue) {
-        // The completion value should always be an instance of a GetBookieInfoCompletion object when we reach here.
-        GetBookieInfoCompletion rc = (GetBookieInfoCompletion)completionValue;
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Got response for read metadata request from bookie: {} rc {}", addr, rc);
-        }
-
-        // convert to BKException code because thats what the upper
-        // layers expect. This is UGLY, there should just be one set of
-        // error codes.
-        Integer rcToRet = statusCodeToExceptionCode(status);
-        if (null == rcToRet) {
-            LOG.error("Read metadata failed on bookie:{} with code:{}",
-                      new Object[] { addr, status });
-            rcToRet = BKException.Code.ReadException;
-        }
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Response received from bookie info read: freeDiskSpace=" + freeDiskSpace + " totalDiskSpace:"
-                    + totalDiskCapacity);
-        }
-        rc.cb.getBookieInfoComplete(rcToRet, new BookieInfo(totalDiskCapacity, freeDiskSpace), rc.ctx);
     }
 
     /**
@@ -1447,6 +1220,15 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         public abstract void errorOut();
         public abstract void errorOut(final int rc);
+
+        public void handleV2Response(
+                long ledgerId, long entryId, StatusCode status,
+                BookieProtocol.Response response) {
+            LOG.warn("Unhandled V2 response {}", response);
+        }
+
+        public abstract void handleV3Response(
+                BookkeeperProtocol.Response response);
     }
 
     // visible for testing
@@ -1495,6 +1277,28 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                             cb.writeLacComplete(rc, ledgerId, addr, ctx);
                         }
                     });
+        }
+
+        @Override
+        public void handleV3Response(BookkeeperProtocol.Response response) {
+            WriteLacResponse writeLacResponse = response.getWriteLacResponse();
+            StatusCode status = response.getStatus() == StatusCode.EOK ?
+                writeLacResponse.getStatus() : response.getStatus();
+            long ledgerId = writeLacResponse.getLedgerId();
+
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Got writeLac response bookie:{}, ledger:{}, rc:{}",
+                          addr, ledgerId, status);
+            }
+
+            // convert to BKException code
+            Integer rcToRet = statusCodeToExceptionCode(status);
+            if (null == rcToRet) {
+                LOG.error("WriteLac for ledger {} failed on bookie {}, code {}",
+                          ledgerId, addr, status);
+                rcToRet = BKException.Code.WriteException;
+            }
+            cb.writeLacComplete(rcToRet, ledgerId, addr, ctx);
         }
     }
 
@@ -1545,6 +1349,39 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                                null, null, ctx);
                         }
                     });
+        }
+
+        @Override
+        public void handleV3Response(BookkeeperProtocol.Response response) {
+            ReadLacResponse readLacResponse = response.getReadLacResponse();
+            ByteBuf lacBuffer = Unpooled.EMPTY_BUFFER;
+            ByteBuf lastEntryBuffer = Unpooled.EMPTY_BUFFER;
+            StatusCode status = response.getStatus() == StatusCode.EOK ? readLacResponse.getStatus() : response.getStatus();
+
+            if (readLacResponse.hasLacBody()) {
+                lacBuffer = Unpooled.wrappedBuffer(readLacResponse.getLacBody().asReadOnlyByteBuffer());
+            }
+
+            if (readLacResponse.hasLastEntryBody()) {
+                lastEntryBuffer = Unpooled.wrappedBuffer(readLacResponse.getLastEntryBody().asReadOnlyByteBuffer());
+            }
+
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Got readLac response bookie:{}, ledger:{}, rc:{}",
+                          addr, ledgerId, status);
+            }
+
+            // convert to BKException code
+            Integer rcToRet = statusCodeToExceptionCode(status);
+            if (null == rcToRet) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.error("readLac for ledger {} failed on bookie {}, code {}",
+                          ledgerId, addr, status);
+                }
+                rcToRet = BKException.Code.ReadException;
+            }
+            cb.readLacComplete(rcToRet, ledgerId, lacBuffer.slice(),
+                               lastEntryBuffer.slice(), ctx);
         }
     }
 
@@ -1600,6 +1437,78 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                         }
                     });
         }
+
+        @Override
+        public void handleV2Response(long ledgerId, long entryId,
+                                     StatusCode status,
+                                     BookieProtocol.Response response) {
+            if (!(response instanceof BookieProtocol.ReadResponse)) {
+                return;
+            }
+            BookieProtocol.ReadResponse readResponse = (BookieProtocol.ReadResponse) response;
+            ByteBuf data = null;
+            if (readResponse.hasData()) {
+                data = readResponse.getData();
+            }
+            handleReadResponse(ledgerId, entryId, status, data,
+                               INVALID_ENTRY_ID, -1L);
+        }
+
+        @Override
+        public void handleV3Response(BookkeeperProtocol.Response response) {
+            ReadResponse readResponse = response.getReadResponse();
+            StatusCode status = response.getStatus() == StatusCode.EOK
+                ? readResponse.getStatus() : response.getStatus();
+            ByteBuf buffer = Unpooled.EMPTY_BUFFER;
+            if (readResponse.hasBody()) {
+                buffer = Unpooled.wrappedBuffer(readResponse.getBody().asReadOnlyByteBuffer());
+            }
+            long maxLAC = INVALID_ENTRY_ID;
+            if (readResponse.hasMaxLAC()) {
+                maxLAC = readResponse.getMaxLAC();
+            }
+            long lacUpdateTimestamp = -1L;
+            if (readResponse.hasLacUpdateTimestamp()) {
+                lacUpdateTimestamp = readResponse.getLacUpdateTimestamp();
+            }
+            handleReadResponse(readResponse.getLedgerId(),
+                               readResponse.getEntryId(),
+                               status, buffer, maxLAC, lacUpdateTimestamp);
+        }
+
+        private void handleReadResponse(long ledgerId,
+                                        long entryId,
+                                        StatusCode status,
+                                        ByteBuf buffer,
+                                        long maxLAC, // max known lac piggy-back from bookies
+                                        long lacUpdateTimestamp) { // the timestamp when the lac is updated.
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Got response for read request from bookie: " + addr + " for ledger: " + ledgerId + " entry: "
+                          + entryId + " rc: " + status + " entry length: " + buffer.readableBytes());
+            }
+
+            // convert to BKException code because thats what the uppper
+            // layers expect. This is UGLY, there should just be one set of
+            // error codes.
+            Integer rcToRet = statusCodeToExceptionCode(status);
+            if (null == rcToRet) {
+                LOG.error("Read entry for ledger:{}, entry:{} failed on bookie:{} with code:{}",
+                          new Object[] { ledgerId, entryId, addr, status });
+                rcToRet = BKException.Code.ReadException;
+            }
+            if(buffer != null) {
+                buffer = buffer.slice();
+            }
+            if (maxLAC > INVALID_ENTRY_ID
+                && (ctx instanceof ReadEntryCallbackCtx)) {
+                ((ReadEntryCallbackCtx)ctx).setLastAddConfirmed(maxLAC);
+            }
+            if (lacUpdateTimestamp > -1L
+                && (ctx instanceof ReadLastConfirmedAndEntryContext)) {
+                ((ReadLastConfirmedAndEntryContext)ctx).setLacUpdateTimestamp(lacUpdateTimestamp);
+            }
+            cb.readEntryComplete(rcToRet, ledgerId, entryId, buffer, ctx);
+        }
     }
 
     class StartTLSCompletion extends CompletionValue {
@@ -1625,6 +1534,38 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         public void errorOut(final int rc) {
             failTLS(rc);
         }
+
+        @Override
+        public void handleV3Response(BookkeeperProtocol.Response response) {
+            StatusCode status = response.getStatus();
+
+            // convert to BKException code because thats what the upper
+            // layers expect. This is UGLY, there should just be one set of
+            // error codes.
+            Integer rcToRet = statusCodeToExceptionCode(status);
+            if (null == rcToRet) {
+                LOG.error("START_TLS failed on bookie:{}", addr);
+                rcToRet = BKException.Code.SecurityException;
+            } else {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Received START_TLS response from {} rc: {}", addr, rcToRet);
+                }
+            }
+
+            // Cancel START_TLS request timeout
+            cb.startTLSComplete(rcToRet, ctx);
+
+            if (state != ConnectionState.START_TLS) {
+                LOG.error("Connection state changed before TLS response received");
+                failTLS(BKException.Code.BookieHandleNotAvailableException);
+            } else if (status != StatusCode.EOK) {
+                LOG.error("Client received error {} during TLS negotiation", status);
+                failTLS(BKException.Code.SecurityException);
+            } else {
+                initTLSHandshake();
+            }
+        }
+
     }
 
     // visible for testing
@@ -1667,6 +1608,38 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                         cb.getBookieInfoComplete(rc, new BookieInfo(), ctx);
                     }
                 });
+        }
+
+        @Override
+        public void handleV3Response(BookkeeperProtocol.Response response) {
+            GetBookieInfoResponse getBookieInfoResponse
+                = response.getGetBookieInfoResponse();
+            StatusCode status = response.getStatus() == StatusCode.EOK
+                ? getBookieInfoResponse.getStatus() : response.getStatus();
+
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Got response for read metadata request from bookie: {} rc {}", addr, status);
+            }
+
+            // convert to BKException code because thats what the upper
+            // layers expect. This is UGLY, there should just be one set of
+            // error codes.
+            Integer rcToRet = statusCodeToExceptionCode(status);
+            if (null == rcToRet) {
+                LOG.error("Read metadata failed on bookie:{} with code:{}",
+                          new Object[] { addr, status });
+                rcToRet = BKException.Code.ReadException;
+            }
+
+            long freeDiskSpace = getBookieInfoResponse.getFreeDiskSpace();
+            long totalDiskSpace = getBookieInfoResponse.getTotalDiskCapacity();
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Response received from bookie info read: freeDiskSpace=" + freeDiskSpace + " totalDiskSpace:"
+                          + totalDiskSpace);
+            }
+            cb.getBookieInfoComplete(rcToRet,
+                                     new BookieInfo(totalDiskSpace,
+                                                    freeDiskSpace), ctx);
         }
     }
 
@@ -1721,6 +1694,43 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                         }
                     }
                 });
+        }
+
+        @Override
+        public void handleV2Response(
+                long ledgerId, long entryId, StatusCode status,
+                BookieProtocol.Response response) {
+            handleResponse(ledgerId, entryId, status);
+        }
+
+        @Override
+        public void handleV3Response(
+                BookkeeperProtocol.Response response) {
+            AddResponse addResponse = response.getAddResponse();
+            StatusCode status = response.getStatus() == StatusCode.EOK
+                ? addResponse.getStatus() : response.getStatus();
+            handleResponse(addResponse.getLedgerId(), addResponse.getEntryId(),
+                           status);
+        }
+
+        private void handleResponse(long ledgerId, long entryId,
+                                    StatusCode status) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Got response for add request from bookie: " + addr + " for ledger: " + ledgerId + " entry: "
+                          + entryId + " rc: " + status);
+            }
+            // convert to BKException code because thats what the upper
+            // layers expect. This is UGLY, there should just be one set of
+            // error codes.
+            Integer rcToRet = statusCodeToExceptionCode(status);
+            if (null == rcToRet) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Add for ledger: " + ledgerId + ", entry: " + entryId + " failed on bookie: " + addr
+                              + " with code:" + status);
+                }
+                rcToRet = BKException.Code.WriteException;
+            }
+            cb.writeComplete(rcToRet, ledgerId, entryId, addr, ctx);
         }
     }
 
