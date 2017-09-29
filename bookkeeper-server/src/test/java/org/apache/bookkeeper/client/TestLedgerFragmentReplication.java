@@ -248,7 +248,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
             }
         };
         LedgerHandle lh = new LedgerHandle(bkc, 0, metadata, TEST_DIGEST_TYPE,
-                TEST_PSSWD);
+                TEST_PSSWD, LedgerType.PD_JOURNAL);
         testSplitIntoSubFragments(10, 21, -1, 1, lh);
         testSplitIntoSubFragments(10, 21, 20, 1, lh);
         testSplitIntoSubFragments(0, 0, 10, 1, lh);

@@ -21,29 +21,26 @@ package org.apache.bookkeeper.client;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.bookkeeper.client.AsyncCallback.AddLacCallback;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.netty.buffer.ByteBuf;
+import org.apache.bookkeeper.client.AsyncCallback.SyncCallback;
+import org.apache.bookkeeper.proto.BookieProtocol;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 
 /**
- * This represents a pending WriteLac operation. When it has got
+ * This represents a pending Sync operation. When it has got
  * success from Ack Quorum bookies, sends success back to the application,
  * otherwise failure is sent back to the caller.
- *
- * This is an optional protocol operations to facilitate tailing readers
- * to be up to date with the writer. This is best effort to get latest LAC
- * from bookies, and doesn't affect the correctness of the protocol.
+ * 
  */
-class PendingWriteLacOp implements WriteLacCallback {
-    private final static Logger LOG = LoggerFactory.getLogger(PendingWriteLacOp.class);
-    ByteBuf toSend;
-    AddLacCallback cb;
-    long lac;
+class PendingSyncOp implements BookkeeperInternalCallbacks.SyncCallback {
+    private final static Logger LOG = LoggerFactory.getLogger(PendingSyncOp.class);    
+    SyncCallback cb;
+    long firstEntryId;
+    long lastEntryId;
     Object ctx;
     Set<Integer> writeSet;
     Set<Integer> receivedResponseSet;
@@ -53,37 +50,33 @@ class PendingWriteLacOp implements WriteLacCallback {
     int lastSeenError = BKException.Code.WriteException;
 
     LedgerHandle lh;
-    OpStatsLogger putLacOpLogger;
+    OpStatsLogger syncOpLogger;    
 
-    PendingWriteLacOp(LedgerHandle lh, AddLacCallback cb, Object ctx) {
+    PendingSyncOp(LedgerHandle lh, long firstEntryId, long lastEntryId, SyncCallback cb, Object ctx) {
         this.lh = lh;
         this.cb = cb;
         this.ctx = ctx;
-        this.lac = LedgerHandle.INVALID_ENTRY_ID;
+        this.firstEntryId = lastEntryId;
+        this.lastEntryId = lastEntryId;
         ackSet = lh.distributionSchedule.getAckSet();
-        putLacOpLogger = lh.bk.getWriteLacOpLogger();
-    }
-
-    void setLac(long lac) {
-        this.lac = lac;
-        this.writeSet = new HashSet<Integer>(lh.distributionSchedule.getWriteSet(lac));
+        syncOpLogger = lh.bk.getSyncOpLogger();
+        this.writeSet = new HashSet<Integer>(lh.distributionSchedule.getWriteSet(lastEntryId));
         this.receivedResponseSet = new HashSet<Integer>(writeSet);
     }
-
-    void sendWriteLacRequest(int bookieIndex) {
-        lh.bk.bookieClient.writeLac(lh.metadata.currentEnsemble.get(bookieIndex), lh.ledgerId, lh.ledgerKey,
-                lac, toSend, this, bookieIndex);
+    
+    void sendSyncRequest(int bookieIndex) {
+        lh.bk.bookieClient.sendSync(lh.metadata.currentEnsemble.get(bookieIndex), lh.ledgerId, lh.ledgerKey,
+                firstEntryId, lastEntryId, this, bookieIndex);
     }
 
-    void initiate(ByteBuf toSend) {
-        this.toSend = toSend;
+    void initiate() {        
         for (int bookieIndex: writeSet) {
-            sendWriteLacRequest(bookieIndex);
+            sendSyncRequest(bookieIndex);
         }
     }
 
     @Override
-    public void writeLacComplete(int rc, long ledgerId, BookieSocketAddress addr, Object ctx) {
+    public void syncComplete(int rc, long ledgerId, long lastSyncedEntryId, BookieSocketAddress addr, Object ctx) {
         int bookieIndex = (Integer) ctx;
 
         if (completed) {
@@ -97,19 +90,21 @@ class PendingWriteLacOp implements WriteLacCallback {
         // We got response.
         receivedResponseSet.remove(bookieIndex);
 
-        if (rc == BKException.Code.OK) {
-            if (ackSet.completeBookieAndCheck(bookieIndex, -1) && !completed) {
+        if (rc == BKException.Code.OK) {            
+            if (ackSet.completeBookieAndCheck(bookieIndex, lastSyncedEntryId) && !completed) {
                 completed = true;
-                cb.addLacComplete(rc, lh, ctx);
+                long estimatedLastAddConfirmed = ackSet.calculateCurrentLastAddSynced();
+                lh.syncCompleted(estimatedLastAddConfirmed);
+                cb.syncComplete(rc, lh, estimatedLastAddConfirmed, this.ctx);
                 return;
             }
         } else {
-            LOG.warn("WriteLac did not succeed: Ledger {} on {}", new Object[] { ledgerId, addr });
+            LOG.warn("Sync did not succeed: Ledger {} on {}", new Object[] { ledgerId, addr });
         }
         
-        if(receivedResponseSet.isEmpty()){
-            completed = true;
-            cb.addLacComplete(lastSeenError, lh, ctx);
+        if (receivedResponseSet.isEmpty()){
+            completed = true;            
+            cb.syncComplete(lastSeenError, lh, BookieProtocol.INVALID_ENTRY_ID, this.ctx);
         }
     }
 }

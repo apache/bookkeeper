@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.client;
 
+import com.google.common.base.Preconditions;
 import java.io.Serializable;
 import java.security.GeneralSecurityException;
 import java.util.Comparator;
@@ -52,9 +53,10 @@ public class LedgerHandleAdv extends LedgerHandle {
         }
     }
 
-    LedgerHandleAdv(BookKeeper bk, long ledgerId, LedgerMetadata metadata, DigestType digestType, byte[] password)
+    LedgerHandleAdv(BookKeeper bk, long ledgerId, LedgerMetadata metadata, DigestType digestType,
+        byte[] password, LedgerType ledgerType)
             throws GeneralSecurityException, NumberFormatException {
-        super(bk, ledgerId, metadata, digestType, password);
+        super(bk, ledgerId, metadata, digestType, password, ledgerType);
         pendingAddOps = new PriorityBlockingQueue<PendingAddOp>(10, new PendingOpsComparator());
     }
 
@@ -70,10 +72,8 @@ public class LedgerHandleAdv extends LedgerHandle {
      *            entryId that is just created.
      */
     @Override
-    public long addEntry(final long entryId, byte[] data) throws InterruptedException, BKException {
-
+    public long addEntry(final long entryId, byte[] data) throws InterruptedException, BKException {        
         return addEntry(entryId, data, 0, data.length);
-
     }
 
     /**
@@ -90,12 +90,12 @@ public class LedgerHandleAdv extends LedgerHandle {
      * @return The entryId of newly inserted entry.
      */
     @Override
-    public long addEntry(final long entryId, byte[] data, int offset, int length) throws InterruptedException,
-            BKException {
+    public long addEntry(final long entryId, byte[] data, int offset, int length)        
+        throws InterruptedException, BKException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Adding entry {}", data);
         }
-
+        
         CompletableFuture<Long> counter = new CompletableFuture<>();
 
         SyncAddCallback callback = new SyncAddCallback();
@@ -146,8 +146,8 @@ public class LedgerHandleAdv extends LedgerHandle {
      */
 
     public void asyncAddEntry(final long entryId, final byte[] data, final int offset, final int length,
-            final AddCallback cb, final Object ctx) {
-        PendingAddOp op = new PendingAddOp(this, cb, ctx);
+            final AddCallback cb, final Object ctx) {                
+        PendingAddOp op = new PendingAddOp(this, cb, ctx);        
         op.setEntryId(entryId);
         if ((entryId <= this.lastAddConfirmed) || pendingAddOps.contains(op)) {
             LOG.error("Trying to re-add duplicate entryid:{}", entryId);
@@ -164,11 +164,14 @@ public class LedgerHandleAdv extends LedgerHandle {
      * unaltered in the base class.
      */
     @Override
-    protected void doAsyncAddEntry(final PendingAddOp op, final ByteBuf data, final AddCallback cb, final Object ctx) {
+    protected void doAsyncAddEntry(final PendingAddOp op, final ByteBuf data, final AddCallback cb,
+        final Object ctx) {
         if (throttler != null) {
             throttler.acquire();
         }
-
+        if (volatileDurability) {
+            op.enableVolatileDurability();            
+        }
         final long currentLength;
         boolean wasClosed = false;
         synchronized (this) {
@@ -179,6 +182,7 @@ public class LedgerHandleAdv extends LedgerHandle {
                 wasClosed = true;
                 currentLength = 0;
             } else {
+                lastAddPushed = Math.max(lastAddPushed, op.getEntryId());
                 currentLength = addToLength(length);
                 pendingAddOps.add(op);
             }

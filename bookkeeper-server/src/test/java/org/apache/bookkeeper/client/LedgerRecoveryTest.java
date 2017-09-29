@@ -188,7 +188,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
 
         Bookie fakeBookie = new Bookie(conf) {
             @Override
-            public void addEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey)
+            public void addEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey, boolean volatileDurability)
                     throws IOException, BookieException {
                 // drop request to simulate a slow and failed bookie
             }

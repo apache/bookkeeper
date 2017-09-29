@@ -72,6 +72,27 @@ public interface AsyncCallback {
     }
 
     /**
+     * Async Callback for sync operation.
+     *
+     * @since 4.6
+     */
+    @InterfaceAudience.Public
+    @InterfaceStability.Stable
+    interface SyncCallback {
+        /**
+         * Callback declaration
+         *
+         * @param rc
+         *          return code
+         * @param lh
+         *          ledger handle
+         * @param ctx
+         *          context object
+         */
+        void syncComplete(int rc, LedgerHandle lh, long lastSyncedEntryId, Object ctx);
+    }
+
+    /**
      * Async Callback for closing ledgers.
      *
      * @since 4.0

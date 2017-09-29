@@ -35,6 +35,7 @@ import java.util.concurrent.CountDownLatch;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
+import org.apache.bookkeeper.client.LedgerType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -122,7 +123,8 @@ public class BookieClientTest {
     };
 
     WriteCallback wrcb = new WriteCallback() {
-        public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
+        public void writeComplete(int rc, long ledgerId, long entryId, long lastAddSyncedEntry,
+            BookieSocketAddress addr, Object ctx) {
             if (ctx != null) {
                 synchronized (ctx) {
                     if (ctx instanceof ResultStruct) {
@@ -145,7 +147,7 @@ public class BookieClientTest {
 
         BookieClient bc = new BookieClient(new ClientConfiguration(), eventLoopGroup, executor);
         ByteBuf bb = createByteBuffer(1, 1, 1);
-        bc.addEntry(addr, 1, passwd, 1, bb, wrcb, arc, BookieProtocol.FLAG_NONE);
+        bc.addEntry(addr, 1, passwd, 1, bb, wrcb, arc, BookieProtocol.FLAG_NONE, LedgerType.PD_JOURNAL);
         synchronized (arc) {
             arc.wait(1000);
             assertEquals(0, arc.rc);
@@ -155,16 +157,16 @@ public class BookieClientTest {
             assertEquals(1, arc.entry.getInt());
         }
         bb = createByteBuffer(2, 1, 2);
-        bc.addEntry(addr, 1, passwd, 2, bb, wrcb, null, BookieProtocol.FLAG_NONE);
+        bc.addEntry(addr, 1, passwd, 2, bb, wrcb, null, BookieProtocol.FLAG_NONE, LedgerType.PD_JOURNAL);
         bb = createByteBuffer(3, 1, 3);
-        bc.addEntry(addr, 1, passwd, 3, bb, wrcb, null, BookieProtocol.FLAG_NONE);
+        bc.addEntry(addr, 1, passwd, 3, bb, wrcb, null, BookieProtocol.FLAG_NONE, LedgerType.PD_JOURNAL);
         bb = createByteBuffer(5, 1, 5);
-        bc.addEntry(addr, 1, passwd, 5, bb, wrcb, null, BookieProtocol.FLAG_NONE);
+        bc.addEntry(addr, 1, passwd, 5, bb, wrcb, null, BookieProtocol.FLAG_NONE, LedgerType.PD_JOURNAL);
         bb = createByteBuffer(7, 1, 7);
-        bc.addEntry(addr, 1, passwd, 7, bb, wrcb, null, BookieProtocol.FLAG_NONE);
+        bc.addEntry(addr, 1, passwd, 7, bb, wrcb, null, BookieProtocol.FLAG_NONE, LedgerType.PD_JOURNAL);
         synchronized (notifyObject) {
             bb = createByteBuffer(11, 1, 11);
-            bc.addEntry(addr, 1, passwd, 11, bb, wrcb, notifyObject, BookieProtocol.FLAG_NONE);
+            bc.addEntry(addr, 1, passwd, 11, bb, wrcb, notifyObject, BookieProtocol.FLAG_NONE, LedgerType.PD_JOURNAL);
             notifyObject.wait();
         }
         synchronized (arc) {

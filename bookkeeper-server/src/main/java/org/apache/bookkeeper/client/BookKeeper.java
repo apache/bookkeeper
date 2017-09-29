@@ -55,6 +55,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.DataFormats;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -100,6 +101,7 @@ public class BookKeeper implements AutoCloseable {
     private OpStatsLogger readLacAndEntryRespLogger;
     private OpStatsLogger addOpLogger;
     private OpStatsLogger writeLacOpLogger;
+    private OpStatsLogger syncOpLogger;
     private OpStatsLogger readLacOpLogger;
     private OpStatsLogger recoverAddEntriesStats;
     private OpStatsLogger recoverReadEntriesStats;
@@ -697,6 +699,13 @@ public class BookKeeper implements AutoCloseable {
     public void asyncCreateLedger(final int ensSize, final int writeQuorumSize, final int ackQuorumSize,
                                   final DigestType digestType, final byte[] passwd,
                                   final CreateCallback cb, final Object ctx, final Map<String, byte[]> customMetadata) {
+        asyncCreateLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd, cb, ctx,
+            customMetadata, LedgerType.PD_JOURNAL);
+    }
+    public void asyncCreateLedger(final int ensSize, final int writeQuorumSize, final int ackQuorumSize,
+                                  final DigestType digestType, final byte[] passwd,
+                                  final CreateCallback cb, final Object ctx, final Map<String, byte[]> customMetadata,
+                                  final LedgerType ledgerType) {
         if (writeQuorumSize < ackQuorumSize) {
             throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
         }
@@ -707,7 +716,7 @@ public class BookKeeper implements AutoCloseable {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata)
+                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata, ledgerType)
                 .initiate();
         } finally {
             closeLock.readLock().unlock();
@@ -788,13 +797,20 @@ public class BookKeeper implements AutoCloseable {
     public LedgerHandle createLedger(int ensSize, int writeQuorumSize, int ackQuorumSize,
                                      DigestType digestType, byte passwd[], final Map<String, byte[]> customMetadata)
             throws InterruptedException, BKException {
+        return createLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
+            customMetadata, LedgerType.PD_JOURNAL);
+    }
+    public LedgerHandle createLedger(int ensSize, int writeQuorumSize, int ackQuorumSize,
+                                     DigestType digestType, byte passwd[], final Map<String, byte[]> customMetadata,
+                                     final LedgerType ledgerType)
+            throws InterruptedException, BKException {
         CompletableFuture<LedgerHandle> counter = new CompletableFuture<>();
 
         /*
          * Calls asynchronous version
          */
         asyncCreateLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
-                          new SyncCreateCallback(), counter, customMetadata);
+                          new SyncCreateCallback(), counter, customMetadata, ledgerType);
 
         LedgerHandle lh = SynchCallbackUtils.waitForResult(counter);
         if (lh == null) {
@@ -826,8 +842,7 @@ public class BookKeeper implements AutoCloseable {
             throws InterruptedException, BKException {
         return createLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd, null);
     }
-
-    /**
+     /**
      * Synchronous call to create ledger.
      * Creates a new ledger asynchronously and returns {@link LedgerHandleAdv} which can accept entryId.
      * Parameters must match those of
@@ -846,6 +861,32 @@ public class BookKeeper implements AutoCloseable {
      */
     public LedgerHandle createLedgerAdv(int ensSize, int writeQuorumSize, int ackQuorumSize,
                                         DigestType digestType, byte passwd[], final Map<String, byte[]> customMetadata)
+         throws InterruptedException, BKException {
+        return createLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd, customMetadata,
+            LedgerType.PD_JOURNAL);
+    }
+
+    /**
+     * Synchronous call to create ledger.
+     * Creates a new ledger asynchronously and returns {@link LedgerHandleAdv} which can accept entryId.
+     * Parameters must match those of
+     * {@link #asyncCreateLedgerAdv(int, int, int, DigestType, byte[],
+     *                           AsyncCallback.CreateCallback, Object)}
+     *
+     * @param ensSize
+     * @param writeQuorumSize
+     * @param ackQuorumSize
+     * @param digestType
+     * @param passwd
+     * @param customMetadata     
+     * @return a handle to the newly created ledger
+     * @throws InterruptedException
+     * @throws BKException
+     */
+    public LedgerHandle createLedgerAdv(int ensSize, int writeQuorumSize, int ackQuorumSize,
+                                        DigestType digestType, byte passwd[],
+                                        final Map<String, byte[]> customMetadata,
+                                        final LedgerType ledgerType)
             throws InterruptedException, BKException {
         CompletableFuture<LedgerHandle> counter = new CompletableFuture<>();
 
@@ -853,7 +894,8 @@ public class BookKeeper implements AutoCloseable {
          * Calls asynchronous version
          */
         asyncCreateLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
-                             new SyncCreateCallback(), counter, customMetadata);
+                             new SyncCreateCallback(), counter, customMetadata,
+                             ledgerType);
 
         LedgerHandle lh = SynchCallbackUtils.waitForResult(counter);
         if (lh == null) {
@@ -898,6 +940,47 @@ public class BookKeeper implements AutoCloseable {
     public void asyncCreateLedgerAdv(final int ensSize, final int writeQuorumSize, final int ackQuorumSize,
             final DigestType digestType, final byte[] passwd, final CreateCallback cb, final Object ctx,
             final Map<String, byte[]> customMetadata) {
+        asyncCreateLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd, cb, ctx, customMetadata,
+            LedgerType.PD_JOURNAL);
+    }
+
+    /**
+     * Creates a new ledger asynchronously and returns {@link LedgerHandleAdv}
+     * which can accept entryId.  Ledgers created with this call have ability to accept
+     * a separate write quorum and ack quorum size. The write quorum must be larger than
+     * the ack quorum.
+     *
+     * Separating the write and the ack quorum allows the BookKeeper client to continue
+     * writing when a bookie has failed but the failure has not yet been detected. Detecting
+     * a bookie has failed can take a number of seconds, as configured by the read timeout
+     * {@link ClientConfiguration#getReadTimeout()}. Once the bookie failure is detected,
+     * that bookie will be removed from the ensemble.
+     *
+     * The other parameters match those of {@link #asyncCreateLedger(int, int, DigestType, byte[],
+     *                                      AsyncCallback.CreateCallback, Object)}
+     *
+     * @param ensSize
+     *          number of bookies over which to stripe entries
+     * @param writeQuorumSize
+     *          number of bookies each entry will be written to
+     * @param ackQuorumSize
+     *          number of bookies which must acknowledge an entry before the call is completed
+     * @param digestType
+     *          digest type, either MAC or CRC32
+     * @param passwd
+     *          password
+     * @param cb
+     *          createCallback implementation
+     * @param ctx
+     *          optional control object
+     * @param customMetadata
+     *          optional customMetadata that holds user specified metadata
+     * @param defaultSyncMode
+     *          do not require an fsynch on journal of Bookies. This option will relax durability guarantees
+     */
+    public void asyncCreateLedgerAdv(final int ensSize, final int writeQuorumSize, final int ackQuorumSize,
+            final DigestType digestType, final byte[] passwd, final CreateCallback cb, final Object ctx,
+            final Map<String, byte[]> customMetadata, final LedgerType ledgerType) {
         if (writeQuorumSize < ackQuorumSize) {
             throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
         }
@@ -908,7 +991,8 @@ public class BookKeeper implements AutoCloseable {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata).initiateAdv((long)(-1));
+                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata, ledgerType)
+                .initiateAdv((long)(-1));
         } finally {
             closeLock.readLock().unlock();
         }
@@ -1005,6 +1089,55 @@ public class BookKeeper implements AutoCloseable {
                                      final CreateCallback cb,
                                      final Object ctx,
                                      final Map<String, byte[]> customMetadata) {
+        asyncCreateLedgerAdv(ledgerId, ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd, cb, ctx,
+            customMetadata, LedgerType.PD_JOURNAL);
+    }
+
+    /**
+     * Asynchronously creates a new ledger using the interface which accepts a ledgerId as input.
+     * This method returns {@link LedgerHandleAdv} which can accept entryId.
+     * Ledgers created with this call have ability to accept
+     * a separate write quorum and ack quorum size. The write quorum must be larger than
+     * the ack quorum.
+     *
+     * Separating the write and the ack quorum allows the BookKeeper client to continue
+     * writing when a bookie has failed but the failure has not yet been detected. Detecting
+     * a bookie has failed can take a number of seconds, as configured by the read timeout
+     * {@link ClientConfiguration#getReadTimeout()}. Once the bookie failure is detected,
+     * that bookie will be removed from the ensemble.
+     *
+     * The other parameters match those of {@link #asyncCreateLedger(long, int, int, DigestType, byte[],
+     *                                      AsyncCallback.CreateCallback, Object)}
+     *
+     * @param ledgerId
+     *          ledger Id to use for the newly created ledger
+     * @param ensSize
+     *          number of bookies over which to stripe entries
+     * @param writeQuorumSize
+     *          number of bookies each entry will be written to
+     * @param ackQuorumSize
+     *          number of bookies which must acknowledge an entry before the call is completed
+     * @param digestType
+     *          digest type, either MAC or CRC32
+     * @param passwd
+     *          password
+     * @param cb
+     *          createCallback implementation
+     * @param ctx
+     *          optional control object
+     * @param customMetadata
+     *          optional customMetadata that holds user specified metadata
+     */
+    public void asyncCreateLedgerAdv(final long ledgerId,
+                                     final int ensSize,
+                                     final int writeQuorumSize,
+                                     final int ackQuorumSize,
+                                     final DigestType digestType,
+                                     final byte[] passwd,
+                                     final CreateCallback cb,
+                                     final Object ctx,
+                                     final Map<String, byte[]> customMetadata,
+                                     final LedgerType ledgerType) {
         if (writeQuorumSize < ackQuorumSize) {
             throw new IllegalArgumentException("Write quorum must be larger than ack quorum");
         }
@@ -1015,7 +1148,9 @@ public class BookKeeper implements AutoCloseable {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata).initiateAdv(ledgerId);
+                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata,
+                               ledgerType)
+                .initiateAdv(ledgerId);
         } finally {
             closeLock.readLock().unlock();
         }
@@ -1382,6 +1517,7 @@ public class BookKeeper implements AutoCloseable {
         readLacAndEntryRespLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY_RESPONSE);
         addOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.ADD_OP);
         writeLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.WRITE_LAC_OP);
+        syncOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.SYNC_OP);
         readLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAC_OP);
         recoverAddEntriesStats = stats.getOpStatsLogger(BookKeeperClientStats.LEDGER_RECOVER_ADD_ENTRIES);
         recoverReadEntriesStats = stats.getOpStatsLogger(BookKeeperClientStats.LEDGER_RECOVER_READ_ENTRIES);
@@ -1396,6 +1532,7 @@ public class BookKeeper implements AutoCloseable {
     OpStatsLogger getReadLacAndEntryRespLogger() { return readLacAndEntryRespLogger; }
     OpStatsLogger getAddOpLogger() { return addOpLogger; }
     OpStatsLogger getWriteLacOpLogger() { return writeLacOpLogger; }
+    OpStatsLogger getSyncOpLogger() { return syncOpLogger; }
     OpStatsLogger getReadLacOpLogger() { return readLacOpLogger; }
     OpStatsLogger getRecoverAddCountLogger() { return recoverAddEntriesStats; }
     OpStatsLogger getRecoverReadCountLogger() { return recoverReadEntriesStats; }
