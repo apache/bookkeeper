@@ -408,7 +408,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HashMap<String, String> respBody3 = JsonUtil.fromJson(response3.getBody(), HashMap.class);
         assertEquals(77, respBody3.size());
         // Verify the entry content that we got.
-        assertTrue(respBody.get("17").equals(content));
+        assertTrue(respBody3.get("17").equals(content));
     }
 
     @Test

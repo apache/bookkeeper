@@ -100,7 +100,7 @@ public class ListLedgerService implements HttpEndpointService {
 
             // Page index should start from 1;
             int pageIndex = (printMeta && params.containsKey("page")) ?
-              Integer.valueOf(params.get("page")) :
+              Integer.parseInt(params.get("page")) :
               -1;
 
             ZooKeeper zk = ZooKeeperClient.newBuilder()

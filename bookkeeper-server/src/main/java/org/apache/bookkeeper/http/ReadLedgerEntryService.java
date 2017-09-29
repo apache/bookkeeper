@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.http;
 
+import static com.google.common.base.Charsets.US_ASCII;
+
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import java.util.Iterator;
@@ -74,7 +76,7 @@ public class ReadLedgerEntryService implements HttpEndpointService {
             Iterator<LedgerEntry> entries = bka.readEntries(ledgerId, startEntryId, endEntryId).iterator();
             while (entries.hasNext()) {
                 LedgerEntry entry = entries.next();
-                output.put(Long.valueOf(entry.getEntryId()).toString(), new String(entry.getEntry()));
+                output.put(Long.valueOf(entry.getEntryId()).toString(), new String(entry.getEntry(), US_ASCII));
             }
 
             if (bka != null) {
