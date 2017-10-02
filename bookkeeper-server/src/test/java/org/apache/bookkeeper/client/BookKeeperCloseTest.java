@@ -87,7 +87,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
                 }
 
                 @Override
-                public void addEntry(ByteBuf entry, WriteCallback cb,
+                public void addEntry(ByteBuf entry, short ledgerType, WriteCallback cb,
                                      Object ctx, byte[] masterKey)
                         throws IOException, BookieException {
                     try {
@@ -97,7 +97,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
                         // and an exception would spam the logs
                         Thread.currentThread().interrupt();
                     }
-                    super.addEntry(entry, cb, ctx, masterKey);
+                    super.addEntry(entry, ledgerType, cb, ctx, masterKey);
                 }
 
                 @Override

@@ -58,6 +58,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.bookkeeper.client.api.LedgerType;
 
 public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
 
@@ -361,14 +362,15 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         final CountDownLatch addLatch = new CountDownLatch(1);
         final AtomicBoolean addSuccess = new AtomicBoolean(false);
         LOG.info("Add entry {} with lac = {}", entryId, lac);
-        lh.bk.bookieClient.addEntry(lh.metadata.currentEnsemble.get(0), lh.getId(), lh.ledgerKey, entryId, toSend,
+        lh.bk.bookieClient.addEntry(lh.metadata.currentEnsemble.get(0),
+            lh.getId(), lh.ledgerKey, entryId, toSend,
             new WriteCallback() {
                 @Override
-                public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
+                public void writeComplete(int rc, long ledgerId, long entryId, long lastAddSyncedEntryId, BookieSocketAddress addr, Object ctx) {
                     addSuccess.set(BKException.Code.OK == rc);
                     addLatch.countDown();
                 }
-            }, 0, BookieProtocol.FLAG_NONE);
+            }, 0, BookieProtocol.FLAG_NONE, LedgerType.PD_JOURNAL);
         addLatch.await();
         assertTrue("add entry 14 should succeed", addSuccess.get());
 
@@ -418,22 +420,24 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
             private final int rc;
             private final long ledgerId;
             private final long entryId;
+            private final long lastAddSyncedEntryId;
             private final BookieSocketAddress addr;
             private final Object ctx;
 
             WriteCallbackEntry(WriteCallback cb,
-                               int rc, long ledgerId, long entryId,
+                               int rc, long ledgerId, long entryId, long lastAddSyncedEntryId,
                                BookieSocketAddress addr, Object ctx) {
                 this.cb = cb;
                 this.rc = rc;
                 this.ledgerId = ledgerId;
                 this.entryId = entryId;
+                this.lastAddSyncedEntryId = lastAddSyncedEntryId;
                 this.addr = addr;
                 this.ctx = ctx;
             }
 
             public void callback() {
-                cb.writeComplete(rc, ledgerId, entryId, addr, ctx);
+                cb.writeComplete(rc, ledgerId, entryId, lastAddSyncedEntryId, addr, ctx);
             }
         }
 
@@ -450,16 +454,16 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public void addEntry(ByteBuf entry, final WriteCallback cb, Object ctx, byte[] masterKey)
+        public void addEntry(ByteBuf entry, short ledgerType, final WriteCallback cb, Object ctx, byte[] masterKey)
                 throws IOException, BookieException {
-            super.addEntry(entry, new WriteCallback() {
+            super.addEntry(entry, ledgerType, new WriteCallback() {
                 @Override
-                public void writeComplete(int rc, long ledgerId, long entryId,
+                public void writeComplete(int rc, long ledgerId, long entryId, long lastAddSyncedEntryId,
                                           BookieSocketAddress addr, Object ctx) {
                     if (delayAddResponse.get()) {
-                        delayQueue.add(new WriteCallbackEntry(cb, rc, ledgerId, entryId, addr, ctx));
+                        delayQueue.add(new WriteCallbackEntry(cb, rc, ledgerId, entryId, lastAddSyncedEntryId, addr, ctx));
                     } else {
-                        cb.writeComplete(rc, ledgerId, entryId, addr, ctx);
+                        cb.writeComplete(rc, ledgerId, entryId, lastAddSyncedEntryId, addr, ctx);
                     }
                 }
             }, ctx, masterKey);

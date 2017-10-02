@@ -77,6 +77,7 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNS;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
@@ -216,7 +217,7 @@ public class Bookie extends BookieCriticalThread {
     // Write Callback do nothing
     static class NopWriteCallback implements WriteCallback {
         @Override
-        public void writeComplete(int rc, long ledgerId, long entryId,
+        public void writeComplete(int rc, long ledgerId, long entryId, long lastAddSyncedEntryId,
                                   BookieSocketAddress addr, Object ctx) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Finished writing entry {} @ ledger {} for {} : {}",
@@ -1378,7 +1379,7 @@ public class Bookie extends BookieCriticalThread {
     /**
      * Add an entry to a ledger as specified by handle.
      */
-    private void addEntryInternal(LedgerDescriptor handle, ByteBuf entry, WriteCallback cb, Object ctx)
+    private void addEntryInternal(LedgerDescriptor handle, ByteBuf entry, short ledgerType, WriteCallback cb, Object ctx)
             throws IOException, BookieException {
         long ledgerId = handle.getLedgerId();
         long entryId = handle.addEntry(entry);
@@ -1388,7 +1389,7 @@ public class Bookie extends BookieCriticalThread {
         if (LOG.isTraceEnabled()) {
             LOG.trace("Adding {}@{}", entryId, ledgerId);
         }
-        getJournal(ledgerId).logAddEntry(entry, cb, ctx);
+        getJournal(ledgerId).logAddEntry(entry, ledgerType, cb, ctx);
     }
 
     /**
@@ -1406,7 +1407,7 @@ public class Bookie extends BookieCriticalThread {
             LedgerDescriptor handle = getLedgerForEntry(entry, masterKey);
             synchronized (handle) {
                 entrySize = entry.readableBytes();
-                addEntryInternal(handle, entry, cb, ctx);
+                addEntryInternal(handle, entry, BookieProtocol.LEDGERTYPE_PD_JOURNAL, cb, ctx);
             }
             success = true;
         } catch (NoWritableLedgerDirException e) {
@@ -1453,7 +1454,7 @@ public class Bookie extends BookieCriticalThread {
      * Add entry to a ledger.
      * @throws BookieException.LedgerFencedException if the ledger is fenced
      */
-    public void addEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey)
+    public void addEntry(ByteBuf entry, short ledgerType, WriteCallback cb, Object ctx, byte[] masterKey)
             throws IOException, BookieException.LedgerFencedException, BookieException {
         long requestNanos = MathUtils.nowInNano();
         boolean success = false;
@@ -1466,7 +1467,7 @@ public class Bookie extends BookieCriticalThread {
                             .create(BookieException.Code.LedgerFencedException);
                 }
                 entrySize = entry.readableBytes();
-                addEntryInternal(handle, entry, cb, ctx);
+                addEntryInternal(handle, entry, ledgerType, cb, ctx);
             }
             success = true;
         } catch (NoWritableLedgerDirException e) {
@@ -1491,7 +1492,7 @@ public class Bookie extends BookieCriticalThread {
         SettableFuture<Boolean> result = SettableFuture.create();
 
         @Override
-        public void writeComplete(int rc, long ledgerId, long entryId,
+        public void writeComplete(int rc, long ledgerId, long entryId, long lastAddSyncedEntryId,
                                   BookieSocketAddress addr, Object ctx) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Finished writing entry {} @ ledger {} for {} : {}",
@@ -1560,7 +1561,7 @@ public class Bookie extends BookieCriticalThread {
         int count;
 
         @Override
-        public synchronized void writeComplete(int rc, long l, long e, BookieSocketAddress addr, Object ctx) {
+        public synchronized void writeComplete(int rc, long l, long e, long las, BookieSocketAddress addr, Object ctx) {
             count--;
             if (count == 0) {
                 notifyAll();
@@ -1680,7 +1681,7 @@ public class Bookie extends BookieCriticalThread {
             buff.writeLong(1);
             buff.writeLong(i);
             cb.incCount();
-            b.addEntry(buff, cb, null, new byte[0]);
+            b.addEntry(buff, BookieProtocol.LEDGERTYPE_PD_JOURNAL, cb, null, new byte[0]);
         }
         cb.waitZero();
         long end = MathUtils.now();

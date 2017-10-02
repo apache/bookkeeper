@@ -49,6 +49,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import org.apache.bookkeeper.client.api.LedgerType;
 
 import static org.junit.Assert.*;
 
@@ -120,7 +121,8 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
         idGenerator.generateLedgerId(new GenericCallback<Long>() {
             @Override
             public void operationComplete(int rc, final Long lid) {
-                manager.createLedgerMetadata(lid, new LedgerMetadata(4, 2, 2, digestType, "fpj was here".getBytes()),
+                manager.createLedgerMetadata(lid, new LedgerMetadata(4, 2, 2, digestType, "fpj was here".getBytes(),
+                null, LedgerType.PD_JOURNAL),
                          new BookkeeperInternalCallbacks.GenericCallback<Void>(){
 
                     @Override

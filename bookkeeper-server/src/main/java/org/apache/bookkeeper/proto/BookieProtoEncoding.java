@@ -155,7 +155,8 @@ public class BookieProtoEncoding {
                 // Read ledger and entry id without advancing the reader index
                 ledgerId = packet.getLong(packet.readerIndex());
                 entryId = packet.getLong(packet.readerIndex() + 8);
-                return new BookieProtocol.AddRequest(version, ledgerId, entryId, flags, masterKey, packet.retain());
+                return new BookieProtocol.AddRequest(version, ledgerId, entryId, flags, masterKey, packet.retain(),
+                                                     BookieProtocol.LEDGERTYPE_PD_JOURNAL);
             }
 
             case BookieProtocol.READENTRY:
@@ -263,7 +264,8 @@ public class BookieProtoEncoding {
                 rc = buffer.readInt();
                 ledgerId = buffer.readLong();
                 entryId = buffer.readLong();
-                return new BookieProtocol.AddResponse(version, rc, ledgerId, entryId);
+                return new BookieProtocol.AddResponse(version, rc, ledgerId, entryId,
+                                                     BookieProtocol.LEDGERTYPE_PD_JOURNAL);
             case BookieProtocol.READENTRY:
                 rc = buffer.readInt();
                 ledgerId = buffer.readLong();

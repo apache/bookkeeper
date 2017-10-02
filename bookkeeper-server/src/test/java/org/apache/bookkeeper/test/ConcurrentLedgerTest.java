@@ -37,6 +37,7 @@ import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.junit.After;
 import org.junit.Before;
@@ -167,7 +168,7 @@ public class ConcurrentLedgerTest {
         throttle = new Semaphore(10000);
         WriteCallback cb = new WriteCallback() {
             @Override
-            public void writeComplete(int rc, long ledgerId, long entryId,
+            public void writeComplete(int rc, long ledgerId, long entryId, long lastAddSyncedEntryId,
                     BookieSocketAddress addr, Object ctx) {
                 AtomicInteger counter = (AtomicInteger)ctx;
                 counter.getAndIncrement();
@@ -187,7 +188,7 @@ public class ConcurrentLedgerTest {
                 bytes.position(0);
                 bytes.limit(bytes.capacity());
                 throttle.acquire();
-                bookie.addEntry(Unpooled.wrappedBuffer(bytes), cb, counter, zeros);
+                bookie.addEntry(Unpooled.wrappedBuffer(bytes), BookieProtocol.LEDGERTYPE_PD_JOURNAL, cb, counter, zeros);
             }
         }
         long finish = System.currentTimeMillis();

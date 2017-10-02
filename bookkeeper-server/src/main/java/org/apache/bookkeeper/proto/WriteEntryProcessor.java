@@ -64,7 +64,8 @@ class WriteEntryProcessor extends PacketProcessorBase implements WriteCallback {
             if (add.isRecoveryAdd()) {
                 requestProcessor.bookie.recoveryAddEntry(add.getData(), this, channel, add.getMasterKey());
             } else {
-                requestProcessor.bookie.addEntry(add.getData(), this, channel, add.getMasterKey());
+                requestProcessor.bookie.addEntry(add.getData(), BookieProtocol.LEDGERTYPE_PD_JOURNAL,
+                    this, channel, add.getMasterKey());
             }
         } catch (IOException e) {
             LOG.error("Error writing " + add, e);
@@ -89,7 +90,7 @@ class WriteEntryProcessor extends PacketProcessorBase implements WriteCallback {
     }
 
     @Override
-    public void writeComplete(int rc, long ledgerId, long entryId,
+    public void writeComplete(int rc, long ledgerId, long entryId, long lastAddSyncedEntry,
                               BookieSocketAddress addr, Object ctx) {
         if (BookieProtocol.EOK == rc) {
             requestProcessor.addEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
@@ -99,7 +100,7 @@ class WriteEntryProcessor extends PacketProcessorBase implements WriteCallback {
                     TimeUnit.NANOSECONDS);
         }
         sendResponse(rc,
-                     ResponseBuilder.buildAddResponse(request),
+                     ResponseBuilder.buildAddResponse(request, lastAddSyncedEntry),
                      requestProcessor.addRequestStats);
     }
 

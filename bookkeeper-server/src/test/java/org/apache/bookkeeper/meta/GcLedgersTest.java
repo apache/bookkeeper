@@ -61,6 +61,7 @@ import org.apache.bookkeeper.bookie.ScanAndCompareGarbageCollector;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.client.api.LedgerType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRange;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
@@ -101,7 +102,8 @@ public class GcLedgersTest extends LedgerManagerTestCase {
                     }
 
                     getLedgerManager().createLedgerMetadata(ledgerId,
-                            new LedgerMetadata(1, 1, 1, DigestType.MAC, "".getBytes()), new GenericCallback<Void>() {
+                            new LedgerMetadata(1, 1, 1, DigestType.MAC, "".getBytes(),
+                                null, LedgerType.PD_JOURNAL), new GenericCallback<Void>() {
                                 @Override
                                 public void operationComplete(int rc, Void result) {
                                     if (rc == BKException.Code.OK) {

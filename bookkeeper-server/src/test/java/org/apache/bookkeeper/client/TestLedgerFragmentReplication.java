@@ -21,6 +21,7 @@ package org.apache.bookkeeper.client;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -28,6 +29,7 @@ import java.util.SortedMap;
 import java.util.concurrent.CountDownLatch;
 
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.api.LedgerType;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -236,7 +238,8 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
     public void testSplitIntoSubFragmentsWithDifferentFragmentBoundaries()
             throws Exception {
         LedgerMetadata metadata = new LedgerMetadata(3, 3, 3, TEST_DIGEST_TYPE,
-                TEST_PSSWD) {
+                TEST_PSSWD,
+                null, LedgerType.PD_JOURNAL) {
             @Override
             ArrayList<BookieSocketAddress> getEnsemble(long entryId) {
                 return null;

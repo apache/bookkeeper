@@ -39,6 +39,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -293,7 +294,9 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
                 LOG.debug("Acknowledge Ledger: {}, Entry: {}", ledgerId, entryId);
             }
             journalAddEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueTime), TimeUnit.NANOSECONDS);
-            cb.writeComplete(0, ledgerId, entryId, null, ctx);
+            final long dummyLastAddSyncedEnryId = -1;
+            // TODO: lastAddSynced will be implemented in next patches for BP-14
+            cb.writeComplete(0, ledgerId, entryId, dummyLastAddSyncedEnryId, null, ctx);
         }
     }
 
@@ -752,19 +755,21 @@ class Journal extends BookieCriticalThread implements CheckpointSource {
     }
 
     public void logAddEntry(ByteBuffer entry, WriteCallback cb, Object ctx) {
-        logAddEntry(Unpooled.wrappedBuffer(entry), cb, ctx);
+        logAddEntry(Unpooled.wrappedBuffer(entry), BookieProtocol.LEDGERTYPE_PD_JOURNAL, cb, ctx);
     }
 
     /**
      * record an add entry operation in journal.
      */
-    public void logAddEntry(ByteBuf entry, WriteCallback cb, Object ctx) {
+    public void logAddEntry(ByteBuf entry, short ledgerType, WriteCallback cb, Object ctx) {
         long ledgerId = entry.getLong(entry.readerIndex() + 0);
         long entryId = entry.getLong(entry.readerIndex() + 8);
         journalQueueSize.inc();
 
         //Retain entry until it gets written to journal
         entry.retain();
+
+        // TODO ledgerType will be taken into account in next patches for BP-14
         queue.add(new QueueEntry(entry, ledgerId, entryId, cb, ctx, MathUtils.nowInNano()));
     }
 
