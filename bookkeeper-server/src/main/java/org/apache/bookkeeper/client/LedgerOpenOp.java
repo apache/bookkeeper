@@ -55,7 +55,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
     boolean doRecovery = true;
     boolean administrativeOpen = false;
     long startTime;
-    OpStatsLogger openOpLogger;
+    final OpStatsLogger openOpLogger;
     
     final DigestType suggestedDigestType;
     final boolean enableDigestAutodetection;
@@ -79,6 +79,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
         this.ctx = ctx;
         this.enableDigestAutodetection = bk.getConf().getEnableDigestTypeAutodetection();
         this.suggestedDigestType = digestType;
+        this.openOpLogger = bk.getOpenOpLogger();
     }
 
     public LedgerOpenOp(BookKeeper bk, long ledgerId, OpenCallback cb, Object ctx) {
@@ -91,6 +92,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
         this.administrativeOpen = true;
         this.enableDigestAutodetection = false;
         this.suggestedDigestType = bk.conf.getBookieRecoveryDigestType();
+        this.openOpLogger = bk.getOpenOpLogger();
     }
 
     /**
@@ -98,8 +100,6 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
      */
     public void initiate() {
         startTime = MathUtils.nowInNano();
-
-        openOpLogger = bk.getOpenOpLogger();
 
         /**
          * Asynchronously read the ledger metadata node.

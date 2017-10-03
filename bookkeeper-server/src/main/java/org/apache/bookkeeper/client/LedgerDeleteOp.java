@@ -44,12 +44,12 @@ class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
 
     static final Logger LOG = LoggerFactory.getLogger(LedgerDeleteOp.class);
 
-    BookKeeper bk;
-    long ledgerId;
-    DeleteCallback cb;
-    Object ctx;
-    long startTime;
-    OpStatsLogger deleteOpLogger;
+    final BookKeeper bk;
+    final long ledgerId;
+    final DeleteCallback cb;
+    final Object ctx;
+    final long startTime;
+    final OpStatsLogger deleteOpLogger;
 
     /**
      * Constructor
