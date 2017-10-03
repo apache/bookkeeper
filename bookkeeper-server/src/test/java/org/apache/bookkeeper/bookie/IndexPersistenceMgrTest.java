@@ -134,7 +134,7 @@ public class IndexPersistenceMgrTest {
     final long lid = 1L;
     final byte[] masterKey = "write".getBytes();
 
-    @Test(timeout = 60000)
+    @Test
     public void testGetFileInfoReadBeforeWrite() throws Exception {
         IndexPersistenceMgr indexPersistenceMgr = null;
         try {
@@ -162,7 +162,7 @@ public class IndexPersistenceMgrTest {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testGetFileInfoWriteBeforeRead() throws Exception {
         IndexPersistenceMgr indexPersistenceMgr = null;
         try {
@@ -188,7 +188,7 @@ public class IndexPersistenceMgrTest {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReadFileInfoCacheEviction() throws Exception {
         IndexPersistenceMgr indexPersistenceMgr = null;
         try {
@@ -232,7 +232,7 @@ public class IndexPersistenceMgrTest {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testEvictionShouldNotAffectLongPollRead() throws Exception {
         IndexPersistenceMgr indexPersistenceMgr = null;
         Observer observer = (obs, obj) -> {
