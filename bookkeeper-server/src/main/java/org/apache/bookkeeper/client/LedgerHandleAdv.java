@@ -241,11 +241,6 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
     }
 
     @Override
-    public CompletableFuture<Long> write(long entryId, ByteBuffer data) {
-        return write(entryId, Unpooled.wrappedBuffer(data));
-    }
-
-    @Override
     public CompletableFuture<Long> write(long entryId, ByteBuf data) {
         CompletableFuture<Long> counter = new CompletableFuture<>();
         SyncAddCallback callback = new SyncAddCallback();

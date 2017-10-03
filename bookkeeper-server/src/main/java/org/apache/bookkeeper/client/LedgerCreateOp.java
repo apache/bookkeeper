@@ -35,6 +35,8 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCreateCallback;
 import org.apache.bookkeeper.client.api.CreateAdvBuilder;
 import org.apache.bookkeeper.client.api.CreateBuilder;
+import org.apache.bookkeeper.client.api.WriteAdvHandle;
+import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -42,14 +44,12 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.bookkeeper.client.api.WriteAdvHandle;
-import org.apache.bookkeeper.client.api.WriteHandle;
 
 /**
  * Encapsulates asynchronous ledger create operation
  *
  */
-class LedgerCreateOp implements GenericCallback<Void>  {
+class LedgerCreateOp implements GenericCallback<Void> {
 
     static final Logger LOG = LoggerFactory.getLogger(LedgerCreateOp.class);
 
@@ -209,21 +209,18 @@ class LedgerCreateOp implements GenericCallback<Void>  {
         cb.createComplete(rc, lh, ctx);
     }
 
-    private static final byte[] EMPTY_PASSWORD = new byte[0];
-
-    public static class CreateBuilderImpl implements CreateBuilder {
+    static class CreateBuilderImpl implements CreateBuilder {
 
         private final BookKeeper bk;
         private int builderEnsembleSize = 3;
         private int builderAckQuorumSize = 2;
         private int builderWriteQuorumSize = 2;
-        private byte[] builderPassword = EMPTY_PASSWORD;
+        private byte[] builderPassword;
         private org.apache.bookkeeper.client.api.DigestType builderDigestType
             = org.apache.bookkeeper.client.api.DigestType.CRC32;
         private Map<String, byte[]> builderCustomMetadata = Collections.emptyMap();
-        private CreateAdvBuilder advBuilder;
 
-        public CreateBuilderImpl(BookKeeper bk) {
+        CreateBuilderImpl(BookKeeper bk) {
             this.bk = bk;
         }
 
@@ -265,46 +262,37 @@ class LedgerCreateOp implements GenericCallback<Void>  {
 
         @Override
         public CreateAdvBuilder makeAdv() {
-            if(advBuilder == null) {
-                advBuilder = new CreateAdvBuilderImpl(this);
-            }
-            return advBuilder;
+            return new CreateAdvBuilderImpl(this);
         }
 
-        private boolean validate(CreateCallback cb, Object ctx) {
+        private boolean validate() {
             if (builderWriteQuorumSize > builderEnsembleSize) {
                 LOG.error("invalid writeQuorumSize {} > ensembleSize {}", builderWriteQuorumSize, builderEnsembleSize);
-                cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
                 return false;
             }
 
             if (builderAckQuorumSize > builderWriteQuorumSize) {
                 LOG.error("invalid ackQuorumSize {} > writeQuorumSize {}", builderAckQuorumSize, builderWriteQuorumSize);
-                cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
                 return false;
             }
 
             if (builderAckQuorumSize <= 0) {
                 LOG.error("invalid ackQuorumSize {} <= 0", builderAckQuorumSize);
-                cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
                 return false;
             }
 
             if (builderPassword == null) {
                 LOG.error("invalid null password");
-                cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
                 return false;
             }
 
             if (builderDigestType == null) {
                 LOG.error("invalid null digestType");
-                cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
                 return false;
             }
 
             if (builderCustomMetadata == null) {
                 LOG.error("invalid null customMetadata");
-                cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
                 return false;
             }
 
@@ -319,7 +307,8 @@ class LedgerCreateOp implements GenericCallback<Void>  {
         }
 
         private void create(CreateCallback cb, Object ctx) {
-            if (!validate(cb, ctx)) {
+            if (!validate()) {
+                cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
                 return;
             }
             LedgerCreateOp op = new LedgerCreateOp(bk, builderEnsembleSize,
@@ -342,22 +331,10 @@ class LedgerCreateOp implements GenericCallback<Void>  {
     private static class CreateAdvBuilderImpl implements CreateAdvBuilder {
 
         private Long builderLedgerId;
-        private final int builderEnsembleSize;
-        private final int builderAckQuorumSize;
-        private final int builderWriteQuorumSize;
-        private final byte[] builderPassword;
-        private final Map<String, byte[]> builderCustomMetadata;
-        private final org.apache.bookkeeper.client.api.DigestType builderDigestType;
-        private final BookKeeper bk;
+        private CreateBuilderImpl parent;
 
-         private CreateAdvBuilderImpl(CreateBuilderImpl other) {
-            this.builderEnsembleSize = other.builderEnsembleSize;
-            this.builderAckQuorumSize = other.builderAckQuorumSize;
-            this.builderWriteQuorumSize = other.builderWriteQuorumSize;
-            this.builderPassword = other.builderPassword;
-            this.builderDigestType = other.builderDigestType;
-            this.builderCustomMetadata = other.builderCustomMetadata;
-            this.bk = other.bk;
+         private CreateAdvBuilderImpl(CreateBuilderImpl parent) {
+            this.parent = parent;
         }
 
         @Override
@@ -373,68 +350,36 @@ class LedgerCreateOp implements GenericCallback<Void>  {
             return counter;
         }
 
-        private boolean validateAdv(CreateCallback cb, Object ctx) {
+        private boolean validate() {
+            if (!parent.validate()) {
+                return false;
+            }
             if (builderLedgerId != null && builderLedgerId < 0) {
                 LOG.error("invalid ledgerId {} < 0. Do not set en explicit value if you want automatic generation", builderLedgerId);
-                cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
                 return false;
             }
-
-            if (builderWriteQuorumSize > builderEnsembleSize) {
-                LOG.error("invalid writeQuorumSize {} > ensembleSize {}", builderWriteQuorumSize, builderEnsembleSize);
-                cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
-                return false;
-            }
-
-            if (builderAckQuorumSize > builderWriteQuorumSize) {
-                LOG.error("invalid ackQuorumSize {} > writeQuorumSize {}", builderAckQuorumSize, builderWriteQuorumSize);
-                cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
-                return false;
-            }
-
-            if (builderAckQuorumSize <= 0) {
-                LOG.error("invalid ackQuorumSize {} <= 0", builderAckQuorumSize);
-                cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
-                return false;
-            }
-
-            if (builderPassword == null) {
-                LOG.error("invalid null password");
-                cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
-                return false;
-            }
-
-            if (builderDigestType == null) {
-                LOG.error("invalid null digestType");
-                cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
-                return false;
-            }
-
-            if (builderCustomMetadata == null) {
-                LOG.error("invalid null customMetadata");
-                cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
-                return false;
-            }
-
             return true;
         }
 
         private void create(CreateCallback cb, Object ctx) {
-            if (!validateAdv(cb, ctx)) {
+            if (!validate()) {
+                cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
                 return;
             }
-            LedgerCreateOp op = new LedgerCreateOp(bk, builderEnsembleSize,
-                    builderWriteQuorumSize, builderAckQuorumSize, DigestType.fromApiDigestType(builderDigestType),
-                    builderPassword, cb, ctx, builderCustomMetadata);
-            bk.getCloseLock().readLock().lock();
+            LedgerCreateOp op = new LedgerCreateOp(parent.bk, parent.builderEnsembleSize,
+                    parent.builderWriteQuorumSize, parent.builderAckQuorumSize,
+                    DigestType.fromApiDigestType(parent.builderDigestType),
+                    parent.builderPassword, cb, ctx, parent.builderCustomMetadata);
+            ReentrantReadWriteLock closeLock = parent.bk.getCloseLock();
+            closeLock.readLock().lock();
             try {
-                if (bk.isClosed()) {
+                if (parent.bk.isClosed()) {
                     cb.createComplete(BKException.Code.ClientClosedException, null, ctx);
                     return;
                 }
                 op.initiateAdv(builderLedgerId == null ? -1L : builderLedgerId);
             } finally {
-                bk.getCloseLock().readLock().unlock();
+                closeLock.readLock().unlock();
             }
         }
     }

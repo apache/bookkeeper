@@ -110,8 +110,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .withEnsembleSize(0)
                     .execute());
             fail("shoud not be able to create a ledger with such specs");
-        }
-        catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKException.BKIncorrectParameterException err) {
         }
 
         try {
@@ -120,8 +119,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .withWriteQuorumSize(0)
                     .execute());
             fail("shoud not be able to create a ledger with such specs");
-        }
-        catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKException.BKIncorrectParameterException err) {
         }
 
         try {
@@ -131,8 +129,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .withAckQuorumSize(0)
                     .execute());
             fail("shoud not be able to create a ledger with such specs");
-        }
-        catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKException.BKIncorrectParameterException err) {
         }
 
         try {
@@ -142,8 +139,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .withAckQuorumSize(1)
                     .execute());
             fail("shoud not be able to create a ledger with such specs");
-        }
-        catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKException.BKIncorrectParameterException err) {
         }
 
         try {
@@ -153,8 +149,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .withAckQuorumSize(2)
                     .execute());
             fail("shoud not be able to create a ledger with such specs");
-        }
-        catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKException.BKIncorrectParameterException err) {
         }
 
         try {
@@ -162,8 +157,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .withPassword(null)
                     .execute());
             fail("shoud not be able to create a ledger with such specs");
-        }
-        catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKException.BKIncorrectParameterException err) {
         }
 
         try {
@@ -171,8 +165,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .withCustomMetadata(null)
                     .execute());
             fail("shoud not be able to create a ledger with such specs");
-        }
-        catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKException.BKIncorrectParameterException err) {
         }
 
         try {
@@ -183,8 +176,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .withDigestType(null)
                     .execute());
             fail("shoud not be able to create a ledger with such specs");
-        }
-        catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKException.BKIncorrectParameterException err) {
         }
 
         try {
@@ -195,8 +187,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .withDigestType(null)
                     .execute());
             fail("shoud not be able to create a ledger with such specs");
-        }
-        catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKException.BKIncorrectParameterException err) {
         }
 
         when(bk.isClosed()).thenReturn(true);
@@ -204,8 +195,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             FutureUtils.result(new CreateBuilderImpl(bk)
                     .execute());
             fail("shoud not be able to create a ledger, client is closed");
-        }
-        catch (BKException.BKClientClosedException err) {
+        } catch (BKException.BKClientClosedException err) {
         }
     }
 
@@ -266,8 +256,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .makeAdv()
                     .execute());
             fail("shoud not be able to create a ledger with such specs");
-        }
-        catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKException.BKIncorrectParameterException err) {
         }
 
         try {
@@ -277,8 +266,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .makeAdv()
                     .execute());
             fail("shoud not be able to create a ledger with such specs");
-        }
-        catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKException.BKIncorrectParameterException err) {
         }
 
         try {
@@ -289,8 +277,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .makeAdv()
                     .execute());
             fail("shoud not be able to create a ledger with such specs");
-        }
-        catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKException.BKIncorrectParameterException err) {
         }
 
         try {
@@ -301,8 +288,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .makeAdv()
                     .execute());
             fail("shoud not be able to create a ledger with such specs");
-        }
-        catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKException.BKIncorrectParameterException err) {
         }
 
         try {
@@ -313,8 +299,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .makeAdv()
                     .execute());
             fail("shoud not be able to create a ledger with such specs");
-        }
-        catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKException.BKIncorrectParameterException err) {
         }
 
         try {
@@ -323,8 +308,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .makeAdv()
                     .execute());
             fail("shoud not be able to create a ledger with such specs");
-        }
-        catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKException.BKIncorrectParameterException err) {
         }
 
         try {
@@ -333,8 +317,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .makeAdv()
                     .execute());
             fail("shoud not be able to create a ledger with such specs");
-        }
-        catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKException.BKIncorrectParameterException err) {
         }
 
         try {
@@ -346,8 +329,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .makeAdv()
                     .execute());
             fail("shoud not be able to create a ledger with such specs");
-        }
-        catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKException.BKIncorrectParameterException err) {
         }
 
         try {
@@ -359,8 +341,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .makeAdv()
                     .execute());
             fail("shoud not be able to create a ledger with such specs");
-        }
-        catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKException.BKIncorrectParameterException err) {
         }
 
         try {
@@ -369,8 +350,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .withLedgerId(-1)
                     .execute());
             fail("shoud not be able to create a ledger with such specs");
-        }
-        catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKException.BKIncorrectParameterException err) {
         }
 
         try {
@@ -379,8 +359,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .withLedgerId(-2)
                     .execute());
             fail("shoud not be able to create a ledger with such specs");
-        }
-        catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKException.BKIncorrectParameterException err) {
         }
 
         assertEquals(0, FutureUtils.result(new CreateBuilderImpl(bk)
@@ -399,8 +378,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .makeAdv()
                     .execute());
             fail("shoud not be able to create a ledger, client is closed");
-        }
-        catch (BKException.BKClientClosedException err) {
+        } catch (BKException.BKClientClosedException err) {
         }
 
     }
@@ -497,8 +475,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             FutureUtils.result(new OpenBuilderImpl(bk)
                     .withPassword(ledgerMetadata.getPassword())
                     .execute());
-        }
-        catch (BKException.BKNoSuchLedgerExistsException err) {
+        } catch (BKException.BKNoSuchLedgerExistsException err) {
         }
 
         try {
@@ -506,8 +483,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .withLedgerId(ledgerId)
                     .execute());
             fail("should not be able to read with bad password");
-        }
-        catch (BKException.BKUnauthorizedAccessException err) {
+        } catch (BKException.BKUnauthorizedAccessException err) {
         }
 
         try {
@@ -515,8 +491,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .withPassword(ledgerMetadata.getPassword())
                     .withLedgerId(ledgerId)
                     .execute());
-        }
-        catch (BKException.BKDigestMatchException err) {
+        } catch (BKException.BKDigestMatchException err) {
         }
 
         try {
@@ -525,8 +500,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .withDigestType(DigestType.CRC32)
                     .withLedgerId(ledgerId)
                     .execute());
-        }
-        catch (BKException.BKDigestMatchException err) {
+        } catch (BKException.BKDigestMatchException err) {
         }
 
         FutureUtils.result(new OpenBuilderImpl(bk)
@@ -548,8 +522,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .withLedgerId(ledgerId)
                     .execute());
             fail("shoud not be able to open a ledger, client is closed");
-        }
-        catch (BKException.BKClientClosedException err) {
+        } catch (BKException.BKClientClosedException err) {
         }
 
     }
@@ -578,16 +551,14 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             FutureUtils.result(new DeleteBuilderImpl(bk)
                     .withLedgerId(-1)
                     .execute());
-        }
-        catch (BKException.BKNoSuchLedgerExistsException err) {
+        } catch (BKException.BKNoSuchLedgerExistsException err) {
         }
 
         try {
             FutureUtils.result(new DeleteBuilderImpl(bk)
                     .withLedgerId(ledgerId + 1)
                     .execute());
-        }
-        catch (BKException.BKNoSuchLedgerExistsException err) {
+        } catch (BKException.BKNoSuchLedgerExistsException err) {
         }
 
         FutureUtils.result(new DeleteBuilderImpl(bk)
@@ -600,8 +571,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                     .withLedgerId(ledgerId)
                     .execute());
             fail("shoud not be able to delete a ledger, client is closed");
-        }
-        catch (BKException.BKClientClosedException err) {
+        } catch (BKException.BKClientClosedException err) {
         }
 
     }
