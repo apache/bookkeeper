@@ -27,24 +27,30 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.bookkeeper.client.BKException.BKClientClosedException;
+import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
+import org.apache.bookkeeper.client.BKException.BKIncorrectParameterException;
+import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
+import org.apache.bookkeeper.client.BKException.BKUnauthorizedAccessException;
 import org.apache.bookkeeper.client.LedgerCreateOp.CreateBuilderImpl;
 import org.apache.bookkeeper.client.LedgerDeleteOp.DeleteBuilderImpl;
 import org.apache.bookkeeper.client.LedgerOpenOp.OpenBuilderImpl;
 import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.WriteAdvHandle;
 import org.apache.bookkeeper.client.api.WriteHandle;
-import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import org.junit.Test;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
-import org.mockito.Mockito;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -60,27 +66,17 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         int ensembleSize = 3;
         int writeQuorumSize = 2;
         int ackQuorumSize = 1;
+        long ledgerId = 12342L;
         Map<String, byte[]> customMetadata = new HashMap<>();
 
-        when(bookieWatcher.newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata))
-                .thenReturn(new ArrayList<>(Arrays.asList(new BookieSocketAddress("localhost", 1234))));
+        prepareBookieWatcherForNewEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata,
+            Arrays.asList(new BookieSocketAddress("localhost", 1234)));
 
-        long ledgerId = 12342L;
-
-        Mockito.doAnswer((Answer<Void>) new Answer<Void>() {
-            @Override
-            @SuppressWarnings("unchecked")
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                Object[] args = invocation.getArguments();
-                BookkeeperInternalCallbacks.GenericCallback cb = (BookkeeperInternalCallbacks.GenericCallback) args[0];
-                cb.operationComplete(BKException.Code.OK, ledgerId);
-                return null;
-            }
-        }).when(ledgerIdGenerator).generateLedgerId(any());
+        setNewGeneratedLedgerId(ledgerId);
 
         AtomicReference<LedgerMetadata> metadataHolder = new AtomicReference<>();
 
-        Mockito.doAnswer((Answer<Void>) new Answer<Void>() {
+        doAnswer((Answer<Void>) new Answer<Void>() {
             @Override
             @SuppressWarnings("unchecked")
             public Void answer(InvocationOnMock invocation) throws Throwable {
@@ -92,110 +88,114 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             }
         }).when(ledgerManager).createLedgerMetadata(eq(ledgerId), any(), any());
 
+        byte[] password = new byte[3];
+
         WriteHandle writer = new CreateBuilderImpl(bk)
-                .withAckQuorumSize(ackQuorumSize)
-                .withEnsembleSize(ensembleSize)
-                .withWriteQuorumSize(writeQuorumSize)
-                .withCustomMetadata(customMetadata)
-                .execute()
-                .get();
+            .withAckQuorumSize(ackQuorumSize)
+            .withEnsembleSize(ensembleSize)
+            .withWriteQuorumSize(writeQuorumSize)
+            .withCustomMetadata(customMetadata)
+            .withPassword(password)
+            .execute()
+            .get();
         assertEquals(ledgerId, writer.getId());
         LedgerMetadata metadata = metadataHolder.get();
         assertEquals(ensembleSize, metadata.getEnsembleSize());
         assertEquals(ackQuorumSize, metadata.getAckQuorumSize());
         assertEquals(writeQuorumSize, metadata.getWriteQuorumSize());
+        assertArrayEquals(password, metadata.getPassword());
 
         try {
-            FutureUtils.result(new CreateBuilderImpl(bk)
-                    .withEnsembleSize(0)
-                    .execute());
+            result(new CreateBuilderImpl(bk)
+                .withEnsembleSize(0)
+                .execute());
             fail("shoud not be able to create a ledger with such specs");
-        } catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKIncorrectParameterException err) {
         }
 
         try {
-            FutureUtils.result(new CreateBuilderImpl(bk)
-                    .withEnsembleSize(2)
-                    .withWriteQuorumSize(0)
-                    .execute());
+            result(new CreateBuilderImpl(bk)
+                .withEnsembleSize(2)
+                .withWriteQuorumSize(0)
+                .execute());
             fail("shoud not be able to create a ledger with such specs");
-        } catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKIncorrectParameterException err) {
         }
 
         try {
-            FutureUtils.result(new CreateBuilderImpl(bk)
-                    .withEnsembleSize(2)
-                    .withWriteQuorumSize(1)
-                    .withAckQuorumSize(0)
-                    .execute());
+            result(new CreateBuilderImpl(bk)
+                .withEnsembleSize(2)
+                .withWriteQuorumSize(1)
+                .withAckQuorumSize(0)
+                .execute());
             fail("shoud not be able to create a ledger with such specs");
-        } catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKIncorrectParameterException err) {
         }
 
         try {
-            FutureUtils.result(new CreateBuilderImpl(bk)
-                    .withEnsembleSize(1)
-                    .withWriteQuorumSize(2)
-                    .withAckQuorumSize(1)
-                    .execute());
+            result(new CreateBuilderImpl(bk)
+                .withEnsembleSize(1)
+                .withWriteQuorumSize(2)
+                .withAckQuorumSize(1)
+                .execute());
             fail("shoud not be able to create a ledger with such specs");
-        } catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKIncorrectParameterException err) {
         }
 
         try {
-            FutureUtils.result(new CreateBuilderImpl(bk)
-                    .withEnsembleSize(1)
-                    .withWriteQuorumSize(1)
-                    .withAckQuorumSize(2)
-                    .execute());
+            result(new CreateBuilderImpl(bk)
+                .withEnsembleSize(1)
+                .withWriteQuorumSize(1)
+                .withAckQuorumSize(2)
+                .execute());
             fail("shoud not be able to create a ledger with such specs");
-        } catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKIncorrectParameterException err) {
         }
 
         try {
-            FutureUtils.result(new CreateBuilderImpl(bk)
-                    .withPassword(null)
-                    .execute());
+            result(new CreateBuilderImpl(bk)
+                .withPassword(null)
+                .execute());
             fail("shoud not be able to create a ledger with such specs");
-        } catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKIncorrectParameterException err) {
         }
 
         try {
-            FutureUtils.result(new CreateBuilderImpl(bk)
-                    .withCustomMetadata(null)
-                    .execute());
+            result(new CreateBuilderImpl(bk)
+                .withCustomMetadata(null)
+                .execute());
             fail("shoud not be able to create a ledger with such specs");
-        } catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKIncorrectParameterException err) {
         }
 
         try {
             ClientConfiguration config = new ClientConfiguration();
             config.setEnableDigestTypeAutodetection(true);
             when(bk.getConf()).thenReturn(config);
-            FutureUtils.result(new CreateBuilderImpl(bk)
-                    .withDigestType(null)
-                    .execute());
+            result(new CreateBuilderImpl(bk)
+                .withDigestType(null)
+                .execute());
             fail("shoud not be able to create a ledger with such specs");
-        } catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKIncorrectParameterException err) {
         }
 
         try {
             ClientConfiguration config = new ClientConfiguration();
             config.setEnableDigestTypeAutodetection(false);
             when(bk.getConf()).thenReturn(config);
-            FutureUtils.result(new CreateBuilderImpl(bk)
-                    .withDigestType(null)
-                    .execute());
+            result(new CreateBuilderImpl(bk)
+                .withDigestType(null)
+                .execute());
             fail("shoud not be able to create a ledger with such specs");
-        } catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKIncorrectParameterException err) {
         }
 
         when(bk.isClosed()).thenReturn(true);
         try {
-            FutureUtils.result(new CreateBuilderImpl(bk)
-                    .execute());
+            result(new CreateBuilderImpl(bk)
+                .execute());
             fail("shoud not be able to create a ledger, client is closed");
-        } catch (BKException.BKClientClosedException err) {
+        } catch (BKClientClosedException err) {
         }
     }
 
@@ -205,26 +205,17 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         int ensembleSize = 3;
         int writeQuorumSize = 2;
         int ackQuorumSize = 1;
-        long mockLedgerId = 12342L;
+        long ledgerId = 12342L;
         Map<String, byte[]> customMetadata = new HashMap<>();
 
-        when(bookieWatcher.newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata))
-                .thenReturn(new ArrayList<>(Arrays.asList(new BookieSocketAddress("localhost", 1234))));
+        prepareBookieWatcherForNewEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata,
+            Arrays.asList(new BookieSocketAddress("localhost", 1234)));
 
-        Mockito.doAnswer((Answer<Void>) new Answer<Void>() {
-            @Override
-            @SuppressWarnings("unchecked")
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                Object[] args = invocation.getArguments();
-                BookkeeperInternalCallbacks.GenericCallback cb = (BookkeeperInternalCallbacks.GenericCallback) args[0];
-                cb.operationComplete(BKException.Code.OK, mockLedgerId);
-                return null;
-            }
-        }).when(ledgerIdGenerator).generateLedgerId(any());
+        setNewGeneratedLedgerId(ledgerId);
 
         AtomicReference<LedgerMetadata> metadataHolder = new AtomicReference<>();
 
-        Mockito.doAnswer((Answer<Void>) new Answer<Void>() {
+        doAnswer((Answer<Void>) new Answer<Void>() {
             @Override
             @SuppressWarnings("unchecked")
             public Void answer(InvocationOnMock invocation) throws Throwable {
@@ -237,148 +228,148 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         }).when(ledgerManager).createLedgerMetadata(anyLong(), any(), any());
 
         WriteAdvHandle writer = new CreateBuilderImpl(bk)
-                .withAckQuorumSize(ackQuorumSize)
-                .withEnsembleSize(ensembleSize)
-                .withWriteQuorumSize(writeQuorumSize)
-                .withCustomMetadata(customMetadata)
-                .makeAdv()
-                .execute()
-                .get();
-        assertEquals(mockLedgerId, writer.getId());
+            .withAckQuorumSize(ackQuorumSize)
+            .withEnsembleSize(ensembleSize)
+            .withWriteQuorumSize(writeQuorumSize)
+            .withCustomMetadata(customMetadata)
+            .makeAdv()
+            .execute()
+            .get();
+        assertEquals(ledgerId, writer.getId());
         LedgerMetadata metadata = metadataHolder.get();
         assertEquals(ensembleSize, metadata.getEnsembleSize());
         assertEquals(ackQuorumSize, metadata.getAckQuorumSize());
         assertEquals(writeQuorumSize, metadata.getWriteQuorumSize());
 
         try {
-            FutureUtils.result(new CreateBuilderImpl(bk)
-                    .withEnsembleSize(0)
-                    .makeAdv()
-                    .execute());
+            result(new CreateBuilderImpl(bk)
+                .withEnsembleSize(0)
+                .makeAdv()
+                .execute());
             fail("shoud not be able to create a ledger with such specs");
-        } catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKIncorrectParameterException err) {
         }
 
         try {
-            FutureUtils.result(new CreateBuilderImpl(bk)
-                    .withEnsembleSize(2)
-                    .withWriteQuorumSize(0)
-                    .makeAdv()
-                    .execute());
+            result(new CreateBuilderImpl(bk)
+                .withEnsembleSize(2)
+                .withWriteQuorumSize(0)
+                .makeAdv()
+                .execute());
             fail("shoud not be able to create a ledger with such specs");
-        } catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKIncorrectParameterException err) {
         }
 
         try {
-            FutureUtils.result(new CreateBuilderImpl(bk)
-                    .withEnsembleSize(2)
-                    .withWriteQuorumSize(1)
-                    .withAckQuorumSize(0)
-                    .makeAdv()
-                    .execute());
+            result(new CreateBuilderImpl(bk)
+                .withEnsembleSize(2)
+                .withWriteQuorumSize(1)
+                .withAckQuorumSize(0)
+                .makeAdv()
+                .execute());
             fail("shoud not be able to create a ledger with such specs");
-        } catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKIncorrectParameterException err) {
         }
 
         try {
-            FutureUtils.result(new CreateBuilderImpl(bk)
-                    .withEnsembleSize(1)
-                    .withWriteQuorumSize(2)
-                    .withAckQuorumSize(1)
-                    .makeAdv()
-                    .execute());
+            result(new CreateBuilderImpl(bk)
+                .withEnsembleSize(1)
+                .withWriteQuorumSize(2)
+                .withAckQuorumSize(1)
+                .makeAdv()
+                .execute());
             fail("shoud not be able to create a ledger with such specs");
-        } catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKIncorrectParameterException err) {
         }
 
         try {
-            FutureUtils.result(new CreateBuilderImpl(bk)
-                    .withEnsembleSize(1)
-                    .withWriteQuorumSize(1)
-                    .withAckQuorumSize(2)
-                    .makeAdv()
-                    .execute());
+            result(new CreateBuilderImpl(bk)
+                .withEnsembleSize(1)
+                .withWriteQuorumSize(1)
+                .withAckQuorumSize(2)
+                .makeAdv()
+                .execute());
             fail("shoud not be able to create a ledger with such specs");
-        } catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKIncorrectParameterException err) {
         }
 
         try {
-            FutureUtils.result(new CreateBuilderImpl(bk)
-                    .withPassword(null)
-                    .makeAdv()
-                    .execute());
+            result(new CreateBuilderImpl(bk)
+                .withPassword(null)
+                .makeAdv()
+                .execute());
             fail("shoud not be able to create a ledger with such specs");
-        } catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKIncorrectParameterException err) {
         }
 
         try {
-            FutureUtils.result(new CreateBuilderImpl(bk)
-                    .withCustomMetadata(null)
-                    .makeAdv()
-                    .execute());
+            result(new CreateBuilderImpl(bk)
+                .withCustomMetadata(null)
+                .makeAdv()
+                .execute());
             fail("shoud not be able to create a ledger with such specs");
-        } catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKIncorrectParameterException err) {
         }
 
         try {
             ClientConfiguration config = new ClientConfiguration();
             config.setEnableDigestTypeAutodetection(true);
             when(bk.getConf()).thenReturn(config);
-            FutureUtils.result(new CreateBuilderImpl(bk)
-                    .withDigestType(null)
-                    .makeAdv()
-                    .execute());
+            result(new CreateBuilderImpl(bk)
+                .withDigestType(null)
+                .makeAdv()
+                .execute());
             fail("shoud not be able to create a ledger with such specs");
-        } catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKIncorrectParameterException err) {
         }
 
         try {
             ClientConfiguration config = new ClientConfiguration();
             config.setEnableDigestTypeAutodetection(false);
             when(bk.getConf()).thenReturn(config);
-            FutureUtils.result(new CreateBuilderImpl(bk)
-                    .withDigestType(null)
-                    .makeAdv()
-                    .execute());
+            result(new CreateBuilderImpl(bk)
+                .withDigestType(null)
+                .makeAdv()
+                .execute());
             fail("shoud not be able to create a ledger with such specs");
-        } catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKIncorrectParameterException err) {
         }
 
         try {
-            FutureUtils.result(new CreateBuilderImpl(bk)
-                    .makeAdv()
-                    .withLedgerId(-1)
-                    .execute());
+            result(new CreateBuilderImpl(bk)
+                .makeAdv()
+                .withLedgerId(-1)
+                .execute());
             fail("shoud not be able to create a ledger with such specs");
-        } catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKIncorrectParameterException err) {
         }
 
         try {
-            FutureUtils.result(new CreateBuilderImpl(bk)
-                    .makeAdv()
-                    .withLedgerId(-2)
-                    .execute());
+            result(new CreateBuilderImpl(bk)
+                .makeAdv()
+                .withLedgerId(-2)
+                .execute());
             fail("shoud not be able to create a ledger with such specs");
-        } catch (BKException.BKIncorrectParameterException err) {
+        } catch (BKIncorrectParameterException err) {
         }
 
-        assertEquals(0, FutureUtils.result(new CreateBuilderImpl(bk)
-                .makeAdv()
-                .withLedgerId(0)
-                .execute()).getId());
+        assertEquals(0, result(new CreateBuilderImpl(bk)
+            .makeAdv()
+            .withLedgerId(0)
+            .execute()).getId());
 
-        assertEquals(Integer.MAX_VALUE + 1L, FutureUtils.result(new CreateBuilderImpl(bk)
-                .makeAdv()
-                .withLedgerId(Integer.MAX_VALUE + 1L)
-                .execute()).getId());
+        assertEquals(Integer.MAX_VALUE + 1L, result(new CreateBuilderImpl(bk)
+            .makeAdv()
+            .withLedgerId(Integer.MAX_VALUE + 1L)
+            .execute()).getId());
 
         when(bk.isClosed()).thenReturn(true);
         try {
-            FutureUtils.result(new CreateBuilderImpl(bk)
-                    .makeAdv()
-                    .execute());
+            result(new CreateBuilderImpl(bk)
+                .makeAdv()
+                .execute());
             fail("shoud not be able to create a ledger, client is closed");
-        } catch (BKException.BKClientClosedException err) {
+        } catch (BKClientClosedException err) {
         }
 
     }
@@ -394,9 +385,9 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         int ackQuorumSize = 1;
 
         when(bk.getBookieWatcher().newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata))
-                .thenReturn(new ArrayList<>(Arrays.asList(new BookieSocketAddress("localhost", 1234))));
+            .thenReturn(new ArrayList<>(Arrays.asList(new BookieSocketAddress("localhost", 1234))));
 
-        Mockito.doAnswer((Answer) (InvocationOnMock invokation) -> {
+        doAnswer((Answer) (InvocationOnMock invokation) -> {
             Object[] args = invokation.getArguments();
 
             long _ledgerId = (Long) args[1];
@@ -417,7 +408,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             return null;
         }).when(bookieClient).readEntryAndFenceLedger(any(), anyLong(), any(), anyLong(), any(ReadEntryCallback.class), any());
 
-        Mockito.doAnswer((Answer) (InvocationOnMock invokation) -> {
+        doAnswer((Answer) (InvocationOnMock invokation) -> {
             Object[] args = invokation.getArguments();
             long _ledgerId = (Long) args[1];
             long entryId = (Long) args[2];
@@ -441,7 +432,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         LedgerMetadata ledgerMetadata = new LedgerMetadata(ensembleSize, writeQuorumSize, ackQuorumSize, BookKeeper.DigestType.MAC, password, customMetadata);
         ledgerMetadata.addEnsemble(0, new ArrayList<>(Arrays.asList(new BookieSocketAddress("localhost", 1234))));
 
-        Mockito.doAnswer((Answer<Void>) new Answer<Void>() {
+        doAnswer((Answer<Void>) new Answer<Void>() {
             @Override
             @SuppressWarnings("unchecked")
             public Void answer(InvocationOnMock invocation) throws Throwable {
@@ -452,7 +443,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             }
         }).when(ledgerManager).readLedgerMetadata(eq(ledgerId), any());
 
-        Mockito.doAnswer((Answer<Void>) new Answer<Void>() {
+        doAnswer((Answer<Void>) new Answer<Void>() {
             @Override
             @SuppressWarnings("unchecked")
             public Void answer(InvocationOnMock invocation) throws Throwable {
@@ -463,7 +454,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             }
         }).when(ledgerManager).writeLedgerMetadata(eq(ledgerId), any(), any());
 
-        Mockito.doAnswer((Answer<Void>) new Answer<Void>() {
+        doAnswer((Answer<Void>) new Answer<Void>() {
             @Override
             @SuppressWarnings("unchecked")
             public Void answer(InvocationOnMock invocation) throws Throwable {
@@ -472,57 +463,57 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         }).when(ledgerManager).registerLedgerMetadataListener(eq(ledgerId), any());
 
         try {
-            FutureUtils.result(new OpenBuilderImpl(bk)
-                    .withPassword(ledgerMetadata.getPassword())
-                    .execute());
-        } catch (BKException.BKNoSuchLedgerExistsException err) {
+            result(new OpenBuilderImpl(bk)
+                .withPassword(ledgerMetadata.getPassword())
+                .execute());
+        } catch (BKNoSuchLedgerExistsException err) {
         }
 
         try {
-            FutureUtils.result(new OpenBuilderImpl(bk)
-                    .withLedgerId(ledgerId)
-                    .execute());
+            result(new OpenBuilderImpl(bk)
+                .withLedgerId(ledgerId)
+                .execute());
             fail("should not be able to read with bad password");
-        } catch (BKException.BKUnauthorizedAccessException err) {
+        } catch (BKUnauthorizedAccessException err) {
         }
 
         try {
-            FutureUtils.result(new OpenBuilderImpl(bk)
-                    .withPassword(ledgerMetadata.getPassword())
-                    .withLedgerId(ledgerId)
-                    .execute());
-        } catch (BKException.BKDigestMatchException err) {
+            result(new OpenBuilderImpl(bk)
+                .withPassword(ledgerMetadata.getPassword())
+                .withLedgerId(ledgerId)
+                .execute());
+        } catch (BKDigestMatchException err) {
         }
 
         try {
-            FutureUtils.result(new OpenBuilderImpl(bk)
-                    .withPassword(ledgerMetadata.getPassword())
-                    .withDigestType(DigestType.CRC32)
-                    .withLedgerId(ledgerId)
-                    .execute());
-        } catch (BKException.BKDigestMatchException err) {
+            result(new OpenBuilderImpl(bk)
+                .withPassword(ledgerMetadata.getPassword())
+                .withDigestType(DigestType.CRC32)
+                .withLedgerId(ledgerId)
+                .execute());
+        } catch (BKDigestMatchException err) {
         }
 
-        FutureUtils.result(new OpenBuilderImpl(bk)
-                .withPassword(ledgerMetadata.getPassword())
-                .withDigestType(DigestType.MAC)
-                .withLedgerId(ledgerId)
-                .withRecovery(true)
-                .execute());
+        result(new OpenBuilderImpl(bk)
+            .withPassword(ledgerMetadata.getPassword())
+            .withDigestType(DigestType.MAC)
+            .withLedgerId(ledgerId)
+            .withRecovery(true)
+            .execute());
 
-        FutureUtils.result(new OpenBuilderImpl(bk)
-                .withPassword(ledgerMetadata.getPassword())
-                .withDigestType(DigestType.MAC)
-                .withLedgerId(ledgerId)
-                .withRecovery(false)
-                .execute());
+        result(new OpenBuilderImpl(bk)
+            .withPassword(ledgerMetadata.getPassword())
+            .withDigestType(DigestType.MAC)
+            .withLedgerId(ledgerId)
+            .withRecovery(false)
+            .execute());
         when(bk.isClosed()).thenReturn(true);
         try {
-            FutureUtils.result(new OpenBuilderImpl(bk)
-                    .withLedgerId(ledgerId)
-                    .execute());
+            result(new OpenBuilderImpl(bk)
+                .withLedgerId(ledgerId)
+                .execute());
             fail("shoud not be able to open a ledger, client is closed");
-        } catch (BKException.BKClientClosedException err) {
+        } catch (BKClientClosedException err) {
         }
 
     }
@@ -531,7 +522,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
     public void testDeleteLedger() throws Exception {
         long ledgerId = 12342L;
 
-        Mockito.doAnswer((Answer<Void>) new Answer<Void>() {
+        doAnswer((Answer<Void>) new Answer<Void>() {
             @Override
             @SuppressWarnings("unchecked")
             public Void answer(InvocationOnMock invocation) throws Throwable {
@@ -548,30 +539,30 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         }).when(ledgerManager).removeLedgerMetadata(anyLong(), any(), any());
 
         try {
-            FutureUtils.result(new DeleteBuilderImpl(bk)
-                    .withLedgerId(-1)
-                    .execute());
-        } catch (BKException.BKNoSuchLedgerExistsException err) {
+            result(new DeleteBuilderImpl(bk)
+                .withLedgerId(-1)
+                .execute());
+        } catch (BKNoSuchLedgerExistsException err) {
         }
 
         try {
-            FutureUtils.result(new DeleteBuilderImpl(bk)
-                    .withLedgerId(ledgerId + 1)
-                    .execute());
-        } catch (BKException.BKNoSuchLedgerExistsException err) {
+            result(new DeleteBuilderImpl(bk)
+                .withLedgerId(ledgerId + 1)
+                .execute());
+        } catch (BKNoSuchLedgerExistsException err) {
         }
 
-        FutureUtils.result(new DeleteBuilderImpl(bk)
-                .withLedgerId(ledgerId)
-                .execute());
+        result(new DeleteBuilderImpl(bk)
+            .withLedgerId(ledgerId)
+            .execute());
 
         when(bk.isClosed()).thenReturn(true);
         try {
-            FutureUtils.result(new DeleteBuilderImpl(bk)
-                    .withLedgerId(ledgerId)
-                    .execute());
+            result(new DeleteBuilderImpl(bk)
+                .withLedgerId(ledgerId)
+                .execute());
             fail("shoud not be able to delete a ledger, client is closed");
-        } catch (BKException.BKClientClosedException err) {
+        } catch (BKClientClosedException err) {
         }
 
     }

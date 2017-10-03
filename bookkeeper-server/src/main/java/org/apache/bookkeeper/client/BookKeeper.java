@@ -31,7 +31,6 @@ import io.netty.util.HashedWheelTimer;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -44,6 +43,8 @@ import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.IsClosedCallback;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCreateCallback;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncDeleteCallback;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncOpenCallback;
 import org.apache.bookkeeper.client.api.BookKeeperBuilder;
 import org.apache.bookkeeper.client.api.CreateBuilder;
 import org.apache.bookkeeper.client.api.DeleteBuilder;
@@ -796,18 +797,19 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws InterruptedException
      * @throws BKException
      */
+    @SuppressWarnings("unchecked")
     public LedgerHandle createLedger(int ensSize, int writeQuorumSize, int ackQuorumSize,
                                      DigestType digestType, byte passwd[], final Map<String, byte[]> customMetadata)
             throws InterruptedException, BKException {
-        CompletableFuture<LedgerHandle> counter = new CompletableFuture<>();
+        SyncCreateCallback result = new SyncCreateCallback();
 
         /*
          * Calls asynchronous version
          */
         asyncCreateLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
-                          new SyncCreateCallback(), counter, customMetadata);
+                          result, null, customMetadata);
 
-        LedgerHandle lh = SyncCallbackUtils.waitForResult(counter);
+        LedgerHandle lh = (LedgerHandle) SyncCallbackUtils.waitForResult(result);
         if (lh == null) {
             LOG.error("Unexpected condition : no ledger handle returned for a success ledger creation");
             throw BKException.create(BKException.Code.UnexpectedConditionException);
@@ -855,18 +857,19 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws InterruptedException
      * @throws BKException
      */
+    @SuppressWarnings("unchecked")
     public LedgerHandle createLedgerAdv(int ensSize, int writeQuorumSize, int ackQuorumSize,
                                         DigestType digestType, byte passwd[], final Map<String, byte[]> customMetadata)
             throws InterruptedException, BKException {
-        CompletableFuture<LedgerHandle> counter = new CompletableFuture<>();
+        SyncCreateCallback result = new SyncCreateCallback();
 
         /*
          * Calls asynchronous version
          */
         asyncCreateLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
-                             new SyncCreateCallback(), counter, customMetadata);
+                             result, null, customMetadata);
 
-        LedgerHandle lh = SyncCallbackUtils.waitForResult(counter);
+        LedgerHandle lh = (LedgerHandle) SyncCallbackUtils.waitForResult(result);
         if (lh == null) {
             LOG.error("Unexpected condition : no ledger handle returned for a success ledger creation");
             throw BKException.create(BKException.Code.UnexpectedConditionException);
@@ -942,6 +945,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws InterruptedException
      * @throws BKException
      */
+    @SuppressWarnings("unchecked")
     public LedgerHandle createLedgerAdv(final long ledgerId,
                                         int ensSize,
                                         int writeQuorumSize,
@@ -949,15 +953,15 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                                         DigestType digestType,
                                         byte passwd[],
                                         final Map<String, byte[]> customMetadata) throws InterruptedException, BKException{
-        CompletableFuture<LedgerHandle> counter = new CompletableFuture<>();
+        SyncCreateCallback result = new SyncCreateCallback();
 
         /*
          * Calls asynchronous version
          */
         asyncCreateLedgerAdv(ledgerId, ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
-                             new SyncCreateCallback(), counter, customMetadata);
+                             result, null, customMetadata);
 
-        LedgerHandle lh = SyncCallbackUtils.waitForResult(counter);
+        LedgerHandle lh = (LedgerHandle) SyncCallbackUtils.waitForResult(result);
         if (lh == null) {
             LOG.error("Unexpected condition : no ledger handle returned for a success ledger creation");
             throw BKException.create(BKException.Code.UnexpectedConditionException);
@@ -1131,17 +1135,17 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws InterruptedException
      * @throws BKException
      */
-
+    @SuppressWarnings("unchecked")
     public LedgerHandle openLedger(long lId, DigestType digestType, byte passwd[])
             throws BKException, InterruptedException {
-        CompletableFuture<LedgerHandle> counter = new CompletableFuture<>();
+        SyncOpenCallback result = new SyncOpenCallback();
 
         /*
          * Calls async open ledger
          */
-        asyncOpenLedger(lId, digestType, passwd, new SyncCallbackUtils.SyncOpenCallback(), counter);
+        asyncOpenLedger(lId, digestType, passwd, result, null);
 
-        return SyncCallbackUtils.waitForResult(counter);
+        return (LedgerHandle) SyncCallbackUtils.waitForResult(result);
     }
 
     /**
@@ -1158,18 +1162,18 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws InterruptedException
      * @throws BKException
      */
-
+    @SuppressWarnings("unchecked")
     public LedgerHandle openLedgerNoRecovery(long lId, DigestType digestType, byte passwd[])
             throws BKException, InterruptedException {
-        CompletableFuture<LedgerHandle> counter = new CompletableFuture<>();
+        SyncOpenCallback result = new SyncOpenCallback();
 
         /*
          * Calls async open ledger
          */
         asyncOpenLedgerNoRecovery(lId, digestType, passwd,
-                                  new SyncCallbackUtils.SyncOpenCallback(), counter);
+                                  result, null);
 
-        return SyncCallbackUtils.waitForResult(counter);
+        return (LedgerHandle) SyncCallbackUtils.waitForResult(result);
     }
 
     /**
@@ -1206,12 +1210,13 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws BKException.BKNoSuchLedgerExistsException if the ledger doesn't exist
      * @throws BKException
      */
+    @SuppressWarnings("unchecked")
     public void deleteLedger(long lId) throws InterruptedException, BKException {
-        CompletableFuture<Void> counter = new CompletableFuture<>();
+        SyncDeleteCallback result = new SyncDeleteCallback();
         // Call asynchronous version
-        asyncDeleteLedger(lId, new SyncCallbackUtils.SyncDeleteCallback(), counter);
+        asyncDeleteLedger(lId, result, null);
 
-        SyncCallbackUtils.waitForResult(counter);
+        SyncCallbackUtils.waitForResult(result);
     }
 
     /**

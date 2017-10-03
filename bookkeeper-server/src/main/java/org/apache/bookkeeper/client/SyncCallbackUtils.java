@@ -22,7 +22,6 @@ import java.util.Enumeration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import static org.apache.bookkeeper.client.LedgerHandle.LOG;
-import org.apache.bookkeeper.common.concurrent.FutureUtils;
 
 /**
  * Utility for callbacks
@@ -71,7 +70,8 @@ class SyncCallbackUtils {
         }
     }
 
-    public static class SyncCreateCallback implements AsyncCallback.CreateCallback {
+    static class SyncCreateCallback extends CompletableFuture
+        implements AsyncCallback.CreateCallback {
 
         /**
          * Create callback implementation for synchronous create call.
@@ -83,12 +83,13 @@ class SyncCallbackUtils {
         @Override
         @SuppressWarnings(value = "unchecked")
         public void createComplete(int rc, LedgerHandle lh, Object ctx) {
-            SyncCallbackUtils.finish(rc, lh, (CompletableFuture<LedgerHandle>) ctx);
+            SyncCallbackUtils.finish(rc, lh, this);
         }
 
     }
 
-    public static class SyncOpenCallback implements AsyncCallback.OpenCallback {
+    static class SyncOpenCallback extends CompletableFuture
+            implements AsyncCallback.OpenCallback {
         /**
          * Callback method for synchronous open operation
          *
@@ -102,11 +103,11 @@ class SyncCallbackUtils {
         @Override
         @SuppressWarnings("unchecked")
         public void openComplete(int rc, LedgerHandle lh, Object ctx) {
-            SyncCallbackUtils.finish(rc, lh, (CompletableFuture<LedgerHandle>) ctx);
+            SyncCallbackUtils.finish(rc, lh, this);
         }
     }
 
-    public static class SyncDeleteCallback implements AsyncCallback.DeleteCallback {
+    static class SyncDeleteCallback extends CompletableFuture implements AsyncCallback.DeleteCallback {
         /**
          * Delete callback implementation for synchronous delete call.
          *
@@ -118,7 +119,7 @@ class SyncCallbackUtils {
         @Override
         @SuppressWarnings("unchecked")
         public void deleteComplete(int rc, Object ctx) {
-            SyncCallbackUtils.finish(rc, null, (CompletableFuture<Void>) ctx);
+            SyncCallbackUtils.finish(rc, null, this);
         }
     }
 
@@ -194,7 +195,7 @@ class SyncCallbackUtils {
         }
     }
 
-    static class SyncAddCallback implements AsyncCallback.AddCallback {
+    static class SyncAddCallback extends CompletableFuture<Long> implements AsyncCallback.AddCallback {
 
         /**
          * Implementation of callback interface for synchronous read method.
@@ -211,7 +212,7 @@ class SyncCallbackUtils {
         @Override
         @SuppressWarnings("unchecked")
         public void addComplete(int rc, LedgerHandle lh, long entry, Object ctx) {
-            SyncCallbackUtils.finish(rc, entry, (CompletableFuture<Long>)ctx);
+            SyncCallbackUtils.finish(rc, entry, this);
         }
     }
 

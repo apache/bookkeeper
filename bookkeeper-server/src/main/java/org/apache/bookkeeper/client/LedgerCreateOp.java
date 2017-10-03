@@ -300,25 +300,26 @@ class LedgerCreateOp implements GenericCallback<Void> {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public CompletableFuture<WriteHandle> execute() {
-            CompletableFuture<WriteHandle> counter = new CompletableFuture<>();
-            create(new SyncCreateCallback(), counter);
-            return counter;
+            SyncCreateCallback result = new SyncCreateCallback();
+            create(result);
+            return (CompletableFuture<WriteHandle>) result;
         }
 
-        private void create(CreateCallback cb, Object ctx) {
+        private void create(CreateCallback cb) {
             if (!validate()) {
-                cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
+                cb.createComplete(BKException.Code.IncorrectParameterException, null, null);
                 return;
             }
             LedgerCreateOp op = new LedgerCreateOp(bk, builderEnsembleSize,
                 builderWriteQuorumSize, builderAckQuorumSize, DigestType.fromApiDigestType(builderDigestType),
-                builderPassword, cb, ctx, builderCustomMetadata);
+                builderPassword, cb, null, builderCustomMetadata);
             ReentrantReadWriteLock closeLock = bk.getCloseLock();
             closeLock.readLock().lock();
             try {
                 if (bk.isClosed()) {
-                    cb.createComplete(BKException.Code.ClientClosedException, null, ctx);
+                    cb.createComplete(BKException.Code.ClientClosedException, null, null);
                     return;
                 }
                 op.initiate();
@@ -331,7 +332,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
     private static class CreateAdvBuilderImpl implements CreateAdvBuilder {
 
         private Long builderLedgerId;
-        private CreateBuilderImpl parent;
+        private final CreateBuilderImpl parent;
 
          private CreateAdvBuilderImpl(CreateBuilderImpl parent) {
             this.parent = parent;
@@ -344,10 +345,11 @@ class LedgerCreateOp implements GenericCallback<Void> {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public CompletableFuture<WriteAdvHandle> execute() {
-            CompletableFuture<WriteAdvHandle> counter = new CompletableFuture<>();
-            create(new SyncCreateCallback(), counter);
-            return counter;
+            SyncCreateCallback result = new SyncCreateCallback();
+            create(result);
+            return (CompletableFuture<WriteAdvHandle>) result;
         }
 
         private boolean validate() {
@@ -361,20 +363,20 @@ class LedgerCreateOp implements GenericCallback<Void> {
             return true;
         }
 
-        private void create(CreateCallback cb, Object ctx) {
+        private void create(CreateCallback cb) {
             if (!validate()) {
-                cb.createComplete(BKException.Code.IncorrectParameterException, null, ctx);
+                cb.createComplete(BKException.Code.IncorrectParameterException, null, null);
                 return;
             }
             LedgerCreateOp op = new LedgerCreateOp(parent.bk, parent.builderEnsembleSize,
                     parent.builderWriteQuorumSize, parent.builderAckQuorumSize,
                     DigestType.fromApiDigestType(parent.builderDigestType),
-                    parent.builderPassword, cb, ctx, parent.builderCustomMetadata);
+                    parent.builderPassword, cb, null, parent.builderCustomMetadata);
             ReentrantReadWriteLock closeLock = parent.bk.getCloseLock();
             closeLock.readLock().lock();
             try {
                 if (parent.bk.isClosed()) {
-                    cb.createComplete(BKException.Code.ClientClosedException, null, ctx);
+                    cb.createComplete(BKException.Code.ClientClosedException, null, null);
                     return;
                 }
                 op.initiateAdv(builderLedgerId == null ? -1L : builderLedgerId);

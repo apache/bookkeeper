@@ -254,30 +254,31 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public CompletableFuture<ReadHandle> execute() {
-             CompletableFuture<ReadHandle> future = new CompletableFuture<>();
-             open(new SyncOpenCallback(), future);
-             return future;
+             SyncOpenCallback future = new SyncOpenCallback();
+             open(future);
+             return (CompletableFuture<ReadHandle>) future;
         }
 
         private boolean validate() {
             return builderLedgerId >= 0;
         }
 
-        private void open(OpenCallback cb, Object ctx) {
+        private void open(OpenCallback cb) {
 
             if (!validate()) {
-                cb.openComplete(BKException.Code.NoSuchLedgerExistsException, null, ctx);
+                cb.openComplete(BKException.Code.NoSuchLedgerExistsException, null, null);
                 return;
             }
 
             LedgerOpenOp op = new LedgerOpenOp(bk, builderLedgerId, DigestType.fromApiDigestType(builderDigestType),
-                builderPassword, cb, ctx);
+                builderPassword, cb, null);
             ReentrantReadWriteLock closeLock = bk.getCloseLock();
             closeLock.readLock().lock();
             try {
                 if (bk.isClosed()) {
-                    cb.openComplete(BKException.Code.ClientClosedException, null, ctx);
+                    cb.openComplete(BKException.Code.ClientClosedException, null, null);
                     return;
                 }
                 if (builderRecovery) {

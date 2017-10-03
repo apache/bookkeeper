@@ -549,11 +549,11 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
      */
     public Enumeration<LedgerEntry> readUnconfirmedEntries(long firstEntry, long lastEntry)
             throws InterruptedException, BKException {
-        CompletableFuture<Enumeration<LedgerEntry>> counter = new CompletableFuture<>();
+        CompletableFuture<Enumeration<LedgerEntry>> result = new CompletableFuture<>();
 
-        asyncReadUnconfirmedEntries(firstEntry, lastEntry, new SyncReadCallback(), counter);
+        asyncReadUnconfirmedEntries(firstEntry, lastEntry, new SyncReadCallback(), result);
 
-        return SyncCallbackUtils.waitForResult(counter);
+        return SyncCallbackUtils.waitForResult(result);
     }
 
     /**
@@ -690,12 +690,11 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
     @Override
     public CompletableFuture<Long> append(ByteBuf data) {
         data.retain();
-        CompletableFuture<Long> counter = new CompletableFuture<>();
 
         SyncAddCallback callback = new SyncAddCallback();
-        PendingAddOp op = new PendingAddOp(LedgerHandle.this, callback, counter);
-        doAsyncAddEntry(op, data, callback, counter);
-        return counter;
+        PendingAddOp op = new PendingAddOp(LedgerHandle.this, callback, null);
+        doAsyncAddEntry(op, data, callback, null);
+        return callback;
     }
 
     /**
@@ -732,12 +731,10 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
             LOG.debug("Adding entry {}", data);
         }
 
-        CompletableFuture<Long> counter = new CompletableFuture<>();
-
         SyncAddCallback callback = new SyncAddCallback();
-        asyncAddEntry(data, offset, length, callback, counter);
+        asyncAddEntry(data, offset, length, callback, null);
 
-        return SyncCallbackUtils.waitForResult(counter);
+        return SyncCallbackUtils.waitForResult(callback);
     }
 
     /**
