@@ -1420,6 +1420,10 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/feature/CacheableFeatureProvider.html#features">features</a></span> - Variable in class org.apache.bookkeeper.feature.<a href="org/apache/bookkeeper/feature/CacheableFeatureProvider.html" title="class in org.apache.bookkeeper.feature">CacheableFeatureProvider</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#FILEINFO_CACHE_INITIAL_CAPACITY">FILEINFO_CACHE_INITIAL_CAPACITY</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#FILEINFO_MAX_IDLE_TIME">FILEINFO_MAX_IDLE_TIME</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/twitter/finagle/FinagleStatsLoggerImpl.html#finagleGauges">finagleGauges</a></span> - Variable in class org.apache.bookkeeper.stats.twitter.finagle.<a href="org/apache/bookkeeper/stats/twitter/finagle/FinagleStatsLoggerImpl.html" title="class in org.apache.bookkeeper.stats.twitter.finagle">FinagleStatsLoggerImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/stats/twitter/finagle/FinagleStatsLoggerImpl.html" title="class in org.apache.bookkeeper.stats.twitter.finagle"><span class="typeNameLink">FinagleStatsLoggerImpl</span></a> - Class in <a href="org/apache/bookkeeper/stats/twitter/finagle/package-summary.html">org.apache.bookkeeper.stats.twitter.finagle</a></dt>
@@ -1839,6 +1843,14 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/feature/FeatureProvider.html#getFeature-java.lang.String-">getFeature(String)</a></span> - Method in interface org.apache.bookkeeper.feature.<a href="org/apache/bookkeeper/feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a></dt>
 <dd>
 <div class="block">Return the feature with given name.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getFileInfoCacheInitialCapacity--">getFileInfoCacheInitialCapacity()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">Get the minimum total size for the internal file info cache tables.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getFileInfoMaxIdleTime--">getFileInfoMaxIdleTime()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">Get the max idle time allowed for a open file info existed in file info cache.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerFragment.html#getFirstEntryId--">getFirstEntryId()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a></dt>
 <dd>&nbsp;</dd>
@@ -4810,6 +4822,14 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#setFeature-java.lang.String-org.apache.bookkeeper.feature.Feature-">setFeature(String, Feature)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setFileInfoCacheInitialCapacity-int-">setFileInfoCacheInitialCapacity(int)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">Set the minimum total size for the internal file info cache tables for initialization.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setFileInfoMaxIdleTime-long-">setFileInfoMaxIdleTime(long)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">Set the max idle time allowed for a open file info existed in file info cache.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#setFirstSpeculativeReadLACTimeout-int-">setFirstSpeculativeReadLACTimeout(int)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
 <div class="block">Set the period of time after which the first speculative read last add confirmed and entry
