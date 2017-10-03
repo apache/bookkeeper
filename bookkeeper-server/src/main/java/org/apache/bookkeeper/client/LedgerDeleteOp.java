@@ -25,6 +25,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
+import static org.apache.bookkeeper.client.LedgerCreateOp.LOG;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncDeleteCallback;
 import org.apache.bookkeeper.client.api.DeleteBuilder;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -98,12 +99,12 @@ class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
         return String.format("LedgerDeleteOp(%d)", ledgerId);
     }
 
-    public static class DeleteBuilderImpl  implements DeleteBuilder {
+    static class DeleteBuilderImpl  implements DeleteBuilder {
 
         private long builderLedgerId = -1;
         private final BookKeeper bk;
 
-        public DeleteBuilderImpl(BookKeeper bk) {
+        DeleteBuilderImpl(BookKeeper bk) {
             this.bk = bk;
         }
 
@@ -120,7 +121,18 @@ class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
             return counter;
         }
 
+        private boolean validate() {
+            if (builderLedgerId < 0) {
+                LOG.error("invalid ledgerId {} < 0", builderLedgerId);
+                return false;
+            }
+            return true;
+        }
+
         private void delete(long ledgerId, AsyncCallback.DeleteCallback cb, Object ctx) {
+            if (validate()) {
+                cb.deleteComplete(BKException.Code.IncorrectParameterException, ctx);
+            }
             LedgerDeleteOp op = new LedgerDeleteOp(bk, ledgerId, cb, ctx);
             bk.getCloseLock().readLock().lock();
             try {

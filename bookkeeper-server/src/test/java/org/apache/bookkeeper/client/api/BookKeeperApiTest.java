@@ -202,8 +202,8 @@ public class BookKeeperApiTest extends BookKeeperClusterTestCase {
                         .withLedgerId(lId)
                         .execute())) {
                     assertEquals(2, reader.getLastAddConfirmed());
-                    assertEquals(2, reader.readLastConfirmedEntryId().get().intValue());
-                    assertEquals(2, reader.tryReadLastConfirmedEntryId().get().intValue());
+                    assertEquals(2, reader.readLastAddConfirmed().get().intValue());
+                    assertEquals(2, reader.tryReadLastAddConfirmed().get().intValue());
 
                     checkEntries(reader.read(0, reader.getLastAddConfirmed()).get(), data);
                     checkEntries(reader.readUnconfirmed(0, reader.getLastAddConfirmed()).get(), data);
@@ -248,7 +248,7 @@ public class BookKeeperApiTest extends BookKeeperClusterTestCase {
                         .withLedgerId(lId)
                         .execute())) {
                     assertEquals(1, reader.getLastAddConfirmed());
-                    assertEquals(1, reader.readLastConfirmedEntryId().get().intValue());
+                    assertEquals(1, reader.readLastAddConfirmed().get().intValue());
                     checkEntries(reader.read(0, reader.getLastAddConfirmed()).get(), data);
                 }
             }

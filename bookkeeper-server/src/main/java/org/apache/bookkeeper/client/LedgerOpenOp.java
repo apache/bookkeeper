@@ -22,32 +22,31 @@
 package org.apache.bookkeeper.client;
 
 import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.security.GeneralSecurityException;
-import java.util.concurrent.CompletableFuture;
-
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncOpenCallback;
 import org.apache.bookkeeper.client.api.OpenBuilder;
+import org.apache.bookkeeper.client.api.ReadHandle;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.bookkeeper.client.api.ReadHandle;
 
 /**
  * Encapsulates the ledger open operation
  *
  */
-class LedgerOpenOp implements GenericCallback<LedgerMetadata>  {
+class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
     static final Logger LOG = LoggerFactory.getLogger(LedgerOpenOp.class);
 
     final BookKeeper bk;
-    long ledgerId;
+    final long ledgerId;
     OpenCallback cb;
     Object ctx;
     LedgerHandle lh;
@@ -216,16 +215,16 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata>  {
         cb.openComplete(rc, lh, ctx);
     }
 
-    public static final class OpenBuilderImpl implements OpenBuilder {
+    static final class OpenBuilderImpl implements OpenBuilder {
 
-        private static final byte[] EMPTY_PASSWORD = new byte[0];
         private boolean builderRecovery = true;
         private long builderLedgerId = -1;
-        private byte[] builderPassword = EMPTY_PASSWORD;
-        private org.apache.bookkeeper.client.api.DigestType builderDigestType = org.apache.bookkeeper.client.api.DigestType.CRC32;
+        private byte[] builderPassword;
+        private org.apache.bookkeeper.client.api.DigestType builderDigestType
+                = org.apache.bookkeeper.client.api.DigestType.CRC32;
         private final BookKeeper bk;
 
-        public OpenBuilderImpl(BookKeeper bookkeeper) {
+        OpenBuilderImpl(BookKeeper bookkeeper) {
             this.bk = bookkeeper;
         }
 
@@ -255,22 +254,19 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata>  {
 
         @Override
         public CompletableFuture<ReadHandle> execute() {
-             CompletableFuture<ReadHandle> counter = new CompletableFuture<>();
-             open(new SyncOpenCallback(), counter);
-             return counter;
+             CompletableFuture<ReadHandle> future = new CompletableFuture<>();
+             open(new SyncOpenCallback(), future);
+             return future;
         }
 
-        private boolean validate(OpenCallback cb, Object ctx) {
-            if (builderLedgerId < 0) {
-                cb.openComplete(BKException.Code.NoSuchLedgerExistsException, null, ctx);
-                return false;
-            }
-            return true;
+        private boolean validate() {
+            return builderLedgerId >= 0;
         }
 
         private void open(OpenCallback cb, Object ctx) {
 
-            if (!validate(cb, ctx)) {
+            if (!validate()) {
+                cb.openComplete(BKException.Code.NoSuchLedgerExistsException, null, ctx);
                 return;
             }
 

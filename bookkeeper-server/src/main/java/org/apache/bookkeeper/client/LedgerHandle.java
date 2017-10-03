@@ -70,6 +70,7 @@ import org.apache.bookkeeper.util.SafeRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.bookkeeper.client.api.WriteHandle;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 
 /**
  * Ledger handle contains ledger metadata and is used to access the read and
@@ -319,27 +320,23 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
 
     /**
      * Close this ledger synchronously.
+     *
+     * @throws java.lang.InterruptedException
+     * @throws org.apache.bookkeeper.client.BKException
      * @see #asyncClose
      */
+    @Override
     public void close()
             throws InterruptedException, BKException {
-        CompletableFuture<Void> counter = new CompletableFuture<>();
-
-        asyncClose(new SyncCloseCallback(), counter);
-
-        explicitLacFlushPolicy.stopExplicitLacFlush();
-
-        SyncCallbackUtils.waitForResult(counter);
+        SyncCallbackUtils.waitForResult(asyncClose());
     }
 
     @Override
     public CompletableFuture<?> asyncClose() {
-        CompletableFuture<Void> counter = new CompletableFuture<>();
-
-        asyncClose(new SyncCloseCallback(), counter);
-
+        SyncCloseCallback result = new SyncCloseCallback();
+        asyncClose(result, null);
         explicitLacFlushPolicy.stopExplicitLacFlush();
-        return counter;
+        return result;
     }
 
     /**
@@ -688,11 +685,6 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
      */
     public long addEntry(byte[] data) throws InterruptedException, BKException {
         return addEntry(data, 0, data.length);
-    }
-
-    @Override
-    public CompletableFuture<Long> append(ByteBuffer data) {
-        return append(Unpooled.wrappedBuffer(data));
     }
 
     @Override
@@ -1047,7 +1039,7 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
     }
 
     @Override
-    public CompletableFuture<Long> tryReadLastConfirmedEntryId() {
+    public CompletableFuture<Long> tryReadLastAddConfirmed() {
         CompletableFuture<Long> counter = new CompletableFuture<>();
 
         ReadLastConfirmedCallback callback = (int rc, long lastConfirmed, Object ctx) -> {
@@ -1058,7 +1050,7 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
     }
 
     @Override
-    public CompletableFuture<Long> readLastConfirmedEntryId() {
+    public CompletableFuture<Long> readLastAddConfirmed() {
         CompletableFuture<Long> counter = new CompletableFuture<>();
 
         ReadLastConfirmedCallback callback = (int rc, long lastConfirmed, Object ctx) -> {

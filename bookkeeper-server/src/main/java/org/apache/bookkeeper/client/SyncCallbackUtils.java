@@ -88,7 +88,7 @@ class SyncCallbackUtils {
 
     }
 
-    public  static class SyncOpenCallback implements AsyncCallback.OpenCallback {
+    public static class SyncOpenCallback implements AsyncCallback.OpenCallback {
         /**
          * Callback method for synchronous open operation
          *
@@ -231,7 +231,7 @@ class SyncCallbackUtils {
         }
     }
 
-    static class SyncCloseCallback implements AsyncCallback.CloseCallback {
+    static class SyncCloseCallback extends CompletableFuture implements AsyncCallback.CloseCallback {
         /**
          * Close callback method
          *
@@ -242,7 +242,7 @@ class SyncCallbackUtils {
         @Override
         @SuppressWarnings("unchecked")
         public void closeComplete(int rc, LedgerHandle lh, Object ctx) {
-            SyncCallbackUtils.finish(rc, null, (CompletableFuture<Void>)ctx);
+            SyncCallbackUtils.finish(rc, null, this);
         }
     }
 

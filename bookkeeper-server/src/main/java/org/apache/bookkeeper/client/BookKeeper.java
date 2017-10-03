@@ -44,6 +44,7 @@ import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.IsClosedCallback;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCreateCallback;
+import org.apache.bookkeeper.client.api.BookKeeperBuilder;
 import org.apache.bookkeeper.client.api.CreateBuilder;
 import org.apache.bookkeeper.client.api.DeleteBuilder;
 import org.apache.bookkeeper.client.api.OpenBuilder;
@@ -151,6 +152,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
     /**
      * BookKeeper Client Builder to build client instances.
+     *
+     * @see BookKeeperBuilder
      */
     public static class Builder {
         final ClientConfiguration conf;
@@ -1391,30 +1394,37 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         return new LedgerDeleteOp.DeleteBuilderImpl(this);
     }
 
+    @VisibleForTesting
     ReentrantReadWriteLock getCloseLock() {
         return closeLock;
     }
 
+    @VisibleForTesting
     boolean isClosed() {
         return closed;
     }
 
+    @VisibleForTesting
     BookieWatcher getBookieWatcher() {
         return bookieWatcher;
     }
 
+    @VisibleForTesting
     OrderedSafeExecutor getMainWorkerPool() {
         return mainWorkerPool;
     }
 
+    @VisibleForTesting
     ScheduledExecutorService getScheduler() {
         return scheduler;
     }
 
+    @VisibleForTesting
     EnsemblePlacementPolicy getPlacementPolicy() {
         return placementPolicy;
     }
 
+    @VisibleForTesting
     boolean isReorderReadSequence() {
         return reorderReadSequence;
     }
