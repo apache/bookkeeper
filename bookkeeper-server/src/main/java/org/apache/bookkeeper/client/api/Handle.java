@@ -22,6 +22,7 @@ package org.apache.bookkeeper.client.api;
 
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 
 /**
  * Handle to manage an open ledger.

@@ -28,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Provide write access to a ledger.
  *
- * @see WriteAdvHandler
+ * @see WriteAdvHandle
  *
  * @since 4.6
  */
