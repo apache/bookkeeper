@@ -53,16 +53,16 @@ class LedgerCreateOp implements GenericCallback<Void> {
 
     static final Logger LOG = LoggerFactory.getLogger(LedgerCreateOp.class);
 
-    CreateCallback cb;
-    LedgerMetadata metadata;
+    final CreateCallback cb;
+    final LedgerMetadata metadata;
     LedgerHandle lh;
-    Long ledgerId = -1L;
-    Object ctx;
-    byte[] passwd;
-    BookKeeper bk;
-    DigestType digestType;
-    long startTime;
-    OpStatsLogger createOpLogger;
+    long ledgerId = -1L;
+    final Object ctx;
+    final byte[] passwd;
+    final BookKeeper bk;
+    final DigestType digestType;
+    final long startTime;
+    final OpStatsLogger createOpLogger;
     boolean adv = false;
     boolean generateLedgerId = true;
 
