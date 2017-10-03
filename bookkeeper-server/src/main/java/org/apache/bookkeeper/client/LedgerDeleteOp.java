@@ -118,7 +118,7 @@ class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
         @Override
         public CompletableFuture<?> execute() {
             SyncDeleteCallback result = new SyncDeleteCallback();
-            delete(builderLedgerId, result, null);
+            delete(builderLedgerId, result);
             return result;
         }
 
@@ -130,16 +130,16 @@ class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
             return true;
         }
 
-        private void delete(long ledgerId, AsyncCallback.DeleteCallback cb, Object ctx) {
+        private void delete(long ledgerId, AsyncCallback.DeleteCallback cb) {
             if (!validate()) {
-                cb.deleteComplete(BKException.Code.IncorrectParameterException, ctx);
+                cb.deleteComplete(BKException.Code.IncorrectParameterException, null);
             }
-            LedgerDeleteOp op = new LedgerDeleteOp(bk, ledgerId, cb, ctx);
+            LedgerDeleteOp op = new LedgerDeleteOp(bk, ledgerId, cb, null);
             ReentrantReadWriteLock closeLock = bk.getCloseLock();
             closeLock.readLock().lock();
             try {
                 if (bk.isClosed()) {
-                    cb.deleteComplete(BKException.Code.ClientClosedException, ctx);
+                    cb.deleteComplete(BKException.Code.ClientClosedException, null);
                     return;
                 }
                 op.initiate();
