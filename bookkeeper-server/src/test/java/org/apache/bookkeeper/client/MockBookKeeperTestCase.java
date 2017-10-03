@@ -18,19 +18,29 @@
 package org.apache.bookkeeper.client;
 
 import com.google.common.base.Optional;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.junit.After;
 import org.junit.Before;
+import static org.mockito.ArgumentMatchers.any;
+import org.mockito.Mockito;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 /**
  * Base class for Mock-based Client testcases
@@ -82,5 +92,25 @@ public abstract class MockBookKeeperTestCase {
     public void tearDown() {
         scheduler.shutdown();
         executor.shutdown();
+    }
+
+    protected void prepareBookieWatcherForNewEnsemble(
+        int ensembleSize, int writeQuorumSize, int ackQuorumSize, Map<String, byte[]> customMetadata,
+        List<BookieSocketAddress> ensemble) throws BKException.BKNotEnoughBookiesException {
+        when(bookieWatcher.newEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata))
+                .thenReturn(new ArrayList<>(ensemble));
+    }
+
+    protected void setNewGeneratedLedgerId(long ledgerId) {
+        Mockito.doAnswer((Answer<Void>) new Answer<Void>() {
+            @Override
+            @SuppressWarnings("unchecked")
+            public Void answer(InvocationOnMock invocation) throws Throwable {
+                Object[] args = invocation.getArguments();
+                BookkeeperInternalCallbacks.GenericCallback cb = (BookkeeperInternalCallbacks.GenericCallback) args[0];
+                cb.operationComplete(BKException.Code.OK, ledgerId);
+                return null;
+            }
+        }).when(ledgerIdGenerator).generateLedgerId(any());
     }
 }

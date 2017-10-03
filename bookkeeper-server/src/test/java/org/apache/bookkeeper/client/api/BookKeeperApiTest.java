@@ -28,9 +28,10 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
+import org.apache.bookkeeper.client.BKException.BKLedgerFencedException;
 import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
 import org.apache.bookkeeper.client.BKException.BKUnauthorizedAccessException;
-import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import static org.junit.Assert.assertArrayEquals;
@@ -57,7 +58,7 @@ public class BookKeeperApiTest extends BookKeeperClusterTestCase {
                 Map<String, byte[]> customMetadata = new HashMap<>();
                 customMetadata.put("test", "test".getBytes(StandardCharsets.UTF_8));
                 try (WriteHandle writer
-                        = FutureUtils.result(
+                        = result(
                                 bkc.newCreateLedgerOp()
                                         .withAckQuorumSize(1)
                                         .withWriteQuorumSize(2)
@@ -81,7 +82,7 @@ public class BookKeeperApiTest extends BookKeeperClusterTestCase {
                 Map<String, byte[]> customMetadata = new HashMap<>();
                 customMetadata.put("test", "test".getBytes(StandardCharsets.UTF_8));
                 try (WriteAdvHandle writer
-                        = FutureUtils.result(bkc.newCreateLedgerOp()
+                        = result(bkc.newCreateLedgerOp()
                                 .withAckQuorumSize(1)
                                 .withWriteQuorumSize(2)
                                 .withEnsembleSize(3)
@@ -107,7 +108,7 @@ public class BookKeeperApiTest extends BookKeeperClusterTestCase {
             Map<String, byte[]> customMetadata = new HashMap<>();
             customMetadata.put("test", "test".getBytes(StandardCharsets.UTF_8));
             try (WriteAdvHandle writer
-                    = FutureUtils.result(bkc.newCreateLedgerOp()
+                    = result(bkc.newCreateLedgerOp()
                             .withAckQuorumSize(1)
                             .withWriteQuorumSize(2)
                             .withEnsembleSize(3)
@@ -146,7 +147,7 @@ public class BookKeeperApiTest extends BookKeeperClusterTestCase {
                 Map<String, byte[]> customMetadata = new HashMap<>();
                 customMetadata.put("test", "test".getBytes(StandardCharsets.UTF_8));
                 try (WriteHandle writer
-                        = FutureUtils.result(bkc.newCreateLedgerOp()
+                        = result(bkc.newCreateLedgerOp()
                                 .withAckQuorumSize(1)
                                 .withWriteQuorumSize(2)
                                 .withEnsembleSize(3)
@@ -161,7 +162,7 @@ public class BookKeeperApiTest extends BookKeeperClusterTestCase {
                     writer.append(ByteBuffer.wrap(data)).get();
                 }
                 try (ReadHandle reader
-                        = FutureUtils.result(bkc.newOpenLedgerOp()
+                        = result(bkc.newOpenLedgerOp()
                                 .withDigestType(DigestType.MAC)
                                 .withPassword("bad-password".getBytes(StandardCharsets.UTF_8))
                                 .withLedgerId(lId)
@@ -171,7 +172,7 @@ public class BookKeeperApiTest extends BookKeeperClusterTestCase {
                 catch (BKUnauthorizedAccessException ok) {
                 }
 
-                try (ReadHandle reader = FutureUtils.result(bkc.newOpenLedgerOp()
+                try (ReadHandle reader = result(bkc.newOpenLedgerOp()
                         .withDigestType(DigestType.CRC32)
                         .withPassword("password".getBytes(StandardCharsets.UTF_8))
                         .withLedgerId(lId)
@@ -182,20 +183,20 @@ public class BookKeeperApiTest extends BookKeeperClusterTestCase {
                 }
 
                 try {
-                    FutureUtils.result(bkc.newOpenLedgerOp().execute());
+                    result(bkc.newOpenLedgerOp().execute());
                     fail("should not open ledger, no id");
                 }
                 catch (BKNoSuchLedgerExistsException ok) {
                 }
 
                 try {
-                    FutureUtils.result(bkc.newOpenLedgerOp().withLedgerId(Long.MAX_VALUE - 1).execute());
+                    result(bkc.newOpenLedgerOp().withLedgerId(Long.MAX_VALUE - 1).execute());
                     fail("should not open ledger, bad id");
                 }
                 catch (BKNoSuchLedgerExistsException ok) {
                 }
 
-                try (ReadHandle reader = FutureUtils.result(bkc.newOpenLedgerOp()
+                try (ReadHandle reader = result(bkc.newOpenLedgerOp()
                         .withDigestType(DigestType.MAC)
                         .withPassword("password".getBytes(StandardCharsets.UTF_8))
                         .withRecovery(false)
@@ -213,7 +214,7 @@ public class BookKeeperApiTest extends BookKeeperClusterTestCase {
                 long lId;
                 Map<String, byte[]> customMetadata = new HashMap<>();
                 customMetadata.put("test", "test".getBytes(StandardCharsets.UTF_8));
-                try (WriteHandle writer = FutureUtils.result(bkc.newCreateLedgerOp()
+                try (WriteHandle writer = result(bkc.newCreateLedgerOp()
                         .withAckQuorumSize(1)
                         .withWriteQuorumSize(2)
                         .withEnsembleSize(3)
@@ -226,7 +227,7 @@ public class BookKeeperApiTest extends BookKeeperClusterTestCase {
                     writer.append(ByteBuffer.wrap(data)).get();
                     writer.append(ByteBuffer.wrap(data)).get();
 
-                    try (ReadHandle reader = FutureUtils.result(bkc.newOpenLedgerOp()
+                    try (ReadHandle reader = result(bkc.newOpenLedgerOp()
                             .withDigestType(DigestType.MAC)
                             .withPassword("password".getBytes(StandardCharsets.UTF_8))
                             .withRecovery(true)
@@ -235,13 +236,13 @@ public class BookKeeperApiTest extends BookKeeperClusterTestCase {
                     }
 
                     try {
-                        FutureUtils.result(writer.append(ByteBuffer.wrap(data)));
+                        result(writer.append(ByteBuffer.wrap(data)));
                         fail("should not be able to write");
                     }
-                    catch (BKException.BKLedgerFencedException ok) {
+                    catch (BKLedgerFencedException ok) {
                     }
                 }
-                try (ReadHandle reader = FutureUtils.result(bkc.newOpenLedgerOp()
+                try (ReadHandle reader = result(bkc.newOpenLedgerOp()
                         .withDigestType(DigestType.MAC)
                         .withPassword("password".getBytes(StandardCharsets.UTF_8))
                         .withRecovery(false)
@@ -266,7 +267,7 @@ public class BookKeeperApiTest extends BookKeeperClusterTestCase {
         try (BookKeeper bkc = BookKeeper.newBuilder(conf).build();) {
             Map<String, byte[]> customMetadata = new HashMap<>();
             customMetadata.put("test", "test".getBytes(StandardCharsets.UTF_8));
-            try (WriteHandle writer = FutureUtils.result(bkc.newCreateLedgerOp()
+            try (WriteHandle writer = result(bkc.newCreateLedgerOp()
                     .withAckQuorumSize(1)
                     .withWriteQuorumSize(2)
                     .withEnsembleSize(3)
@@ -277,7 +278,7 @@ public class BookKeeperApiTest extends BookKeeperClusterTestCase {
                 lId = writer.getId();
             }
 
-            try (ReadHandle opened = FutureUtils.result(bkc.newOpenLedgerOp()
+            try (ReadHandle opened = result(bkc.newOpenLedgerOp()
                     .withDigestType(DigestType.MAC)
                     .withPassword("password".getBytes(StandardCharsets.UTF_8))
                     .withLedgerId(lId)
@@ -287,7 +288,7 @@ public class BookKeeperApiTest extends BookKeeperClusterTestCase {
             bkc.newDeleteLedgerOp().withLedgerId(lId).execute().get();
 
             try {
-                FutureUtils.result(bkc.newOpenLedgerOp()
+                result(bkc.newOpenLedgerOp()
                         .withDigestType(DigestType.MAC)
                         .withPassword("password".getBytes(StandardCharsets.UTF_8))
                         .withLedgerId(lId)
@@ -297,11 +298,11 @@ public class BookKeeperApiTest extends BookKeeperClusterTestCase {
             catch (BKNoSuchLedgerExistsException ok) {
             }
 
-            try (WriteHandle writer = FutureUtils.result(bkc.newCreateLedgerOp()
+            try (WriteHandle writer = result(bkc.newCreateLedgerOp()
                     .execute());) {
                 lId = writer.getId();
             }
-            try (ReadHandle opened = FutureUtils.result(bkc.newOpenLedgerOp()
+            try (ReadHandle opened = result(bkc.newOpenLedgerOp()
                     .withLedgerId(lId)
                     .execute());) {
             }
@@ -309,7 +310,7 @@ public class BookKeeperApiTest extends BookKeeperClusterTestCase {
             bkc.newDeleteLedgerOp().withLedgerId(lId).execute().get();
 
             try {
-                FutureUtils.result(bkc.newOpenLedgerOp()
+                result(bkc.newOpenLedgerOp()
                         .withLedgerId(lId)
                         .execute());
                 fail("ledger cannot be open if delete succeeded");
@@ -318,7 +319,7 @@ public class BookKeeperApiTest extends BookKeeperClusterTestCase {
             }
 
             try {
-                FutureUtils.result(bkc.newOpenLedgerOp()
+                result(bkc.newOpenLedgerOp()
                         .withLedgerId(lId)
                         .execute());
                 fail("ledger cannot be open if delete succeeded");
@@ -326,11 +327,11 @@ public class BookKeeperApiTest extends BookKeeperClusterTestCase {
             catch (BKNoSuchLedgerExistsException ok) {
             }
 
-            try (WriteHandle writer = FutureUtils.result(bkc.newCreateLedgerOp()
+            try (WriteHandle writer = result(bkc.newCreateLedgerOp()
                     .execute());) {
                 lId = writer.getId();
             }
-            try (ReadHandle opened = FutureUtils.result(bkc.newOpenLedgerOp()
+            try (ReadHandle opened = result(bkc.newOpenLedgerOp()
                     .withLedgerId(lId)
                     .execute());) {
             }
@@ -338,7 +339,7 @@ public class BookKeeperApiTest extends BookKeeperClusterTestCase {
             bkc.newDeleteLedgerOp().withLedgerId(lId).execute().get();
 
             try {
-                FutureUtils.result(bkc.newOpenLedgerOp()
+                result(bkc.newOpenLedgerOp()
                         .withLedgerId(lId)
                         .execute());
                 fail("ledger cannot be open if delete succeeded");
@@ -347,14 +348,14 @@ public class BookKeeperApiTest extends BookKeeperClusterTestCase {
             }
 
             try {
-                FutureUtils.result(bkc.newDeleteLedgerOp().withLedgerId(lId).execute());
+                result(bkc.newDeleteLedgerOp().withLedgerId(lId).execute());
                 fail("ledger cannot be deleted twice");;
             }
             catch (BKNoSuchLedgerExistsException ok) {
             }
 
             try {
-                FutureUtils.result(bkc.newDeleteLedgerOp().execute());
+                result(bkc.newDeleteLedgerOp().execute());
                 fail("ledger cannot be deleted, no id");
             }
             catch (BKNoSuchLedgerExistsException ok) {

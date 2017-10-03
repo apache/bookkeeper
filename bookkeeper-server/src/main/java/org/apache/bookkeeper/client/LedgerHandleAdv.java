@@ -99,13 +99,11 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
             LOG.debug("Adding entry {}", data);
         }
 
-        CompletableFuture<Long> counter = new CompletableFuture<>();
-
         SyncAddCallback callback = new SyncAddCallback();
-        asyncAddEntry(entryId, data, offset, length, callback, counter);
+        asyncAddEntry(entryId, data, offset, length, callback, null);
 
         try {
-            return counter.get();
+            return callback.get();
         } catch (ExecutionException err) {
             throw (BKException) err.getCause();
         }
@@ -242,10 +240,9 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
 
     @Override
     public CompletableFuture<Long> write(long entryId, ByteBuf data) {
-        CompletableFuture<Long> counter = new CompletableFuture<>();
         SyncAddCallback callback = new SyncAddCallback();
-        asyncAddEntry(entryId, data, callback, counter);
-        return counter;
+        asyncAddEntry(entryId, data, callback, null);
+        return callback;
     }
 
     /**
