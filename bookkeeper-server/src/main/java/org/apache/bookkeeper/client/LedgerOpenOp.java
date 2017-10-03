@@ -48,16 +48,16 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
 
     final BookKeeper bk;
     final long ledgerId;
-    OpenCallback cb;
-    Object ctx;
+    final OpenCallback cb;
+    final Object ctx;
     LedgerHandle lh;
-    byte[] passwd;
+    final byte[] passwd;
     boolean doRecovery = true;
     boolean administrativeOpen = false;
     long startTime;
     OpStatsLogger openOpLogger;
     
-    DigestType suggestedDigestType;
+    final DigestType suggestedDigestType;
     final boolean enableDigestAutodetection;
 
     /**

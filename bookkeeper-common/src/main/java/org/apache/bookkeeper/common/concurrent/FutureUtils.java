@@ -42,8 +42,7 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 @Slf4j
 public final class FutureUtils {
 
-    private FutureUtils() {
-    }
+    private FutureUtils() {}
 
     private static final Function<Throwable, Exception> DEFAULT_EXCEPTION_HANDLER = cause -> {
         if (cause instanceof Exception) {
@@ -119,7 +118,7 @@ public final class FutureUtils {
     }
 
     public static <T> void complete(CompletableFuture<T> result,
-        T value) {
+                                    T value) {
         if (null == result) {
             return;
         }
@@ -127,7 +126,7 @@ public final class FutureUtils {
     }
 
     public static <T> void completeExceptionally(CompletableFuture<T> result,
-        Throwable cause) {
+                                                 Throwable cause) {
         if (null == result) {
             return;
         }
@@ -163,8 +162,7 @@ public final class FutureUtils {
                 .collect(Collectors.toList()));
     }
 
-    public static <T> void proxyTo(CompletableFuture<T> src,
-        CompletableFuture<T> target) {
+    public static <T> void proxyTo(CompletableFuture<T> src, CompletableFuture<T> target) {
         src.whenComplete((value, cause) -> {
             if (null == cause) {
                 target.complete(value);
@@ -330,15 +328,14 @@ public final class FutureUtils {
         return promise;
     }
 
-    public static <T> CompletableFuture<T> ensure(CompletableFuture<T> future,
-        Runnable ensureBlock) {
+    public static <T> CompletableFuture<T> ensure(CompletableFuture<T> future, Runnable ensureBlock) {
         return future.whenComplete((value, cause) -> {
             ensureBlock.run();
         });
     }
 
     public static <T> CompletableFuture<T> rescue(CompletableFuture<T> future,
-        Function<Throwable, CompletableFuture<T>> rescueFuc) {
+                                                  Function<Throwable, CompletableFuture<T>> rescueFuc) {
         CompletableFuture<T> result = FutureUtils.createFuture();
         future.whenComplete((value, cause) -> {
             if (null == cause) {

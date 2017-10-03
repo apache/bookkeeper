@@ -108,6 +108,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         try {
             result(new CreateBuilderImpl(bk)
                 .withEnsembleSize(0)
+                .withPassword(password)
                 .execute());
             fail("shoud not be able to create a ledger with such specs");
         } catch (BKIncorrectParameterException err) {
@@ -117,6 +118,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             result(new CreateBuilderImpl(bk)
                 .withEnsembleSize(2)
                 .withWriteQuorumSize(0)
+                .withPassword(password)
                 .execute());
             fail("shoud not be able to create a ledger with such specs");
         } catch (BKIncorrectParameterException err) {
@@ -127,6 +129,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                 .withEnsembleSize(2)
                 .withWriteQuorumSize(1)
                 .withAckQuorumSize(0)
+                .withPassword(password)
                 .execute());
             fail("shoud not be able to create a ledger with such specs");
         } catch (BKIncorrectParameterException err) {
@@ -137,6 +140,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                 .withEnsembleSize(1)
                 .withWriteQuorumSize(2)
                 .withAckQuorumSize(1)
+                .withPassword(password)
                 .execute());
             fail("shoud not be able to create a ledger with such specs");
         } catch (BKIncorrectParameterException err) {
@@ -147,6 +151,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                 .withEnsembleSize(1)
                 .withWriteQuorumSize(1)
                 .withAckQuorumSize(2)
+                .withPassword(password)
                 .execute());
             fail("shoud not be able to create a ledger with such specs");
         } catch (BKIncorrectParameterException err) {
@@ -163,6 +168,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         try {
             result(new CreateBuilderImpl(bk)
                 .withCustomMetadata(null)
+                .withPassword(password)
                 .execute());
             fail("shoud not be able to create a ledger with such specs");
         } catch (BKIncorrectParameterException err) {
@@ -174,6 +180,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             when(bk.getConf()).thenReturn(config);
             result(new CreateBuilderImpl(bk)
                 .withDigestType(null)
+                .withPassword(password)
                 .execute());
             fail("shoud not be able to create a ledger with such specs");
         } catch (BKIncorrectParameterException err) {
@@ -185,6 +192,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             when(bk.getConf()).thenReturn(config);
             result(new CreateBuilderImpl(bk)
                 .withDigestType(null)
+                .withPassword(password)
                 .execute());
             fail("shoud not be able to create a ledger with such specs");
         } catch (BKIncorrectParameterException err) {
@@ -193,6 +201,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         when(bk.isClosed()).thenReturn(true);
         try {
             result(new CreateBuilderImpl(bk)
+                .withPassword(password)
                 .execute());
             fail("shoud not be able to create a ledger, client is closed");
         } catch (BKClientClosedException err) {
@@ -206,6 +215,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         int writeQuorumSize = 2;
         int ackQuorumSize = 1;
         long ledgerId = 12342L;
+        byte[] password = new byte[3];
         Map<String, byte[]> customMetadata = new HashMap<>();
 
         prepareBookieWatcherForNewEnsemble(ensembleSize, writeQuorumSize, ackQuorumSize, customMetadata,
@@ -230,6 +240,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         WriteAdvHandle writer = new CreateBuilderImpl(bk)
             .withAckQuorumSize(ackQuorumSize)
             .withEnsembleSize(ensembleSize)
+            .withPassword(password)
             .withWriteQuorumSize(writeQuorumSize)
             .withCustomMetadata(customMetadata)
             .makeAdv()
@@ -240,10 +251,12 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         assertEquals(ensembleSize, metadata.getEnsembleSize());
         assertEquals(ackQuorumSize, metadata.getAckQuorumSize());
         assertEquals(writeQuorumSize, metadata.getWriteQuorumSize());
+        assertArrayEquals(password, metadata.getPassword());
 
         try {
             result(new CreateBuilderImpl(bk)
                 .withEnsembleSize(0)
+                .withPassword(password)
                 .makeAdv()
                 .execute());
             fail("shoud not be able to create a ledger with such specs");
@@ -254,6 +267,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             result(new CreateBuilderImpl(bk)
                 .withEnsembleSize(2)
                 .withWriteQuorumSize(0)
+                .withPassword(password)
                 .makeAdv()
                 .execute());
             fail("shoud not be able to create a ledger with such specs");
@@ -276,6 +290,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                 .withEnsembleSize(1)
                 .withWriteQuorumSize(2)
                 .withAckQuorumSize(1)
+                .withPassword(password)
                 .makeAdv()
                 .execute());
             fail("shoud not be able to create a ledger with such specs");
@@ -287,6 +302,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                 .withEnsembleSize(1)
                 .withWriteQuorumSize(1)
                 .withAckQuorumSize(2)
+                .withPassword(password)
                 .makeAdv()
                 .execute());
             fail("shoud not be able to create a ledger with such specs");
@@ -305,6 +321,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         try {
             result(new CreateBuilderImpl(bk)
                 .withCustomMetadata(null)
+                .withPassword(password)
                 .makeAdv()
                 .execute());
             fail("shoud not be able to create a ledger with such specs");
@@ -317,6 +334,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             when(bk.getConf()).thenReturn(config);
             result(new CreateBuilderImpl(bk)
                 .withDigestType(null)
+                .withPassword(password)
                 .makeAdv()
                 .execute());
             fail("shoud not be able to create a ledger with such specs");
@@ -329,6 +347,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             when(bk.getConf()).thenReturn(config);
             result(new CreateBuilderImpl(bk)
                 .withDigestType(null)
+                .withPassword(password)
                 .makeAdv()
                 .execute());
             fail("shoud not be able to create a ledger with such specs");
@@ -337,6 +356,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
 
         try {
             result(new CreateBuilderImpl(bk)
+                .withPassword(password)
                 .makeAdv()
                 .withLedgerId(-1)
                 .execute());
@@ -346,6 +366,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
 
         try {
             result(new CreateBuilderImpl(bk)
+                .withPassword(password)
                 .makeAdv()
                 .withLedgerId(-2)
                 .execute());
@@ -354,11 +375,13 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         }
 
         assertEquals(0, result(new CreateBuilderImpl(bk)
+            .withPassword(password)
             .makeAdv()
             .withLedgerId(0)
             .execute()).getId());
 
         assertEquals(Integer.MAX_VALUE + 1L, result(new CreateBuilderImpl(bk)
+            .withPassword(password)
             .makeAdv()
             .withLedgerId(Integer.MAX_VALUE + 1L)
             .execute()).getId());
@@ -366,6 +389,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         when(bk.isClosed()).thenReturn(true);
         try {
             result(new CreateBuilderImpl(bk)
+                .withPassword(password)
                 .makeAdv()
                 .execute());
             fail("shoud not be able to create a ledger, client is closed");
@@ -542,7 +566,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             result(new DeleteBuilderImpl(bk)
                 .withLedgerId(-1)
                 .execute());
-        } catch (BKNoSuchLedgerExistsException err) {
+        } catch (BKIncorrectParameterException err) {
         }
 
         try {

@@ -159,7 +159,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
         doAsyncAddEntry(op, Unpooled.wrappedBuffer(data, offset, length), cb, ctx);
     }
 
-    public void asyncAddEntry(final long entryId, final ByteBuf data, final AddCallback cb, final Object ctx) {
+    private void asyncAddEntry(final long entryId, final ByteBuf data, final AddCallback cb, final Object ctx) {
         PendingAddOp op = new PendingAddOp(this, cb, ctx);
         op.setEntryId(entryId);
         if ((entryId <= this.lastAddConfirmed) || pendingAddOps.contains(op)) {
