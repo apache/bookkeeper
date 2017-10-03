@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,12 +15,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.bookkeeper.util;
+package org.apache.bookkeeper.common.concurrent;
+
+import java.util.concurrent.CompletionException;
+import java.util.function.BiConsumer;
 
 /**
- * Provides misc math functions that don't come standard
- *
- * @Deprecated since 4.6.0, in favor of using {@link org.apache.bookkeeper.common.util.MathUtils}.
+ * Provide similar interface (as twitter future) over java future.
  */
-public class MathUtils extends org.apache.bookkeeper.common.util.MathUtils {
+public interface FutureEventListener<T> extends BiConsumer<T, Throwable> {
+
+  void onSuccess(T value);
+
+  void onFailure(Throwable cause);
+
+  @Override
+  default void accept(T t, Throwable throwable) {
+    if (null != throwable) {
+      if (throwable instanceof CompletionException && null != throwable.getCause()) {
+        onFailure(throwable.getCause());
+      } else {
+        onFailure(throwable);
+      }
+      return;
+    }
+    onSuccess(t);
+  }
 }

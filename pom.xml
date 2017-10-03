@@ -98,6 +98,8 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <!-- dependencies -->
     <commons-configuration.version>1.10</commons-configuration.version>
+    <commons-lang3.version>3.3.2</commons-lang3.version>
+    <google.code.version>3.0.2</google.code.version>
     <guava.version>20.0</guava.version>
     <hamcrest.version>1.3</hamcrest.version>
     <jmh.version>1.19</jmh.version>
