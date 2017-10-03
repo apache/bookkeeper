@@ -23,6 +23,7 @@ package org.apache.bookkeeper.client;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import static org.apache.bookkeeper.client.LedgerCreateOp.LOG;
@@ -134,7 +135,8 @@ class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
                 cb.deleteComplete(BKException.Code.IncorrectParameterException, ctx);
             }
             LedgerDeleteOp op = new LedgerDeleteOp(bk, ledgerId, cb, ctx);
-            bk.getCloseLock().readLock().lock();
+            ReentrantReadWriteLock closeLock = bk.getCloseLock();
+            closeLock.readLock().lock();
             try {
                 if (bk.isClosed()) {
                     cb.deleteComplete(BKException.Code.ClientClosedException, ctx);
@@ -142,7 +144,7 @@ class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
                 }
                 op.initiate();
             } finally {
-                bk.getCloseLock().readLock().unlock();
+                closeLock.readLock().unlock();
             }
         }
     }

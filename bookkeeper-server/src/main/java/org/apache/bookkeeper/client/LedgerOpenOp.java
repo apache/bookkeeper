@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.security.GeneralSecurityException;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -272,7 +273,8 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
 
             LedgerOpenOp op = new LedgerOpenOp(bk, builderLedgerId, DigestType.fromApiDigestType(builderDigestType),
                 builderPassword, cb, ctx);
-            bk.getCloseLock().readLock().lock();
+            ReentrantReadWriteLock closeLock = bk.getCloseLock();
+            closeLock.readLock().lock();
             try {
                 if (bk.isClosed()) {
                     cb.openComplete(BKException.Code.ClientClosedException, null, ctx);
@@ -284,7 +286,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
                     op.initiateWithoutRecovery();
                 }
             } finally {
-                bk.getCloseLock().readLock().unlock();
+                closeLock.readLock().unlock();
             }
         }
     }
