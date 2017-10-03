@@ -283,7 +283,8 @@ public class LedgerCacheTest {
 
         // Simulate the flush failure
         FileInfo newFileInfo = new FileInfo(fileInfo.getLf(), fileInfo.getMasterKey());
-        ledgerCache.getIndexPersistenceManager().fileInfoCache.put(Long.valueOf(1), newFileInfo);
+        ledgerCache.getIndexPersistenceManager().writeFileInfoCache.put(Long.valueOf(1), newFileInfo);
+        ledgerCache.getIndexPersistenceManager().readFileInfoCache.put(Long.valueOf(1), newFileInfo);
         // Add entries
         ledgerStorage.addEntry(generateEntry(1, 1));
         ledgerStorage.addEntry(generateEntry(1, 2));
