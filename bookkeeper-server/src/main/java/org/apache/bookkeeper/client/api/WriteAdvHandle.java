@@ -30,7 +30,7 @@ import java.util.concurrent.CompletableFuture;
  * write for a given entryId will be acknowledged if and only if all entries up to entryId - 1 have been acknowledged
  * too (expected from entryId 0)
  *
- * @see WriteHandler
+ * @see WriteHandle
  *
  * @since 4.6
  */

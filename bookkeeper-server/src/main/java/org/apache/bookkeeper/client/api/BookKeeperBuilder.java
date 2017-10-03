@@ -37,16 +37,16 @@ import org.apache.zookeeper.ZooKeeper;
 public interface BookKeeperBuilder {
 
     /**
-     * Configure the bookkeeper client with a provided {@link EventLoopGroup}.
+     * Configure the bookkeeper client with a provided Netty EventLoopGroup.
      *
-     * @param f an external {@link EventLoopGroup} to use by the bookkeeper client.
+     * @param eventLoopGroup an external {@link EventLoopGroup} to use by the bookkeeper client.
      *
      * @return client builder.
      */
-    BookKeeperBuilder eventLoopGroup(EventLoopGroup f);
+    BookKeeperBuilder eventLoopGroup(EventLoopGroup eventLoopGroup);
 
     /**
-     * Configure the bookkeeper client with a provided {@link ZooKeeper} client.
+     * Configure the bookkeeper client with a provided ZooKeeper client.
      *
      * @param zk an external {@link ZooKeeper} client to use by the bookkeeper client.
      *
@@ -74,7 +74,7 @@ public interface BookKeeperBuilder {
     BookKeeperBuilder dnsResolver(DNSToSwitchMapping dnsResolver);
 
     /**
-     * Configure the bookkeeper client to use a provided {@link HashedWheelTimer}.
+     * Configure the bookkeeper client to use a provided Netty HashedWheelTimer.
      *
      * @param requestTimer request timer for client to manage timer related tasks.
      *
