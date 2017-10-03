@@ -23,7 +23,7 @@ import org.junit.Assert;
 
 public class TestLongVersion {
 
-    @Test(timeout=60000)
+    @Test
     public void testNullIntVersion() {
         LongVersion longVersion = new LongVersion(99);
         try {
@@ -33,7 +33,7 @@ public class TestLongVersion {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testInvalidVersion() {
         LongVersion longVersion = new LongVersion(99);
         try {
@@ -43,7 +43,7 @@ public class TestLongVersion {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testCompare() {
         LongVersion iv = new LongVersion(99);
         Assert.assertEquals(Occurred.AFTER, iv.compare(new LongVersion(98)));
