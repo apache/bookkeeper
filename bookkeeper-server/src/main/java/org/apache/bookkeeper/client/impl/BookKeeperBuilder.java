@@ -18,10 +18,13 @@
  * under the License.
  *
  */
-package org.apache.bookkeeper.client.api;
+package org.apache.bookkeeper.client.impl;
 
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.HashedWheelTimer;
+import java.io.IOException;import org.apache.bookkeeper.client.api.BookKeeper;
+import org.apache.bookkeeper.client.api.BookKeeperException;
+
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -96,7 +99,8 @@ public interface BookKeeperBuilder {
      *
      * @throws BookKeeperException
      * @throws InterruptedException
+     * @throws IOException
      */
-    BookKeeper build() throws BookKeeperException, InterruptedException;
+    BookKeeper build() throws BookKeeperException, InterruptedException, IOException;
 
 }

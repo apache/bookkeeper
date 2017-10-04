@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.client.api;
 
+import org.apache.bookkeeper.client.impl.BookKeeperBuilder;
 import org.apache.bookkeeper.client.BookKeeperBuilderImpl;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 

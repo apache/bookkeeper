@@ -62,15 +62,6 @@ public interface LedgerEntry {
     byte[] getEntry();
 
     /**
-     * Returns the content of the entry. This method can be called only once. While using v2 wire protocol this method
-     * will automatically release the internal ByteBuf when calling the close method of the returned InputStream.
-     *
-     * @return an InputStream which gives access to the content of the entry
-     * @throws IllegalStateException if this method is called twice
-     */
-    InputStream getEntryInputStream();
-
-    /**
      * Return the internal buffer that contains the entry payload.
      *
      * <p>Note: Using v2 wire protocol it is responsibility of the caller
