@@ -29,10 +29,11 @@ import org.apache.bookkeeper.meta.ZkVersion;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.ZooKeeperClient;
-import org.apache.distributedlog.exceptions.DLInterruptedException;
 import org.apache.distributedlog.api.subscription.SubscriptionStateStore;
 import org.apache.distributedlog.api.subscription.SubscriptionsStore;
 import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.distributedlog.exceptions.DLInterruptedException;
+
 import org.apache.distributedlog.util.Utils;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;

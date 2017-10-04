@@ -17,7 +17,8 @@
  */
 package org.apache.distributedlog.metadata;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.DistributedLogConfiguration;
@@ -28,6 +29,10 @@ import org.apache.distributedlog.util.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ *The implementation is responsible
+ * for updating the metadata.
+ */
 public class LogSegmentMetadataStoreUpdater implements MetadataUpdater {
 
     static final Logger LOG = LoggerFactory.getLogger(LogSegmentMetadataStoreUpdater.class);
@@ -59,9 +64,9 @@ public class LogSegmentMetadataStoreUpdater implements MetadataUpdater {
     public CompletableFuture<LogSegmentMetadata> updateLastRecord(LogSegmentMetadata segment,
                                                                   LogRecordWithDLSN record) {
         DLSN dlsn = record.getDlsn();
-        Preconditions.checkState(!segment.isInProgress(),
+        checkState(!segment.isInProgress(),
                 "Updating last dlsn for an inprogress log segment isn't supported.");
-        Preconditions.checkArgument(segment.isDLSNinThisSegment(dlsn),
+        checkArgument(segment.isDLSNinThisSegment(dlsn),
                 "DLSN " + dlsn + " doesn't belong to segment " + segment);
         final LogSegmentMetadata newSegment = segment.mutator()
                 .setLastDLSN(dlsn)
@@ -85,7 +90,7 @@ public class LogSegmentMetadataStoreUpdater implements MetadataUpdater {
     }
 
     /**
-     * Change the truncation status of a <i>log segment</i> to be active
+     * Change the truncation status of a <i>log segment</i> to be active.
      *
      * @param segment log segment to change truncation status to active.
      * @return new log segment
@@ -99,7 +104,7 @@ public class LogSegmentMetadataStoreUpdater implements MetadataUpdater {
     }
 
     /**
-     * Change the truncation status of a <i>log segment</i> to truncated
+     * Change the truncation status of a <i>log segment</i> to truncated.
      *
      * @param segment log segment to change truncation status to truncated.
      * @return new log segment
@@ -122,14 +127,15 @@ public class LogSegmentMetadataStoreUpdater implements MetadataUpdater {
     }
 
     /**
-     * Change the truncation status of a <i>log segment</i> to partially truncated
+     * Change the truncation status of a <i>log segment</i> to partially truncated.
      *
      * @param segment log segment to change sequence number.
      * @param minActiveDLSN DLSN within the log segment before which log has been truncated
      * @return new log segment
      */
     @Override
-    public CompletableFuture<LogSegmentMetadata> setLogSegmentPartiallyTruncated(LogSegmentMetadata segment, DLSN minActiveDLSN) {
+    public CompletableFuture<LogSegmentMetadata>
+    setLogSegmentPartiallyTruncated(LogSegmentMetadata segment, DLSN minActiveDLSN) {
         final LogSegmentMetadata newSegment = segment.mutator()
             .setTruncationStatus(LogSegmentMetadata.TruncationStatus.PARTIALLY_TRUNCATED)
             .setMinActiveDLSN(minActiveDLSN)

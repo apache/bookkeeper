@@ -26,27 +26,27 @@ import org.apache.distributedlog.io.AsyncCloseable;
 /**
  * Provide a metadata accessor to access customized metadata associated with logs.
  *
- * @Deprecated this class is here for legacy reason. It is not recommended to use this class for storing customized
+ * @deprecated this class is here for legacy reason. It is not recommended to use this class for storing customized
  *             metadata.
  */
 @LimitedPrivate
 @Evolving
 public interface MetadataAccessor extends Closeable, AsyncCloseable {
     /**
-     * Get the name of the stream managed by this log manager
+     * Get the name of the stream managed by this log manager.
      * @return streamName
      */
-    public String getStreamName();
+    String getStreamName();
 
-    public void createOrUpdateMetadata(byte[] metadata) throws IOException;
+    void createOrUpdateMetadata(byte[] metadata) throws IOException;
 
-    public void deleteMetadata() throws IOException;
+    void deleteMetadata() throws IOException;
 
-    public byte[] getMetadata() throws IOException;
+    byte[] getMetadata() throws IOException;
 
     /**
      * Close the distributed log metadata, freeing any resources it may hold.
      */
-    public void close() throws IOException;
+    void close() throws IOException;
 
 }

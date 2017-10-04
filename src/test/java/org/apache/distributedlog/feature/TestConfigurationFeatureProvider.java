@@ -17,18 +17,18 @@
  */
 package org.apache.distributedlog.feature;
 
-import org.apache.distributedlog.common.config.ConcurrentBaseConfiguration;
-import org.apache.bookkeeper.feature.Feature;
-import org.apache.bookkeeper.feature.SettableFeature;
-import org.junit.Test;
-
+import static org.junit.Assert.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.apache.bookkeeper.feature.Feature;
+import org.apache.bookkeeper.feature.SettableFeature;
+import org.apache.distributedlog.common.config.ConcurrentBaseConfiguration;
+import org.junit.Test;
 
-import static org.junit.Assert.*;
+
 
 /**
- * Test case for configuration based feature provider
+ * Test case for configuration based feature provider.
  */
 public class TestConfigurationFeatureProvider {
 

@@ -32,16 +32,16 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.Entry.Reader;
 import org.apache.distributedlog.Entry.Writer;
-import org.apache.distributedlog.exceptions.LogRecordTooLongException;
-import org.apache.distributedlog.io.CompressionCodec;
 import org.apache.distributedlog.common.concurrent.FutureEventListener;
 import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.distributedlog.exceptions.LogRecordTooLongException;
+import org.apache.distributedlog.io.CompressionCodec;
 import org.apache.distributedlog.util.Utils;
 import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * Test Case of {@link Entry}
+ * Test Case of {@link Entry}.
  */
 public class TestEntry {
 

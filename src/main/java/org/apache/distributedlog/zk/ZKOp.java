@@ -17,14 +17,15 @@
  */
 package org.apache.distributedlog.zk;
 
+import javax.annotation.Nullable;
 import org.apache.distributedlog.util.Transaction;
 import org.apache.zookeeper.Op;
 import org.apache.zookeeper.OpResult;
 
-import javax.annotation.Nullable;
+
 
 /**
- * ZooKeeper Transaction Operation
+ * ZooKeeper Transaction Operation.
  */
 public abstract class ZKOp implements Transaction.Op<Object> {
 

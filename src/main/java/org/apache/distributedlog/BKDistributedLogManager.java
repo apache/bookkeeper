@@ -17,21 +17,31 @@
  */
 package org.apache.distributedlog;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.distributedlog.namespace.NamespaceDriver.Role.READER;
 import static org.apache.distributedlog.namespace.NamespaceDriver.Role.WRITER;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
-import com.google.common.base.Preconditions;
+
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
+
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+
 import java.util.function.Function;
+
+
+
+
+
+
+
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.stats.AlertStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -39,37 +49,47 @@ import org.apache.distributedlog.api.AsyncLogReader;
 import org.apache.distributedlog.api.AsyncLogWriter;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.LogReader;
+import org.apache.distributedlog.api.subscription.SubscriptionsStore;
+
 import org.apache.distributedlog.callback.LogSegmentListener;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.distributedlog.common.stats.BroadCastStatsLogger;
+
+import org.apache.distributedlog.common.util.PermitLimiter;
+import org.apache.distributedlog.common.util.PermitManager;
 import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
+
 import org.apache.distributedlog.exceptions.AlreadyClosedException;
 import org.apache.distributedlog.exceptions.LogEmptyException;
 import org.apache.distributedlog.exceptions.LogNotFoundException;
 import org.apache.distributedlog.exceptions.UnexpectedException;
 import org.apache.distributedlog.injector.AsyncFailureInjector;
-import org.apache.distributedlog.logsegment.LogSegmentEntryStore;
-import org.apache.distributedlog.logsegment.LogSegmentEntryWriter;
-import org.apache.distributedlog.metadata.LogMetadataForReader;
-import org.apache.distributedlog.metadata.LogMetadataForWriter;
 import org.apache.distributedlog.io.AsyncCloseable;
 import org.apache.distributedlog.lock.DistributedLock;
 import org.apache.distributedlog.lock.NopDistributedLock;
 import org.apache.distributedlog.lock.ZKDistributedLock;
+import org.apache.distributedlog.logsegment.LogSegmentEntryStore;
+import org.apache.distributedlog.logsegment.LogSegmentEntryWriter;
 import org.apache.distributedlog.logsegment.LogSegmentFilter;
+
 import org.apache.distributedlog.logsegment.LogSegmentMetadataCache;
+
+import org.apache.distributedlog.metadata.LogMetadataForReader;
+import org.apache.distributedlog.metadata.LogMetadataForWriter;
+
 import org.apache.distributedlog.metadata.LogStreamMetadataStore;
 import org.apache.distributedlog.namespace.NamespaceDriver;
-import org.apache.distributedlog.common.stats.BroadCastStatsLogger;
-import org.apache.distributedlog.api.subscription.SubscriptionsStore;
 import org.apache.distributedlog.util.Allocator;
 import org.apache.distributedlog.util.DLUtils;
-import org.apache.distributedlog.common.concurrent.FutureEventListener;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
+
 import org.apache.distributedlog.util.OrderedScheduler;
-import org.apache.distributedlog.common.util.PermitLimiter;
-import org.apache.distributedlog.common.util.PermitManager;
+
 import org.apache.distributedlog.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+
 
 /**
  * <h3>Metrics</h3>
@@ -422,7 +442,7 @@ class BKDistributedLogManager implements DistributedLogManager {
     }
 
     /**
-     * Check if an end of stream marker was added to the stream
+     * Check if an end of stream marker was added to the stream.
      * A stream with an end of stream marker cannot be appended to
      *
      * @return true if the marker was added to the stream, false otherwise
@@ -435,7 +455,7 @@ class BKDistributedLogManager implements DistributedLogManager {
     }
 
     /**
-     * Begin appending to the end of the log stream which is being treated as a sequence of bytes
+     * Begin appending to the end of the log stream which is being treated as a sequence of bytes.
      *
      * @return the writer interface to generate log records
      */
@@ -443,8 +463,8 @@ class BKDistributedLogManager implements DistributedLogManager {
         long position;
         try {
             position = Utils.ioResult(getLastLogRecordAsyncInternal(true, false)).getTransactionId();
-            if (DistributedLogConstants.INVALID_TXID == position ||
-                DistributedLogConstants.EMPTY_LOGSEGMENT_TX_ID == position) {
+            if (DistributedLogConstants.INVALID_TXID == position
+                    || DistributedLogConstants.EMPTY_LOGSEGMENT_TX_ID == position) {
                 position = 0;
             }
         } catch (LogEmptyException ex) {
@@ -456,7 +476,7 @@ class BKDistributedLogManager implements DistributedLogManager {
     }
 
     /**
-     * Get a reader to read a log stream as a sequence of bytes
+     * Get a reader to read a log stream as a sequence of bytes.
      *
      * @return the writer interface to generate log records
      */
@@ -465,7 +485,7 @@ class BKDistributedLogManager implements DistributedLogManager {
     }
 
     /**
-     * Begin writing to the log stream identified by the name
+     * Begin writing to the log stream identified by the name.
      *
      * @return the writer interface to generate log records
      */
@@ -493,7 +513,7 @@ class BKDistributedLogManager implements DistributedLogManager {
     }
 
     /**
-     * Begin writing to the log stream identified by the name
+     * Begin writing to the log stream identified by the name.
      *
      * @return the writer interface to generate log records
      */
@@ -599,7 +619,7 @@ class BKDistributedLogManager implements DistributedLogManager {
     }
 
     /**
-     * Get the input stream starting with fromTxnId for the specified log
+     * Get the input stream starting with fromTxnId for the specified log.
      *
      * @param fromTxnId - the first transaction id we want to read
      * @return the stream starting with transaction fromTxnId
@@ -648,7 +668,8 @@ class BKDistributedLogManager implements DistributedLogManager {
      * </p>
      *
      * @see DLUtils#findLogSegmentNotLessThanTxnId(List, long)
-     * @see ReadUtils#getLogRecordNotLessThanTxId(String, LogSegmentMetadata, long, ExecutorService, LogSegmentEntryStore, int)
+     * @see ReadUtils#getLogRecordNotLessThanTxId(String, LogSegmentMetadata,
+     * long, ExecutorService, LogSegmentEntryStore, int)
      * @param fromTxnId
      *          transaction id to start reading from
      * @return future representing the open result.
@@ -779,7 +800,7 @@ class BKDistributedLogManager implements DistributedLogManager {
     }
 
     /**
-     * Get the input stream starting with fromTxnId for the specified log
+     * Get the input stream starting with fromTxnId for the specified log.
      *
      * @param fromTxnId
      *          transaction id to start reading from
@@ -810,7 +831,7 @@ class BKDistributedLogManager implements DistributedLogManager {
     }
 
     /**
-     * Get the last log record in the stream
+     * Get the last log record in the stream.
      *
      * @return the last log record in the stream
      * @throws java.io.IOException if a stream cannot be found.
@@ -840,7 +861,7 @@ class BKDistributedLogManager implements DistributedLogManager {
     }
 
     /**
-     * Get Latest log record in the log
+     * Get Latest log record in the log.
      *
      * @return latest log record
      */
@@ -860,7 +881,7 @@ class BKDistributedLogManager implements DistributedLogManager {
     }
 
     /**
-     * Get Latest Transaction Id in the log
+     * Get Latest Transaction Id in the log.
      *
      * @return latest transaction id
      */
@@ -901,7 +922,7 @@ class BKDistributedLogManager implements DistributedLogManager {
     }
 
     /**
-     * Get the number of log records in the active portion of the log
+     * Get the number of log records in the active portion of the log.
      * Any log segments that have already been truncated will not be included
      *
      * @return number of log records
@@ -955,7 +976,7 @@ class BKDistributedLogManager implements DistributedLogManager {
     }
 
     /**
-     * Delete all the partitions of the specified log
+     * Delete all the partitions of the specified log.
      *
      * @throws IOException if the deletion fails
      */
@@ -981,7 +1002,7 @@ class BKDistributedLogManager implements DistributedLogManager {
      */
     @Override
     public void purgeLogsOlderThan(long minTxIdToKeep) throws IOException {
-        Preconditions.checkArgument(minTxIdToKeep > 0, "Invalid transaction id " + minTxIdToKeep);
+        checkArgument(minTxIdToKeep > 0, "Invalid transaction id " + minTxIdToKeep);
         checkClosedOrInError("purgeLogSegmentsOlderThan");
         BKLogWriteHandler ledgerHandler = createWriteHandler(true);
         try {

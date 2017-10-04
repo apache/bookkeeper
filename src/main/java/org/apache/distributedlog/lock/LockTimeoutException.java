@@ -17,12 +17,12 @@
  */
 package org.apache.distributedlog.lock;
 
+import java.util.concurrent.TimeUnit;
 import org.apache.distributedlog.exceptions.LockingException;
 
-import java.util.concurrent.TimeUnit;
 
 /**
- * Exception thrown when acquiring lock timeout
+ * Exception thrown when acquiring lock timeout.
  */
 public class LockTimeoutException extends LockingException {
 

@@ -17,8 +17,10 @@
  */
 package org.apache.distributedlog;
 
+import static org.junit.Assert.*;
 import com.google.common.base.Stopwatch;
-
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -26,17 +28,14 @@ import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
 
 /**
- * Utilities of {@link org.apache.distributedlog.ZooKeeperClient}
+ * Utilities of {@link org.apache.distributedlog.ZooKeeperClient}.
  */
 public class ZooKeeperClientUtils {
 
-    static final Logger logger = LoggerFactory.getLogger(ZooKeeperClientUtils.class);
+    private static final Logger logger = LoggerFactory.getLogger(ZooKeeperClientUtils.class);
 
     /**
      * Expire given zookeeper client's session.
@@ -58,8 +57,8 @@ public class ZooKeeperClientUtils {
             @Override
             public void process(WatchedEvent event) {
                 logger.debug("Receive event : {}", event);
-                if (event.getType() == Event.EventType.None &&
-                        event.getState() == Event.KeeperState.Expired) {
+                if (event.getType() == Event.EventType.None
+                        && event.getState() == Event.KeeperState.Expired) {
                     expireLatch.countDown();
                 }
             }
@@ -67,8 +66,8 @@ public class ZooKeeperClientUtils {
         ZooKeeper newZk = new ZooKeeper(zkServers, timeout, new Watcher() {
             @Override
             public void process(WatchedEvent event) {
-                if (Event.EventType.None == event.getType() &&
-                        Event.KeeperState.SyncConnected == event.getState()) {
+                if (Event.EventType.None == event.getType()
+                        && Event.KeeperState.SyncConnected == event.getState()) {
                     latch.countDown();
                 }
             }
@@ -80,7 +79,7 @@ public class ZooKeeperClientUtils {
 
         boolean done = false;
         Stopwatch expireWait = Stopwatch.createStarted();
-        while (!done && expireWait.elapsed(TimeUnit.MILLISECONDS) < timeout*2) {
+        while (!done && expireWait.elapsed(TimeUnit.MILLISECONDS) < timeout * 2) {
             try {
                 zkc.get().exists("/", false);
                 done = true;

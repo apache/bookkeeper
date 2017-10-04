@@ -119,7 +119,7 @@ class EnvelopedEntryReader implements Entry.Reader, RecordStream {
         if (isExhausted) {
             return;
         }
-        releaseBuffer();;
+        releaseBuffer();
     }
 
     @Override

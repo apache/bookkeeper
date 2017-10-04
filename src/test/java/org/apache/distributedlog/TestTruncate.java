@@ -17,25 +17,29 @@
  */
 package org.apache.distributedlog;
 
+import static org.junit.Assert.*;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.distributedlog.LogSegmentMetadata.TruncationStatus;
 import org.apache.distributedlog.api.AsyncLogWriter;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.LogReader;
 import org.apache.distributedlog.util.Utils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
+
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.distributedlog.LogSegmentMetadata.TruncationStatus;
 
-import static org.junit.Assert.*;
 
+
+/**
+ * Test Cases for truncation.
+ */
 public class TestTruncate extends TestDistributedLogBase {
     static final Logger LOG = LoggerFactory.getLogger(TestTruncate.class);
 
@@ -45,7 +49,8 @@ public class TestTruncate extends TestDistributedLogBase {
                     .setOutputBufferSize(0)
                     .setPeriodicFlushFrequencyMilliSeconds(10)
                     .setSchedulerShutdownTimeoutMs(0)
-                    .setDLLedgerMetadataLayoutVersion(LogSegmentMetadata.LogSegmentMetadataVersion.VERSION_V2_LEDGER_SEQNO.value);
+                    .setDLLedgerMetadataLayoutVersion(
+                            LogSegmentMetadata.LogSegmentMetadataVersion.VERSION_V2_LEDGER_SEQNO.value);
 
     static void updateCompletionTime(ZooKeeperClient zkc,
                                      LogSegmentMetadata l, long completionTime) throws Exception {
@@ -78,7 +83,7 @@ public class TestTruncate extends TestDistributedLogBase {
                 .build();
 
         // Update completion time of first 5 segments
-        long newTimeMs = System.currentTimeMillis() - 60*60*1000*2;
+        long newTimeMs = System.currentTimeMillis() - 60 * 60 * 1000 * 2;
         for (int i = 0; i < 5; i++) {
             LogSegmentMetadata segment = segments.get(i);
             updateCompletionTime(zkc, segment, newTimeMs + i);
@@ -128,8 +133,8 @@ public class TestTruncate extends TestDistributedLogBase {
         verifyEntries(name, 1, 1, 5 * 10);
 
         for (int i = 1; i <= 4; i++) {
-            int txn = (i-1) * 10 + i;
-            DLSN dlsn = txid2DLSN.get((long)txn);
+            int txn = (i - 1) * 10 + i;
+            DLSN dlsn = txid2DLSN.get((long) txn);
             assertTrue(Utils.ioResult(pair.getRight().truncate(dlsn)));
             verifyEntries(name, 1, (i - 1) * 10 + 1, (5 - i + 1) * 10);
         }
@@ -159,8 +164,8 @@ public class TestTruncate extends TestDistributedLogBase {
         Thread.sleep(1000);
 
         for (int i = 1; i <= 4; i++) {
-            int txn = (i-1) * 10 + i;
-            DLSN dlsn = txid2DLSN.get((long)txn);
+            int txn = (i - 1) * 10 + i;
+            DLSN dlsn = txid2DLSN.get((long) txn);
             assertTrue(Utils.ioResult(pair.getRight().truncate(dlsn)));
             verifyEntries(name, 1, (i - 1) * 10 + 1, (5 - i + 1) * 10);
         }
@@ -175,7 +180,7 @@ public class TestTruncate extends TestDistributedLogBase {
         pair.getLeft().close();
 
         // Try force truncation
-        BKDistributedLogManager dlm = (BKDistributedLogManager)createNewDLM(confLocal, name);
+        BKDistributedLogManager dlm = (BKDistributedLogManager) createNewDLM(confLocal, name);
         BKLogWriteHandler handler = dlm.createWriteHandler(true);
         Utils.ioResult(handler.purgeLogSegmentsOlderThanTxnId(Integer.MAX_VALUE));
 

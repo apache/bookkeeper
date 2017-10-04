@@ -17,14 +17,13 @@
  */
 package org.apache.distributedlog;
 
+import static com.google.common.base.Charsets.UTF_8;
+import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
-import com.google.common.collect.ImmutableList;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.data.ACL;
 
-import static com.google.common.base.Charsets.UTF_8;
 
 /**
  * Constants used in DistributedLog.

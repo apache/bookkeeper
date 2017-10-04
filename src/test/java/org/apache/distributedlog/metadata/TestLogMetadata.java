@@ -17,14 +17,19 @@
  */
 package org.apache.distributedlog.metadata;
 
-import org.apache.distributedlog.DLMTestUtil;
-import org.junit.Test;
-
-import java.net.URI;
 
 import static org.apache.distributedlog.metadata.LogMetadata.*;
 import static org.junit.Assert.*;
+import java.net.URI;
+import org.apache.distributedlog.DLMTestUtil;
+import org.junit.Test;
 
+
+
+
+/**
+ * Test Case for {@link LogMetadata}s.
+ */
 public class TestLogMetadata {
 
     @Test(timeout = 60000)

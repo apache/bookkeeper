@@ -18,7 +18,10 @@
 package org.apache.distributedlog.logsegment;
 
 import org.apache.distributedlog.common.util.Sizable;
-
+/**
+ * SizeBased Policy for rolling.
+ *
+ */
 public class SizeBasedRollingPolicy implements RollingPolicy {
 
     final long maxSize;

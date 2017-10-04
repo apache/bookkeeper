@@ -20,7 +20,7 @@ package org.apache.distributedlog.metadata;
 import java.net.URI;
 
 /**
- * Class to represent the layout and metadata of the zookeeper-based log metadata
+ * Class to represent the layout and metadata of the zookeeper-based log metadata.
  */
 public class LogMetadata {
 
@@ -70,14 +70,14 @@ public class LogMetadata {
     }
 
     public static final int LAYOUT_VERSION = -1;
-    public final static String LOGSEGMENTS_PATH = "/ledgers";
-    public final static String VERSION_PATH = "/version";
+    public static final  String LOGSEGMENTS_PATH = "/ledgers";
+    public static final  String VERSION_PATH = "/version";
     // writer znodes
-    public final static String MAX_TXID_PATH = "/maxtxid";
-    public final static String LOCK_PATH = "/lock";
-    public final static String ALLOCATION_PATH = "/allocation";
+    public static final  String MAX_TXID_PATH = "/maxtxid";
+    public static final  String LOCK_PATH = "/lock";
+    public static final  String ALLOCATION_PATH = "/allocation";
     // reader znodes
-    public final static String READ_LOCK_PATH = "/readLock";
+    public static final  String READ_LOCK_PATH = "/readLock";
 
     protected final URI uri;
     protected final String logName;
@@ -92,7 +92,7 @@ public class LogMetadata {
     protected final String allocationPath;
 
     /**
-     * metadata representation of a log
+     * metadata representation of a log.
      *
      * @param uri
      *          namespace to store the log

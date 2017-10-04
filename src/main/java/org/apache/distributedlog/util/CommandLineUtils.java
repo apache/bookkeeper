@@ -21,7 +21,7 @@ import com.google.common.base.Optional;
 import org.apache.commons.cli.CommandLine;
 
 /**
- * Utils to commandline
+ * Utils to commandline.
  */
 public class CommandLineUtils {
 
@@ -41,7 +41,8 @@ public class CommandLineUtils {
         }
     }
 
-    public static Optional<Integer> getOptionalIntegerArg(CommandLine cmdline, String arg) throws IllegalArgumentException {
+    public static Optional<Integer> getOptionalIntegerArg(CommandLine cmdline, String arg)
+            throws IllegalArgumentException {
         try {
             if (cmdline.hasOption(arg)) {
                 return Optional.of(Integer.parseInt(cmdline.getOptionValue(arg)));

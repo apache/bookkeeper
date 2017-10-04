@@ -17,7 +17,22 @@
  */
 package org.apache.distributedlog;
 
+import static com.google.common.base.Charsets.UTF_8;
+import static org.junit.Assert.*;
+import java.io.IOException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BookKeeper;
+import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.feature.SettableFeatureProvider;
+import org.apache.bookkeeper.stats.AlertStatsLogger;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.distributedlog.common.util.PermitLimiter;
 import org.apache.distributedlog.exceptions.BKTransmitException;
 import org.apache.distributedlog.exceptions.EndOfStreamException;
 import org.apache.distributedlog.exceptions.WriteCancelledException;
@@ -25,21 +40,13 @@ import org.apache.distributedlog.exceptions.WriteException;
 import org.apache.distributedlog.exceptions.ZKException;
 import org.apache.distributedlog.impl.BKNamespaceDriver;
 import org.apache.distributedlog.impl.logsegment.BKLogSegmentEntryWriter;
+import org.apache.distributedlog.impl.metadata.BKDLConfig;
 import org.apache.distributedlog.lock.SessionLockFactory;
 import org.apache.distributedlog.lock.ZKDistributedLock;
 import org.apache.distributedlog.lock.ZKSessionLockFactory;
-import org.apache.distributedlog.impl.metadata.BKDLConfig;
 import org.apache.distributedlog.util.ConfUtils;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.OrderedScheduler;
-import org.apache.distributedlog.common.util.PermitLimiter;
 import org.apache.distributedlog.util.Utils;
-import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.BookKeeper;
-import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.feature.SettableFeatureProvider;
-import org.apache.bookkeeper.stats.AlertStatsLogger;
-import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
 import org.junit.After;
@@ -48,17 +55,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
 
-import static com.google.common.base.Charsets.UTF_8;
-import static org.junit.Assert.*;
+
 
 /**
- * Test Case for BookKeeper Based Log Segment Writer
+ * Test Case for BookKeeper Based Log Segment Writer.
  */
 public class TestBKLogSegmentWriter extends TestDistributedLogBase {
 
@@ -423,7 +424,7 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
     }
 
     /**
-     * Close the writer when ledger is fenced: it should release the lock, fail on flushing data and throw exception
+     * Close the writer when ledger is fenced: it should release the lock, fail on flushing data and throw exception.
      *
      * @throws Exception
      */

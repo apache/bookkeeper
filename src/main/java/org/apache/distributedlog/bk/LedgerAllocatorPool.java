@@ -19,19 +19,34 @@ package org.apache.distributedlog.bk;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import org.apache.distributedlog.BookKeeperClient;
-import org.apache.distributedlog.DistributedLogConfiguration;
-import org.apache.distributedlog.ZooKeeperClient;
-import org.apache.distributedlog.exceptions.DLInterruptedException;
-import org.apache.distributedlog.common.concurrent.FutureEventListener;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
-import org.apache.distributedlog.util.Transaction;
-import org.apache.distributedlog.util.Utils;
+
+import java.util.concurrent.CountDownLatch;
+
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.meta.ZkVersion;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.Versioned;
+import org.apache.distributedlog.BookKeeperClient;
+import org.apache.distributedlog.DistributedLogConfiguration;
+import org.apache.distributedlog.ZooKeeperClient;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.distributedlog.exceptions.DLInterruptedException;
+
+import org.apache.distributedlog.util.Transaction;
+import org.apache.distributedlog.util.Utils;
+
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -39,21 +54,14 @@ import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
+
+/**
+ * LedgerAllocator impl.
+ */
 public class LedgerAllocatorPool implements LedgerAllocator {
 
-    static final Logger logger = LoggerFactory.getLogger(LedgerAllocatorPool.class);
+    private static final Logger logger = LoggerFactory.getLogger(LedgerAllocatorPool.class);
 
     private final DistributedLogConfiguration conf;
     private final QuorumConfigProvider quorumConfigProvider;
@@ -233,7 +241,7 @@ public class LedgerAllocatorPool implements LedgerAllocator {
     }
 
     /**
-     * Rescue a ledger allocator from an ERROR state
+     * Rescue a ledger allocator from an ERROR state.
      * @param ledgerAllocator
      *          ledger allocator to rescue
      */
@@ -280,9 +288,11 @@ public class LedgerAllocatorPool implements LedgerAllocator {
             synchronized (LedgerAllocatorPool.this) {
                 rescueMap.remove(ledgerAllocator.allocatePath);
             }
-            throw new DLInterruptedException("Interrupted on rescuing ledger allocator " + ledgerAllocator.allocatePath, ie);
+            throw new DLInterruptedException("Interrupted on rescuing ledger allocator "
+                    + ledgerAllocator.allocatePath, ie);
         } catch (IOException ioe) {
-            logger.warn("Failed to rescue ledger allocator {}, retry rescuing it later : ", ledgerAllocator.allocatePath, ioe);
+            logger.warn("Failed to rescue ledger allocator {}, retry rescuing it later : ",
+                    ledgerAllocator.allocatePath, ioe);
             synchronized (LedgerAllocatorPool.this) {
                 rescueMap.remove(ledgerAllocator.allocatePath);
             }
@@ -295,8 +305,8 @@ public class LedgerAllocatorPool implements LedgerAllocator {
         SimpleLedgerAllocator allocator;
         synchronized (this) {
             if (pendingList.isEmpty()) {
-                // if no ledger allocator available, we should fail it immediately, which the request will be redirected to other
-                // proxies
+                // if no ledger allocator available, we should fail it immediately,
+                // which the request will be redirected to other proxies
                 throw new IOException("No ledger allocator available under " + poolPath + ".");
             } else {
                 allocator = pendingList.removeFirst();

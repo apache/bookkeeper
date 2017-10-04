@@ -18,12 +18,12 @@
 package org.apache.distributedlog.lock;
 
 /**
- * Lock Action
+ * Lock Action.
  */
 interface LockAction {
 
     /**
-     * Execute a lock action
+     * Execute a lock action.
      */
     void execute();
 

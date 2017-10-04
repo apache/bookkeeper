@@ -17,30 +17,35 @@
  */
 package org.apache.distributedlog.impl;
 
+import static org.apache.distributedlog.impl.BKNamespaceDriver.getZKServersFromDLUri;
+import com.google.common.annotations.VisibleForTesting;
+
 import java.io.IOException;
 import java.net.URI;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.util.concurrent.CompletableFuture;
-import org.apache.distributedlog.DistributedLogConfiguration;
-import org.apache.distributedlog.api.MetadataAccessor;
-import org.apache.distributedlog.ZooKeeperClient;
-import org.apache.distributedlog.ZooKeeperClientBuilder;
-import org.apache.distributedlog.exceptions.AlreadyClosedException;
-import org.apache.distributedlog.exceptions.DLInterruptedException;
-import org.apache.distributedlog.impl.metadata.BKDLConfig;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
-import org.apache.distributedlog.util.Utils;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
 import org.apache.bookkeeper.zookeeper.RetryPolicy;
+import org.apache.distributedlog.DistributedLogConfiguration;
+import org.apache.distributedlog.ZooKeeperClient;
+import org.apache.distributedlog.ZooKeeperClientBuilder;
+import org.apache.distributedlog.api.MetadataAccessor;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.distributedlog.exceptions.AlreadyClosedException;
+import org.apache.distributedlog.exceptions.DLInterruptedException;
+import org.apache.distributedlog.impl.metadata.BKDLConfig;
+import org.apache.distributedlog.util.Utils;
+
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.distributedlog.impl.BKNamespaceDriver.getZKServersFromDLUri;
 
+/**
+ * access to ZKMetadata.
+ */
 public class ZKMetadataAccessor implements MetadataAccessor {
     static final Logger LOG = LoggerFactory.getLogger(ZKMetadataAccessor.class);
     protected final String name;
@@ -131,7 +136,7 @@ public class ZKMetadataAccessor implements MetadataAccessor {
     }
 
     /**
-     * Get the name of the stream managed by this log manager
+     * Get the name of the stream managed by this log manager.
      *
      * @return streamName
      */
@@ -142,7 +147,7 @@ public class ZKMetadataAccessor implements MetadataAccessor {
 
     /**
      * Creates or update the metadata stored at the node associated with the
-     * name and URI
+     * name and URI.
      * @param metadata opaque metadata to be stored for the node
      * @throws IOException
      */
@@ -184,8 +189,8 @@ public class ZKMetadataAccessor implements MetadataAccessor {
     }
 
     /**
-     * Retrieve the metadata stored at the node
-     * @return byte array containing the metadata
+     * Retrieve the metadata stored at the node.
+     * @return byte array containing the metadata.
      * @throws IOException
      */
     @Override

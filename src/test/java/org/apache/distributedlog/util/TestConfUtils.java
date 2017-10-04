@@ -17,12 +17,15 @@
  */
 package org.apache.distributedlog.util;
 
+import static org.junit.Assert.*;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.Configuration;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
 
+/**
+ * Test Case for {@link Configuration}s.
+ */
 public class TestConfUtils {
 
     @Test(timeout = 60000)

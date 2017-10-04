@@ -17,6 +17,8 @@
  */
 package org.apache.distributedlog;
 
+import com.google.common.base.Optional;
+import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -24,21 +26,20 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.logsegment.LogSegmentEntryStore;
 import org.apache.distributedlog.logsegment.LogSegmentRandomAccessEntryReader;
-import com.google.common.base.Optional;
-import com.google.common.collect.Lists;
 import org.apache.distributedlog.selector.FirstDLSNNotLessThanSelector;
 import org.apache.distributedlog.selector.FirstTxIdNotLessThanSelector;
 import org.apache.distributedlog.selector.LastRecordSelector;
 import org.apache.distributedlog.selector.LogRecordSelector;
-import org.apache.distributedlog.common.concurrent.FutureEventListener;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Utility function for readers
+ * Utility function for readers.
  */
 public class ReadUtils {
 
@@ -516,7 +517,7 @@ public class ReadUtils {
                     long lastEntryId = reader.getLastAddConfirmed();
                     if (lastEntryId < 0) {
                         // it means that the log segment is created but not written yet or an empty log segment.
-                        // it is equivalent to 'all log records whose transaction id is less than provided transactionId'
+                        //it is equivalent to 'all log records whose transaction id is less than provided transactionId'
                         Optional<LogRecordWithDLSN> nonRecord = Optional.absent();
                         promise.complete(nonRecord);
                         return;
@@ -641,7 +642,7 @@ public class ReadUtils {
     }
 
     /**
-     * Process the search results
+     * Process the search results.
      */
     static void processSearchResults(
             final String logName,

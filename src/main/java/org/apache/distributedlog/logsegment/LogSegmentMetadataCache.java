@@ -17,20 +17,21 @@
  */
 package org.apache.distributedlog.logsegment;
 
+
 import com.google.common.base.Ticker;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
 import com.google.common.cache.RemovalNotification;
+import java.util.concurrent.TimeUnit;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.LogSegmentMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.TimeUnit;
 
 /**
- * Cache the log segment metadata
+ * Cache the log segment metadata.
  */
 public class LogSegmentMetadataCache implements RemovalListener<String, LogSegmentMetadata> {
 

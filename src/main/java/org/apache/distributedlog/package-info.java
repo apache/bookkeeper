@@ -16,6 +16,6 @@
  * limitations under the License.
  */
 /**
- * Protocol & Core of DistributedLog
+ * Protocol & Core of DistributedLog.
  */
 package org.apache.distributedlog;

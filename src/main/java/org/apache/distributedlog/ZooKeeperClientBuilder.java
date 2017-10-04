@@ -17,18 +17,20 @@
  */
 package org.apache.distributedlog;
 
-import com.google.common.base.Preconditions;
-import org.apache.distributedlog.ZooKeeperClient.Credentials;
-import org.apache.distributedlog.ZooKeeperClient.DigestCredentials;
-import org.apache.distributedlog.impl.BKNamespaceDriver;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import java.net.URI;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.zookeeper.RetryPolicy;
+import org.apache.distributedlog.ZooKeeperClient.Credentials;
+import org.apache.distributedlog.ZooKeeperClient.DigestCredentials;
+import org.apache.distributedlog.impl.BKNamespaceDriver;
+
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
 
 /**
  * Builder to build zookeeper client.
@@ -72,7 +74,7 @@ public class ZooKeeperClientBuilder {
     private ZooKeeperClientBuilder() {}
 
     /**
-     * Set zookeeper client name
+     * Set zookeeper client name.
      *
      * @param name zookeeper client name
      * @return zookeeper client builder
@@ -108,7 +110,7 @@ public class ZooKeeperClientBuilder {
     }
 
     /**
-     * Set zookeeper connection timeout in milliseconds
+     * Set zookeeper connection timeout in milliseconds.
      *
      * @param connectionTimeoutMs
      *          connection timeout ms.
@@ -189,13 +191,13 @@ public class ZooKeeperClientBuilder {
     }
 
     private void validateParameters() {
-        Preconditions.checkNotNull(zkServers, "No zk servers provided.");
-        Preconditions.checkArgument(conectionTimeoutMs > 0,
+        checkNotNull(zkServers, "No zk servers provided.");
+        checkArgument(conectionTimeoutMs > 0,
                 "Invalid connection timeout : %d", conectionTimeoutMs);
-        Preconditions.checkArgument(sessionTimeoutMs > 0,
+        checkArgument(sessionTimeoutMs > 0,
                 "Invalid session timeout : %d", sessionTimeoutMs);
-        Preconditions.checkNotNull(statsLogger, "No stats logger provided.");
-        Preconditions.checkArgument(zkAclIdSet, "Zookeeper acl id not set.");
+        checkNotNull(statsLogger, "No stats logger provided.");
+        checkArgument(zkAclIdSet, "Zookeeper acl id not set.");
     }
 
     /**

@@ -17,14 +17,18 @@
  */
 package org.apache.distributedlog;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkNotNull;
 import java.io.IOException;
 import java.io.InputStream;
+
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.LogReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * AppendOnlyStreamReader.
+ */
 public class AppendOnlyStreamReader extends InputStream {
     static final Logger LOG = LoggerFactory.getLogger(AppendOnlyStreamReader.class);
 
@@ -40,7 +44,7 @@ public class AppendOnlyStreamReader extends InputStream {
         private final LogRecordWithDLSN logRecord;
 
         LogRecordWithInputStream(LogRecordWithDLSN logRecord) {
-            Preconditions.checkNotNull(logRecord);
+            checkNotNull(logRecord);
 
             LOG.debug("Got record dlsn = {}, txid = {}, len = {}",
                 new Object[] {logRecord.getDlsn(), logRecord.getTransactionId(), logRecord.getPayload().length});
@@ -65,7 +69,7 @@ public class AppendOnlyStreamReader extends InputStream {
     }
 
     /**
-     * Construct ledger input stream
+     * Construct ledger input stream.
      *
      * @param dlm the Distributed Log Manager to access the stream
      */
@@ -183,7 +187,7 @@ public class AppendOnlyStreamReader extends InputStream {
         byte[] skipBuffer = new byte[SKIP_BUFFER_SIZE];
         while (currentPosition < position) {
             long bytesToRead = Math.min(position - currentPosition, SKIP_BUFFER_SIZE);
-            long bytesRead = read(skipBuffer, 0, (int)bytesToRead);
+            long bytesRead = read(skipBuffer, 0, (int) bytesToRead);
             if (bytesRead < bytesToRead) {
                 return false;
             }

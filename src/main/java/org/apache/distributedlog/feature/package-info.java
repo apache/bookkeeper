@@ -16,6 +16,6 @@
  * limitations under the License.
  */
 /**
- * Feature & FeatureProvider for distributedlog
+ * Feature & FeatureProvider for distributedlog.
  */
 package org.apache.distributedlog.feature;

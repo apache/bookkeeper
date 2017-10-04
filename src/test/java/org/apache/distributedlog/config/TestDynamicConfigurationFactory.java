@@ -17,16 +17,14 @@
  */
 package org.apache.distributedlog.config;
 
+import static org.junit.Assert.*;
 import com.google.common.base.Objects;
 import com.google.common.base.Optional;
-
-import org.apache.distributedlog.DistributedLogConfiguration;
-
 import java.io.File;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
+import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.common.config.ConcurrentBaseConfiguration;
 import org.apache.distributedlog.common.config.ConcurrentConstConfiguration;
 import org.apache.distributedlog.common.config.PropertiesWriter;
@@ -34,8 +32,10 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
 
+/**
+ * TestDynamicConfigurationFactory.
+ */
 public class TestDynamicConfigurationFactory {
     static final Logger LOG = LoggerFactory.getLogger(TestDynamicConfigurationFactory.class);
 
@@ -62,7 +62,8 @@ public class TestDynamicConfigurationFactory {
         PropertiesWriter writer = new PropertiesWriter();
         DynamicConfigurationFactory factory = getConfigFactory(writer.getFile());
         Optional<DynamicDistributedLogConfiguration> conf = factory.getDynamicConfiguration(writer.getFile().getPath());
-        assertEquals(DistributedLogConfiguration.BKDL_RETENTION_PERIOD_IN_HOURS_DEFAULT, conf.get().getRetentionPeriodHours());
+        assertEquals(DistributedLogConfiguration.BKDL_RETENTION_PERIOD_IN_HOURS_DEFAULT,
+                conf.get().getRetentionPeriodHours());
         writer.setProperty(DistributedLogConfiguration.BKDL_RETENTION_PERIOD_IN_HOURS, "1");
         writer.save();
         waitForConfig(conf.get(), 1);

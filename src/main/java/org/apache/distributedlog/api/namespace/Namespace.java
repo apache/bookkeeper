@@ -28,8 +28,8 @@ import org.apache.distributedlog.acl.AccessControlManager;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.callback.NamespaceListener;
 import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
-import org.apache.distributedlog.exceptions.LogNotFoundException;
 import org.apache.distributedlog.exceptions.InvalidStreamNameException;
+import org.apache.distributedlog.exceptions.LogNotFoundException;
 import org.apache.distributedlog.namespace.NamespaceDriver;
 
 /**
@@ -49,20 +49,21 @@ import org.apache.distributedlog.namespace.NamespaceDriver;
  *
  * <h4>Namespace Location</h4>
  *
- * At the highest level, a <code>Namespace</code> is located by a <code>URI</code>. The location
- * URI is in string form has the syntax
+ * <p>At the highest level, a <code>Namespace</code> is located by a <code>URI</code>. The location
+ * URI is in string form has the syntax</p>
  *
  * <blockquote>
  * distributedlog[<tt><b>-</b></tt><i>provider</i>]<tt><b>:</b></tt><i>provider-specific-path</i>
  * </blockquote>
  *
- * where square brackets [...] delineate optional components and the characters <tt><b>-</b></tt> and <tt><b>:</b></tt>
- * stand for themselves.
+ * <p>where square brackets [...] delineate optional components and the characters
+ * <tt><b>-</b></tt> and <tt><b>:</b></tt>
+ * stand for themselves.</p>
  *
- * The <code>provider</code> part in the URI indicates what is the backend used for this namespace. For example:
+ * <p>The <code>provider</code> part in the URI indicates what is the backend used for this namespace. For example:
  * <i>distributedlog-bk</i> URI is storing logs in bookkeeper, while <i>distributedlog-mem</i> URI is storing logs in
  * memory. The <code>provider</code> part is optional. It would use bookkeeper backend if the <i>provider</i> part
- * is omitted.
+ * is omitted.</p>
  *
  * @see DistributedLogManager
  * @since 0.3.32

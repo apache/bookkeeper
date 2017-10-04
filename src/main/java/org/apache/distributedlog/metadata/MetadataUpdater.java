@@ -29,7 +29,7 @@ import org.apache.distributedlog.util.Transaction;
 public interface MetadataUpdater {
 
     /**
-     * Start a transaction on metadata updates
+     * Start a transaction on metadata updates.
      *
      * @return transaction
      */
@@ -60,7 +60,7 @@ public interface MetadataUpdater {
                                                     long logSegmentSeqNo);
 
     /**
-     * Change the truncation status of a <i>log segment</i> to be active
+     * Change the truncation status of a <i>log segment</i> to be active.
      *
      * @param segment
      *          log segment to change truncation status to active.
@@ -69,7 +69,7 @@ public interface MetadataUpdater {
     CompletableFuture<LogSegmentMetadata> setLogSegmentActive(LogSegmentMetadata segment);
 
     /**
-     * Change the truncation status of a <i>log segment</i> to truncated
+     * Change the truncation status of a <i>log segment</i> to truncated.
      *
      * @param segment
      *          log segment to change truncation status to truncated.
@@ -90,7 +90,7 @@ public interface MetadataUpdater {
     LogSegmentMetadata setLogSegmentTruncated(Transaction<Object> txn, LogSegmentMetadata segment);
 
     /**
-     * Change the truncation status of a <i>log segment</i> to partially truncated
+     * Change the truncation status of a <i>log segment</i> to partially truncated.
      *
      * @param segment
      *          log segment to change sequence number.

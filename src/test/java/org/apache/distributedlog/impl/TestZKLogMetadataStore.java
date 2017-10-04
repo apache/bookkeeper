@@ -17,8 +17,11 @@
  */
 package org.apache.distributedlog.impl;
 
+import static org.junit.Assert.*;
 import com.google.common.base.Optional;
 import com.google.common.collect.Sets;
+import java.net.URI;
+import java.util.Set;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.TestDistributedLogBase;
 import org.apache.distributedlog.TestZooKeeperClientBuilder;
@@ -33,17 +36,14 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 
-import java.net.URI;
-import java.util.Set;
 
-import static org.junit.Assert.*;
 
 /**
  * Test ZK based metadata store.
  */
 public class TestZKLogMetadataStore extends TestDistributedLogBase {
 
-    private final static int zkSessionTimeoutMs = 2000;
+    private static final  int zkSessionTimeoutMs = 2000;
 
     @Rule
     public TestName runtime = new TestName();

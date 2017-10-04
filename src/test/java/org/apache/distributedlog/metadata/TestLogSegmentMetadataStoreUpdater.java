@@ -17,6 +17,10 @@
  */
 package org.apache.distributedlog.metadata;
 
+import static org.junit.Assert.*;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.distributedlog.DLMTestUtil;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.DistributedLogConfiguration;
@@ -37,12 +41,11 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
 
-import static org.junit.Assert.*;
 
+/**
+ * Test update for {@link LogSegmentMetadataStore}s.
+ */
 public class TestLogSegmentMetadataStoreUpdater extends ZooKeeperClusterTestCase {
 
     static final Logger LOG = LoggerFactory.getLogger(TestLogSegmentMetadataStoreUpdater.class);
@@ -88,14 +91,16 @@ public class TestLogSegmentMetadataStoreUpdater extends ZooKeeperClusterTestCase
         Map<Long, LogSegmentMetadata> completedLogSegments = new HashMap<Long, LogSegmentMetadata>();
         // Create 5 completed log segments
         for (int i = 1; i <= 5; i++) {
-            LogSegmentMetadata segment = DLMTestUtil.completedLogSegment(ledgerPath, i, (i - 1) * 100, i * 100 - 1, 100, i, 100, 0);
-            completedLogSegments.put(((long)i), segment);
+            LogSegmentMetadata segment =
+                    DLMTestUtil.completedLogSegment(ledgerPath, i, (i - 1) * 100, i * 100 - 1, 100, i, 100, 0);
+            completedLogSegments.put(((long) i), segment);
             LOG.info("Create completed segment {} : {}", segment.getZkPath(), segment);
             segment.write(zkc);
         }
         // Create a smaller inprogress log segment
         long inprogressSeqNo = 3;
-        LogSegmentMetadata segment = DLMTestUtil.inprogressLogSegment(ledgerPath, inprogressSeqNo, 5 * 100, inprogressSeqNo);
+        LogSegmentMetadata segment =
+                DLMTestUtil.inprogressLogSegment(ledgerPath, inprogressSeqNo, 5 * 100, inprogressSeqNo);
         LOG.info("Create inprogress segment {} : {}", segment.getZkPath(), segment);
         segment.write(zkc);
 
@@ -119,9 +124,9 @@ public class TestLogSegmentMetadataStoreUpdater extends ZooKeeperClusterTestCase
 
         // check first 5 log segments
         for (int i = 1; i <= 5; i++) {
-            LogSegmentMetadata s = segmentList.get((long)i);
+            LogSegmentMetadata s = segmentList.get((long) i);
             assertNotNull(s);
-            assertEquals(completedLogSegments.get((long)i), s);
+            assertEquals(completedLogSegments.get((long) i), s);
         }
 
         // get log segment 6
@@ -138,7 +143,8 @@ public class TestLogSegmentMetadataStoreUpdater extends ZooKeeperClusterTestCase
         String ledgerPath = "/testUpdateLastDLSN";
         zkc.get().create(ledgerPath, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         // Create 1 completed log segment
-        LogSegmentMetadata completedLogSegment = DLMTestUtil.completedLogSegment(ledgerPath, 1L, 0L, 99L, 100, 1L, 99L, 0L);
+        LogSegmentMetadata completedLogSegment =
+                DLMTestUtil.completedLogSegment(ledgerPath, 1L, 0L, 99L, 100, 1L, 99L, 0L);
         completedLogSegment.write(zkc);
         // Create 1 inprogress log segment
         LogSegmentMetadata inprogressLogSegment = DLMTestUtil.inprogressLogSegment(ledgerPath, 2L, 100L, 2L);
@@ -214,7 +220,8 @@ public class TestLogSegmentMetadataStoreUpdater extends ZooKeeperClusterTestCase
         assertEquals(completedLogSegment.getCompletionTime(), readCompletedLogSegment.getCompletionTime());
         assertEquals(completedLogSegment.getFirstTxId(), readCompletedLogSegment.getFirstTxId());
         assertEquals(completedLogSegment.getLogSegmentId(), readCompletedLogSegment.getLogSegmentId());
-        assertEquals(completedLogSegment.getLogSegmentSequenceNumber(), readCompletedLogSegment.getLogSegmentSequenceNumber());
+        assertEquals(completedLogSegment.getLogSegmentSequenceNumber(),
+                readCompletedLogSegment.getLogSegmentSequenceNumber());
         assertEquals(completedLogSegment.getRegionId(), readCompletedLogSegment.getRegionId());
         assertEquals(completedLogSegment.getZkPath(), readCompletedLogSegment.getZkPath());
         assertEquals(completedLogSegment.getZNodeName(), readCompletedLogSegment.getZNodeName());
@@ -231,8 +238,9 @@ public class TestLogSegmentMetadataStoreUpdater extends ZooKeeperClusterTestCase
         Map<Long, LogSegmentMetadata> completedLogSegments = new HashMap<Long, LogSegmentMetadata>();
         // Create 5 completed log segments
         for (int i = 1; i <= 5; i++) {
-            LogSegmentMetadata segment = DLMTestUtil.completedLogSegment(ledgerPath, i, (i - 1) * 100, i * 100 - 1, 100, i, 100, 0);
-            completedLogSegments.put(((long)i), segment);
+            LogSegmentMetadata segment =
+                    DLMTestUtil.completedLogSegment(ledgerPath, i, (i - 1) * 100, i * 100 - 1, 100, i, 100, 0);
+            completedLogSegments.put(((long) i), segment);
             LOG.info("Create completed segment {} : {}", segment.getZkPath(), segment);
             segment.write(zkc);
         }

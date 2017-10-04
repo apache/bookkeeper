@@ -16,6 +16,6 @@
  * limitations under the License.
  */
 /**
- * Rate limiting for distributedlog
+ * Rate limiting for distributedlog.
  */
 package org.apache.distributedlog.limiter;

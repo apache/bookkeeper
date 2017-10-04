@@ -17,13 +17,16 @@
  */
 package org.apache.distributedlog.net;
 
-import org.junit.Test;
-
+import static org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.Test;
 
-import static org.junit.Assert.*;
 
+
+/**
+ * Test update for {@link DNSResolver}s.
+ */
 public class TestDNSResolver {
 
     private static final String host1 = "r1-w1rack1-1111-2222.distributedlog.io";

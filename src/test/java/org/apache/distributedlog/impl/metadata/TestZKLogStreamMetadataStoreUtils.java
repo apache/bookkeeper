@@ -17,22 +17,26 @@
  */
 package org.apache.distributedlog.impl.metadata;
 
+
+import static org.apache.distributedlog.impl.metadata.ZKLogStreamMetadataStore.*;
+import static org.junit.Assert.*;
 import com.google.common.collect.Lists;
+import java.net.URI;
+import java.util.List;
+import org.apache.bookkeeper.meta.ZkVersion;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.distributedlog.DLMTestUtil;
 import org.apache.distributedlog.exceptions.UnexpectedException;
 import org.apache.distributedlog.metadata.LogMetadata;
 import org.apache.distributedlog.metadata.LogMetadataForWriter;
 import org.apache.distributedlog.util.DLUtils;
-import org.apache.bookkeeper.meta.ZkVersion;
-import org.apache.bookkeeper.versioning.Versioned;
+
 import org.junit.Test;
 
-import java.net.URI;
-import java.util.List;
 
-import static org.apache.distributedlog.impl.metadata.ZKLogStreamMetadataStore.*;
-import static org.junit.Assert.*;
-
+/**
+ * TestZKLogStreamMetadataStoreUtils.
+ */
 public class TestZKLogStreamMetadataStoreUtils {
 
     @SuppressWarnings("unchecked")

@@ -17,25 +17,25 @@
  */
 package org.apache.distributedlog.feature;
 
+import static org.junit.Assert.*;
+import org.apache.bookkeeper.feature.Feature;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.common.annotations.DistributedLogAnnotations;
 import org.apache.distributedlog.common.config.PropertiesWriter;
-import org.apache.bookkeeper.feature.Feature;
-import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+
 
 /**
- * Test case for dynamic configuration based feature provider
+ * Test case for dynamic configuration based feature provider.
  */
 public class TestDynamicConfigurationFeatureProvider {
 
     /**
-     * Make sure config is reloaded
-     *
-     * Give FileChangedReloadingStrategy some time to allow reloading
+     * Make sure config is reloaded.
+     *Give FileChangedReloadingStrategy some time to allow reloading
      * Make sure now!=lastChecked
      * {@link org.apache.commons.configuration.reloading.FileChangedReloadingStrategy#reloadingRequired()}
      */
@@ -77,7 +77,7 @@ public class TestDynamicConfigurationFeatureProvider {
     }
 
     /**
-     * {@link https://issues.apache.org/jira/browse/DL-40}
+     * {@link https://issues.apache.org/jira/browse/DL-40}.
      */
     @DistributedLogAnnotations.FlakyTest
     @Ignore

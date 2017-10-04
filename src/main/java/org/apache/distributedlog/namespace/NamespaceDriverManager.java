@@ -17,21 +17,21 @@
  */
 package org.apache.distributedlog.namespace;
 
+import static com.google.common.base.Preconditions.*;
 import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
-import org.apache.distributedlog.DistributedLogConstants;
-import org.apache.distributedlog.impl.BKNamespaceDriver;
-import org.apache.bookkeeper.util.ReflectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.net.URI;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.apache.bookkeeper.util.ReflectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.distributedlog.DistributedLogConstants;
+import org.apache.distributedlog.impl.BKNamespaceDriver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.google.common.base.Preconditions.*;
+
 
 /**
  * The basic service for managing a set of namespace drivers.
@@ -111,7 +111,6 @@ public class NamespaceDriverManager {
      * Register the namespace {@code driver}.
      *
      * @param driver the namespace driver
-     * @return the namespace driver manager
      */
     public static void registerDriver(String backend, Class<? extends NamespaceDriver> driver) {
         if (!initialized) {

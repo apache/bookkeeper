@@ -17,15 +17,31 @@
  */
 package org.apache.distributedlog.impl.metadata;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.distributedlog.metadata.LogMetadata.*;
+
 import com.google.common.base.Optional;
-import com.google.common.base.Preconditions;
+
 import com.google.common.collect.Lists;
+import java.io.IOException;
+import java.net.URI;
+import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+
 import java.util.function.Function;
+import org.apache.bookkeeper.meta.ZkVersion;
+import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.DistributedLogConstants;
 import org.apache.distributedlog.ZooKeeperClient;
+
+import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.distributedlog.common.util.PermitManager;
+import org.apache.distributedlog.common.util.SchedulerUtils;
 import org.apache.distributedlog.exceptions.DLInterruptedException;
 import org.apache.distributedlog.exceptions.InvalidStreamNameException;
 import org.apache.distributedlog.exceptions.LockCancelledException;
@@ -39,22 +55,20 @@ import org.apache.distributedlog.lock.SessionLockFactory;
 import org.apache.distributedlog.lock.ZKDistributedLock;
 import org.apache.distributedlog.lock.ZKSessionLockFactory;
 import org.apache.distributedlog.logsegment.LogSegmentMetadataStore;
-import org.apache.distributedlog.metadata.LogStreamMetadataStore;
 import org.apache.distributedlog.metadata.LogMetadata;
 import org.apache.distributedlog.metadata.LogMetadataForReader;
 import org.apache.distributedlog.metadata.LogMetadataForWriter;
+import org.apache.distributedlog.metadata.LogStreamMetadataStore;
+
+
 import org.apache.distributedlog.util.DLUtils;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
-import org.apache.distributedlog.common.util.SchedulerUtils;
-import org.apache.distributedlog.zk.LimitedPermitManager;
 import org.apache.distributedlog.util.OrderedScheduler;
-import org.apache.distributedlog.common.util.PermitManager;
 import org.apache.distributedlog.util.Transaction;
 import org.apache.distributedlog.util.Utils;
+import org.apache.distributedlog.zk.LimitedPermitManager;
 import org.apache.distributedlog.zk.ZKTransaction;
-import org.apache.bookkeeper.meta.ZkVersion;
-import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.versioning.Versioned;
+
+
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -68,19 +82,15 @@ import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
-import static org.apache.distributedlog.metadata.LogMetadata.*;
+
 
 /**
- * zookeeper based {@link LogStreamMetadataStore}
+ * zookeeper based {@link LogStreamMetadataStore}.
  */
 public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
 
-    private final static Logger LOG = LoggerFactory.getLogger(ZKLogStreamMetadataStore.class);
+    private static final  Logger LOG = LoggerFactory.getLogger(ZKLogStreamMetadataStore.class);
 
     private final String clientId;
     private final DistributedLogConfiguration conf;
@@ -191,8 +201,9 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
                                 promise.completeExceptionally(new LogNotFoundException(
                                         String.format("Log %s does not exist or has been deleted", logName)));
                             } else {
-                                promise.completeExceptionally(new ZKException("Error on checking log existence for " + logName,
-                                        KeeperException.create(KeeperException.Code.get(rc))));
+                                promise.completeExceptionally(
+                                        new ZKException("Error on checking log existence for "
+                                                + logName, KeeperException.create(KeeperException.Code.get(rc))));
                             }
                         }
                     }, null);
@@ -253,11 +264,13 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
                             FutureUtils.complete(promise, null);
                             LOG.trace("Path {} is already existed.", path);
                         } else if (DistributedLogConstants.ZK_CONNECTION_EXCEPTION_RESULT_CODE == rc) {
-                            FutureUtils.completeExceptionally(promise, new ZooKeeperClient.ZooKeeperConnectionException(path));
+                            FutureUtils.completeExceptionally(promise,
+                                    new ZooKeeperClient.ZooKeeperConnectionException(path));
                         } else if (DistributedLogConstants.DL_INTERRUPTED_EXCEPTION_RESULT_CODE == rc) {
                             FutureUtils.completeExceptionally(promise, new DLInterruptedException(path));
                         } else {
-                            FutureUtils.completeExceptionally(promise, KeeperException.create(KeeperException.Code.get(rc)));
+                            FutureUtils.completeExceptionally(promise,
+                                    KeeperException.create(KeeperException.Code.get(rc)));
                         }
                     }
                 }, null);
@@ -343,8 +356,8 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
     }
 
     static void ensureMetadataExist(Versioned<byte[]> metadata) {
-        Preconditions.checkNotNull(metadata.getValue());
-        Preconditions.checkNotNull(metadata.getVersion());
+        checkNotNull(metadata.getValue());
+        checkNotNull(metadata.getVersion());
     }
 
     static void createMissingMetadata(final ZooKeeper zk,
@@ -487,7 +500,7 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
             // version
             Versioned<byte[]> versionData = metadatas.get(MetadataIndex.VERSION);
             ensureMetadataExist(maxTxnIdData);
-            Preconditions.checkArgument(LAYOUT_VERSION == bytesToInt(versionData.getValue()));
+            checkArgument(LAYOUT_VERSION == bytesToInt(versionData.getValue()));
             // lock path
             ensureMetadataExist(metadatas.get(MetadataIndex.LOCK));
             // read lock path
@@ -560,8 +573,9 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
                         }
                     });
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
-            return FutureUtils.exception(new ZKException("Encountered zookeeper connection issue on creating log " + logName,
-                    KeeperException.Code.CONNECTIONLOSS));
+            return FutureUtils.exception(
+                    new ZKException("Encountered zookeeper connection issue on creating log "
+                            + logName, KeeperException.Code.CONNECTIONLOSS));
         } catch (InterruptedException e) {
             return FutureUtils.exception(new DLInterruptedException("Interrupted on creating log " + logName, e));
         }
@@ -603,13 +617,15 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
                 }
             }, null);
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
-            FutureUtils.completeExceptionally(promise, new ZKException("Encountered zookeeper issue on deleting log stream "
-                    + logName, KeeperException.Code.CONNECTIONLOSS));
+            FutureUtils.completeExceptionally(promise,
+                    new ZKException("Encountered zookeeper issue on deleting log stream "
+                            + logName, KeeperException.Code.CONNECTIONLOSS));
         } catch (InterruptedException e) {
-            FutureUtils.completeExceptionally(promise, new DLInterruptedException("Interrupted while deleting log stream "
-                    + logName));
+            FutureUtils.completeExceptionally(promise,
+                    new DLInterruptedException("Interrupted while deleting log stream " + logName));
         } catch (KeeperException e) {
-            FutureUtils.completeExceptionally(promise, new ZKException("Encountered zookeeper issue on deleting log stream "
+            FutureUtils.completeExceptionally(promise,
+                    new ZKException("Encountered zookeeper issue on deleting log stream "
                     + logName, e));
         }
         return promise;

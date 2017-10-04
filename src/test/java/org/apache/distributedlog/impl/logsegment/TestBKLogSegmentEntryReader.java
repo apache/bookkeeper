@@ -17,15 +17,17 @@
  */
 package org.apache.distributedlog.impl.logsegment;
 
+import static org.junit.Assert.*;
 import com.google.common.collect.Lists;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import org.apache.distributedlog.api.AsyncLogWriter;
+import java.util.concurrent.TimeUnit;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.distributedlog.BookKeeperClient;
 import org.apache.distributedlog.BookKeeperClientBuilder;
 import org.apache.distributedlog.DLMTestUtil;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.DistributedLogConfiguration;
-import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.Entry;
 import org.apache.distributedlog.LogRecord;
 import org.apache.distributedlog.LogRecordWithDLSN;
@@ -33,6 +35,8 @@ import org.apache.distributedlog.LogSegmentMetadata;
 import org.apache.distributedlog.TestDistributedLogBase;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.ZooKeeperClientBuilder;
+import org.apache.distributedlog.api.AsyncLogWriter;
+import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.exceptions.EndOfLogSegmentException;
 import org.apache.distributedlog.exceptions.ReadCancelledException;
 import org.apache.distributedlog.injector.AsyncFailureInjector;
@@ -40,20 +44,17 @@ import org.apache.distributedlog.logsegment.LogSegmentEntryStore;
 import org.apache.distributedlog.util.ConfUtils;
 import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.Utils;
-import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+
 
 /**
- * Test Case for {@link BKLogSegmentEntryReader}
+ * Test Case for {@link BKLogSegmentEntryReader}.
  */
 public class TestBKLogSegmentEntryReader extends TestDistributedLogBase {
 

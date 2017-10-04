@@ -21,12 +21,12 @@ import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
 import org.apache.bookkeeper.zookeeper.RetryPolicy;
 
 /**
- * Utils for {@link org.apache.bookkeeper.zookeeper.RetryPolicy}
+ * Utils for {@link org.apache.bookkeeper.zookeeper.RetryPolicy}.
  */
 public class RetryPolicyUtils {
 
     /**
-     * Infinite retry policy
+     * Infinite retry policy.
      */
     public static final RetryPolicy DEFAULT_INFINITE_RETRY_POLICY = infiniteRetry(200, 2000);
 

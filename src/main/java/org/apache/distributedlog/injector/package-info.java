@@ -16,6 +16,6 @@
  * limitations under the License.
  */
 /**
- * DistributedLog Failure Injection
+ * DistributedLog Failure Injection.
  */
 package org.apache.distributedlog.injector;

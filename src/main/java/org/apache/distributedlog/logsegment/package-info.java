@@ -16,6 +16,6 @@
  * limitations under the License.
  */
 /**
- * Log Segment Management
+ * Log Segment Management.
  */
 package org.apache.distributedlog.logsegment;

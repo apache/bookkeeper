@@ -17,13 +17,17 @@
  */
 package org.apache.distributedlog.bk;
 
+import java.io.IOException;
+import java.util.concurrent.ScheduledExecutorService;
 import org.apache.distributedlog.BookKeeperClient;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.ZooKeeperClient;
 
-import java.io.IOException;
-import java.util.concurrent.ScheduledExecutorService;
 
+
+/**
+ * LedgerAllocator utilities.
+ */
 public class LedgerAllocatorUtils {
 
     /**

@@ -17,14 +17,15 @@
  */
 package org.apache.distributedlog.impl;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import org.apache.distributedlog.DistributedLogConstants;
 import org.apache.distributedlog.logsegment.LogSegmentFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+
 
 /**
  * Filters based on current zookeeper log segments.
@@ -57,7 +58,7 @@ public class ZKLogSegmentFilters {
                                 lastCompletedLogSegmentName = s;
                             }
                         } else if (6 == parts.length) {
-                            // name: logrecs_<start_tx_id>_<end_tx_id>_<logsegment_sequence_number>_<ledger_id>_<region_id>
+                            //name: logrecs_<start_tx_id>_<end_tx_id>_<logsegment_seq_number>_<ledger_id>_<region_id>
                             long logSegmentSequenceNumber = Long.parseLong(parts[3]);
                             if (logSegmentSequenceNumber > lastLogSegmentSequenceNumber) {
                                 lastLogSegmentSequenceNumber = logSegmentSequenceNumber;

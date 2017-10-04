@@ -47,5 +47,5 @@ public interface MetadataResolver {
      * @return dl metadata.
      * @throws IOException
      */
-    public DLMetadata resolve(URI uri) throws IOException;
+    DLMetadata resolve(URI uri) throws IOException;
 }

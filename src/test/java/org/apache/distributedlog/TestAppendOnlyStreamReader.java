@@ -17,20 +17,20 @@
  */
 package org.apache.distributedlog;
 
+import static org.junit.Assert.*;
 import java.util.Arrays;
-
 import org.apache.distributedlog.api.DistributedLogManager;
+import org.apache.distributedlog.exceptions.EndOfStreamException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-
-import org.apache.distributedlog.exceptions.EndOfStreamException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
 
+/**
+ * Test Case for {@link AppendOnlyStreamReader}.
+ */
 public class TestAppendOnlyStreamReader extends TestDistributedLogBase {
     static final Logger LOG = LoggerFactory.getLogger(TestAppendOnlyStreamReader.class);
 
@@ -94,8 +94,8 @@ public class TestAppendOnlyStreamReader extends TestDistributedLogBase {
         DistributedLogConfiguration confLocal = new DistributedLogConfiguration();
         confLocal.loadConf(conf);
         confLocal.setImmediateFlushEnabled(false);
-        confLocal.setOutputBufferSize(1024*100);
-        confLocal.setPeriodicFlushFrequencyMilliSeconds(1000*60);
+        confLocal.setOutputBufferSize(1024 * 100);
+        confLocal.setPeriodicFlushFrequencyMilliSeconds(1000 * 60);
 
         skipForwardThenSkipBack(name, confLocal);
     }

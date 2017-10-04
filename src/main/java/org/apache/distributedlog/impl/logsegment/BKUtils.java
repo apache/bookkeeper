@@ -18,17 +18,18 @@
 package org.apache.distributedlog.impl.logsegment;
 
 import com.google.common.collect.Lists;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import org.apache.distributedlog.common.functions.VoidFunctions;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.distributedlog.common.functions.VoidFunctions;
 
-import java.util.List;
+
 
 /**
- * BookKeeper Util Functions
+ * BookKeeper Util Functions.
  */
 public class BKUtils {
 

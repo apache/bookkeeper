@@ -17,19 +17,21 @@
  */
 package org.apache.distributedlog;
 
-import org.apache.distributedlog.exceptions.OverCapacityException;
-import org.apache.distributedlog.util.SimplePermitLimiter;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.SettableFeature;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.distributedlog.exceptions.OverCapacityException;
+import org.apache.distributedlog.util.SimplePermitLimiter;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
-
+/**
+ * Test Cases for {@link org.apache.distributedlog.util.SimplePermitLimiter}.
+ */
 public class TestWriteLimiter {
     static final Logger LOG = LoggerFactory.getLogger(TestWriteLimiter.class);
 
@@ -196,7 +198,8 @@ public class TestWriteLimiter {
         assertPermits(streamLimiter, 0, globalLimiter, 0);
     }
 
-    void assertPermits(SimplePermitLimiter streamLimiter, int streamPermits, SimplePermitLimiter globalLimiter, int globalPermits) {
+    void assertPermits(SimplePermitLimiter streamLimiter,
+                       int streamPermits, SimplePermitLimiter globalLimiter, int globalPermits) {
         assertEquals(streamPermits, streamLimiter.getPermits());
         assertEquals(globalPermits, globalLimiter.getPermits());
     }

@@ -17,15 +17,17 @@
  */
 package org.apache.distributedlog.limiter;
 
+
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
-import org.apache.distributedlog.exceptions.OverCapacityException;
-
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.distributedlog.exceptions.OverCapacityException;
+
+
+
 
 /**
  * Chain request limiters for easier management of multi limiter policy.
@@ -34,6 +36,9 @@ public class ChainedRequestLimiter<Request> implements RequestLimiter<Request> {
     private final ImmutableList<RequestLimiter<Request>> limiters;
     private final OpStatsLogger applyTime;
 
+    /**
+     * Builder to build ChainedRequestLimiter.
+     */
     public static class Builder<Request> {
         private final ImmutableList.Builder<RequestLimiter<Request>> limitersBuilder;
         private StatsLogger statsLogger = NullStatsLogger.INSTANCE;

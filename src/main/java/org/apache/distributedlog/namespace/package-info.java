@@ -16,6 +16,6 @@
  * limitations under the License.
  */
 /**
- * DistributedLog Namespace
+ * DistributedLog Namespace.
  */
 package org.apache.distributedlog.namespace;

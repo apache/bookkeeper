@@ -350,15 +350,16 @@
         </dependencies>
         <configuration>
           <configLocation>distributedlog/checkstyle.xml</configLocation>
-          <suppressionsLocation>distributedlog/suppressions-core.xml</suppressionsLocation>
+          <suppressionsLocation>distributedlog/suppressions.xml</suppressionsLocation>
           <consoleOutput>true</consoleOutput>
           <failOnViolation>true</failOnViolation>
           <includeResources>false</includeResources>
           <includeTestSourceDirectory>true</includeTestSourceDirectory>
+          <excludes>**/thrift/**/*</excludes>
         </configuration>
         <executions>
           <execution>
-            <phase>validate</phase>
+            <phase>test-compile</phase>
             <goals>
               <goal>check</goal>
             </goals>

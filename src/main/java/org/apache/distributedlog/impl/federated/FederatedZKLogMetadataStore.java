@@ -17,24 +17,43 @@
  */
 package org.apache.distributedlog.impl.federated;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.callback.NamespaceListener;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.exceptions.LogExistsException;
 import org.apache.distributedlog.exceptions.UnexpectedException;
 import org.apache.distributedlog.exceptions.ZKException;
 import org.apache.distributedlog.impl.ZKNamespaceWatcher;
 import org.apache.distributedlog.metadata.LogMetadataStore;
 import org.apache.distributedlog.namespace.NamespaceWatcher;
-import org.apache.distributedlog.common.concurrent.FutureEventListener;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
+
 import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.Utils;
 import org.apache.zookeeper.AsyncCallback;
@@ -49,42 +68,27 @@ import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
-import static com.google.common.base.Charsets.UTF_8;
+
 
 /**
  * A Federated ZooKeeper Based Log Metadata Store.
- *
- * To Upgrade a simple ZKLogMetadataStore to FederatedZKLogMetadataStore, following steps should be taken in sequence:
+ *To Upgrade a simple ZKLogMetadataStore to FederatedZKLogMetadataStore, following steps should be taken in sequence:
  * a) deploy the new code with disabling createStreamsIfNotExists in all writer.
  * b) once all proxies disable the flag, update namespace binding to enable federated namespace.
  * c) restart writers to take federated namespace in place.
  *
- * NOTE: current federated namespace isn't optimized for deletion/creation. so don't use it in the workloads
- *       that have lots of creations or deletions.
+ * <p>NOTE: current federated namespace isn't optimized for deletion/creation. so don't use it in the workloads
+ *       that have lots of creations or deletions.</p>
  */
 public class FederatedZKLogMetadataStore
         extends NamespaceWatcher
         implements LogMetadataStore, Watcher, Runnable, FutureEventListener<Set<URI>> {
 
-    static final Logger logger = LoggerFactory.getLogger(FederatedZKLogMetadataStore.class);
+    private static final Logger logger = LoggerFactory.getLogger(FederatedZKLogMetadataStore.class);
 
-    private final static String ZNODE_SUB_NAMESPACES = ".subnamespaces";
-    private final static String SUB_NAMESPACE_PREFIX = "NS_";
+    private static final  String ZNODE_SUB_NAMESPACES = ".subnamespaces";
+    private static final  String SUB_NAMESPACE_PREFIX = "NS_";
 
     /**
      * Create the federated namespace.
@@ -148,8 +152,8 @@ public class FederatedZKLogMetadataStore
                 for (String logName : newLogs) {
                     URI oldURI = log2Locations.putIfAbsent(logName, uri);
                     if (null != oldURI && !Objects.equal(uri, oldURI)) {
-                        logger.error("Log {} is found duplicated in multiple locations : old location = {}," +
-                                " new location = {}", new Object[] { logName, oldURI, uri });
+                        logger.error("Log {} is found duplicated in multiple locations : old location = {},"
+                                + " new location = {}", new Object[] { logName, oldURI, uri });
                         duplicatedLogFound.set(true);
                     }
                 }
@@ -241,7 +245,8 @@ public class FederatedZKLogMetadataStore
             @Override
             public void onSuccess(T value) {
                 if (duplicatedLogFound.get()) {
-                    postCheckedPromise.completeExceptionally(new UnexpectedException("Duplicate log found under " + namespace));
+                    postCheckedPromise.completeExceptionally(
+                            new UnexpectedException("Duplicate log found under " + namespace));
                 } else {
                     postCheckedPromise.complete(value);
                 }
@@ -370,8 +375,8 @@ public class FederatedZKLogMetadataStore
 
     @Override
     public void process(WatchedEvent watchedEvent) {
-        if (Event.EventType.None == watchedEvent.getType() &&
-                Event.KeeperState.Expired == watchedEvent.getState()) {
+        if (Event.EventType.None == watchedEvent.getType()
+                && Event.KeeperState.Expired == watchedEvent.getState()) {
             scheduleTask(this, conf.getZKSessionTimeoutMilliseconds());
             return;
         }
@@ -385,7 +390,7 @@ public class FederatedZKLogMetadataStore
     // Log Related Methods
     //
 
-    private <A> CompletableFuture<A> duplicatedLogException(String logName) {
+    private <T> CompletableFuture<T> duplicatedLogException(String logName) {
         return FutureUtils.exception(new UnexpectedException("Duplicated log " + logName
                 + " found in namespace " + namespace));
     }
@@ -405,7 +410,8 @@ public class FederatedZKLogMetadataStore
             @Override
             public void onSuccess(Optional<URI> uriOptional) {
                 if (uriOptional.isPresent()) {
-                    createPromise.completeExceptionally(new LogExistsException("Log " + logName + " already exists in " + uriOptional.get()));
+                    createPromise.completeExceptionally(
+                            new LogExistsException("Log " + logName + " already exists in " + uriOptional.get()));
                 } else {
                     getCachedSubNamespacesAndCreateLog(logName, createPromise);
                 }
@@ -523,7 +529,8 @@ public class FederatedZKLogMetadataStore
                                 } catch (UnexpectedException ue) {
                                     promise.completeExceptionally(ue);
                                 } catch (URISyntaxException e) {
-                                    promise.completeExceptionally(new UnexpectedException("Invalid namespace " + name + " is created."));
+                                    promise.completeExceptionally(
+                                            new UnexpectedException("Invalid namespace " + name + " is created."));
                                 }
                             } else {
                                 promise.completeExceptionally(KeeperException.create(Code.get(rc)));

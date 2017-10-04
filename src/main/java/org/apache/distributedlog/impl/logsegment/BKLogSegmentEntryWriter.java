@@ -19,9 +19,10 @@ package org.apache.distributedlog.impl.logsegment;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
-import org.apache.distributedlog.logsegment.LogSegmentEntryWriter;
 import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.distributedlog.logsegment.LogSegmentEntryWriter;
+
 
 /**
  * Ledger based log segment entry writer.

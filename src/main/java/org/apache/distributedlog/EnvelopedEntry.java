@@ -27,29 +27,28 @@ import org.apache.distributedlog.io.CompressionUtils;
 /**
  * An enveloped entry written to BookKeeper.
  *
- * Data type in brackets. Interpretation should be on the basis of data types and not individual
+ * <p>Data type in brackets. Interpretation should be on the basis of data types and not individual
  * bytes to honor Endianness.
  *
- * Entry Structure:
+ * <p>Entry Structure:
  * ---------------
  * Bytes 0                                  : Version (Byte)
  * Bytes 1 - (DATA = 1+Header.length-1)     : Header (Integer)
  * Bytes DATA - DATA+3                      : Payload Length (Integer)
  * BYTES DATA+4 - DATA+4+payload.length-1   : Payload (Byte[])
  *
- * V1 Header Structure: // Offsets relative to the start of the header.
+ *  <p>V1 Header Structure: // Offsets relative to the start of the header.
  * -------------------
  * Bytes 0 - 3                              : Flags (Integer)
  * Bytes 4 - 7                              : Original payload size before compression (Integer)
  *
- *      Flags: // 32 Bits
+ * <p>Flags: // 32 Bits
  *      -----
  *      0 ... 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
  *                                      |_|
  *                                       |
  *                               Compression Type
- *
- *      Compression Type: // 2 Bits (Least significant)
+ *Compression Type: // 2 Bits (Least significant)
  *      ----------------
  *      00      : No Compression
  *      01      : LZ4 Compression
@@ -76,8 +75,7 @@ class EnvelopedEntry {
     /**
      * Return an {@link ByteBuf} that reads from the provided {@link ByteBuf}, decompresses the data
      * and returns a new InputStream wrapping the underlying payload.
-     *
-     * Note that src is modified by this call.
+     *Note that src is modified by this call.
      *
      * @return
      *      New Input stream with the underlying payload.

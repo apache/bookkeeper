@@ -44,6 +44,7 @@ class BKTransmitPacket {
 
     /**
      * Complete the transmit with result code <code>transmitRc</code>.
+     *
      * <p>It would notify all the waiters that are waiting via {@link #awaitTransmitComplete(long, TimeUnit)}
      * or {@link #addTransmitCompleteListener(FutureEventListener)}.
      *
@@ -56,6 +57,7 @@ class BKTransmitPacket {
 
     /**
      * Register a transmit complete listener.
+     *
      * <p>The listener will be triggered with transmit result when transmit completes.
      * The method should be non-blocking.
      *
@@ -68,7 +70,7 @@ class BKTransmitPacket {
     }
 
     /**
-     * Await for the transmit to be complete
+     * Await for the transmit to be complete.
      *
      * @param timeout
      *          wait timeout

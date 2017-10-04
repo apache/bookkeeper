@@ -17,10 +17,14 @@
  */
 package org.apache.distributedlog.limiter;
 
+import static org.junit.Assert.*;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
 
+
+/**
+ * TestRequestLimiter.
+ */
 public class TestRequestLimiter {
 
     class MockRequest {

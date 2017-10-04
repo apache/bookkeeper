@@ -17,13 +17,15 @@
  */
 package org.apache.distributedlog.acl;
 
+import static com.google.common.base.Charsets.UTF_8;
+import static org.junit.Assert.*;
 import java.net.URI;
 import org.apache.distributedlog.TestZooKeeperClientBuilder;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.ZooKeeperClusterTestCase;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.impl.acl.ZKAccessControl;
 import org.apache.distributedlog.thrift.AccessControlEntry;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.Utils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -31,9 +33,12 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static com.google.common.base.Charsets.UTF_8;
-import static org.junit.Assert.*;
 
+
+
+/**
+ * TestZKAccessControl.
+ */
 public class TestZKAccessControl extends ZooKeeperClusterTestCase {
 
     private ZooKeeperClient zkc;

@@ -19,14 +19,14 @@ package org.apache.distributedlog;
 
 interface AsyncNotification {
     /**
-     * Triggered when the background activity encounters an exception
+     * Triggered when the background activity encounters an exception.
      *
      * @param reason the exception that encountered.
      */
     void notifyOnError(Throwable reason);
 
     /**
-     *  Triggered when the background activity completes an operation
+     *  Triggered when the background activity completes an operation.
      */
     void notifyOnOperationComplete();
 }

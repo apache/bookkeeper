@@ -18,7 +18,7 @@
 package org.apache.distributedlog.injector;
 
 /**
- * Failure Injector that works in asynchronous way
+ * Failure Injector that works in asynchronous way.
  */
 public interface AsyncFailureInjector {
 

@@ -24,16 +24,19 @@ import org.apache.distributedlog.exceptions.OwnershipAcquireFailedException;
 
 /**
  * One time lock.
- * <p>The lock is only alive during a given period. It should
+ *
+ *  <p>The lock is only alive during a given period. It should
  * be not usable if the lock is expired.
- * <p>Listener could be registered by {@link #setLockListener(LockListener)}
+ *
+ *  <p>Listener could be registered by {@link #setLockListener(LockListener)}
  * to receive state changes of the lock.
  */
 public interface SessionLock {
 
     /**
      * Set lock listener for lock state changes.
-     * <p>Typically a listener should be set before try locking.
+     *
+     *  <p>Typically a listener should be set before try locking.
      *
      * @param lockListener
      *          lock listener for state changes.
@@ -49,7 +52,8 @@ public interface SessionLock {
 
     /**
      * Whether the lock is expired or not?
-     * <p>If a lock is expired, it will not be reusable any more. Because it is an one-time lock.
+     *
+     *  <p>If a lock is expired, it will not be reusable any more. Because it is an one-time lock.
      *
      * @return true if the lock is expired, otherwise false.
      */
@@ -57,19 +61,19 @@ public interface SessionLock {
 
     /**
      * Acquire the lock if it is free within given waiting time.
-     * <p>
-     * Calling this method will attempt to acquire the lock. If the lock
+     *
+     *  <p>Calling this method will attempt to acquire the lock. If the lock
      * is already acquired by others, the caller will wait for <i>timeout</i>
      * period. If the caller could claim the lock within <i>timeout</i> period,
      * the caller acquire the lock. Otherwise, it would fail with {@link OwnershipAcquireFailedException}.
-     * <p>
-     * {@link #unlock()} should be called to unlock a claimed lock. The caller
+     *
+     *  <p>{@link #unlock()} should be called to unlock a claimed lock. The caller
      * doesn't need to unlock to clean up resources if <i>tryLock</i> fails.
-     * <p>
-     * <i>tryLock</i> here is effectively the combination of following asynchronous calls.
+     *
+     *  <p><i>tryLock</i> here is effectively the combination of following asynchronous calls.
      * <pre>
      *     ZKDistributedLock lock = ...;
-     *     CompletableFuture<LockWaiter> attemptFuture = lock.asyncTryLock(...);
+     *     CompletableFuture&lt;LockWaiter&gt; attemptFuture = lock.asyncTryLock(...);
      *
      *     boolean acquired = waiter.waitForAcquireQuietly();
      *     if (acquired) {
@@ -91,8 +95,8 @@ public interface SessionLock {
 
     /**
      * Acquire the lock in asynchronous way.
-     * <p>
-     * Calling this method will attempt to place a lock waiter to acquire this lock.
+     *
+     *  <p>Calling this method will attempt to place a lock waiter to acquire this lock.
      * The future returned by this method represents the result of this attempt. It doesn't mean
      * the caller acquired the lock or not. The application should check {@link LockWaiter#getAcquireFuture()}
      * to see if it acquired the lock or not.

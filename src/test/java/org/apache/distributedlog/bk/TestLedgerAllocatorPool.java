@@ -17,25 +17,9 @@
  */
 package org.apache.distributedlog.bk;
 
+import static org.junit.Assert.*;
+
 import com.google.common.collect.Lists;
-import org.apache.distributedlog.BookKeeperClient;
-import org.apache.distributedlog.BookKeeperClientBuilder;
-import org.apache.distributedlog.DistributedLogConfiguration;
-import org.apache.distributedlog.TestDistributedLogBase;
-import org.apache.distributedlog.TestZooKeeperClientBuilder;
-import org.apache.distributedlog.ZooKeeperClient;
-import org.apache.distributedlog.util.Transaction.OpListener;
-import org.apache.distributedlog.util.Utils;
-import org.apache.distributedlog.zk.ZKTransaction;
-import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.zookeeper.data.Stat;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TestName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
@@ -47,9 +31,31 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.distributedlog.BookKeeperClient;
+import org.apache.distributedlog.BookKeeperClientBuilder;
+import org.apache.distributedlog.DistributedLogConfiguration;
+import org.apache.distributedlog.TestDistributedLogBase;
+import org.apache.distributedlog.TestZooKeeperClientBuilder;
+import org.apache.distributedlog.ZooKeeperClient;
+import org.apache.distributedlog.util.Transaction.OpListener;
+import org.apache.distributedlog.util.Utils;
+import org.apache.distributedlog.zk.ZKTransaction;
+import org.apache.zookeeper.data.Stat;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestName;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
 
+
+
+/**
+ * TestLedgerAllocatorPool.
+ */
 public class TestLedgerAllocatorPool extends TestDistributedLogBase {
 
     private static final Logger logger = LoggerFactory.getLogger(TestLedgerAllocatorPool.class);

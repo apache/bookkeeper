@@ -20,13 +20,13 @@ package org.apache.distributedlog.metadata;
 import java.io.IOException;
 
 /**
- * Specific config of a given implementation of DL
+ * Specific config of a given implementation of DL.
  */
 public interface DLConfig {
     /**
      * Serialize the dl config into a string.
      */
-    public String serialize();
+    String serialize();
 
     /**
      * Deserialize the dl config from a readable stream.
@@ -35,5 +35,5 @@ public interface DLConfig {
      *          bytes to desrialize dl config.
      * @throws IOException if fail to deserialize the dl config string representation.
      */
-    public void deserialize(byte[] data) throws IOException;
+    void deserialize(byte[] data) throws IOException;
 }

@@ -18,7 +18,7 @@
 package org.apache.distributedlog.bk;
 
 /**
- * Provider to provide quorum config
+ * Provider to provide quorum config.
  */
 public interface QuorumConfigProvider {
 

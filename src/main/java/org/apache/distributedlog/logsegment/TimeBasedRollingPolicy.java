@@ -21,10 +21,13 @@ import org.apache.distributedlog.common.util.Sizable;
 import org.apache.distributedlog.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+/**
+ * TimeBased Policy for rolling.
+ *
+ */
 public class TimeBasedRollingPolicy implements RollingPolicy {
 
-    final static Logger LOG = LoggerFactory.getLogger(TimeBasedRollingPolicy.class);
+    static final  Logger LOG = LoggerFactory.getLogger(TimeBasedRollingPolicy.class);
 
     final long rollingIntervalMs;
 

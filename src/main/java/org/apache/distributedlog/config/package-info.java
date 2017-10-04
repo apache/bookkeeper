@@ -16,6 +16,6 @@
  * limitations under the License.
  */
 /**
- * DistributedLog Configuration
+ * DistributedLog Configuration.
  */
 package org.apache.distributedlog.config;

@@ -17,6 +17,12 @@
  */
 package org.apache.distributedlog;
 
+
+import static com.google.common.base.Charsets.UTF_8;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import java.io.IOException;
 import org.apache.distributedlog.LogSegmentMetadata.LogSegmentMetadataBuilder;
 import org.apache.distributedlog.LogSegmentMetadata.LogSegmentMetadataVersion;
 import org.apache.distributedlog.LogSegmentMetadata.TruncationStatus;
@@ -28,15 +34,10 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 
-import static com.google.common.base.Charsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
- * Test {@link LogSegmentMetadata}
+ * Test {@link LogSegmentMetadata}.
  */
 public class TestLogSegmentMetadata extends ZooKeeperClusterTestCase {
 

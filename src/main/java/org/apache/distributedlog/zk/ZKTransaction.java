@@ -30,7 +30,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.OpResult;
 
 /**
- * ZooKeeper Transaction
+ * ZooKeeper Transaction.
  */
 public class ZKTransaction implements Transaction<Object>, AsyncCallback.MultiCallback {
 

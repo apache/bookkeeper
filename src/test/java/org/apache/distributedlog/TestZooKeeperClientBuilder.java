@@ -17,8 +17,8 @@
  */
 package org.apache.distributedlog;
 
-import org.apache.distributedlog.util.RetryPolicyUtils;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.distributedlog.util.RetryPolicyUtils;
 
 /**
  * The zookeeper client builder used for testing.

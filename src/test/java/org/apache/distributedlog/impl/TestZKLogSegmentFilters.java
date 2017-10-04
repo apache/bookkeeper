@@ -17,22 +17,27 @@
  */
 package org.apache.distributedlog.impl;
 
+import static org.apache.distributedlog.impl.ZKLogSegmentFilters.*;
+import static org.junit.Assert.*;
 import com.google.common.collect.Sets;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.apache.distributedlog.DLMTestUtil;
 import org.apache.distributedlog.DistributedLogConstants;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
-import static org.apache.distributedlog.impl.ZKLogSegmentFilters.*;
-import static org.junit.Assert.*;
 
+
+
+/**
+ * TestZKLogSegmentFilters.
+ */
 public class TestZKLogSegmentFilters {
 
     static final Logger LOG = LoggerFactory.getLogger(TestZKLogSegmentFilters.class);

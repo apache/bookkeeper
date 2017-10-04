@@ -17,7 +17,15 @@
  */
 package org.apache.distributedlog;
 
+import static org.junit.Assert.*;
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.distributedlog.api.AsyncLogReader;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.common.concurrent.FutureEventListener;
@@ -25,15 +33,7 @@ import org.apache.distributedlog.util.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.*;
 
 /**
  * A Reader wraps reading next logic for testing.

@@ -18,16 +18,16 @@
 package org.apache.distributedlog.logsegment;
 
 import com.google.common.annotations.Beta;
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.LogSegmentMetadata;
 import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
 import org.apache.distributedlog.metadata.LogMetadataForWriter;
 import org.apache.distributedlog.util.Allocator;
 
-import java.io.IOException;
 
 /**
- * Log Segment Store to read log segments
+ * Log Segment Store to read log segments.
  */
 @Beta
 public interface LogSegmentEntryStore {

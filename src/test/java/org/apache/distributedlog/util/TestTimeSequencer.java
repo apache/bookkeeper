@@ -17,9 +17,13 @@
  */
 package org.apache.distributedlog.util;
 
-import org.junit.Test;
 import static org.junit.Assert.*;
+import org.junit.Test;
 
+
+/**
+ * Test Case for {@link TimeSequencer}.
+ */
 public class TestTimeSequencer {
 
     @Test(timeout = 60000)

@@ -20,24 +20,26 @@ package org.apache.distributedlog;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
 import com.google.common.base.Ticker;
-import java.util.concurrent.CompletableFuture;
-import org.apache.distributedlog.api.AsyncLogReader;
-import org.apache.distributedlog.api.LogReader;
-import org.apache.distributedlog.exceptions.EndOfStreamException;
-import org.apache.distributedlog.exceptions.IdleReaderException;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
-import org.apache.distributedlog.util.Utils;
-import org.apache.bookkeeper.stats.Counter;
-import org.apache.bookkeeper.stats.StatsLogger;
-
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.distributedlog.api.AsyncLogReader;
+import org.apache.distributedlog.api.LogReader;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.distributedlog.exceptions.EndOfStreamException;
+import org.apache.distributedlog.exceptions.IdleReaderException;
+import org.apache.distributedlog.util.Utils;
+
+
+
 
 /**
- * Synchronous Log Reader based on {@link AsyncLogReader}
+ * Synchronous Log Reader based on {@link AsyncLogReader}.
  */
 class BKSyncLogReader implements LogReader, AsyncNotification {
 
@@ -171,8 +173,8 @@ class BKSyncLogReader implements LogReader, AsyncNotification {
         LogRecordWithDLSN record = doReadNext(nonBlocking);
         // no record is returned, check if the reader becomes idle
         if (null == record && shouldCheckIdleReader) {
-            if (readAheadReader.getNumCachedEntries() <= 0 &&
-                    readAheadReader.isReaderIdle(idleErrorThresholdMillis, TimeUnit.MILLISECONDS)) {
+            if (readAheadReader.getNumCachedEntries() <= 0
+                    && readAheadReader.isReaderIdle(idleErrorThresholdMillis, TimeUnit.MILLISECONDS)) {
                 markReaderAsIdle();
             }
         }

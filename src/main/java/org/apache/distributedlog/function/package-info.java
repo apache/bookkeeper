@@ -16,6 +16,6 @@
  * limitations under the License.
  */
 /**
- * Common Functions for DistributedLog
+ * Common Functions for DistributedLog.
  */
 package org.apache.distributedlog.function;

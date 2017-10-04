@@ -17,12 +17,12 @@
  */
 package org.apache.distributedlog.metadata;
 
+import java.net.URI;
 import org.apache.bookkeeper.versioning.Versioned;
 
-import java.net.URI;
 
 /**
- * Log Metadata for writer
+ * Log Metadata for writer.
  */
 public class LogMetadataForWriter extends LogMetadata {
 
@@ -31,7 +31,7 @@ public class LogMetadataForWriter extends LogMetadata {
     private final Versioned<byte[]> allocationData;
 
     /**
-     * metadata representation of a log
+     * metadata representation of a log.
      *
      * @param uri           namespace to store the log
      * @param logName       name of the log

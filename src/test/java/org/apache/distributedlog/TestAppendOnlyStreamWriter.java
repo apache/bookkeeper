@@ -17,6 +17,8 @@
  */
 package org.apache.distributedlog;
 
+import static org.junit.Assert.*;
+
 import java.io.ByteArrayInputStream;
 import java.net.URI;
 
@@ -24,20 +26,21 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.exceptions.BKTransmitException;
+import org.apache.distributedlog.exceptions.EndOfStreamException;
+import org.apache.distributedlog.exceptions.WriteException;
+import org.apache.distributedlog.util.FailpointUtils;
 import org.apache.distributedlog.util.Utils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-
-import org.apache.distributedlog.exceptions.EndOfStreamException;
-import org.apache.distributedlog.exceptions.WriteException;
-import org.apache.distributedlog.util.FailpointUtils;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
 
+
+/**
+ * Test Case for {@link AppendOnlyStreamWriter}.
+ */
 public class TestAppendOnlyStreamWriter extends TestDistributedLogBase {
     static final Logger LOG = LoggerFactory.getLogger(TestAppendOnlyStreamWriter.class);
 
@@ -113,7 +116,7 @@ public class TestAppendOnlyStreamWriter extends TestDistributedLogBase {
     public void testPositionUpdatesOnlyAfterWriteCompletion() throws Exception {
         String name = testNames.getMethodName();
         DistributedLogConfiguration conf = new DistributedLogConfiguration();
-        conf.setPeriodicFlushFrequencyMilliSeconds(10*1000);
+        conf.setPeriodicFlushFrequencyMilliSeconds(10 * 1000);
         conf.setImmediateFlushEnabled(false);
 
         DistributedLogManager dlmwriter = createNewDLM(conf, name);
@@ -154,9 +157,9 @@ public class TestAppendOnlyStreamWriter extends TestDistributedLogBase {
         DistributedLogConfiguration conf = new DistributedLogConfiguration();
 
         // Long flush time, but we don't wait for it.
-        conf.setPeriodicFlushFrequencyMilliSeconds(100*1000);
+        conf.setPeriodicFlushFrequencyMilliSeconds(100 * 1000);
         conf.setImmediateFlushEnabled(false);
-        conf.setOutputBufferSize(1024*1024);
+        conf.setOutputBufferSize(1024 * 1024);
 
         DistributedLogManager dlmwriter = createNewDLM(conf, name);
         byte[] byteStream = DLMTestUtil.repeatString("abc", 11).getBytes();
@@ -178,9 +181,9 @@ public class TestAppendOnlyStreamWriter extends TestDistributedLogBase {
     public void testPositionUpdatesOnlyAfterWriteCompletionWithoutFsync() throws Exception {
         String name = testNames.getMethodName();
         DistributedLogConfiguration conf = new DistributedLogConfiguration();
-        conf.setPeriodicFlushFrequencyMilliSeconds(1*1000);
+        conf.setPeriodicFlushFrequencyMilliSeconds(1 * 1000);
         conf.setImmediateFlushEnabled(false);
-        conf.setOutputBufferSize(1024*1024);
+        conf.setOutputBufferSize(1024 * 1024);
 
         DistributedLogManager dlmwriter = createNewDLM(conf, name);
         byte[] byteStream = DLMTestUtil.repeatString("abc", 11).getBytes();
@@ -221,14 +224,14 @@ public class TestAppendOnlyStreamWriter extends TestDistributedLogBase {
         String name = testNames.getMethodName();
         DistributedLogConfiguration conf = new DistributedLogConfiguration();
         conf.setImmediateFlushEnabled(false);
-        conf.setPeriodicFlushFrequencyMilliSeconds(60*1000);
-        conf.setOutputBufferSize(1024*1024);
+        conf.setPeriodicFlushFrequencyMilliSeconds(60 * 1000);
+        conf.setOutputBufferSize(1024 * 1024);
         conf.setLogSegmentSequenceNumberValidationEnabled(false);
 
-        final int WRITE_LEN = 5;
-        final int SECTION_WRITES = 10;
-        long read = writeRecordsAndReadThemBackAfterInjectingAFailedTransmit(conf, name, WRITE_LEN, SECTION_WRITES);
-        assertEquals((2*SECTION_WRITES + 1)*WRITE_LEN, read);
+        final int writeLen = 5;
+        final int sectionWrites = 10;
+        long read = writeRecordsAndReadThemBackAfterInjectingAFailedTransmit(conf, name, writeLen, sectionWrites);
+        assertEquals((2 * sectionWrites + 1) * writeLen, read);
     }
 
     @Test(timeout = 60000)
@@ -236,18 +239,17 @@ public class TestAppendOnlyStreamWriter extends TestDistributedLogBase {
         String name = testNames.getMethodName();
         DistributedLogConfiguration conf = new DistributedLogConfiguration();
         conf.setImmediateFlushEnabled(false);
-        conf.setPeriodicFlushFrequencyMilliSeconds(60*1000);
-        conf.setOutputBufferSize(1024*1024);
+        conf.setPeriodicFlushFrequencyMilliSeconds(60 * 1000);
+        conf.setOutputBufferSize(1024 * 1024);
         conf.setDisableRollingOnLogSegmentError(true);
 
-        final int WRITE_LEN = 5;
-        final int SECTION_WRITES = 10;
+        final int writeLen = 5;
+        final int sectionWrites = 10;
 
         try {
-            writeRecordsAndReadThemBackAfterInjectingAFailedTransmit(conf, name, WRITE_LEN, SECTION_WRITES);
+            writeRecordsAndReadThemBackAfterInjectingAFailedTransmit(conf, name, writeLen, sectionWrites);
             fail("should have thrown");
         } catch (BKTransmitException ex) {
-            ;
         }
 
         BKDistributedLogManager dlm = (BKDistributedLogManager) createNewDLM(conf, name);
@@ -278,8 +280,8 @@ public class TestAppendOnlyStreamWriter extends TestDistributedLogBase {
         }
         writer.force(false);
 
-        long read = read(dlm, 1*sectionWrites*writeLen);
-        assertEquals(1*sectionWrites*writeLen, read);
+        long read = read(dlm, 1 * sectionWrites * writeLen);
+        assertEquals(1 * sectionWrites * writeLen, read);
 
         // Now write another 100, but trigger failure during transmit.
         for (int i = 0; i < sectionWrites; i++) {
@@ -294,7 +296,6 @@ public class TestAppendOnlyStreamWriter extends TestDistributedLogBase {
             writer.force(false);
             fail("should have thown ⊙﹏⊙");
         } catch (WriteException we) {
-            ;
         } finally {
             FailpointUtils.removeFailpoint(
                 FailpointUtils.FailPointName.FP_TransmitFailGetBuffer);
@@ -313,7 +314,7 @@ public class TestAppendOnlyStreamWriter extends TestDistributedLogBase {
         writer.close();
 
         long length = dlm.getLastTxId();
-        assertEquals(3*sectionWrites*writeLen+5, length);
+        assertEquals(3 * sectionWrites * writeLen + 5, length);
         read = read(dlm, length);
         dlm.close();
         return read;

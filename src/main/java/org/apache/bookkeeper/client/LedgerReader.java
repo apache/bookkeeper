@@ -105,6 +105,7 @@ public class LedgerReader {
                     } catch (BKException.BKDigestMatchException e) {
                         rr = new ReadResult<>(
                             eid, BKException.Code.DigestMatchException, null, bookieAddress.getSocketAddress());
+
                     } finally {
                         buffer.release();
                     }
@@ -158,6 +159,7 @@ public class LedgerReader {
                 callback.operationComplete(rc, resultList);
                 return;
             }
+
 
             if (LedgerHandle.INVALID_ENTRY_ID >= recoveryData.lastAddConfirmed) {
                 callback.operationComplete(BKException.Code.OK, resultList);

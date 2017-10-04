@@ -17,12 +17,12 @@
  */
 package org.apache.distributedlog;
 
+import static org.junit.Assert.*;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
 
 /**
- * Test Case for {@link EntryPosition}
+ * Test Case for {@link EntryPosition}.
  */
 public class TestEntryPosition {
 

@@ -17,13 +17,16 @@
  */
 package org.apache.distributedlog.util;
 
+import static com.google.common.base.Charsets.UTF_8;
+import static org.junit.Assert.*;
 import com.google.common.base.Optional;
+import java.util.concurrent.CountDownLatch;
+import org.apache.bookkeeper.meta.ZkVersion;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.distributedlog.DLMTestUtil;
 import org.apache.distributedlog.TestZooKeeperClientBuilder;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.ZooKeeperClusterTestCase;
-import org.apache.bookkeeper.meta.ZkVersion;
-import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
@@ -31,17 +34,15 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.concurrent.CountDownLatch;
 
-import static com.google.common.base.Charsets.UTF_8;
-import static org.junit.Assert.*;
+
 
 /**
- * Test Utils
+ * Test Utils.
  */
 public class TestUtils extends ZooKeeperClusterTestCase {
 
-    private final static int sessionTimeoutMs = 30000;
+    private static final  int sessionTimeoutMs = 30000;
 
     private ZooKeeperClient zkc;
 

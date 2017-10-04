@@ -17,7 +17,7 @@
  */
 package org.apache.distributedlog.limiter;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkNotNull;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.distributedlog.exceptions.OverCapacityException;
@@ -25,31 +25,37 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Collect rate limiter implementation, cost(Request), overlimit, etc. behavior.
+ * Collect rate limiter implementation, cost(RequestT), overlimit, etc. behavior.
  */
-public class ComposableRequestLimiter<Request> implements RequestLimiter<Request> {
+public class ComposableRequestLimiter<RequestT> implements RequestLimiter<RequestT> {
     protected static final Logger LOG = LoggerFactory.getLogger(ComposableRequestLimiter.class);
 
     private final RateLimiter limiter;
-    private final OverlimitFunction<Request> overlimitFunction;
-    private final CostFunction<Request> costFunction;
+    private final OverlimitFunction<RequestT> overlimitFunction;
+    private final CostFunction<RequestT> costFunction;
     private final Counter overlimitCounter;
 
-    static public interface OverlimitFunction<Request> {
-        void apply(Request request) throws OverCapacityException;
+    /**
+     * OverlimitFunction.
+     */
+    public interface OverlimitFunction<RequestT> {
+        void apply(RequestT request) throws OverCapacityException;
     }
-    static public interface CostFunction<Request> {
-        int apply(Request request);
+    /**
+     * CostFunction.
+     */
+    public interface CostFunction<RequestT> {
+        int apply(RequestT request);
     }
 
     public ComposableRequestLimiter(
             RateLimiter limiter,
-            OverlimitFunction<Request> overlimitFunction,
-            CostFunction<Request> costFunction,
+            OverlimitFunction<RequestT> overlimitFunction,
+            CostFunction<RequestT> costFunction,
             StatsLogger statsLogger) {
-        Preconditions.checkNotNull(limiter);
-        Preconditions.checkNotNull(overlimitFunction);
-        Preconditions.checkNotNull(costFunction);
+        checkNotNull(limiter);
+        checkNotNull(overlimitFunction);
+        checkNotNull(costFunction);
         this.limiter = limiter;
         this.overlimitFunction = overlimitFunction;
         this.costFunction = costFunction;
@@ -57,7 +63,7 @@ public class ComposableRequestLimiter<Request> implements RequestLimiter<Request
     }
 
     @Override
-    public void apply(Request request) throws OverCapacityException {
+    public void apply(RequestT request) throws OverCapacityException {
         int permits = costFunction.apply(request);
         if (!limiter.acquire(permits)) {
             overlimitCounter.inc();

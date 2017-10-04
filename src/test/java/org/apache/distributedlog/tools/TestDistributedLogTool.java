@@ -17,36 +17,51 @@
  */
 package org.apache.distributedlog.tools;
 
+import static org.junit.Assert.*;
 import java.net.URI;
 
+import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
+import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.distributedlog.DLMTestUtil;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.DistributedLogConfiguration;
-import org.apache.distributedlog.api.DistributedLogManager;
-import org.apache.distributedlog.TestDistributedLogBase;
 import org.apache.distributedlog.LocalDLMEmulator;
 import org.apache.distributedlog.LogRecordWithDLSN;
+import org.apache.distributedlog.TestDistributedLogBase;
+import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.LogReader;
 import org.apache.distributedlog.exceptions.ZKException;
-import org.apache.distributedlog.tools.DistributedLogTool.*;
-import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
-import org.apache.bookkeeper.util.ReflectionUtils;
+import org.apache.distributedlog.tools.DistributedLogTool.CreateCommand;
+import org.apache.distributedlog.tools.DistributedLogTool.DeleteAllocatorPoolCommand;
+import org.apache.distributedlog.tools.DistributedLogTool.DeleteCommand;
+import org.apache.distributedlog.tools.DistributedLogTool.DumpCommand;
+import org.apache.distributedlog.tools.DistributedLogTool.InspectCommand;
+import org.apache.distributedlog.tools.DistributedLogTool.ListCommand;
+import org.apache.distributedlog.tools.DistributedLogTool.ReadEntriesCommand;
+import org.apache.distributedlog.tools.DistributedLogTool.ReadLastConfirmedCommand;
+import org.apache.distributedlog.tools.DistributedLogTool.ShowCommand;
+import org.apache.distributedlog.tools.DistributedLogTool.TruncateCommand;
+import org.apache.distributedlog.tools.DistributedLogTool.TruncateStreamCommand;
+
+
 import org.apache.zookeeper.KeeperException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
 
+/**
+ * Test Case for {@link DistributedLogTool}s.
+ */
 public class TestDistributedLogTool extends TestDistributedLogBase {
 
     static final Logger LOG = LoggerFactory.getLogger(TestDistributedLogTool.class);
 
-    static final String defaultLedgerPath = LocalDLMEmulator.getBkLedgerPath();
-    static final String defaultPath = "/test/namespace";
-    static final String defaultHost = "127.0.0.1";
-    static final String defaultPrivilegedZkAclId = "NathanielP";
+    private static final String defaultLedgerPath = LocalDLMEmulator.getBkLedgerPath();
+    private static final String defaultPath = "/test/namespace";
+    private static final String defaultHost = "127.0.0.1";
+    private static final String defaultPrivilegedZkAclId = "NathanielP";
     static URI defaultUri = null;
 
     static final String ADMIN_TOOL = org.apache.distributedlog.admin.DistributedLogAdmin.class.getName();
@@ -157,7 +172,6 @@ public class TestDistributedLogTool extends TestDistributedLogBase {
         cmd.setStreamName("DefaultStream");
         assertEquals(0, cmd.runCmd());
     }
-
     @Test(timeout = 60000)
     public void testToolTruncate() throws Exception {
         DistributedLogManager dlm = DLMTestUtil.createNewDLM("TruncateStream", conf, defaultUri);
@@ -212,7 +226,7 @@ public class TestDistributedLogTool extends TestDistributedLogBase {
         DistributedLogManager dlm = DLMTestUtil.createNewDLM("testToolTruncateStream", confLocal, defaultUri);
         DLMTestUtil.generateCompletedLogSegments(dlm, confLocal, 3, 1000);
 
-        DLSN dlsn = new DLSN(2,1,0);
+        DLSN dlsn = new DLSN(2, 1, 0);
         TruncateStreamCommand cmd = new TruncateStreamCommand();
         cmd.setDlsn(dlsn);
         cmd.setUri(defaultUri);

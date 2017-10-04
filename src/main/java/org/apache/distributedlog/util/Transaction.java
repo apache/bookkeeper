@@ -21,34 +21,34 @@ import com.google.common.annotations.Beta;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Util class represents a transaction
+ * Util class represents a transaction.
  */
 @Beta
-public interface Transaction<OpResult> {
+public interface Transaction<OpResultT> {
 
     /**
      * An operation executed in a transaction.
      */
-    interface Op<OpResult> {
+    interface Op<OpResultT> {
 
         /**
-         * Execute after the transaction succeeds
+         * Execute after the transaction succeeds.
          */
-        void commit(OpResult r);
+        void commit(OpResultT r);
 
         /**
-         * Execute after the transaction fails
+         * Execute after the transaction fails.
          */
-        void abort(Throwable t, OpResult r);
+        void abort(Throwable t, OpResultT r);
 
     }
 
     /**
      * Listener on the result of an {@link Transaction.Op}.
      *
-     * @param <OpResult>
+     * @param <OpResultT>
      */
-    interface OpListener<OpResult> {
+    interface OpListener<OpResultT> {
 
         /**
          * Trigger on operation committed.
@@ -56,7 +56,7 @@ public interface Transaction<OpResult> {
          * @param r
          *          result to return
          */
-        void onCommit(OpResult r);
+        void onCommit(OpResultT r);
 
         /**
          * Trigger on operation aborted.
@@ -73,7 +73,7 @@ public interface Transaction<OpResult> {
      * @param operation
      *          operation to execute under current transaction
      */
-    void addOp(Op<OpResult> operation);
+    void addOp(Op<OpResultT> operation);
 
     /**
      * Execute the current transaction. If the transaction succeed, all operations will be

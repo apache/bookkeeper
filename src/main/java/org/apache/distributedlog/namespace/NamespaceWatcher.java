@@ -17,9 +17,9 @@
  */
 package org.apache.distributedlog.namespace;
 
+import java.util.concurrent.CopyOnWriteArraySet;
 import org.apache.distributedlog.callback.NamespaceListener;
 
-import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * Namespace Watcher watching namespace changes.

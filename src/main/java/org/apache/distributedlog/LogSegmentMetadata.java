@@ -17,18 +17,18 @@
  */
 package org.apache.distributedlog;
 
+import static com.google.common.base.Charsets.UTF_8;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Objects;
 import java.io.File;
 import java.io.IOException;
 import java.util.Comparator;
-
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Objects;
 import java.util.concurrent.CompletableFuture;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.exceptions.DLInterruptedException;
 import org.apache.distributedlog.exceptions.LogSegmentNotFoundException;
 import org.apache.distributedlog.exceptions.UnsupportedMetadataVersionException;
 import org.apache.distributedlog.exceptions.ZKException;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.Utils;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
@@ -37,16 +37,17 @@ import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.google.common.base.Charsets.UTF_8;
 
 /**
  * Utility class for storing the metadata associated
- * with a single edit log segment, stored in a single ledger
+ * with a single edit log segment, stored in a single ledger.
  */
 public class LogSegmentMetadata {
     static final Logger LOG = LoggerFactory.getLogger(LogSegmentMetadata.class);
-
-    public static enum LogSegmentMetadataVersion {
+    /**
+     * LogSegmentMetadataVersion.
+     */
+    public enum LogSegmentMetadataVersion {
         VERSION_INVALID(0),
         VERSION_V1_ORIGINAL(1),
         VERSION_V2_LEDGER_SEQNO(2),
@@ -79,8 +80,10 @@ public class LogSegmentMetadata {
             }
         }
     }
-
-    public static enum TruncationStatus {
+    /**
+     * TruncationStatus.
+     */
+    public  enum TruncationStatus {
         ACTIVE (0), PARTIALLY_TRUNCATED(1), TRUNCATED (2);
         private final int value;
 
@@ -89,6 +92,9 @@ public class LogSegmentMetadata {
         }
     }
 
+    /**
+     * LogSegmentMetadataBuilder to build LogSegmentMetadata.
+     */
     public static class LogSegmentMetadataBuilder {
         protected String zkPath;
         protected long logSegmentId;
@@ -327,13 +333,13 @@ public class LogSegmentMetadata {
     // NOTE: This value is not stored in the Metadata store.
     private final boolean envelopeEntries;
 
-    public static final Comparator<LogSegmentMetadata> COMPARATOR
-        = new Comparator<LogSegmentMetadata>() {
+    public static final Comparator<LogSegmentMetadata> COMPARATOR =
+            new Comparator<LogSegmentMetadata>() {
 
         public int compare(LogSegmentMetadata o1,
                            LogSegmentMetadata o2) {
-            if ((o1.getLogSegmentSequenceNumber() == DistributedLogConstants.UNASSIGNED_LOGSEGMENT_SEQNO) ||
-                (o2.getLogSegmentSequenceNumber() == DistributedLogConstants.UNASSIGNED_LOGSEGMENT_SEQNO)) {
+            if ((o1.getLogSegmentSequenceNumber() == DistributedLogConstants.UNASSIGNED_LOGSEGMENT_SEQNO)
+                    || (o2.getLogSegmentSequenceNumber() == DistributedLogConstants.UNASSIGNED_LOGSEGMENT_SEQNO)) {
                 if (o1.firstTxId < o2.firstTxId) {
                     return -1;
                 } else if (o1.firstTxId == o2.firstTxId) {
@@ -362,12 +368,12 @@ public class LogSegmentMetadata {
         }
     };
 
-    public static final Comparator<LogSegmentMetadata> DESC_COMPARATOR
-        = new Comparator<LogSegmentMetadata>() {
+    public static final Comparator<LogSegmentMetadata> DESC_COMPARATOR =
+            new Comparator<LogSegmentMetadata>() {
         public int compare(LogSegmentMetadata o1,
                            LogSegmentMetadata o2) {
-            if ((o1.getLogSegmentSequenceNumber() == DistributedLogConstants.UNASSIGNED_LOGSEGMENT_SEQNO) ||
-                (o2.getLogSegmentSequenceNumber() == DistributedLogConstants.UNASSIGNED_LOGSEGMENT_SEQNO)) {
+            if ((o1.getLogSegmentSequenceNumber() == DistributedLogConstants.UNASSIGNED_LOGSEGMENT_SEQNO)
+                    || (o2.getLogSegmentSequenceNumber() == DistributedLogConstants.UNASSIGNED_LOGSEGMENT_SEQNO)) {
                 if (o1.firstTxId > o2.firstTxId) {
                     return -1;
                 } else if (o1.firstTxId == o2.firstTxId) {
@@ -493,8 +499,8 @@ public class LogSegmentMetadata {
 
     public long getStartSequenceId() {
         // generate negative sequence id for log segments that created <= v4
-        return supportsSequenceId() && startSequenceId != DistributedLogConstants.UNASSIGNED_SEQUENCE_ID ?
-                startSequenceId : Long.MIN_VALUE + (getLogSegmentSequenceNumber() << 32L);
+        return supportsSequenceId() && startSequenceId != DistributedLogConstants.UNASSIGNED_SEQUENCE_ID
+                ? startSequenceId : Long.MIN_VALUE + (getLogSegmentSequenceNumber() << 32L);
     }
 
     public boolean isTruncated() {
@@ -593,7 +599,8 @@ public class LogSegmentMetadata {
         return read(zkc, path, false);
     }
 
-    public static CompletableFuture<LogSegmentMetadata> read(ZooKeeperClient zkc, String path, final boolean skipMinVersionCheck) {
+    public static CompletableFuture<LogSegmentMetadata> read(ZooKeeperClient zkc,
+                                                             String path, final boolean skipMinVersionCheck) {
         final CompletableFuture<LogSegmentMetadata> result = new CompletableFuture<LogSegmentMetadata>();
         try {
             zkc.get().getData(path, false, new AsyncCallback.DataCallback() {
@@ -636,7 +643,7 @@ public class LogSegmentMetadata {
 
         LogSegmentMetadataVersion llmv = LogSegmentMetadataVersion.VERSION_V1_ORIGINAL;
 
-        int regionId = (int)(versionStatusCount & REGION_MASK) >> REGION_SHIFT;
+        int regionId = (int) (versionStatusCount & REGION_MASK) >> REGION_SHIFT;
         assert (regionId >= 0 && regionId <= 0xf);
 
         long status = (versionStatusCount & STATUS_BITS_MASK) >> STATUS_BITS_SHIFT;
@@ -681,7 +688,7 @@ public class LogSegmentMetadata {
 
         LogSegmentMetadataVersion llmv = LogSegmentMetadataVersion.VERSION_V2_LEDGER_SEQNO;
 
-        int regionId = (int)((versionStatusCount & REGION_MASK) >> REGION_SHIFT);
+        int regionId = (int) ((versionStatusCount & REGION_MASK) >> REGION_SHIFT);
         assert (regionId >= 0 && regionId <= 0xf);
 
         long status = (versionStatusCount & STATUS_BITS_MASK) >> STATUS_BITS_SHIFT;
@@ -731,12 +738,12 @@ public class LogSegmentMetadata {
 
         long version = versionStatusCount & METADATA_VERSION_MASK;
         assert (version >= Integer.MIN_VALUE && version <= Integer.MAX_VALUE);
-        assert (LogSegmentMetadataVersion.VERSION_V3_MIN_ACTIVE_DLSN.value <= version &&
-                LogSegmentMetadataVersion.VERSION_V4_ENVELOPED_ENTRIES.value >= version);
+        assert (LogSegmentMetadataVersion.VERSION_V3_MIN_ACTIVE_DLSN.value <= version
+                && LogSegmentMetadataVersion.VERSION_V4_ENVELOPED_ENTRIES.value >= version);
 
         LogSegmentMetadataVersion llmv = LogSegmentMetadataVersion.of((int) version);
 
-        int regionId = (int)((versionStatusCount & REGION_MASK) >> REGION_SHIFT);
+        int regionId = (int) ((versionStatusCount & REGION_MASK) >> REGION_SHIFT);
         assert (regionId >= 0 && regionId <= 0xf);
 
         long status = (versionStatusCount & STATUS_BITS_MASK) >> STATUS_BITS_SHIFT;
@@ -801,12 +808,12 @@ public class LogSegmentMetadata {
 
         long version = versionStatusCount & METADATA_VERSION_MASK;
         assert (version >= Integer.MIN_VALUE && version <= Integer.MAX_VALUE);
-        assert (LogSegmentMetadataVersion.VERSION_V5_SEQUENCE_ID.value <= version &&
-                LogSegmentMetadata.LEDGER_METADATA_CURRENT_LAYOUT_VERSION >= version);
+        assert (LogSegmentMetadataVersion.VERSION_V5_SEQUENCE_ID.value <= version
+                && LogSegmentMetadata.LEDGER_METADATA_CURRENT_LAYOUT_VERSION >= version);
 
         LogSegmentMetadataVersion llmv = LogSegmentMetadataVersion.of((int) version);
 
-        int regionId = (int)((versionStatusCount & REGION_MASK) >> REGION_SHIFT);
+        int regionId = (int) ((versionStatusCount & REGION_MASK) >> REGION_SHIFT);
         assert (regionId >= 0 && regionId <= 0xf);
 
         long status = (versionStatusCount & STATUS_BITS_MASK) >> STATUS_BITS_SHIFT;
@@ -880,21 +887,21 @@ public class LogSegmentMetadata {
         }
 
         if (!skipMinVersionCheck && version < LogSegmentMetadata.LEDGER_METADATA_OLDEST_SUPPORTED_VERSION) {
-            throw new UnsupportedMetadataVersionException("Ledger metadata version '" + version + "' is no longer supported: "
-                + new String(data, UTF_8));
+            throw new UnsupportedMetadataVersionException("Ledger metadata version '"
+                    + version + "' is no longer supported: " + new String(data, UTF_8));
         }
 
         if (version > LogSegmentMetadata.LEDGER_METADATA_CURRENT_LAYOUT_VERSION) {
-            throw new UnsupportedMetadataVersionException("Metadata version '" + version + "' is higher than the highest supported version : "
-                + new String(data, UTF_8));
+            throw new UnsupportedMetadataVersionException("Metadata version '"
+                    + version + "' is higher than the highest supported version : " + new String(data, UTF_8));
         }
 
         if (LogSegmentMetadataVersion.VERSION_V1_ORIGINAL.value == version) {
             return parseDataV1(path, data, parts);
         } else if (LogSegmentMetadataVersion.VERSION_V2_LEDGER_SEQNO.value == version) {
             return parseDataV2(path, data, parts);
-        } else if (LogSegmentMetadataVersion.VERSION_V4_ENVELOPED_ENTRIES.value >= version &&
-                   LogSegmentMetadataVersion.VERSION_V3_MIN_ACTIVE_DLSN.value <= version) {
+        } else if (LogSegmentMetadataVersion.VERSION_V4_ENVELOPED_ENTRIES.value >= version
+                && LogSegmentMetadataVersion.VERSION_V3_MIN_ACTIVE_DLSN.value <= version) {
             return parseDataVersionsWithMinActiveDLSN(path, data, parts);
         } else {
             assert(version >= LogSegmentMetadataVersion.VERSION_V5_SEQUENCE_ID.value);
@@ -919,7 +926,7 @@ public class LogSegmentMetadata {
                 finalisedData = String.format("%d;%d;%d",
                     version.value, logSegmentId, firstTxId);
             } else {
-                long versionAndCount = ((long) version.value) | ((long)recordCount << LOGRECORD_COUNT_SHIFT);
+                long versionAndCount = ((long) version.value) | ((long) recordCount << LOGRECORD_COUNT_SHIFT);
                 finalisedData = String.format("%d;%d;%d;%d;%d",
                     versionAndCount, logSegmentId, firstTxId, lastTxId, completionTime);
             }
@@ -928,7 +935,7 @@ public class LogSegmentMetadata {
             versionStatusCount |= ((status & METADATA_STATUS_BIT_MAX) << STATUS_BITS_SHIFT);
             versionStatusCount |= (((long) regionId & MAX_REGION_ID) << REGION_SHIFT);
             if (!inprogress) {
-                versionStatusCount |= ((long)recordCount << LOGRECORD_COUNT_SHIFT);
+                versionStatusCount |= ((long) recordCount << LOGRECORD_COUNT_SHIFT);
             }
             if (LogSegmentMetadataVersion.VERSION_V2_LEDGER_SEQNO == version) {
                 if (inprogress) {
@@ -939,21 +946,23 @@ public class LogSegmentMetadata {
                         versionStatusCount, logSegmentId, firstTxId, lastTxId, completionTime,
                         logSegmentSeqNo, lastEntryId, lastSlotId);
                 }
-            } else if (LogSegmentMetadataVersion.VERSION_V4_ENVELOPED_ENTRIES.value >= version.value &&
-                        LogSegmentMetadataVersion.VERSION_V3_MIN_ACTIVE_DLSN.value <= version.value) {
+            } else if (LogSegmentMetadataVersion.VERSION_V4_ENVELOPED_ENTRIES.value >= version.value
+                    && LogSegmentMetadataVersion.VERSION_V3_MIN_ACTIVE_DLSN.value <= version.value) {
                 if (inprogress) {
                     finalisedData = String.format("%d;%d;%d;%d;%d;%d",
-                        versionStatusCount, logSegmentId, firstTxId, logSegmentSeqNo, minActiveEntryId, minActiveSlotId);
+                        versionStatusCount, logSegmentId, firstTxId,
+                            logSegmentSeqNo, minActiveEntryId, minActiveSlotId);
                 } else {
                     finalisedData = String.format("%d;%d;%d;%d;%d;%d;%d;%d;%d;%d",
                         versionStatusCount, logSegmentId, firstTxId, lastTxId, completionTime,
                         logSegmentSeqNo, lastEntryId, lastSlotId, minActiveEntryId, minActiveSlotId);
                 }
-            } else if (LogSegmentMetadataVersion.VERSION_V5_SEQUENCE_ID.value <= version.value &&
-                        LogSegmentMetadata.LEDGER_METADATA_CURRENT_LAYOUT_VERSION >= version.value) {
+            } else if (LogSegmentMetadataVersion.VERSION_V5_SEQUENCE_ID.value <= version.value
+                    && LogSegmentMetadata.LEDGER_METADATA_CURRENT_LAYOUT_VERSION >= version.value) {
                 if (inprogress) {
                     finalisedData = String.format("%d;%d;%d;%d;%d;%d;%d",
-                        versionStatusCount, logSegmentId, firstTxId, logSegmentSeqNo, minActiveEntryId, minActiveSlotId, startSequenceId);
+                        versionStatusCount, logSegmentId, firstTxId, logSegmentSeqNo,
+                            minActiveEntryId, minActiveSlotId, startSequenceId);
                 } else {
                     finalisedData = String.format("%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d",
                         versionStatusCount, logSegmentId, firstTxId, lastTxId, completionTime,
@@ -1004,9 +1013,9 @@ public class LogSegmentMetadata {
             // completionTime is set when a node is finalized, so that
             // cannot be compared
             // if the node is inprogress, don't compare the lastTxId either
-            if (this.getLogSegmentSequenceNumber() != other.getLogSegmentSequenceNumber() ||
-                this.logSegmentId != other.logSegmentId ||
-                this.firstTxId != other.firstTxId) {
+            if (this.getLogSegmentSequenceNumber() != other.getLogSegmentSequenceNumber()
+                    || this.logSegmentId != other.logSegmentId
+                    || this.firstTxId != other.firstTxId) {
                 retVal = false;
             } else if (this.inprogress) {
                 retVal = other.inprogress;
@@ -1054,21 +1063,21 @@ public class LogSegmentMetadata {
     }
 
     public String toString() {
-        return "[LogSegmentId:" + logSegmentId +
-            ", firstTxId:" + firstTxId +
-            ", lastTxId:" + lastTxId +
-            ", version:" + version +
-            ", completionTime:" + completionTime +
-            ", recordCount:" + recordCount +
-            ", regionId:" + regionId +
-            ", status:" + status +
-            ", logSegmentSequenceNumber:" + getLogSegmentSequenceNumber() +
-            ", lastEntryId:" + getLastEntryId() +
-            ", lastSlotId:" + getLastSlotId() +
-            ", inprogress:" + inprogress +
-            ", minActiveDLSN:" + minActiveDLSN +
-            ", startSequenceId:" + startSequenceId +
-            "]";
+        return "[LogSegmentId:" + logSegmentId
+                + ", firstTxId:" + firstTxId
+                + ", lastTxId:" + lastTxId
+                + ", version:" + version
+                + ", completionTime:" + completionTime
+                + ", recordCount:" + recordCount
+                + ", regionId:" + regionId
+                + ", status:" + status
+                + ", logSegmentSequenceNumber:" + getLogSegmentSequenceNumber()
+                + ", lastEntryId:" + getLastEntryId()
+                + ", lastSlotId:" + getLastSlotId()
+                + ", inprogress:" + inprogress
+                + ", minActiveDLSN:" + minActiveDLSN
+                + ", startSequenceId:" + startSequenceId
+                + "]";
     }
 
     public Mutator mutator() {

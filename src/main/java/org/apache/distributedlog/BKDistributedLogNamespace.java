@@ -27,10 +27,14 @@ import java.util.Iterator;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.bookkeeper.feature.FeatureProvider;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.distributedlog.acl.AccessControlManager;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.callback.NamespaceListener;
+import org.apache.distributedlog.common.util.PermitLimiter;
+import org.apache.distributedlog.common.util.SchedulerUtils;
 import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
 import org.apache.distributedlog.exceptions.AlreadyClosedException;
 import org.apache.distributedlog.exceptions.InvalidStreamNameException;
@@ -40,11 +44,8 @@ import org.apache.distributedlog.logsegment.LogSegmentMetadataCache;
 import org.apache.distributedlog.namespace.NamespaceDriver;
 import org.apache.distributedlog.util.ConfUtils;
 import org.apache.distributedlog.util.OrderedScheduler;
-import org.apache.distributedlog.common.util.PermitLimiter;
-import org.apache.distributedlog.common.util.SchedulerUtils;
 import org.apache.distributedlog.util.Utils;
-import org.apache.bookkeeper.feature.FeatureProvider;
-import org.apache.bookkeeper.stats.StatsLogger;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,7 +77,6 @@ import org.slf4j.LoggerFactory;
  * </ul>
  *
  * <h4>DistributedLogManager</h4>
- *
  * All the core stats about reader and writer are exposed under current scope via {@link BKDistributedLogManager}.
  */
 public class BKDistributedLogNamespace implements Namespace {

@@ -16,6 +16,6 @@
  * limitations under the License.
  */
 /**
- * DistributedLog Utils
+ * DistributedLog Utils.
  */
 package org.apache.distributedlog.util;

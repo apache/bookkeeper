@@ -17,15 +17,16 @@
  */
 package org.apache.distributedlog.net;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+
 
 /**
  * Abstract DNS resolver for bookkeeper ensemble placement.
@@ -48,8 +49,8 @@ public abstract class DNSResolver implements DNSToSwitchMapping {
 
     /**
      * Construct the dns resolver with host-region overrides.
-     * <p>
-     * <i>hostRegionOverrides</i> is a string of pairs of host-region mapping
+     *
+     *  <p><i>hostRegionOverrides</i> is a string of pairs of host-region mapping
      * (host:region) separated by ';'. during dns resolution, the host will be resolved
      * to override region. example: <i>host1:region1;host2:region2;...</i>
      *

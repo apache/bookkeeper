@@ -19,16 +19,16 @@ package org.apache.distributedlog.net;
 
 /**
  * Resolve the dns by rows.
- * <p>
- * It resolves domain name like `(region)-(row)xx-xxx-xxx.*` to network location
+ *
+ *  <p>It resolves domain name like `(region)-(row)xx-xxx-xxx.*` to network location
  * `/(region)/(row)`. If resolution failed, it returns `/default-region/default-row`.
- * <p>
- * region could be override in <code>hostRegionOverrides</code>. for example, if the
+ *
+ *  <p>region could be override in <code>hostRegionOverrides</code>. for example, if the
  * host name is <i>regionA-row1-xx-yyy</i>, it would be resolved to `/regionA/row1`
  * without any overrides. If the specified overrides is <i>regionA-row1-xx-yyy:regionB</i>,
  * the resolved network location would be <i>/regionB/row1</i>.
- * <p>
- * Region overrides provide optimization hits to bookkeeper if two `logical` regions are
+ *
+ *  <p>Region overrides provide optimization hits to bookkeeper if two `logical` regions are
  * in same or close locations.
  *
  * @see DNSResolver#DNSResolver(String)

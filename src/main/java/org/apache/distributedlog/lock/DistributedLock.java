@@ -22,7 +22,7 @@ import org.apache.distributedlog.exceptions.LockingException;
 import org.apache.distributedlog.io.AsyncCloseable;
 
 /**
- * Interface for distributed locking
+ * Interface for distributed locking.
  */
 public interface DistributedLock extends AsyncCloseable {
 

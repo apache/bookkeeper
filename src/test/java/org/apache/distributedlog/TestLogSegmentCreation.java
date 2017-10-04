@@ -17,9 +17,9 @@
  */
 package org.apache.distributedlog;
 
+import static org.junit.Assert.*;
 import java.net.URI;
 import java.util.List;
-
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.api.namespace.NamespaceBuilder;
@@ -28,8 +28,11 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
 
+
+/**
+ * Test Cases for LogSegmentCreation.
+ */
 public class TestLogSegmentCreation extends TestDistributedLogBase {
 
     static Logger LOG = LoggerFactory.getLogger(TestLogSegmentCreation.class);

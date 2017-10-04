@@ -25,10 +25,11 @@ import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.distributedlog.LogRecord;
 import org.apache.distributedlog.io.Abortable;
 
-/*
-* A generic interface class to support writing log records into
-* a persistent distributed log.
-*/
+
+/**
+ * A generic interface class to support writing log records into
+ * a persistent distributed log.
+ */
 @Public
 @Evolving
 public interface LogWriter extends Closeable, Abortable {
@@ -38,7 +39,7 @@ public interface LogWriter extends Closeable, Abortable {
      * @param record single log record
      * @throws IOException
      */
-    public void write(LogRecord record) throws IOException;
+    void write(LogRecord record) throws IOException;
 
 
     /**
@@ -48,7 +49,7 @@ public interface LogWriter extends Closeable, Abortable {
      * @throws IOException
      */
     @Deprecated
-    public int writeBulk(List<LogRecord> records) throws IOException;
+    int writeBulk(List<LogRecord> records) throws IOException;
 
     /**
      * All data that has been written to the stream so far will be sent to
@@ -56,14 +57,14 @@ public interface LogWriter extends Closeable, Abortable {
      * The transmission is asynchronous and new data can be still written to the
      * stream while flushing is performed.
      */
-    public long flush() throws IOException;
+    long flush() throws IOException;
 
     /**
      * Flush and sync all data that is ready to be flush
      * {@link #flush()} into underlying persistent store.
      * @throws IOException
      */
-    public long commit() throws IOException;
+    long commit() throws IOException;
 
     /**
      * Flushes all the data up to this point,
@@ -73,6 +74,6 @@ public interface LogWriter extends Closeable, Abortable {
      *
      * @throws IOException
      */
-    public void markEndOfStream() throws IOException;
+    void markEndOfStream() throws IOException;
 
 }

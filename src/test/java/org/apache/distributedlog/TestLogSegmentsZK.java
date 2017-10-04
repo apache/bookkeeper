@@ -17,15 +17,22 @@
  */
 package org.apache.distributedlog;
 
+
+import static com.google.common.base.Charsets.UTF_8;
+import static org.junit.Assert.*;
+
+import java.io.IOException;
+import java.net.URI;
+import java.util.List;
+import org.apache.bookkeeper.meta.ZkVersion;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.namespace.Namespace;
+import org.apache.distributedlog.api.namespace.NamespaceBuilder;
 import org.apache.distributedlog.exceptions.DLIllegalStateException;
 import org.apache.distributedlog.exceptions.UnexpectedException;
 import org.apache.distributedlog.metadata.LogMetadata;
-import org.apache.distributedlog.api.namespace.NamespaceBuilder;
 import org.apache.distributedlog.util.DLUtils;
-import org.apache.bookkeeper.meta.ZkVersion;
-import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.data.Stat;
 import org.junit.Rule;
 import org.junit.Test;
@@ -33,19 +40,18 @@ import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.List;
 
-import static com.google.common.base.Charsets.UTF_8;
-import static org.junit.Assert.*;
 
+
+/**
+ * Test Cases for LogSegmentsZK.
+ */
 public class TestLogSegmentsZK extends TestDistributedLogBase {
 
     static Logger LOG = LoggerFactory.getLogger(TestLogSegmentsZK.class);
 
     private static MaxLogSegmentSequenceNo getMaxLogSegmentSequenceNo(ZooKeeperClient zkc, URI uri, String streamName,
-                                                                      DistributedLogConfiguration conf) throws Exception {
+                                                              DistributedLogConfiguration conf) throws Exception {
         Stat stat = new Stat();
         String logSegmentsPath = LogMetadata.getLogSegmentsPath(
                 uri, streamName, conf.getUnpartitionedStreamName());
@@ -140,7 +146,8 @@ public class TestLogSegmentsZK extends TestDistributedLogBase {
         }
 
         // invalid max ledger sequence number
-        updateMaxLogSegmentSequenceNo(getZooKeeperClient(namespace), uri, streamName, conf, "invalid-max".getBytes(UTF_8));
+        updateMaxLogSegmentSequenceNo(getZooKeeperClient(namespace),
+                uri, streamName, conf, "invalid-max".getBytes(UTF_8));
         DistributedLogManager dlm2 = namespace.openLog(streamName);
         try {
             dlm2.startLogSegmentNonPartitioned();
@@ -190,7 +197,7 @@ public class TestLogSegmentsZK extends TestDistributedLogBase {
         DistributedLogManager dlm1 = namespace.openLog(streamName);
         try {
             BKSyncLogWriter out1 = (BKSyncLogWriter) dlm1.startLogSegmentNonPartitioned();
-            out1.write(DLMTestUtil.getLogRecordInstance(numSegments+1));
+            out1.write(DLMTestUtil.getLogRecordInstance(numSegments + 1));
             out1.closeAndComplete();
             fail("Should fail creating new log segment when encountered unmatch max ledger sequence number");
         } catch (DLIllegalStateException lse) {

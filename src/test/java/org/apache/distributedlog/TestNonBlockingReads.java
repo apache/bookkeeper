@@ -17,10 +17,12 @@
  */
 package org.apache.distributedlog;
 
+
+import static org.apache.distributedlog.NonBlockingReadsTestUtil.*;
+import static org.junit.Assert.*;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.LogReader;
 import org.apache.distributedlog.common.annotations.DistributedLogAnnotations;
@@ -32,11 +34,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.distributedlog.NonBlockingReadsTestUtil.*;
-import static org.junit.Assert.*;
-
 /**
- * {@link https://issues.apache.org/jira/browse/DL-12}
+ * {@link https://issues.apache.org/jira/browse/DL-12}.
  */
 @DistributedLogAnnotations.FlakyTest
 @Ignore

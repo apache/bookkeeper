@@ -22,7 +22,7 @@ import com.google.common.base.Optional;
 import java.net.URI;
 
 /**
- * Log Metadata for Reader
+ * Log Metadata for Reader.
  */
 public class LogMetadataForReader extends LogMetadata {
 
@@ -73,10 +73,10 @@ public class LogMetadataForReader extends LogMetadata {
         return new LogMetadataForReader(uri, logName, logIdentifier);
     }
 
-    final static String SUBSCRIBERS_PATH = "/subscribers";
+    static final  String SUBSCRIBERS_PATH = "/subscribers";
 
     /**
-     * metadata representation of a log
+     * metadata representation of a log.
      *
      * @param uri           namespace to store the log
      * @param logName       name of the log

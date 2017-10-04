@@ -17,6 +17,11 @@
  */
 package org.apache.distributedlog.metadata;
 
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import java.io.IOException;
+import java.net.URI;
 import org.apache.distributedlog.LocalDLMEmulator;
 import org.apache.distributedlog.ZooKeeperClusterTestCase;
 import org.apache.distributedlog.impl.metadata.BKDLConfig;
@@ -26,12 +31,12 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.net.URI;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
+
+/**
+ * Test Case for {@link DLMetadata}s.
+ */
 public class TestDLMetadata extends ZooKeeperClusterTestCase {
 
     private static final BKDLConfig bkdlConfig =

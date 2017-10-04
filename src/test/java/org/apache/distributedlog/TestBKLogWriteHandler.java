@@ -17,25 +17,25 @@
  */
 package org.apache.distributedlog;
 
+import static org.junit.Assert.*;
+import java.io.IOException;
+import java.net.URI;
 import org.apache.distributedlog.api.AsyncLogWriter;
 import org.apache.distributedlog.api.DistributedLogManager;
+import org.apache.distributedlog.api.namespace.NamespaceBuilder;
 import org.apache.distributedlog.bk.LedgerAllocator;
 import org.apache.distributedlog.bk.LedgerAllocatorPool;
 import org.apache.distributedlog.impl.BKNamespaceDriver;
-import org.apache.distributedlog.api.namespace.NamespaceBuilder;
 import org.apache.distributedlog.util.FailpointUtils;
 import org.apache.distributedlog.util.Utils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 
-import java.io.IOException;
-import java.net.URI;
 
-import static org.junit.Assert.*;
 
 /**
- * Test {@link BKLogWriteHandler}
+ * Test {@link BKLogWriteHandler}.
  */
 public class TestBKLogWriteHandler extends TestDistributedLogBase {
 

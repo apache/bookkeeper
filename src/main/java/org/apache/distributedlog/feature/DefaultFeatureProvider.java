@@ -17,12 +17,13 @@
  */
 package org.apache.distributedlog.feature;
 
-import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.feature.SettableFeature;
 import org.apache.bookkeeper.feature.SettableFeatureProvider;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.distributedlog.DistributedLogConfiguration;
+
 
 /**
  * Default feature provider which disable all features by default.

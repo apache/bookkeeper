@@ -17,6 +17,15 @@
  */
 package org.apache.distributedlog;
 
+
+import static org.apache.distributedlog.DLMTestUtil.validateFutureFailed;
+import static org.apache.distributedlog.DLMTestUtil.validateFutureSucceededAndGetResult;
+import static org.apache.distributedlog.LogRecord.MAX_LOGRECORDSET_SIZE;
+import static org.apache.distributedlog.LogRecord.MAX_LOGRECORD_SIZE;
+import static org.junit.Assert.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import org.apache.distributedlog.api.DistributedLogManager;
@@ -31,15 +40,8 @@ import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
-import static org.apache.distributedlog.DLMTestUtil.validateFutureFailed;
-import static org.apache.distributedlog.DLMTestUtil.validateFutureSucceededAndGetResult;
-import static org.apache.distributedlog.LogRecord.MAX_LOGRECORD_SIZE;
-import static org.apache.distributedlog.LogRecord.MAX_LOGRECORDSET_SIZE;
-import static org.junit.Assert.*;
+
 
 /**
  * Test cases for bulk writes.
@@ -61,9 +63,7 @@ public class TestAsyncBulkWrite extends TestDistributedLogBase {
 
     /**
      * Test Case for partial failure in a bulk write.
-     *
      * Write a batch: 10 good records + 1 too large record + 10 good records.
-     *
      * Expected: first 10 good records succeed, the too-large-record will be rejected, while
      *           the last 10 good records will be cancelled because their previous write is rejected.
      */
@@ -74,7 +74,7 @@ public class TestAsyncBulkWrite extends TestDistributedLogBase {
         confLocal.loadConf(testConf);
         confLocal.setOutputBufferSize(1024);
         DistributedLogManager dlm = createNewDLM(confLocal, name);
-        BKAsyncLogWriter writer = (BKAsyncLogWriter)(dlm.startAsyncLogSegmentNonPartitioned());
+        BKAsyncLogWriter writer = (BKAsyncLogWriter) (dlm.startAsyncLogSegmentNonPartitioned());
 
         final int goodRecs = 10;
 
@@ -87,7 +87,7 @@ public class TestAsyncBulkWrite extends TestDistributedLogBase {
         List<CompletableFuture<DLSN>> results = validateFutureSucceededAndGetResult(futureResults);
 
         // One future returned for each write.
-        assertEquals(2*goodRecs + 1, results.size());
+        assertEquals(2 * goodRecs + 1, results.size());
 
         // First goodRecs are good.
         for (int i = 0; i < goodRecs; i++) {
@@ -98,7 +98,7 @@ public class TestAsyncBulkWrite extends TestDistributedLogBase {
         validateFutureFailed(results.get(goodRecs), LogRecordTooLongException.class);
 
         // Rest are WriteCancelledException.
-        for (int i = goodRecs+1; i < 2*goodRecs+1; i++) {
+        for (int i = goodRecs + 1; i < 2 * goodRecs + 1; i++) {
             validateFutureFailed(results.get(i), WriteCancelledException.class);
         }
 
@@ -108,7 +108,6 @@ public class TestAsyncBulkWrite extends TestDistributedLogBase {
 
     /**
      * Test Case for a total failure in a bulk write.
-     *
      * Write 100 records as a batch. Inject failure on transmit and all records should be failed.
      *
      * @throws Exception
@@ -120,7 +119,7 @@ public class TestAsyncBulkWrite extends TestDistributedLogBase {
         confLocal.loadConf(testConf);
         confLocal.setOutputBufferSize(1024);
         DistributedLogManager dlm = createNewDLM(confLocal, name);
-        BKAsyncLogWriter writer = (BKAsyncLogWriter)(dlm.startAsyncLogSegmentNonPartitioned());
+        BKAsyncLogWriter writer = (BKAsyncLogWriter) (dlm.startAsyncLogSegmentNonPartitioned());
 
         final int batchSize = 100;
         FailpointUtils.setFailpoint(
@@ -155,7 +154,7 @@ public class TestAsyncBulkWrite extends TestDistributedLogBase {
         confLocal.setMaxLogSegmentBytes(1024);
         confLocal.setLogSegmentRollingIntervalMinutes(0);
         DistributedLogManager dlm = createNewDLM(confLocal, name);
-        BKAsyncLogWriter writer = (BKAsyncLogWriter)(dlm.startAsyncLogSegmentNonPartitioned());
+        BKAsyncLogWriter writer = (BKAsyncLogWriter) (dlm.startAsyncLogSegmentNonPartitioned());
 
         // Write one record larger than max seg size. Ledger doesn't roll until next write.
         int txid = 1;
@@ -198,7 +197,7 @@ public class TestAsyncBulkWrite extends TestDistributedLogBase {
         confLocal.loadConf(testConf);
         confLocal.setOutputBufferSize(1024);
         DistributedLogManager dlm = createNewDLM(confLocal, name);
-        BKAsyncLogWriter writer = (BKAsyncLogWriter)(dlm.startAsyncLogSegmentNonPartitioned());
+        BKAsyncLogWriter writer = (BKAsyncLogWriter) (dlm.startAsyncLogSegmentNonPartitioned());
 
         int batchSize = 100;
         int recSize = 1024;
@@ -222,7 +221,7 @@ public class TestAsyncBulkWrite extends TestDistributedLogBase {
         slotIndex = 0;
         txIndex += batchSize;
         writer.closeAndComplete();
-        writer = (BKAsyncLogWriter)(dlm.startAsyncLogSegmentNonPartitioned());
+        writer = (BKAsyncLogWriter) (dlm.startAsyncLogSegmentNonPartitioned());
         checkAllSucceeded(writer, batchSize, recSize, ledgerIndex, entryIndex, slotIndex, txIndex);
 
         writer.closeAndComplete();
@@ -240,12 +239,12 @@ public class TestAsyncBulkWrite extends TestDistributedLogBase {
         confLocal.loadConf(testConf);
         confLocal.setOutputBufferSize(1024);
         DistributedLogManager dlm = createNewDLM(confLocal, name);
-        BKAsyncLogWriter writer = (BKAsyncLogWriter)(dlm.startAsyncLogSegmentNonPartitioned());
+        BKAsyncLogWriter writer = (BKAsyncLogWriter) (dlm.startAsyncLogSegmentNonPartitioned());
 
         // First entry.
         int numTransmissions = 4;
-        int recSize = 10*1024;
-        int batchSize = (numTransmissions*MAX_LOGRECORDSET_SIZE+1)/recSize;
+        int recSize = 10 * 1024;
+        int batchSize = (numTransmissions * MAX_LOGRECORDSET_SIZE + 1) / recSize;
         long ledgerIndex = 1;
         long entryIndex = 0;
         long slotIndex = 0;
@@ -269,12 +268,12 @@ public class TestAsyncBulkWrite extends TestDistributedLogBase {
         confLocal.loadConf(testConf);
         confLocal.setOutputBufferSize(1024);
         DistributedLogManager dlm = createNewDLM(confLocal, name);
-        BKAsyncLogWriter writer = (BKAsyncLogWriter)(dlm.startAsyncLogSegmentNonPartitioned());
+        BKAsyncLogWriter writer = (BKAsyncLogWriter) (dlm.startAsyncLogSegmentNonPartitioned());
 
         // First entry.
         int numTransmissions = 4;
-        int recSize = 10*1024;
-        int batchSize = (numTransmissions*MAX_LOGRECORDSET_SIZE+1)/recSize;
+        int recSize = 10 * 1024;
+        int batchSize = (numTransmissions * MAX_LOGRECORDSET_SIZE + 1) / recSize;
         long ledgerIndex = 1;
         long entryIndex = 0;
         long slotIndex = 0;

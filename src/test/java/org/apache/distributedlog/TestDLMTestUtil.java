@@ -29,6 +29,9 @@ import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Test Case for {@link LocalDLMEmulator}.
+ */
 public class TestDLMTestUtil {
     static final Logger LOG = LoggerFactory.getLogger(TestDLMTestUtil.class);
 

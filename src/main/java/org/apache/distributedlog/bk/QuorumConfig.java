@@ -22,7 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Configuration for quorums
+ * Configuration for quorums.
  */
 public class QuorumConfig {
 

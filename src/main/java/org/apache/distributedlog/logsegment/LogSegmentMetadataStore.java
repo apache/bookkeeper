@@ -18,6 +18,8 @@
 package org.apache.distributedlog.logsegment;
 
 import com.google.common.annotations.Beta;
+import java.io.Closeable;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
@@ -28,8 +30,6 @@ import org.apache.distributedlog.metadata.LogMetadataForWriter;
 import org.apache.distributedlog.util.Transaction;
 import org.apache.distributedlog.util.Transaction.OpListener;
 
-import java.io.Closeable;
-import java.util.List;
 
 /**
  * Interface for log segment metadata store. All operations that modify log segments should
@@ -67,7 +67,7 @@ public interface LogSegmentMetadataStore extends Closeable {
                                           OpListener<Version> listener);
 
     /**
-     * Store the maximum transaction id for <code>path</code>
+     * Store the maximum transaction id for <code>path</code>.
      *
      * @param txn
      *          transaction to execute for storing transaction id
@@ -86,8 +86,8 @@ public interface LogSegmentMetadataStore extends Closeable {
     /**
      * Create a log segment <code>segment</code> under transaction <code>txn</code>.
      *
-     * NOTE: this operation shouldn't be a blocking call. and it shouldn't execute the operation
-     *       immediately. the operation should be executed via {@link Transaction#execute()}
+     * <p>NOTE: this operation shouldn't be a blocking call. and it shouldn't execute the operation
+     *       immediately. the operation should be executed via {@link Transaction#execute()}</p>
      *
      * @param txn
      *          transaction to execute for this operation
@@ -103,8 +103,8 @@ public interface LogSegmentMetadataStore extends Closeable {
     /**
      * Delete a log segment <code>segment</code> under transaction <code>txn</code>.
      *
-     * NOTE: this operation shouldn't be a blocking call. and it shouldn't execute the operation
-     *       immediately. the operation should be executed via {@link Transaction#execute()}
+     * <p>NOTE: this operation shouldn't be a blocking call. and it shouldn't execute the operation
+     *       immediately. the operation should be executed via {@link Transaction#execute()}</p>
      *
      * @param txn
      *          transaction to execute for this operation
@@ -118,8 +118,8 @@ public interface LogSegmentMetadataStore extends Closeable {
     /**
      * Update a log segment <code>segment</code> under transaction <code>txn</code>.
      *
-     * NOTE: this operation shouldn't be a blocking call. and it shouldn't execute the operation
-     *       immediately. the operation should be executed via {@link Transaction#execute()}
+     * <p>NOTE: this operation shouldn't be a blocking call. and it shouldn't execute the operation
+     *       immediately. the operation should be executed via {@link Transaction#execute()}</p>
      *
      * @param txn
      *          transaction to execute for this operation

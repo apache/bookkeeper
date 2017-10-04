@@ -17,6 +17,14 @@
  */
 package org.apache.distributedlog.impl;
 
+import static org.apache.distributedlog.util.DLUtils.*;
+
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.callback.NamespaceListener;
@@ -30,22 +38,15 @@ import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.apache.distributedlog.util.DLUtils.*;
 
 /**
- * Watcher on watching a given namespace
+ * Watcher on watching a given namespace.
  */
 public class ZKNamespaceWatcher extends NamespaceWatcher
         implements Runnable, Watcher, AsyncCallback.Children2Callback {
 
-    static final Logger logger = LoggerFactory.getLogger(ZKNamespaceWatcher.class);
+    private static final Logger logger = LoggerFactory.getLogger(ZKNamespaceWatcher.class);
 
     private final DistributedLogConfiguration conf;
     private final URI uri;

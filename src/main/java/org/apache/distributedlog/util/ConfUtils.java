@@ -17,13 +17,16 @@
  */
 package org.apache.distributedlog.util;
 
+import java.util.Iterator;
+import org.apache.commons.configuration.Configuration;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.common.config.ConcurrentConstConfiguration;
 import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
-import org.apache.commons.configuration.Configuration;
 
-import java.util.Iterator;
 
+/**
+ * Utils to conf.
+ */
 public class ConfUtils {
 
     /**

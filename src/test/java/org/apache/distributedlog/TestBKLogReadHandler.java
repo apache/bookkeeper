@@ -17,21 +17,22 @@
  */
 package org.apache.distributedlog;
 
+import static org.junit.Assert.*;
 import com.google.common.base.Optional;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.apache.distributedlog.api.AsyncLogWriter;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.LogWriter;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.exceptions.LogNotFoundException;
 import org.apache.distributedlog.exceptions.OwnershipAcquireFailedException;
 import org.apache.distributedlog.logsegment.LogSegmentFilter;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.Utils;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -39,10 +40,9 @@ import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
 
 /**
- * Test {@link BKLogReadHandler}
+ * Test {@link BKLogReadHandler}.
  */
 public class TestBKLogReadHandler extends TestDistributedLogBase {
 
@@ -51,7 +51,8 @@ public class TestBKLogReadHandler extends TestDistributedLogBase {
     @Rule
     public TestName runtime = new TestName();
 
-    private void prepareLogSegmentsNonPartitioned(String name, int numSegments, int numEntriesPerSegment) throws Exception {
+    private void prepareLogSegmentsNonPartitioned(String name,
+                                                  int numSegments, int numEntriesPerSegment) throws Exception {
         DistributedLogManager dlm = createNewDLM(conf, name);
         long txid = 1;
         for (int sid = 0; sid < numSegments; ++sid) {
@@ -92,9 +93,9 @@ public class TestBKLogReadHandler extends TestDistributedLogBase {
         Utils.ioResult(out.write(controlRecord));
 
         DLSN last = dlm1.getLastDLSN();
-        assertEquals(new DLSN(1,9,0), last);
+        assertEquals(new DLSN(1, 9, 0), last);
         DLSN first = Utils.ioResult(dlm1.getFirstDLSNAsync());
-        assertEquals(new DLSN(1,0,0), first);
+        assertEquals(new DLSN(1, 0, 0), first);
         Utils.close(out);
     }
 

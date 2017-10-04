@@ -17,12 +17,12 @@
  */
 package org.apache.distributedlog.injector;
 
+import java.util.Random;
 import org.apache.distributedlog.util.Utils;
 
-import java.util.Random;
 
 /**
- * Failure injector based on {@link java.util.Random}
+ * Failure injector based on {@link java.util.Random}.
  */
 public class AsyncRandomFailureInjector implements AsyncFailureInjector {
 
@@ -32,6 +32,9 @@ public class AsyncRandomFailureInjector implements AsyncFailureInjector {
         return new Builder();
     }
 
+    /**
+     * Builder to build AsyncRandomFailureInjector.
+     */
     public static class Builder {
 
         private boolean _simulateDelays = false;

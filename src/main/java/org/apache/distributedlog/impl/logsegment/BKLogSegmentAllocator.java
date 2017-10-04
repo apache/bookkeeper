@@ -20,14 +20,15 @@ package org.apache.distributedlog.impl.logsegment;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import org.apache.bookkeeper.client.LedgerHandle;
+
 import org.apache.distributedlog.bk.LedgerAllocator;
 import org.apache.distributedlog.logsegment.LogSegmentEntryWriter;
 import org.apache.distributedlog.util.Allocator;
 import org.apache.distributedlog.util.Transaction;
-import org.apache.bookkeeper.client.LedgerHandle;
 
 /**
- * Allocate log segments
+ * Allocate log segments.
  */
 class BKLogSegmentAllocator implements Allocator<LogSegmentEntryWriter, Object> {
 
@@ -56,8 +57,8 @@ class BKLogSegmentAllocator implements Allocator<LogSegmentEntryWriter, Object> 
     }
 
     @Override
-    public CompletableFuture<LogSegmentEntryWriter> tryObtain(Transaction<Object> txn,
-                                                              final Transaction.OpListener<LogSegmentEntryWriter> listener) {
+    public CompletableFuture<LogSegmentEntryWriter> tryObtain(Transaction<Object> txn, final
+    Transaction.OpListener<LogSegmentEntryWriter> listener) {
         return allocator.tryObtain(txn, new Transaction.OpListener<LedgerHandle>() {
             @Override
             public void onCommit(LedgerHandle lh) {

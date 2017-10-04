@@ -16,6 +16,6 @@
  * limitations under the License.
  */
 /**
- * Distributed locking mechanism in distributedlog
+ * Distributed locking mechanism in distributedlog.
  */
 package org.apache.distributedlog.lock;

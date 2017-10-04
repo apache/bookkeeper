@@ -18,7 +18,7 @@
 package org.apache.distributedlog.acl;
 
 /**
- * Access Control on stream operations
+ * Access Control on stream operations.
  */
 public interface AccessControlManager {
 

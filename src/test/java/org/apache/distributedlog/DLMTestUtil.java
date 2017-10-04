@@ -17,29 +17,12 @@
  */
 package org.apache.distributedlog;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import org.apache.distributedlog.api.AsyncLogWriter;
-import org.apache.distributedlog.api.DistributedLogManager;
-import org.apache.distributedlog.api.LogReader;
-import org.apache.distributedlog.api.MetadataAccessor;
-import org.apache.distributedlog.api.namespace.Namespace;
-import org.apache.distributedlog.impl.BKNamespaceDriver;
-import org.apache.distributedlog.impl.logsegment.BKLogSegmentEntryWriter;
-import org.apache.distributedlog.logsegment.LogSegmentEntryStore;
-import org.apache.distributedlog.api.namespace.NamespaceBuilder;
-import org.apache.distributedlog.namespace.NamespaceDriver;
-import org.apache.distributedlog.util.ConfUtils;
-import org.apache.distributedlog.common.util.PermitLimiter;
-import org.apache.distributedlog.util.Utils;
-import org.apache.bookkeeper.client.BookKeeper;
-import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.feature.SettableFeatureProvider;
-import org.apache.bookkeeper.versioning.Version;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import static com.google.common.base.Charsets.UTF_8;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
@@ -48,31 +31,50 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import org.apache.bookkeeper.client.BookKeeper;
+import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.feature.SettableFeatureProvider;
+import org.apache.bookkeeper.versioning.Version;
+import org.apache.distributedlog.api.AsyncLogWriter;
+import org.apache.distributedlog.api.DistributedLogManager;
+import org.apache.distributedlog.api.LogReader;
+import org.apache.distributedlog.api.MetadataAccessor;
+import org.apache.distributedlog.api.namespace.Namespace;
+import org.apache.distributedlog.api.namespace.NamespaceBuilder;
+import org.apache.distributedlog.common.util.PermitLimiter;
+import org.apache.distributedlog.impl.BKNamespaceDriver;
+import org.apache.distributedlog.impl.logsegment.BKLogSegmentEntryWriter;
+import org.apache.distributedlog.logsegment.LogSegmentEntryStore;
+import org.apache.distributedlog.namespace.NamespaceDriver;
+import org.apache.distributedlog.util.ConfUtils;
+import org.apache.distributedlog.util.Utils;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static com.google.common.base.Charsets.UTF_8;
-import static org.junit.Assert.assertNotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
 
 /**
  * Utility class for setting up bookkeeper ensembles
- * and bringing individual bookies up and down
+ * and bringing individual bookies up and down.
  */
 public class DLMTestUtil {
     protected static final Logger LOG = LoggerFactory.getLogger(DLMTestUtil.class);
-    private final static byte[] payloadStatic = repeatString("abc", 512).getBytes();
+    private static final  byte[] payloadStatic = repeatString("abc", 512).getBytes();
 
     static String repeatString(String s, int n) {
         String ret = s;
-        for(int i = 1; i < n; i++) {
+        for (int i = 1; i < n; i++) {
             ret += s;
         }
         return ret;
     }
 
-    public static Map<Long, LogSegmentMetadata> readLogSegments(ZooKeeperClient zkc, String ledgerPath) throws Exception {
+    public static Map<Long, LogSegmentMetadata> readLogSegments(ZooKeeperClient zkc, String ledgerPath)
+            throws Exception {
         List<String> children = zkc.get().getChildren(ledgerPath, false);
         LOG.info("Children under {} : {}", ledgerPath, children);
         Map<Long, LogSegmentMetadata> segments =
@@ -113,7 +115,8 @@ public class DLMTestUtil {
         try {
             List<LogSegmentMetadata> logSegmentList = dlm.getLogSegments();
             LogSegmentMetadata lastSegment = logSegmentList.get(logSegmentList.size() - 1);
-            LogSegmentEntryStore entryStore = dlm.getNamespaceDriver().getLogSegmentEntryStore(NamespaceDriver.Role.READER);
+            LogSegmentEntryStore entryStore =
+                    dlm.getNamespaceDriver().getLogSegmentEntryStore(NamespaceDriver.Role.READER);
             Utils.close(Utils.ioResult(entryStore.openRandomAccessReader(lastSegment, true)));
         } finally {
             dlm.close();
@@ -208,7 +211,7 @@ public class DLMTestUtil {
 
     public static LogRecordWithDLSN getLogRecordWithDLSNInstance(DLSN dlsn, long txId, boolean isControlRecord) {
         LogRecordWithDLSN record = new LogRecordWithDLSN(dlsn, txId, generatePayload(txId), 1L);
-        record.setPositionWithinLogSegment((int)txId + 1);
+        record.setPositionWithinLogSegment((int) txId + 1);
         if (isControlRecord) {
             record.setControl();
         }
@@ -219,14 +222,16 @@ public class DLMTestUtil {
         return String.format("%s_%018d", DistributedLogConstants.INPROGRESS_LOGSEGMENT_PREFIX, logSegmentSeqNo);
     }
 
-    public static String completedLedgerZNodeNameWithVersion(long ledgerId, long firstTxId, long lastTxId, long logSegmentSeqNo) {
+    public static String completedLedgerZNodeNameWithVersion(long ledgerId,
+                                                             long firstTxId, long lastTxId, long logSegmentSeqNo) {
         return String.format("%s_%018d_%018d_%018d_v%dl%d_%04d", DistributedLogConstants.COMPLETED_LOGSEGMENT_PREFIX,
-                             firstTxId, lastTxId, logSegmentSeqNo, DistributedLogConstants.LOGSEGMENT_NAME_VERSION, ledgerId,
-                             DistributedLogConstants.LOCAL_REGION_ID);
+                       firstTxId, lastTxId, logSegmentSeqNo, DistributedLogConstants.LOGSEGMENT_NAME_VERSION, ledgerId,
+                       DistributedLogConstants.LOCAL_REGION_ID);
     }
 
     public static String completedLedgerZNodeNameWithTxID(long firstTxId, long lastTxId) {
-        return String.format("%s_%018d_%018d", DistributedLogConstants.COMPLETED_LOGSEGMENT_PREFIX, firstTxId, lastTxId);
+        return String.format("%s_%018d_%018d",
+                DistributedLogConstants.COMPLETED_LOGSEGMENT_PREFIX, firstTxId, lastTxId);
     }
 
     public static String completedLedgerZNodeNameWithLogSegmentSequenceNumber(long logSegmentSeqNo) {
@@ -286,7 +291,8 @@ public class DLMTestUtil {
                     .setInprogress(false)
                     .setLogSegmentSequenceNo(logSegmentSeqNo)
                     .build();
-        return metadata.completeLogSegment(ledgerPath + "/" + completedLedgerZNodeNameWithLogSegmentSequenceNumber(logSegmentSeqNo),
+        return metadata.completeLogSegment(ledgerPath + "/"
+                        + completedLedgerZNodeNameWithLogSegmentSequenceNumber(logSegmentSeqNo),
                 lastTxId, recordCount, lastEntryId, lastSlotId, firstTxId);
     }
 
@@ -303,12 +309,13 @@ public class DLMTestUtil {
         }
     }
 
-    public static long generateLogSegmentNonPartitioned(DistributedLogManager dlm, int controlEntries, int userEntries, long startTxid)
-            throws Exception {
+    public static long generateLogSegmentNonPartitioned(DistributedLogManager dlm,
+                                                 int controlEntries, int userEntries, long startTxid) throws Exception {
         return generateLogSegmentNonPartitioned(dlm, controlEntries, userEntries, startTxid, 1L);
     }
 
-    public static long generateLogSegmentNonPartitioned(DistributedLogManager dlm, int controlEntries, int userEntries, long startTxid, long txidStep) throws Exception {
+    public static long generateLogSegmentNonPartitioned(DistributedLogManager dlm, int controlEntries,
+                                                   int userEntries, long startTxid, long txidStep) throws Exception {
         AsyncLogWriter out = dlm.startAsyncLogSegmentNonPartitioned();
         long txid = startTxid;
         for (int i = 0; i < controlEntries; ++i) {
@@ -334,9 +341,9 @@ public class DLMTestUtil {
         return ((BKNamespaceDriver) dlm.getNamespaceDriver()).getReaderBKC();
     }
 
-    public static void injectLogSegmentWithGivenLogSegmentSeqNo(DistributedLogManager manager, DistributedLogConfiguration conf,
-                                                                long logSegmentSeqNo, long startTxID, boolean writeEntries, long segmentSize,
-                                                                boolean completeLogSegment)
+    public static void injectLogSegmentWithGivenLogSegmentSeqNo(DistributedLogManager manager,
+                                                DistributedLogConfiguration conf, long logSegmentSeqNo, long startTxID,
+                                                boolean writeEntries, long segmentSize, boolean completeLogSegment)
             throws Exception {
         BKDistributedLogManager dlm = (BKDistributedLogManager) manager;
         BKLogWriteHandler writeHandler = dlm.createWriteHandler(false);
@@ -435,7 +442,8 @@ public class DLMTestUtil {
         if (recordWrongLastDLSN) {
             Utils.ioResult(writer.asyncClose());
             writeHandler.completeAndCloseLogSegment(
-                    writeHandler.inprogressZNodeName(writer.getLogSegmentId(), writer.getStartTxId(), writer.getLogSegmentSequenceNumber()),
+                    writeHandler.inprogressZNodeName(writer.getLogSegmentId(),
+                            writer.getStartTxId(), writer.getLogSegmentSequenceNumber()),
                     writer.getLogSegmentSequenceNumber(),
                     writer.getLogSegmentId(),
                     writer.getStartTxId(),

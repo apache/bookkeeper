@@ -18,7 +18,7 @@
 package org.apache.distributedlog.lock;
 
 /**
- * Listener on lock state changes
+ * Listener on lock state changes.
  */
 interface LockListener {
     /**

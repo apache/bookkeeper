@@ -23,7 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Injector that injects random delays
+ * Injector that injects random delays.
  */
 public class RandomDelayFailureInjector implements FailureInjector {
 

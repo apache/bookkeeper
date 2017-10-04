@@ -20,7 +20,7 @@ package org.apache.distributedlog.lock;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Factory to create {@link SessionLock}
+ * Factory to create {@link SessionLock}.
  */
 public interface SessionLockFactory {
 

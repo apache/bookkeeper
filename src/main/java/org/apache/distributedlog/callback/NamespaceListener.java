@@ -21,6 +21,9 @@ import com.google.common.annotations.Beta;
 
 import java.util.Iterator;
 
+/**
+ * Namespace Listener.
+ */
 @Beta
 public interface NamespaceListener {
 

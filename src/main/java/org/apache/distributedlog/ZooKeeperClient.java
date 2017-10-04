@@ -17,24 +17,8 @@
  */
 package org.apache.distributedlog;
 
+import static com.google.common.base.Charsets.UTF_8;
 import com.google.common.base.Stopwatch;
-import org.apache.distributedlog.util.FailpointUtils;
-import org.apache.distributedlog.zk.ZKWatcherManager;
-import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
-import org.apache.bookkeeper.zookeeper.RetryPolicy;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.Watcher.Event.EventType;
-import org.apache.zookeeper.Watcher.Event.KeeperState;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.data.ACL;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -42,9 +26,25 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
+import org.apache.bookkeeper.zookeeper.RetryPolicy;
+import org.apache.distributedlog.util.FailpointUtils;
+import org.apache.distributedlog.zk.ZKWatcherManager;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.Watcher.Event.EventType;
+import org.apache.zookeeper.Watcher.Event.KeeperState;
+import org.apache.zookeeper.ZooDefs;
+import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.data.ACL;
 
-import static com.google.common.base.Charsets.UTF_8;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
 
 /**
  * ZooKeeper Client wrapper over {@link org.apache.bookkeeper.zookeeper.ZooKeeperClient}.
@@ -61,7 +61,10 @@ import static com.google.common.base.Charsets.UTF_8;
  */
 public class ZooKeeperClient {
 
-    public static interface Credentials {
+    /**
+     * interface used to authenticate zk client.
+     */
+    public interface Credentials {
 
         Credentials NONE = new Credentials() {
             @Override
@@ -72,7 +75,9 @@ public class ZooKeeperClient {
 
         void authenticate(ZooKeeper zooKeeper);
     }
-
+    /**
+     * interface impl used to authenticate zk client.
+     */
     public static class DigestCredentials implements Credentials {
 
         String username;
@@ -89,6 +94,9 @@ public class ZooKeeperClient {
         }
     }
 
+    /**
+     * Notify a zk session expire event.
+     */
     public interface ZooKeeperSessionExpireNotifier {
         void notifySessionExpired();
     }
@@ -193,7 +201,6 @@ public class ZooKeeperClient {
      * @return a connected ZooKeeper client
      * @throws ZooKeeperConnectionException if there was a problem connecting to the ZK cluster
      * @throws InterruptedException if interrupted while waiting for a connection to be established
-     * @throws TimeoutException if a connection could not be established within the configured
      * session timeout
      */
     public synchronized ZooKeeper get()
@@ -202,7 +209,8 @@ public class ZooKeeperClient {
         try {
             FailpointUtils.checkFailPoint(FailpointUtils.FailPointName.FP_ZooKeeperConnectionLoss);
         } catch (IOException ioe) {
-            throw new ZooKeeperConnectionException("Client " + name + " failed on establishing zookeeper connection", ioe);
+            throw new ZooKeeperConnectionException("Client "
+                    + name + " failed on establishing zookeeper connection", ioe);
         }
 
         // This indicates that the client was explictly closed
@@ -260,8 +268,8 @@ public class ZooKeeperClient {
                                 break;
                             case Disconnected:
                                 if (null == retryPolicy) {
-                                    LOG.info("ZooKeeper {} is disconnected from zookeeper now," +
-                                            " but it is OK unless we received EXPIRED event.", name);
+                                    LOG.info("ZooKeeper {} is disconnected from zookeeper now,"
+                                            + " but it is OK unless we received EXPIRED event.", name);
                                 }
                                 // Mark as not authenticated if expired or disconnected. In both cases
                                 // we lose any attached auth info. Relying on Expired/Disconnected is
@@ -294,10 +302,10 @@ public class ZooKeeperClient {
 
         ZooKeeper zk;
         try {
-            RetryPolicy opRetryPolicy = null == retryPolicy ?
-                    new BoundExponentialBackoffRetryPolicy(sessionTimeoutMs, sessionTimeoutMs, 0) : retryPolicy;
-            RetryPolicy connectRetryPolicy = null == retryPolicy ?
-                    new BoundExponentialBackoffRetryPolicy(sessionTimeoutMs, sessionTimeoutMs, 0) :
+            RetryPolicy opRetryPolicy = null == retryPolicy
+                    ? new BoundExponentialBackoffRetryPolicy(sessionTimeoutMs, sessionTimeoutMs, 0) : retryPolicy;
+            RetryPolicy connectRetryPolicy = null == retryPolicy
+                    ? new BoundExponentialBackoffRetryPolicy(sessionTimeoutMs, sessionTimeoutMs, 0) :
                     new BoundExponentialBackoffRetryPolicy(sessionTimeoutMs, sessionTimeoutMs, Integer.MAX_VALUE);
             zk = org.apache.bookkeeper.zookeeper.ZooKeeperClient.newBuilder()
                     .connectString(zooKeeperServers)

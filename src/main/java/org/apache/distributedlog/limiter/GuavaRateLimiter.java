@@ -17,7 +17,7 @@
  */
 package org.apache.distributedlog.limiter;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Wrap a guava limiter in a simple interface to make testing easier.
@@ -48,7 +48,7 @@ public class GuavaRateLimiter implements RateLimiter {
 
     @Override
     public boolean acquire(int permits) {
-        Preconditions.checkState(permits >= 0);
+        checkState(permits >= 0);
         if (permits > 0) {
             return limiter.tryAcquire(permits);
         } else {

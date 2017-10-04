@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 package org.apache.distributedlog.lock;
-
-import org.apache.commons.lang3.tuple.Pair;
-
 import java.util.HashSet;
 import java.util.Set;
+import org.apache.commons.lang3.tuple.Pair;
+
+
 
 class DistributedLockContext {
     private final Set<Pair<String, Long>> lockIds;

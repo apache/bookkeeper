@@ -23,7 +23,7 @@ import org.apache.distributedlog.DistributedLogConstants;
 import org.apache.distributedlog.LogSegmentMetadata;
 
 /**
- * Retrieve the last tx id from list of log segments
+ * Retrieve the last tx id from list of log segments.
  */
 public class GetLastTxIdFunction implements Function<List<LogSegmentMetadata>, Long> {
 

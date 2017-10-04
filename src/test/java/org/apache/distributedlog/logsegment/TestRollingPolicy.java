@@ -17,10 +17,10 @@
  */
 package org.apache.distributedlog.logsegment;
 
+import static org.junit.Assert.*;
 import org.apache.distributedlog.common.util.Sizable;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
 
 /**
  * Test Case for {@link RollingPolicy}s.

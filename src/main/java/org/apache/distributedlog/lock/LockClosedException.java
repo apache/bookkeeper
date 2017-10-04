@@ -16,10 +16,9 @@
  * limitations under the License.
  */
 package org.apache.distributedlog.lock;
-
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.distributedlog.exceptions.LockingException;
 import org.apache.distributedlog.lock.ZKSessionLock.State;
-import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Exception indicates that the lock was closed (unlocked) before the lock request could complete.

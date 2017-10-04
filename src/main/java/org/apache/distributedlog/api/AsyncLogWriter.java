@@ -26,6 +26,9 @@ import org.apache.distributedlog.LogRecord;
 import org.apache.distributedlog.io.AsyncAbortable;
 import org.apache.distributedlog.io.AsyncCloseable;
 
+/**
+ * AsyncLogWriter.
+ */
 @Public
 @Evolving
 public interface AsyncLogWriter extends AsyncCloseable, AsyncAbortable {
@@ -76,7 +79,7 @@ public interface AsyncLogWriter extends AsyncCloseable, AsyncAbortable {
     CompletableFuture<Long> markEndOfStream();
 
     /**
-     * Get the name of the stream this writer writes data to
+     * Get the name of the stream this writer writes data to.
      */
     String getStreamName();
 }

@@ -17,9 +17,10 @@
  */
 package org.apache.distributedlog.callback;
 
+import java.util.List;
+
 import org.apache.bookkeeper.versioning.Versioned;
 
-import java.util.List;
 
 /**
  * Listener on list of log segments changes for a given stream used by

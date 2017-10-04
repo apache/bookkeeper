@@ -16,10 +16,15 @@
  * limitations under the License.
  */
 package org.apache.distributedlog.impl.acl;
+import static com.google.common.base.Charsets.UTF_8;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.concurrent.CompletableFuture;
+
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.thrift.AccessControlEntry;
 import org.apache.thrift.TException;
@@ -32,17 +37,17 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.data.Stat;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-
-import static com.google.common.base.Charsets.UTF_8;
-
+/**
+ * ZooKeeper Based AccessControl.
+ */
 public class ZKAccessControl {
 
     private static final int BUFFER_SIZE = 4096;
 
     public static final AccessControlEntry DEFAULT_ACCESS_CONTROL_ENTRY = new AccessControlEntry();
-
+    /**
+     * AccessControl Exception.
+     */
     public static class CorruptedAccessControlException extends IOException {
 
         private static final long serialVersionUID = 5391285182476211603L;
@@ -77,8 +82,8 @@ public class ZKAccessControl {
             return false;
         }
         ZKAccessControl other = (ZKAccessControl) obj;
-        return Objects.equal(zkPath, other.zkPath) &&
-                Objects.equal(accessControlEntry, other.accessControlEntry);
+        return Objects.equal(zkPath, other.zkPath)
+                && Objects.equal(accessControlEntry, other.accessControlEntry);
     }
 
     @Override
@@ -148,7 +153,8 @@ public class ZKAccessControl {
         return promise;
     }
 
-    public static CompletableFuture<ZKAccessControl> read(final ZooKeeperClient zkc, final String zkPath, Watcher watcher) {
+    public static CompletableFuture<ZKAccessControl>
+    read(final ZooKeeperClient zkc, final String zkPath, Watcher watcher) {
         final CompletableFuture<ZKAccessControl> promise = new CompletableFuture<ZKAccessControl>();
 
         try {
@@ -182,8 +188,8 @@ public class ZKAccessControl {
             zkc.get().delete(zkPath, -1, new AsyncCallback.VoidCallback() {
                 @Override
                 public void processResult(int rc, String path, Object ctx) {
-                    if (KeeperException.Code.OK.intValue() == rc ||
-                            KeeperException.Code.NONODE.intValue() == rc) {
+                    if (KeeperException.Code.OK.intValue() == rc
+                            || KeeperException.Code.NONODE.intValue() == rc) {
                         promise.complete(null);
                     } else {
                         promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc)));

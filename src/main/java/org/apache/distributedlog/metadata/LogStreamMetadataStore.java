@@ -19,14 +19,15 @@ package org.apache.distributedlog.metadata;
 
 import com.google.common.annotations.Beta;
 import com.google.common.base.Optional;
-import java.util.concurrent.CompletableFuture;
-import org.apache.distributedlog.lock.DistributedLock;
-import org.apache.distributedlog.logsegment.LogSegmentMetadataStore;
-import org.apache.distributedlog.common.util.PermitManager;
-import org.apache.distributedlog.util.Transaction;
-
 import java.io.Closeable;
 import java.net.URI;
+import java.util.concurrent.CompletableFuture;
+import org.apache.distributedlog.common.util.PermitManager;
+import org.apache.distributedlog.lock.DistributedLock;
+import org.apache.distributedlog.logsegment.LogSegmentMetadataStore;
+import org.apache.distributedlog.util.Transaction;
+
+
 
 /**
  * The interface to manage the log stream metadata. The implementation is responsible
@@ -43,7 +44,7 @@ public interface LogStreamMetadataStore extends Closeable {
     Transaction<Object> newTransaction();
 
     /**
-     * Ensure the existence of a log stream
+     * Ensure the existence of a log stream.
      *
      * @param uri the location of the log stream
      * @param logName the name of the log stream

@@ -28,12 +28,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.distributedlog.exceptions.LockingException;
-import org.apache.distributedlog.exceptions.OwnershipAcquireFailedException;
-import org.apache.distributedlog.exceptions.UnexpectedException;
 import org.apache.distributedlog.common.concurrent.AsyncSemaphore;
 import org.apache.distributedlog.common.concurrent.FutureEventListener;
 import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.distributedlog.exceptions.LockingException;
+import org.apache.distributedlog.exceptions.OwnershipAcquireFailedException;
+import org.apache.distributedlog.exceptions.UnexpectedException;
 import org.apache.distributedlog.util.OrderedScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,8 +50,8 @@ import org.slf4j.LoggerFactory;
  * The lock is only allowed to acquire once. If the lock is acquired successfully,
  * the caller holds the ownership until it loses the ownership either because of
  * others already acquired the lock when session expired or explicitly close it.
- * <p>
- * The caller could use {@link #checkOwnership()} or {@link #checkOwnershipAndReacquire()}
+ *
+ *  <p>The caller could use {@link #checkOwnership()} or {@link #checkOwnershipAndReacquire()}
  * to check if it still holds the lock. If it doesn't hold the lock, the caller should
  * give up the ownership and close the lock.
  * <h3>Metrics</h3>
@@ -134,7 +134,8 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
      */
     public synchronized CompletableFuture<ZKDistributedLock> asyncAcquire() {
         if (null != lockAcquireFuture) {
-            return FutureUtils.exception(new UnexpectedException("Someone is already acquiring/acquired lock " + lockPath));
+            return FutureUtils.exception(
+                    new UnexpectedException("Someone is already acquiring/acquired lock " + lockPath));
         }
         final CompletableFuture<ZKDistributedLock> promise = FutureUtils.createFuture();
         promise.whenComplete((zkDistributedLock, throwable) -> {
@@ -474,7 +475,8 @@ public class ZKDistributedLock implements LockListener, DistributedLock {
         doAsyncAcquireWithSemaphore(tryPromise, 0);
     }
 
-    private CompletableFuture<ZKDistributedLock> reacquireLock(boolean throwLockAcquireException) throws LockingException {
+    private CompletableFuture<ZKDistributedLock> reacquireLock(boolean throwLockAcquireException)
+            throws LockingException {
         final Stopwatch stopwatch = Stopwatch.createStarted();
         CompletableFuture<ZKDistributedLock> lockPromise;
         synchronized (this) {

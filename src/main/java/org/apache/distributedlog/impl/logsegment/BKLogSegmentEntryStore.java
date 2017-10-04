@@ -17,7 +17,14 @@
  */
 package org.apache.distributedlog.impl.logsegment;
 
+import static com.google.common.base.Charsets.UTF_8;
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import org.apache.bookkeeper.client.AsyncCallback;
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BookKeeper;
+import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.distributedlog.BookKeeperClient;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.LogSegmentMetadata;
@@ -27,6 +34,7 @@ import org.apache.distributedlog.bk.LedgerAllocator;
 import org.apache.distributedlog.bk.LedgerAllocatorDelegator;
 import org.apache.distributedlog.bk.QuorumConfigProvider;
 import org.apache.distributedlog.bk.SimpleLedgerAllocator;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
 import org.apache.distributedlog.exceptions.BKTransmitException;
 import org.apache.distributedlog.injector.AsyncFailureInjector;
@@ -36,22 +44,15 @@ import org.apache.distributedlog.logsegment.LogSegmentEntryWriter;
 import org.apache.distributedlog.logsegment.LogSegmentRandomAccessEntryReader;
 import org.apache.distributedlog.metadata.LogMetadataForWriter;
 import org.apache.distributedlog.util.Allocator;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.OrderedScheduler;
-import org.apache.bookkeeper.client.AsyncCallback;
-import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.BookKeeper;
-import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.stats.StatsLogger;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 
-import static com.google.common.base.Charsets.UTF_8;
 
 /**
- * BookKeeper Based Entry Store
+ * BookKeeper Based Entry Store.
  */
 public class BKLogSegmentEntryStore implements
         LogSegmentEntryStore,
@@ -248,7 +249,8 @@ public class BKLogSegmentEntryStore implements
         } catch (IOException e) {
             return FutureUtils.exception(e);
         }
-        final CompletableFuture<LogSegmentRandomAccessEntryReader> openPromise = new CompletableFuture<LogSegmentRandomAccessEntryReader>();
+        final CompletableFuture<LogSegmentRandomAccessEntryReader> openPromise =
+                new CompletableFuture<LogSegmentRandomAccessEntryReader>();
         AsyncCallback.OpenCallback openCallback = new AsyncCallback.OpenCallback() {
             @Override
             public void openComplete(int rc, LedgerHandle lh, Object ctx) {

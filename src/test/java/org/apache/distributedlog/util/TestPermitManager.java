@@ -17,18 +17,22 @@
  */
 package org.apache.distributedlog.util;
 
-import org.apache.distributedlog.common.util.PermitManager;
-import org.apache.distributedlog.zk.LimitedPermitManager;
-import org.junit.Test;
-
+import static org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import org.apache.distributedlog.common.util.PermitManager;
+import org.apache.distributedlog.zk.LimitedPermitManager;
+import org.junit.Test;
 
-import static org.junit.Assert.*;
 
+
+
+/**
+ * Test Case for {@link PermitManager}.
+ */
 public class TestPermitManager {
 
     @Test(timeout = 60000)

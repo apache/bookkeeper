@@ -17,7 +17,11 @@
  */
 package org.apache.distributedlog.util;
 
+import static com.google.common.base.Charsets.UTF_8;
+import static org.apache.distributedlog.util.DLUtils.validateAndNormalizeName;
+import static org.junit.Assert.*;
 import com.google.common.collect.Lists;
+import java.util.List;
 import org.apache.distributedlog.DLMTestUtil;
 import org.apache.distributedlog.LogSegmentMetadata;
 import org.apache.distributedlog.LogSegmentMetadata.LogSegmentMetadataVersion;
@@ -25,14 +29,11 @@ import org.apache.distributedlog.exceptions.InvalidStreamNameException;
 import org.apache.distributedlog.exceptions.UnexpectedException;
 import org.junit.Test;
 
-import java.util.List;
 
-import static com.google.common.base.Charsets.UTF_8;
-import static org.apache.distributedlog.util.DLUtils.validateAndNormalizeName;
-import static org.junit.Assert.*;
+
 
 /**
- * Test Case for {@link DLUtils}
+ * Test Case for {@link DLUtils}.
  */
 public class TestDLUtils {
 

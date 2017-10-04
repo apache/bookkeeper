@@ -23,7 +23,7 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.DLSN;
 
 /**
- * Store to manage subscriptions
+ * Store to manage subscriptions.
  */
 public interface SubscriptionsStore extends Closeable {
 
@@ -34,14 +34,14 @@ public interface SubscriptionsStore extends Closeable {
      *          subscriber id
      * @return future representing last committed position.
      */
-    public CompletableFuture<DLSN> getLastCommitPosition(String subscriberId);
+    CompletableFuture<DLSN> getLastCommitPosition(String subscriberId);
 
     /**
      * Get the last committed positions for all subscribers.
      *
      * @return future representing last committed positions for all subscribers.
      */
-    public CompletableFuture<Map<String, DLSN>> getLastCommitPositions();
+    CompletableFuture<Map<String, DLSN>> getLastCommitPositions();
 
     /**
      * Advance the last committed position for <i>subscriberId</i>.
@@ -52,7 +52,7 @@ public interface SubscriptionsStore extends Closeable {
      *          new committed position.
      * @return future representing advancing result.
      */
-    public CompletableFuture<Void> advanceCommitPosition(String subscriberId, DLSN newPosition);
+    CompletableFuture<Void> advanceCommitPosition(String subscriberId, DLSN newPosition);
 
     /**
      * Delete the subscriber <i>subscriberId</i> permanently. Once the subscriber is deleted, all the
@@ -62,6 +62,6 @@ public interface SubscriptionsStore extends Closeable {
      * return true only if there's such subscriber and we removed it successfully.
      * return false if there's no such subscriber, or we failed to remove.
      */
-    public CompletableFuture<Boolean> deleteSubscriber(String subscriberId);
+    CompletableFuture<Boolean> deleteSubscriber(String subscriberId);
 
 }

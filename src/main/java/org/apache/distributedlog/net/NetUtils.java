@@ -17,21 +17,22 @@
  */
 package org.apache.distributedlog.net;
 
-import org.apache.bookkeeper.net.DNSToSwitchMapping;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import org.apache.bookkeeper.net.DNSToSwitchMapping;
+
+
 
 /**
- * Utils about network
+ * Utils about network.
  */
 public class NetUtils {
 
     /**
      * Get the dns resolver from class <code>resolverClassName</code> with optional
      * <code>hostRegionOverrides</code>.
-     * <p>
-     * It would try to load the class with the constructor with <code>hostRegionOverrides</code>.
+     *
+     *  <p>It would try to load the class with the constructor with <code>hostRegionOverrides</code>.
      * If it fails, it would fall back to load the class with default empty constructor.
      * The interpretion of <code>hostRegionOverrides</code> is up to the implementation.
      *

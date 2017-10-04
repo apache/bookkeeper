@@ -17,15 +17,15 @@
  */
 package org.apache.distributedlog;
 
-import org.apache.distributedlog.util.DLUtils;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
+import org.apache.distributedlog.util.DLUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Utility class for storing and reading
- * the max seen txid in zookeeper
+ * the max seen txid in zookeeper.
  */
 class MaxTxId {
     static final Logger LOG = LoggerFactory.getLogger(MaxTxId.class);

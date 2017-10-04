@@ -17,11 +17,11 @@
  */
 package org.apache.distributedlog.selector;
 
+import static org.junit.Assert.*;
 import org.apache.distributedlog.DLMTestUtil;
 import org.apache.distributedlog.DLSN;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
 
 /**
  * Test Case for {@link LogRecordSelector}s.

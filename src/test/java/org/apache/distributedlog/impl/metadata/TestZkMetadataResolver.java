@@ -17,30 +17,35 @@
  */
 package org.apache.distributedlog.impl.metadata;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import java.io.IOException;
+import java.net.URI;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.DistributedLogConstants;
 import org.apache.distributedlog.TestZooKeeperClientBuilder;
-import org.apache.distributedlog.impl.metadata.BKDLConfig;
-import org.apache.distributedlog.impl.metadata.ZkMetadataResolver;
+import org.apache.distributedlog.ZooKeeperClient;
+import org.apache.distributedlog.ZooKeeperClusterTestCase;
+
 import org.apache.distributedlog.metadata.DLMetadata;
 import org.apache.distributedlog.util.Utils;
-import org.apache.distributedlog.ZooKeeperClient;
-import org.apache.distributedlog.ZooKeeperClientBuilder;
-import org.apache.distributedlog.ZooKeeperClusterTestCase;
+
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.net.URI;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
+
+
+
+/**
+ * TestZkMetadataResolver.
+ */
 public class TestZkMetadataResolver extends ZooKeeperClusterTestCase {
 
     private static final BKDLConfig bkdlConfig = new BKDLConfig("127.0.0.1:7000", "ledgers");

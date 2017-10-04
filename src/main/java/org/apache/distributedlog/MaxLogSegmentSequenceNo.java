@@ -17,12 +17,13 @@
  */
 package org.apache.distributedlog;
 
-import org.apache.distributedlog.util.DLUtils;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
+import org.apache.distributedlog.util.DLUtils;
+
 
 /**
- * Utility class for storing and reading max ledger sequence number
+ * Utility class for storing and reading max ledger sequence number.
  */
 class MaxLogSegmentSequenceNo {
 

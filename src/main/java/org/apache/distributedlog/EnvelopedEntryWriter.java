@@ -49,7 +49,7 @@ import org.slf4j.LoggerFactory;
  */
 class EnvelopedEntryWriter implements Writer {
 
-    static final Logger logger = LoggerFactory.getLogger(EnvelopedEntryWriter.class);
+    private static final Logger logger = LoggerFactory.getLogger(EnvelopedEntryWriter.class);
 
     private static class WriteRequest {
 

@@ -17,11 +17,20 @@
  */
 package org.apache.distributedlog;
 
+import static org.junit.Assert.*;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
 import org.apache.distributedlog.ZooKeeperClient.Credentials;
 import org.apache.distributedlog.ZooKeeperClient.DigestCredentials;
 import org.apache.distributedlog.common.annotations.DistributedLogAnnotations;
-import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
+
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -38,23 +47,15 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
 
 /**
- * Test Cases for {@link org.apache.distributedlog.ZooKeeperClient}
+ * Test Cases for {@link org.apache.distributedlog.ZooKeeperClient}.
  */
 public class TestZooKeeperClient extends ZooKeeperClusterTestCase {
     static final Logger LOG = LoggerFactory.getLogger(TestZooKeeperClient.class);
 
-    private final static int sessionTimeoutMs = 2000;
+    private static final int sessionTimeoutMs = 2000;
 
     private ZooKeeperClient zkc;
 
@@ -104,7 +105,8 @@ public class TestZooKeeperClient extends ZooKeeperClusterTestCase {
         ZooKeeperClient zkcAuth = buildAuthdClient("test");
         zkcAuth.get().create("/test", new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         zkcAuth.get().create("/test/key1", new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        zkcAuth.get().create("/test/key2", new byte[0], DistributedLogConstants.EVERYONE_READ_CREATOR_ALL, CreateMode.PERSISTENT);
+        zkcAuth.get().create("/test/key2", new byte[0],
+                DistributedLogConstants.EVERYONE_READ_CREATOR_ALL, CreateMode.PERSISTENT);
 
         ZooKeeperClient zkcNoAuth = buildClient();
         zkcNoAuth.get().create("/test/key1/key1", new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
@@ -124,7 +126,8 @@ public class TestZooKeeperClient extends ZooKeeperClusterTestCase {
         zkcAuth.get().create("/test", new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         zkcAuth.get().create("/test/key1", new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         try {
-            zkcAuth.get().create("/test/key2", new byte[0], DistributedLogConstants.EVERYONE_READ_CREATOR_ALL, CreateMode.PERSISTENT);
+            zkcAuth.get().create("/test/key2", new byte[0],
+                    DistributedLogConstants.EVERYONE_READ_CREATOR_ALL, CreateMode.PERSISTENT);
             fail("create should fail because we're not authenticated");
         } catch (KeeperException.InvalidACLException ex) {
             LOG.info("caught exception writing to protected key", ex);
@@ -136,9 +139,12 @@ public class TestZooKeeperClient extends ZooKeeperClusterTestCase {
     @Test(timeout = 60000)
     public void testAclAllowsReadsForNoAuth() throws Exception {
         ZooKeeperClient zkcAuth = buildAuthdClient("test");
-        zkcAuth.get().create("/test", new byte[0], DistributedLogConstants.EVERYONE_READ_CREATOR_ALL, CreateMode.PERSISTENT);
-        zkcAuth.get().create("/test/key1", new byte[0], DistributedLogConstants.EVERYONE_READ_CREATOR_ALL, CreateMode.PERSISTENT);
-        zkcAuth.get().create("/test/key1/key2", new byte[0], DistributedLogConstants.EVERYONE_READ_CREATOR_ALL, CreateMode.PERSISTENT);
+        zkcAuth.get().create("/test", new byte[0],
+                DistributedLogConstants.EVERYONE_READ_CREATOR_ALL, CreateMode.PERSISTENT);
+        zkcAuth.get().create("/test/key1", new byte[0],
+                DistributedLogConstants.EVERYONE_READ_CREATOR_ALL, CreateMode.PERSISTENT);
+        zkcAuth.get().create("/test/key1/key2", new byte[0],
+                DistributedLogConstants.EVERYONE_READ_CREATOR_ALL, CreateMode.PERSISTENT);
 
         ZooKeeperClient zkcNoAuth = buildClient();
         List<String> nodes = null;
@@ -164,7 +170,8 @@ public class TestZooKeeperClient extends ZooKeeperClusterTestCase {
         zkcAuth.get().create("/test", new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 
         try {
-            zkcAuth.get().create("/test/key1", new byte[0], DistributedLogConstants.EVERYONE_READ_CREATOR_ALL, CreateMode.PERSISTENT);
+            zkcAuth.get().create("/test/key1", new byte[0],
+                    DistributedLogConstants.EVERYONE_READ_CREATOR_ALL, CreateMode.PERSISTENT);
             fail("should have failed");
         } catch (Exception ex) {
         }
@@ -173,7 +180,8 @@ public class TestZooKeeperClient extends ZooKeeperClusterTestCase {
         credentials.authenticate(zkcAuth.get());
 
         // Should not throw now that we're authenticated.
-        zkcAuth.get().create("/test/key1", new byte[0], DistributedLogConstants.EVERYONE_READ_CREATOR_ALL, CreateMode.PERSISTENT);
+        zkcAuth.get().create("/test/key1", new byte[0],
+                DistributedLogConstants.EVERYONE_READ_CREATOR_ALL, CreateMode.PERSISTENT);
 
         rmAll(zkcAuth, "/test");
     }
@@ -252,14 +260,15 @@ public class TestZooKeeperClient extends ZooKeeperClusterTestCase {
     }
 
     /**
-     * {@link https://issues.apache.org/jira/browse/DL-34}
+     * {@link https://issues.apache.org/jira/browse/DL-34}.
      */
     @DistributedLogAnnotations.FlakyTest
     @Ignore
     @Test(timeout = 60000)
     public void testAclAuthSpansExpiration() throws Exception {
         ZooKeeperClient zkcAuth = buildAuthdClient("test");
-        zkcAuth.get().create("/test", new byte[0], DistributedLogConstants.EVERYONE_READ_CREATOR_ALL, CreateMode.PERSISTENT);
+        zkcAuth.get().create("/test", new byte[0],
+                DistributedLogConstants.EVERYONE_READ_CREATOR_ALL, CreateMode.PERSISTENT);
 
         CountDownLatch expired = awaitConnectionEvent(KeeperState.Expired, zkcAuth);
         CountDownLatch connected = awaitConnectionEvent(KeeperState.SyncConnected, zkcAuth);
@@ -269,20 +278,22 @@ public class TestZooKeeperClient extends ZooKeeperClusterTestCase {
         expired.await(2, TimeUnit.SECONDS);
         connected.await(2, TimeUnit.SECONDS);
 
-        zkcAuth.get().create("/test/key1", new byte[0], DistributedLogConstants.EVERYONE_READ_CREATOR_ALL, CreateMode.PERSISTENT);
+        zkcAuth.get().create("/test/key1", new byte[0],
+                DistributedLogConstants.EVERYONE_READ_CREATOR_ALL, CreateMode.PERSISTENT);
 
         rmAll(zkcAuth, "/test");
     }
 
     /**
-     * {@link https://issues.apache.org/jira/browse/DL-34}
+     * {@link https://issues.apache.org/jira/browse/DL-34}.
      */
     @DistributedLogAnnotations.FlakyTest
     @Ignore
     @Test(timeout = 60000)
     public void testAclAuthSpansExpirationNonRetryableClient() throws Exception {
         ZooKeeperClient zkcAuth = clientBuilder().retryPolicy(null).zkAclId("test").build();
-        zkcAuth.get().create("/test", new byte[0], DistributedLogConstants.EVERYONE_READ_CREATOR_ALL, CreateMode.PERSISTENT);
+        zkcAuth.get().create("/test", new byte[0],
+                DistributedLogConstants.EVERYONE_READ_CREATOR_ALL, CreateMode.PERSISTENT);
 
         CountDownLatch expired = awaitConnectionEvent(KeeperState.Expired, zkcAuth);
         CountDownLatch connected = awaitConnectionEvent(KeeperState.SyncConnected, zkcAuth);
@@ -292,7 +303,8 @@ public class TestZooKeeperClient extends ZooKeeperClusterTestCase {
         expired.await(2, TimeUnit.SECONDS);
         connected.await(2, TimeUnit.SECONDS);
 
-        zkcAuth.get().create("/test/key1", new byte[0], DistributedLogConstants.EVERYONE_READ_CREATOR_ALL, CreateMode.PERSISTENT);
+        zkcAuth.get().create("/test/key1", new byte[0],
+                DistributedLogConstants.EVERYONE_READ_CREATOR_ALL, CreateMode.PERSISTENT);
 
         rmAll(zkcAuth, "/test");
     }

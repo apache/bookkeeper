@@ -17,17 +17,21 @@
  */
 package org.apache.distributedlog.zk;
 
+import static org.junit.Assert.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.junit.Test;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
 
-import static org.junit.Assert.*;
 
+
+/**
+ * Test Case for {@link ZKWatcherManager}.
+ */
 public class TestZKWatcherManager {
 
     @Test(timeout = 60000)

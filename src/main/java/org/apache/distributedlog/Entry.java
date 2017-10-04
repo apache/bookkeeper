@@ -17,14 +17,14 @@
  */
 package org.apache.distributedlog;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkNotNull;
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.distributedlog.exceptions.LogRecordTooLongException;
 import org.apache.distributedlog.exceptions.WriteException;
 import org.apache.distributedlog.io.CompressionCodec;
-import org.apache.bookkeeper.stats.NullStatsLogger;
 
 /**
  * A set of {@link LogRecord}s.
@@ -139,7 +139,7 @@ public class Entry {
         }
 
         public Entry.Reader buildReader() throws IOException {
-            Preconditions.checkNotNull(buffer,
+            checkNotNull(buffer,
                     "Serialized data or input stream isn't provided");
             return new EnvelopedEntryReader(
                     logSegmentSequenceNumber,

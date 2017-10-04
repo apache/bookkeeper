@@ -17,41 +17,11 @@
  */
 package org.apache.distributedlog.auditor;
 
-import com.google.common.base.Objects;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
-import java.util.concurrent.CompletableFuture;
-import org.apache.distributedlog.BookKeeperClient;
-import org.apache.distributedlog.BookKeeperClientBuilder;
-import org.apache.distributedlog.DistributedLogConfiguration;
-import org.apache.distributedlog.api.DistributedLogManager;
-import org.apache.distributedlog.LogSegmentMetadata;
-import org.apache.distributedlog.api.namespace.Namespace;
-import org.apache.distributedlog.impl.BKNamespaceDriver;
-import org.apache.distributedlog.ZooKeeperClient;
-import org.apache.distributedlog.ZooKeeperClientBuilder;
-import org.apache.distributedlog.exceptions.DLInterruptedException;
-import org.apache.distributedlog.exceptions.ZKException;
-import org.apache.distributedlog.impl.metadata.BKDLConfig;
-import org.apache.distributedlog.api.namespace.NamespaceBuilder;
-import org.apache.distributedlog.namespace.NamespaceDriver;
-import org.apache.distributedlog.util.DLUtils;
-import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.BookKeeper;
-import org.apache.bookkeeper.client.BookKeeperAccessor;
-import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.meta.LedgerManager;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
-import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
-import org.apache.bookkeeper.zookeeper.RetryPolicy;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
-import org.apache.zookeeper.AsyncCallback;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.data.Stat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static com.google.common.base.Charsets.UTF_8;
+import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.base.Objects;
+import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -61,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -69,8 +40,44 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BookKeeper;
+import org.apache.bookkeeper.client.BookKeeperAccessor;
+import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
+import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
+import org.apache.bookkeeper.zookeeper.RetryPolicy;
+import org.apache.commons.lang3.tuple.Pair;
 
-import static com.google.common.base.Charsets.UTF_8;
+import org.apache.distributedlog.BookKeeperClient;
+import org.apache.distributedlog.BookKeeperClientBuilder;
+import org.apache.distributedlog.DistributedLogConfiguration;
+import org.apache.distributedlog.LogSegmentMetadata;
+import org.apache.distributedlog.ZooKeeperClient;
+import org.apache.distributedlog.ZooKeeperClientBuilder;
+
+import org.apache.distributedlog.api.DistributedLogManager;
+import org.apache.distributedlog.api.namespace.Namespace;
+import org.apache.distributedlog.api.namespace.NamespaceBuilder;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
+
+import org.apache.distributedlog.exceptions.DLInterruptedException;
+import org.apache.distributedlog.exceptions.ZKException;
+import org.apache.distributedlog.impl.BKNamespaceDriver;
+
+import org.apache.distributedlog.impl.metadata.BKDLConfig;
+import org.apache.distributedlog.namespace.NamespaceDriver;
+import org.apache.distributedlog.util.DLUtils;
+
+import org.apache.zookeeper.AsyncCallback;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.data.Stat;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
+
 
 /**
  * DL Auditor will audit DL namespace, e.g. find leaked ledger, report disk usage by streams.
@@ -123,7 +130,7 @@ public class DLAuditor {
 
     public Pair<Set<Long>, Set<Long>> collectLedgers(List<URI> uris, List<List<String>> allocationPaths)
             throws IOException {
-        Preconditions.checkArgument(uris.size() > 0, "No uri provided to audit");
+        checkArgument(uris.size() > 0, "No uri provided to audit");
 
         String zkServers = validateAndGetZKServers(uris);
         RetryPolicy retryPolicy = new BoundExponentialBackoffRetryPolicy(
@@ -212,7 +219,7 @@ public class DLAuditor {
             throw new DLInterruptedException("Interrupted on collecting ledgers : ", e);
         } catch (ExecutionException e) {
             if (e.getCause() instanceof IOException) {
-                throw (IOException)(e.getCause());
+                throw (IOException) (e.getCause());
             } else {
                 throw new IOException("Failed to collect ledgers : ", e.getCause());
             }
@@ -316,7 +323,8 @@ public class DLAuditor {
                 try {
                     collectLedgersFromPool(poolPath);
                 } catch (InterruptedException e) {
-                    throw new DLInterruptedException("Interrupted on collecting ledgers from allocation pool " + poolPath, e);
+                    throw new DLInterruptedException("Interrupted on collecting"
+                            + " ledgers from allocation pool " + poolPath, e);
                 } catch (KeeperException e) {
                     throw new ZKException("Failed to collect ledgers from allocation pool " + poolPath, e.code());
                 }
@@ -441,7 +449,8 @@ public class DLAuditor {
             List<LogSegmentMetadata> segments = dlm.getLogSegments();
             for (LogSegmentMetadata segment : segments) {
                 try {
-                    LedgerHandle lh = getBookKeeperClient(namespace).get().openLedgerNoRecovery(segment.getLogSegmentId(),
+                    LedgerHandle lh =
+                            getBookKeeperClient(namespace).get().openLedgerNoRecovery(segment.getLogSegmentId(),
                             BookKeeper.DigestType.CRC32, conf.getBKDigestPW().getBytes(UTF_8));
                     totalBytes += lh.getLength();
                     lh.close();
@@ -517,7 +526,8 @@ public class DLAuditor {
                 executorService.submit(new Runnable() {
                     @Override
                     public void run() {
-                        bk.asyncOpenLedgerNoRecovery(lid, BookKeeper.DigestType.CRC32, conf.getBKDigestPW().getBytes(UTF_8),
+                        bk.asyncOpenLedgerNoRecovery(lid,
+                                BookKeeper.DigestType.CRC32, conf.getBKDigestPW().getBytes(UTF_8),
                                 new org.apache.bookkeeper.client.AsyncCallback.OpenCallback() {
                             @Override
                             public void openComplete(int rc, LedgerHandle lh, Object ctx) {
@@ -561,7 +571,7 @@ public class DLAuditor {
             throw new DLInterruptedException("Interrupted on calculating ledger space : ", e);
         } catch (ExecutionException e) {
             if (e.getCause() instanceof IOException) {
-                throw (IOException)(e.getCause());
+                throw (IOException) (e.getCause());
             } else {
                 throw new IOException("Failed to calculate ledger space : ", e.getCause());
             }
@@ -573,8 +583,8 @@ public class DLAuditor {
         // no-op
     }
 
-    static interface Action<T> {
-        void execute(T item) throws IOException ;
+    interface Action<T> {
+        void execute(T item) throws IOException;
     }
 
     static <T> void executeAction(final LinkedBlockingQueue<T> queue,
@@ -587,7 +597,7 @@ public class DLAuditor {
 
         ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
         try {
-            for (int i = 0 ; i < numThreads; i++) {
+            for (int i = 0; i < numThreads; i++) {
                 executorService.submit(new Runnable() {
                     @Override
                     public void run() {

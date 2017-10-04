@@ -33,24 +33,25 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-import org.apache.distributedlog.DistributedLogConstants;
-import org.apache.distributedlog.util.FailpointUtils;
-import org.apache.distributedlog.exceptions.LockingException;
-import org.apache.distributedlog.ZooKeeperClient;
-import org.apache.distributedlog.exceptions.DLInterruptedException;
-import org.apache.distributedlog.exceptions.OwnershipAcquireFailedException;
-import org.apache.distributedlog.exceptions.UnexpectedException;
-import org.apache.distributedlog.exceptions.ZKException;
-import org.apache.distributedlog.common.stats.OpStatsListener;
-import org.apache.distributedlog.common.concurrent.FutureEventListener;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
-import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.distributedlog.DistributedLogConstants;
+import org.apache.distributedlog.ZooKeeperClient;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
+
+import org.apache.distributedlog.common.stats.OpStatsListener;
+import org.apache.distributedlog.exceptions.DLInterruptedException;
+import org.apache.distributedlog.exceptions.LockingException;
+import org.apache.distributedlog.exceptions.OwnershipAcquireFailedException;
+import org.apache.distributedlog.exceptions.UnexpectedException;
+import org.apache.distributedlog.exceptions.ZKException;
+import org.apache.distributedlog.util.FailpointUtils;
+import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -66,15 +67,15 @@ import org.slf4j.LoggerFactory;
  * It is not reusable: if lock failed, if zookeeper session is expired, if #unlock is called,
  * it would be transitioned to expired or closed state.
  *
- * The Locking Procedure is described as below.
+ *<p>The Locking Procedure is described as below.</p>
  *
  * <p>
- * 0. if it is an immediate lock, it would get lock waiters first. if the lock is already held
- *    by someone. it would fail immediately with {@link org.apache.distributedlog.exceptions.OwnershipAcquireFailedException}
+ * 0. if it is an immediate lock, it would get lock waiters first. if the lock is already held by someone.
+ *    it would fail immediately with {@link org.apache.distributedlog.exceptions.OwnershipAcquireFailedException}
  *    with current owner. if there is no lock waiters, it would start locking procedure from 1.
  * 1. prepare: create a sequential znode to identify the lock.
- * 2. check lock waiters: get all lock waiters to check after prepare. if it is the first waiter,
- *    claim the ownership; if it is not the first waiter, but first waiter was itself (same client id and same session id)
+ * 2. check lock waiters: get all lock waiters to check after prepare. if it is the first waiter, claim the ownership;
+ *    if it is not the first waiter, but first waiter was itself (same client id and same session id)
  *    claim the ownership too; otherwise, it would set watcher on its sibling and wait it to disappared.
  * </p>
  *
@@ -141,11 +142,12 @@ class ZKSessionLock implements SessionLock {
         return lockPath + LOCK_PATH_PREFIX + URLEncoder.encode(clientId, UTF_8.name()) + LOCK_PART_SEP;
     }
 
-    public static String getLockPathPrefixV3(String lockPath, String clientId, long sessionOwner) throws UnsupportedEncodingException {
+    public static String getLockPathPrefixV3(String lockPath, String clientId, long sessionOwner)
+            throws UnsupportedEncodingException {
         // member_<clientid>_s<owner_session>_
         StringBuilder sb = new StringBuilder();
-        sb.append(lockPath).append(LOCK_PATH_PREFIX).append(URLEncoder.encode(clientId, UTF_8.name())).append(LOCK_PART_SEP)
-                .append("s").append(String.format("%10d", sessionOwner)).append(LOCK_PART_SEP);
+        sb.append(lockPath).append(LOCK_PATH_PREFIX).append(URLEncoder.encode(clientId, UTF_8.name())).
+                append(LOCK_PART_SEP).append("s").append(String.format("%10d", sessionOwner)).append(LOCK_PART_SEP);
         return sb.toString();
     }
 
@@ -174,7 +176,7 @@ class ZKSessionLock implements SessionLock {
         }
     };
 
-    static enum State {
+    enum State {
         INIT,      // initialized state
         PREPARING, // preparing to lock, but no lock node created
         PREPARED,  // lock node created
@@ -235,8 +237,8 @@ class ZKSessionLock implements SessionLock {
         }
 
         private boolean isTryingOrClaimed() {
-            return inState(State.PREPARING) || inState(State.PREPARED) ||
-                inState(State.WAITING) || inState(State.CLAIMED);
+            return inState(State.PREPARING) || inState(State.PREPARED)
+                    || inState(State.WAITING) || inState(State.CLAIMED);
         }
 
         public boolean isExpiredOrClosing() {
@@ -404,8 +406,10 @@ class ZKSessionLock implements SessionLock {
                     }
                 } else {
                     if (LOG.isTraceEnabled()) {
-                        LOG.trace("{} skipped executing lock action '{}' for lock {}, since epoch is changed from {} to {}.",
-                                new Object[]{lockId, func.getActionName(), lockPath, lockEpoch, ZKSessionLock.this.epoch.get()});
+                        LOG.trace("{} skipped executing lock action '{}' for lock {},"
+                                        + " since epoch is changed from {} to {}.",
+                                new Object[]{lockId, func.getActionName(),
+                                        lockPath, lockEpoch, ZKSessionLock.this.epoch.get()});
                     }
                 }
             }
@@ -424,7 +428,8 @@ class ZKSessionLock implements SessionLock {
      * @param promise
      *          promise
      */
-    protected <T> void executeLockAction(final int lockEpoch, final LockAction func, final CompletableFuture<T> promise) {
+    protected <T> void executeLockAction(final int lockEpoch,
+                                         final LockAction func, final CompletableFuture<T> promise) {
         lockStateExecutor.submit(lockPath, new SafeRunnable() {
             @Override
             public void safeRun() {
@@ -441,7 +446,8 @@ class ZKSessionLock implements SessionLock {
                     }
                 } else {
                     if (LOG.isTraceEnabled()) {
-                        LOG.trace("{} skipped executing lock action '{}' for lock {}, since epoch is changed from {} to {}.",
+                        LOG.trace("{} skipped executing lock action '{}' for lock {},"
+                                        + " since epoch is changed from {} to {}.",
                                 new Object[]{lockId, func.getActionName(), lockPath, lockEpoch, currentEpoch});
                     }
                     promise.completeExceptionally(new EpochChangedException(lockPath, lockEpoch, currentEpoch));
@@ -451,7 +457,7 @@ class ZKSessionLock implements SessionLock {
     }
 
     /**
-     * Parse member id generated by zookeeper from given <i>nodeName</i>
+     * Parse member id generated by zookeeper from given <i>nodeName</i>.
      *
      * @param nodeName
      *          lock node name
@@ -507,7 +513,8 @@ class ZKSessionLock implements SessionLock {
      *          node name
      * @return client id and its ephemeral owner.
      */
-    static CompletableFuture<Pair<String, Long>> asyncParseClientID(ZooKeeper zkClient, String lockPath, String nodeName) {
+    static CompletableFuture<Pair<String, Long>> asyncParseClientID(
+            ZooKeeper zkClient, String lockPath, String nodeName) {
         String[] parts = nodeName.split("_");
         // member_<clientid>_s<owner_session>_
         if (4 == parts.length && parts[2].startsWith("s")) {
@@ -550,7 +557,8 @@ class ZKSessionLock implements SessionLock {
                         @Override
                         public void safeRun() {
                             if (!lockState.inState(State.INIT)) {
-                                result.completeExceptionally(new LockStateChangedException(lockPath, lockId, State.INIT, lockState.getState()));
+                                result.completeExceptionally(new LockStateChangedException(lockPath,
+                                        lockId, State.INIT, lockState.getState()));
                                 return;
                             }
                             if (KeeperException.Code.OK.intValue() != rc) {
@@ -627,7 +635,7 @@ class ZKSessionLock implements SessionLock {
                             });
                         }
                     }
-                });;
+                });
                 return new LockWaiter(
                         lockId.getLeft(),
                         currentOwner,
@@ -653,7 +661,8 @@ class ZKSessionLock implements SessionLock {
             @Override
             public void execute() {
                 if (!lockState.inState(State.INIT)) {
-                    result.completeExceptionally(new LockStateChangedException(lockPath, lockId, State.INIT, lockState.getState()));
+                    result.completeExceptionally(
+                            new LockStateChangedException(lockPath, lockId, State.INIT, lockState.getState()));
                     return;
                 }
                 asyncTryLock(false, result);
@@ -686,8 +695,8 @@ class ZKSessionLock implements SessionLock {
             public void onFailure(final Throwable lockCause) {
                 // If tryLock failed due to state changed, we don't need to cleanup
                 if (lockCause instanceof LockStateChangedException) {
-                    LOG.info("skipping cleanup for {} at {} after encountering lock " +
-                            "state change exception : ", new Object[] { lockId, lockPath, lockCause });
+                    LOG.info("skipping cleanup for {} at {} after encountering lock "
+                            + "state change exception : ", new Object[] { lockId, lockPath, lockCause });
                     result.completeExceptionally(lockCause);
                     return;
                 }
@@ -718,8 +727,8 @@ class ZKSessionLock implements SessionLock {
      * the sibling is dead. <i>acquireCompletableFuture</i> will be notified either it locked successfully
      * or the lock failed. The promise will only satisfy with current lock owner.
      *
-     * NOTE: the <i>promise</i> is only satisfied on <i>lockStateExecutor</i>, so any
-     * transformations attached on promise will be executed in order.
+     * <p>NOTE: the <i>promise</i> is only satisfied on <i>lockStateExecutor</i>, so any
+     * transformations attached on promise will be executed in order.</p>
      *
      * @param wait
      *          whether to wait for ownership.
@@ -731,7 +740,8 @@ class ZKSessionLock implements SessionLock {
             @Override
             public void execute() {
                 if (!lockState.inState(State.INIT)) {
-                    promise.completeExceptionally(new LockStateChangedException(lockPath, lockId, State.INIT, lockState.getState()));
+                    promise.completeExceptionally(
+                            new LockStateChangedException(lockPath, lockId, State.INIT, lockState.getState()));
                     return;
                 }
                 lockState.transition(State.PREPARING);
@@ -748,8 +758,8 @@ class ZKSessionLock implements SessionLock {
                 } catch (UnsupportedEncodingException uee) {
                     myPath = getLockPathPrefixV1(lockPath);
                 }
-                zk.create(myPath, serializeClientId(lockId.getLeft()), zkClient.getDefaultACL(), CreateMode.EPHEMERAL_SEQUENTIAL,
-                        new AsyncCallback.StringCallback() {
+                zk.create(myPath, serializeClientId(lockId.getLeft()), zkClient.getDefaultACL(),
+                        CreateMode.EPHEMERAL_SEQUENTIAL, new AsyncCallback.StringCallback() {
                             @Override
                             public void processResult(final int rc, String path, Object ctx, final String name) {
                                 executeLockAction(curEpoch, new LockAction() {
@@ -761,7 +771,8 @@ class ZKSessionLock implements SessionLock {
                                             return;
                                         }
 
-                                        if (FailpointUtils.checkFailPointNoThrow(FailpointUtils.FailPointName.FP_LockTryCloseRaceCondition)) {
+                                        if (FailpointUtils.checkFailPointNoThrow(
+                                                FailpointUtils.FailPointName.FP_LockTryCloseRaceCondition)) {
                                             lockState.transition(State.CLOSING);
                                             lockState.transition(State.CLOSED);
                                         }
@@ -776,8 +787,8 @@ class ZKSessionLock implements SessionLock {
                                         LOG.trace("{} received member id for lock {}", lockId, currentId);
 
                                         if (lockState.isExpiredOrClosing()) {
-                                            // Delete node attempt may have come after PREPARING but before create node, in which case
-                                            // we'd be left with a dangling node unless we clean up.
+                                            // Delete node attempt may have come after PREPARING but before create node,
+                                            // in which case we'd be left with a dangling node unless we clean up.
                                             CompletableFuture<Void> deletePromise = new CompletableFuture<Void>();
                                             deleteLockNode(deletePromise);
                                             FutureUtils.ensure(
@@ -973,8 +984,8 @@ class ZKSessionLock implements SessionLock {
                     public void safeRun() {
                         if (KeeperException.Code.OK.intValue() == rc) {
                             LOG.info("Deleted lock node {} for {} successfully.", path, lockId);
-                        } else if (KeeperException.Code.NONODE.intValue() == rc ||
-                                KeeperException.Code.SESSIONEXPIRED.intValue() == rc) {
+                        } else if (KeeperException.Code.NONODE.intValue() == rc
+                                || KeeperException.Code.SESSIONEXPIRED.intValue() == rc) {
                             LOG.info("Delete node failed. Node already gone for node {} id {}, rc = {}",
                                     new Object[] { path, lockId, KeeperException.Code.get(rc) });
                         } else {
@@ -1117,7 +1128,8 @@ class ZKSessionLock implements SessionLock {
             @Override
             public void execute() {
                 if (!lockState.inState(State.PREPARED)) { // e.g. lock closed or session expired after prepared
-                    promise.completeExceptionally(new LockStateChangedException(lockPath, lockId, State.PREPARED, lockState.getState()));
+                    promise.completeExceptionally(
+                            new LockStateChangedException(lockPath, lockId, State.PREPARED, lockState.getState()));
                     return;
                 }
 
@@ -1145,7 +1157,8 @@ class ZKSessionLock implements SessionLock {
                     promise.complete(cid);
                 } else if (memberIndex > 0) { // we are in the member list but we didn't hold the lock
                     // get ownership of current owner
-                    asyncParseClientID(zk, lockPath, children.get(0)).whenComplete(new FutureEventListener<Pair<String, Long>>() {
+                    asyncParseClientID(zk, lockPath, children.get(0)).whenComplete(
+                            new FutureEventListener<Pair<String, Long>>() {
                         @Override
                         public void onSuccess(Pair<String, Long> currentOwner) {
                             watchLockOwner(lockWatcher, wait,
@@ -1171,8 +1184,8 @@ class ZKSessionLock implements SessionLock {
                     LOG.error("Member {} doesn't exist in the members list {} for lock {}.",
                             new Object[]{ cid, children, lockPath});
                     promise.completeExceptionally(
-                            new UnexpectedException("Member " + cid + " doesn't exist in member list " +
-                                    children + " for lock " + lockPath));
+                            new UnexpectedException("Member " + cid + " doesn't exist in member list "
+                                    + children + " for lock " + lockPath));
                 }
             }
 
@@ -1218,20 +1231,22 @@ class ZKSessionLock implements SessionLock {
                     // we should watch it and claim ownership
                     shouldWatch = true;
                     shouldClaimOwnership = true;
-                    LOG.info("LockWatcher {} for {} found its previous session {} held lock, watch it to claim ownership.",
-                            new Object[] { myNode, lockPath, currentOwner });
+                    LOG.info("LockWatcher {} for {} found its previous session {} held lock,"
+                                    + " watch it to claim ownership.", new Object[] { myNode, lockPath, currentOwner });
                 } else if (lockId.compareTo(currentOwner) == 0 && areLockWaitersInSameSession(siblingNode, ownerNode)) {
                     // I found that my sibling is the current owner with same lock id (client id & session id)
                     // It must be left by any race condition from same zookeeper client
                     shouldWatch = true;
                     shouldClaimOwnership = true;
-                    LOG.info("LockWatcher {} for {} found itself {} already held lock at sibling node {}, watch it to claim ownership.",
+                    LOG.info("LockWatcher {} for {} found itself {} already held lock at sibling node {},"
+                                    + " watch it to claim ownership.",
                             new Object[]{myNode, lockPath, lockId, siblingNode});
                 } else {
                     shouldWatch = wait;
                     if (wait) {
                         if (LOG.isDebugEnabled()) {
-                            LOG.debug("Current LockWatcher for {} with ephemeral node {}, is waiting for {} to release lock at {}.",
+                            LOG.debug("Current LockWatcher for {} with ephemeral node {}, "
+                                            + "is waiting for {} to release lock at {}.",
                                     new Object[]{lockPath, myNode, siblingNode, System.currentTimeMillis()});
                         }
                     }
@@ -1248,7 +1263,8 @@ class ZKSessionLock implements SessionLock {
                                 @Override
                                 public void execute() {
                                     if (!lockState.inState(State.PREPARED)) {
-                                        promise.completeExceptionally(new LockStateChangedException(lockPath, lockId, State.PREPARED, lockState.getState()));
+                                        promise.completeExceptionally(new LockStateChangedException(lockPath,
+                                                lockId, State.PREPARED, lockState.getState()));
                                         return;
                                     }
 
@@ -1268,7 +1284,8 @@ class ZKSessionLock implements SessionLock {
                                         // sibling just disappeared, it might be the chance to claim ownership
                                         checkLockOwnerAndWaitIfPossible(lockWatcher, wait, promise);
                                     } else {
-                                        promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc)));
+                                        promise.completeExceptionally(
+                                                KeeperException.create(KeeperException.Code.get(rc)));
                                     }
                                 }
 
@@ -1309,7 +1326,7 @@ class ZKSessionLock implements SessionLock {
         @Override
         public void process(WatchedEvent event) {
             LOG.debug("Received event {} from lock {} at {} : watcher epoch {}, lock epoch {}.",
-                    new Object[] { event, lockPath, System.currentTimeMillis(), epoch, ZKSessionLock.this.epoch.get() });
+                    new Object[] {event, lockPath, System.currentTimeMillis(), epoch, ZKSessionLock.this.epoch.get() });
             if (event.getType() == Watcher.Event.EventType.None) {
                 switch (event.getState()) {
                     case SyncConnected:

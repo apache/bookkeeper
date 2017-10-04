@@ -25,8 +25,12 @@ import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.distributedlog.LogRecordWithDLSN;
 import org.apache.distributedlog.io.AsyncCloseable;
 
+/**
+ * AsyncLogReader.
+ */
 @Public
 @Evolving
+
 public interface AsyncLogReader extends AsyncCloseable {
 
     /**
@@ -34,14 +38,14 @@ public interface AsyncLogReader extends AsyncCloseable {
      *
      * @return stream name.
      */
-    public String getStreamName();
+    String getStreamName();
 
     /**
-     * Read the next record from the log stream
+     * Read the next record from the log stream.
      *
      * @return A promise that when satisfied will contain the Log Record with its DLSN.
      */
-    public CompletableFuture<LogRecordWithDLSN> readNext();
+    CompletableFuture<LogRecordWithDLSN> readNext();
 
     /**
      * Read next <i>numEntries</i> entries. The future is only satisfied with non-empty list
@@ -52,12 +56,12 @@ public interface AsyncLogReader extends AsyncCloseable {
      *          num entries
      * @return A promise that when satisfied will contain a non-empty list of records with their DLSN.
      */
-    public CompletableFuture<List<LogRecordWithDLSN>> readBulk(int numEntries);
+    CompletableFuture<List<LogRecordWithDLSN>> readBulk(int numEntries);
 
     /**
      * Read next <i>numEntries</i> entries in a given <i>waitTime</i>.
-     * <p>
-     * The future is satisfied when either reads <i>numEntries</i> entries or reaches <i>waitTime</i>.
+     *
+     *  <p>The future is satisfied when either reads <i>numEntries</i> entries or reaches <i>waitTime</i>.
      * The only exception is if there isn't any new entries written within <i>waitTime</i>, it would
      * wait until new entries are available.
      *
@@ -69,5 +73,5 @@ public interface AsyncLogReader extends AsyncCloseable {
      *          wait time unit
      * @return A promise that when satisfied will contain a non-empty list of records with their DLSN.
      */
-    public CompletableFuture<List<LogRecordWithDLSN>> readBulk(int numEntries, long waitTime, TimeUnit timeUnit);
+    CompletableFuture<List<LogRecordWithDLSN>> readBulk(int numEntries, long waitTime, TimeUnit timeUnit);
 }

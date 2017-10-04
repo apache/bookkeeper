@@ -17,15 +17,26 @@
  */
 package org.apache.distributedlog.admin;
 
+import static org.junit.Assert.*;
+
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
-
+import org.apache.distributedlog.DLMTestUtil;
+import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.DistributedLogConfiguration;
+import org.apache.distributedlog.LogRecord;
+import org.apache.distributedlog.LogRecordWithDLSN;
+import org.apache.distributedlog.TestDistributedLogBase;
 import org.apache.distributedlog.TestZooKeeperClientBuilder;
+import org.apache.distributedlog.ZooKeeperClient;
+import org.apache.distributedlog.api.AsyncLogReader;
+import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.namespace.Namespace;
+import org.apache.distributedlog.api.namespace.NamespaceBuilder;
 import org.apache.distributedlog.common.annotations.DistributedLogAnnotations;
 import org.apache.distributedlog.exceptions.UnexpectedException;
-import org.apache.distributedlog.api.namespace.NamespaceBuilder;
+import org.apache.distributedlog.metadata.DryrunLogSegmentMetadataStoreUpdater;
+import org.apache.distributedlog.metadata.LogSegmentMetadataStoreUpdater;
 import org.apache.distributedlog.util.Utils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
@@ -36,19 +47,10 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.distributedlog.api.AsyncLogReader;
-import org.apache.distributedlog.DLMTestUtil;
-import org.apache.distributedlog.DLSN;
-import org.apache.distributedlog.api.DistributedLogManager;
-import org.apache.distributedlog.LogRecord;
-import org.apache.distributedlog.LogRecordWithDLSN;
-import org.apache.distributedlog.TestDistributedLogBase;
-import org.apache.distributedlog.ZooKeeperClient;
-import org.apache.distributedlog.metadata.DryrunLogSegmentMetadataStoreUpdater;
-import org.apache.distributedlog.metadata.LogSegmentMetadataStoreUpdater;
 
-import static org.junit.Assert.*;
-
+/**
+ * TestDistributedLogAdmin.
+ */
 public class TestDistributedLogAdmin extends TestDistributedLogBase {
 
     static final Logger LOG = LoggerFactory.getLogger(TestDistributedLogAdmin.class);
@@ -70,7 +72,7 @@ public class TestDistributedLogAdmin extends TestDistributedLogBase {
     }
 
     /**
-     * {@link https://issues.apache.org/jira/browse/DL-44}
+     * {@link https://issues.apache.org/jira/browse/DL-44}.
      */
     @DistributedLogAnnotations.FlakyTest
     @Ignore
@@ -144,7 +146,8 @@ public class TestDistributedLogAdmin extends TestDistributedLogBase {
 
         // Dryrun
         DistributedLogAdmin.fixInprogressSegmentWithLowerSequenceNumber(namespace,
-                new DryrunLogSegmentMetadataStoreUpdater(confLocal, getLogSegmentMetadataStore(namespace)), streamName, false, false);
+                new DryrunLogSegmentMetadataStoreUpdater(confLocal,
+                        getLogSegmentMetadataStore(namespace)), streamName, false, false);
 
         try {
             reader = readDLM.getAsyncLogReader(lastDLSN);
@@ -158,7 +161,8 @@ public class TestDistributedLogAdmin extends TestDistributedLogBase {
 
         // Actual run
         DistributedLogAdmin.fixInprogressSegmentWithLowerSequenceNumber(namespace,
-                LogSegmentMetadataStoreUpdater.createMetadataUpdater(confLocal, getLogSegmentMetadataStore(namespace)), streamName, false, false);
+                LogSegmentMetadataStoreUpdater.createMetadataUpdater(confLocal,
+                        getLogSegmentMetadataStore(namespace)), streamName, false, false);
 
         // be able to read more after fix
         reader = readDLM.getAsyncLogReader(lastDLSN);

@@ -18,7 +18,10 @@
 package org.apache.distributedlog.logsegment;
 
 import org.apache.distributedlog.common.util.Sizable;
-
+/**
+ * Policy for rolling.
+ *
+ */
 public interface RollingPolicy {
     /**
      * Determines if a rollover may be appropriate at this time.

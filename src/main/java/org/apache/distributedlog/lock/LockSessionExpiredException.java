@@ -16,10 +16,9 @@
  * limitations under the License.
  */
 package org.apache.distributedlog.lock;
-
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.distributedlog.exceptions.LockingException;
 import org.apache.distributedlog.lock.ZKSessionLock.State;
-import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Exception indicates that the lock's zookeeper session was expired before the lock request could complete.
@@ -29,6 +28,7 @@ public class LockSessionExpiredException extends LockingException {
     private static final long serialVersionUID = 8775253025963470331L;
 
     public LockSessionExpiredException(String lockPath, Pair<String, Long> lockId, State currentState) {
-        super(lockPath, "lock at path " + lockPath + " with id " + lockId + " expired early in state : " + currentState);
+        super(lockPath, "lock at path " + lockPath + " with id "
+                + lockId + " expired early in state : " + currentState);
     }
 }

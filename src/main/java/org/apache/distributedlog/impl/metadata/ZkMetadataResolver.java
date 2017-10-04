@@ -17,17 +17,20 @@
  */
 package org.apache.distributedlog.impl.metadata;
 
+import java.io.IOException;
+import java.net.URI;
+import org.apache.commons.lang.StringUtils;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.metadata.DLMetadata;
 import org.apache.distributedlog.metadata.MetadataResolver;
-import org.apache.commons.lang.StringUtils;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.common.PathUtils;
 import org.apache.zookeeper.data.Stat;
 
-import java.io.IOException;
-import java.net.URI;
 
+/**
+ * zookeeper metadata resolver.
+ */
 public class ZkMetadataResolver implements MetadataResolver {
 
     private final ZooKeeperClient zkc;

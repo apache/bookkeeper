@@ -17,20 +17,21 @@
  */
 package org.apache.distributedlog.logsegment;
 
+import static org.junit.Assert.*;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.apache.distributedlog.DLMTestUtil;
-import org.apache.distributedlog.LogSegmentMetadata;
-import org.apache.distributedlog.exceptions.UnexpectedException;
-import org.apache.commons.lang3.tuple.Pair;
-import org.junit.Test;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.distributedlog.DLMTestUtil;
+import org.apache.distributedlog.LogSegmentMetadata;
+import org.apache.distributedlog.exceptions.UnexpectedException;
+import org.junit.Test;
 
-import static org.junit.Assert.*;
+
 
 /**
  * Test Case for Per Stream Log Segment Cache.
@@ -160,7 +161,7 @@ public class TestPerStreamLogSegmentCache {
         cache.add(DLMTestUtil.completedLedgerZNodeNameWithLogSegmentSequenceNumber(1L), segment1);
         LogSegmentMetadata segment3 =
                 DLMTestUtil.completedLogSegment("/segment-3", 3L, 3L, 300L, 100, 3L, 99L, 0L)
-                        .mutator().setVersion(LogSegmentMetadata.LogSegmentMetadataVersion.VERSION_V2_LEDGER_SEQNO).build();
+                .mutator().setVersion(LogSegmentMetadata.LogSegmentMetadataVersion.VERSION_V2_LEDGER_SEQNO).build();
         cache.add(DLMTestUtil.completedLedgerZNodeNameWithLogSegmentSequenceNumber(3L), segment3);
         List<LogSegmentMetadata> expectedList = Lists.asList(segment1, new LogSegmentMetadata[] { segment3 });
         List<LogSegmentMetadata> resultList = cache.getLogSegments(LogSegmentMetadata.COMPARATOR);

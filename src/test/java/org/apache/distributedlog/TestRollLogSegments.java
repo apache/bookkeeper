@@ -17,33 +17,37 @@
  */
 package org.apache.distributedlog;
 
+import static com.google.common.base.Charsets.UTF_8;
+import static org.junit.Assert.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
-
-import org.apache.distributedlog.api.DistributedLogManager;
-import org.apache.distributedlog.api.LogReader;
-import org.apache.distributedlog.feature.CoreFeatureKeys;
-import org.apache.distributedlog.impl.logsegment.BKLogSegmentEntryReader;
-import org.apache.distributedlog.util.FailpointUtils;
-import org.apache.distributedlog.common.concurrent.FutureEventListener;
-import org.apache.distributedlog.util.Utils;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.feature.SettableFeature;
+import org.apache.distributedlog.api.DistributedLogManager;
+import org.apache.distributedlog.api.LogReader;
+import org.apache.distributedlog.common.annotations.DistributedLogAnnotations.FlakyTest;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
+import org.apache.distributedlog.feature.CoreFeatureKeys;
+import org.apache.distributedlog.impl.logsegment.BKLogSegmentEntryReader;
+import org.apache.distributedlog.util.FailpointUtils;
+import org.apache.distributedlog.util.Utils;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.distributedlog.common.annotations.DistributedLogAnnotations.FlakyTest;
 
-import static com.google.common.base.Charsets.UTF_8;
-import static org.junit.Assert.*;
 
+
+
+/**
+ * Test Cases for RollLogSegments.
+ */
 public class TestRollLogSegments extends TestDistributedLogBase {
-    static final Logger logger = LoggerFactory.getLogger(TestRollLogSegments.class);
+    private static final Logger logger = LoggerFactory.getLogger(TestRollLogSegments.class);
 
     private static void ensureOnlyOneInprogressLogSegments(List<LogSegmentMetadata> segments) throws Exception {
         int numInprogress = 0;
@@ -268,7 +272,8 @@ public class TestRollLogSegments extends TestDistributedLogBase {
         // send requests in parallel to have outstanding requests
         for (int i = 1; i <= numLogSegments; i++) {
             final int entryId = i;
-            CompletableFuture<DLSN> writeFuture = writer.write(DLMTestUtil.getLogRecordInstance(entryId)).whenComplete(new FutureEventListener<DLSN>() {
+            CompletableFuture<DLSN> writeFuture = writer.write(DLMTestUtil.getLogRecordInstance(entryId))
+                    .whenComplete(new FutureEventListener<DLSN>() {
                 @Override
                 public void onSuccess(DLSN value) {
                     logger.info("Completed entry {} : {}.", entryId, value);
@@ -405,7 +410,8 @@ public class TestRollLogSegments extends TestDistributedLogBase {
         // simulate a recovery without closing ledger causing recording wrong last dlsn
         BKLogWriteHandler writeHandler = writer.getCachedWriteHandler();
         writeHandler.completeAndCloseLogSegment(
-                writeHandler.inprogressZNodeName(perStreamWriter.getLogSegmentId(), perStreamWriter.getStartTxId(), perStreamWriter.getLogSegmentSequenceNumber()),
+                writeHandler.inprogressZNodeName(perStreamWriter.getLogSegmentId(),
+                        perStreamWriter.getStartTxId(), perStreamWriter.getLogSegmentSequenceNumber()),
                 perStreamWriter.getLogSegmentSequenceNumber(),
                 perStreamWriter.getLogSegmentId(),
                 perStreamWriter.getStartTxId(), perStreamWriter.getLastTxId(),

@@ -17,8 +17,8 @@
  */
 package org.apache.distributedlog;
 
-import org.apache.distributedlog.exceptions.OverCapacityException;
 import org.apache.distributedlog.common.util.PermitLimiter;
+import org.apache.distributedlog.exceptions.OverCapacityException;
 
 class WriteLimiter {
 

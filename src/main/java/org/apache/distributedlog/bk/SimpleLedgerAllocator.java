@@ -18,33 +18,37 @@
 package org.apache.distributedlog.bk;
 
 import com.google.common.collect.Lists;
+import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
-import org.apache.distributedlog.BookKeeperClient;
-import org.apache.distributedlog.DistributedLogConstants;
-import org.apache.distributedlog.util.DLUtils;
-import org.apache.distributedlog.common.concurrent.FutureEventListener;
-import org.apache.distributedlog.util.Transaction;
-import org.apache.distributedlog.util.Transaction.OpListener;
-import org.apache.distributedlog.ZooKeeperClient;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
-import org.apache.distributedlog.util.Utils;
-import org.apache.distributedlog.zk.ZKTransaction;
-import org.apache.distributedlog.zk.ZKVersionedSetOp;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.meta.ZkVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
+import org.apache.distributedlog.BookKeeperClient;
+import org.apache.distributedlog.DistributedLogConstants;
+import org.apache.distributedlog.ZooKeeperClient;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
+
+import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.distributedlog.util.DLUtils;
+
+import org.apache.distributedlog.util.Transaction;
+import org.apache.distributedlog.util.Transaction.OpListener;
+import org.apache.distributedlog.util.Utils;
+import org.apache.distributedlog.zk.ZKTransaction;
+import org.apache.distributedlog.zk.ZKVersionedSetOp;
+
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
+
 
 /**
  * Allocator to allocate ledgers.
@@ -53,7 +57,7 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
 
     static final Logger LOG = LoggerFactory.getLogger(SimpleLedgerAllocator.class);
 
-    static enum Phase {
+    enum Phase {
         ALLOCATING, ALLOCATED, HANDING_OVER, HANDED_OVER, ERROR
     }
 
@@ -218,7 +222,8 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
 
     private synchronized void deleteLedgerLeftFromPreviousAllocationIfNecessary() {
         if (null != ledgerIdLeftFromPrevAllocation) {
-            LOG.info("Deleting allocated-but-unused ledger left from previous allocation {}.", ledgerIdLeftFromPrevAllocation);
+            LOG.info("Deleting allocated-but-unused ledger left from previous allocation {}.",
+                    ledgerIdLeftFromPrevAllocation);
             deleteLedger(ledgerIdLeftFromPrevAllocation);
             ledgerIdLeftFromPrevAllocation = null;
         }
@@ -293,8 +298,8 @@ public class SimpleLedgerAllocator implements LedgerAllocator, FutureEventListen
         OpListener<LedgerHandle> listenerToNotify;
         synchronized (this) {
             listenerToNotify = tryObtainListener;
-            if (t instanceof KeeperException &&
-                    ((KeeperException) t).code() == KeeperException.Code.BADVERSION) {
+            if (t instanceof KeeperException
+                    && ((KeeperException) t).code() == KeeperException.Code.BADVERSION) {
                 LOG.info("Set ledger allocator {} to ERROR state after hit bad version : version = {}",
                         allocatePath, getVersion());
                 setPhase(Phase.ERROR);

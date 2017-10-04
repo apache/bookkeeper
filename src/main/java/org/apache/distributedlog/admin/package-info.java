@@ -16,6 +16,6 @@
  * limitations under the License.
  */
 /**
- * Admin Tools for DistributedLog
+ * Admin Tools for DistributedLog.
  */
 package org.apache.distributedlog.admin;

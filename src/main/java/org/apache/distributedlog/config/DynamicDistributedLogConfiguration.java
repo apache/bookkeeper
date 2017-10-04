@@ -17,11 +17,16 @@
  */
 package org.apache.distributedlog.config;
 
+import static org.apache.distributedlog.DistributedLogConfiguration.*;
+
+
+
 import org.apache.distributedlog.DistributedLogConfiguration;
+
 import org.apache.distributedlog.bk.QuorumConfig;
 import org.apache.distributedlog.common.config.ConcurrentBaseConfiguration;
 
-import static org.apache.distributedlog.DistributedLogConfiguration.*;
+
 
 /**
  * Whitelist dynamic configuration by adding an accessor to this class.
@@ -42,7 +47,7 @@ public class DynamicDistributedLogConfiguration extends ConcurrentBaseConfigurat
     }
 
     /**
-     * Get retention period in hours
+     * Get retention period in hours.
      *
      * @return retention period in hours
      */
@@ -193,7 +198,7 @@ public class DynamicDistributedLogConfiguration extends ConcurrentBaseConfigurat
     }
 
     /**
-     * Get output buffer size
+     * Get output buffer size.
      *
      * @return buffer size
      */
@@ -210,7 +215,7 @@ public class DynamicDistributedLogConfiguration extends ConcurrentBaseConfigurat
     }
 
     /**
-     * Get Periodic Log Flush Frequency in seconds
+     * Get Periodic Log Flush Frequency in seconds.
      *
      * @return periodic flush frequency
      */
@@ -221,7 +226,7 @@ public class DynamicDistributedLogConfiguration extends ConcurrentBaseConfigurat
     }
 
     /**
-     * Get the number of entries that readahead worker reads as a batch from bookkeeper
+     * Get the number of entries that readahead worker reads as a batch from bookkeeper.
      *
      * @return the batch size
      */

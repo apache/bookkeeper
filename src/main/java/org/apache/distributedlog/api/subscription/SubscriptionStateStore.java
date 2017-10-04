@@ -21,19 +21,22 @@ import java.io.Closeable;
 import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.DLSN;
 
+/**
+ * Store to manage subscription states.
+ */
 public interface SubscriptionStateStore extends Closeable {
     /**
-     * Get the last committed position stored for this subscription
+     * Get the last committed position stored for this subscription.
      *
      * @return future represents the last commit position
      */
-    public CompletableFuture<DLSN> getLastCommitPosition();
+    CompletableFuture<DLSN> getLastCommitPosition();
 
     /**
-     * Advances the position associated with the subscriber
+     * Advances the position associated with the subscriber.
      *
      * @param newPosition - new commit position
      * @return future represents the advance result
      */
-    public CompletableFuture<Void> advanceCommitPosition(DLSN newPosition);
+    CompletableFuture<Void> advanceCommitPosition(DLSN newPosition);
 }

@@ -16,6 +16,6 @@
  * limitations under the License.
  */
 /**
- * Tools for distributedlog
+ * Tools for distributedlog.
  */
 package org.apache.distributedlog.tools;

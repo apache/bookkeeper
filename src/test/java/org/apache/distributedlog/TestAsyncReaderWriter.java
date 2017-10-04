@@ -17,6 +17,12 @@
  */
 package org.apache.distributedlog;
 
+import static com.google.common.base.Charsets.UTF_8;
+import static org.apache.distributedlog.DLMTestUtil.validateFutureFailed;
+import static org.apache.distributedlog.LogRecord.MAX_LOGRECORD_SIZE;
+import static org.junit.Assert.*;
+import com.google.common.base.Stopwatch;
+import com.google.common.collect.Lists;
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.net.URI;
@@ -29,32 +35,47 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import junit.framework.Assert;
 
-import com.google.common.base.Optional;
-import com.google.common.collect.Lists;
-import org.apache.distributedlog.api.AsyncLogReader;
-import org.apache.distributedlog.api.AsyncLogWriter;
-import org.apache.distributedlog.api.DistributedLogManager;
-import org.apache.distributedlog.api.LogReader;
-import org.apache.distributedlog.api.LogWriter;
-import org.apache.distributedlog.api.namespace.Namespace;
-import org.apache.distributedlog.common.annotations.DistributedLogAnnotations;
-import org.apache.distributedlog.common.config.ConcurrentBaseConfiguration;
-import org.apache.distributedlog.common.config.ConcurrentConstConfiguration;
-import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
-import org.apache.distributedlog.exceptions.BKTransmitException;
-import org.apache.distributedlog.exceptions.LockingException;
-import org.apache.distributedlog.impl.BKNamespaceDriver;
-import org.apache.distributedlog.io.CompressionCodec;
-import org.apache.distributedlog.common.concurrent.FutureEventListener;
-import org.apache.distributedlog.util.Utils;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAccessor;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.feature.FixedValueFeature;
 import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.apache.bookkeeper.stats.StatsLogger;
+
+import org.apache.distributedlog.api.AsyncLogReader;
+import org.apache.distributedlog.api.AsyncLogWriter;
+import org.apache.distributedlog.api.DistributedLogManager;
+import org.apache.distributedlog.api.LogReader;
+import org.apache.distributedlog.api.LogWriter;
+import org.apache.distributedlog.api.namespace.Namespace;
+import org.apache.distributedlog.api.namespace.NamespaceBuilder;
+import org.apache.distributedlog.common.annotations.DistributedLogAnnotations;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.distributedlog.common.config.ConcurrentBaseConfiguration;
+import org.apache.distributedlog.common.config.ConcurrentConstConfiguration;
+
+import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
+import org.apache.distributedlog.exceptions.BKTransmitException;
+import org.apache.distributedlog.exceptions.DLIllegalStateException;
+import org.apache.distributedlog.exceptions.EndOfStreamException;
+import org.apache.distributedlog.exceptions.IdleReaderException;
+import org.apache.distributedlog.exceptions.LockingException;
+import org.apache.distributedlog.exceptions.LogRecordTooLongException;
+import org.apache.distributedlog.exceptions.OverCapacityException;
+import org.apache.distributedlog.exceptions.ReadCancelledException;
+import org.apache.distributedlog.exceptions.WriteException;
+import org.apache.distributedlog.impl.BKNamespaceDriver;
+import org.apache.distributedlog.io.CompressionCodec;
+import org.apache.distributedlog.lock.DistributedLock;
+import org.apache.distributedlog.util.FailpointUtils;
+import org.apache.distributedlog.util.SimplePermitLimiter;
+
+
+import org.apache.distributedlog.util.Utils;
+
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -62,26 +83,12 @@ import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Stopwatch;
-import org.apache.distributedlog.exceptions.DLIllegalStateException;
-import org.apache.distributedlog.exceptions.EndOfStreamException;
-import org.apache.distributedlog.exceptions.IdleReaderException;
-import org.apache.distributedlog.exceptions.LogRecordTooLongException;
-import org.apache.distributedlog.exceptions.OverCapacityException;
-import org.apache.distributedlog.exceptions.ReadCancelledException;
-import org.apache.distributedlog.exceptions.WriteException;
-import org.apache.distributedlog.lock.DistributedLock;
-import org.apache.distributedlog.api.namespace.NamespaceBuilder;
-import org.apache.distributedlog.util.FailpointUtils;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
-import org.apache.distributedlog.util.SimplePermitLimiter;
 
-import junit.framework.Assert;
-import static com.google.common.base.Charsets.UTF_8;
-import static org.apache.distributedlog.DLMTestUtil.validateFutureFailed;
-import static org.apache.distributedlog.LogRecord.MAX_LOGRECORD_SIZE;
-import static org.junit.Assert.*;
 
+
+/**
+ * Test Cases for AsyncReaderWriter.
+ */
 public class TestAsyncReaderWriter extends TestDistributedLogBase {
     static final Logger LOG = LoggerFactory.getLogger(TestAsyncReaderWriter.class);
 
@@ -113,7 +120,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         int txid = 1;
         for (long i = 0; i < 3; i++) {
             final long currentLogSegmentSeqNo = i + 1;
-            BKAsyncLogWriter writer = (BKAsyncLogWriter)(dlm.startAsyncLogSegmentNonPartitioned());
+            BKAsyncLogWriter writer = (BKAsyncLogWriter) (dlm.startAsyncLogSegmentNonPartitioned());
             DLSN dlsn = Utils.ioResult(writer.writeControlRecord(new LogRecord(txid++, "control".getBytes(UTF_8))));
             assertEquals(currentLogSegmentSeqNo, dlsn.getLogSegmentSequenceNo());
             assertEquals(0, dlsn.getEntryId());
@@ -159,7 +166,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         confLocal.setMaxLogSegmentBytes(1024);
         confLocal.setLogSegmentRollingIntervalMinutes(0);
         DistributedLogManager dlm = createNewDLM(confLocal, name);
-        BKAsyncLogWriter writer = (BKAsyncLogWriter)(dlm.startAsyncLogSegmentNonPartitioned());
+        BKAsyncLogWriter writer = (BKAsyncLogWriter) (dlm.startAsyncLogSegmentNonPartitioned());
 
         // Write one record larger than max seg size. Ledger doesn't roll until next write.
         int txid = 1;
@@ -206,7 +213,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         int txid = 1;
         for (long i = 0; i < numLogSegments; i++) {
             final long currentLogSegmentSeqNo = i + 1;
-            BKAsyncLogWriter writer = (BKAsyncLogWriter)(dlm.startAsyncLogSegmentNonPartitioned());
+            BKAsyncLogWriter writer = (BKAsyncLogWriter) (dlm.startAsyncLogSegmentNonPartitioned());
             for (long j = 0; j < numRecordsPerLogSegment; j++) {
                 final long currentEntryId = j;
                 final LogRecord record = DLMTestUtil.getLargeLogRecordInstance(txid++);
@@ -214,12 +221,13 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
                 dlsnFuture.whenComplete(new FutureEventListener<DLSN>() {
                     @Override
                     public void onSuccess(DLSN value) {
-                        if(value.getLogSegmentSequenceNo() != currentLogSegmentSeqNo) {
-                            LOG.debug("LogSegmentSequenceNumber: {}, Expected {}", value.getLogSegmentSequenceNo(), currentLogSegmentSeqNo);
+                        if (value.getLogSegmentSequenceNo() != currentLogSegmentSeqNo) {
+                            LOG.debug("LogSegmentSequenceNumber: {}, Expected {}",
+                                    value.getLogSegmentSequenceNo(), currentLogSegmentSeqNo);
                             errorsFound.set(true);
                         }
 
-                        if(value.getEntryId() != currentEntryId) {
+                        if (value.getEntryId() != currentEntryId) {
                             LOG.debug("EntryId: {}, Expected {}", value.getEntryId(), currentEntryId);
                             errorsFound.set(true);
                         }
@@ -233,7 +241,8 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
                     }
                     @Override
                     public void onFailure(Throwable cause) {
-                        LOG.error("Encountered exception on writing record {} in log segment {}", currentEntryId, currentLogSegmentSeqNo);
+                        LOG.error("Encountered exception on writing record {} in log segment {}",
+                                currentEntryId, currentLogSegmentSeqNo);
                         errorsFound.set(true);
                     }
                 });
@@ -255,7 +264,8 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
     }
 
     /**
-     * Write records into <i>numLogSegments</i> log segments. Each log segment has <i>numRecordsPerLogSegment</i> records.
+     * Write records into <i>numLogSegments</i> log segments.
+     * Each log segment has <i>numRecordsPerLogSegment</i> records.
      *
      * @param dlm
      *          distributedlog manager
@@ -274,7 +284,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
                                      boolean emptyRecord) throws IOException {
         long txid = startTxId;
         for (long i = 0; i < numLogSegments; i++) {
-            BKSyncLogWriter writer = (BKSyncLogWriter)dlm.startLogSegmentNonPartitioned();
+            BKSyncLogWriter writer = (BKSyncLogWriter) dlm.startLogSegmentNonPartitioned();
             for (long j = 1; j <= numRecordsPerLogSegment; j++) {
                 if (emptyRecord) {
                     writer.write(DLMTestUtil.getEmptyLogRecordInstance(txid++));
@@ -315,7 +325,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
             } else {
                 writer.write(DLMTestUtil.getLargeLogRecordInstance(txid++));
             }
-            if (j % flushPerNumRecords == 0 ) {
+            if (j % flushPerNumRecords == 0) {
                 writer.flush();
                 writer.commit();
             }
@@ -552,7 +562,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
     }
 
     /**
-     * Test Async Read by positioning to a given position in the log
+     * Test Async Read by positioning to a given position in the log.
      * @throws Exception
      */
     @Test(timeout = 60000)
@@ -574,7 +584,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         // write another log segment with 5 records
         txid = writeLogSegment(dlm, 5, txid, Integer.MAX_VALUE, false);
 
-        final CountDownLatch syncLatch = new CountDownLatch((int)(txid - 14));
+        final CountDownLatch syncLatch = new CountDownLatch((int) (txid - 14));
         final CountDownLatch doneLatch = new CountDownLatch(1);
         final AtomicBoolean errorsFound = new AtomicBoolean(false);
         final AsyncLogReader reader = dlm.getAsyncLogReader(new DLSN(2, 2, 4));
@@ -620,8 +630,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
     /**
      * Test if entries written using log segment metadata that doesn't support enveloping
      * can be read correctly by a reader supporting both.
-     *
-     * NOTE: An older reader cannot read enveloped entry, so we don't have a test case covering
+     *NOTE: An older reader cannot read enveloped entry, so we don't have a test case covering
      *       the other scenario.
      *
      * @throws Exception
@@ -655,16 +664,16 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         }
 
         /**
-         * Invoked if the computation completes successfully
+         * Invoked if the computation completes successfully.
          */
         @Override
         public void onSuccess(DLSN value) {
-            if(value.getLogSegmentSequenceNo() != currentLogSegmentSeqNo) {
+            if (value.getLogSegmentSequenceNo() != currentLogSegmentSeqNo) {
                 LOG.error("Ledger Seq No: {}, Expected: {}", value.getLogSegmentSequenceNo(), currentLogSegmentSeqNo);
                 errorsFound.set(true);
             }
 
-            if(verifyEntryId && value.getEntryId() != currentEntryId) {
+            if (verifyEntryId && value.getEntryId() != currentEntryId) {
                 LOG.error("EntryId: {}, Expected: {}", value.getEntryId(), currentEntryId);
                 errorsFound.set(true);
             }
@@ -672,7 +681,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         }
 
         /**
-         * Invoked if the computation completes unsuccessfully
+         * Invoked if the computation completes unsuccessfully.
          */
         @Override
         public void onFailure(Throwable cause) {
@@ -714,7 +723,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         int txid = 1;
         for (long i = 0; i < 3; i++) {
             final long currentLogSegmentSeqNo = i + 1;
-            BKAsyncLogWriter writer = (BKAsyncLogWriter)(dlm.startAsyncLogSegmentNonPartitioned());
+            BKAsyncLogWriter writer = (BKAsyncLogWriter) (dlm.startAsyncLogSegmentNonPartitioned());
             for (long j = 0; j < 10; j++) {
                 final long currentEntryId = j;
                 final LogRecord record = DLMTestUtil.getLargeLogRecordInstance(txid++);
@@ -792,7 +801,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         int txid = 1;
         for (long i = 0; i < 3; i++) {
             final long currentLogSegmentSeqNo = i + 1;
-            BKAsyncLogWriter writer = (BKAsyncLogWriter)(dlm.startAsyncLogSegmentNonPartitioned());
+            BKAsyncLogWriter writer = (BKAsyncLogWriter) (dlm.startAsyncLogSegmentNonPartitioned());
             for (long j = 0; j < 10; j++) {
                 final long currentEntryId = j;
                 final LogRecord record = DLMTestUtil.getLargeLogRecordInstance(txid++);
@@ -865,7 +874,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
             final long currentLogSegmentSeqNo = i + 1;
             BKAsyncLogWriter[] writers = new BKAsyncLogWriter[count];
             for (int s = 0; s < count; s++) {
-                writers[s] = (BKAsyncLogWriter)(dlms[s].startAsyncLogSegmentNonPartitioned());
+                writers[s] = (BKAsyncLogWriter) (dlms[s].startAsyncLogSegmentNonPartitioned());
             }
             for (long j = 0; j < 1; j++) {
                 final long currentEntryId = j;
@@ -899,7 +908,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
     }
 
     /**
-     * Flaky test fixed: readers need to be added to the pendingReaders
+     * Flaky test fixed: readers need to be added to the pendingReaders.
      * @throws Exception
      */
     @Test(timeout = 300000)
@@ -936,7 +945,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         int txid = 1;
         for (long i = 0; i < numLogSegments; i++) {
             final long currentLogSegmentSeqNo = i + 1;
-            BKAsyncLogWriter writer = (BKAsyncLogWriter)(dlm.startAsyncLogSegmentNonPartitioned());
+            BKAsyncLogWriter writer = (BKAsyncLogWriter) (dlm.startAsyncLogSegmentNonPartitioned());
             for (long j = 0; j < numRecordsPerLogSegment; j++) {
                 final long currentEntryId = j;
                 final LogRecord record = DLMTestUtil.getLargeLogRecordInstance(txid++);
@@ -987,7 +996,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         int txid = 1;
         for (long i = 0; i < numLogSegments; i++) {
             final long currentLogSegmentSeqNo = i + 1;
-            BKAsyncLogWriter writer = (BKAsyncLogWriter)(dlm.startAsyncLogSegmentNonPartitioned());
+            BKAsyncLogWriter writer = (BKAsyncLogWriter) (dlm.startAsyncLogSegmentNonPartitioned());
             for (long j = 0; j < numRecordsPerLogSegment; j++) {
                 Thread.sleep(50);
                 final LogRecord record = DLMTestUtil.getLargeLogRecordInstance(txid++);
@@ -995,7 +1004,8 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
                 dlsnFuture.whenComplete(new WriteFutureEventListener(
                         record, currentLogSegmentSeqNo, j, writeLatch, writeErrors, false));
                 if (i == 0 && j == 0) {
-                    boolean monotonic = LogSegmentMetadata.supportsSequenceId(confLocal.getDLLedgerMetadataLayoutVersion());
+                    boolean monotonic =
+                            LogSegmentMetadata.supportsSequenceId(confLocal.getDLLedgerMetadataLayoutVersion());
                     TestAsyncReaderWriter.readNext(
                             reader,
                             DLSN.InvalidDLSN,
@@ -1025,7 +1035,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         final String name = "distrlog-cancel-read-requests-on-reader-closed";
 
         DistributedLogManager dlm = createNewDLM(testConf, name);
-        BKAsyncLogWriter writer = (BKAsyncLogWriter)(dlm.startAsyncLogSegmentNonPartitioned());
+        BKAsyncLogWriter writer = (BKAsyncLogWriter) (dlm.startAsyncLogSegmentNonPartitioned());
         writer.write(DLMTestUtil.getLogRecordInstance(1L));
         writer.closeAndComplete();
 
@@ -1082,12 +1092,12 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         confLocal.setMinDelayBetweenImmediateFlushMs(100);
         DistributedLogManager dlm = createNewDLM(confLocal, name);
         final Thread currentThread = Thread.currentThread();
-        final int COUNT = 5000;
-        final CountDownLatch syncLatch = new CountDownLatch(COUNT);
+        final int count = 5000;
+        final CountDownLatch syncLatch = new CountDownLatch(count);
         int txid = 1;
-        BKAsyncLogWriter writer = (BKAsyncLogWriter)(dlm.startAsyncLogSegmentNonPartitioned());
+        BKAsyncLogWriter writer = (BKAsyncLogWriter) (dlm.startAsyncLogSegmentNonPartitioned());
         Stopwatch executionTime = Stopwatch.createStarted();
-        for (long i = 0; i < COUNT; i++) {
+        for (long i = 0; i < count; i++) {
             Thread.sleep(1);
             final LogRecord record = DLMTestUtil.getLogRecordInstance(txid++);
             CompletableFuture<DLSN> dlsnFuture = writer.write(record);
@@ -1122,12 +1132,14 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         assertTrue(success);
 
         LogRecordWithDLSN last = dlm.getLastLogRecord();
-        LOG.info("Last Entry {}; elapsed time {}", last.getDlsn().getEntryId(), executionTime.elapsed(TimeUnit.MILLISECONDS));
+        LOG.info("Last Entry {}; elapsed time {}",
+                last.getDlsn().getEntryId(), executionTime.elapsed(TimeUnit.MILLISECONDS));
 
         // Regardless of how many records we wrote; the number of BK entries should always be bounded by the min delay.
-        // Since there are two flush processes--data flush and control flush, and since control flush may also end up flushing
-        // data if data is available, the upper bound is 2*(time/min_delay + 1)
-        assertTrue(last.getDlsn().getEntryId() <= ((executionTime.elapsed(TimeUnit.MILLISECONDS) / confLocal.getMinDelayBetweenImmediateFlushMs() + 1))*2);
+        // Since there are two flush processes--data flush and control flush, and since control flush may also end up
+        // flushing data if data is available, the upper bound is 2*(time/min_delay + 1)
+        assertTrue(last.getDlsn().getEntryId() <= ((executionTime.elapsed(TimeUnit.MILLISECONDS)
+                / confLocal.getMinDelayBetweenImmediateFlushMs() + 1)) * 2);
         DLMTestUtil.verifyLogRecord(last);
 
         dlm.close();
@@ -1153,7 +1165,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         DistributedLogManager dlm1 = namespace1.openLog(name);
 
         int txid = 1;
-        BKAsyncLogWriter writer = (BKAsyncLogWriter)(dlm.startAsyncLogSegmentNonPartitioned());
+        BKAsyncLogWriter writer = (BKAsyncLogWriter) (dlm.startAsyncLogSegmentNonPartitioned());
 
         // First write succeeds since lock isnt checked until transmit, which is scheduled
         Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(txid++)));
@@ -1164,7 +1176,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         Utils.ioResult(lock.asyncClose());
 
         // Get second writer, steal lock
-        BKAsyncLogWriter writer2 = (BKAsyncLogWriter)(dlm1.startAsyncLogSegmentNonPartitioned());
+        BKAsyncLogWriter writer2 = (BKAsyncLogWriter) (dlm1.startAsyncLogSegmentNonPartitioned());
 
         try {
             // Succeeds, kicks off scheduked flush
@@ -1196,7 +1208,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         } else {
             dlm = createNewDLM(confLocal, runtime.getMethodName());
         }
-        BKAsyncLogWriter writer = (BKAsyncLogWriter)(dlm.startAsyncLogSegmentNonPartitioned());
+        BKAsyncLogWriter writer = (BKAsyncLogWriter) (dlm.startAsyncLogSegmentNonPartitioned());
         ArrayList<CompletableFuture<DLSN>> results = new ArrayList<CompletableFuture<DLSN>>(1000);
         for (int i = 0; i < 1000; i++) {
             results.add(writer.write(DLMTestUtil.getLogRecordInstance(1L)));
@@ -1244,7 +1256,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         confLocal.setPerWriterOutstandingWriteLimit(0);
         confLocal.setOutstandingWriteLimitDarkmode(true);
         DistributedLogManager dlm = createNewDLM(confLocal, runtime.getMethodName());
-        BKAsyncLogWriter writer = (BKAsyncLogWriter)(dlm.startAsyncLogSegmentNonPartitioned());
+        BKAsyncLogWriter writer = (BKAsyncLogWriter) (dlm.startAsyncLogSegmentNonPartitioned());
         ArrayList<CompletableFuture<DLSN>> results = new ArrayList<CompletableFuture<DLSN>>(1000);
         for (int i = 0; i < 1000; i++) {
             results.add(writer.write(DLMTestUtil.getLogRecordInstance(1L)));
@@ -1265,7 +1277,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         confLocal.setImmediateFlushEnabled(true);
 
         BKDistributedLogManager dlm = (BKDistributedLogManager) createNewDLM(confLocal, name);
-        BKAsyncLogWriter writer = (BKAsyncLogWriter)(dlm.startAsyncLogSegmentNonPartitioned());
+        BKAsyncLogWriter writer = (BKAsyncLogWriter) (dlm.startAsyncLogSegmentNonPartitioned());
 
         long txId = 1L;
         for (int i = 0; i < 5; i++) {
@@ -1309,7 +1321,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         confLocal.setImmediateFlushEnabled(true);
 
         BKDistributedLogManager dlm = (BKDistributedLogManager) createNewDLM(confLocal, name);
-        BKAsyncLogWriter writer = (BKAsyncLogWriter)(dlm.startAsyncLogSegmentNonPartitioned());
+        BKAsyncLogWriter writer = (BKAsyncLogWriter) (dlm.startAsyncLogSegmentNonPartitioned());
 
         long txId = 1L;
         for (int i = 0; i < 5; i++) {
@@ -1366,7 +1378,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
                         int txid = 1;
                         for (long i = 0; i < numSegments; i++) {
                             long start = txid;
-                            BKSyncLogWriter writer = (BKSyncLogWriter)dlm.startLogSegmentNonPartitioned();
+                            BKSyncLogWriter writer = (BKSyncLogWriter) dlm.startLogSegmentNonPartitioned();
                             for (long j = 1; j <= segmentSize; j++) {
                                 writer.write(DLMTestUtil.getLargeLogRecordInstance(txid++));
                                 if ((i == 0) && (j == 1)) {
@@ -1381,7 +1393,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
                                     - 200 // BK commitTime
                                     - 100; //safety margin
 
-                                for (int iter = 1; iter <= (2 * idleReaderErrorThreshold / threadSleepTime) ; iter++) {
+                                for (int iter = 1; iter <= (2 * idleReaderErrorThreshold / threadSleepTime); iter++) {
                                     Thread.sleep(threadSleepTime);
                                     writer.write(DLMTestUtil.getLargeLogRecordInstance(txid, true));
                                     writer.flush();
@@ -1466,7 +1478,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
 
         DistributedLogManager dlm = createNewDLM(confLocal, name);
         BKAsyncLogWriter writer =
-                (BKAsyncLogWriter)(dlm.startAsyncLogSegmentNonPartitioned());
+                (BKAsyncLogWriter) (dlm.startAsyncLogSegmentNonPartitioned());
 
         Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(1L)));
         writer.abort();
@@ -1545,7 +1557,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
                 }, 0, TimeUnit.MILLISECONDS);
 
         latch.await();
-        BKAsyncLogReader reader = (BKAsyncLogReader)dlm.getAsyncLogReader(DLSN.InitialDLSN);
+        BKAsyncLogReader reader = (BKAsyncLogReader) dlm.getAsyncLogReader(DLSN.InitialDLSN);
         reader.disableReadAheadLogSegmentsNotification();
         boolean exceptionEncountered = false;
         int recordCount = 0;
@@ -1656,9 +1668,9 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         DistributedLogManager dlm = createNewDLM(confLocal, name);
         BKAsyncLogWriter writer = (BKAsyncLogWriter) dlm.startAsyncLogSegmentNonPartitioned();
 
-        final int NUM_RECORDS = 10;
+        final int numRecords = 10;
         int i = 1;
-        for (; i <= NUM_RECORDS; i++) {
+        for (; i <= numRecords; i++) {
             Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(i)));
             assertEquals("last tx id should become " + i,
                     i, writer.getLastTxId());
@@ -1677,9 +1689,9 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
 
         BKAsyncLogReader reader = (BKAsyncLogReader) dlm.getAsyncLogReader(DLSN.InitialDLSN);
         LogRecord record = null;
-        for (int j = 0; j < NUM_RECORDS; j++) {
+        for (int j = 0; j < numRecords; j++) {
             record = Utils.ioResult(reader.readNext());
-            assertEquals(j+1, record.getTransactionId());
+            assertEquals(j + 1, record.getTransactionId());
         }
 
         try {
@@ -1735,7 +1747,8 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         Utils.ioResult(writer.write(controlRecord));
 
         BKAsyncLogReader reader = (BKAsyncLogReader) dlm.getAsyncLogReader(DLSN.InitialDLSN);
-        CompletableFuture<List<LogRecordWithDLSN>> bulkReadFuture = reader.readBulk(2, Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        CompletableFuture<List<LogRecordWithDLSN>> bulkReadFuture =
+                reader.readBulk(2, Long.MAX_VALUE, TimeUnit.MILLISECONDS);
         CompletableFuture<LogRecordWithDLSN> readFuture = reader.readNext();
 
         // write another records
@@ -1983,8 +1996,8 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         List<LogSegmentMetadata> segments = dlm.getLogSegments();
         assertEquals(1, segments.size());
         long ledgerId = segments.get(0).getLogSegmentId();
-        LedgerHandle lh = ((BKNamespaceDriver) namespace.getNamespaceDriver()).getReaderBKC()
-                .get().openLedgerNoRecovery(ledgerId, BookKeeper.DigestType.CRC32, confLocal.getBKDigestPW().getBytes(UTF_8));
+        LedgerHandle lh = ((BKNamespaceDriver) namespace.getNamespaceDriver()).getReaderBKC().get()
+                .openLedgerNoRecovery(ledgerId, BookKeeper.DigestType.CRC32, confLocal.getBKDigestPW().getBytes(UTF_8));
         LedgerMetadata metadata = BookKeeperAccessor.getLedgerMetadata(lh);
         assertEquals(DistributedLogConfiguration.BKDL_BOOKKEEPER_ENSEMBLE_SIZE_DEFAULT, metadata.getEnsembleSize());
         lh.close();
@@ -2002,8 +2015,8 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
         segments = dlm.getLogSegments();
         assertEquals(1, segments.size());
         ledgerId = segments.get(0).getLogSegmentId();
-        lh = ((BKNamespaceDriver) namespace.getNamespaceDriver()).getReaderBKC()
-                .get().openLedgerNoRecovery(ledgerId, BookKeeper.DigestType.CRC32, confLocal.getBKDigestPW().getBytes(UTF_8));
+        lh = ((BKNamespaceDriver) namespace.getNamespaceDriver()).getReaderBKC().get()
+                .openLedgerNoRecovery(ledgerId, BookKeeper.DigestType.CRC32, confLocal.getBKDigestPW().getBytes(UTF_8));
         metadata = BookKeeperAccessor.getLedgerMetadata(lh);
         assertEquals(DistributedLogConfiguration.BKDL_BOOKKEEPER_ENSEMBLE_SIZE_DEFAULT - 1, metadata.getEnsembleSize());
         lh.close();
@@ -2106,8 +2119,8 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
                 assertEquals(new DLSN(1L, 5L, i - 5), record.getDlsn());
                 assertEquals(6L, record.getTransactionId());
             }
-            assertEquals(i+1, record.getPositionWithinLogSegment());
-            assertArrayEquals(DLMTestUtil.generatePayload(i+1), record.getPayload());
+            assertEquals(i + 1, record.getPositionWithinLogSegment());
+            assertArrayEquals(DLMTestUtil.generatePayload(i + 1), record.getPayload());
         }
         Utils.close(reader1);
         readDLM1.close();
@@ -2125,7 +2138,7 @@ public class TestAsyncReaderWriter extends TestDistributedLogBase {
                 assertEquals(new DLSN(1L, i, 0L), record.getDlsn());
                 assertEquals(1L + i, record.getTransactionId());
                 assertEquals(i + 1, record.getPositionWithinLogSegment());
-                assertArrayEquals(DLMTestUtil.generatePayload(i+1), record.getPayload());
+                assertArrayEquals(DLMTestUtil.generatePayload(i + 1), record.getPayload());
             } else if (i >= 6L) {
                 assertEquals(new DLSN(1L, 6L + i - 6, 0L), record.getDlsn());
                 assertEquals(11L + i - 6, record.getTransactionId());

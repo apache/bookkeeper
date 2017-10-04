@@ -21,10 +21,11 @@ import com.google.common.annotations.VisibleForTesting;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.feature.Feature;
-import org.apache.bookkeeper.stats.OpStatsLogger;
-import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
+import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
+
 import org.apache.distributedlog.common.util.PermitLimiter;
 
 /**

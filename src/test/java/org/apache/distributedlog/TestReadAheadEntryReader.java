@@ -17,36 +17,35 @@
  */
 package org.apache.distributedlog;
 
+import static org.junit.Assert.*;
 import com.google.common.base.Optional;
 import com.google.common.base.Ticker;
 import com.google.common.collect.Lists;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import org.apache.bookkeeper.stats.AlertStatsLogger;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.distributedlog.api.AsyncLogWriter;
 import org.apache.distributedlog.api.DistributedLogManager;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.exceptions.AlreadyTruncatedTransactionException;
 import org.apache.distributedlog.exceptions.DLIllegalStateException;
 import org.apache.distributedlog.impl.logsegment.BKLogSegmentEntryStore;
 import org.apache.distributedlog.injector.AsyncFailureInjector;
 import org.apache.distributedlog.logsegment.LogSegmentEntryStore;
 import org.apache.distributedlog.util.ConfUtils;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.Utils;
-import org.apache.bookkeeper.stats.AlertStatsLogger;
-import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.*;
 
 /**
- * Test Case {@link ReadAheadEntryReader}
+ * Test Case {@link ReadAheadEntryReader}.
  */
 public class TestReadAheadEntryReader extends TestDistributedLogBase {
 

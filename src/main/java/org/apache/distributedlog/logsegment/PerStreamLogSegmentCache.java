@@ -19,13 +19,6 @@ package org.apache.distributedlog.logsegment;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
-import org.apache.distributedlog.DistributedLogConstants;
-import org.apache.distributedlog.LogSegmentMetadata;
-import org.apache.distributedlog.exceptions.UnexpectedException;
-import org.apache.commons.lang3.tuple.Pair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -35,6 +28,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.distributedlog.DistributedLogConstants;
+import org.apache.distributedlog.LogSegmentMetadata;
+import org.apache.distributedlog.exceptions.UnexpectedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
 
 /**
  * Managing log segments in local cache.
@@ -70,8 +71,7 @@ public class PerStreamLogSegmentCache {
 
     /**
      * Retrieve log segments from the cache.
-     *
-     * - first sort the log segments in ascending order
+     *- first sort the log segments in ascending order
      * - do validation and assign corresponding sequence id
      * - apply comparator after validation
      *
@@ -96,13 +96,16 @@ public class PerStreamLogSegmentCache {
                 LogSegmentMetadata segment = segmentsToReturn.get(i);
 
                 if (null != prevSegment
-                        && prevSegment.getVersion() >= LogSegmentMetadata.LogSegmentMetadataVersion.VERSION_V2_LEDGER_SEQNO.value
-                        && segment.getVersion() >= LogSegmentMetadata.LogSegmentMetadataVersion.VERSION_V2_LEDGER_SEQNO.value
+                        && prevSegment.getVersion()
+                        >= LogSegmentMetadata.LogSegmentMetadataVersion.VERSION_V2_LEDGER_SEQNO.value
+                        && segment.getVersion()
+                        >= LogSegmentMetadata.LogSegmentMetadataVersion.VERSION_V2_LEDGER_SEQNO.value
                         && prevSegment.getLogSegmentSequenceNumber() + 1 != segment.getLogSegmentSequenceNumber()) {
                     LOG.error("{} found ledger sequence number gap between log segment {} and {}",
                             new Object[] { streamName, prevSegment, segment });
                     throw new UnexpectedException(streamName + " found ledger sequence number gap between log segment "
-                            + prevSegment.getLogSegmentSequenceNumber() + " and " + segment.getLogSegmentSequenceNumber());
+                            + prevSegment.getLogSegmentSequenceNumber()
+                            + " and " + segment.getLogSegmentSequenceNumber());
                 }
                 prevSegment = segment;
             }
@@ -127,7 +130,8 @@ public class PerStreamLogSegmentCache {
             } else {
                 if (segment.supportsSequenceId()) {
                     LogSegmentMetadata newSegment = segment.mutator()
-                            .setStartSequenceId(startSequenceId == DistributedLogConstants.UNASSIGNED_SEQUENCE_ID ? 0L : startSequenceId)
+                            .setStartSequenceId(startSequenceId
+                                    == DistributedLogConstants.UNASSIGNED_SEQUENCE_ID ? 0L : startSequenceId)
                             .build();
                     segmentsToReturn.set(i, newSegment);
                 }

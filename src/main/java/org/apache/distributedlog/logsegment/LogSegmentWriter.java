@@ -38,7 +38,7 @@ public interface LogSegmentWriter extends AsyncCloseable, AsyncAbortable {
      *
      * @return log segment id.
      */
-    public long getLogSegmentId();
+    long getLogSegmentId();
 
     /**
      * Write a log record to a log segment.
@@ -52,12 +52,11 @@ public interface LogSegmentWriter extends AsyncCloseable, AsyncAbortable {
      * @throws BKTransmitException if failed to transmit data to bk
      * @throws org.apache.distributedlog.exceptions.WriteException if failed to write to bk
      */
-    public CompletableFuture<DLSN> asyncWrite(LogRecord record);
+    CompletableFuture<DLSN> asyncWrite(LogRecord record);
 
     /**
      * This isn't a simple synchronous version of {@code asyncWrite}. It has different semantic.
      * This method only writes data to the buffer and flushes buffer if needed.
-     *
      * TODO: we should remove this method. when we rewrite synchronous writer based on asynchronous writer,
      *       since this is the semantic needed to be provided in higher level but just calling write & flush.
      *
@@ -65,7 +64,7 @@ public interface LogSegmentWriter extends AsyncCloseable, AsyncAbortable {
      * @throws IOException when tried to flush the buffer.
      * @see LogSegmentWriter#asyncWrite(LogRecord)
      */
-    public void write(LogRecord record) throws IOException;
+    void write(LogRecord record) throws IOException;
 
     /**
      * Transmit the buffered data and wait for it being persisted and return the last acknowledged
@@ -73,7 +72,7 @@ public interface LogSegmentWriter extends AsyncCloseable, AsyncAbortable {
      *
      * @return future representing the transmit result with last acknowledged transaction id.
      */
-    public CompletableFuture<Long> flush();
+    CompletableFuture<Long> flush();
 
     /**
      * Commit the current acknowledged data. It is the consequent operation of {@link #flush()},
@@ -81,6 +80,6 @@ public interface LogSegmentWriter extends AsyncCloseable, AsyncAbortable {
      *
      * @return future representing the commit result.
      */
-    public CompletableFuture<Long> commit();
+    CompletableFuture<Long> commit();
 
 }

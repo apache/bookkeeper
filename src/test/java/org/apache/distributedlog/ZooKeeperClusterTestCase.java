@@ -17,16 +17,18 @@
  */
 package org.apache.distributedlog;
 
+import java.io.File;
 import org.apache.bookkeeper.shims.zk.ZooKeeperServerShim;
 import org.apache.bookkeeper.util.IOUtils;
-import org.apache.bookkeeper.util.LocalBookKeeper;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
-import java.io.File;
 
+/**
+ * ZooKeeperClusterTestCase.
+ */
 public class ZooKeeperClusterTestCase {
 
     protected static File zkDir;

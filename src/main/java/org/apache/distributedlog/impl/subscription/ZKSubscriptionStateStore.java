@@ -23,9 +23,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.ZooKeeperClient;
-import org.apache.distributedlog.exceptions.DLInterruptedException;
 import org.apache.distributedlog.api.subscription.SubscriptionStateStore;
 import org.apache.distributedlog.common.concurrent.FutureUtils;
+
+import org.apache.distributedlog.exceptions.DLInterruptedException;
 import org.apache.distributedlog.util.Utils;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
@@ -33,10 +34,12 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+/**
+ * The subscription state store Implementation.
+ */
 public class ZKSubscriptionStateStore implements SubscriptionStateStore {
 
-    static final Logger logger = LoggerFactory.getLogger(ZKSubscriptionStateStore.class);
+    private static final Logger logger = LoggerFactory.getLogger(ZKSubscriptionStateStore.class);
 
     private final ZooKeeperClient zooKeeperClient;
     private final String zkPath;
@@ -52,7 +55,7 @@ public class ZKSubscriptionStateStore implements SubscriptionStateStore {
     }
 
     /**
-     * Get the last committed position stored for this subscription
+     * Get the last committed position stored for this subscription.
      */
     @Override
     public CompletableFuture<DLSN> getLastCommitPosition() {
@@ -96,14 +99,14 @@ public class ZKSubscriptionStateStore implements SubscriptionStateStore {
     }
 
     /**
-     * Advances the position associated with the subscriber
+     * Advances the position associated with the subscriber.
      *
      * @param newPosition - new commit position
      */
     @Override
     public CompletableFuture<Void> advanceCommitPosition(DLSN newPosition) {
-        if (null == lastCommittedPosition.get() ||
-            (newPosition.compareTo(lastCommittedPosition.get()) > 0)) {
+        if (null == lastCommittedPosition.get()
+                || (newPosition.compareTo(lastCommittedPosition.get()) > 0)) {
             lastCommittedPosition.set(newPosition);
             return Utils.zkAsyncCreateFullPathOptimisticAndSetData(zooKeeperClient,
                 zkPath, newPosition.serialize().getBytes(Charsets.UTF_8),

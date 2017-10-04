@@ -21,7 +21,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.Code;
 
 /**
- * TODO: move ZKException to distributedlog-protocol
+ * TODO: move ZKException to distributedlog-protocol.
  */
 public class ZKException extends DLException {
 
@@ -45,9 +45,9 @@ public class ZKException extends DLException {
 
     public static boolean isRetryableZKException(ZKException zke) {
         KeeperException.Code code = zke.getKeeperExceptionCode();
-        return KeeperException.Code.CONNECTIONLOSS == code ||
-                KeeperException.Code.OPERATIONTIMEOUT == code ||
-                KeeperException.Code.SESSIONEXPIRED == code ||
-                KeeperException.Code.SESSIONMOVED == code;
+        return KeeperException.Code.CONNECTIONLOSS == code
+                || KeeperException.Code.OPERATIONTIMEOUT == code
+                || KeeperException.Code.SESSIONEXPIRED == code
+                || KeeperException.Code.SESSIONMOVED == code;
     }
 }

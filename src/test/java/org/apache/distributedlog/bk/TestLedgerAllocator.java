@@ -17,27 +17,39 @@
  */
 package org.apache.distributedlog.bk;
 
+import static com.google.common.base.Charsets.UTF_8;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import java.net.URI;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import org.apache.distributedlog.BookKeeperClient;
-import org.apache.distributedlog.BookKeeperClientBuilder;
-import org.apache.distributedlog.TestZooKeeperClientBuilder;
-import org.apache.distributedlog.common.annotations.DistributedLogAnnotations;
-import org.apache.distributedlog.bk.SimpleLedgerAllocator.AllocationException;
-import org.apache.distributedlog.bk.SimpleLedgerAllocator.Phase;
-import org.apache.distributedlog.DistributedLogConfiguration;
-import org.apache.distributedlog.TestDistributedLogBase;
-import org.apache.distributedlog.ZooKeeperClient;
-import org.apache.distributedlog.exceptions.ZKException;
-import org.apache.distributedlog.util.Transaction.OpListener;
-import org.apache.distributedlog.util.Utils;
-import org.apache.distributedlog.zk.DefaultZKOp;
-import org.apache.distributedlog.zk.ZKTransaction;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.meta.ZkVersion;
 import org.apache.bookkeeper.versioning.Versioned;
+import org.apache.distributedlog.BookKeeperClient;
+import org.apache.distributedlog.BookKeeperClientBuilder;
+import org.apache.distributedlog.DistributedLogConfiguration;
+import org.apache.distributedlog.TestDistributedLogBase;
+import org.apache.distributedlog.TestZooKeeperClientBuilder;
+
+import org.apache.distributedlog.ZooKeeperClient;
+import org.apache.distributedlog.bk.SimpleLedgerAllocator.AllocationException;
+import org.apache.distributedlog.bk.SimpleLedgerAllocator.Phase;
+import org.apache.distributedlog.common.annotations.DistributedLogAnnotations;
+
+
+import org.apache.distributedlog.exceptions.ZKException;
+import org.apache.distributedlog.util.Transaction.OpListener;
+import org.apache.distributedlog.util.Utils;
+import org.apache.distributedlog.zk.DefaultZKOp;
+import org.apache.distributedlog.zk.ZKTransaction;
+
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Op;
@@ -52,16 +64,12 @@ import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Set;
 
-import static com.google.common.base.Charsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
+
+/**
+ * TestLedgerAllocator.
+ */
 public class TestLedgerAllocator extends TestDistributedLogBase {
 
     private static final Logger logger = LoggerFactory.getLogger(TestLedgerAllocator.class);
@@ -124,7 +132,7 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
     }
 
     /**
-     * {@link https://issues.apache.org/jira/browse/DL-43}
+     * {@link https://issues.apache.org/jira/browse/DL-43}.
      */
     @DistributedLogAnnotations.FlakyTest
     @Ignore
@@ -190,7 +198,8 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
 
         long eid = lh.addEntry("hello world".getBytes());
         lh.close();
-        LedgerHandle readLh = bkc.get().openLedger(lh.getId(), BookKeeper.DigestType.CRC32, dlConf.getBKDigestPW().getBytes());
+        LedgerHandle readLh = bkc.get().openLedger(lh.getId(),
+                BookKeeper.DigestType.CRC32, dlConf.getBKDigestPW().getBytes());
         Enumeration<LedgerEntry> entries = readLh.readEntries(eid, eid);
         int i = 0;
         while (entries.hasMoreElements()) {
@@ -255,7 +264,8 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         // should fail to commit txn1 as version is changed by second allocator
         try {
             Utils.ioResult(txn1.execute());
-            fail("Should fail commit obtaining ledger handle from first allocator as allocator is modified by second allocator.");
+            fail("Should fail commit obtaining ledger handle from first allocator"
+                    + " as allocator is modified by second allocator.");
         } catch (ZKException ke) {
             // as expected
         }
@@ -278,7 +288,8 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         }
         long eid = lh2.addEntry("hello world".getBytes());
         lh2.close();
-        LedgerHandle readLh = bkc.get().openLedger(lh2.getId(), BookKeeper.DigestType.CRC32, dlConf.getBKDigestPW().getBytes());
+        LedgerHandle readLh = bkc.get().openLedger(lh2.getId(),
+                BookKeeper.DigestType.CRC32, dlConf.getBKDigestPW().getBytes());
         Enumeration<LedgerEntry> entries = readLh.readEntries(eid, eid);
         int i = 0;
         while (entries.hasMoreElements()) {
@@ -306,7 +317,7 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
     }
 
     /**
-     * {@link https://issues.apache.org/jira/browse/DL-26}
+     * {@link https://issues.apache.org/jira/browse/DL-26}.
      */
     @DistributedLogAnnotations.FlakyTest
     @Ignore

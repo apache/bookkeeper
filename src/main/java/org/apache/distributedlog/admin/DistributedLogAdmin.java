@@ -17,40 +17,8 @@
  */
 package org.apache.distributedlog.admin;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.collect.Lists;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
-import org.apache.bookkeeper.util.IOUtils;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
-import org.apache.distributedlog.api.DistributedLogManager;
-import org.apache.distributedlog.LogRecordWithDLSN;
-import org.apache.distributedlog.LogSegmentMetadata;
-import org.apache.distributedlog.ReadUtils;
-import org.apache.distributedlog.ZooKeeperClient;
-import org.apache.distributedlog.ZooKeeperClientBuilder;
-import org.apache.distributedlog.api.namespace.Namespace;
-import org.apache.distributedlog.impl.BKNamespaceDriver;
-import org.apache.distributedlog.impl.acl.ZKAccessControl;
-import org.apache.distributedlog.exceptions.DLIllegalStateException;
-import org.apache.distributedlog.impl.federated.FederatedZKLogMetadataStore;
-import org.apache.distributedlog.logsegment.LogSegmentEntryStore;
-import org.apache.distributedlog.impl.metadata.BKDLConfig;
-import org.apache.distributedlog.metadata.DLMetadata;
-import org.apache.distributedlog.metadata.DryrunLogSegmentMetadataStoreUpdater;
-import org.apache.distributedlog.metadata.MetadataUpdater;
-import org.apache.distributedlog.metadata.LogSegmentMetadataStoreUpdater;
-import org.apache.distributedlog.namespace.NamespaceDriver;
-import org.apache.distributedlog.thrift.AccessControlEntry;
-import org.apache.distributedlog.tools.DistributedLogTool;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
-import org.apache.distributedlog.util.OrderedScheduler;
-import org.apache.distributedlog.common.util.SchedulerUtils;
-import org.apache.zookeeper.KeeperException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
@@ -63,13 +31,55 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
+
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CountDownLatch;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import org.apache.bookkeeper.util.IOUtils;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.apache.distributedlog.LogRecordWithDLSN;
+import org.apache.distributedlog.LogSegmentMetadata;
+import org.apache.distributedlog.ReadUtils;
+import org.apache.distributedlog.ZooKeeperClient;
+import org.apache.distributedlog.ZooKeeperClientBuilder;
+import org.apache.distributedlog.api.DistributedLogManager;
+import org.apache.distributedlog.api.namespace.Namespace;
+
+import org.apache.distributedlog.common.concurrent.FutureUtils;
+import org.apache.distributedlog.common.util.SchedulerUtils;
+
+import org.apache.distributedlog.exceptions.DLIllegalStateException;
+
+
+import org.apache.distributedlog.impl.BKNamespaceDriver;
+import org.apache.distributedlog.impl.acl.ZKAccessControl;
+import org.apache.distributedlog.impl.federated.FederatedZKLogMetadataStore;
+import org.apache.distributedlog.impl.metadata.BKDLConfig;
+
+import org.apache.distributedlog.logsegment.LogSegmentEntryStore;
+import org.apache.distributedlog.metadata.DLMetadata;
+import org.apache.distributedlog.metadata.DryrunLogSegmentMetadataStoreUpdater;
+import org.apache.distributedlog.metadata.LogSegmentMetadataStoreUpdater;
+
+import org.apache.distributedlog.metadata.MetadataUpdater;
+import org.apache.distributedlog.namespace.NamespaceDriver;
+import org.apache.distributedlog.thrift.AccessControlEntry;
+import org.apache.distributedlog.tools.DistributedLogTool;
+import org.apache.distributedlog.util.OrderedScheduler;
+import org.apache.zookeeper.KeeperException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
 
 /**
  * Admin Tool for DistributedLog.
@@ -113,16 +123,19 @@ public class DistributedLogAdmin extends DistributedLogTool {
             LogSegmentMetadata inprogressSegment = null;
             for (LogSegmentMetadata segment : segments) {
                 if (!segment.isInProgress()) {
-                    maxCompletedLogSegmentSequenceNumber = Math.max(maxCompletedLogSegmentSequenceNumber, segment.getLogSegmentSequenceNumber());
+                    maxCompletedLogSegmentSequenceNumber = Math.max(maxCompletedLogSegmentSequenceNumber,
+                            segment.getLogSegmentSequenceNumber());
                 } else {
                     // we already found an inprogress segment
                     if (null != inprogressSegment) {
-                        throw new DLIllegalStateException("Multiple inprogress segments found for stream " + streamName + " : " + segments);
+                        throw new DLIllegalStateException("Multiple inprogress segments found for stream "
+                                + streamName + " : " + segments);
                     }
                     inprogressSegment = segment;
                 }
             }
-            if (null == inprogressSegment || inprogressSegment.getLogSegmentSequenceNumber() > maxCompletedLogSegmentSequenceNumber) {
+            if (null == inprogressSegment || inprogressSegment.getLogSegmentSequenceNumber()
+                    > maxCompletedLogSegmentSequenceNumber) {
                 // nothing to fix
                 return;
             }
@@ -131,7 +144,8 @@ public class DistributedLogAdmin extends DistributedLogTool {
                 return;
             }
             final LogSegmentMetadata newSegment =
-                    FutureUtils.result(metadataUpdater.changeSequenceNumber(inprogressSegment, newLogSegmentSequenceNumber));
+                    FutureUtils.result(metadataUpdater.changeSequenceNumber(inprogressSegment,
+                            newLogSegmentSequenceNumber));
             LOG.info("Fixed {} : {} -> {} ",
                      new Object[] { streamName, inprogressSegment, newSegment });
             if (verbose) {
@@ -206,7 +220,7 @@ public class DistributedLogAdmin extends DistributedLogTool {
                                                  final boolean verbose,
                                                  final boolean interactive,
                                                  final int concurrency) throws Exception {
-        Preconditions.checkArgument(concurrency > 0, "Invalid concurrency " + concurrency + " found.");
+        checkArgument(concurrency > 0, "Invalid concurrency " + concurrency + " found.");
         // 0. getting streams under a given uri.
         Iterator<String> streamsIter = namespace.getLogs();
         List<String> streams = Lists.newArrayList();
@@ -225,7 +239,8 @@ public class DistributedLogAdmin extends DistributedLogTool {
         if (verbose) {
             System.out.println("+ 0. " + streamCandidates.size() + " corrupted streams found.");
         }
-        if (interactive && !IOUtils.confirmPrompt("Do you want to fix all " + streamCandidates.size() + " corrupted streams (Y/N) : ")) {
+        if (interactive && !IOUtils.confirmPrompt("Do you want to fix all "
+                + streamCandidates.size() + " corrupted streams (Y/N) : ")) {
             return;
         }
         if (verbose) {
@@ -371,10 +386,10 @@ public class DistributedLogAdmin extends DistributedLogTool {
         ).thenApply(new Function<LogRecordWithDLSN, LogSegmentCandidate>() {
             @Override
             public LogSegmentCandidate apply(LogRecordWithDLSN record) {
-                if (null != record &&
-                    (record.getDlsn().compareTo(metadata.getLastDLSN()) > 0 ||
-                     record.getTransactionId() > metadata.getLastTxId() ||
-                     !metadata.isRecordPositionWithinSegmentScope(record))) {
+                if (null != record
+                        && (record.getDlsn().compareTo(metadata.getLastDLSN()) > 0
+                            || record.getTransactionId() > metadata.getLastTxId()
+                            || !metadata.isRecordPositionWithinSegmentScope(record))) {
                     return new LogSegmentCandidate(metadata, record);
                 } else {
                     return null;
@@ -396,14 +411,15 @@ public class DistributedLogAdmin extends DistributedLogTool {
             }
             System.out.println("-------------------------------------------");
         }
-        if (interactive && !IOUtils.confirmPrompt("Do you want to fix the stream " + streamCandidate.streamName + " (Y/N) : ")) {
+        if (interactive && !IOUtils.confirmPrompt("Do you want to fix the stream "
+                + streamCandidate.streamName + " (Y/N) : ")) {
             return false;
         }
         for (LogSegmentCandidate segmentCandidate : streamCandidate.segmentCandidates) {
             LogSegmentMetadata newMetadata = FutureUtils.result(
                     metadataUpdater.updateLastRecord(segmentCandidate.metadata, segmentCandidate.lastRecord));
             if (verbose) {
-                System.out.println("  Fixed segment " + segmentCandidate.metadata.getLogSegmentSequenceNumber() + " : ");
+                System.out.println(" Fixed segment " + segmentCandidate.metadata.getLogSegmentSequenceNumber() + " : ");
                 System.out.println("    old metadata : " + segmentCandidate.metadata);
                 System.out.println("    new metadata : " + newMetadata);
             }
@@ -420,7 +436,6 @@ public class DistributedLogAdmin extends DistributedLogTool {
 
     /**
      * Unbind the bookkeeper environment for a given distributedlog uri.
-     *
      * TODO: move unbind operation to namespace driver
      */
     class UnbindCommand extends OptsCommand {
@@ -481,7 +496,6 @@ public class DistributedLogAdmin extends DistributedLogTool {
 
     /**
      * Bind Command to bind bookkeeper environment for a given distributed uri.
-     *
      * TODO: move bind to namespace driver
      */
     class BindCommand extends OptsCommand {
@@ -492,12 +506,16 @@ public class DistributedLogAdmin extends DistributedLogTool {
             super("bind", "bind the bookkeeper environment settings for a given distributedlog instance.");
             options.addOption("l", "bkLedgers", true, "ZooKeeper ledgers path for bookkeeper instance.");
             options.addOption("s", "bkZkServers", true, "ZooKeeper servers used for bookkeeper for writers.");
-            options.addOption("bkzr", "bkZkServersForReader", true, "ZooKeeper servers used for bookkeeper for readers.");
-            options.addOption("dlzw", "dlZkServersForWriter", true, "ZooKeeper servers used for distributedlog for writers.");
-            options.addOption("dlzr", "dlZkServersForReader", true, "ZooKeeper servers used for distributedlog for readers.");
+            options.addOption("bkzr", "bkZkServersForReader", true,
+                    "ZooKeeper servers used for bookkeeper for readers.");
+            options.addOption("dlzw", "dlZkServersForWriter", true,
+                    "ZooKeeper servers used for distributedlog for writers.");
+            options.addOption("dlzr", "dlZkServersForReader", true,
+                    "ZooKeeper servers used for distributedlog for readers.");
             options.addOption("i", "sanityCheckTxnID", true, "Flag to sanity check highest txn id.");
             options.addOption("r", "encodeRegionID", true, "Flag to encode region id.");
-            options.addOption("seqno", "firstLogSegmentSeqNo", true, "The first log segment sequence number to use after upgrade");
+            options.addOption("seqno", "firstLogSegmentSeqNo", true,
+                    "The first log segment sequence number to use after upgrade");
             options.addOption("fns", "federatedNamespace", false, "Flag to turn a namespace to federated namespace");
             options.addOption("f", "force", false, "Force binding without prompt.");
             options.addOption("c", "creation", false, "Whether is it a creation binding.");
@@ -570,7 +588,8 @@ public class DistributedLogAdmin extends DistributedLogTool {
                                 .setEncodeRegionID(encodeRegionID);
 
                 if (cmdline.hasOption("seqno")) {
-                    newBKDLConfig = newBKDLConfig.setFirstLogSegmentSeqNo(Long.parseLong(cmdline.getOptionValue("seqno")));
+                    newBKDLConfig = newBKDLConfig.setFirstLogSegmentSeqNo(
+                            Long.parseLong(cmdline.getOptionValue("seqno")));
                 }
 
                 if (cmdline.hasOption("fns")) {
@@ -594,7 +613,7 @@ public class DistributedLogAdmin extends DistributedLogTool {
                         if (newBKDLConfig.equals(bkdlConfig)) {
                             System.out.println("No bookkeeper binding needs to be updated. Quit.");
                             return 0;
-                        } else if(!newBKDLConfig.isFederatedNamespace() && bkdlConfig.isFederatedNamespace()) {
+                        } else if (!newBKDLConfig.isFederatedNamespace() && bkdlConfig.isFederatedNamespace()) {
                             System.out.println("You can't turn a federated namespace back to non-federated.");
                             return 0;
                         } else {
@@ -670,8 +689,8 @@ public class DistributedLogAdmin extends DistributedLogTool {
 
         @Override
         protected int runCmd() throws Exception {
-            MetadataUpdater metadataUpdater = dryrun ?
-                    new DryrunLogSegmentMetadataStoreUpdater(getConf(),
+            MetadataUpdater metadataUpdater = dryrun
+                    ? new DryrunLogSegmentMetadataStoreUpdater(getConf(),
                             getLogSegmentMetadataStore()) :
                     LogSegmentMetadataStoreUpdater.createMetadataUpdater(getConf(),
                             getLogSegmentMetadataStore());
@@ -681,7 +700,8 @@ public class DistributedLogAdmin extends DistributedLogTool {
                 return -1;
             }
             for (String stream : streams) {
-                fixInprogressSegmentWithLowerSequenceNumber(getNamespace(), metadataUpdater, stream, verbose, !getForce());
+                fixInprogressSegmentWithLowerSequenceNumber(getNamespace(),
+                        metadataUpdater, stream, verbose, !getForce());
             }
             return 0;
         }
@@ -721,8 +741,8 @@ public class DistributedLogAdmin extends DistributedLogTool {
 
         @Override
         protected int runCmd() throws Exception {
-            MetadataUpdater metadataUpdater = dryrun ?
-                    new DryrunLogSegmentMetadataStoreUpdater(getConf(),
+            MetadataUpdater metadataUpdater = dryrun
+                    ? new DryrunLogSegmentMetadataStoreUpdater(getConf(),
                             getLogSegmentMetadataStore()) :
                     LogSegmentMetadataStoreUpdater.createMetadataUpdater(getConf(),
                             getLogSegmentMetadataStore());
@@ -829,7 +849,7 @@ public class DistributedLogAdmin extends DistributedLogTool {
         }
     }
 
-    static abstract class SetACLCommand extends PerDLCommand {
+    abstract static  class SetACLCommand extends PerDLCommand {
 
         boolean denyWrite = false;
         boolean denyTruncate = false;

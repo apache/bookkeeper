@@ -20,7 +20,7 @@ package org.apache.distributedlog.selector;
 import org.apache.distributedlog.LogRecordWithDLSN;
 
 /**
- * Save the first record processed
+ * Save the first record processed.
  */
 public class FirstRecordSelector implements LogRecordSelector {
 

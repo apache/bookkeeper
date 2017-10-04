@@ -16,14 +16,15 @@
  * limitations under the License.
  */
 package org.apache.distributedlog.bk;
-
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+
+import org.apache.bookkeeper.client.LedgerHandle;
+
 import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.util.Transaction;
 import org.apache.distributedlog.util.Transaction.OpListener;
-import org.apache.bookkeeper.client.LedgerHandle;
 
-import java.io.IOException;
 
 /**
  * Delegator of the underlying allocator. If it owns the allocator, it takes

@@ -17,20 +17,36 @@
  */
 package org.apache.distributedlog.impl;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 import com.google.common.collect.ImmutableList;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.apache.bookkeeper.meta.ZkVersion;
+import org.apache.bookkeeper.versioning.Version;
+import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.LogSegmentMetadata;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.callback.LogSegmentNamesListener;
+import org.apache.distributedlog.common.concurrent.FutureEventListener;
 import org.apache.distributedlog.exceptions.LogNotFoundException;
 import org.apache.distributedlog.exceptions.LogSegmentNotFoundException;
 import org.apache.distributedlog.exceptions.ZKException;
+import org.apache.distributedlog.logsegment.LogSegmentMetadataStore;
 import org.apache.distributedlog.metadata.LogMetadata;
 import org.apache.distributedlog.metadata.LogMetadataForWriter;
-import org.apache.distributedlog.logsegment.LogSegmentMetadataStore;
 import org.apache.distributedlog.util.DLUtils;
-import org.apache.distributedlog.common.concurrent.FutureEventListener;
 import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.Transaction;
 import org.apache.distributedlog.util.Transaction.OpListener;
@@ -39,9 +55,7 @@ import org.apache.distributedlog.zk.DefaultZKOp;
 import org.apache.distributedlog.zk.ZKOp;
 import org.apache.distributedlog.zk.ZKTransaction;
 import org.apache.distributedlog.zk.ZKVersionedSetOp;
-import org.apache.bookkeeper.meta.ZkVersion;
-import org.apache.bookkeeper.versioning.Version;
-import org.apache.bookkeeper.versioning.Versioned;
+
 import org.apache.zookeeper.AsyncCallback.Children2Callback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -52,18 +66,7 @@ import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import static com.google.common.base.Charsets.UTF_8;
 
 /**
  * ZooKeeper based log segment metadata store.
@@ -137,8 +140,9 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
         }
 
         synchronized void onSegmentsUpdated(Versioned<List<String>> logSegments) {
-            if (lastNotifiedLogSegments.getVersion() == Version.NEW ||
-                    lastNotifiedLogSegments.getVersion().compare(logSegments.getVersion()) == Version.Occurred.BEFORE) {
+            if (lastNotifiedLogSegments.getVersion() == Version.NEW
+                    || lastNotifiedLogSegments.getVersion()
+                    .compare(logSegments.getVersion()) == Version.Occurred.BEFORE) {
                 lastNotifiedLogSegments = logSegments;
                 listener.onSegmentsUpdated(logSegments);
             }
@@ -320,7 +324,7 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
     // reads
 
     /**
-     * Process the watched events for registered listeners
+     * Process the watched events for registered listeners.
      */
     @Override
     public void process(WatchedEvent event) {
@@ -421,7 +425,8 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
                 closeLock.readLock().unlock();
             }
         }
-        CompletableFuture<Versioned<List<String>>> getLogSegmentNamesResult = zkGetLogSegmentNames(logSegmentsPath, zkWatcher);
+        CompletableFuture<Versioned<List<String>>> getLogSegmentNamesResult =
+                zkGetLogSegmentNames(logSegmentsPath, zkWatcher);
         if (null != listener) {
             getLogSegmentNamesResult.whenComplete(new ReadLogSegmentsTask(logSegmentsPath, this));
         }

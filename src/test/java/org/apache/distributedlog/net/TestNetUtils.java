@@ -17,12 +17,11 @@
  */
 package org.apache.distributedlog.net;
 
+import static org.junit.Assert.*;
+import java.util.List;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.junit.Test;
 
-import java.util.List;
-
-import static org.junit.Assert.*;
 
 /**
  * Test Cases of {@link NetUtils}.
