@@ -50,7 +50,7 @@ import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.client.SyncCallbackUtils.FutureReadCallback;
+import org.apache.bookkeeper.client.SyncCallbackUtils.FutureReadResult;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncAddCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCloseCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadCallback;
@@ -633,7 +633,7 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
      */
     @Override
     public CompletableFuture<Iterable<org.apache.bookkeeper.client.api.LedgerEntry>> read(long firstEntry, long lastEntry) {
-        FutureReadCallback result = new FutureReadCallback();
+        FutureReadResult result = new FutureReadResult();
         asyncReadEntries(firstEntry, lastEntry, result, null);
         return result;
     }
@@ -663,7 +663,7 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
      */
     @Override
     public CompletableFuture<Iterable<org.apache.bookkeeper.client.api.LedgerEntry>> readUnconfirmed(long firstEntry, long lastEntry) {
-        FutureReadCallback result = new FutureReadCallback();
+        FutureReadResult result = new FutureReadResult();
         asyncReadUnconfirmedEntries(firstEntry, lastEntry, result, null);
         return result;
     }

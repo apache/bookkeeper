@@ -22,6 +22,7 @@ import java.util.Enumeration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import static org.apache.bookkeeper.client.LedgerHandle.LOG;
+import org.apache.bookkeeper.client.api.ReadHandle;
 
 /**
  * Utility for callbacks
@@ -70,7 +71,7 @@ class SyncCallbackUtils {
         }
     }
 
-    static class SyncCreateCallback extends CompletableFuture
+    static class SyncCreateCallback<T> extends CompletableFuture<T>
         implements AsyncCallback.CreateCallback {
 
         /**
@@ -83,12 +84,12 @@ class SyncCallbackUtils {
         @Override
         @SuppressWarnings(value = "unchecked")
         public void createComplete(int rc, LedgerHandle lh, Object ctx) {
-            SyncCallbackUtils.finish(rc, lh, this);
+            SyncCallbackUtils.finish(rc, lh, (CompletableFuture<LedgerHandle>) this);
         }
 
     }
 
-    static class SyncOpenCallback extends CompletableFuture
+    static class SyncOpenCallback<T> extends CompletableFuture<T>
             implements AsyncCallback.OpenCallback {
         /**
          * Callback method for synchronous open operation
@@ -103,11 +104,11 @@ class SyncCallbackUtils {
         @Override
         @SuppressWarnings("unchecked")
         public void openComplete(int rc, LedgerHandle lh, Object ctx) {
-            SyncCallbackUtils.finish(rc, lh, this);
+            SyncCallbackUtils.finish(rc, lh, (CompletableFuture<LedgerHandle>) this);
         }
     }
 
-    static class SyncDeleteCallback extends CompletableFuture implements AsyncCallback.DeleteCallback {
+    static class SyncDeleteCallback extends CompletableFuture<Void> implements AsyncCallback.DeleteCallback {
         /**
          * Delete callback implementation for synchronous delete call.
          *
@@ -168,11 +169,11 @@ class SyncCallbackUtils {
         }
     }
 
-    static class FutureReadCallback extends CompletableFuture<Iterable<org.apache.bookkeeper.client.api.LedgerEntry>>
+    static class FutureReadResult extends CompletableFuture<Iterable<org.apache.bookkeeper.client.api.LedgerEntry>>
         implements AsyncCallback.ReadCallback {
 
         /**
-         * Implementation of callback interface for synchronous read method.
+         * Implementation of callback interface for read method of {@link ReadHandle}.
          *
          * @param rc
          *          return code
@@ -232,7 +233,7 @@ class SyncCallbackUtils {
         }
     }
 
-    static class SyncCloseCallback extends CompletableFuture implements AsyncCallback.CloseCallback {
+    static class SyncCloseCallback extends CompletableFuture<Void> implements AsyncCallback.CloseCallback {
         /**
          * Close callback method
          *

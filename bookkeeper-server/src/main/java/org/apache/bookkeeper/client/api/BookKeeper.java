@@ -20,7 +20,6 @@
  */
 package org.apache.bookkeeper.client.api;
 
-import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperBuilderImpl;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 
@@ -66,10 +65,9 @@ public interface BookKeeper extends AutoCloseable {
     /**
      * Close the client and release every resource.
      *
-     * @throws BKException
      * @throws InterruptedException
      */
     @Override
-    void close() throws BKException, InterruptedException;
+    void close() throws InterruptedException;
 
 }

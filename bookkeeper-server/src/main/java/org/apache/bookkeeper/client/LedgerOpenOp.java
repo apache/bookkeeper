@@ -254,11 +254,10 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
         }
 
         @Override
-        @SuppressWarnings("unchecked")
         public CompletableFuture<ReadHandle> execute() {
-             SyncOpenCallback future = new SyncOpenCallback();
+             SyncOpenCallback<ReadHandle> future = new SyncOpenCallback<>();
              open(future);
-             return (CompletableFuture<ReadHandle>) future;
+             return future;
         }
 
         private boolean validate() {
