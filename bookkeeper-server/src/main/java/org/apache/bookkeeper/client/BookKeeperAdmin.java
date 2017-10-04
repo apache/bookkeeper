@@ -23,6 +23,7 @@ package org.apache.bookkeeper.client;
 import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.util.concurrent.AbstractFuture;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -42,10 +43,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
-
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
 import org.apache.bookkeeper.client.LedgerFragmentReplicator.SingleFragmentCallback;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncOpenCallback;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadCallback;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
@@ -77,10 +79,6 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.util.concurrent.AbstractFuture;
-import org.apache.bookkeeper.client.SyncCallbackUtils.SyncOpenCallback;
-import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadCallback;
 
 /**
  * Admin client for BookKeeper clusters
@@ -404,12 +402,12 @@ public class BookKeeperAdmin implements AutoCloseable {
             }
             if (lastEntryId == -1 || nextEntryId <= lastEntryId) {
                 try {
-                    CompletableFuture<Enumeration<LedgerEntry>> counter = new CompletableFuture<>();
+                    CompletableFuture<Enumeration<LedgerEntry>> result = new CompletableFuture<>();
 
                     handle.asyncReadEntriesInternal(nextEntryId, nextEntryId, new SyncReadCallback(),
-                            counter);
+                            result);
 
-                    currentEntry = SyncCallbackUtils.waitForResult(counter).nextElement();
+                    currentEntry = SyncCallbackUtils.waitForResult(result).nextElement();
 
                     return true;
                 } catch (Exception e) {

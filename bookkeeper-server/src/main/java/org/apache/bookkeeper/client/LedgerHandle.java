@@ -523,11 +523,11 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
      */
     public Enumeration<LedgerEntry> readEntries(long firstEntry, long lastEntry)
             throws InterruptedException, BKException {
-        CompletableFuture<Enumeration<LedgerEntry>> counter = new CompletableFuture<>();
+        CompletableFuture<Enumeration<LedgerEntry>> result = new CompletableFuture<>();
 
-        asyncReadEntries(firstEntry, lastEntry, new SyncReadCallback(), counter);
+        asyncReadEntries(firstEntry, lastEntry, new SyncReadCallback(), result);
 
-        return SyncCallbackUtils.waitForResult(counter);
+        return SyncCallbackUtils.waitForResult(result);
     }
 
     /**
@@ -1034,24 +1034,24 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
 
     @Override
     public CompletableFuture<Long> tryReadLastAddConfirmed() {
-        CompletableFuture<Long> counter = new CompletableFuture<>();
+        CompletableFuture<Long> result = new CompletableFuture<>();
 
         ReadLastConfirmedCallback callback = (int rc, long lastConfirmed, Object ctx) -> {
-            SyncCallbackUtils.finish(rc, lastConfirmed, counter);
+            SyncCallbackUtils.finish(rc, lastConfirmed, result);
         };
-        asyncTryReadLastConfirmed(callback, counter);
-        return counter;
+        asyncTryReadLastConfirmed(callback, result);
+        return result;
     }
 
     @Override
     public CompletableFuture<Long> readLastAddConfirmed() {
-        CompletableFuture<Long> counter = new CompletableFuture<>();
+        CompletableFuture<Long> result = new CompletableFuture<>();
 
         ReadLastConfirmedCallback callback = (int rc, long lastConfirmed, Object ctx) -> {
-            SyncCallbackUtils.finish(rc, lastConfirmed, counter);
+            SyncCallbackUtils.finish(rc, lastConfirmed, result);
         };
-        asyncReadLastConfirmed(callback, counter);
-        return counter;
+        asyncReadLastConfirmed(callback, result);
+        return result;
     }
 
 
