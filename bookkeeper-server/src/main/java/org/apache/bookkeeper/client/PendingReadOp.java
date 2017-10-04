@@ -562,7 +562,6 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
     }
 
     protected void submitCallback(int code) {
-        System.out.println("submitCallback "+code);
         if (BKException.Code.OK == code) {
             numPendingEntries--;
             if (numPendingEntries != 0) {
