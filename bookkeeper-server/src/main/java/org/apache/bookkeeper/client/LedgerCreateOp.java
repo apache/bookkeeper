@@ -105,7 +105,6 @@ class LedgerCreateOp implements GenericCallback<Void> {
      * Initiates the operation
      */
     public void initiate() {
-
         // allocate ensemble first
 
         /*

@@ -26,11 +26,11 @@ import io.netty.util.HashedWheelTimer;
 import java.io.IOException;
 import org.apache.bookkeeper.client.BKException.ZKException;
 import org.apache.bookkeeper.client.api.BookKeeper;
-import org.apache.bookkeeper.client.api.BookKeeperBuilder;
+import org.apache.bookkeeper.client.impl.BookKeeperBuilder;
+import org.apache.bookkeeper.client.api.BookKeeperException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
-import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
@@ -40,65 +40,58 @@ import org.apache.zookeeper.ZooKeeper;
  */
 public class BookKeeperBuilderImpl implements BookKeeperBuilder {
 
-    private final ClientConfiguration conf;
-    private ZooKeeper zk = null;
-    private EventLoopGroup eventLoopGroup;
-    private StatsLogger statsLogger = NullStatsLogger.INSTANCE;
-    private DNSToSwitchMapping dnsResolver;
-    private HashedWheelTimer requestTimer;
-    private FeatureProvider featureProvider;
+    private final org.apache.bookkeeper.client.BookKeeper.Builder builder;
 
     public BookKeeperBuilderImpl(ClientConfiguration conf) {
-        this.conf = conf;
+        this.builder = org.apache.bookkeeper.client.BookKeeper.forConfig(conf);
     }
 
     @Override
     public BookKeeperBuilder eventLoopGroup(EventLoopGroup component) {
         Preconditions.checkNotNull(component);
-        this.eventLoopGroup = component;
+        builder.eventLoopGroup(component);
         return this;
     }
 
     @Override
     public BookKeeperBuilder zk(ZooKeeper component) {
         Preconditions.checkNotNull(component);
-        this.zk = component;
+        builder.zk(component);
         return this;
     }
 
     @Override
     public BookKeeperBuilder statsLogger(StatsLogger component) {
         Preconditions.checkNotNull(component);
-        this.statsLogger = component;
+        builder.statsLogger(component);
         return this;
     }
 
     @Override
     public BookKeeperBuilder dnsResolver(DNSToSwitchMapping component) {
         Preconditions.checkNotNull(component);
-        this.dnsResolver = component;
+        builder.dnsResolver(component);
         return this;
     }
 
     @Override
     public BookKeeperBuilder requestTimer(HashedWheelTimer component) {
         Preconditions.checkNotNull(component);
-        this.requestTimer = component;
+        builder.requestTimer(component);
         return this;
     }
 
     @Override
     public BookKeeperBuilder featureProvider(FeatureProvider component) {
         Preconditions.checkNotNull(component);
-        this.featureProvider = component;
+        builder.featureProvider(component);
         return this;
     }
 
     @Override
-    public BookKeeper build() throws BKException, InterruptedException, IOException {
+    public BookKeeper build() throws InterruptedException, BookKeeperException, IOException  {
         try {
-            return new org.apache.bookkeeper.client.BookKeeper(conf, zk, eventLoopGroup,
-                    statsLogger, dnsResolver, requestTimer, featureProvider);
+            return builder.build();
         } catch (KeeperException err) {
             ZKException zkErr = new ZKException();
             zkErr.initCause(err);
