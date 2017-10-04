@@ -36,7 +36,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 
 /**
- * Internal builder for {@link org.apache.bookkeeper.client.api.BookKeeper} client
+ * Internal builder for {@link org.apache.bookkeeper.client.api.BookKeeper} client.
  */
 public class BookKeeperBuilderImpl implements BookKeeperBuilder {
 
