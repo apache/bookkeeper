@@ -14,7 +14,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.bookkeeper.stats;
+package org.apache.bookkeeper.stats.prometheus;
 
 import io.prometheus.client.Collector;
 import io.prometheus.client.CollectorRegistry;
@@ -39,7 +39,7 @@ public class PrometheusUtil {
             collectorsMapField = CollectorRegistry.class.getDeclaredField("namesToCollectors");
             collectorsMapField.setAccessible(true);
 
-            collectorsNamesMethod = CollectorRegistry.class.getDeclaredMethod("collectorNames", String.class);
+            collectorsNamesMethod = CollectorRegistry.class.getDeclaredMethod("collectorNames", Collector.class);
             collectorsNamesMethod.setAccessible(true);
 
         } catch (NoSuchFieldException | SecurityException | NoSuchMethodException e) {
