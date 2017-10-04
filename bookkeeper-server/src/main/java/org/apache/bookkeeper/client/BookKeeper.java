@@ -122,7 +122,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     final BookieClient bookieClient;
     final BookieWatcher bookieWatcher;
 
-    final private OrderedSafeExecutor mainWorkerPool;
+    final OrderedSafeExecutor mainWorkerPool;
     final ScheduledExecutorService scheduler;
     final HashedWheelTimer requestTimer;
     final boolean ownTimer;
