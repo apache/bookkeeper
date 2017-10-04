@@ -20,11 +20,9 @@
  */
 package org.apache.bookkeeper.client.api;
 
+import java.io.IOException;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.HashedWheelTimer;
-import java.io.IOException;import org.apache.bookkeeper.client.api.BookKeeper;
-import org.apache.bookkeeper.client.api.BookKeeperException;
-
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.stats.StatsLogger;

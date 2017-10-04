@@ -37,6 +37,8 @@ import org.apache.zookeeper.ZooKeeper;
 
 /**
  * Internal builder for {@link org.apache.bookkeeper.client.api.BookKeeper} client.
+ *
+ * @since 4.6
  */
 public class BookKeeperBuilderImpl implements BookKeeperBuilder {
 

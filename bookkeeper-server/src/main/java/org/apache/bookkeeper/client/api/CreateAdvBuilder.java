@@ -40,15 +40,4 @@ public interface CreateAdvBuilder extends OpBuilder<WriteAdvHandle> {
      * @return the builder itself
      */
     CreateAdvBuilder withLedgerId(long ledgerId);
-
-    /**
-     * Starts the creation of the ledger, check the result of the returned CompletableFuture.
-     *
-     * @return an handle to the result of the operation
-     *
-     * @see FutureUtils#result(java.util.concurrent.CompletableFuture)
-     */
-    @Override
-    CompletableFuture<WriteAdvHandle> execute();
-
 }
