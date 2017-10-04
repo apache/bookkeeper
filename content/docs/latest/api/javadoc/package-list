@@ -3,6 +3,7 @@ org.apache.bookkeeper.common.annotation
 org.apache.bookkeeper.conf
 org.apache.bookkeeper.feature
 org.apache.bookkeeper.stats
+org.apache.bookkeeper.stats.prometheus
 org.apache.bookkeeper.stats.twitter.finagle
 org.apache.bookkeeper.stats.twitter.ostrich
 org.apache.bookkeeper.stats.twitter.science
