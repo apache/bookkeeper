@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.bookkeeper.client;
+package org.apache.bookkeeper.client.impl;
 
 import com.google.common.base.Preconditions;
 import io.netty.channel.EventLoopGroup;
@@ -26,7 +26,7 @@ import io.netty.util.HashedWheelTimer;
 import java.io.IOException;
 import org.apache.bookkeeper.client.BKException.ZKException;
 import org.apache.bookkeeper.client.api.BookKeeper;
-import org.apache.bookkeeper.client.impl.BookKeeperBuilder;
+import org.apache.bookkeeper.client.api.BookKeeperBuilder;
 import org.apache.bookkeeper.client.api.BookKeeperException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
