@@ -21,6 +21,9 @@
 
 package org.apache.bookkeeper.client;
 
+import static org.apache.bookkeeper.common.concurrent.FutureUtils.createFuture;
+import static org.apache.bookkeeper.common.concurrent.FutureUtils.completeExceptionally;
+
 import java.io.Serializable;
 import java.security.GeneralSecurityException;
 import java.util.Comparator;
@@ -28,18 +31,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
-
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncAddCallback;
+import org.apache.bookkeeper.client.api.WriteAdvHandle;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import java.nio.ByteBuffer;
-import org.apache.bookkeeper.client.SyncCallbackUtils.SyncAddCallback;
-import org.apache.bookkeeper.client.api.WriteAdvHandle;
 
 /**
  * Ledger Advanced handle extends {@link LedgerHandle} to provide API to add entries with
@@ -159,18 +159,6 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
         doAsyncAddEntry(op, Unpooled.wrappedBuffer(data, offset, length), cb, ctx);
     }
 
-    private void asyncAddEntry(final long entryId, final ByteBuf data, final AddCallback cb, final Object ctx) {
-        PendingAddOp op = new PendingAddOp(this, cb, ctx);
-        op.setEntryId(entryId);
-        if ((entryId <= this.lastAddConfirmed) || pendingAddOps.contains(op)) {
-            LOG.error("Trying to re-add duplicate entryid:{}", entryId);
-            cb.addComplete(BKException.Code.DuplicateEntryIdException,
-                    LedgerHandleAdv.this, entryId, ctx);
-            return;
-        }
-        doAsyncAddEntry(op, data, cb, ctx);
-    }
-
     /**
      * Overriding part is mostly around setting entryId.
      * Though there may be some code duplication, Choose to have the override routine so the control flow is
@@ -241,7 +229,15 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
     @Override
     public CompletableFuture<Long> write(long entryId, ByteBuf data) {
         SyncAddCallback callback = new SyncAddCallback();
-        asyncAddEntry(entryId, data, callback, null);
+        PendingAddOp op = new PendingAddOp(this, callback, null);
+        op.setEntryId(entryId);
+        if ((entryId <= this.lastAddConfirmed) || pendingAddOps.contains(op)) {
+            LOG.error("Trying to re-add duplicate entryid:{}", entryId);
+            CompletableFuture<Long> result = createFuture();
+            completeExceptionally(result, BKException.create(BKException.Code.DuplicateEntryIdException));
+            return result;
+        }
+        doAsyncAddEntry(op, data, callback, null);
         return callback;
     }
 
