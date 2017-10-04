@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.bookkeeper.client.impl;
+package org.apache.bookkeeper.client.api;
 
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.HashedWheelTimer;
