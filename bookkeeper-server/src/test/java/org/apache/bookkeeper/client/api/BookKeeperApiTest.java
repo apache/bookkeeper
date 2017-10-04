@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
+import org.apache.bookkeeper.client.BKException.BKDuplicateEntryIdException;
 import org.apache.bookkeeper.client.BKException.BKLedgerFencedException;
 import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
 import org.apache.bookkeeper.client.BKException.BKUnauthorizedAccessException;
@@ -126,6 +127,10 @@ public class BookKeeperApiTest extends BookKeeperClusterTestCase {
                 writer.write(entryId++, ByteBuffer.wrap(data)).get();
                 writer.write(entryId++, ByteBuffer.wrap(data)).get();
                 writer.write(entryId++, Unpooled.wrappedBuffer(data)).get();
+                try {
+                    result(writer.write(entryId-1, Unpooled.wrappedBuffer(data)));
+                } catch (BKDuplicateEntryIdException ok){
+                }
                 writer.write(entryId++, ByteBuffer.wrap(data)).get();
                 long expectedEntryId = writer.write(entryId++, ByteBuffer.wrap(data)).get();
                 assertEquals(expectedEntryId, writer.getLastAddConfirmed());
