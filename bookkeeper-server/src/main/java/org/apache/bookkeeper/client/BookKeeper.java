@@ -579,9 +579,45 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     LedgerManager getUnderlyingLedgerManager() {
         return ((CleanupLedgerManager) ledgerManager).getUnderlying();
     }
-    
+
+    @VisibleForTesting
     LedgerIdGenerator getLedgerIdGenerator() {
         return ledgerIdGenerator;
+    }
+
+    @VisibleForTesting
+    ReentrantReadWriteLock getCloseLock() {
+        return closeLock;
+    }
+
+    @VisibleForTesting
+    boolean isClosed() {
+        return closed;
+    }
+
+    @VisibleForTesting
+    BookieWatcher getBookieWatcher() {
+        return bookieWatcher;
+    }
+
+    @VisibleForTesting
+    OrderedSafeExecutor getMainWorkerPool() {
+        return mainWorkerPool;
+    }
+
+    @VisibleForTesting
+    ScheduledExecutorService getScheduler() {
+        return scheduler;
+    }
+
+    @VisibleForTesting
+    EnsemblePlacementPolicy getPlacementPolicy() {
+        return placementPolicy;
+    }
+
+    @VisibleForTesting
+    boolean isReorderReadSequence() {
+        return reorderReadSequence;
     }
 
     /**
@@ -797,11 +833,10 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws InterruptedException
      * @throws BKException
      */
-    @SuppressWarnings("unchecked")
     public LedgerHandle createLedger(int ensSize, int writeQuorumSize, int ackQuorumSize,
                                      DigestType digestType, byte passwd[], final Map<String, byte[]> customMetadata)
             throws InterruptedException, BKException {
-        SyncCreateCallback result = new SyncCreateCallback();
+        SyncCreateCallback<LedgerHandle> result = new SyncCreateCallback<>();
 
         /*
          * Calls asynchronous version
@@ -809,7 +844,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         asyncCreateLedger(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
                           result, null, customMetadata);
 
-        LedgerHandle lh = (LedgerHandle) SyncCallbackUtils.waitForResult(result);
+        LedgerHandle lh = SyncCallbackUtils.waitForResult(result);
         if (lh == null) {
             LOG.error("Unexpected condition : no ledger handle returned for a success ledger creation");
             throw BKException.create(BKException.Code.UnexpectedConditionException);
@@ -857,11 +892,10 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws InterruptedException
      * @throws BKException
      */
-    @SuppressWarnings("unchecked")
     public LedgerHandle createLedgerAdv(int ensSize, int writeQuorumSize, int ackQuorumSize,
                                         DigestType digestType, byte passwd[], final Map<String, byte[]> customMetadata)
             throws InterruptedException, BKException {
-        SyncCreateCallback result = new SyncCreateCallback();
+        SyncCreateCallback<LedgerHandle> result = new SyncCreateCallback<>();
 
         /*
          * Calls asynchronous version
@@ -869,7 +903,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         asyncCreateLedgerAdv(ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
                              result, null, customMetadata);
 
-        LedgerHandle lh = (LedgerHandle) SyncCallbackUtils.waitForResult(result);
+        LedgerHandle lh = SyncCallbackUtils.waitForResult(result);
         if (lh == null) {
             LOG.error("Unexpected condition : no ledger handle returned for a success ledger creation");
             throw BKException.create(BKException.Code.UnexpectedConditionException);
@@ -945,7 +979,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws InterruptedException
      * @throws BKException
      */
-    @SuppressWarnings("unchecked")
     public LedgerHandle createLedgerAdv(final long ledgerId,
                                         int ensSize,
                                         int writeQuorumSize,
@@ -953,7 +986,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                                         DigestType digestType,
                                         byte passwd[],
                                         final Map<String, byte[]> customMetadata) throws InterruptedException, BKException{
-        SyncCreateCallback result = new SyncCreateCallback();
+        SyncCreateCallback<LedgerHandle> result = new SyncCreateCallback<>();
 
         /*
          * Calls asynchronous version
@@ -961,7 +994,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         asyncCreateLedgerAdv(ledgerId, ensSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
                              result, null, customMetadata);
 
-        LedgerHandle lh = (LedgerHandle) SyncCallbackUtils.waitForResult(result);
+        LedgerHandle lh = SyncCallbackUtils.waitForResult(result);
         if (lh == null) {
             LOG.error("Unexpected condition : no ledger handle returned for a success ledger creation");
             throw BKException.create(BKException.Code.UnexpectedConditionException);
@@ -1135,17 +1168,16 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws InterruptedException
      * @throws BKException
      */
-    @SuppressWarnings("unchecked")
     public LedgerHandle openLedger(long lId, DigestType digestType, byte passwd[])
             throws BKException, InterruptedException {
-        SyncOpenCallback result = new SyncOpenCallback();
+        SyncOpenCallback<LedgerHandle> result = new SyncOpenCallback<>();
 
         /*
          * Calls async open ledger
          */
         asyncOpenLedger(lId, digestType, passwd, result, null);
 
-        return (LedgerHandle) SyncCallbackUtils.waitForResult(result);
+        return SyncCallbackUtils.waitForResult(result);
     }
 
     /**
@@ -1162,10 +1194,9 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @throws InterruptedException
      * @throws BKException
      */
-    @SuppressWarnings("unchecked")
     public LedgerHandle openLedgerNoRecovery(long lId, DigestType digestType, byte passwd[])
             throws BKException, InterruptedException {
-        SyncOpenCallback result = new SyncOpenCallback();
+        SyncOpenCallback<LedgerHandle> result = new SyncOpenCallback<>();
 
         /*
          * Calls async open ledger
@@ -1173,7 +1204,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         asyncOpenLedgerNoRecovery(lId, digestType, passwd,
                                   result, null);
 
-        return (LedgerHandle) SyncCallbackUtils.waitForResult(result);
+        return SyncCallbackUtils.waitForResult(result);
     }
 
     /**
@@ -1286,7 +1317,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      *
      */
     @Override
-    public void close() throws InterruptedException, BKException {
+    public void close() throws InterruptedException {
         closeLock.writeLock().lock();
         try {
             if (closed) {
@@ -1397,41 +1428,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     @Override
     public DeleteBuilder newDeleteLedgerOp() {
         return new LedgerDeleteOp.DeleteBuilderImpl(this);
-    }
-
-    @VisibleForTesting
-    ReentrantReadWriteLock getCloseLock() {
-        return closeLock;
-    }
-
-    @VisibleForTesting
-    boolean isClosed() {
-        return closed;
-    }
-
-    @VisibleForTesting
-    BookieWatcher getBookieWatcher() {
-        return bookieWatcher;
-    }
-
-    @VisibleForTesting
-    OrderedSafeExecutor getMainWorkerPool() {
-        return mainWorkerPool;
-    }
-
-    @VisibleForTesting
-    ScheduledExecutorService getScheduler() {
-        return scheduler;
-    }
-
-    @VisibleForTesting
-    EnsemblePlacementPolicy getPlacementPolicy() {
-        return placementPolicy;
-    }
-
-    @VisibleForTesting
-    boolean isReorderReadSequence() {
-        return reorderReadSequence;
     }
 
 }

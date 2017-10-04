@@ -188,7 +188,8 @@
       </extension>
     </extensions>
     <plugins>
-      <plugin>
+    <!--
+     <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
         <version>${maven-checkstyle-plugin.version}</version>
@@ -221,6 +222,7 @@
           </execution>
         </executions>
       </plugin>
+      -->
       <plugin>
         <!-- for mini-kdc -->
         <groupId>org.apache.felix</groupId>

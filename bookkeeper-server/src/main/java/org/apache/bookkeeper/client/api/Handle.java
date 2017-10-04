@@ -21,7 +21,7 @@
 package org.apache.bookkeeper.client.api;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.bookkeeper.client.BKException;
+import lombok.SneakyThrows;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 
 /**
@@ -41,12 +41,15 @@ public interface Handle extends AutoCloseable {
     /**
      * Close this ledger synchronously.
      *
-     * @throws org.apache.bookkeeper.client.BKException
+     * @throws org.apache.bookkeeper.client.api.BookKeeperException
      * @throws java.lang.InterruptedException
      * @see #asyncClose
      */
     @Override
-    void close() throws BKException, InterruptedException;
+    @SneakyThrows(Exception.class)
+    default void close() throws BookKeeperException, InterruptedException {
+        FutureUtils.result(asyncClose());
+    }
 
     /**
      * Asynchronous close, any adds in flight will return errors.

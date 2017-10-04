@@ -300,11 +300,10 @@ class LedgerCreateOp implements GenericCallback<Void> {
         }
 
         @Override
-        @SuppressWarnings("unchecked")
         public CompletableFuture<WriteHandle> execute() {
-            SyncCreateCallback result = new SyncCreateCallback();
+            SyncCreateCallback<WriteHandle> result = new SyncCreateCallback<>();
             create(result);
-            return (CompletableFuture<WriteHandle>) result;
+            return result;
         }
 
         private void create(CreateCallback cb) {
@@ -345,11 +344,10 @@ class LedgerCreateOp implements GenericCallback<Void> {
         }
 
         @Override
-        @SuppressWarnings("unchecked")
         public CompletableFuture<WriteAdvHandle> execute() {
-            SyncCreateCallback result = new SyncCreateCallback();
+            SyncCreateCallback<WriteAdvHandle> result = new SyncCreateCallback<>();
             create(result);
-            return (CompletableFuture<WriteAdvHandle>) result;
+            return result;
         }
 
         private boolean validate() {
