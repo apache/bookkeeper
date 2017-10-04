@@ -14,11 +14,13 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.bookkeeper.stats;
+package org.apache.bookkeeper.stats.prometheus;
 
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Summary;
 import java.util.concurrent.TimeUnit;
+import org.apache.bookkeeper.stats.OpStatsData;
+import org.apache.bookkeeper.stats.OpStatsLogger;
 
 /**
  * A {@code Prometheus} based {@link OpStatsLogger} implementation.

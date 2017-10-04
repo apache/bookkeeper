@@ -14,11 +14,15 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.bookkeeper.stats;
+package org.apache.bookkeeper.stats.prometheus;
 
 import com.google.common.base.Joiner;
 import io.prometheus.client.Collector;
 import io.prometheus.client.CollectorRegistry;
+import org.apache.bookkeeper.stats.Counter;
+import org.apache.bookkeeper.stats.Gauge;
+import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 
 /**
  * A {@code Prometheus} based {@link StatsLogger} implementation.
