@@ -119,7 +119,7 @@ public class TestFutureUtils {
 
     @Test
     public void testVoid() throws Exception {
-        CompletableFuture<Void> voidFuture = FutureUtils.voidFuture();
+        CompletableFuture<Void> voidFuture = FutureUtils.Void();
         assertTrue(voidFuture.isDone());
         assertFalse(voidFuture.isCompletedExceptionally());
         assertFalse(voidFuture.isCancelled());

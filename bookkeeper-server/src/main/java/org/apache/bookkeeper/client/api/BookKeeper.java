@@ -65,9 +65,10 @@ public interface BookKeeper extends AutoCloseable {
     /**
      * Close the client and release every resource.
      *
+     * @throws BookKeeperException
      * @throws InterruptedException
      */
     @Override
-    void close() throws InterruptedException;
+    void close() throws BookKeeperException, InterruptedException;
 
 }

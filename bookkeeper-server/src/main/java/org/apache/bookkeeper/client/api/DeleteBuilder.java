@@ -28,7 +28,7 @@ import org.apache.bookkeeper.common.concurrent.FutureUtils;
  *
  * @since 4.6
  */
-public interface DeleteBuilder extends OpBuilder {
+public interface DeleteBuilder extends OpBuilder<Void> {
 
     /**
      * Set the id of the ledger to be deleted.
@@ -47,6 +47,6 @@ public interface DeleteBuilder extends OpBuilder {
      * @see FutureUtils#result(java.util.concurrent.CompletableFuture) to have a simple method to access the result
      */
     @Override
-    CompletableFuture<?> execute();
+    CompletableFuture<Void> execute();
 
 }
