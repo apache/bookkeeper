@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.client.api;
 
 import io.netty.buffer.ByteBuf;
-import java.io.InputStream;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 
 /**

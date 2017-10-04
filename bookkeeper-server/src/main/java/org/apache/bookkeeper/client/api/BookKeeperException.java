@@ -19,6 +19,8 @@ import org.apache.bookkeeper.client.LedgerHandleAdv;
 
 /**
  * Super class for all errors which occur using BookKeeper client
+ *
+ * @since 4.6
  */
 public abstract class BookKeeperException extends Exception {
     protected final int code;

@@ -20,5 +20,7 @@
  */
 /**
  * BookKeeper Client implementation package
+ *
+ * @since 4.6
  */
 package org.apache.bookkeeper.client.impl;

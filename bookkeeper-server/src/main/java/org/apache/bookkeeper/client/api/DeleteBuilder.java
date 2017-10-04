@@ -39,14 +39,4 @@ public interface DeleteBuilder extends OpBuilder<Void> {
      */
     DeleteBuilder withLedgerId(long ledgerId);
 
-    /**
-     * Starts the deletion of the ledger, check the result of the returned CompletableFuture.
-     *
-     * @return an handle to the result of the operation
-     *
-     * @see FutureUtils#result(java.util.concurrent.CompletableFuture) to have a simple method to access the result
-     */
-    @Override
-    CompletableFuture<Void> execute();
-
 }
