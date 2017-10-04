@@ -97,9 +97,9 @@ class SyncCallbackUtils {
 
     static class SyncOpenCallback<T> implements AsyncCallback.OpenCallback {
 
-        private final CompletableFuture<ReadHandle> future;
+        private final CompletableFuture future;
 
-        public SyncOpenCallback(CompletableFuture<ReadHandle> future) {
+        public SyncOpenCallback(CompletableFuture future) {
             this.future = future;
         }
 

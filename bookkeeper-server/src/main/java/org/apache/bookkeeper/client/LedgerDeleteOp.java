@@ -26,7 +26,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
-import static org.apache.bookkeeper.client.LedgerCreateOp.LOG;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncDeleteCallback;
 import org.apache.bookkeeper.client.api.DeleteBuilder;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -102,7 +101,7 @@ class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
 
     static class DeleteBuilderImpl  implements DeleteBuilder {
 
-        private long builderLedgerId = -1;
+        private Long builderLedgerId;
         private final BookKeeper bk;
 
         DeleteBuilderImpl(BookKeeper bk) {
@@ -124,7 +123,7 @@ class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
         }
 
         private boolean validate() {
-            if (builderLedgerId < 0) {
+            if (builderLedgerId == null || builderLedgerId < 0) {
                 LOG.error("invalid ledgerId {} < 0", builderLedgerId);
                 return false;
             }
