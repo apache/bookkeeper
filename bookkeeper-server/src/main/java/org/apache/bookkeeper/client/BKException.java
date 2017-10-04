@@ -24,6 +24,8 @@ import org.apache.bookkeeper.client.api.BookKeeperException;
 
 /**
  * Class the enumerates all the possible error conditions.
+ *
+ * <P>This class is going to be deprecate soon, please use the new class {@link BookKeeperException}
  */
 @SuppressWarnings("serial")
 public abstract class BKException extends BookKeeperException {

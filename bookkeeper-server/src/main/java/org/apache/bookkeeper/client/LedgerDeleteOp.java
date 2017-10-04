@@ -116,10 +116,11 @@ class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
         }
 
         @Override
-        public CompletableFuture<?> execute() {
-            SyncDeleteCallback result = new SyncDeleteCallback();
+        public CompletableFuture<Void> execute() {
+            CompletableFuture<Void> future = new CompletableFuture<>();
+            SyncDeleteCallback result = new SyncDeleteCallback(future);
             delete(builderLedgerId, result);
-            return result;
+            return future;
         }
 
         private boolean validate() {

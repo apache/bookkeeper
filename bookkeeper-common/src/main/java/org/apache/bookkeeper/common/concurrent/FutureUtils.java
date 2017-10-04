@@ -52,7 +52,7 @@ public final class FutureUtils {
         }
     };
 
-    public static CompletableFuture<Void> voidFuture() {
+    public static CompletableFuture<Void> Void() {
         return value(null);
     }
 

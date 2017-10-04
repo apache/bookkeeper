@@ -291,11 +291,12 @@ public class BookKeeperAdmin implements AutoCloseable {
      */
     public LedgerHandle openLedger(final long lId) throws InterruptedException,
             BKException {
-        SyncOpenCallback<LedgerHandle> result = new SyncOpenCallback<>();
+        CompletableFuture<LedgerHandle> future = new CompletableFuture<>();
+        SyncOpenCallback result = new SyncOpenCallback(future);
 
         new LedgerOpenOp(bkc, lId, result, null).initiate();
 
-        return SyncCallbackUtils.waitForResult(result);
+        return SyncCallbackUtils.waitForResult(future);
     }
 
     /**
@@ -328,12 +329,13 @@ public class BookKeeperAdmin implements AutoCloseable {
     @SuppressWarnings("unchecked")
     public LedgerHandle openLedgerNoRecovery(final long lId)
             throws InterruptedException, BKException {
-        SyncOpenCallback<LedgerHandle> result = new SyncOpenCallback<>();
+        CompletableFuture<LedgerHandle> future = new CompletableFuture<>();
+        SyncOpenCallback result = new SyncOpenCallback(future);
 
         new LedgerOpenOp(bkc, lId, result, null)
                 .initiateWithoutRecovery();
 
-        return SyncCallbackUtils.waitForResult(result);
+        return SyncCallbackUtils.waitForResult(future);
     }
 
     /**

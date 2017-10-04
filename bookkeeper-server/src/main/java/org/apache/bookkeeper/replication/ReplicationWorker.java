@@ -453,6 +453,8 @@ public class ReplicationWorker implements Runnable {
         } catch (InterruptedException e) {
             LOG.warn("Interrupted while closing the Bookie client", e);
             Thread.currentThread().interrupt();
+        } catch (BKException e) {
+            LOG.warn("Exception while closing the Bookie client", e);
         }
         try {
             underreplicationManager.close();

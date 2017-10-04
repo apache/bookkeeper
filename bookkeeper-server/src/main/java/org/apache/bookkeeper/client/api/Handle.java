@@ -62,6 +62,6 @@ public interface Handle extends AutoCloseable {
      *
      * @see FutureUtils#result(java.util.concurrent.CompletableFuture) to have a simple method to access the result
      */
-    CompletableFuture<?> asyncClose();
+    CompletableFuture<Void> asyncClose();
 
 }

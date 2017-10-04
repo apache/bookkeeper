@@ -32,6 +32,7 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncOpenCallback;
 import org.apache.bookkeeper.client.api.OpenBuilder;
 import org.apache.bookkeeper.client.api.ReadHandle;
+import org.apache.bookkeeper.client.api.WriteAdvHandle;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
@@ -255,8 +256,9 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
 
         @Override
         public CompletableFuture<ReadHandle> execute() {
-             SyncOpenCallback<ReadHandle> future = new SyncOpenCallback<>();
-             open(future);
+            CompletableFuture<ReadHandle> future = new CompletableFuture<>();
+             SyncOpenCallback callback = new SyncOpenCallback(future);
+             open(callback);
              return future;
         }
 

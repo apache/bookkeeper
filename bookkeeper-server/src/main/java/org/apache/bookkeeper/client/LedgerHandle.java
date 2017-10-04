@@ -56,6 +56,7 @@ import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCloseCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.api.WriteHandle;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
@@ -329,9 +330,10 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
     }
 
     @Override
-    public CompletableFuture<?> asyncClose() {
-        SyncCloseCallback result = new SyncCloseCallback();
-        asyncClose(result, null);
+    public CompletableFuture<Void> asyncClose() {
+        CompletableFuture<Void> result = FutureUtils.Void();
+        SyncCloseCallback callback = new SyncCloseCallback(result);
+        asyncClose(callback, null);
         explicitLacFlushPolicy.stopExplicitLacFlush();
         return result;
     }
