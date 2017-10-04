@@ -69,8 +69,7 @@ public interface LedgerEntry {
      * @return a ByteBuf which contains the data
      *
      * @see ClientConfiguration#setNettyUsePooledBuffers(boolean)
-     * @throws IllegalStateException if the entry has been retrieved by {@link #getEntry()} or
-     * {@link #getEntryInputStream()}.
+     * @throws IllegalStateException if the entry has been retrieved by {@link #getEntry()}
      */
     ByteBuf getEntryBuffer();
 

@@ -32,7 +32,10 @@ public abstract class BookKeeperException extends Exception {
 
     /**
      * Get the return code for the exception
-     * @return
+     *
+     * @return the error code
+     *
+     * @see Code
      */
     public final int getCode() {
         return this.code;
