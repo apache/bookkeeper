@@ -707,6 +707,9 @@ class ReadAheadEntryReader implements
     private boolean updateLogSegmentMetadata(SegmentReader reader,
                                              LogSegmentMetadata newMetadata) {
         if (reader.getSegment().getLogSegmentSequenceNumber() != newMetadata.getLogSegmentSequenceNumber()) {
+            logger.error("Inconsistent state found in entry reader for {} : "
+                + "current segment = {}, new segment = {}",
+                new Object[] { streamName, reader.getSegment(), newMetadata });
             setLastException(new DLIllegalStateException("Inconsistent state found in entry reader for "
                     + streamName + " : current segment = " + reader.getSegment() + ", new segment = " + newMetadata));
             return false;
@@ -746,6 +749,9 @@ class ReadAheadEntryReader implements
             }
         } else {
             if (currentSegmentSequenceNumber != segment.getLogSegmentSequenceNumber()) {
+                logger.error("Inconsistent state found in entry reader for {} : "
+                    + "current segment sn = {}, new segment sn = {}",
+                    new Object[] { streamName, currentSegmentSequenceNumber, segment.getLogSegmentSequenceNumber() });
                 setLastException(new DLIllegalStateException("Inconsistent state found in entry reader for "
                         + streamName + " : current segment sn = " + currentSegmentSequenceNumber
                         + ", new segment sn = " + segment.getLogSegmentSequenceNumber()));
