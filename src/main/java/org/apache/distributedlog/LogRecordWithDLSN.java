@@ -19,6 +19,7 @@ package org.apache.distributedlog;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 /**
  * Log record with {@link DLSN} and <code>SequenceId</code>.
@@ -75,7 +76,10 @@ public class LogRecordWithDLSN extends LogRecord {
 
     @VisibleForTesting
     public LogRecordWithDLSN(DLSN dlsn, long txid, ByteBuf buffer, long startSequenceIdOfCurrentSegment) {
-        super(txid, buffer);
+        // Need to make a copy since the passed payload is using a ref-count buffer that we don't know when could
+        // release, since the record is passed to the user. Also, the passed ByteBuf is coming from network and is
+        // backed by a direct buffer which we could not expose as a byte[]
+        super(txid, Unpooled.copiedBuffer(buffer));
         this.dlsn = dlsn;
         this.startSequenceIdOfCurrentSegment = startSequenceIdOfCurrentSegment;
     }

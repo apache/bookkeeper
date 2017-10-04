@@ -172,15 +172,13 @@ public class LogRecord {
 
     /**
      * Construct a log record with <i>txid</i> and ByteBuf <i>payload</i>.
+     *
      * @param txid transaction id
      * @param payload playload
      */
     public LogRecord(long txid, ByteBuf payload) {
         this.txid = txid;
-        // Need to make a copy since the passed payload is using a ref-count buffer that we don't know when could
-        // release, since the record is passed to the user. Also, the passed ByteBuf is coming from network and is
-        // backed by a direct buffer which we could not expose as a byte[]
-        this.payload = Unpooled.copiedBuffer(payload);
+        this.payload = payload;
         this.metadata = 0;
     }
 
