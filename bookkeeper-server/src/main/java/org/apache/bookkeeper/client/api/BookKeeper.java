@@ -31,8 +31,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 public interface BookKeeper extends AutoCloseable {
 
     /**
-     * Create a new builder which can be used to boot a new BookKeeper client. Additional contextual components can be
-     * injected to the client using {@link BookKeeperBuilder#with(java.lang.Object) } method.
+     * Create a new builder which can be used to boot a new BookKeeper client.
      *
      * @param clientConfiguration the configuration for the client
      * @return a builder
