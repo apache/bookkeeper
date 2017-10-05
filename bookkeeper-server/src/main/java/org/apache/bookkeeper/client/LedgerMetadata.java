@@ -17,6 +17,7 @@
  */
 package org.apache.bookkeeper.client;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.TextFormat;
 
@@ -193,7 +194,8 @@ public class LedgerMetadata {
         return hasPassword;
     }
 
-    byte[] getPassword() {
+    @VisibleForTesting
+    public byte[] getPassword() {
         return Arrays.copyOf(password, password.length);
     }
 

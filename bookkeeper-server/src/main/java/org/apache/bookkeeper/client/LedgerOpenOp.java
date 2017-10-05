@@ -256,9 +256,9 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
         @Override
         public CompletableFuture<ReadHandle> execute() {
             CompletableFuture<ReadHandle> future = new CompletableFuture<>();
-             SyncOpenCallback callback = new SyncOpenCallback(future);
-             open(callback);
-             return future;
+            SyncOpenCallback callback = new SyncOpenCallback(future);
+            open(callback);
+            return future;
         }
 
         private boolean validate() {

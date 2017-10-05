@@ -671,7 +671,7 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
     }
 
     void asyncReadEntriesInternal(long firstEntry, long lastEntry, ReadCallback cb, Object ctx) {
-        new PendingReadOp(this, bk.scheduler,
+        new PendingReadOp(this, bk.getScheduler(),
                           firstEntry, lastEntry, cb, ctx).initiate();
     }
 
@@ -1128,7 +1128,7 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
                 }
             }
         };
-        new ReadLastConfirmedAndEntryOp(this, innercb, entryId - 1, timeOutInMillis, bk.scheduler).parallelRead(parallel).initiate();
+        new ReadLastConfirmedAndEntryOp(this, innercb, entryId - 1, timeOutInMillis, bk.getScheduler()).parallelRead(parallel).initiate();
     }
 
     /**
