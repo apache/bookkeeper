@@ -59,7 +59,7 @@ public class LifecycleComponentStack implements LifecycleComponent {
 
         public LifecycleComponentStack build() {
             checkNotNull(name, "Lifecycle component stack name is not provided");
-            checkArgument(!components.isEmpty(), "Lifecycle component stack is empty");
+            checkArgument(!components.isEmpty(), "Lifecycle component stack is empty : " + components);
             return new LifecycleComponentStack(
                 name,
                 ImmutableList.copyOf(components));
