@@ -4,7 +4,7 @@ subtitle: Download or clone BookKeeper and build it locally
 next: ../run-locally
 ---
 
-{% capture download_url %}http://apache.claz.org/bookkeeper/bookkeeper-{{ site.stable_release }}/bookkeeper-{{ site.stable_release }}-src.tar.gz{% endcapture %}
+{% capture download_url %}http://apache.claz.org/bookkeeper/bookkeeper-{{ site.latest_release }}/bookkeeper-{{ site.latest_release }}-src.tar.gz{% endcapture %}
 
 You can install BookKeeper either by [downloading](#download) a [GZipped](http://www.gzip.org/) tarball package or [cloning](#clone) the BookKeeper repository.
 
@@ -20,8 +20,8 @@ You can download Apache BookKeeper releases from one of many [Apache mirrors](ht
 
 ```shell
 $ curl -O {{ download_url }}
-$ tar xvf bookkeeper-{{ site.stable_release }}-src.tar.gz
-$ cd bookkeeper-{{ site.stable_release }}
+$ tar xvf bookkeeper-{{ site.latest_release }}-src.tar.gz
+$ cd bookkeeper-{{ site.latest_release }}
 ```
 
 ## Clone
