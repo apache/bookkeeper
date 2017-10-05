@@ -42,6 +42,7 @@ public class TestPrometheusMetricsProvider {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testTwoCounters() throws Exception {
         PrometheusCounter counter1 = new PrometheusCounter(registry, "testcounter");
         PrometheusCounter counter2 = new PrometheusCounter(registry, "testcounter");
