@@ -229,7 +229,15 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
     @Override
     public CompletableFuture<Long> write(long entryId, ByteBuf data) {
         SyncAddCallback callback = new SyncAddCallback();
-        asyncAddEntry(data, callback, null);
+        PendingAddOp op = new PendingAddOp(this, callback, null);
+        op.setEntryId(entryId);
+        if ((entryId <= this.lastAddConfirmed) || pendingAddOps.contains(op)) {
+            LOG.error("Trying to re-add duplicate entryid:{}", entryId);
+            CompletableFuture<Long> result = createFuture();
+            completeExceptionally(result, BKException.create(BKException.Code.DuplicateEntryIdException));
+            return result;
+        }
+        doAsyncAddEntry(op, data, callback, null);
         return callback;
     }
 
