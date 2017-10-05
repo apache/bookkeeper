@@ -42,7 +42,10 @@ import java.util.TreeMap;
 import static com.google.common.base.Charsets.UTF_8;
 
 import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
+import java.util.Collections;
+import org.apache.bookkeeper.client.api.LedgerType;
 
 /**
  * This class encapsulates all the ledger metadata that is persistently stored
@@ -74,6 +77,7 @@ public class LedgerMetadata {
     private long length;
     private long lastEntryId;
     private long ctime;
+    private LedgerType ledgerType;
 
     private LedgerMetadataFormat.State state;
     private SortedMap<Long, ArrayList<BookieSocketAddress>> ensembles =
@@ -85,14 +89,17 @@ public class LedgerMetadata {
     private LedgerMetadataFormat.DigestType digestType;
     private byte[] password;
 
-    private Map<String, byte[]> customMetadata = Maps.newHashMap();
+    private Map<String, byte[]> customMetadata;
 
     public LedgerMetadata(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
-                          BookKeeper.DigestType digestType, byte[] password, Map<String, byte[]> customMetadata) {
+                          BookKeeper.DigestType digestType, byte[] password, Map<String, byte[]> customMetadata,
+                          LedgerType ledgerType) {
+        Preconditions.checkNotNull(ledgerType, "ledgerType is required");
         this.ensembleSize = ensembleSize;
         this.writeQuorumSize = writeQuorumSize;
         this.ackQuorumSize = ackQuorumSize;
         this.ctime = System.currentTimeMillis();
+        this.ledgerType = ledgerType;
 
         /*
          * It is set in PendingReadOp.readEntryComplete, and
@@ -109,12 +116,9 @@ public class LedgerMetadata {
         this.hasPassword = true;
         if (customMetadata != null) {
             this.customMetadata = customMetadata;
+        } else {
+            this.customMetadata = Collections.emptyMap();
         }
-    }
-
-    public LedgerMetadata(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
-            BookKeeper.DigestType digestType, byte[] password) {
-        this(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, password, null);
     }
 
     /**
@@ -132,6 +136,7 @@ public class LedgerMetadata {
         this.version = other.version;
         this.hasPassword = other.hasPassword;
         this.digestType = other.digestType;
+        this.ledgerType = other.ledgerType;
         this.password = new byte[other.password.length];
         System.arraycopy(other.password, 0, this.password, 0, other.password.length);
         // copy the ensembles
@@ -142,9 +147,9 @@ public class LedgerMetadata {
         }
         this.customMetadata = other.customMetadata;
     }
-
+    private final static byte[] EMPTY_PASSWORD = new byte[0];
     private LedgerMetadata() {
-        this(0, 0, 0, BookKeeper.DigestType.MAC, new byte[] {});
+        this(0, 0, 0, BookKeeper.DigestType.MAC, EMPTY_PASSWORD, null, LedgerType.PD_JOURNAL);
         this.hasPassword = false;
     }
 
@@ -421,6 +426,18 @@ public class LedgerMetadata {
             lc.ackQuorumSize = data.getAckQuorumSize();
         } else {
             lc.ackQuorumSize = lc.writeQuorumSize;
+        }
+        if (data.hasLedgerType()) {
+            switch (data.getLedgerType()) {
+                case VD_JOURNAL:
+                   lc.ledgerType = LedgerType.VD_JOURNAL;
+                   break;
+                case PD_JOURNAL:
+                   lc.ledgerType = LedgerType.PD_JOURNAL;
+                   break;
+                default:
+                    throw new IllegalStateException("illegal ledgerType "+data.getLedgerType()+" is metadata");
+            }
         }
 
         lc.ensembleSize = data.getEnsembleSize();

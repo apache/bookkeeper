@@ -70,7 +70,7 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
 
         BookkeeperInternalCallbacks.WriteCallback wcb = new BookkeeperInternalCallbacks.WriteCallback() {
             @Override
-            public void writeComplete(int rc, long ledgerId, long entryId,
+            public void writeComplete(int rc, long ledgerId, long entryId, long lastAddSyncedEntry,
                                       BookieSocketAddress addr, Object ctx) {
                 if (BookieProtocol.EOK == rc) {
                     requestProcessor.addEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
@@ -108,7 +108,10 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
             if (addRequest.hasFlag() && addRequest.getFlag().equals(AddRequest.Flag.RECOVERY_ADD)) {
                 requestProcessor.bookie.recoveryAddEntry(entryToAdd, wcb, channel, masterKey);
             } else {
-                requestProcessor.bookie.addEntry(entryToAdd, wcb, channel, masterKey);
+                 short ledgerType = addRequest.hasLedgerType()
+                    && addRequest.getLedgerType().equals(AddRequest.LedgerType.VD_JOURNAL)
+                    ? BookieProtocol.LEDGERTYPE_VD_JOURNAL : BookieProtocol.LEDGERTYPE_PD_JOURNAL;
+                requestProcessor.bookie.addEntry(entryToAdd, ledgerType, wcb, channel, masterKey);
             }
             status = StatusCode.EOK;
         } catch (IOException e) {

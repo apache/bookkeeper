@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -122,7 +123,8 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
             result = logFenceResult = SettableFuture.create();
         }
         ByteBuf entry = createLedgerFenceEntry(ledgerId);
-        journal.logAddEntry(entry, (rc, ledgerId, entryId, addr, ctx) -> {
+        journal.logAddEntry(entry, BookieProtocol.LEDGERTYPE_PD_JOURNAL,
+            (rc, ledgerId, entryId, lastAddSyncedEntryId,addr, ctx) -> {
             LOG.debug("Record fenced state for ledger {} in journal with rc {}", ledgerId, rc);
             if (rc == 0) {
                 fenceEntryPersisted.compareAndSet(false, true);

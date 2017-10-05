@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
+import org.apache.bookkeeper.client.api.LedgerType;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -291,7 +292,7 @@ public class LedgerFragmentReplicator {
                         new WriteCallback() {
                             @Override
                             public void writeComplete(int rc, long ledgerId,
-                                    long entryId, BookieSocketAddress addr,
+                                    long entryId, long lastAddSyncedEntryId, BookieSocketAddress addr,
                                     Object ctx) {
                                 if (rc != BKException.Code.OK) {
                                     LOG.error(
@@ -317,7 +318,9 @@ public class LedgerFragmentReplicator {
                                 ledgerFragmentEntryMcb.processResult(rc, null,
                                         null);
                             }
-                        }, null, BookieProtocol.FLAG_RECOVERY_ADD);
+                            // TODO: using LedgerType.PD_JOURNAL as we want recovery to be guaranteed to succeeed
+                            //       could this be a problem for other LedgerTypes ?
+                        }, null, BookieProtocol.FLAG_RECOVERY_ADD, LedgerType.PD_JOURNAL);
             }
         }, null);
     }
