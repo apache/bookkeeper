@@ -331,7 +331,7 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
 
     @Override
     public CompletableFuture<Void> asyncClose() {
-        CompletableFuture<Void> result = FutureUtils.Void();
+        CompletableFuture<Void> result = new CompletableFuture<>();
         SyncCloseCallback callback = new SyncCloseCallback(result);
         asyncClose(callback, null);
         explicitLacFlushPolicy.stopExplicitLacFlush();
