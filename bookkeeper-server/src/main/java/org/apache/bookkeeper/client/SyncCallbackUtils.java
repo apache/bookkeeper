@@ -264,9 +264,9 @@ class SyncCallbackUtils {
 
     static class SyncCloseCallback implements AsyncCallback.CloseCallback {
 
-        private final CompletableFuture future;
+        private final CompletableFuture<Void> future;
 
-        public SyncCloseCallback(CompletableFuture future) {
+        public SyncCloseCallback(CompletableFuture<Void> future) {
             this.future = future;
         }
 
