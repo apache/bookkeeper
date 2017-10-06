@@ -122,9 +122,9 @@ class SyncCallbackUtils {
 
     static class SyncDeleteCallback implements AsyncCallback.DeleteCallback {
 
-        private final CompletableFuture future;
+        private final CompletableFuture<Void> future;
 
-        public SyncDeleteCallback(CompletableFuture future) {
+        public SyncDeleteCallback(CompletableFuture<Void> future) {
             this.future = future;
         }
 
