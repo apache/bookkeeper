@@ -90,12 +90,12 @@ class SyncCallbackUtils {
         @Override
         @SuppressWarnings(value = "unchecked")
         public void createComplete(int rc, LedgerHandle lh, Object ctx) {
-            SyncCallbackUtils.finish(rc, lh, future);
+            finish(rc, lh, future);
         }
 
     }
 
-    static class SyncOpenCallback<T> implements AsyncCallback.OpenCallback {
+    static class SyncOpenCallback implements AsyncCallback.OpenCallback {
 
         private final CompletableFuture future;
 
@@ -116,7 +116,7 @@ class SyncCallbackUtils {
         @Override
         @SuppressWarnings("unchecked")
         public void openComplete(int rc, LedgerHandle lh, Object ctx) {
-            SyncCallbackUtils.finish(rc, lh, future);
+            finish(rc, lh, future);
         }
     }
 
@@ -140,7 +140,7 @@ class SyncCallbackUtils {
         @Override
         @SuppressWarnings("unchecked")
         public void deleteComplete(int rc, Object ctx) {
-            SyncCallbackUtils.finish(rc, null, future);
+            finish(rc, null, future);
         }
     }
 
@@ -185,7 +185,7 @@ class SyncCallbackUtils {
         @SuppressWarnings("unchecked")
         public void readComplete(int rc, LedgerHandle lh,
                                  Enumeration<LedgerEntry> seq, Object ctx) {
-            SyncCallbackUtils.finish(rc, seq, (CompletableFuture<Enumeration<LedgerEntry>>)ctx);
+            finish(rc, seq, (CompletableFuture<Enumeration<LedgerEntry>>)ctx);
         }
     }
 
@@ -233,8 +233,17 @@ class SyncCallbackUtils {
         @Override
         @SuppressWarnings("unchecked")
         public void addComplete(int rc, LedgerHandle lh, long entry, Object ctx) {
-            SyncCallbackUtils.finish(rc, entry, this);
+            finish(rc, entry, this);
         }
+    }
+
+    static class FutureReadLastConfirmed extends CompletableFuture<Long> implements AsyncCallback.ReadLastConfirmedCallback {
+
+        @Override
+        public void readLastConfirmedComplete(int rc, long lastConfirmed, Object ctx) {
+            finish(rc, lastConfirmed, this);
+        }
+
     }
 
     static class SyncReadLastConfirmedCallback implements AsyncCallback.ReadLastConfirmedCallback {
@@ -271,7 +280,7 @@ class SyncCallbackUtils {
         @Override
         @SuppressWarnings("unchecked")
         public void closeComplete(int rc, LedgerHandle lh, Object ctx) {
-            SyncCallbackUtils.finish(rc, null, future);
+            finish(rc, null, future);
         }
     }
 

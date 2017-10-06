@@ -50,13 +50,13 @@ import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.SyncCallbackUtils.FutureReadLastConfirmed;
 import org.apache.bookkeeper.client.SyncCallbackUtils.FutureReadResult;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncAddCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCloseCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.api.WriteHandle;
-import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
@@ -74,7 +74,7 @@ import org.slf4j.LoggerFactory;
  * Ledger handle contains ledger metadata and is used to access the read and
  * write operations to a ledger.
  */
-public class LedgerHandle implements AutoCloseable, WriteHandle {
+public class LedgerHandle implements WriteHandle {
     final static Logger LOG = LoggerFactory.getLogger(LedgerHandle.class);
 
     final byte[] ledgerKey;
@@ -317,11 +317,7 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
     }
 
     /**
-     * Close this ledger synchronously.
-     *
-     * @throws java.lang.InterruptedException
-     * @throws org.apache.bookkeeper.client.BKException
-     * @see #asyncClose
+     * {@inheritDoc }
      */
     @Override
     public void close()
@@ -329,6 +325,9 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
         SyncCallbackUtils.waitForResult(asyncClose());
     }
 
+    /**
+     * {@inheritDoc }
+     */
     @Override
     public CompletableFuture<Void> asyncClose() {
         CompletableFuture<Void> result = new CompletableFuture<>();
@@ -686,13 +685,13 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
         return addEntry(data, 0, data.length);
     }
 
+    /**
+     * {@inheritDoc }
+     */
     @Override
     public CompletableFuture<Long> append(ByteBuf data) {
-        data.retain();
-
         SyncAddCallback callback = new SyncAddCallback();
-        PendingAddOp op = new PendingAddOp(LedgerHandle.this, callback, null);
-        doAsyncAddEntry(op, data, callback, null);
+        asyncAddEntry(data, callback, null);
         return callback;
     }
 
@@ -1034,28 +1033,25 @@ public class LedgerHandle implements AutoCloseable, WriteHandle {
         new TryReadLastConfirmedOp(this, innercb, getLastAddConfirmed()).initiate();
     }
 
+    /**
+     * @{@inheritDoc }
+     */
     @Override
     public CompletableFuture<Long> tryReadLastAddConfirmed() {
-        CompletableFuture<Long> result = new CompletableFuture<>();
-
-        ReadLastConfirmedCallback callback = (int rc, long lastConfirmed, Object ctx) -> {
-            SyncCallbackUtils.finish(rc, lastConfirmed, result);
-        };
-        asyncTryReadLastConfirmed(callback, result);
+        FutureReadLastConfirmed result = new FutureReadLastConfirmed();
+        asyncTryReadLastConfirmed(result, null);
         return result;
     }
 
+    /**
+     * @{@inheritDoc }
+     */
     @Override
     public CompletableFuture<Long> readLastAddConfirmed() {
-        CompletableFuture<Long> result = new CompletableFuture<>();
-
-        ReadLastConfirmedCallback callback = (int rc, long lastConfirmed, Object ctx) -> {
-            SyncCallbackUtils.finish(rc, lastConfirmed, result);
-        };
-        asyncReadLastConfirmed(callback, result);
+        FutureReadLastConfirmed result = new FutureReadLastConfirmed();
+        asyncReadLastConfirmed(result, null);
         return result;
     }
-
 
     /**
      * Asynchronous read next entry and the latest last add confirmed.

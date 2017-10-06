@@ -145,8 +145,13 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
      *             if offset or length is negative or offset and length sum to a
      *             value higher than the length of data.
      */
-
+    @Override
     public void asyncAddEntry(final long entryId, final byte[] data, final int offset, final int length,
+            final AddCallback cb, final Object ctx) {
+        asyncAddEntry(entryId, Unpooled.wrappedBuffer(data, offset, length), cb, ctx);
+    }
+
+    private void asyncAddEntry(final long entryId, ByteBuf data,
             final AddCallback cb, final Object ctx) {
         PendingAddOp op = new PendingAddOp(this, cb, ctx);
         op.setEntryId(entryId);
@@ -156,7 +161,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
                     LedgerHandleAdv.this, entryId, ctx);
             return;
         }
-        doAsyncAddEntry(op, Unpooled.wrappedBuffer(data, offset, length), cb, ctx);
+        doAsyncAddEntry(op, data, cb, ctx);
     }
 
     /**
@@ -229,15 +234,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
     @Override
     public CompletableFuture<Long> write(long entryId, ByteBuf data) {
         SyncAddCallback callback = new SyncAddCallback();
-        PendingAddOp op = new PendingAddOp(this, callback, null);
-        op.setEntryId(entryId);
-        if ((entryId <= this.lastAddConfirmed) || pendingAddOps.contains(op)) {
-            LOG.error("Trying to re-add duplicate entryid:{}", entryId);
-            CompletableFuture<Long> result = createFuture();
-            completeExceptionally(result, BKException.create(BKException.Code.DuplicateEntryIdException));
-            return result;
-        }
-        doAsyncAddEntry(op, data, callback, null);
+        asyncAddEntry(entryId, data, callback, data);
         return callback;
     }
 

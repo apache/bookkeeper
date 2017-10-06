@@ -79,4 +79,12 @@
     <Bug category="MT_CORRECTNESS"/>
     <Class name="~org.apache.bookkeeper.util.collections\.[^.]+"/>
   </And>
+  <And>
+    <Class name="org.apache.bookkeeper.client.BKException" />
+    <Bug pattern="NM_SAME_SIMPLE_NAME_AS_SUPERCLASS"/>
+  </And>
+  <And>
+    <Class name="org.apache.bookkeeper.client.BKException$Code" />
+    <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE"/>
+  </And>
 </FindBugsFilter>

@@ -86,7 +86,7 @@ public class LedgerEntry
      *
      * @return an InputStream which gives access to the content of the entry
      * @throws IllegalStateException if this method is called twice
-     */    
+     */
     public InputStream getEntryInputStream() {
         Preconditions.checkState(null != data, "entry content can be accessed only once");
         ByteBufInputStream res = new ByteBufInputStream(data);

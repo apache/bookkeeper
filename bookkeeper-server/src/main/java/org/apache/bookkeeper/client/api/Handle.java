@@ -41,13 +41,13 @@ public interface Handle extends AutoCloseable {
     /**
      * Close this ledger synchronously.
      *
-     * @throws org.apache.bookkeeper.client.api.BookKeeperException
+     * @throws org.apache.bookkeeper.client.api.BKException
      * @throws java.lang.InterruptedException
      * @see #asyncClose
      */
     @Override
     @SneakyThrows(Exception.class)
-    default void close() throws BookKeeperException, InterruptedException {
+    default void close() throws BKException, InterruptedException {
         FutureUtils.result(asyncClose());
     }
 

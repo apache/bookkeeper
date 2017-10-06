@@ -18,20 +18,27 @@ package org.apache.bookkeeper.client.api;
 import org.apache.bookkeeper.client.LedgerHandleAdv;
 
 /**
- * Super class for all errors which occur using BookKeeper client
+ * Super class for all errors which occur using BookKeeper client.
  *
  * @since 4.6
  */
-public abstract class BookKeeperException extends Exception {
+public abstract class BKException extends Exception {
     protected final int code;
 
-    public BookKeeperException(int code) {
+    /**
+     * Create a new exception.
+     *
+     * @param code the error code
+     *
+     * @see Code
+     */
+    public BKException(int code) {
         super(getMessage(code));
         this.code = code;
     }
 
     /**
-     * Get the return code for the exception
+     * Get the return code for the exception.
      *
      * @return the error code
      *
@@ -41,6 +48,13 @@ public abstract class BookKeeperException extends Exception {
         return this.code;
     }
 
+    /**
+     * Describe an error code.
+     *
+     * @param code
+     *
+     * @return the description of the error code
+     */
     public static String getMessage(int code) {
         switch (code) {
         case Code.OK:
@@ -116,49 +130,49 @@ public abstract class BookKeeperException extends Exception {
      * Codes which represent the various exceptoin types.
      */
     public interface Code {
-        /** A placer holder (unused) */
+        /** A placer holder (unused). */
         int UNINITIALIZED = 1;
-        /** Everything is OK */
+        /** Everything is OK. */
         int OK = 0;
-        /** Read operations failed (bookie error) */
+        /** Read operations failed (bookie error). */
         int ReadException = -1;
-        /** Unused */
+        /** Unused. */
         int QuorumException = -2;
-        /** Unused */
+        /** Unused. */
         int NoBookieAvailableException = -3;
-        /** Digest Manager is not initialized (client error) */
+        /** Digest Manager is not initialized (client error). */
         int DigestNotInitializedException = -4;
-        /** Digest doesn't match on returned entries */
+        /** Digest doesn't match on returned entries. */
         int DigestMatchException = -5;
-        /** Not enough bookies available to form an ensemble */
+        /** Not enough bookies available to form an ensemble. */
         int NotEnoughBookiesException = -6;
-        /** No such ledger exists */
+        /** No such ledger exists. */
         int NoSuchLedgerExistsException = -7;
-        /** Bookies are not available */
+        /** Bookies are not available. */
         int BookieHandleNotAvailableException = -8;
-        /** ZooKeeper operations failed */
+        /** ZooKeeper operations failed. */
         int ZKException = -9;
-        /** Ledger recovery operations failed */
+        /** Ledger recovery operations failed. */
         int LedgerRecoveryException = -10;
-        /** Executing operations on a closed ledger handle */
+        /** Executing operations on a closed ledger handle. */
         int LedgerClosedException = -11;
-        /** Write operations failed (bookie error) */
+        /** Write operations failed (bookie error). */
         int WriteException = -12;
-        /** No such entry exists */
+        /** No such entry exists. */
         int NoSuchEntryException = -13;
-        /** Incorrect parameters (operations are absolutely not executed) */
+        /** Incorrect parameters (operations are absolutely not executed). */
         int IncorrectParameterException = -14;
-        /** Synchronous operations are interrupted */
+        /** Synchronous operations are interrupted. */
         int InterruptedException = -15;
-        /** Protocol version is wrong (operations are absolutely not executed) */
+        /** Protocol version is wrong (operations are absolutely not executed). */
         int ProtocolVersionException = -16;
-        /** Bad version on executing metadata operations */
+        /** Bad version on executing metadata operations. */
         int MetadataVersionException = -17;
-        /** Meta store operations failed */
+        /** Meta store operations failed. */
         int MetaStoreException = -18;
-        /** Executing operations on a closed client */
+        /** Executing operations on a closed client. */
         int ClientClosedException = -19;
-        /** Ledger already exists */
+        /** Ledger already exists. */
         int LedgerExistException = -20;
         /**
          * Add entry operation timeouts on waiting quorum responses.
@@ -197,7 +211,7 @@ public abstract class BookKeeperException extends Exception {
          */
         int UnclosedFragmentException = -103;
         /**
-         * Write operations failed due to bookies are readonly
+         * Write operations failed due to bookies are readonly.
          */
         int WriteOnReadOnlyBookieException = -104;
         //-105 reserved for TooManyRequestsException
@@ -209,7 +223,7 @@ public abstract class BookKeeperException extends Exception {
         int LedgerIdOverflowException = -106;
 
         /**
-         * generic exception code used to propagate in replication pipeline
+         * Generic exception code used to propagate in replication pipeline.
          */
         int ReplicationException = -200;
 
@@ -218,5 +232,5 @@ public abstract class BookKeeperException extends Exception {
          */
         int UnexpectedConditionException = -999;
     }
-    
+
 }

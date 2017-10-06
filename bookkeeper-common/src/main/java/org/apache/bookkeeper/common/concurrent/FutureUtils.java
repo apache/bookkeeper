@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.bookkeeper.common.concurrent;
 
 import com.google.common.base.Stopwatch;
@@ -155,14 +156,15 @@ public final class FutureUtils {
     public static <T> CompletableFuture<List<T>> collect(List<CompletableFuture<T>> futureList) {
         CompletableFuture<Void> finalFuture =
             CompletableFuture.allOf(futureList.toArray(new CompletableFuture[futureList.size()]));
-        return finalFuture.thenApply(result
-            -> futureList
+        return finalFuture.thenApply(result ->
+            futureList
                 .stream()
                 .map(CompletableFuture::join)
                 .collect(Collectors.toList()));
     }
 
-    public static <T> void proxyTo(CompletableFuture<T> src, CompletableFuture<T> target) {
+    public static <T> void proxyTo(CompletableFuture<T> src,
+                                   CompletableFuture<T> target) {
         src.whenComplete((value, cause) -> {
             if (null == cause) {
                 target.complete(value);
@@ -328,7 +330,8 @@ public final class FutureUtils {
         return promise;
     }
 
-    public static <T> CompletableFuture<T> ensure(CompletableFuture<T> future, Runnable ensureBlock) {
+    public static <T> CompletableFuture<T> ensure(CompletableFuture<T> future,
+                                                  Runnable ensureBlock) {
         return future.whenComplete((value, cause) -> {
             ensureBlock.run();
         });
