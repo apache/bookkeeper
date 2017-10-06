@@ -19,16 +19,16 @@
 package org.apache.bookkeeper.server.service;
 
 import java.io.IOException;
-import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
 
 /**
- * A {@link org.apache.bookkeeper.common.component.LifecycleComponent} that starts the core bookie server.
+ * A {@link ServerLifecycleComponent} that starts the core bookie server.
  */
-public class BookieService extends AbstractLifecycleComponent<BookieConfiguration> {
+public class BookieService extends ServerLifecycleComponent {
 
     public static final String NAME = "bookie-server";
 

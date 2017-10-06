@@ -26,6 +26,7 @@ import com.google.common.annotations.Beta;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.SortedLedgerStorage;
+import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.stats.NullStatsProvider;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.bookkeeper.util.BookKeeperConstants;
@@ -168,6 +169,9 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String TLS_TRUSTSTORE_TYPE = "tlsTrustStoreType";
     protected final static String TLS_TRUSTSTORE = "tlsTrustStore";
     protected final static String TLS_TRUSTSTORE_PASSWORD_PATH = "tlsTrustStorePasswordPath";
+
+    // Lifecycle Components
+    protected final static String EXTRA_SERVER_COMPONENTS = "extraServerComponents";
 
     /**
      * Construct a default configuration object
@@ -2353,6 +2357,30 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public ServerConfiguration setHttpServerPort(int port) {
         setProperty(HTTP_SERVER_PORT, port);
+        return this;
+    }
+
+    /**
+     * Get the extra list of server lifecycle components to enable on a bookie server.
+     *
+     * @return the extra list of server lifecycle components to enable on a bookie server.
+     */
+    public String[] getExtraServerComponents() {
+        if (!this.containsKey(EXTRA_SERVER_COMPONENTS)) {
+            return null;
+        }
+        return this.getStringArray(EXTRA_SERVER_COMPONENTS);
+    }
+
+    /**
+     * Set the extra list of server lifecycle components to enable on a bookie server.
+     *
+     * @param componentClasses
+     *          the list of server lifecycle components to enable on a bookie server.
+     * @return server configuration.
+     */
+    public ServerConfiguration setExtraServerComponents(String[] componentClasses) {
+        this.setProperty(EXTRA_SERVER_COMPONENTS, componentClasses);
         return this;
     }
 
