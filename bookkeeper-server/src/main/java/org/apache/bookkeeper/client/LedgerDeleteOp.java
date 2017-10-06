@@ -130,9 +130,10 @@ class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
             return true;
         }
 
-        private void delete(long ledgerId, AsyncCallback.DeleteCallback cb) {
+        private void delete(Long ledgerId, AsyncCallback.DeleteCallback cb) {
             if (!validate()) {
                 cb.deleteComplete(BKException.Code.IncorrectParameterException, null);
+                return;
             }
             LedgerDeleteOp op = new LedgerDeleteOp(bk, ledgerId, cb, null);
             ReentrantReadWriteLock closeLock = bk.getCloseLock();

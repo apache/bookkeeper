@@ -20,9 +20,9 @@
  */
 package org.apache.bookkeeper.client.api;
 
-import java.io.IOException;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.HashedWheelTimer;
+import java.io.IOException;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -95,10 +95,10 @@ public interface BookKeeperBuilder {
      *
      * @return the client
      *
-     * @throws BookKeeperException
+     * @throws BKException
      * @throws InterruptedException
      * @throws IOException
      */
-    BookKeeper build() throws BookKeeperException, InterruptedException, IOException;
+    BookKeeper build() throws BKException, InterruptedException, IOException;
 
 }

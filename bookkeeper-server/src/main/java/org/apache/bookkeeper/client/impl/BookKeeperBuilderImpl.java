@@ -27,7 +27,7 @@ import java.io.IOException;
 import org.apache.bookkeeper.client.BKException.ZKException;
 import org.apache.bookkeeper.client.api.BookKeeper;
 import org.apache.bookkeeper.client.api.BookKeeperBuilder;
-import org.apache.bookkeeper.client.api.BookKeeperException;
+import org.apache.bookkeeper.client.api.BKException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
@@ -49,49 +49,43 @@ public class BookKeeperBuilderImpl implements BookKeeperBuilder {
     }
 
     @Override
-    public BookKeeperBuilder eventLoopGroup(EventLoopGroup component) {
-        Preconditions.checkNotNull(component);
-        builder.eventLoopGroup(component);
+    public BookKeeperBuilder eventLoopGroup(EventLoopGroup eventLoopGroup) {
+        builder.eventLoopGroup(eventLoopGroup);
         return this;
     }
 
     @Override
-    public BookKeeperBuilder zk(ZooKeeper component) {
-        Preconditions.checkNotNull(component);
-        builder.zk(component);
+    public BookKeeperBuilder zk(ZooKeeper zk) {
+        builder.zk(zk);
         return this;
     }
 
     @Override
-    public BookKeeperBuilder statsLogger(StatsLogger component) {
-        Preconditions.checkNotNull(component);
-        builder.statsLogger(component);
+    public BookKeeperBuilder statsLogger(StatsLogger statsLogger) {
+        builder.statsLogger(statsLogger);
         return this;
     }
 
     @Override
-    public BookKeeperBuilder dnsResolver(DNSToSwitchMapping component) {
-        Preconditions.checkNotNull(component);
-        builder.dnsResolver(component);
+    public BookKeeperBuilder dnsResolver(DNSToSwitchMapping dnsResolver) {
+        builder.dnsResolver(dnsResolver);
         return this;
     }
 
     @Override
-    public BookKeeperBuilder requestTimer(HashedWheelTimer component) {
-        Preconditions.checkNotNull(component);
-        builder.requestTimer(component);
+    public BookKeeperBuilder requestTimer(HashedWheelTimer requeestTimer) {
+        builder.requestTimer(requeestTimer);
         return this;
     }
 
     @Override
-    public BookKeeperBuilder featureProvider(FeatureProvider component) {
-        Preconditions.checkNotNull(component);
-        builder.featureProvider(component);
+    public BookKeeperBuilder featureProvider(FeatureProvider featureProvider) {
+        builder.featureProvider(featureProvider);
         return this;
     }
 
     @Override
-    public BookKeeper build() throws InterruptedException, BookKeeperException, IOException  {
+    public BookKeeper build() throws InterruptedException, BKException, IOException  {
         try {
             return builder.build();
         } catch (KeeperException err) {

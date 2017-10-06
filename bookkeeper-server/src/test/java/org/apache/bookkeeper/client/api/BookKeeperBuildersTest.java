@@ -31,7 +31,6 @@ import org.apache.bookkeeper.client.BKException.BKClientClosedException;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.BKException.BKIncorrectParameterException;
 import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
-import org.apache.bookkeeper.client.BKException.BKUnauthorizedAccessException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.client.MockBookKeeperTestCase;
@@ -46,18 +45,17 @@ import org.junit.Test;
  */
 public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
 
+    private final static int ensembleSize = 3;
+    private final static int writeQuorumSize = 2;
+    private final static int ackQuorumSize = 1;
+    private final static long ledgerId = 12342L;
+    private final static Map<String, byte[]> customMetadata = new HashMap<>();
+    private final static byte[] password = new byte[3];
+    private final static byte[] entryData = new byte[32];
+
     @Test
     public void testCreateLedger() throws Exception {
-
-        int ensembleSize = 3;
-        int writeQuorumSize = 2;
-        int ackQuorumSize = 1;
-        long ledgerId = 12342L;
-        Map<String, byte[]> customMetadata = new HashMap<>();
-        byte[] password = new byte[3];
-
         setNewGeneratedLedgerId(ledgerId);
-
         WriteHandle writer = newCreateLedgerOp()
             .withAckQuorumSize(ackQuorumSize)
             .withEnsembleSize(ensembleSize)
@@ -72,122 +70,111 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         assertEquals(ackQuorumSize, metadata.getAckQuorumSize());
         assertEquals(writeQuorumSize, metadata.getWriteQuorumSize());
         assertArrayEquals(password, metadata.getPassword());
+    }
 
-        try {
-            result(newCreateLedgerOp()
-                .withEnsembleSize(0)
-                .withPassword(password)
-                .execute());
-            fail("shoud not be able to create a ledger with such specs");
-        } catch (BKIncorrectParameterException err) {
-        }
+    @Test(expected = BKIncorrectParameterException.class)
+    public void testFailEnsembleSize0() throws Exception {
+        result(newCreateLedgerOp()
+            .withEnsembleSize(0)
+            .withPassword(password)
+            .execute());
+    }
 
-        try {
-            result(newCreateLedgerOp()
-                .withEnsembleSize(2)
-                .withWriteQuorumSize(0)
-                .withPassword(password)
-                .execute());
-            fail("shoud not be able to create a ledger with such specs");
-        } catch (BKIncorrectParameterException err) {
-        }
+    @Test(expected = BKIncorrectParameterException.class)
+    public void testFailWriteQuorumSize0() throws Exception {
+        result(newCreateLedgerOp()
+            .withEnsembleSize(2)
+            .withWriteQuorumSize(0)
+            .withPassword(password)
+            .execute());
+    }
 
-        try {
-            result(newCreateLedgerOp()
-                .withEnsembleSize(2)
-                .withWriteQuorumSize(1)
-                .withAckQuorumSize(0)
-                .withPassword(password)
-                .execute());
-            fail("shoud not be able to create a ledger with such specs");
-        } catch (BKIncorrectParameterException err) {
-        }
+    @Test(expected = BKIncorrectParameterException.class)
+    public void testFailAckQuorumSize0() throws Exception {
+        result(newCreateLedgerOp()
+            .withEnsembleSize(2)
+            .withWriteQuorumSize(1)
+            .withAckQuorumSize(0)
+            .withPassword(password)
+            .execute());
+    }
 
-        try {
-            result(newCreateLedgerOp()
-                .withEnsembleSize(1)
-                .withWriteQuorumSize(2)
-                .withAckQuorumSize(1)
-                .withPassword(password)
-                .execute());
-            fail("shoud not be able to create a ledger with such specs");
-        } catch (BKIncorrectParameterException err) {
-        }
+    @Test(expected = BKIncorrectParameterException.class)
+    public void testFailWriteQuorumSizeGreaterThanEnsembleSize() throws Exception {
+        result(newCreateLedgerOp()
+            .withEnsembleSize(1)
+            .withWriteQuorumSize(2)
+            .withAckQuorumSize(1)
+            .withPassword(password)
+            .execute());
+    }
 
-        try {
-            result(newCreateLedgerOp()
-                .withEnsembleSize(1)
-                .withWriteQuorumSize(1)
-                .withAckQuorumSize(2)
-                .withPassword(password)
-                .execute());
-            fail("shoud not be able to create a ledger with such specs");
-        } catch (BKIncorrectParameterException err) {
-        }
+    @Test(expected = BKIncorrectParameterException.class)
+    public void testFailAckQuorumSizeGreaterThanWriteQuorumSize() throws Exception {
+        result(newCreateLedgerOp()
+            .withEnsembleSize(1)
+            .withWriteQuorumSize(1)
+            .withAckQuorumSize(2)
+            .withPassword(password)
+            .execute());
+    }
 
-        try {
-            result(newCreateLedgerOp()
-                .withPassword(null)
-                .execute());
-            fail("shoud not be able to create a ledger with such specs");
-        } catch (BKIncorrectParameterException err) {
-        }
+    @Test(expected = BKIncorrectParameterException.class)
+    public void testFailNoPassword() throws Exception {
+        result(newCreateLedgerOp()
+            .execute());
+    }
 
-        try {
-            result(newCreateLedgerOp()
-                .withCustomMetadata(null)
-                .withPassword(password)
-                .execute());
-            fail("shoud not be able to create a ledger with such specs");
-        } catch (BKIncorrectParameterException err) {
-        }
+    @Test(expected = BKIncorrectParameterException.class)
+    public void testFailPasswordNull() throws Exception {
+        result(newCreateLedgerOp()
+            .withPassword(null)
+            .execute());
+    }
 
-        try {
-            ClientConfiguration config = new ClientConfiguration();
-            config.setEnableDigestTypeAutodetection(true);
-            setBookkeeperConfig(config);
-            result(newCreateLedgerOp()
-                .withDigestType(null)
-                .withPassword(password)
-                .execute());
-            fail("shoud not be able to create a ledger with such specs");
-        } catch (BKIncorrectParameterException err) {
-        }
+    @Test(expected = BKIncorrectParameterException.class)
+    public void testFailCustomMetadataNull() throws Exception {
+        result(newCreateLedgerOp()
+            .withCustomMetadata(null)
+            .withPassword(password)
+            .execute());
+    }
 
-        try {
-            ClientConfiguration config = new ClientConfiguration();
-            config.setEnableDigestTypeAutodetection(false);
-            setBookkeeperConfig(config);
-            result(newCreateLedgerOp()
-                .withDigestType(null)
-                .withPassword(password)
-                .execute());
-            fail("shoud not be able to create a ledger with such specs");
-        } catch (BKIncorrectParameterException err) {
-        }
+    @Test(expected = BKIncorrectParameterException.class)
+    public void testFailDigestTypeNullAndAutodetectionTrue() throws Exception {
+        ClientConfiguration config = new ClientConfiguration();
+        config.setEnableDigestTypeAutodetection(true);
+        setBookkeeperConfig(config);
+        result(newCreateLedgerOp()
+            .withDigestType(null)
+            .withPassword(password)
+            .execute());
+    }
 
+    @Test(expected = BKIncorrectParameterException.class)
+    public void testFailDigestTypeNullAndAutodetectionFalse() throws Exception {
+        ClientConfiguration config = new ClientConfiguration();
+        config.setEnableDigestTypeAutodetection(false);
+        setBookkeeperConfig(config);
+        result(newCreateLedgerOp()
+            .withDigestType(null)
+            .withPassword(password)
+            .execute());
+        fail("shoud not be able to create a ledger with such specs");
+    }
+
+    @Test(expected = BKClientClosedException.class)
+    public void testFailDigestTypeNullAndBookkKeeperClosed() throws Exception {
         closeBookkeeper();
-        try {
-            result(newCreateLedgerOp()
-                .withPassword(password)
-                .execute());
-            fail("shoud not be able to create a ledger, client is closed");
-        } catch (BKClientClosedException err) {
-        }
+        result(newCreateLedgerOp()
+            .withPassword(password)
+            .execute());
+        fail("shoud not be able to create a ledger, client is closed");
     }
 
     @Test
     public void testCreateAdvLedger() throws Exception {
-
-        int ensembleSize = 3;
-        int writeQuorumSize = 2;
-        int ackQuorumSize = 1;
-        long ledgerId = 12342L;
-        byte[] password = new byte[3];
-        Map<String, byte[]> customMetadata = new HashMap<>();
-
         setNewGeneratedLedgerId(ledgerId);
-
         WriteAdvHandle writer = newCreateLedgerOp()
             .withAckQuorumSize(ackQuorumSize)
             .withEnsembleSize(ensembleSize)
@@ -203,163 +190,51 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         assertEquals(ackQuorumSize, metadata.getAckQuorumSize());
         assertEquals(writeQuorumSize, metadata.getWriteQuorumSize());
         assertArrayEquals(password, metadata.getPassword());
+    }
 
-        try {
-            result(newCreateLedgerOp()
-                .withEnsembleSize(0)
-                .withPassword(password)
-                .makeAdv()
-                .execute());
-            fail("shoud not be able to create a ledger with such specs");
-        } catch (BKIncorrectParameterException err) {
-        }
-
-        try {
-            result(newCreateLedgerOp()
-                .withEnsembleSize(2)
-                .withWriteQuorumSize(0)
-                .withPassword(password)
-                .makeAdv()
-                .execute());
-            fail("shoud not be able to create a ledger with such specs");
-        } catch (BKIncorrectParameterException err) {
-        }
-
-        try {
-            result(newCreateLedgerOp()
-                .withEnsembleSize(2)
-                .withWriteQuorumSize(1)
-                .withAckQuorumSize(0)
-                .makeAdv()
-                .execute());
-            fail("shoud not be able to create a ledger with such specs");
-        } catch (BKIncorrectParameterException err) {
-        }
-
-        try {
-            result(newCreateLedgerOp()
-                .withEnsembleSize(1)
-                .withWriteQuorumSize(2)
-                .withAckQuorumSize(1)
-                .withPassword(password)
-                .makeAdv()
-                .execute());
-            fail("shoud not be able to create a ledger with such specs");
-        } catch (BKIncorrectParameterException err) {
-        }
-
-        try {
-            result(newCreateLedgerOp()
-                .withEnsembleSize(1)
-                .withWriteQuorumSize(1)
-                .withAckQuorumSize(2)
-                .withPassword(password)
-                .makeAdv()
-                .execute());
-            fail("shoud not be able to create a ledger with such specs");
-        } catch (BKIncorrectParameterException err) {
-        }
-
-        try {
-            result(newCreateLedgerOp()
-                .withPassword(null)
-                .makeAdv()
-                .execute());
-            fail("shoud not be able to create a ledger with such specs");
-        } catch (BKIncorrectParameterException err) {
-        }
-
-        try {
-            result(newCreateLedgerOp()
-                .withCustomMetadata(null)
-                .withPassword(password)
-                .makeAdv()
-                .execute());
-            fail("shoud not be able to create a ledger with such specs");
-        } catch (BKIncorrectParameterException err) {
-        }
-
-        try {
-            ClientConfiguration config = new ClientConfiguration();
-            config.setEnableDigestTypeAutodetection(true);
-            setBookkeeperConfig(config);
-            result(newCreateLedgerOp()
-                .withDigestType(null)
-                .withPassword(password)
-                .makeAdv()
-                .execute());
-            fail("shoud not be able to create a ledger with such specs");
-        } catch (BKIncorrectParameterException err) {
-        }
-
-        try {
-            ClientConfiguration config = new ClientConfiguration();
-            config.setEnableDigestTypeAutodetection(false);
-            setBookkeeperConfig(config);
-            result(newCreateLedgerOp()
-                .withDigestType(null)
-                .withPassword(password)
-                .makeAdv()
-                .execute());
-            fail("shoud not be able to create a ledger with such specs");
-        } catch (BKIncorrectParameterException err) {
-        }
-
-        try {
-            result(newCreateLedgerOp()
-                .withPassword(password)
-                .makeAdv()
-                .withLedgerId(-1)
-                .execute());
-            fail("shoud not be able to create a ledger with such specs");
-        } catch (BKIncorrectParameterException err) {
-        }
-
-        try {
-            result(newCreateLedgerOp()
-                .withPassword(password)
-                .makeAdv()
-                .withLedgerId(-2)
-                .execute());
-            fail("shoud not be able to create a ledger with such specs");
-        } catch (BKIncorrectParameterException err) {
-        }
-
-        assertEquals(0, result(newCreateLedgerOp()
+    @Test(expected = BKIncorrectParameterException.class)
+    public void testFailCreateAdvLedgerBadFixedLedgerIdMinus1() throws Exception {
+        result(newCreateLedgerOp()
             .withPassword(password)
             .makeAdv()
-            .withLedgerId(0)
-            .execute()).getId());
+            .withLedgerId(-1)
+            .execute());
+    }
 
-        assertEquals(Integer.MAX_VALUE + 1L, result(newCreateLedgerOp()
+    @Test(expected = BKIncorrectParameterException.class)
+    public void testFailCreateAdvLedgerBadFixedLedgerIdNegative() throws Exception {
+        result(newCreateLedgerOp()
             .withPassword(password)
             .makeAdv()
-            .withLedgerId(Integer.MAX_VALUE + 1L)
-            .execute()).getId());
+            .withLedgerId(-2)
+            .execute());
+        fail("shoud not be able to create a ledger with such specs");
+    }
 
+    @Test(expected = BKNoSuchLedgerExistsException.class)
+    public void testOpenLedgerNoId() throws Exception {
+        result(newOpenLedgerOp().execute());
+    }
+
+    @Test(expected = BKNoSuchLedgerExistsException.class)
+    public void testOpenLedgerBadId() throws Exception {
+        result(newOpenLedgerOp()
+            .withPassword(password)
+            .withLedgerId(ledgerId)
+            .execute());
+    }
+
+    @Test(expected = BKClientClosedException.class)
+    public void testOpenLedgerClientClosed() throws Exception {
         closeBookkeeper();
-        try {
-            result(newCreateLedgerOp()
-                .withPassword(password)
-                .makeAdv()
-                .execute());
-            fail("shoud not be able to create a ledger, client is closed");
-        } catch (BKClientClosedException err) {
-        }
-
+        result(newOpenLedgerOp()
+            .withPassword(password)
+            .withLedgerId(ledgerId)
+            .execute());
     }
 
     @Test
-    public void testOpenLedger() throws Exception {
-
-        long ledgerId = 12342L;
-        byte[] password = new byte[16];
-        Map<String, byte[]> customMetadata = new HashMap<>();
-        int ensembleSize = 1;
-        int writeQuorumSize = 1;
-        int ackQuorumSize = 1;
-
-        byte[] entryData = new byte[32];
+    public void testOpenLedgerNoRecovery() throws Exception {
         LedgerMetadata ledgerMetadata = generateLedgerMetadata(ensembleSize,
             writeQuorumSize, ackQuorumSize, password, customMetadata);
         registerMockLedgerMetadata(ledgerId, ledgerMetadata);
@@ -367,107 +242,67 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         registerMockEntryForRead(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, password, entryData, -1);
         registerMockEntryForRead(ledgerId, 0, password, entryData, -1);
 
-        try {
-            result(newOpenLedgerOp()
-                .withPassword(ledgerMetadata.getPassword())
-                .execute());
-        } catch (BKNoSuchLedgerExistsException err) {
-        }
-
-        try {
-            result(newOpenLedgerOp()
-                .withLedgerId(ledgerId)
-                .execute());
-            fail("should not be able to read with bad password");
-        } catch (BKUnauthorizedAccessException err) {
-        }
-
-        try {
-            result(newOpenLedgerOp()
-                .withPassword(ledgerMetadata.getPassword())
-                .withLedgerId(ledgerId)
-                .execute());
-        } catch (BKDigestMatchException err) {
-        }
-
-        try {
-            result(newOpenLedgerOp()
-                .withPassword(ledgerMetadata.getPassword())
-                .withDigestType(DigestType.CRC32)
-                .withLedgerId(ledgerId)
-                .execute());
-        } catch (BKDigestMatchException err) {
-        }
-
         result(newOpenLedgerOp()
             .withPassword(ledgerMetadata.getPassword())
-            .withDigestType(DigestType.MAC)
+            .withDigestType(DigestType.CRC32)
             .withLedgerId(ledgerId)
             .withRecovery(true)
             .execute());
-
-        result(newOpenLedgerOp()
-            .withPassword(ledgerMetadata.getPassword())
-            .withDigestType(DigestType.MAC)
-            .withLedgerId(ledgerId)
-            .withRecovery(false)
-            .execute());
-        closeBookkeeper();
-        try {
-            result(newOpenLedgerOp()
-                .withLedgerId(ledgerId)
-                .execute());
-            fail("shoud not be able to open a ledger, client is closed");
-        } catch (BKClientClosedException err) {
-        }
-
     }
 
     @Test
-    public void testDeleteLedger() throws Exception {
-        long ledgerId = 12342L;
-
-        byte[] password = new byte[16];
-        Map<String, byte[]> customMetadata = new HashMap<>();
-        int ensembleSize = 1;
-        int writeQuorumSize = 1;
-        int ackQuorumSize = 1;
+    public void testOpenLedgerRecovery() throws Exception {
         LedgerMetadata ledgerMetadata = generateLedgerMetadata(ensembleSize,
             writeQuorumSize, ackQuorumSize, password, customMetadata);
         registerMockLedgerMetadata(ledgerId, ledgerMetadata);
 
-        try {
-            result(newDeleteLedgerOp()
-                .withLedgerId(-1)
-                .execute());
-        } catch (BKIncorrectParameterException err) {
-        }
+        registerMockEntryForRead(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, password, entryData, -1);
+        registerMockEntryForRead(ledgerId, 0, password, entryData, -1);
+        result(newOpenLedgerOp()
+            .withPassword(ledgerMetadata.getPassword())
+            .withDigestType(DigestType.CRC32)
+            .withLedgerId(ledgerId)
+            .withRecovery(false)
+            .execute());
+    }
 
-        try {
-            result(newDeleteLedgerOp()
-                .withLedgerId(ledgerId + 1)
-                .execute());
-        } catch (BKNoSuchLedgerExistsException err) {
-        }
+    @Test(expected = BKIncorrectParameterException.class)
+    public void testDeleteLedgerNoLedgerId() throws Exception {
+        result(newDeleteLedgerOp()
+            .execute());
+    }
+
+    @Test(expected = BKIncorrectParameterException.class)
+    public void testDeleteLedgerBadLedgerId() throws Exception {
+        result(newDeleteLedgerOp()
+            .withLedgerId(-1)
+            .execute());
+    }
+
+    @Test
+    public void testDeleteLedger() throws Exception {
+        LedgerMetadata ledgerMetadata = generateLedgerMetadata(ensembleSize,
+            writeQuorumSize, ackQuorumSize, password, customMetadata);
+        registerMockLedgerMetadata(ledgerId, ledgerMetadata);
 
         result(newDeleteLedgerOp()
             .withLedgerId(ledgerId)
             .execute());
-
-        closeBookkeeper();
-        try {
-            result(newDeleteLedgerOp()
-                .withLedgerId(ledgerId)
-                .execute());
-            fail("shoud not be able to delete a ledger, client is closed");
-        } catch (BKClientClosedException err) {
-        }
-
     }
 
-    protected LedgerMetadata generateLedgerMetadata(int ensembleSize, int writeQuorumSize, int ackQuorumSize, byte[] password, Map<String, byte[]> customMetadata) {
+    @Test(expected = BKClientClosedException.class)
+    public void testDeleteLedgerBookKeeperClosed() throws Exception {
+        closeBookkeeper();
+        result(newDeleteLedgerOp()
+            .withLedgerId(ledgerId)
+            .execute());
+    }
+
+    protected LedgerMetadata generateLedgerMetadata(int ensembleSize,
+        int writeQuorumSize, int ackQuorumSize, byte[] password,
+        Map<String, byte[]> customMetadata) {
         LedgerMetadata ledgerMetadata = new LedgerMetadata(ensembleSize, writeQuorumSize,
-            ackQuorumSize, BookKeeper.DigestType.MAC, password, customMetadata);
+            ackQuorumSize, BookKeeper.DigestType.CRC32, password, customMetadata);
         ledgerMetadata.addEnsemble(0, generateNewEnsemble(ensembleSize));
         return ledgerMetadata;
     }

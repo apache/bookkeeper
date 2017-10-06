@@ -21,8 +21,6 @@
 package org.apache.bookkeeper.client.api;
 
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import org.apache.bookkeeper.common.concurrent.FutureUtils;
 
 /**
  * Builder-style interface to create new ledgers.

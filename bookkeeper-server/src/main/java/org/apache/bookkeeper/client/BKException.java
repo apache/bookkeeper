@@ -20,15 +20,13 @@
  */
 package org.apache.bookkeeper.client;
 
-import org.apache.bookkeeper.client.api.BookKeeperException;
-
 /**
  * Class the enumerates all the possible error conditions.
  *
- * <P>This class is going to be deprecate soon, please use the new class {@link BookKeeperException}
+ * <P>This class is going to be deprecate soon, please use the new class {@link BKException}
  */
 @SuppressWarnings("serial")
-public abstract class BKException extends BookKeeperException {
+public abstract class BKException extends org.apache.bookkeeper.client.api.BKException {
 
     BKException(int code) {
         super(code);
@@ -110,9 +108,9 @@ public abstract class BKException extends BookKeeperException {
 
     /**
      * Legacy interface which holds constants for BookKeeper error codes.
-     * The list has been moved to {@link BookKeeperException}
+     * The list has been moved to {@link BKException}
      */
-    public interface Code extends BookKeeperException.Code {
+    public interface Code extends org.apache.bookkeeper.client.api.BKException.Code {
     }
 
     public static class BKSecurityException extends BKException {

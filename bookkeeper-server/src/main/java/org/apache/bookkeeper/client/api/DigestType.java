@@ -22,6 +22,8 @@ package org.apache.bookkeeper.client.api;
 
 /**
  * Digest type.
+ *
+ * @since 4.6
  */
 public enum DigestType {
 

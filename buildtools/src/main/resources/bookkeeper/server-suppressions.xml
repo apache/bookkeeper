@@ -21,7 +21,7 @@
     <suppress checks="JavadocPackage" files=".*[\\/]maven-archetypes[\\/].*"/>
     <suppress checks="JavadocPackage" files=".*[\\/]examples[\\/].*"/>
     <!-- suppress packages by packages -->
-    <suppress checks=".*" files=".*[\\/]client[\\/](?:[^\\/]+$|(?!api)[^\\/]+[\\/])"/>
+    <suppress checks=".*" files=".*[\\/]client[\\/](?:[^\\/]+$|(?!api)|(?!impl)[^\\/]+[\\/])"/>
     <suppress checks=".*" files=".*[\\/]conf[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]feature[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]meta[\\/].*"/>
