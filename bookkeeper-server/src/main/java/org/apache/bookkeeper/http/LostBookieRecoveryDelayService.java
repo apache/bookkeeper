@@ -23,7 +23,6 @@ package org.apache.bookkeeper.http;
 import com.google.common.base.Preconditions;
 import java.util.HashMap;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
-import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
@@ -33,17 +32,22 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * HttpEndpointService that handle Bookkeeper Configuration related http request.
+ * HttpEndpointService that handle Bookkeeper lost bookie recovery delay parameter related http request.
+ *
+ * The GET method will get the value of parameter lostBookieRecoveryDelay,
+ * while the PUT method will set the value of parameter lostBookieRecoveryDelay,
  */
 public class LostBookieRecoveryDelayService implements HttpEndpointService {
 
     static final Logger LOG = LoggerFactory.getLogger(LostBookieRecoveryDelayService.class);
 
     protected ServerConfiguration conf;
+    protected BookKeeperAdmin bka;
 
-    public LostBookieRecoveryDelayService(ServerConfiguration conf) {
+    public LostBookieRecoveryDelayService(ServerConfiguration conf, BookKeeperAdmin bka) {
         Preconditions.checkNotNull(conf);
         this.conf = conf;
+        this.bka = bka;
     }
 
     /*
@@ -53,15 +57,11 @@ public class LostBookieRecoveryDelayService implements HttpEndpointService {
     public HttpServiceResponse handle(HttpServiceRequest request) throws Exception {
         HttpServiceResponse response = new HttpServiceResponse();
 
-        ClientConfiguration adminConf = new ClientConfiguration(conf);
-        BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
-
         if (HttpServer.Method.PUT == request.getMethod()) {
             // request body as {"delay_seconds": <delay_seconds>}
             String requestBody = request.getBody();
 
             if (requestBody == null) {
-                admin.close();
                 response.setCode(HttpServer.StatusCode.NOT_FOUND);
                 response.setBody("Null request body for lostBookieRecoveryDelay.");
                 return response;
@@ -71,21 +71,18 @@ public class LostBookieRecoveryDelayService implements HttpEndpointService {
             HashMap<String, Integer> configMap = JsonUtil.fromJson(requestBody, HashMap.class);
             if (configMap != null && configMap.containsKey("delay_seconds")) {
                 int delaySeconds = configMap.get("delay_seconds");
-                admin.setLostBookieRecoveryDelay(delaySeconds);
-                admin.close();
+                bka.setLostBookieRecoveryDelay(delaySeconds);
                 response.setCode(HttpServer.StatusCode.OK);
                 response.setBody("Success set lostBookieRecoveryDelay to " + delaySeconds);
                 return response;
             } else {
-                admin.close();
                 response.setCode(HttpServer.StatusCode.NOT_FOUND);
                 response.setBody("Request body not contains lostBookieRecoveryDelay.");
                 return response;
             }
         } else if (HttpServer.Method.GET == request.getMethod()) {
             try {
-                int delaySeconds = admin.getLostBookieRecoveryDelay();
-                admin.close();
+                int delaySeconds = bka.getLostBookieRecoveryDelay();
                 response.setCode(HttpServer.StatusCode.OK);
                 response.setBody("lostBookieRecoveryDelay value: " + delaySeconds);
                 LOG.debug("response body:" + response.getBody());
@@ -98,7 +95,6 @@ public class LostBookieRecoveryDelayService implements HttpEndpointService {
                 return response;
             }
         } else {
-            admin.close();
             response.setCode(HttpServer.StatusCode.NOT_FOUND);
             response.setBody("Not found method. Should be PUT method");
             return response;

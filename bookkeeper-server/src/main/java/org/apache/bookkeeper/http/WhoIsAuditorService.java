@@ -27,23 +27,26 @@ import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.replication.AuditorElector;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * HttpEndpointService that handle Bookkeeper Configuration related http request.
+ * HttpEndpointService that handle Bookkeeper who is auditor related http request.
+ *
+ * The GET method will get the auditor bookie address
  */
 public class WhoIsAuditorService implements HttpEndpointService {
 
     static final Logger LOG = LoggerFactory.getLogger(WhoIsAuditorService.class);
 
     protected ServerConfiguration conf;
+    protected ZooKeeper zk;
 
-    public WhoIsAuditorService(ServerConfiguration conf) {
+    public WhoIsAuditorService(ServerConfiguration conf, ZooKeeper zk) {
         Preconditions.checkNotNull(conf);
         this.conf = conf;
+        this.zk = zk;
     }
 
     /*
@@ -54,10 +57,6 @@ public class WhoIsAuditorService implements HttpEndpointService {
         HttpServiceResponse response = new HttpServiceResponse();
 
         if (HttpServer.Method.GET == request.getMethod()) {
-            ZooKeeper zk = ZooKeeperClient.newBuilder()
-                .connectString(conf.getZkServers())
-                .sessionTimeoutMs(conf.getZkTimeout())
-                .build();
             BookieSocketAddress bookieId = null;
             try {
                 bookieId = AuditorElector.getCurrentAuditor(conf, zk);
@@ -68,7 +67,7 @@ public class WhoIsAuditorService implements HttpEndpointService {
                     return response;
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                LOG.error("Meet Exception: ", e);
                 response.setCode(HttpServer.StatusCode.NOT_FOUND);
                 response.setBody("Exception when get." + e.getMessage());
                 return response;

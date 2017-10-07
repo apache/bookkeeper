@@ -107,7 +107,7 @@ public class BookieServer {
                 new Bookie(conf, statsLogger.scope(BOOKIE_SCOPE));
     }
 
-    public void start() throws IOException, UnavailableException, InterruptedException {
+    public void start() throws IOException, UnavailableException, InterruptedException, KeeperException {
         this.bookie.start();
         // fail fast, when bookie startup is not successful
         if (!this.bookie.isRunning()) {

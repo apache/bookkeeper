@@ -32,23 +32,27 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * HttpEndpointService that handle Bookkeeper Configuration related http request.
+ * HttpEndpointService that handle Bookkeeper expand storage related http request.
+ * The PUT method will expand this bookie's storage.
+ * User should update the directories info in the conf file with new empty ledger/index
+ * directories, before running the command.
  */
 public class ExpandStorageService implements HttpEndpointService {
 
     static final Logger LOG = LoggerFactory.getLogger(ExpandStorageService.class);
 
     protected ServerConfiguration conf;
+    private ZooKeeper zk;
 
-    public ExpandStorageService(ServerConfiguration conf) {
+    public ExpandStorageService(ServerConfiguration conf, ZooKeeper zk) {
         Preconditions.checkNotNull(conf);
         this.conf = conf;
+        this.zk = zk;
     }
 
     /*
@@ -60,12 +64,6 @@ public class ExpandStorageService implements HttpEndpointService {
         HttpServiceResponse response = new HttpServiceResponse();
 
         if (HttpServer.Method.PUT == request.getMethod()) {
-
-            ZooKeeper zk = ZooKeeperClient.newBuilder()
-              .connectString(conf.getZkServers())
-              .sessionTimeoutMs(conf.getZkTimeout())
-              .build();
-
             File[] ledgerDirectories = Bookie.getCurrentDirectories(conf.getLedgerDirs());
             File[] journalDirectories = Bookie.getCurrentDirectories(conf.getJournalDirs());
             File[] indexDirectories;
@@ -87,13 +85,9 @@ public class ExpandStorageService implements HttpEndpointService {
             } catch (BookieException | IOException e) {
                 LOG.error(
                   "Exception while updating cookie for storage expansion", e);
-                response.setCode(HttpServer.StatusCode.NOT_FOUND);
+                response.setCode(HttpServer.StatusCode.INTERNAL_ERROR);
                 response.setBody("Exception while updating cookie for storage expansion");
                 return response;
-            }
-
-            if (zk != null) {
-                zk.close();
             }
 
             String jsonResponse = "Success expand storage";

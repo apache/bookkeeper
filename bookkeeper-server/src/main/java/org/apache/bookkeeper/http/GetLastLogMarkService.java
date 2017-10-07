@@ -39,7 +39,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * HttpEndpointService that handle Bookkeeper Configuration related http request.
+ * HttpEndpointService that handle Bookkeeper get last log mark related http request.
+ * The GET method will get the last log position of each journal.
+ *
+ * output would be like this:
+ *  {
+ *    "<Journal_id>" : "<Pos>",
+ *    ...
+ *  }
  */
 public class GetLastLogMarkService implements HttpEndpointService {
 

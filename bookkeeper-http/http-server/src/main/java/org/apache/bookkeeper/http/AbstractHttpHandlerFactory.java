@@ -27,109 +27,30 @@ package org.apache.bookkeeper.http;
 public abstract class AbstractHttpHandlerFactory<Handler> {
     private HttpServiceProvider httpServiceProvider;
 
+    /**
+     * Instantiates a new Abstract http handler factory.
+     *
+     * @param httpServiceProvider the http service provider
+     */
     public AbstractHttpHandlerFactory(HttpServiceProvider httpServiceProvider) {
         this.httpServiceProvider = httpServiceProvider;
     }
 
+    /**
+     * Gets http service provider.
+     *
+     * @return the http service provider
+     */
     public HttpServiceProvider getHttpServiceProvider() {
         return httpServiceProvider;
     }
 
     /**
-     * Create a handler for heartbeat api.
+     * Create a handler for the given ApiType.
+     *
+     * @param type the api type
+     * @return the handler
      */
-    public abstract Handler newHeartbeatHandler();
-
-    /**
-     * Create a handler for server configuration api.
-     */
-    public abstract Handler newConfigurationHandler();
-
-    //
-    // ledger
-    //
-
-    /**
-     * Create a handler for delete ledger api.
-     */
-    public abstract Handler newDeleteLedgerHandler();
-
-    /**
-     * Create a handler for list ledger api.
-     */
-    public abstract Handler newListLedgerHandler();
-
-    /**
-     * Create a handler for delete ledger api.
-     */
-    public abstract Handler newGetLedgerMetaHandler();
-
-    /**
-     * Create a handler for read ledger entries api.
-     */
-    public abstract Handler newReadLedgerEntryHandler();
-
-    //
-    // bookie
-    //
-
-    /**
-     * Create a handler for list bookies api.
-     */
-    public abstract Handler newListBookiesHandler();
-
-    /**
-     * Create a handler for list bookie disk usage api.
-     */
-    public abstract Handler newListBookieInfoHandler();
-
-    /**
-     * Create a handler for get last log mark api.
-     */
-    public abstract Handler newGetLastLogMarkHandler();
-
-    /**
-     * Create a handler for list bookie disk files api.
-     */
-    public abstract Handler newListDiskFileHandler();
-
-    /**
-     * Create a handler for expand bookie storage api.
-     */
-    public abstract Handler newExpandStorageHandler();
-
-    //
-    // autorecovery
-    //
-
-    /**
-     * Create a handler for auto recovery failed bookie api.
-     */
-    public abstract Handler newRecoveryBookieHandler();
-
-    /**
-     * Create a handler for get auditor api.
-     */
-    public abstract Handler newWhoIsAuditorHandler();
-
-    /**
-     * Create a handler for list under replicated ledger api.
-     */
-    public abstract Handler newListUnderReplicatedLedgerHandler();
-
-    /**
-     * Create a handler for trigger audit api.
-     */
-    public abstract Handler newTriggerAuditHandler();
-
-    /**
-     * Create a handler for set/get lostBookieRecoveryDelay api.
-     */
-    public abstract Handler newLostBookieRecoveryDelayHandler();
-
-    /**
-     * Create a handler for decommission bookie api.
-     */
-    public abstract Handler newDecommissionHandler();
+    public abstract Handler newHandler(HttpServer.ApiType type);
 
 }

@@ -39,23 +39,27 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.util.JsonUtil;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * HttpEndpointService that handle Bookkeeper Configuration related http request.
+ * HttpEndpointService that handle Bookkeeper list ledger related http request.
+ *
+ * The GET method will list all ledger_ids in this bookkeeper cluster.
+ * User can choose print metadata of each ledger or not by set parameter "print_metadata"
  */
 public class ListLedgerService implements HttpEndpointService {
 
     static final Logger LOG = LoggerFactory.getLogger(ListLedgerService.class);
 
     protected ServerConfiguration conf;
+    protected ZooKeeper zk;
 
-    public ListLedgerService(ServerConfiguration conf) {
+    public ListLedgerService(ServerConfiguration conf, ZooKeeper zk) {
         Preconditions.checkNotNull(conf);
         this.conf = conf;
+        this.zk = zk;
     }
 
     // Number of LedgerMetadata contains in each page
@@ -103,10 +107,6 @@ public class ListLedgerService implements HttpEndpointService {
               Integer.parseInt(params.get("page")) :
               -1;
 
-            ZooKeeper zk = ZooKeeperClient.newBuilder()
-              .connectString(conf.getZkServers())
-              .sessionTimeoutMs(conf.getZkTimeout())
-              .build();
             LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(conf, zk);
             LedgerManager manager = mFactory.newLedgerManager();
             LedgerManager.LedgerRangeIterator iter = manager.getLedgerRanges();
@@ -161,7 +161,6 @@ public class ListLedgerService implements HttpEndpointService {
 
             manager.close();
             mFactory.uninitialize();
-            zk.close();
 
             String jsonResponse = JsonUtil.toJson(output);
             LOG.debug("output body:" + jsonResponse);

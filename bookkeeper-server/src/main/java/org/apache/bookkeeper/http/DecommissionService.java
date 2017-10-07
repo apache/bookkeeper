@@ -23,7 +23,6 @@ package org.apache.bookkeeper.http;
 import com.google.common.base.Preconditions;
 import java.util.HashMap;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
-import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
@@ -34,33 +33,33 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * HttpEndpointService that handle Bookkeeper Configuration related http request.
+ * HttpEndpointService that handle Bookkeeper Decommission related http request.
+ * The PUT method will send decommission bookie command running at backend.
  */
 public class DecommissionService implements HttpEndpointService {
 
     static final Logger LOG = LoggerFactory.getLogger(DecommissionService.class);
 
     protected ServerConfiguration conf;
+    protected BookKeeperAdmin bka;
 
-    public DecommissionService(ServerConfiguration conf) {
+    public DecommissionService(ServerConfiguration conf, BookKeeperAdmin bka) {
         Preconditions.checkNotNull(conf);
         this.conf = conf;
+        this.bka = bka;
     }
 
     /*
-     * decommission bookie,
+     * decommission bookie.
      */
     @Override
     public HttpServiceResponse handle(HttpServiceRequest request) throws Exception {
         HttpServiceResponse response = new HttpServiceResponse();
 
         if (HttpServer.Method.PUT == request.getMethod()) {
-            ClientConfiguration adminConf = new ClientConfiguration(conf);
-            BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
             String requestBody = request.getBody();
 
             if (requestBody == null) {
-                admin.close();
                 response.setCode(HttpServer.StatusCode.NOT_FOUND);
                 response.setBody("Null request body for DecommissionService.");
                 return response;
@@ -74,20 +73,28 @@ public class DecommissionService implements HttpEndpointService {
                     BookieSocketAddress bookieSrc = new BookieSocketAddress(
                       bookieSrcString[0], Integer.parseInt(bookieSrcString[1]));
 
-                    admin.decommissionBookie(bookieSrc);
-                    admin.close();
+                    Thread thread = new Thread() {
+                        @Override
+                        public void run() {
+                            try {
+                                bka.decommissionBookie(bookieSrc);
+                            } catch (Exception e) {
+                                LOG.error("Error handling decommissionBookie: {} with exception {}", bookieSrc, e);
+                            }
+                        }
+                    };
+
+                    thread.run();
                     response.setCode(HttpServer.StatusCode.OK);
-                    response.setBody("Success decommission Bookie " + bookieSrc.toString());
+                    response.setBody("Success send decommission Bookie command " + bookieSrc.toString());
                     return response;
                 } catch (Exception e) {
-                    admin.close();
                     LOG.error("Meet Exception: ", e);
                     response.setCode(HttpServer.StatusCode.NOT_FOUND);
-                    response.setBody("Exception when do decommission." + e.getMessage());
+                    response.setBody("Exception when send decommission command." + e.getMessage());
                     return response;
                 }
             } else {
-                admin.close();
                 response.setCode(HttpServer.StatusCode.NOT_FOUND);
                 response.setBody("Request body not contains bookie_src.");
                 return response;

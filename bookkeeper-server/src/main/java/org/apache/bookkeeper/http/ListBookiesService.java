@@ -37,17 +37,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * HttpEndpointService that handle Bookkeeper Configuration related http request.
+ * HttpEndpointService that handle Bookkeeper list bookies related http request.
+ * The GET method will list all bookies of type rw|ro in this bookkeeper cluster.
  */
 public class ListBookiesService implements HttpEndpointService {
 
     static final Logger LOG = LoggerFactory.getLogger(ListBookiesService.class);
 
     protected ServerConfiguration conf;
+    protected BookKeeperAdmin bka;
 
-    public ListBookiesService(ServerConfiguration conf) {
+    public ListBookiesService(ServerConfiguration conf, BookKeeperAdmin bka) {
         Preconditions.checkNotNull(conf);
         this.conf = conf;
+        this.bka = bka;
     }
 
     @Override
@@ -67,10 +70,6 @@ public class ListBookiesService implements HttpEndpointService {
               params.containsKey("print_hostnames") &&
               params.get("print_hostnames").equals("true");
 
-            ClientConfiguration clientconf = new ClientConfiguration(conf)
-              .setZkServers(conf.getZkServers());
-            BookKeeperAdmin bka = new BookKeeperAdmin(clientconf);
-
             if (readOnly) {
                 bookies.addAll(bka.getReadOnlyBookies());
             } else {
@@ -84,9 +83,7 @@ public class ListBookiesService implements HttpEndpointService {
                 LOG.debug("bookie: " + b.toString() + " hostname:" + b.getHostName());
             }
             String jsonResponse = JsonUtil.toJson(output);
-            if (bka != null) {
-                bka.close();
-            }
+
             response.setBody(jsonResponse);
             response.setCode(HttpServer.StatusCode.OK);
             return response;

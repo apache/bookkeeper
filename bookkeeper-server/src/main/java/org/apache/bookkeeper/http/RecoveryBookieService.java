@@ -36,17 +36,27 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * HttpEndpointService that handle Bookkeeper Configuration related http request.
+ * HttpEndpointService that handle Bookkeeper recovery related http request.
+ *
+ * The PUT method will recovery bookie with provided parameter.
+ * The parameter of input body should be like this format:
+ * {
+ *   "bookie_src": [ "bookie_src1", "bookie_src2"... ],
+ *   "bookie_dest": [ "bookie_dest1", "bookie_dest2"... ],
+ *   "delete_cookie": <bool_value>
+ * }
  */
 public class RecoveryBookieService implements HttpEndpointService {
 
     static final Logger LOG = LoggerFactory.getLogger(RecoveryBookieService.class);
 
     protected ServerConfiguration conf;
+    protected BookKeeperAdmin bka;
 
-    public RecoveryBookieService(ServerConfiguration conf) {
+    public RecoveryBookieService(ServerConfiguration conf, BookKeeperAdmin bka) {
         Preconditions.checkNotNull(conf);
         this.conf = conf;
+        this.bka = bka;
     }
 
     /*
@@ -61,12 +71,6 @@ public class RecoveryBookieService implements HttpEndpointService {
         public List<String> bookie_src;
         public List<String> bookie_dest;
         public boolean delete_cookie;
-
-        /*public RecoveryRequestJsonBody () {
-            bookie_src = null;
-            bookie_dest = null;
-            delete_cookie = false;
-        }*/
     }
 
     @Override
@@ -97,32 +101,37 @@ public class RecoveryBookieService implements HttpEndpointService {
         if (HttpServer.Method.PUT == request.getMethod() &&
             !requestJsonBody.bookie_src.isEmpty()) {
             ClientConfiguration adminConf = new ClientConfiguration(conf);
-            BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
 
             String bookieSrcString[] = requestJsonBody.bookie_src.get(0).split(":");
             BookieSocketAddress bookieSrc = new BookieSocketAddress(
               bookieSrcString[0], Integer.parseInt(bookieSrcString[1]));
-            BookieSocketAddress bookieDest = null;
+            final BookieSocketAddress bookieDest;
             if ((requestJsonBody.bookie_dest != null) && !requestJsonBody.bookie_dest.isEmpty()) {
                 String bookieDestString[] = requestJsonBody.bookie_dest.get(0).split(":");
                 bookieDest = new BookieSocketAddress(bookieDestString[0],
                   Integer.parseInt(bookieDestString[1]));
+            } else {
+                bookieDest = null;
             }
             boolean deleteCookie = requestJsonBody.delete_cookie;
-            try {
-                admin.recoverBookieData(bookieSrc, bookieDest);
-                if (deleteCookie) {
-                    Versioned<Cookie> cookie = Cookie.readFromZooKeeper(admin.getZooKeeper(), adminConf, bookieSrc);
-                    cookie.getValue().deleteFromZooKeeper(admin.getZooKeeper(), adminConf, bookieSrc, cookie.getVersion());
+            Thread thread = new Thread() {
+                @Override
+                public void run() {
+                    try {
+                        bka.recoverBookieData(bookieSrc, bookieDest);
+                        if (deleteCookie) {
+                            Versioned<Cookie> cookie = Cookie.readFromZooKeeper(bka.getZooKeeper(), adminConf, bookieSrc);
+                            cookie.getValue().deleteFromZooKeeper(bka.getZooKeeper(), adminConf, bookieSrc, cookie.getVersion());
+                        }
+                    } catch (Exception e) {
+                        LOG.error("Meet Exception: ", e);
+                    }
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
-                response.setCode(HttpServer.StatusCode.NOT_FOUND);
-                response.setBody("ERROR handling request: " + e.getMessage());
-                return response;
-            }
+            };
+
+            thread.run();
             response.setCode(HttpServer.StatusCode.OK);
-            response.setBody("Handled recovery request");
+            response.setBody("Success send recovery request command.");
             return response;
         } else {
             response.setCode(HttpServer.StatusCode.NOT_FOUND);

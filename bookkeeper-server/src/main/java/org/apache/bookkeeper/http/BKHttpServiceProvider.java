@@ -20,7 +20,11 @@
  */
 package org.apache.bookkeeper.http;
 
+import java.io.IOException;
 import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BookKeeperAdmin;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.service.ErrorHttpService;
 import org.apache.bookkeeper.http.service.HeartbeatService;
@@ -28,6 +32,9 @@ import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
+import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.ZooKeeper;
 
 /**
  * Bookkeeper based implementation of HttpServiceProvider,
@@ -39,13 +46,24 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
     private final BookieServer bookieServer;
     private final AutoRecoveryMain autoRecovery;
     private final ServerConfiguration serverConf;
+    private final ZooKeeper zk;
+    private final BookKeeperAdmin bka;
 
     private BKHttpServiceProvider(BookieServer bookieServer,
                                   AutoRecoveryMain autoRecovery,
-                                  ServerConfiguration serverConf) {
+                                  ServerConfiguration serverConf)
+        throws IOException, KeeperException, InterruptedException {
         this.bookieServer = bookieServer;
         this.autoRecovery = autoRecovery;
         this.serverConf = serverConf;
+        this.zk = ZooKeeperClient.newBuilder()
+          .connectString(serverConf.getZkServers())
+          .sessionTimeoutMs(serverConf.getZkTimeout())
+          .build();
+
+        ClientConfiguration clientConfiguration = new ClientConfiguration(serverConf)
+          .setZkServers(serverConf.getZkServers());
+        this.bka = new BookKeeperAdmin(clientConfiguration);
     }
 
     private ServerConfiguration getServerConf() {
@@ -84,7 +102,8 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
             return this;
         }
 
-        public BKHttpServiceProvider build() {
+        public BKHttpServiceProvider build()
+            throws IOException, KeeperException, InterruptedException {
             return new BKHttpServiceProvider(
                 bookieServer,
                 autoRecovery,
@@ -94,211 +113,57 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
     }
 
     @Override
-    public HttpEndpointService provideHeartbeatService() {
-        return new HeartbeatService();
-    }
-
-    @Override
-    public HttpEndpointService provideConfigurationService() {
+    public HttpEndpointService provideHttpEndpointService(HttpServer.ApiType type) {
         ServerConfiguration configuration = getServerConf();
         if (configuration == null) {
             return new ErrorHttpService();
         }
-        return new ConfigurationService(configuration);
-    }
 
-    // TODO
+        switch (type) {
+            case HEARTBEAT:
+                return new HeartbeatService();
+            case SERVER_CONFIG:
+                return new ConfigurationService(configuration);
 
-    //
-    // ledger
-    //
+            // ledger
+            case DELETE_LEDGER:
+                return new DeleteLedgerService(configuration);
+            case LIST_LEDGER:
+                return new ListLedgerService(configuration, zk);
+            case GET_LEDGER_META:
+                return new GetLedgerMetaService(configuration, zk);
+            case READ_LEDGER_ENTRY:
+                return new ReadLedgerEntryService(configuration, bka);
 
-    /**
-     * Provide service for delete ledger api.
-     */
-    @Override
-    public HttpEndpointService provideDeleteLedgerService() {
-        ServerConfiguration configuration = getServerConf();
-        if (configuration == null) {
-            return new ErrorHttpService();
+            // bookie
+            case LIST_BOOKIES:
+                return new ListBookiesService(configuration, bka);
+            case LIST_BOOKIE_INFO:
+                return new ListBookieInfoService(configuration);
+            case LAST_LOG_MARK:
+                return new GetLastLogMarkService(configuration);
+            case LIST_DISK_FILE:
+                return new ListDiskFilesService(configuration);
+            case EXPAND_STORAGE:
+                return new ExpandStorageService(configuration, zk);
+
+            // autorecovery
+            case RECOVERY_BOOKIE:
+                return new RecoveryBookieService(configuration, bka);
+            case LIST_UNDER_REPLICATED_LEDGER:
+                return new ListUnderReplicatedLedgerService(configuration, zk);
+            case WHO_IS_AUDITOR:
+                return new WhoIsAuditorService(configuration, zk);
+            case TRIGGER_AUDIT:
+                return new TriggerAuditService(configuration, bka);
+            case LOST_BOOKIE_RECOVERY_DELAY:
+                return new LostBookieRecoveryDelayService(configuration, bka);
+            case DECOMMISSION:
+                return new DecommissionService(configuration, bka);
+
+            default:
+                return new ConfigurationService(configuration);
         }
-        return new DeleteLedgerService(configuration);
-    }
-
-    /**
-     * Provide service for list ledger api.
-     */
-    @Override
-    public HttpEndpointService provideListLedgerService() {
-        ServerConfiguration configuration = getServerConf();
-        if (configuration == null) {
-            return new ErrorHttpService();
-        }
-        return new ListLedgerService(configuration);
-    }
-
-    /**
-     * Provide service for delete ledger api.
-     */
-    @Override
-    public HttpEndpointService provideGetLedgerMetaService() {
-        ServerConfiguration configuration = getServerConf();
-        if (configuration == null) {
-            return new ErrorHttpService();
-        }
-        return new GetLedgerMetaService(configuration);
-    }
-
-    /**
-     * Provide service for read ledger entries api.
-     */
-    @Override
-    public HttpEndpointService provideReadLedgerEntryService() {
-        ServerConfiguration configuration = getServerConf();
-        if (configuration == null) {
-            return new ErrorHttpService();
-        }
-        return new ReadLedgerEntryService(configuration);
-    }
-
-    //
-    // bookie
-    //
-
-    /**
-     * Provide service for list bookies api.
-     */
-    @Override
-    public HttpEndpointService provideListBookiesService() {
-        ServerConfiguration configuration = getServerConf();
-        if (configuration == null) {
-            return new ErrorHttpService();
-        }
-        return new ListBookiesService(configuration);
-    }
-
-    /**
-     * Provide service for list bookie disk usage api.
-     */
-    @Override
-    public HttpEndpointService provideListBookieInfoService() {
-        ServerConfiguration configuration = getServerConf();
-        if (configuration == null) {
-            return new ErrorHttpService();
-        }
-        return new ListBookieInfoService(configuration);
-    }
-
-    /**
-     * Provide service for get last log mark api.
-     */
-    @Override
-    public HttpEndpointService provideGetLastLogMarkService() {
-        ServerConfiguration configuration = getServerConf();
-        if (configuration == null) {
-            return new ErrorHttpService();
-        }
-        return new GetLastLogMarkService(configuration);
-    }
-
-    /**
-     * Provide service for list bookie disk files api.
-     */
-    @Override
-    public HttpEndpointService provideListDiskFileService() {
-        ServerConfiguration configuration = getServerConf();
-        if (configuration == null) {
-            return new ErrorHttpService();
-        }
-        return new ListDiskFilesService(configuration);
-    }
-
-    /**
-     * Provide service for expand bookie storage api.
-     */
-    @Override
-    public HttpEndpointService provideExpandStorageService() {
-        ServerConfiguration configuration = getServerConf();
-        if (configuration == null) {
-            return new ErrorHttpService();
-        }
-        return new ExpandStorageService(configuration);
-    }
-
-    //
-    // autorecovery
-    //
-
-    /**
-     * Provide service for auto recovery failed bookie api.
-     */
-    @Override
-    public HttpEndpointService provideRecoveryBookieService() {
-        ServerConfiguration configuration = getServerConf();
-        if (configuration == null) {
-            return new ErrorHttpService();
-        }
-        return new RecoveryBookieService(configuration);
-    }
-
-    /**
-     * Provide service for get auditor api.
-     */
-    @Override
-    public HttpEndpointService provideWhoIsAuditorService() {
-        ServerConfiguration configuration = getServerConf();
-        if (configuration == null) {
-            return new ErrorHttpService();
-        }
-        return new WhoIsAuditorService(configuration);
-    }
-
-    /**
-     * Provide service for list under replicated ledger api.
-     */
-    @Override
-    public HttpEndpointService provideListUnderReplicatedLedgerService() {
-        ServerConfiguration configuration = getServerConf();
-        if (configuration == null) {
-            return new ErrorHttpService();
-        }
-        return new ListUnderReplicatedLedgerService(configuration);
-    }
-
-    /**
-     * Provide service for trigger audit api.
-     */
-    @Override
-    public HttpEndpointService provideTriggerAuditService() {
-        ServerConfiguration configuration = getServerConf();
-        if (configuration == null) {
-            return new ErrorHttpService();
-        }
-        return new TriggerAuditService(configuration);
-    }
-
-    /**
-     * Provide service for set/get lostBookieRecoveryDelay api.
-     */
-    @Override
-    public HttpEndpointService provideLostBookieRecoveryDelayService() {
-        ServerConfiguration configuration = getServerConf();
-        if (configuration == null) {
-            return new ErrorHttpService();
-        }
-        return new LostBookieRecoveryDelayService(configuration);
-    }
-
-    /**
-     * Provide service for decommission bookie api.
-     */
-    @Override
-    public HttpEndpointService provideDecommissionService() {
-        ServerConfiguration configuration = getServerConf();
-        if (configuration == null) {
-            return new ErrorHttpService();
-        }
-        return new DecommissionService(configuration);
     }
 
 }

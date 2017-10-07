@@ -33,7 +33,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * HttpEndpointService that handle Bookkeeper Configuration related http request.
+ * HttpEndpointService that handle Bookkeeper delete ledger related http request.
+ * The DELETE method will delete ledger with provided "ledger_id".
  */
 public class DeleteLedgerService implements HttpEndpointService {
 

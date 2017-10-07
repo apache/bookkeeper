@@ -33,23 +33,25 @@ import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.util.JsonUtil;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * HttpEndpointService that handle Bookkeeper Configuration related http request.
+ * HttpEndpointService that handle Bookkeeper get ledger metadata related http request.
+ * The GET method will get the ledger metadata for given "ledger_id".
  */
 public class GetLedgerMetaService implements HttpEndpointService {
 
     static final Logger LOG = LoggerFactory.getLogger(GetLedgerMetaService.class);
 
     protected ServerConfiguration conf;
+    protected ZooKeeper zk;
 
-    public GetLedgerMetaService(ServerConfiguration conf) {
+    public GetLedgerMetaService(ServerConfiguration conf, ZooKeeper zk) {
         Preconditions.checkNotNull(conf);
         this.conf = conf;
+        this.zk = zk;
     }
 
     @Override
@@ -60,10 +62,6 @@ public class GetLedgerMetaService implements HttpEndpointService {
         if (HttpServer.Method.GET == request.getMethod() && (params != null) && params.containsKey("ledger_id")) {
             Long ledgerId = Long.parseLong(params.get("ledger_id"));
 
-            ZooKeeper zk = ZooKeeperClient.newBuilder()
-              .connectString(conf.getZkServers())
-              .sessionTimeoutMs(conf.getZkTimeout())
-              .build();
             LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(conf, zk);
             LedgerManager manager = mFactory.newLedgerManager();
 
@@ -77,7 +75,6 @@ public class GetLedgerMetaService implements HttpEndpointService {
 
             manager.close();
             mFactory.uninitialize();
-            zk.close();
 
             String jsonResponse = JsonUtil.toJson(output);
             LOG.debug("output body:" + jsonResponse);

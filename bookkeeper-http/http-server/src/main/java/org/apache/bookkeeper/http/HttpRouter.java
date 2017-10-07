@@ -56,29 +56,31 @@ public abstract class HttpRouter<Handler> {
   private final Map<String, Handler> endpointHandlers = new HashMap<>();
 
   public HttpRouter(AbstractHttpHandlerFactory<Handler> handlerFactory) {
-    this.endpointHandlers.put(HEARTBEAT, handlerFactory.newHeartbeatHandler());
-    this.endpointHandlers.put(SERVER_CONFIG, handlerFactory.newConfigurationHandler());
+    this.endpointHandlers.put(HEARTBEAT, handlerFactory.newHandler(HttpServer.ApiType.HEARTBEAT));
+    this.endpointHandlers.put(SERVER_CONFIG, handlerFactory.newHandler(HttpServer.ApiType.SERVER_CONFIG));
 
     // ledger
-    this.endpointHandlers.put(DELETE_LEDGER, handlerFactory.newDeleteLedgerHandler());
-    this.endpointHandlers.put(LIST_LEDGER, handlerFactory.newListLedgerHandler());
-    this.endpointHandlers.put(GET_LEDGER_META, handlerFactory.newGetLedgerMetaHandler());
-    this.endpointHandlers.put(READ_LEDGER_ENTRY, handlerFactory.newReadLedgerEntryHandler());
+    this.endpointHandlers.put(DELETE_LEDGER, handlerFactory.newHandler(HttpServer.ApiType.DELETE_LEDGER));
+    this.endpointHandlers.put(LIST_LEDGER, handlerFactory.newHandler(HttpServer.ApiType.LIST_LEDGER));
+    this.endpointHandlers.put(GET_LEDGER_META, handlerFactory.newHandler(HttpServer.ApiType.GET_LEDGER_META));
+    this.endpointHandlers.put(READ_LEDGER_ENTRY, handlerFactory.newHandler(HttpServer.ApiType.READ_LEDGER_ENTRY));
 
     // bookie
-    this.endpointHandlers.put(LIST_BOOKIES, handlerFactory.newListBookiesHandler());
-    this.endpointHandlers.put(LIST_BOOKIE_INFO, handlerFactory.newListBookieInfoHandler());
-    this.endpointHandlers.put(LAST_LOG_MARK, handlerFactory.newGetLastLogMarkHandler());
-    this.endpointHandlers.put(LIST_DISK_FILE, handlerFactory.newListDiskFileHandler());
-    this.endpointHandlers.put(EXPAND_STORAGE, handlerFactory.newExpandStorageHandler());
+    this.endpointHandlers.put(LIST_BOOKIES, handlerFactory.newHandler(HttpServer.ApiType.LIST_BOOKIES));
+    this.endpointHandlers.put(LIST_BOOKIE_INFO, handlerFactory.newHandler(HttpServer.ApiType.LIST_BOOKIE_INFO));
+    this.endpointHandlers.put(LAST_LOG_MARK, handlerFactory.newHandler(HttpServer.ApiType.LAST_LOG_MARK));
+    this.endpointHandlers.put(LIST_DISK_FILE, handlerFactory.newHandler(HttpServer.ApiType.LIST_DISK_FILE));
+    this.endpointHandlers.put(EXPAND_STORAGE, handlerFactory.newHandler(HttpServer.ApiType.EXPAND_STORAGE));
 
     // autorecovery
-    this.endpointHandlers.put(RECOVERY_BOOKIE, handlerFactory.newRecoveryBookieHandler());
-    this.endpointHandlers.put(LIST_UNDER_REPLICATED_LEDGER, handlerFactory.newListUnderReplicatedLedgerHandler());
-    this.endpointHandlers.put(WHO_IS_AUDITOR, handlerFactory.newWhoIsAuditorHandler());
-    this.endpointHandlers.put(TRIGGER_AUDIT, handlerFactory.newTriggerAuditHandler());
-    this.endpointHandlers.put(LOST_BOOKIE_RECOVERY_DELAY, handlerFactory.newLostBookieRecoveryDelayHandler());
-    this.endpointHandlers.put(DECOMMISSION, handlerFactory.newDecommissionHandler());
+    this.endpointHandlers.put(RECOVERY_BOOKIE, handlerFactory.newHandler(HttpServer.ApiType.RECOVERY_BOOKIE));
+    this.endpointHandlers.put(LIST_UNDER_REPLICATED_LEDGER,
+      handlerFactory.newHandler(HttpServer.ApiType.LIST_UNDER_REPLICATED_LEDGER));
+    this.endpointHandlers.put(WHO_IS_AUDITOR, handlerFactory.newHandler(HttpServer.ApiType.WHO_IS_AUDITOR));
+    this.endpointHandlers.put(TRIGGER_AUDIT, handlerFactory.newHandler(HttpServer.ApiType.TRIGGER_AUDIT));
+    this.endpointHandlers.put(LOST_BOOKIE_RECOVERY_DELAY,
+      handlerFactory.newHandler(HttpServer.ApiType.LOST_BOOKIE_RECOVERY_DELAY));
+    this.endpointHandlers.put(DECOMMISSION, handlerFactory.newHandler(HttpServer.ApiType.DECOMMISSION));
   }
 
   /**

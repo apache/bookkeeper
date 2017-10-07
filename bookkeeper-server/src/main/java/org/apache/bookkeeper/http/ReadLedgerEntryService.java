@@ -28,7 +28,6 @@ import java.util.Iterator;
 import java.util.Map;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.LedgerEntry;
-import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
@@ -38,18 +37,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * HttpEndpointService that handle Bookkeeper Configuration related http request.
+ * HttpEndpointService that handle Bookkeeper read ledger entry related http request.
+ *
+ * The GET method will print all entry content of wanted entry.
+ * User should set wanted "ledger_id", and can choose only print out wanted entry
+ * by set parameter "start_entry_id", "end_entry_id" and "page".
  */
 public class ReadLedgerEntryService implements HttpEndpointService {
 
     static final Logger LOG = LoggerFactory.getLogger(ReadLedgerEntryService.class);
 
     protected ServerConfiguration conf;
+    protected BookKeeperAdmin bka;
 
-    public ReadLedgerEntryService(ServerConfiguration conf) {
+    public ReadLedgerEntryService(ServerConfiguration conf, BookKeeperAdmin bka) {
         Preconditions.checkNotNull(conf);
         this.conf = conf;
+        this.bka = bka;
     }
+
+    static final Long ENTRIES_PER_PAE = 1000L;
 
     @Override
     public HttpServiceResponse handle(HttpServiceRequest request) throws Exception {
@@ -67,20 +74,36 @@ public class ReadLedgerEntryService implements HttpEndpointService {
                 endEntryId = Long.parseLong(params.get("end_entry_id"));
             }
 
-            ClientConfiguration clientConfiguration = new ClientConfiguration(conf)
-              .setZkServers(conf.getZkServers());
-
             // output <entryid: entry_content>
             Map<String, String> output = Maps.newHashMap();
-            BookKeeperAdmin bka = new BookKeeperAdmin(clientConfiguration);
+
+            // Page index should start from 1;
+            int pageIndex = params.containsKey("page") ? Integer.parseInt(params.get("page")) : -1;
+            if(pageIndex > 0) {
+                // start and end ledger index for wanted page.
+                Long startIndexInPage = (pageIndex - 1) * ENTRIES_PER_PAE;
+                Long endIndexInPage = startIndexInPage + ENTRIES_PER_PAE - 1;
+
+                if ((startEntryId == 0L) || (startEntryId < startIndexInPage)) {
+                    startEntryId = startIndexInPage;
+                }
+                if ((endEntryId == -1L) || (endEntryId > endIndexInPage)) {
+                    endEntryId = endIndexInPage;
+                }
+                output.put("Entries for page: ", Integer.valueOf(pageIndex).toString());
+            }
+
+            if (endEntryId != -1L && startEntryId > endEntryId) {
+                response.setCode(HttpServer.StatusCode.INTERNAL_ERROR);
+                response.setBody("parameter for start_entry_id: " + startEntryId
+                    + " and end_entry_id: " + endEntryId + " conflict with page=" + pageIndex);
+                return response;
+            }
+
             Iterator<LedgerEntry> entries = bka.readEntries(ledgerId, startEntryId, endEntryId).iterator();
             while (entries.hasNext()) {
                 LedgerEntry entry = entries.next();
                 output.put(Long.valueOf(entry.getEntryId()).toString(), new String(entry.getEntry(), US_ASCII));
-            }
-
-            if (bka != null) {
-                bka.close();
             }
 
             String jsonResponse = JsonUtil.toJson(output);

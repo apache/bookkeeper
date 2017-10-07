@@ -287,7 +287,7 @@ public class BookieShell implements Tool {
 
         public RecoverCmd() {
             super(CMD_RECOVER);
-            opts.addOption("d", "delete_cookie", false, "Delete cookie node for the bookie.");
+            opts.addOption("d", "deleteCookie", false, "Delete cookie node for the bookie.");
         }
 
         @Override
@@ -302,7 +302,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "recover [-delete_cookie] <bookieSrc> [bookieDest]";
+            return "recover [-deleteCookie] <bookieSrc> [bookieDest]";
         }
 
         @Override

@@ -22,7 +22,6 @@ package org.apache.bookkeeper.http;
 
 import com.google.common.base.Preconditions;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
-import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
@@ -31,17 +30,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * HttpEndpointService that handle Bookkeeper Configuration related http request.
+ * HttpEndpointService that handle Bookkeeper trigger audit related http request.
+ * The PUT method will force trigger the audit by resetting the lostBookieRecoveryDelay.
  */
 public class TriggerAuditService implements HttpEndpointService {
 
     static final Logger LOG = LoggerFactory.getLogger(TriggerAuditService.class);
 
     protected ServerConfiguration conf;
+    protected BookKeeperAdmin bka;
 
-    public TriggerAuditService(ServerConfiguration conf) {
+    public TriggerAuditService(ServerConfiguration conf, BookKeeperAdmin bka) {
         Preconditions.checkNotNull(conf);
         this.conf = conf;
+        this.bka = bka;
     }
 
     /*
@@ -52,13 +54,10 @@ public class TriggerAuditService implements HttpEndpointService {
         HttpServiceResponse response = new HttpServiceResponse();
 
         if (HttpServer.Method.PUT == request.getMethod()) {
-            ClientConfiguration adminConf = new ClientConfiguration(conf);
-            BookKeeperAdmin admin = new BookKeeperAdmin(adminConf);
-
             try {
-                admin.triggerAudit();
+                bka.triggerAudit();
             } catch (Exception e) {
-                e.printStackTrace();
+                LOG.error("Meet Exception: ", e);
                 response.setCode(HttpServer.StatusCode.NOT_FOUND);
                 response.setBody("Exception when do operation." + e.getMessage());
                 return response;

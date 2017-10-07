@@ -33,24 +33,28 @@ import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.util.JsonUtil;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.commons.lang.StringUtils;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * HttpEndpointService that handle Bookkeeper Configuration related http request.
+ * HttpEndpointService that handle Bookkeeper list under replicated ledger related http request.
+ *
+ * The GET method will list all ledger_ids of under replicated ledger.
+ * User can filer wanted ledger by set parameter "missingreplica" and "excludingmissingreplica"
  */
 public class ListUnderReplicatedLedgerService implements HttpEndpointService {
 
     static final Logger LOG = LoggerFactory.getLogger(ListUnderReplicatedLedgerService.class);
 
     protected ServerConfiguration conf;
+    protected ZooKeeper zk;
 
-    public ListUnderReplicatedLedgerService(ServerConfiguration conf) {
+    public ListUnderReplicatedLedgerService(ServerConfiguration conf, ZooKeeper zk) {
         Preconditions.checkNotNull(conf);
         this.conf = conf;
+        this.zk = zk;
     }
 
     /*
@@ -85,11 +89,6 @@ public class ListUnderReplicatedLedgerService implements HttpEndpointService {
                 predicate = replicasList -> !replicasList.contains(excludingBookieId);
             }
 
-            ZooKeeper zk = ZooKeeperClient.newBuilder()
-                .connectString(conf.getZkServers())
-                .sessionTimeoutMs(conf.getZkTimeout())
-                .build();
-
             try {
                 List<Long> outputLedgers = Lists.newArrayList();
                 LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(conf, zk);
@@ -99,7 +98,6 @@ public class ListUnderReplicatedLedgerService implements HttpEndpointService {
                 while (iter.hasNext()) {
                     outputLedgers.add(iter.next());
                 }
-                zk.close();
                 if (outputLedgers.isEmpty()) {
                     response.setCode(HttpServer.StatusCode.NOT_FOUND);
                     response.setBody("No under replicated ledgers found");
@@ -112,7 +110,7 @@ public class ListUnderReplicatedLedgerService implements HttpEndpointService {
                     return response;
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                LOG.error("Meet Exception: ", e);
                 response.setCode(HttpServer.StatusCode.NOT_FOUND);
                 response.setBody("Exception when get." + e.getMessage());
                 return response;

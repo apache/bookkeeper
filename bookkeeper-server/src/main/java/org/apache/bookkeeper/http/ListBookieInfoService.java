@@ -39,7 +39,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * HttpEndpointService that handle Bookkeeper Configuration related http request.
+ * HttpEndpointService that handle Bookkeeper list bookie info related http request.
+ *
+ * The GET method will get the disk usage of all bookies in this bookkeeper cluster.
+ * Output would be like this:
+ *  {
+ *    "bookieAddress" : {free: xxx, total: xxx}",
+ *    "bookieAddress" : {free: xxx, total: xxx},
+ *    ...
+ *    "clusterInfo" : {total_free: xxx, total: xxx}"
+ *  }
  */
 public class ListBookieInfoService implements HttpEndpointService {
 

@@ -36,7 +36,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * HttpEndpointService that handle Bookkeeper Configuration related http request.
+ * HttpEndpointService that handle Bookkeeper list disk files related http request.
+ *
+ * The GET method will list all bookie files of type journal|entrylog|index in this bookie.
+ * The output would be like this:
+ *  {
+ *    "journal files" : "filename1 \t ...",
+ *    "entrylog files" : "filename1 \t ...",
+ *    "index files" : "filename1 \t ..."
+ *  }
  */
 public class ListDiskFilesService implements HttpEndpointService {
 

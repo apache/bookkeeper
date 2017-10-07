@@ -24,6 +24,7 @@ import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.zookeeper.KeeperException;
 
 /**
  * A {@link org.apache.bookkeeper.common.component.LifecycleComponent} that starts the core bookie server.
@@ -49,7 +50,7 @@ public class BookieService extends AbstractLifecycleComponent<BookieConfiguratio
     protected void doStart() {
         try {
             this.server.start();
-        } catch (IOException | UnavailableException | InterruptedException e) {
+        } catch (IOException | UnavailableException | InterruptedException | KeeperException e) {
             throw new RuntimeException("Failed to start bookie server", e);
         }
     }
