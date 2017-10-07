@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.http;
 
+import org.apache.bookkeeper.http.service.HeartbeatService;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.NullHttpService;
 
@@ -38,6 +39,9 @@ public class NullHttpServiceProvider implements HttpServiceProvider {
 
     @Override
     public HttpEndpointService provideHttpEndpointService(HttpServer.ApiType type) {
-      return NULL_HTTP_SERVICE;
+        if (type == HttpServer.ApiType.HEARTBEAT) {
+            return new HeartbeatService();
+        }
+        return NULL_HTTP_SERVICE;
     }
 }
