@@ -195,12 +195,12 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         //3, parameter: type=ro&print_hostnames=true, should print ro bookies with hostname
         // turn bookie 1 into ro, get it
         setBookieToReadOnly(getBookie(1));
-        LOG.info("turn all 6 bookies into RO");
         HashMap<String, String> params3 = Maps.newHashMap();
         params3.put("type", "ro");
         params3.put("print_hostnames", "true");
         HttpServiceRequest request3 = new HttpServiceRequest(null, HttpServer.Method.GET, params3);
         HttpServiceResponse response3 = listBookiesService.handle(request3);
+        LOG.info("Turn 1 bookies into RO, should get it in this request");
         assertEquals(HttpServer.StatusCode.OK.getValue(), response3.getStatusCode());
         // get response , expected get 1 ro bookies, and with hostname
         @SuppressWarnings("unchecked")

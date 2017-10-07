@@ -78,7 +78,7 @@ public class ReadLedgerEntryService implements HttpEndpointService {
             Map<String, String> output = Maps.newHashMap();
 
             // Page index should start from 1;
-            int pageIndex = params.containsKey("page") ? Integer.parseInt(params.get("page")) : -1;
+            Integer pageIndex = params.containsKey("page") ? Integer.parseInt(params.get("page")) : -1;
             if(pageIndex > 0) {
                 // start and end ledger index for wanted page.
                 Long startIndexInPage = (pageIndex - 1) * ENTRIES_PER_PAE;
@@ -90,7 +90,7 @@ public class ReadLedgerEntryService implements HttpEndpointService {
                 if ((endEntryId == -1L) || (endEntryId > endIndexInPage)) {
                     endEntryId = endIndexInPage;
                 }
-                output.put("Entries for page: ", Integer.valueOf(pageIndex).toString());
+                output.put("Entries for page: ", pageIndex.toString());
             }
 
             if (endEntryId != -1L && startEntryId > endEntryId) {

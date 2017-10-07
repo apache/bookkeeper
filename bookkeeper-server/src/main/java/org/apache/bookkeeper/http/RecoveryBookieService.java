@@ -129,7 +129,7 @@ public class RecoveryBookieService implements HttpEndpointService {
                 }
             };
 
-            thread.run();
+            thread.start();
             response.setCode(HttpServer.StatusCode.OK);
             response.setBody("Success send recovery request command.");
             return response;
