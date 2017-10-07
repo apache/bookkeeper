@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,16 +15,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.bookkeeper.util;
+
+package org.apache.bookkeeper.common.util;
 
 import java.util.function.Consumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public abstract class SafeRunnable implements org.apache.bookkeeper.common.util.SafeRunnable {
+/**
+ * A runnable that catches runtime exceptions.
+ */
+@FunctionalInterface
+public interface SafeRunnable extends Runnable {
+
+    Logger LOGGER = LoggerFactory.getLogger(SafeRunnable.class);
+
+    @Override
+    default void run() {
+        try {
+            safeRun();
+        } catch (Throwable t) {
+            LOGGER.error("Unexpected throwable caught ", t);
+        }
+    }
+
+    void safeRun();
 
     /**
-     * Utility method to use SafeRunnable from lambdas
-     * <p>
-     * Eg:
+     * Utility method to use SafeRunnable from lambdas.
+     *
+     * <p>Eg:
      * <pre>
      * <code>
      * executor.submit(SafeRunnable.safeRun(() -> {
@@ -33,7 +53,7 @@ public abstract class SafeRunnable implements org.apache.bookkeeper.common.util.
      * </code>
      * </pre>
      */
-    public static SafeRunnable safeRun(Runnable runnable) {
+    static SafeRunnable safeRun(Runnable runnable) {
         return new SafeRunnable() {
             @Override
             public void safeRun() {
@@ -44,9 +64,9 @@ public abstract class SafeRunnable implements org.apache.bookkeeper.common.util.
 
     /**
      * Utility method to use SafeRunnable from lambdas with
-     * a custom exception handler
-     * <p>
-     * Eg:
+     * a custom exception handler.
+     *
+     * <p>Eg:
      * <pre>
      * <code>
      * executor.submit(SafeRunnable.safeRun(() -> {
@@ -62,16 +82,13 @@ public abstract class SafeRunnable implements org.apache.bookkeeper.common.util.
      *            handler that will be called when there are any exception
      * @return
      */
-    public static SafeRunnable safeRun(Runnable runnable, Consumer<Throwable> exceptionHandler) {
-        return new SafeRunnable() {
-            @Override
-            public void safeRun() {
-                try {
-                    runnable.run();
-                } catch (Throwable t) {
-                    exceptionHandler.accept(t);
-                    throw t;
-                }
+    static SafeRunnable safeRun(Runnable runnable, Consumer<Throwable> exceptionHandler) {
+        return () -> {
+            try {
+                runnable.run();
+            } catch (Throwable t) {
+                exceptionHandler.accept(t);
+                throw t;
             }
         };
     }

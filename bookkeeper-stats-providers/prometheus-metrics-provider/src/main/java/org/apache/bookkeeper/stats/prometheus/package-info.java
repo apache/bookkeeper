@@ -15,6 +15,6 @@
  * the License.
  */
 /**
- * A stats provider implementation based on {@link Prometheus}.
+ * A stats provider implementation based on {@link https://prometheus.io/}.
  */
-package org.apache.bookkeeper.stats;
+package org.apache.bookkeeper.stats.prometheus;

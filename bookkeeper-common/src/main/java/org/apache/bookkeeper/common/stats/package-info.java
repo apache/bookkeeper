@@ -15,12 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.bookkeeper.util;
-
 /**
- * Provides misc math functions that don't come standard
- *
- * @Deprecated since 4.6.0, in favor of using {@link org.apache.bookkeeper.common.util.MathUtils}.
+ * Stats Related Utils.
  */
-public class MathUtils extends org.apache.bookkeeper.common.util.MathUtils {
-}
+package org.apache.bookkeeper.common.stats;

@@ -268,45 +268,39 @@ public class Main {
      * @return lifecycle stack
      */
     private static LifecycleComponent buildBookieServer(BookieConfiguration conf) throws Exception {
-        LifecycleComponentStack.Builder serverBuilder = LifecycleComponentStack.newBuilder();
+        LifecycleComponentStack.Builder serverBuilder = LifecycleComponentStack.newBuilder().withName("bookie-server");
 
-        try {
-            // 1. build stats provider
-            StatsProviderService statsProviderService =
-                new StatsProviderService(conf);
-            StatsLogger rootStatsLogger = statsProviderService.getStatsProvider().getStatsLogger("");
+        // 1. build stats provider
+        StatsProviderService statsProviderService =
+            new StatsProviderService(conf);
+        StatsLogger rootStatsLogger = statsProviderService.getStatsProvider().getStatsLogger("");
 
-            serverBuilder.addComponent(statsProviderService);
+        serverBuilder.addComponent(statsProviderService);
 
-            // 2. build bookie server
-            BookieService bookieService =
-                new BookieService(conf, rootStatsLogger);
+        // 2. build bookie server
+        BookieService bookieService =
+            new BookieService(conf, rootStatsLogger);
 
-            serverBuilder.addComponent(bookieService);
+        serverBuilder.addComponent(bookieService);
 
-            // 3. build auto recovery
-            if (conf.getServerConf().isAutoRecoveryDaemonEnabled()) {
-                AutoRecoveryService autoRecoveryService =
-                    new AutoRecoveryService(conf, rootStatsLogger.scope(REPLICATION_SCOPE));
+        // 3. build auto recovery
+        if (conf.getServerConf().isAutoRecoveryDaemonEnabled()) {
+            AutoRecoveryService autoRecoveryService =
+                new AutoRecoveryService(conf, rootStatsLogger.scope(REPLICATION_SCOPE));
 
-                serverBuilder.addComponent(autoRecoveryService);
-            }
+            serverBuilder.addComponent(autoRecoveryService);
+        }
 
-            // 4. build http service
-            if (conf.getServerConf().isHttpServerEnabled()) {
-                BKHttpServiceProvider provider = new BKHttpServiceProvider.Builder()
-                    .setBookieServer(bookieService.getServer())
-                    .setServerConfiguration(conf.getServerConf())
-                    .build();
-                HttpService httpService =
-                    new HttpService(provider, conf, rootStatsLogger);
+        // 4. build http service
+        if (conf.getServerConf().isHttpServerEnabled()) {
+            BKHttpServiceProvider provider = new BKHttpServiceProvider.Builder()
+                .setBookieServer(bookieService.getServer())
+                .setServerConfiguration(conf.getServerConf())
+                .build();
+            HttpService httpService =
+                new HttpService(provider, conf, rootStatsLogger);
 
-                serverBuilder.addComponent(httpService);
-            }
-        } catch (Exception e) {
-            LifecycleComponent component = serverBuilder.build();
-            component.close();
-            throw e;
+            serverBuilder.addComponent(httpService);
         }
 
         return serverBuilder.build();

@@ -14,11 +14,12 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.bookkeeper.stats;
+package org.apache.bookkeeper.stats.prometheus;
 
 import io.prometheus.client.Collector;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
+import org.apache.bookkeeper.stats.Counter;
 
 /**
  * A {@link Counter} implementation based on <i>Prometheus</i> metrics library.

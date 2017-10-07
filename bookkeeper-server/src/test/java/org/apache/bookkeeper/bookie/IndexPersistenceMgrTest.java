@@ -32,6 +32,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.util.Observable;
+import java.util.Observer;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static org.junit.Assert.*;
@@ -107,7 +109,7 @@ public class IndexPersistenceMgrTest {
     }
 
     private void evictFileInfoTest(boolean createFile) throws Exception {
-        IndexPersistenceMgr indexPersistenceMgr = createIndexPersistenceManager(5);
+        IndexPersistenceMgr indexPersistenceMgr = createIndexPersistenceManager(2);
         try {
             long lid = 99999L;
             byte[] masterKey = "evict-file-info".getBytes(UTF_8);
@@ -126,6 +128,140 @@ public class IndexPersistenceMgrTest {
             assertTrue("Fence bit should be persisted", fi.isFenced());
         } finally {
             indexPersistenceMgr.close();
+        }
+    }
+
+    final long lid = 1L;
+    final byte[] masterKey = "write".getBytes();
+
+    @Test
+    public void testGetFileInfoReadBeforeWrite() throws Exception {
+        IndexPersistenceMgr indexPersistenceMgr = null;
+        try {
+            indexPersistenceMgr = createIndexPersistenceManager(1);
+            // get the file info for read
+            try {
+                indexPersistenceMgr.getFileInfo(lid, null);
+                fail("Should fail get file info for reading if the file doesn't exist");
+            } catch (Bookie.NoLedgerException nle) {
+                // exepcted
+            }
+            assertEquals(0, indexPersistenceMgr.writeFileInfoCache.size());
+            assertEquals(0, indexPersistenceMgr.readFileInfoCache.size());
+
+            FileInfo writeFileInfo = indexPersistenceMgr.getFileInfo(lid, masterKey);
+            assertEquals(3, writeFileInfo.getUseCount());
+            assertEquals(1, indexPersistenceMgr.writeFileInfoCache.size());
+            assertEquals(1, indexPersistenceMgr.readFileInfoCache.size());
+            writeFileInfo.release();
+            assertEquals(2, writeFileInfo.getUseCount());
+        } finally {
+            if (null != indexPersistenceMgr) {
+                indexPersistenceMgr.close();
+            }
+        }
+    }
+
+    @Test
+    public void testGetFileInfoWriteBeforeRead() throws Exception {
+        IndexPersistenceMgr indexPersistenceMgr = null;
+        try {
+            indexPersistenceMgr = createIndexPersistenceManager(1);
+
+            FileInfo writeFileInfo = indexPersistenceMgr.getFileInfo(lid, masterKey);
+            assertEquals(3, writeFileInfo.getUseCount());
+            assertEquals(1, indexPersistenceMgr.writeFileInfoCache.size());
+            assertEquals(1, indexPersistenceMgr.readFileInfoCache.size());
+            writeFileInfo.release();
+
+            FileInfo readFileInfo = indexPersistenceMgr.getFileInfo(lid, null);
+            assertEquals(3, readFileInfo.getUseCount());
+            assertEquals(1, indexPersistenceMgr.writeFileInfoCache.size());
+            assertEquals(1, indexPersistenceMgr.readFileInfoCache.size());
+            readFileInfo.release();
+            assertEquals(2, writeFileInfo.getUseCount());
+            assertEquals(2, readFileInfo.getUseCount());
+        } finally {
+            if (null != indexPersistenceMgr) {
+                indexPersistenceMgr.close();
+            }
+        }
+    }
+
+    @Test
+    public void testReadFileInfoCacheEviction() throws Exception {
+        IndexPersistenceMgr indexPersistenceMgr = null;
+        try {
+            indexPersistenceMgr = createIndexPersistenceManager(1);
+            for (int i = 0; i < 3; i++) {
+                FileInfo fileInfo = indexPersistenceMgr.getFileInfo(lid+i, masterKey);
+                // We need to make sure index file is created, otherwise the test case can be flaky
+                fileInfo.checkOpen(true);
+            }
+
+            indexPersistenceMgr.getFileInfo(lid, masterKey);
+            assertEquals(1, indexPersistenceMgr.writeFileInfoCache.size());
+            assertEquals(2, indexPersistenceMgr.readFileInfoCache.size());
+
+            // trigger file info eviction on read file info cache
+            for (int i = 1; i <= 2; i++) {
+                indexPersistenceMgr.getFileInfo(lid + i, null);
+            }
+            assertEquals(1, indexPersistenceMgr.writeFileInfoCache.size());
+            assertEquals(2, indexPersistenceMgr.readFileInfoCache.size());
+
+            FileInfo fileInfo = indexPersistenceMgr.writeFileInfoCache.asMap().get(lid);
+            assertNotNull(fileInfo);
+            assertEquals(2, fileInfo.getUseCount());
+            fileInfo = indexPersistenceMgr.writeFileInfoCache.asMap().get(lid+1);
+            assertNull(fileInfo);
+            fileInfo = indexPersistenceMgr.writeFileInfoCache.asMap().get(lid+2);
+            assertNull(fileInfo);
+            fileInfo = indexPersistenceMgr.readFileInfoCache.asMap().get(lid);
+            assertNull(fileInfo);
+            fileInfo = indexPersistenceMgr.readFileInfoCache.asMap().get(lid+1);
+            assertNotNull(fileInfo);
+            assertEquals(2, fileInfo.getUseCount());
+            fileInfo = indexPersistenceMgr.readFileInfoCache.asMap().get(lid+2);
+            assertNotNull(fileInfo);
+            assertEquals(2, fileInfo.getUseCount());
+        } finally {
+            if (null != indexPersistenceMgr) {
+                indexPersistenceMgr.close();
+            }
+        }
+    }
+
+    @Test
+    public void testEvictionShouldNotAffectLongPollRead() throws Exception {
+        IndexPersistenceMgr indexPersistenceMgr = null;
+        Observer observer = (obs, obj) -> {
+            //no-ops
+        };
+        try {
+            indexPersistenceMgr = createIndexPersistenceManager(1);
+            indexPersistenceMgr.getFileInfo(lid, masterKey);
+            indexPersistenceMgr.getFileInfo(lid, null);
+            indexPersistenceMgr.updateLastAddConfirmed(lid, 1);
+            Observable observable = indexPersistenceMgr.waitForLastAddConfirmedUpdate(lid, 1, observer);
+            // observer shouldn't be null because ledger is not evicted or closed
+            assertNotNull("Observer should not be null", observable);
+            // now evict ledger 1 from write cache
+            indexPersistenceMgr.getFileInfo(lid + 1, masterKey);
+            observable = indexPersistenceMgr.waitForLastAddConfirmedUpdate(lid, 1, observer);
+            // even if ledger 1 is evicted from write cache, observer still shouldn't be null
+            assertNotNull("Observer should not be null", observable);
+            // now evict ledger 1 from read cache
+            indexPersistenceMgr.getFileInfo(lid + 2, masterKey);
+            indexPersistenceMgr.getFileInfo(lid + 2, null);
+            // even if ledger 1 is evicted from both cache, observer still shouldn't be null because it
+            // will create a new FileInfo when cache miss
+            observable = indexPersistenceMgr.waitForLastAddConfirmedUpdate(lid, 1, observer);
+            assertNotNull("Observer should not be null", observable);
+        } finally {
+            if (null != indexPersistenceMgr) {
+                indexPersistenceMgr.close();
+            }
         }
     }
 }
