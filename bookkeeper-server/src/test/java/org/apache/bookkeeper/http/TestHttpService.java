@@ -195,18 +195,31 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         //3, parameter: type=ro&print_hostnames=true, should print ro bookies with hostname
         // turn bookie 1 into ro, get it
         setBookieToReadOnly(getBookie(1));
+        Thread.sleep(200);
         HashMap<String, String> params3 = Maps.newHashMap();
         params3.put("type", "ro");
         params3.put("print_hostnames", "true");
         HttpServiceRequest request3 = new HttpServiceRequest(null, HttpServer.Method.GET, params3);
         HttpServiceResponse response3 = listBookiesService.handle(request3);
-        LOG.info("Turn 1 bookies into RO, should get it in this request");
+        //LOG.info("Turn 1 bookies into RO, should get it in this request");
         assertEquals(HttpServer.StatusCode.OK.getValue(), response3.getStatusCode());
         // get response , expected get 1 ro bookies, and with hostname
         @SuppressWarnings("unchecked")
         HashMap<String, String> respBody3 = JsonUtil.fromJson(response3.getBody(), HashMap.class);
         assertEquals(1, respBody3.size());
         assertEquals(true, respBody3.containsKey(getBookie(1).toString()));
+
+        // get other 5 rw bookies.
+        HashMap<String, String> params4 = Maps.newHashMap();
+        params4.put("type", "rw");
+        params4.put("print_hostnames", "true");
+        HttpServiceRequest request4 = new HttpServiceRequest(null, HttpServer.Method.GET, params4);
+        HttpServiceResponse response4 = listBookiesService.handle(request4);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response4.getStatusCode());
+        @SuppressWarnings("unchecked")
+        HashMap<String, String> respBody4 = JsonUtil.fromJson(response4.getBody(), HashMap.class);
+        assertEquals(5, respBody4.size());
+        assertEquals(true, respBody4.containsKey(getBookie(2).toString()));
     }
 
     /**
