@@ -77,14 +77,13 @@ public class DecommissionService implements HttpEndpointService {
                     BookieSocketAddress bookieSrc = new BookieSocketAddress(
                       bookieSrcString[0], Integer.parseInt(bookieSrcString[1]));
 
-                    executor.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                bka.decommissionBookie(bookieSrc);
-                            } catch (Exception e) {
-                                LOG.error("Error handling decommissionBookie: {} with exception {}", bookieSrc, e);
-                            }
+                    executor.execute(() -> {
+                        try {
+                            LOG.info("Start decommissioning bookie.");
+                            bka.decommissionBookie(bookieSrc);
+                            LOG.info("Complete decommissioning bookie.");
+                        } catch (Exception e) {
+                            LOG.error("Error handling decommissionBookie: {} with exception {}", bookieSrc, e);
                         }
                     });
 
@@ -92,7 +91,7 @@ public class DecommissionService implements HttpEndpointService {
                     response.setBody("Success send decommission Bookie command " + bookieSrc.toString());
                     return response;
                 } catch (Exception e) {
-                    LOG.error("Exception occurred while decommission bookie: ", e);
+                    LOG.error("Exception occurred while decommissioning bookie: ", e);
                     response.setCode(HttpServer.StatusCode.NOT_FOUND);
                     response.setBody("Exception when send decommission command." + e.getMessage());
                     return response;

@@ -117,18 +117,17 @@ public class RecoveryBookieService implements HttpEndpointService {
                 bookieDest = null;
             }
             boolean deleteCookie = requestJsonBody.delete_cookie;
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        bka.recoverBookieData(bookieSrc, bookieDest);
-                        if (deleteCookie) {
-                            Versioned<Cookie> cookie = Cookie.readFromZooKeeper(bka.getZooKeeper(), adminConf, bookieSrc);
-                            cookie.getValue().deleteFromZooKeeper(bka.getZooKeeper(), adminConf, bookieSrc, cookie.getVersion());
-                        }
-                    } catch (Exception e) {
-                        LOG.error("Exception occurred while recovering bookie", e);
+            executor.execute(() -> {
+                try {
+                    LOG.info("Start recovering bookie.");
+                    bka.recoverBookieData(bookieSrc, bookieDest);
+                    if (deleteCookie) {
+                        Versioned<Cookie> cookie = Cookie.readFromZooKeeper(bka.getZooKeeper(), adminConf, bookieSrc);
+                        cookie.getValue().deleteFromZooKeeper(bka.getZooKeeper(), adminConf, bookieSrc, cookie.getVersion());
                     }
+                    LOG.info("Complete recovering bookie");
+                } catch (Exception e) {
+                    LOG.error("Exception occurred while recovering bookie", e);
                 }
             });
 
