@@ -63,4 +63,5 @@ public interface BookKeeperClientStats {
     public final static String CHANNEL_TIMEOUT_READ_LAC = "TIMEOUT_READ_LAC";
     public final static String TIMEOUT_GET_BOOKIE_INFO = "TIMEOUT_GET_BOOKIE_INFO";
     public final static String CHANNEL_START_TLS_OP = "START_TLS";
+    public final static String CHANNEL_TIMEOUT_START_TLS_OP = "TIMEOUT_START_TLS";
 }
