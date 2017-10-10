@@ -154,7 +154,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
         if (!callbackDone.get()) {
             startEntryToRead = endEntryToRead + 1;
             endEntryToRead = endEntryToRead + readBatchSize;
-            new RecoveryReadOp(lh, lh.bk.scheduler, startEntryToRead, endEntryToRead, this, null)
+            new RecoveryReadOp(lh, lh.bk.getScheduler(), startEntryToRead, endEntryToRead, this, null)
                     .parallelRead(parallelRead).initiate();
         }
     }
