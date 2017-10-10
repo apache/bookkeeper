@@ -25,6 +25,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.Router;
 
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -92,6 +93,11 @@ public class VertxHttpServer implements HttpServer {
     @Override
     public void stopServer() {
         CountDownLatch shutdownLatch = new CountDownLatch(1);
+        try {
+            httpServiceProvider.close();
+        } catch (IOException ioe) {
+            LOG.error("Error while close httpServiceProvider", ioe);
+        }
         vertx.close(asyncResult -> {
             isRunning = false;
             shutdownLatch.countDown();

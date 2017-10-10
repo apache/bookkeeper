@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.http;
 
+import java.io.IOException;
 import org.apache.bookkeeper.http.service.HeartbeatService;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.NullHttpService;
@@ -43,5 +44,9 @@ public class NullHttpServiceProvider implements HttpServiceProvider {
             return new HeartbeatService();
         }
         return NULL_HTTP_SERVICE;
+    }
+
+    @Override
+    public void close() throws IOException {
     }
 }

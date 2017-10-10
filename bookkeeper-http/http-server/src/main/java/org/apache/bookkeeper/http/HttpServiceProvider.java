@@ -20,12 +20,13 @@
  */
 package org.apache.bookkeeper.http;
 
+import java.io.Closeable;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 
 /**
  * Provider to provide services for different http endpoint handlers.
  */
-public interface HttpServiceProvider {
+public interface HttpServiceProvider extends Closeable{
 
     /**
      * Provide http endpoint service.

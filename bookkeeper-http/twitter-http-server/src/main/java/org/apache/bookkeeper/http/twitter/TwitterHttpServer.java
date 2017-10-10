@@ -27,6 +27,7 @@ import com.twitter.finagle.http.HttpMuxer;
 import com.twitter.finagle.http.HttpMuxer$;
 import com.twitter.server.AbstractTwitterServer;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 
 import org.apache.bookkeeper.http.HttpRouter;
@@ -68,6 +69,11 @@ public class TwitterHttpServer extends AbstractTwitterServer implements HttpServ
 
     @Override
     public void stopServer() {
+        try {
+            httpServiceProvider.close();
+        } catch (IOException ioe) {
+            LOG.error("Error while close httpServiceProvider", ioe);
+        }
         if (server != null) {
             server.close();
             isRunning = false;

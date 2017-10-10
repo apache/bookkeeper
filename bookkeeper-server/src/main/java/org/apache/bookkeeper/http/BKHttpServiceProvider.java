@@ -24,7 +24,9 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -43,6 +45,7 @@ import org.apache.zookeeper.ZooKeeper;
  * which provide bookkeeper services to handle http requests
  * from different http endpoints.
  */
+@Slf4j
 public class BKHttpServiceProvider implements HttpServiceProvider {
 
     private final BookieServer bookieServer;
@@ -70,7 +73,23 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
         this.bka = new BookKeeperAdmin(clientConfiguration);
 
         this.executor = Executors.newSingleThreadExecutor(
-          new ThreadFactoryBuilder().setNameFormat("BKHttpServiceThread").build());
+          new ThreadFactoryBuilder().setNameFormat("BKHttpServiceThread").setDaemon(true).build());
+    }
+
+    @Override
+    public void close() throws IOException {
+        try {
+            executor.shutdown();
+            if (bka != null) {
+                bka.close();
+            }
+            if (zk != null) {
+                zk.close();
+            }
+        } catch (InterruptedException | BKException e) {
+            log.error("Error while close BKHttpServiceProvider", e);
+            throw new IOException("Error while close BKHttpServiceProvider", e);
+        }
     }
 
     private ServerConfiguration getServerConf() {
