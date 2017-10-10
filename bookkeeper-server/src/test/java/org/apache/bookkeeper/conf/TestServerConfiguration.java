@@ -21,15 +21,30 @@
 
 package org.apache.bookkeeper.conf;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import org.apache.commons.configuration.ConfigurationException;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
  * Unit test for {@link ServerConfiguration}.
  */
 public class TestServerConfiguration {
+
+    private final ServerConfiguration serverConf;
+
+    public TestServerConfiguration() {
+        serverConf = new ServerConfiguration();
+    }
+
+    @Before
+    public void setup() throws Exception {
+        serverConf.loadConf(
+            getClass().getClassLoader().getResource("bk_server.conf"));
+    }
 
     @Test
     public void testEphemeralPortsAllowed() throws ConfigurationException {
@@ -47,6 +62,25 @@ public class TestServerConfiguration {
         conf.setAllowEphemeralPorts(false);
         conf.setBookiePort(0);
         conf.validate();
+    }
+
+    @Test
+    public void testSetExtraServerComponents() {
+        ServerConfiguration conf = new ServerConfiguration();
+        assertNull(conf.getExtraServerComponents());
+        String[] components = new String[] {
+            "test1", "test2", "test3"
+        };
+        conf.setExtraServerComponents(components);
+        assertArrayEquals(components, conf.getExtraServerComponents());
+    }
+
+    @Test
+    public void testGetExtraServerComponents() {
+        String[] components = new String[] {
+            "test1", "test2", "test3"
+        };
+        assertArrayEquals(components, serverConf.getExtraServerComponents());
     }
 
 }

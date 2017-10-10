@@ -21,6 +21,7 @@ package org.apache.bookkeeper.common.component;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import java.util.List;
@@ -74,6 +75,16 @@ public class LifecycleComponentStack implements LifecycleComponent {
                                     ImmutableList<LifecycleComponent> components) {
         this.name = name;
         this.components = components;
+    }
+
+    @VisibleForTesting
+    public int getNumComponents() {
+        return components.size();
+    }
+
+    @VisibleForTesting
+    public LifecycleComponent getComponent(int index) {
+        return components.get(index);
     }
 
     @Override

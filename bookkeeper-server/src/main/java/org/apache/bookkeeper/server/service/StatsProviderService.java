@@ -19,7 +19,7 @@
 package org.apache.bookkeeper.server.service;
 
 import java.io.IOException;
-import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
+import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsProvider;
@@ -28,7 +28,7 @@ import org.apache.bookkeeper.util.ReflectionUtils;
 /**
  * A {@link org.apache.bookkeeper.common.component.LifecycleComponent} that runs stats provider.
  */
-public class StatsProviderService extends AbstractLifecycleComponent<BookieConfiguration> {
+public class StatsProviderService extends ServerLifecycleComponent {
 
     public static final String NAME = "stats-provider";
 
