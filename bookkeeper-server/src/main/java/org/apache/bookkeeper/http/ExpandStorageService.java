@@ -83,8 +83,7 @@ public class ExpandStorageService implements HttpEndpointService {
                 Bookie.checkEnvironmentWithStorageExpansion(conf, zk,
                   Lists.newArrayList(journalDirectories), allLedgerDirs);
             } catch (BookieException | IOException e) {
-                LOG.error(
-                  "Exception while updating cookie for storage expansion", e);
+                LOG.error("Exception occurred while updating cookie for storage expansion", e);
                 response.setCode(HttpServer.StatusCode.INTERNAL_ERROR);
                 response.setBody("Exception while updating cookie for storage expansion");
                 return response;

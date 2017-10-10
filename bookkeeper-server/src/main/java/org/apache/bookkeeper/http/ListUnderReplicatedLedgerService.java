@@ -110,7 +110,7 @@ public class ListUnderReplicatedLedgerService implements HttpEndpointService {
                     return response;
                 }
             } catch (Exception e) {
-                LOG.error("Meet Exception: ", e);
+                LOG.error("Exception occurred while listing under replicated ledgers", e);
                 response.setCode(HttpServer.StatusCode.NOT_FOUND);
                 response.setBody("Exception when get." + e.getMessage());
                 return response;

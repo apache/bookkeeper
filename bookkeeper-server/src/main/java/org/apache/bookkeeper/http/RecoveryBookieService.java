@@ -22,6 +22,7 @@ package org.apache.bookkeeper.http;
 
 import com.google.common.base.Preconditions;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import org.apache.bookkeeper.bookie.Cookie;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -52,11 +53,13 @@ public class RecoveryBookieService implements HttpEndpointService {
 
     protected ServerConfiguration conf;
     protected BookKeeperAdmin bka;
+    protected ExecutorService executor;
 
-    public RecoveryBookieService(ServerConfiguration conf, BookKeeperAdmin bka) {
+    public RecoveryBookieService(ServerConfiguration conf, BookKeeperAdmin bka, ExecutorService executor) {
         Preconditions.checkNotNull(conf);
         this.conf = conf;
         this.bka = bka;
+        this.executor = executor;
     }
 
     /*
@@ -114,7 +117,7 @@ public class RecoveryBookieService implements HttpEndpointService {
                 bookieDest = null;
             }
             boolean deleteCookie = requestJsonBody.delete_cookie;
-            Thread thread = new Thread() {
+            executor.execute(new Runnable() {
                 @Override
                 public void run() {
                     try {
@@ -124,12 +127,11 @@ public class RecoveryBookieService implements HttpEndpointService {
                             cookie.getValue().deleteFromZooKeeper(bka.getZooKeeper(), adminConf, bookieSrc, cookie.getVersion());
                         }
                     } catch (Exception e) {
-                        LOG.error("Meet Exception: ", e);
+                        LOG.error("Exception occurred while recovering bookie", e);
                     }
                 }
-            };
+            });
 
-            thread.start();
             response.setCode(HttpServer.StatusCode.OK);
             response.setBody("Success send recovery request command.");
             return response;

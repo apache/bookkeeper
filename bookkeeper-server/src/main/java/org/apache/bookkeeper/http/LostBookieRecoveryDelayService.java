@@ -89,7 +89,7 @@ public class LostBookieRecoveryDelayService implements HttpEndpointService {
                 return response;
             } catch (Exception e) {
                 // may get noNode exception
-                LOG.error("Exception got: ", e);
+                LOG.error("Exception occurred while getting lost bookie recovery delay", e);
                 response.setCode(HttpServer.StatusCode.NOT_FOUND);
                 response.setBody("Exception when get lostBookieRecoveryDelay." + e.getMessage());
                 return response;

@@ -22,6 +22,7 @@ package org.apache.bookkeeper.http;
 
 import com.google.common.base.Preconditions;
 import java.util.HashMap;
+import java.util.concurrent.ExecutorService;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
@@ -42,11 +43,14 @@ public class DecommissionService implements HttpEndpointService {
 
     protected ServerConfiguration conf;
     protected BookKeeperAdmin bka;
+    protected ExecutorService executor;
 
-    public DecommissionService(ServerConfiguration conf, BookKeeperAdmin bka) {
+
+    public DecommissionService(ServerConfiguration conf, BookKeeperAdmin bka, ExecutorService executor) {
         Preconditions.checkNotNull(conf);
         this.conf = conf;
         this.bka = bka;
+        this.executor = executor;
     }
 
     /*
@@ -73,7 +77,7 @@ public class DecommissionService implements HttpEndpointService {
                     BookieSocketAddress bookieSrc = new BookieSocketAddress(
                       bookieSrcString[0], Integer.parseInt(bookieSrcString[1]));
 
-                    Thread thread = new Thread() {
+                    executor.execute(new Runnable() {
                         @Override
                         public void run() {
                             try {
@@ -82,14 +86,13 @@ public class DecommissionService implements HttpEndpointService {
                                 LOG.error("Error handling decommissionBookie: {} with exception {}", bookieSrc, e);
                             }
                         }
-                    };
+                    });
 
-                    thread.start();
                     response.setCode(HttpServer.StatusCode.OK);
                     response.setBody("Success send decommission Bookie command " + bookieSrc.toString());
                     return response;
                 } catch (Exception e) {
-                    LOG.error("Meet Exception: ", e);
+                    LOG.error("Exception occurred while decommission bookie: ", e);
                     response.setCode(HttpServer.StatusCode.NOT_FOUND);
                     response.setBody("Exception when send decommission command." + e.getMessage());
                     return response;

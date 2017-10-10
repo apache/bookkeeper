@@ -20,9 +20,11 @@
  */
 package org.apache.bookkeeper.http;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.apache.bookkeeper.bookie.Bookie;
-import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -48,6 +50,8 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
     private final ServerConfiguration serverConf;
     private final ZooKeeper zk;
     private final BookKeeperAdmin bka;
+    private final ExecutorService executor;
+
 
     private BKHttpServiceProvider(BookieServer bookieServer,
                                   AutoRecoveryMain autoRecovery,
@@ -64,6 +68,9 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
         ClientConfiguration clientConfiguration = new ClientConfiguration(serverConf)
           .setZkServers(serverConf.getZkServers());
         this.bka = new BookKeeperAdmin(clientConfiguration);
+
+        this.executor = Executors.newSingleThreadExecutor(
+          new ThreadFactoryBuilder().setNameFormat("BKHttpServiceThread").build());
     }
 
     private ServerConfiguration getServerConf() {
@@ -149,7 +156,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
 
             // autorecovery
             case RECOVERY_BOOKIE:
-                return new RecoveryBookieService(configuration, bka);
+                return new RecoveryBookieService(configuration, bka, executor);
             case LIST_UNDER_REPLICATED_LEDGER:
                 return new ListUnderReplicatedLedgerService(configuration, zk);
             case WHO_IS_AUDITOR:
@@ -159,7 +166,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
             case LOST_BOOKIE_RECOVERY_DELAY:
                 return new LostBookieRecoveryDelayService(configuration, bka);
             case DECOMMISSION:
-                return new DecommissionService(configuration, bka);
+                return new DecommissionService(configuration, bka, executor);
 
             default:
                 return new ConfigurationService(configuration);
