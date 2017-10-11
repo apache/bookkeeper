@@ -98,7 +98,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
             .setBookiePort(bookiePort);
         Cookie.Builder cookieBuilder = Cookie.generateCookie(conf1);
         Cookie c = cookieBuilder.build();
-        c.writeToZooKeeper(zkc, conf1, Version.NEW);
+        c.writeToRegistrationManager(zkc, conf1, Version.NEW);
 
         String journalDir = newDirectory();
         String ledgerDir = newDirectory();
@@ -596,7 +596,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
             version1 instanceof LongVersion);
         LongVersion zkVersion1 = (LongVersion) version1;
         Cookie cookie = zkCookie.getValue();
-        cookie.writeToZooKeeper(zkc, conf, version1);
+        cookie.writeToRegistrationManager(zkc, conf, version1);
 
         zkCookie = Cookie.readFromZooKeeper(zkc, conf);
         Version version2 = zkCookie.getVersion();

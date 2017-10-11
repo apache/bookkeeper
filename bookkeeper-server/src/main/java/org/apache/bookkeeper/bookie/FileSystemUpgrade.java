@@ -36,20 +36,19 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.RegistrationManager;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.HardLink;
+import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.io.FileUtils;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -128,22 +127,15 @@ public class FileSystemUpgrade {
         }
     }
 
-    private static ZooKeeper newZookeeper(final ServerConfiguration conf)
+    private static RegistrationManager newRegistrationManager(final ServerConfiguration conf)
             throws BookieException.UpgradeException {
+
         try {
-            int zkTimeout = conf.getZkTimeout();
-            return ZooKeeperClient.newBuilder()
-                    .connectString(conf.getZkServers())
-                    .sessionTimeoutMs(zkTimeout)
-                    .operationRetryPolicy(
-                            new BoundExponentialBackoffRetryPolicy(zkTimeout, zkTimeout, Integer.MAX_VALUE))
-                    .build();
-        } catch (InterruptedException ie) {
-            throw new BookieException.UpgradeException(ie);
-        } catch (IOException ioe) {
-            throw new BookieException.UpgradeException(ioe);
-        } catch (KeeperException ke) {
-            throw new BookieException.UpgradeException(ke);
+            Class<? extends RegistrationManager> rmClass = conf.getRegistrationManagerClass();
+            RegistrationManager rm = ReflectionUtils.newInstance(rmClass);
+            return rm.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
+        } catch (Exception e) {
+            throw new BookieException.UpgradeException(e);
         }
     }
 
@@ -177,7 +169,7 @@ public class FileSystemUpgrade {
             throws BookieException.UpgradeException, InterruptedException {
         LOG.info("Upgrading...");
 
-        ZooKeeper zk = newZookeeper(conf);
+        RegistrationManager rm = newRegistrationManager(conf);
         try {
             Map<File, File> deferredMoves = new HashMap<File, File>();
             Cookie.Builder cookieBuilder = Cookie.generateCookie(conf);
@@ -229,15 +221,15 @@ public class FileSystemUpgrade {
             }
 
             try {
-                c.writeToZooKeeper(zk, conf, Version.NEW);
-            } catch (KeeperException ke) {
-                LOG.error("Error writing cookie to zookeeper");
+                c.writeToRegistrationManager(rm, conf, Version.NEW);
+            } catch (BookieException ke) {
+                LOG.error("Error writing cookie to registration manager");
                 throw new BookieException.UpgradeException(ke);
             }
         } catch (IOException ioe) {
             throw new BookieException.UpgradeException(ioe);
         } finally {
-            zk.close();
+            rm.close();
         }
         LOG.info("Done");
     }
@@ -283,7 +275,7 @@ public class FileSystemUpgrade {
     public static void rollback(ServerConfiguration conf)
             throws BookieException.UpgradeException, InterruptedException {
         LOG.info("Rolling back upgrade...");
-        ZooKeeper zk = newZookeeper(conf);
+        RegistrationManager rm = newRegistrationManager(conf);
         try {
             for (File d : getAllDirectories(conf)) {
                 LOG.info("Rolling back {}", d);
@@ -305,17 +297,14 @@ public class FileSystemUpgrade {
                 }
             }
             try {
-                Versioned<Cookie> cookie = Cookie.readFromZooKeeper(zk, conf);
-                cookie.getValue().deleteFromZooKeeper(zk, conf, cookie.getVersion());
-            } catch (KeeperException ke) {
-                LOG.error("Error deleting cookie from ZooKeeper");
+                Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, conf);
+                cookie.getValue().deleteFromRegistrationManager(rm, conf, cookie.getVersion());
+            } catch (BookieException ke) {
+                LOG.error("Error deleting cookie from Registration Manager");
                 throw new BookieException.UpgradeException(ke);
-            } catch (IOException ioe) {
-                LOG.error("I/O Error deleting cookie from ZooKeeper");
-                throw new BookieException.UpgradeException(ioe);
             }
         } finally {
-            zk.close();
+            rm.close();
         }
         LOG.info("Done");
     }

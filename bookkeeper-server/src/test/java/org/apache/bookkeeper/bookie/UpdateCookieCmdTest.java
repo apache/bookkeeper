@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.apache.bookkeeper.util.BookKeeperConstants.COOKIE_NODE;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -30,7 +32,6 @@ import org.junit.Assert;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.zookeeper.KeeperException;
 import org.junit.Test;
@@ -114,7 +115,7 @@ public class UpdateCookieCmdTest extends BookKeeperClusterTestCase {
         conf.setUseHostNameAsBookieID(false); // sets to hostname
         final String newBookieHost = Bookie.getBookieAddress(conf).toString();
         cookieBuilder.setBookieHost(newBookieHost);
-        cookieBuilder.build().writeToZooKeeper(zkc, conf, Version.NEW);
+        cookieBuilder.build().writeToRegistrationManager(zkc, conf, Version.NEW);
         verifyCookieInZooKeeper(conf, 2);
 
         // again issue hostname cmd
@@ -148,7 +149,7 @@ public class UpdateCookieCmdTest extends BookKeeperClusterTestCase {
         BookieServer bks = bs.get(0);
         bks.shutdown();
 
-        String zkCookiePath = Cookie.getZkPath(conf);
+        String zkCookiePath = conf.getZkLedgersRootPath() + "/" + COOKIE_NODE + "/" + Bookie.getBookieAddress(conf);
         Assert.assertNotNull("Cookie path doesn't still exists!", zkc.exists(zkCookiePath, false));
         zkc.delete(zkCookiePath, -1);
         Assert.assertNull("Cookie path still exists!", zkc.exists(zkCookiePath, false));
@@ -163,7 +164,7 @@ public class UpdateCookieCmdTest extends BookKeeperClusterTestCase {
     private void verifyCookieInZooKeeper(ServerConfiguration conf, int expectedCount) throws KeeperException,
             InterruptedException {
         List<String> cookies;
-        String bookieCookiePath1 = conf.getZkLedgersRootPath() + "/" + BookKeeperConstants.COOKIE_NODE;
+        String bookieCookiePath1 = conf.getZkLedgersRootPath() + "/" + COOKIE_NODE;
         cookies = zkc.getChildren(bookieCookiePath1, false);
         Assert.assertEquals("Wrongly updated the cookie!", expectedCount, cookies.size());
     }
