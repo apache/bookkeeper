@@ -23,7 +23,6 @@ package org.apache.bookkeeper.util;
 import java.lang.reflect.Constructor;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 
@@ -34,6 +33,30 @@ public class ReflectionUtils {
 
     private static final Map<Class<?>, Constructor<?>> constructorCache =
             new ConcurrentHashMap<Class<?>, Constructor<?>>();
+
+    /**
+     * Returns the {@code Class} object object associated with the class or interface
+     * with the given string name, which is a subclass of {@code xface}.
+     *
+     * @param className class name
+     * @param xface class interface
+     * @return the class object associated with the class or interface with the given string name.
+     */
+    public static <U> Class<? extends U> forName(String className,
+                                                 Class<U> xface) {
+
+        // Construct the class
+        Class<?> theCls;
+        try {
+            theCls = Class.forName(className);
+        } catch (ClassNotFoundException cnfe) {
+            throw new RuntimeException(cnfe);
+        }
+        if (!xface.isAssignableFrom(theCls)) {
+            throw new RuntimeException(className + " not " + xface.getName());
+        }
+        return theCls.asSubclass(xface);
+    }
 
     /**
      * Get the value of the <code>name</code> property as a <code>Class</code>.
