@@ -21,10 +21,11 @@
 package org.apache.bookkeeper.http.service;
 
 /**
- * Service provides the abstraction for how to handle the logic
- * for a specific endpoint.
+ * HttpEndpointService that return empty content.
  */
-public interface Service {
-
-    ServiceResponse handle(ServiceRequest request) throws Exception;
+public class NullHttpService implements HttpEndpointService {
+    @Override
+    public HttpServiceResponse handle(HttpServiceRequest request) {
+        return new HttpServiceResponse();
+    }
 }

@@ -24,25 +24,33 @@ package org.apache.bookkeeper.http;
  * Abstract handler factory which provide interface
  * to create handlers for bookkeeper http endpoints.
  */
-public abstract class AbstractHandlerFactory<Handler> {
-    private ServiceProvider serviceProvider;
+public abstract class AbstractHttpHandlerFactory<Handler> {
+    private HttpServiceProvider httpServiceProvider;
 
-    public AbstractHandlerFactory(ServiceProvider serviceProvider) {
-        this.serviceProvider = serviceProvider;
-    }
-
-    public ServiceProvider getServiceProvider() {
-        return serviceProvider;
+    /**
+     * Instantiates a new Abstract http handler factory.
+     *
+     * @param httpServiceProvider the http service provider
+     */
+    public AbstractHttpHandlerFactory(HttpServiceProvider httpServiceProvider) {
+        this.httpServiceProvider = httpServiceProvider;
     }
 
     /**
-     * Create a handler for heartbeat api.
+     * Gets http service provider.
+     *
+     * @return the http service provider
      */
-    public abstract Handler newHeartbeatHandler();
+    public HttpServiceProvider getHttpServiceProvider() {
+        return httpServiceProvider;
+    }
 
     /**
-     * Create a handler for server configuration api.
+     * Create a handler for the given ApiType.
+     *
+     * @param type the api type
+     * @return the handler
      */
-    public abstract Handler newConfigurationHandler();
+    public abstract Handler newHandler(HttpServer.ApiType type);
 
 }

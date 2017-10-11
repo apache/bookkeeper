@@ -23,38 +23,30 @@ package org.apache.bookkeeper.http.twitter;
 import com.twitter.finagle.http.Request;
 import com.twitter.finagle.http.Response;
 import com.twitter.util.Future;
-
-import org.apache.bookkeeper.http.AbstractHandlerFactory;
-import org.apache.bookkeeper.http.ServiceProvider;
-
+import org.apache.bookkeeper.http.AbstractHttpHandlerFactory;
+import org.apache.bookkeeper.http.HttpServer;
+import org.apache.bookkeeper.http.HttpServiceProvider;
+import org.apache.bookkeeper.http.service.HttpEndpointService;
 
 
 /**
  * Factory which provide http handlers for TwitterServer based Http Server.
  */
-public class TwitterHandlerFactory extends AbstractHandlerFactory<TwitterAbstractHandler> {
+public class TwitterHttpHandlerFactory extends AbstractHttpHandlerFactory<TwitterAbstractHandler> {
 
-    public TwitterHandlerFactory(ServiceProvider serviceProvider) {
-        super(serviceProvider);
+    public TwitterHttpHandlerFactory(HttpServiceProvider httpServiceProvider) {
+        super(httpServiceProvider);
     }
+
 
     @Override
-    public TwitterAbstractHandler newHeartbeatHandler() {
+    public TwitterAbstractHandler newHandler(HttpServer.ApiType type) {
         return new TwitterAbstractHandler() {
             @Override
             public Future<Response> apply(Request request) {
-                return processRequest(getServiceProvider().provideHeartbeatService(), request);
+                HttpEndpointService service = getHttpServiceProvider().provideHttpEndpointService(type);
+                return processRequest(service, request);
             }
         };
     }
-
-    public TwitterAbstractHandler newConfigurationHandler() {
-        return new TwitterAbstractHandler() {
-            @Override
-            public Future<Response> apply(Request request) {
-                return processRequest(getServiceProvider().provideConfigurationService(), request);
-            }
-        };
-    }
-
 }

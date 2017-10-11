@@ -20,12 +20,23 @@
  */
 package org.apache.bookkeeper.http.service;
 
+import org.apache.bookkeeper.http.HttpServer;
+
 /**
- * Service that return empty content.
+ * HttpEndpointService that return internal server error.
  */
-public class NullService implements Service {
+public class ErrorHttpService implements HttpEndpointService {
+
+    private HttpServer.StatusCode statusCode = HttpServer.StatusCode.INTERNAL_ERROR;
+
+    public ErrorHttpService() {}
+
+    public ErrorHttpService(HttpServer.StatusCode statusCode) {
+        this.statusCode = statusCode;
+    }
+
     @Override
-    public ServiceResponse handle(ServiceRequest request) {
-        return new ServiceResponse();
+    public HttpServiceResponse handle(HttpServiceRequest request) {
+        return new HttpServiceResponse().setCode(statusCode);
     }
 }

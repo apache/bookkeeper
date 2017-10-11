@@ -18,23 +18,13 @@
  * under the License.
  *
  */
-package org.apache.bookkeeper.http;
-
-import org.apache.bookkeeper.http.service.Service;
+package org.apache.bookkeeper.http.service;
 
 /**
- * Provider to provide services for different http endpoint handlers.
+ * HttpEndpointService provides the abstraction for how to handle the logic
+ * for a specific endpoint.
  */
-public interface ServiceProvider {
+public interface HttpEndpointService {
 
-    /**
-     * Provide heartbeat service for heartbeat api.
-     */
-    Service provideHeartbeatService();
-
-    /**
-     * Provide service for configuration api.
-     */
-    Service provideConfigurationService();
-
+    HttpServiceResponse handle(HttpServiceRequest request) throws Exception;
 }

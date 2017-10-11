@@ -23,14 +23,14 @@ package org.apache.bookkeeper.http.service;
 import org.apache.bookkeeper.http.HttpServer;
 
 /**
- * Service that serve heartbeat request.
+ * HttpEndpointService that serve heartbeat request.
  */
-public class HeartbeatService implements Service {
+public class HeartbeatService implements HttpEndpointService {
 
     public static final String HEARTBEAT = "OK\n";
 
     @Override
-    public ServiceResponse handle(ServiceRequest request) {
-        return new ServiceResponse(HEARTBEAT, HttpServer.StatusCode.OK);
+    public HttpServiceResponse handle(HttpServiceRequest request) {
+        return new HttpServiceResponse(HEARTBEAT, HttpServer.StatusCode.OK);
     }
 }

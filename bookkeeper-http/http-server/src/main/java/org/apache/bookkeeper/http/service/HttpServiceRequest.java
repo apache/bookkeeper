@@ -20,38 +20,52 @@
  */
 package org.apache.bookkeeper.http.service;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.bookkeeper.http.HttpServer;
 
 /**
- * A wrapper class that wrap the result from service, which
- * can then be parsed into http response.
+ * A wrapper class that wrap a http request into a class which
+ * can then be passed into the service.
  */
-public class ServiceResponse {
+public class HttpServiceRequest {
     private String body;
-    private HttpServer.StatusCode code = HttpServer.StatusCode.OK;
+    private HttpServer.Method method = HttpServer.Method.GET;
+    private Map<String, String> params = new HashMap<>();
 
-    public ServiceResponse() {}
+    public HttpServiceRequest() {}
 
-    public ServiceResponse(String body, HttpServer.StatusCode code) {
+    public HttpServiceRequest(String body, HttpServer.Method method, Map<String, String> params) {
         this.body = body;
-        this.code = code;
+        this.method = method;
+        this.params = params;
     }
 
     public String getBody() {
         return body;
     }
 
-    public int getStatusCode() {
-        return code.getValue();
-    }
-
-    public ServiceResponse setBody(String body) {
+    public HttpServiceRequest setBody(String body) {
         this.body = body;
         return this;
     }
 
-    public ServiceResponse setCode(HttpServer.StatusCode code) {
-        this.code = code;
+    public HttpServer.Method getMethod() {
+        return method;
+    }
+
+    public HttpServiceRequest setMethod(HttpServer.Method method) {
+        this.method = method;
+        return this;
+    }
+
+    public Map<String, String> getParams() {
+        return params;
+    }
+
+    public HttpServiceRequest setParams(Map<String, String> params) {
+        this.params = params;
         return this;
     }
 }
