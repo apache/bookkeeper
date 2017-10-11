@@ -64,7 +64,7 @@ class SyncCallbackUtils {
      * @param result
      * @param future
      */
-    public static <T> void finish(int rc, T result, CompletableFuture<T> future) {
+    public static <T> void finish(int rc, T result, CompletableFuture<? super T> future) {
         if (rc != BKException.Code.OK) {
             future.completeExceptionally(BKException.create(rc).fillInStackTrace());
         } else {
@@ -74,9 +74,9 @@ class SyncCallbackUtils {
 
     static class SyncCreateCallback implements AsyncCallback.CreateCallback {
 
-        private final CompletableFuture future;
+        private final CompletableFuture<? super LedgerHandle> future;
 
-        public SyncCreateCallback(CompletableFuture future) {
+        public SyncCreateCallback(CompletableFuture<? super LedgerHandle> future) {
             this.future = future;
         }
 
@@ -88,7 +88,6 @@ class SyncCallbackUtils {
          * @param ctx optional control object
          */
         @Override
-        @SuppressWarnings(value = "unchecked")
         public void createComplete(int rc, LedgerHandle lh, Object ctx) {
             finish(rc, lh, future);
         }
@@ -97,9 +96,9 @@ class SyncCallbackUtils {
 
     static class SyncOpenCallback implements AsyncCallback.OpenCallback {
 
-        private final CompletableFuture future;
+        private final CompletableFuture<? super LedgerHandle> future;
 
-        public SyncOpenCallback(CompletableFuture future) {
+        public SyncOpenCallback(CompletableFuture<? super LedgerHandle> future) {
             this.future = future;
         }
 
@@ -114,7 +113,6 @@ class SyncCallbackUtils {
          *          optional control object
          */
         @Override
-        @SuppressWarnings("unchecked")
         public void openComplete(int rc, LedgerHandle lh, Object ctx) {
             finish(rc, lh, future);
         }
@@ -138,7 +136,6 @@ class SyncCallbackUtils {
          *            optional control object
          */
         @Override
-        @SuppressWarnings("unchecked")
         public void deleteComplete(int rc, Object ctx) {
             finish(rc, null, future);
         }
@@ -169,6 +166,13 @@ class SyncCallbackUtils {
     }
 
     static class SyncReadCallback implements AsyncCallback.ReadCallback {
+
+        private final CompletableFuture<Enumeration<LedgerEntry>> future;
+
+        public SyncReadCallback(CompletableFuture<Enumeration<LedgerEntry>> future) {
+            this.future = future;
+        }
+
         /**
          * Implementation of callback interface for synchronous read method.
          *
@@ -182,14 +186,14 @@ class SyncCallbackUtils {
          *          control object
          */
         @Override
-        @SuppressWarnings("unchecked")
         public void readComplete(int rc, LedgerHandle lh,
                                  Enumeration<LedgerEntry> seq, Object ctx) {
-            finish(rc, seq, (CompletableFuture<Enumeration<LedgerEntry>>)ctx);
+            finish(rc, seq, future);
         }
     }
 
-    static class FutureReadResult extends CompletableFuture<Iterable<org.apache.bookkeeper.client.api.LedgerEntry>>
+    static class FutureReadResult
+        extends CompletableFuture<Iterable<org.apache.bookkeeper.client.api.LedgerEntry>>
         implements AsyncCallback.ReadCallback {
 
         /**
@@ -211,7 +215,7 @@ class SyncCallbackUtils {
             if (rc != BKException.Code.OK) {
                 this.completeExceptionally(BKException.create(rc).fillInStackTrace());
             } else {
-                this.complete((Iterable) (() -> Iterators.forEnumeration(seq)));
+                this.complete((Iterable) Iterators.forEnumeration(seq));
             }
         }
     }
@@ -231,7 +235,6 @@ class SyncCallbackUtils {
          *          control object
          */
         @Override
-        @SuppressWarnings("unchecked")
         public void addComplete(int rc, LedgerHandle lh, long entry, Object ctx) {
             finish(rc, entry, this);
         }
@@ -278,7 +281,6 @@ class SyncCallbackUtils {
          * @param ctx
          */
         @Override
-        @SuppressWarnings("unchecked")
         public void closeComplete(int rc, LedgerHandle lh, Object ctx) {
             finish(rc, null, future);
         }

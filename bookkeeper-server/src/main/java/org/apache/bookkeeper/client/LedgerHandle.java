@@ -56,7 +56,9 @@ import org.apache.bookkeeper.client.SyncCallbackUtils.SyncAddCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCloseCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadLastConfirmedCallback;
+import org.apache.bookkeeper.client.api.WriteAdvHandle;
 import org.apache.bookkeeper.client.api.WriteHandle;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
@@ -74,7 +76,7 @@ import org.slf4j.LoggerFactory;
  * Ledger handle contains ledger metadata and is used to access the read and
  * write operations to a ledger.
  */
-public class LedgerHandle implements WriteHandle {
+public class LedgerHandle implements WriteHandle, WriteAdvHandle {
     final static Logger LOG = LoggerFactory.getLogger(LedgerHandle.class);
 
     final byte[] ledgerKey;
@@ -526,7 +528,7 @@ public class LedgerHandle implements WriteHandle {
             throws InterruptedException, BKException {
         CompletableFuture<Enumeration<LedgerEntry>> result = new CompletableFuture<>();
 
-        asyncReadEntries(firstEntry, lastEntry, new SyncReadCallback(), result);
+        asyncReadEntries(firstEntry, lastEntry, new SyncReadCallback(result), null);
 
         return SyncCallbackUtils.waitForResult(result);
     }
@@ -549,7 +551,7 @@ public class LedgerHandle implements WriteHandle {
             throws InterruptedException, BKException {
         CompletableFuture<Enumeration<LedgerEntry>> result = new CompletableFuture<>();
 
-        asyncReadUnconfirmedEntries(firstEntry, lastEntry, new SyncReadCallback(), result);
+        asyncReadUnconfirmedEntries(firstEntry, lastEntry, new SyncReadCallback(result), null);
 
         return SyncCallbackUtils.waitForResult(result);
     }
@@ -693,6 +695,16 @@ public class LedgerHandle implements WriteHandle {
         SyncAddCallback callback = new SyncAddCallback();
         asyncAddEntry(data, callback, null);
         return callback;
+    }
+
+    /**
+     * {@inheritDoc }
+     */
+    @Override
+    public CompletableFuture<Long> write(long entryId, ByteBuf data) {
+        CompletableFuture<Long> res = new CompletableFuture<>();
+        FutureUtils.completeExceptionally(res, BKException.create(BKException.Code.IllegalOpException));
+        return res;
     }
 
     /**

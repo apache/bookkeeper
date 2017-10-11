@@ -406,8 +406,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                 try {
                     CompletableFuture<Enumeration<LedgerEntry>> result = new CompletableFuture<>();
 
-                    handle.asyncReadEntriesInternal(nextEntryId, nextEntryId, new SyncReadCallback(),
-                            result);
+                    handle.asyncReadEntriesInternal(nextEntryId, nextEntryId, new SyncReadCallback(result), null);
 
                     currentEntry = SyncCallbackUtils.waitForResult(result).nextElement();
 
