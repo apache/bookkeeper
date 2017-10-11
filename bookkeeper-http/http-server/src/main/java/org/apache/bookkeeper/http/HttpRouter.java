@@ -31,13 +31,56 @@ public abstract class HttpRouter<Handler> {
 
   // Define endpoints here.
   public static final String HEARTBEAT                    = "/heartbeat";
-  public static final String SERVER_CONFIG                = "/api/config/serverConfig";
+  public static final String SERVER_CONFIG                = "/api/v1/config/server_config";
+
+  // ledger
+  public static final String DELETE_LEDGER                = "/api/v1/ledger/delete";
+  public static final String LIST_LEDGER                  = "/api/v1/ledger/list";
+  public static final String GET_LEDGER_META              = "/api/v1/ledger/metadata";
+  public static final String READ_LEDGER_ENTRY            = "/api/v1/ledger/read";
+  // bookie
+  public static final String LIST_BOOKIES                 = "/api/v1/bookie/list_bookies";
+  public static final String LIST_BOOKIE_INFO             = "/api/v1/bookie/list_bookie_info";
+  public static final String LAST_LOG_MARK                = "/api/v1/bookie/last_log_mark";
+  public static final String LIST_DISK_FILE               = "/api/v1/bookie/list_disk_file";
+  public static final String EXPAND_STORAGE               = "/api/v1/bookie/expand_storage";
+  // autorecovery
+  public static final String RECOVERY_BOOKIE              = "/api/v1/autorecovery/bookie";
+  public static final String LIST_UNDER_REPLICATED_LEDGER = "/api/v1/autorecovery/list_under_replicated_ledger";
+  public static final String WHO_IS_AUDITOR               = "/api/v1/autorecovery/who_is_auditor";
+  public static final String TRIGGER_AUDIT                = "/api/v1/autorecovery/trigger_audit";
+  public static final String LOST_BOOKIE_RECOVERY_DELAY   = "/api/v1/autorecovery/lost_bookie_recovery_delay";
+  public static final String DECOMMISSION                 = "/api/v1/autorecovery/decommission";
+
 
   private final Map<String, Handler> endpointHandlers = new HashMap<>();
 
-  public HttpRouter(AbstractHandlerFactory<Handler> handlerFactory) {
-    this.endpointHandlers.put(HEARTBEAT, handlerFactory.newHeartbeatHandler());
-    this.endpointHandlers.put(SERVER_CONFIG, handlerFactory.newConfigurationHandler());
+  public HttpRouter(AbstractHttpHandlerFactory<Handler> handlerFactory) {
+    this.endpointHandlers.put(HEARTBEAT, handlerFactory.newHandler(HttpServer.ApiType.HEARTBEAT));
+    this.endpointHandlers.put(SERVER_CONFIG, handlerFactory.newHandler(HttpServer.ApiType.SERVER_CONFIG));
+
+    // ledger
+    this.endpointHandlers.put(DELETE_LEDGER, handlerFactory.newHandler(HttpServer.ApiType.DELETE_LEDGER));
+    this.endpointHandlers.put(LIST_LEDGER, handlerFactory.newHandler(HttpServer.ApiType.LIST_LEDGER));
+    this.endpointHandlers.put(GET_LEDGER_META, handlerFactory.newHandler(HttpServer.ApiType.GET_LEDGER_META));
+    this.endpointHandlers.put(READ_LEDGER_ENTRY, handlerFactory.newHandler(HttpServer.ApiType.READ_LEDGER_ENTRY));
+
+    // bookie
+    this.endpointHandlers.put(LIST_BOOKIES, handlerFactory.newHandler(HttpServer.ApiType.LIST_BOOKIES));
+    this.endpointHandlers.put(LIST_BOOKIE_INFO, handlerFactory.newHandler(HttpServer.ApiType.LIST_BOOKIE_INFO));
+    this.endpointHandlers.put(LAST_LOG_MARK, handlerFactory.newHandler(HttpServer.ApiType.LAST_LOG_MARK));
+    this.endpointHandlers.put(LIST_DISK_FILE, handlerFactory.newHandler(HttpServer.ApiType.LIST_DISK_FILE));
+    this.endpointHandlers.put(EXPAND_STORAGE, handlerFactory.newHandler(HttpServer.ApiType.EXPAND_STORAGE));
+
+    // autorecovery
+    this.endpointHandlers.put(RECOVERY_BOOKIE, handlerFactory.newHandler(HttpServer.ApiType.RECOVERY_BOOKIE));
+    this.endpointHandlers.put(LIST_UNDER_REPLICATED_LEDGER,
+      handlerFactory.newHandler(HttpServer.ApiType.LIST_UNDER_REPLICATED_LEDGER));
+    this.endpointHandlers.put(WHO_IS_AUDITOR, handlerFactory.newHandler(HttpServer.ApiType.WHO_IS_AUDITOR));
+    this.endpointHandlers.put(TRIGGER_AUDIT, handlerFactory.newHandler(HttpServer.ApiType.TRIGGER_AUDIT));
+    this.endpointHandlers.put(LOST_BOOKIE_RECOVERY_DELAY,
+      handlerFactory.newHandler(HttpServer.ApiType.LOST_BOOKIE_RECOVERY_DELAY));
+    this.endpointHandlers.put(DECOMMISSION, handlerFactory.newHandler(HttpServer.ApiType.DECOMMISSION));
   }
 
   /**

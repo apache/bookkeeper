@@ -21,71 +21,56 @@
 package org.apache.bookkeeper.http;
 
 import com.google.common.base.Preconditions;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-
+import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
-import org.apache.bookkeeper.util.JsonUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * HttpEndpointService that handle Bookkeeper Configuration related http request.
+ * HttpEndpointService that handle Bookkeeper trigger audit related http request.
+ * The PUT method will force trigger the audit by resetting the lostBookieRecoveryDelay.
  */
-public class ConfigurationService implements HttpEndpointService {
+public class TriggerAuditService implements HttpEndpointService {
+
+    static final Logger LOG = LoggerFactory.getLogger(TriggerAuditService.class);
 
     protected ServerConfiguration conf;
+    protected BookKeeperAdmin bka;
 
-    public ConfigurationService(ServerConfiguration conf) {
+    public TriggerAuditService(ServerConfiguration conf, BookKeeperAdmin bka) {
         Preconditions.checkNotNull(conf);
         this.conf = conf;
+        this.bka = bka;
     }
 
+    /*
+     * Force trigger the Audit by resetting the lostBookieRecoveryDelay.
+     */
     @Override
     public HttpServiceResponse handle(HttpServiceRequest request) throws Exception {
         HttpServiceResponse response = new HttpServiceResponse();
-        // GET
-        if (HttpServer.Method.GET == request.getMethod()) {
-            Map<String, Object> configMap = toMap(conf);
-            String jsonResponse = JsonUtil.toJson(configMap);
-            response.setBody(jsonResponse);
-            return response;
-        } else if (HttpServer.Method.PUT == request.getMethod()) {
-            String requestBody = request.getBody();
-            if(null == requestBody) {
+
+        if (HttpServer.Method.PUT == request.getMethod()) {
+            try {
+                bka.triggerAudit();
+            } catch (Exception e) {
+                LOG.error("Meet Exception: ", e);
                 response.setCode(HttpServer.StatusCode.NOT_FOUND);
-                response.setBody("Request body not found. should contains k-v pairs");
+                response.setBody("Exception when do operation." + e.getMessage());
                 return response;
-            }
-            @SuppressWarnings("unchecked")
-            HashMap<String, Object> configMap = JsonUtil.fromJson(requestBody, HashMap.class);
-            for(Map.Entry<String, Object> entry: configMap.entrySet()) {
-                conf.setProperty(entry.getKey(), entry.getValue());
             }
 
             response.setCode(HttpServer.StatusCode.OK);
-            response.setBody("Success set server config.");
+            response.setBody("Success trigger audit.");
+            LOG.debug("response body:" + response.getBody());
             return response;
         } else {
             response.setCode(HttpServer.StatusCode.NOT_FOUND);
-            response.setBody("Request body not found. should contains k-v pairs");
+            response.setBody("Not found method. Should be PUT method");
             return response;
         }
-
-    }
-
-    private Map<String, Object> toMap(ServerConfiguration conf) {
-        Map<String, Object> configMap = new HashMap<>();
-        Iterator iterator = conf.getKeys();
-        while (iterator.hasNext()) {
-            String key = iterator.next().toString();
-            Object property = conf.getProperty(key);
-            if (property != null) {
-                configMap.put(key, property.toString());
-            }
-        }
-        return configMap;
     }
 }

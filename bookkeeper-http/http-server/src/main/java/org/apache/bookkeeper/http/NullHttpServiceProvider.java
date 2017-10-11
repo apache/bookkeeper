@@ -20,30 +20,33 @@
  */
 package org.apache.bookkeeper.http;
 
+import java.io.IOException;
 import org.apache.bookkeeper.http.service.HeartbeatService;
-import org.apache.bookkeeper.http.service.NullService;
-import org.apache.bookkeeper.http.service.Service;
+import org.apache.bookkeeper.http.service.HttpEndpointService;
+import org.apache.bookkeeper.http.service.NullHttpService;
 
 /**
- * Service provider which provide service that do nothing.
+ * HttpEndpointService provider which provide service that do nothing.
  */
-public class NullServiceProvider implements ServiceProvider {
+public class NullHttpServiceProvider implements HttpServiceProvider {
 
-    private static final NullServiceProvider NULL_SERVICE_PROVIDER = new NullServiceProvider();
+    private static final NullHttpServiceProvider NULL_HTTP_SERVICE_PROVIDER = new NullHttpServiceProvider();
 
-    static final Service NULL_SERVICE = new NullService();
+    static final HttpEndpointService NULL_HTTP_SERVICE = new NullHttpService();
 
-    @Override
-    public Service provideHeartbeatService() {
-        return new HeartbeatService();
+    public static NullHttpServiceProvider getInstance() {
+        return NULL_HTTP_SERVICE_PROVIDER;
     }
 
     @Override
-    public Service provideConfigurationService() {
-        return NULL_SERVICE;
+    public HttpEndpointService provideHttpEndpointService(HttpServer.ApiType type) {
+        if (type == HttpServer.ApiType.HEARTBEAT) {
+            return new HeartbeatService();
+        }
+        return NULL_HTTP_SERVICE;
     }
 
-    public static NullServiceProvider getInstance() {
-        return NULL_SERVICE_PROVIDER;
+    @Override
+    public void close() throws IOException {
     }
 }

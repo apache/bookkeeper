@@ -2085,7 +2085,7 @@ public class BookieShell implements Tool {
      * @param extensions - the file extensions, which we are interested in
      * @return sorted list of files
      */
-    private static List<File> listFilesAndSort(File[] folderNames, String... extensions) {
+    public static List<File> listFilesAndSort(File[] folderNames, String... extensions) {
         List<File> completeFilesList = new ArrayList<File>();
         for (int i = 0; i < folderNames.length; i++) {
             Collection<File> filesCollection = FileUtils.listFiles(folderNames[i], extensions, true);
