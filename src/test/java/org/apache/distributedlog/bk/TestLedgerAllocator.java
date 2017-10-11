@@ -21,6 +21,7 @@ import static com.google.common.base.Charsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 import java.net.URI;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -30,26 +31,22 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.meta.ZkVersion;
+import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.distributedlog.BookKeeperClient;
 import org.apache.distributedlog.BookKeeperClientBuilder;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.TestDistributedLogBase;
 import org.apache.distributedlog.TestZooKeeperClientBuilder;
-
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.bk.SimpleLedgerAllocator.AllocationException;
 import org.apache.distributedlog.bk.SimpleLedgerAllocator.Phase;
 import org.apache.distributedlog.common.annotations.DistributedLogAnnotations;
-
-
 import org.apache.distributedlog.exceptions.ZKException;
 import org.apache.distributedlog.util.Transaction.OpListener;
 import org.apache.distributedlog.util.Utils;
 import org.apache.distributedlog.zk.DefaultZKOp;
 import org.apache.distributedlog.zk.ZKTransaction;
-
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Op;
@@ -63,9 +60,6 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-
-
 
 /**
  * TestLedgerAllocator.
@@ -174,7 +168,7 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         zkc.get().create(allocationPath, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         Stat stat = new Stat();
         byte[] data = zkc.get().getData(allocationPath, false, stat);
-        Versioned<byte[]> allocationData = new Versioned<byte[]>(data, new ZkVersion(stat.getVersion()));
+        Versioned<byte[]> allocationData = new Versioned<byte[]>(data, new LongVersion(stat.getVersion()));
 
         SimpleLedgerAllocator allocator1 =
                 new SimpleLedgerAllocator(allocationPath, allocationData, newQuorumConfigProvider(dlConf), zkc, bkc);
@@ -241,7 +235,7 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         Stat stat = new Stat();
         byte[] data = zkc.get().getData(allocationPath, false, stat);
 
-        Versioned<byte[]> allocationData = new Versioned<byte[]>(data, new ZkVersion(stat.getVersion()));
+        Versioned<byte[]> allocationData = new Versioned<byte[]>(data, new LongVersion(stat.getVersion()));
 
         SimpleLedgerAllocator allocator1 =
                 new SimpleLedgerAllocator(allocationPath, allocationData, newQuorumConfigProvider(dlConf), zkc, bkc);
@@ -253,7 +247,7 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         // Second allocator kicks in
         stat = new Stat();
         data = zkc.get().getData(allocationPath, false, stat);
-        allocationData = new Versioned<byte[]>(data, new ZkVersion(stat.getVersion()));
+        allocationData = new Versioned<byte[]>(data, new LongVersion(stat.getVersion()));
         SimpleLedgerAllocator allocator2 =
                 new SimpleLedgerAllocator(allocationPath, allocationData, newQuorumConfigProvider(dlConf), zkc, bkc);
         allocator2.allocate();

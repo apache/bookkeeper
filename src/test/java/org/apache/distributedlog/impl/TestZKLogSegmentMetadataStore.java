@@ -17,8 +17,14 @@
  */
 package org.apache.distributedlog.impl;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import com.google.common.collect.Lists;
 import java.net.URI;
 import java.util.Collections;
@@ -27,7 +33,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.bookkeeper.meta.ZkVersion;
+import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.distributedlog.DLMTestUtil;
@@ -45,7 +51,6 @@ import org.apache.distributedlog.metadata.LogMetadataForWriter;
 import org.apache.distributedlog.util.DLUtils;
 import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.Transaction;
-
 import org.apache.distributedlog.util.Utils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -58,10 +63,6 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-
-
-
 
 /**
  * Test ZK based log segment metadata store.
@@ -637,7 +638,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
     @Test(timeout = 60000)
     public void testStoreMaxLogSegmentSequenceNumber() throws Exception {
         Transaction<Object> updateTxn = lsmStore.transaction();
-        Versioned<Long> value = new Versioned<Long>(999L, new ZkVersion(0));
+        Versioned<Long> value = new Versioned<Long>(999L, new LongVersion(0));
         final CompletableFuture<Version> result = new CompletableFuture<Version>();
         LogMetadata metadata = mock(LogMetadata.class);
         when(metadata.getLogSegmentsPath()).thenReturn(rootZkPath);
@@ -654,7 +655,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
             }
         });
         Utils.ioResult(updateTxn.execute());
-        assertEquals(1, ((ZkVersion) Utils.ioResult(result)).getZnodeVersion());
+        assertEquals(1L, ((LongVersion) Utils.ioResult(result)).getLongVersion());
         Stat stat = new Stat();
         byte[] data = zkc.get().getData(rootZkPath, false, stat);
         assertEquals(999L, DLUtils.deserializeLogSegmentSequenceNumber(data));
@@ -664,7 +665,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
     @Test(timeout = 60000)
     public void testStoreMaxLogSegmentSequenceNumberBadVersion() throws Exception {
         Transaction<Object> updateTxn = lsmStore.transaction();
-        Versioned<Long> value = new Versioned<Long>(999L, new ZkVersion(10));
+        Versioned<Long> value = new Versioned<Long>(999L, new LongVersion(10));
         final CompletableFuture<Version> result = new CompletableFuture<Version>();
         LogMetadata metadata = mock(LogMetadata.class);
         when(metadata.getLogSegmentsPath()).thenReturn(rootZkPath);
@@ -701,7 +702,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
     @Test(timeout = 60000)
     public void testStoreMaxLogSegmentSequenceNumberOnNonExistentPath() throws Exception {
         Transaction<Object> updateTxn = lsmStore.transaction();
-        Versioned<Long> value = new Versioned<Long>(999L, new ZkVersion(10));
+        Versioned<Long> value = new Versioned<Long>(999L, new LongVersion(10));
         final CompletableFuture<Version> result = new CompletableFuture<Version>();
         String nonExistentPath = rootZkPath + "/non-existent";
         LogMetadata metadata = mock(LogMetadata.class);
@@ -735,7 +736,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
     @Test(timeout = 60000)
     public void testStoreMaxTxnId() throws Exception {
         Transaction<Object> updateTxn = lsmStore.transaction();
-        Versioned<Long> value = new Versioned<Long>(999L, new ZkVersion(0));
+        Versioned<Long> value = new Versioned<Long>(999L, new LongVersion(0));
         final CompletableFuture<Version> result = new CompletableFuture<Version>();
         LogMetadataForWriter metadata = mock(LogMetadataForWriter.class);
         when(metadata.getMaxTxIdPath()).thenReturn(rootZkPath);
@@ -752,7 +753,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
             }
         });
         Utils.ioResult(updateTxn.execute());
-        assertEquals(1, ((ZkVersion) Utils.ioResult(result)).getZnodeVersion());
+        assertEquals(1L, ((LongVersion) Utils.ioResult(result)).getLongVersion());
         Stat stat = new Stat();
         byte[] data = zkc.get().getData(rootZkPath, false, stat);
         assertEquals(999L, DLUtils.deserializeTransactionId(data));
@@ -762,7 +763,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
     @Test(timeout = 60000)
     public void testStoreMaxTxnIdBadVersion() throws Exception {
         Transaction<Object> updateTxn = lsmStore.transaction();
-        Versioned<Long> value = new Versioned<Long>(999L, new ZkVersion(10));
+        Versioned<Long> value = new Versioned<Long>(999L, new LongVersion(10));
         final CompletableFuture<Version> result = new CompletableFuture<Version>();
         LogMetadataForWriter metadata = mock(LogMetadataForWriter.class);
         when(metadata.getMaxTxIdPath()).thenReturn(rootZkPath);
@@ -799,7 +800,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
     @Test(timeout = 60000)
     public void testStoreMaxTxnIdOnNonExistentPath() throws Exception {
         Transaction<Object> updateTxn = lsmStore.transaction();
-        Versioned<Long> value = new Versioned<Long>(999L, new ZkVersion(10));
+        Versioned<Long> value = new Versioned<Long>(999L, new LongVersion(10));
         final CompletableFuture<Version> result = new CompletableFuture<Version>();
         String nonExistentPath = rootZkPath + "/non-existent";
         LogMetadataForWriter metadata = mock(LogMetadataForWriter.class);

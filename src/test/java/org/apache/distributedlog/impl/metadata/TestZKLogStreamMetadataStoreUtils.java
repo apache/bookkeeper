@@ -17,22 +17,22 @@
  */
 package org.apache.distributedlog.impl.metadata;
 
+import static org.apache.distributedlog.impl.metadata.ZKLogStreamMetadataStore.intToBytes;
+import static org.apache.distributedlog.impl.metadata.ZKLogStreamMetadataStore.processLogMetadatas;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
-import static org.apache.distributedlog.impl.metadata.ZKLogStreamMetadataStore.*;
-import static org.junit.Assert.*;
 import com.google.common.collect.Lists;
 import java.net.URI;
 import java.util.List;
-import org.apache.bookkeeper.meta.ZkVersion;
+import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.distributedlog.DLMTestUtil;
 import org.apache.distributedlog.exceptions.UnexpectedException;
 import org.apache.distributedlog.metadata.LogMetadata;
 import org.apache.distributedlog.metadata.LogMetadataForWriter;
 import org.apache.distributedlog.util.DLUtils;
-
 import org.junit.Test;
-
 
 /**
  * TestZKLogStreamMetadataStoreUtils.
@@ -63,7 +63,7 @@ public class TestZKLogStreamMetadataStoreUtils {
         List<Versioned<byte[]>> metadatas = Lists.newArrayList(
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(null, null),
-                new Versioned<byte[]>(DLUtils.serializeTransactionId(1L), new ZkVersion(1)),
+                new Versioned<byte[]>(DLUtils.serializeTransactionId(1L), new LongVersion(1)),
                 new Versioned<byte[]>(null, null));
         processLogMetadatas(uri, logName, logIdentifier, metadatas, false);
     }
@@ -78,7 +78,7 @@ public class TestZKLogStreamMetadataStoreUtils {
         List<Versioned<byte[]>> metadatas = Lists.newArrayList(
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(null, null),
-                new Versioned<byte[]>(DLUtils.serializeTransactionId(1L), new ZkVersion(1)),
+                new Versioned<byte[]>(DLUtils.serializeTransactionId(1L), new LongVersion(1)),
                 new Versioned<byte[]>(intToBytes(9999), null));
         processLogMetadatas(uri, logName, logIdentifier, metadatas, false);
     }
@@ -93,7 +93,7 @@ public class TestZKLogStreamMetadataStoreUtils {
         List<Versioned<byte[]>> metadatas = Lists.newArrayList(
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(null, null),
-                new Versioned<byte[]>(DLUtils.serializeTransactionId(1L), new ZkVersion(1)),
+                new Versioned<byte[]>(DLUtils.serializeTransactionId(1L), new LongVersion(1)),
                 new Versioned<byte[]>(intToBytes(LogMetadata.LAYOUT_VERSION), null),
                 new Versioned<byte[]>(null, null));
         processLogMetadatas(uri, logName, logIdentifier, metadatas, false);
@@ -109,9 +109,9 @@ public class TestZKLogStreamMetadataStoreUtils {
         List<Versioned<byte[]>> metadatas = Lists.newArrayList(
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(null, null),
-                new Versioned<byte[]>(DLUtils.serializeTransactionId(1L), new ZkVersion(1)),
+                new Versioned<byte[]>(DLUtils.serializeTransactionId(1L), new LongVersion(1)),
                 new Versioned<byte[]>(intToBytes(LogMetadata.LAYOUT_VERSION), null),
-                new Versioned<byte[]>(new byte[0], new ZkVersion(1)),
+                new Versioned<byte[]>(new byte[0], new LongVersion(1)),
                 new Versioned<byte[]>(null, null));
         processLogMetadatas(uri, logName, logIdentifier, metadatas, false);
     }
@@ -126,10 +126,10 @@ public class TestZKLogStreamMetadataStoreUtils {
         List<Versioned<byte[]>> metadatas = Lists.newArrayList(
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(null, null),
-                new Versioned<byte[]>(DLUtils.serializeTransactionId(1L), new ZkVersion(1)),
+                new Versioned<byte[]>(DLUtils.serializeTransactionId(1L), new LongVersion(1)),
                 new Versioned<byte[]>(intToBytes(LogMetadata.LAYOUT_VERSION), null),
-                new Versioned<byte[]>(new byte[0], new ZkVersion(1)),
-                new Versioned<byte[]>(new byte[0], new ZkVersion(1)),
+                new Versioned<byte[]>(new byte[0], new LongVersion(1)),
+                new Versioned<byte[]>(new byte[0], new LongVersion(1)),
                 new Versioned<byte[]>(null, null));
         processLogMetadatas(uri, logName, logIdentifier, metadatas, false);
     }
@@ -144,11 +144,11 @@ public class TestZKLogStreamMetadataStoreUtils {
         List<Versioned<byte[]>> metadatas = Lists.newArrayList(
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(null, null),
-                new Versioned<byte[]>(DLUtils.serializeTransactionId(1L), new ZkVersion(1)),
+                new Versioned<byte[]>(DLUtils.serializeTransactionId(1L), new LongVersion(1)),
                 new Versioned<byte[]>(intToBytes(LogMetadata.LAYOUT_VERSION), null),
-                new Versioned<byte[]>(new byte[0], new ZkVersion(1)),
-                new Versioned<byte[]>(new byte[0], new ZkVersion(1)),
-                new Versioned<byte[]>(DLUtils.serializeLogSegmentSequenceNumber(1L), new ZkVersion(1)),
+                new Versioned<byte[]>(new byte[0], new LongVersion(1)),
+                new Versioned<byte[]>(new byte[0], new LongVersion(1)),
+                new Versioned<byte[]>(DLUtils.serializeLogSegmentSequenceNumber(1L), new LongVersion(1)),
                 new Versioned<byte[]>(null, null));
         processLogMetadatas(uri, logName, logIdentifier, metadatas, true);
     }
@@ -161,16 +161,16 @@ public class TestZKLogStreamMetadataStoreUtils {
         String logName = "test-log";
         String logIdentifier = "<default>";
         Versioned<byte[]> maxTxnIdData =
-                new Versioned<byte[]>(DLUtils.serializeTransactionId(1L), new ZkVersion(1));
+                new Versioned<byte[]>(DLUtils.serializeTransactionId(1L), new LongVersion(1));
         Versioned<byte[]> logSegmentsData =
-                new Versioned<byte[]>(DLUtils.serializeLogSegmentSequenceNumber(1L), new ZkVersion(1));
+                new Versioned<byte[]>(DLUtils.serializeLogSegmentSequenceNumber(1L), new LongVersion(1));
         List<Versioned<byte[]>> metadatas = Lists.newArrayList(
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(null, null),
                 maxTxnIdData,
                 new Versioned<byte[]>(intToBytes(LogMetadata.LAYOUT_VERSION), null),
-                new Versioned<byte[]>(new byte[0], new ZkVersion(1)),
-                new Versioned<byte[]>(new byte[0], new ZkVersion(1)),
+                new Versioned<byte[]>(new byte[0], new LongVersion(1)),
+                new Versioned<byte[]>(new byte[0], new LongVersion(1)),
                 logSegmentsData);
         LogMetadataForWriter metadata =
                 processLogMetadatas(uri, logName, logIdentifier, metadatas, false);
@@ -188,18 +188,18 @@ public class TestZKLogStreamMetadataStoreUtils {
         String logName = "test-log";
         String logIdentifier = "<default>";
         Versioned<byte[]> maxTxnIdData =
-                new Versioned<byte[]>(DLUtils.serializeTransactionId(1L), new ZkVersion(1));
+                new Versioned<byte[]>(DLUtils.serializeTransactionId(1L), new LongVersion(1));
         Versioned<byte[]> logSegmentsData =
-                new Versioned<byte[]>(DLUtils.serializeLogSegmentSequenceNumber(1L), new ZkVersion(1));
+                new Versioned<byte[]>(DLUtils.serializeLogSegmentSequenceNumber(1L), new LongVersion(1));
         Versioned<byte[]> allocationData =
-                new Versioned<byte[]>(DLUtils.logSegmentId2Bytes(1L), new ZkVersion(1));
+                new Versioned<byte[]>(DLUtils.logSegmentId2Bytes(1L), new LongVersion(1));
         List<Versioned<byte[]>> metadatas = Lists.newArrayList(
                 new Versioned<byte[]>(null, null),
                 new Versioned<byte[]>(null, null),
                 maxTxnIdData,
                 new Versioned<byte[]>(intToBytes(LogMetadata.LAYOUT_VERSION), null),
-                new Versioned<byte[]>(new byte[0], new ZkVersion(1)),
-                new Versioned<byte[]>(new byte[0], new ZkVersion(1)),
+                new Versioned<byte[]>(new byte[0], new LongVersion(1)),
+                new Versioned<byte[]>(new byte[0], new LongVersion(1)),
                 logSegmentsData,
                 allocationData);
         LogMetadataForWriter metadata =

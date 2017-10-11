@@ -22,7 +22,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.distributedlog.metadata.LogMetadata.*;
 
 import com.google.common.base.Optional;
-
 import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.net.URI;
@@ -30,15 +29,13 @@ import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-
 import java.util.function.Function;
-import org.apache.bookkeeper.meta.ZkVersion;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.DistributedLogConstants;
 import org.apache.distributedlog.ZooKeeperClient;
-
 import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.common.util.PermitManager;
 import org.apache.distributedlog.common.util.SchedulerUtils;
@@ -59,16 +56,12 @@ import org.apache.distributedlog.metadata.LogMetadata;
 import org.apache.distributedlog.metadata.LogMetadataForReader;
 import org.apache.distributedlog.metadata.LogMetadataForWriter;
 import org.apache.distributedlog.metadata.LogStreamMetadataStore;
-
-
 import org.apache.distributedlog.util.DLUtils;
 import org.apache.distributedlog.util.OrderedScheduler;
 import org.apache.distributedlog.util.Transaction;
 import org.apache.distributedlog.util.Utils;
 import org.apache.distributedlog.zk.LimitedPermitManager;
 import org.apache.distributedlog.zk.ZKTransaction;
-
-
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -81,9 +74,6 @@ import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-
-
 
 /**
  * zookeeper based {@link LogStreamMetadataStore}.
@@ -458,7 +448,7 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
                         if (null == dataCreated) {
                             finalMetadatas.add(metadatas.get(i));
                         } else {
-                            finalMetadatas.add(new Versioned<byte[]>(dataCreated, new ZkVersion(0)));
+                            finalMetadatas.add(new Versioned<byte[]>(dataCreated, new LongVersion(0)));
                         }
                     }
                     promise.complete(finalMetadatas);

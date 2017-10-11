@@ -26,16 +26,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-
 import java.util.concurrent.CountDownLatch;
-
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.meta.ZkVersion;
 import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.distributedlog.BookKeeperClient;
 import org.apache.distributedlog.DistributedLogConfiguration;
@@ -43,18 +41,14 @@ import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.common.concurrent.FutureEventListener;
 import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.exceptions.DLInterruptedException;
-
 import org.apache.distributedlog.util.Transaction;
 import org.apache.distributedlog.util.Utils;
-
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-
 
 /**
  * LedgerAllocator impl.
@@ -203,7 +197,7 @@ public class LedgerAllocatorPool implements LedgerAllocator {
                     return;
                 }
                 Versioned<byte[]> allocatorData =
-                        new Versioned<byte[]>(data, new ZkVersion(stat.getVersion()));
+                        new Versioned<byte[]>(data, new LongVersion(stat.getVersion()));
                 SimpleLedgerAllocator allocator =
                         new SimpleLedgerAllocator(path, allocatorData, quorumConfigProvider, zkc, bkc);
                 allocator.start();
@@ -262,7 +256,7 @@ public class LedgerAllocatorPool implements LedgerAllocator {
                     SimpleLedgerAllocator newAllocator = null;
                     if (KeeperException.Code.OK.intValue() == rc) {
                         Versioned<byte[]> allocatorData =
-                                new Versioned<byte[]>(data, new ZkVersion(stat.getVersion()));
+                                new Versioned<byte[]>(data, new LongVersion(stat.getVersion()));
                         logger.info("Rescuing ledger allocator {}.", path);
                         newAllocator = new SimpleLedgerAllocator(path, allocatorData, quorumConfigProvider, zkc, bkc);
                         newAllocator.start();
@@ -448,6 +442,6 @@ public class LedgerAllocatorPool implements LedgerAllocator {
             allocatorsToDelete,
             allocator -> allocator.delete(),
             scheduledExecutorService
-        ).thenCompose(values -> Utils.zkDelete(zkc, poolPath, new ZkVersion(-1)));
+        ).thenCompose(values -> Utils.zkDelete(zkc, poolPath, new LongVersion(-1)));
     }
 }

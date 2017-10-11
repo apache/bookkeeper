@@ -84,7 +84,7 @@ public class TestDistributedLogConfiguration {
     @Test(timeout = 20000)
     public void loadStreamConfNullOverrides() throws Exception {
         DistributedLogConfiguration conf = new DistributedLogConfiguration();
-        DistributedLogConfiguration confClone = (DistributedLogConfiguration) conf.clone();
+        DistributedLogConfiguration confClone = new DistributedLogConfiguration();
         Optional<DistributedLogConfiguration> streamConfiguration = Optional.absent();
         conf.loadStreamConf(streamConfiguration);
 

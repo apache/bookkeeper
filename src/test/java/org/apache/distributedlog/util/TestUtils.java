@@ -18,10 +18,14 @@
 package org.apache.distributedlog.util;
 
 import static com.google.common.base.Charsets.UTF_8;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+
 import com.google.common.base.Optional;
 import java.util.concurrent.CountDownLatch;
-import org.apache.bookkeeper.meta.ZkVersion;
+import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.distributedlog.DLMTestUtil;
 import org.apache.distributedlog.TestZooKeeperClientBuilder;
@@ -33,9 +37,6 @@ import org.apache.zookeeper.ZooDefs;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-
-
 
 /**
  * Test Utils.
@@ -121,7 +122,7 @@ public class TestUtils extends ZooKeeperClusterTestCase {
         assertArrayEquals("Data should return as written",
                 rawData, data.getValue());
         assertEquals("Version should be zero",
-                0, ((ZkVersion) data.getVersion()).getZnodeVersion());
+                0L, ((LongVersion) data.getVersion()).getLongVersion());
     }
 
     @Test(timeout = 60000)

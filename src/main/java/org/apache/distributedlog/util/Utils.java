@@ -31,10 +31,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nullable;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.meta.ZkVersion;
+import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.distributedlog.DistributedLogConstants;
 import org.apache.distributedlog.ZooKeeperClient;
@@ -340,7 +339,7 @@ public class Utils {
                     if (null == stat) {
                         promise.complete(new Versioned<byte[]>(null, null));
                     } else {
-                        promise.complete(new Versioned<byte[]>(data, new ZkVersion(stat.getVersion())));
+                        promise.complete(new Versioned<byte[]>(data, new LongVersion(stat.getVersion())));
                     }
                 } else if (KeeperException.Code.NONODE.intValue() == rc) {
                     promise.complete(new Versioned<byte[]>(null, null));
@@ -352,8 +351,8 @@ public class Utils {
         return promise;
     }
 
-    public static CompletableFuture<ZkVersion> zkSetData(ZooKeeperClient zkc,
-                                                         String path, byte[] data, ZkVersion version) {
+    public static CompletableFuture<LongVersion> zkSetData(ZooKeeperClient zkc,
+                                                         String path, byte[] data, LongVersion version) {
         ZooKeeper zk;
         try {
             zk = zkc.get();
@@ -378,13 +377,14 @@ public class Utils {
      *          version used to set data
      * @return future representing the version after this operation.
      */
-    public static CompletableFuture<ZkVersion> zkSetData(ZooKeeper zk, String path, byte[] data, ZkVersion version) {
-        final CompletableFuture<ZkVersion> promise = new CompletableFuture<ZkVersion>();
-        zk.setData(path, data, version.getZnodeVersion(), new AsyncCallback.StatCallback() {
+    public static CompletableFuture<LongVersion> zkSetData(
+            ZooKeeper zk, String path, byte[] data, LongVersion version) {
+        final CompletableFuture<LongVersion> promise = new CompletableFuture<LongVersion>();
+        zk.setData(path, data, (int) version.getLongVersion(), new AsyncCallback.StatCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx, Stat stat) {
                 if (KeeperException.Code.OK.intValue() == rc) {
-                    promise.complete(new ZkVersion(stat.getVersion()));
+                    promise.complete(new LongVersion(stat.getVersion()));
                     return;
                 }
                 promise.completeExceptionally(
@@ -395,7 +395,7 @@ public class Utils {
         return promise;
     }
 
-    public static CompletableFuture<Void> zkDelete(ZooKeeperClient zkc, String path, ZkVersion version) {
+    public static CompletableFuture<Void> zkDelete(ZooKeeperClient zkc, String path, LongVersion version) {
         ZooKeeper zk;
         try {
             zk = zkc.get();
@@ -418,9 +418,9 @@ public class Utils {
      *          version used to set data
      * @return future representing the version after this operation.
      */
-    public static CompletableFuture<Void> zkDelete(ZooKeeper zk, String path, ZkVersion version) {
+    public static CompletableFuture<Void> zkDelete(ZooKeeper zk, String path, LongVersion version) {
         final CompletableFuture<Void> promise = new CompletableFuture<Void>();
-        zk.delete(path, version.getZnodeVersion(), new AsyncCallback.VoidCallback() {
+        zk.delete(path, (int) version.getLongVersion(), new AsyncCallback.VoidCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx) {
                 if (KeeperException.Code.OK.intValue() == rc) {
@@ -448,7 +448,7 @@ public class Utils {
      * false if the node doesn't exist, otherwise future will throw exception
      *
      */
-    public static CompletableFuture<Boolean> zkDeleteIfNotExist(ZooKeeperClient zkc, String path, ZkVersion version) {
+    public static CompletableFuture<Boolean> zkDeleteIfNotExist(ZooKeeperClient zkc, String path, LongVersion version) {
         ZooKeeper zk;
         try {
             zk = zkc.get();
@@ -458,7 +458,7 @@ public class Utils {
             return FutureUtils.exception(zkException(e, path));
         }
         final CompletableFuture<Boolean> promise = new CompletableFuture<Boolean>();
-        zk.delete(path, version.getZnodeVersion(), new AsyncCallback.VoidCallback() {
+        zk.delete(path, (int) version.getLongVersion(), new AsyncCallback.VoidCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx) {
                 if (KeeperException.Code.OK.intValue() == rc) {

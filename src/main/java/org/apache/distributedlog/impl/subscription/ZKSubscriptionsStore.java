@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import org.apache.bookkeeper.meta.ZkVersion;
+import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.ZooKeeperClient;
@@ -33,7 +33,6 @@ import org.apache.distributedlog.api.subscription.SubscriptionStateStore;
 import org.apache.distributedlog.api.subscription.SubscriptionsStore;
 import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.exceptions.DLInterruptedException;
-
 import org.apache.distributedlog.util.Utils;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
@@ -137,7 +136,7 @@ public class ZKSubscriptionsStore implements SubscriptionsStore {
     public CompletableFuture<Boolean> deleteSubscriber(String subscriberId) {
         subscribers.remove(subscriberId);
         String path = getSubscriberZKPath(subscriberId);
-        return Utils.zkDeleteIfNotExist(zkc, path, new ZkVersion(-1));
+        return Utils.zkDeleteIfNotExist(zkc, path, new LongVersion(-1L));
     }
 
     @Override

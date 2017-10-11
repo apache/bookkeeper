@@ -17,14 +17,14 @@
  */
 package org.apache.distributedlog;
 
-
 import static com.google.common.base.Charsets.UTF_8;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
-import org.apache.bookkeeper.meta.ZkVersion;
+import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.namespace.Namespace;
@@ -40,9 +40,6 @@ import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
-
-
 /**
  * Test Cases for LogSegmentsZK.
  */
@@ -56,7 +53,7 @@ public class TestLogSegmentsZK extends TestDistributedLogBase {
         String logSegmentsPath = LogMetadata.getLogSegmentsPath(
                 uri, streamName, conf.getUnpartitionedStreamName());
         byte[] data = zkc.get().getData(logSegmentsPath, false, stat);
-        Versioned<byte[]> maxLSSNData = new Versioned<byte[]>(data, new ZkVersion(stat.getVersion()));
+        Versioned<byte[]> maxLSSNData = new Versioned<byte[]>(data, new LongVersion(stat.getVersion()));
         return new MaxLogSegmentSequenceNo(maxLSSNData);
     }
 
