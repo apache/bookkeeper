@@ -21,9 +21,11 @@
     <suppress checks="JavadocPackage" files=".*[\\/]maven-archetypes[\\/].*"/>
     <suppress checks="JavadocPackage" files=".*[\\/]examples[\\/].*"/>
     <!-- suppress packages by packages -->
+    <suppress checks=".*" files=".*[\\/]bookie[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]client[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]conf[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]feature[\\/].*"/>
+    <suppress checks=".*" files=".*[\\/]http[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]meta[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]metastore[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]net[\\/].*"/>
@@ -34,8 +36,11 @@
     <suppress checks=".*" files=".*[\\/]shims[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]stats[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]streaming[\\/].*"/>
+    <suppress checks=".*" files=".*[\\/]test[\\/].*"/>
+    <suppress checks=".*" files=".*[\\/]tls[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]tools[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]util[\\/].*"/>
+    <suppress checks=".*" files=".*[\\/]versioning[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]zookeeper[\\/].*"/>
 
     <!-- suppress all checks in the generated directories -->

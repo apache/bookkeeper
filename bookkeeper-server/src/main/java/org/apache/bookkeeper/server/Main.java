@@ -19,10 +19,12 @@
 package org.apache.bookkeeper.server;
 
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_SCOPE;
+import static org.apache.bookkeeper.server.component.ServerLifecycleComponent.loadServerComponents;
 
 import java.io.File;
 import java.net.MalformedURLException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.ExitCode;
@@ -31,6 +33,7 @@ import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.common.component.LifecycleComponentStack;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.BKHttpServiceProvider;
+import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.server.service.AutoRecoveryService;
 import org.apache.bookkeeper.server.service.BookieService;
@@ -54,39 +57,40 @@ import org.apache.commons.configuration.ConfigurationException;
 @Slf4j
 public class Main {
 
-    static final Options bkOpts = new Options();
+    static final Options BK_OPTS = new Options();
     static {
-        bkOpts.addOption("c", "conf", true, "Configuration for Bookie Server");
-        bkOpts.addOption("withAutoRecovery", false,
+        BK_OPTS.addOption("c", "conf", true, "Configuration for Bookie Server");
+        BK_OPTS.addOption("withAutoRecovery", false,
                 "Start Autorecovery service Bookie server");
-        bkOpts.addOption("readOnly", false,
+        BK_OPTS.addOption("readOnly", false,
                 "Force Start a ReadOnly Bookie server");
-        bkOpts.addOption("z", "zkserver", true, "Zookeeper Server");
-        bkOpts.addOption("m", "zkledgerpath", true, "Zookeeper ledgers root path");
-        bkOpts.addOption("p", "bookieport", true, "bookie port exported");
-        bkOpts.addOption("j", "journal", true, "bookie journal directory");
+        BK_OPTS.addOption("z", "zkserver", true, "Zookeeper Server");
+        BK_OPTS.addOption("m", "zkledgerpath", true, "Zookeeper ledgers root path");
+        BK_OPTS.addOption("p", "bookieport", true, "bookie port exported");
+        BK_OPTS.addOption("j", "journal", true, "bookie journal directory");
         Option indexDirs = new Option ("i", "indexdirs", true, "bookie index directories");
         indexDirs.setArgs(10);
-        bkOpts.addOption(indexDirs);
+        BK_OPTS.addOption(indexDirs);
         Option ledgerDirs = new Option ("l", "ledgerdirs", true, "bookie ledgers directories");
         ledgerDirs.setArgs(10);
-        bkOpts.addOption(ledgerDirs);
-        bkOpts.addOption("h", "help", false, "Print help message");
+        BK_OPTS.addOption(ledgerDirs);
+        BK_OPTS.addOption("h", "help", false, "Print help message");
     }
 
     /**
-     * Print usage
+     * Print usage.
      */
     private static void printUsage() {
         HelpFormatter hf = new HelpFormatter();
         String header = "\n"
-                        + "BookieServer provide an interface to start a bookie with configuration file and/or arguments."
-                        + "The settings in configuration file will be overwrite by provided arguments.\n"
-                        + "Options including:\n";
-        String footer = "Here is an example:\n" +
-                        "\tBookieServer -c bookie.conf -z localhost:2181 -m /bookkeeper/ledgers " +
-                        "-p 3181 -j /mnt/journal -i \"/mnt/index1 /mnt/index2\" -l \"/mnt/ledger1 /mnt/ledger2 /mnt/ledger3\"\n";
-        hf.printHelp("BookieServer [options]\n", header,  bkOpts, footer, true);
+            + "BookieServer provide an interface to start a bookie with configuration file and/or arguments."
+            + "The settings in configuration file will be overwrite by provided arguments.\n"
+            + "Options including:\n";
+        String footer = "Here is an example:\n"
+            + "\tBookieServer -c bookie.conf -z localhost:2181 -m /bookkeeper/ledgers "
+            + "-p 3181 -j /mnt/journal -i \"/mnt/index1 /mnt/index2\""
+            + " -l \"/mnt/ledger1 /mnt/ledger2 /mnt/ledger3\"\n";
+        hf.printHelp("BookieServer [options]\n", header, BK_OPTS, footer, true);
     }
 
     private static void loadConfFile(ServerConfiguration conf, String confFile)
@@ -95,20 +99,20 @@ public class Main {
             conf.loadConf(new File(confFile).toURI().toURL());
             conf.validate();
         } catch (MalformedURLException e) {
-            log.error("Could not open configuration file: " + confFile, e);
+            log.error("Could not open configuration file: {}", confFile, e);
             throw new IllegalArgumentException();
         } catch (ConfigurationException e) {
-            log.error("Malformed configuration file: " + confFile, e);
+            log.error("Malformed configuration file: {}", confFile, e);
             throw new IllegalArgumentException();
         }
-        log.info("Using configuration file " + confFile);
+        log.info("Using configuration file {}", confFile);
     }
 
     private static ServerConfiguration parseArgs(String[] args)
         throws IllegalArgumentException {
         try {
             BasicParser parser = new BasicParser();
-            CommandLine cmdLine = parser.parse(bkOpts, args);
+            CommandLine cmdLine = parser.parse(BK_OPTS, args);
 
             if (cmdLine.hasOption('h')) {
                 throw new IllegalArgumentException();
@@ -133,34 +137,34 @@ public class Main {
             // command line arguments overwrite settings in configuration file
             if (cmdLine.hasOption('z')) {
                 String sZK = cmdLine.getOptionValue('z');
-                log.info("Get cmdline zookeeper instance: " + sZK);
+                log.info("Get cmdline zookeeper instance: {}", sZK);
                 conf.setZkServers(sZK);
             }
 
             if (cmdLine.hasOption('m')) {
                 String sZkLedgersRootPath = cmdLine.getOptionValue('m');
-                log.info("Get cmdline zookeeper ledger path: " + sZkLedgersRootPath);
+                log.info("Get cmdline zookeeper ledger path: {}", sZkLedgersRootPath);
                 conf.setZkLedgersRootPath(sZkLedgersRootPath);
             }
 
             if (cmdLine.hasOption('p')) {
                 String sPort = cmdLine.getOptionValue('p');
-                log.info("Get cmdline bookie port: " + sPort);
+                log.info("Get cmdline bookie port: {}", sPort);
                 Integer iPort = Integer.parseInt(sPort);
                 conf.setBookiePort(iPort.intValue());
             }
 
             if (cmdLine.hasOption('j')) {
                 String sJournalDir = cmdLine.getOptionValue('j');
-                log.info("Get cmdline journal dir: " + sJournalDir);
+                log.info("Get cmdline journal dir: {}", sJournalDir);
                 conf.setJournalDirName(sJournalDir);
             }
 
             if (cmdLine.hasOption('i')) {
                 String[] sIndexDirs = cmdLine.getOptionValues('i');
                 log.info("Get cmdline index dirs: ");
-                for(String index : sIndexDirs) {
-                    log.info("indexDir : " + index);
+                for (String index : sIndexDirs) {
+                    log.info("indexDir : {}", index);
                 }
                 conf.setIndexDirName(sIndexDirs);
             }
@@ -168,8 +172,8 @@ public class Main {
             if (cmdLine.hasOption('l')) {
                 String[] sLedgerDirs = cmdLine.getOptionValues('l');
                 log.info("Get cmdline ledger dirs: ");
-                for(String ledger : sLedgerDirs) {
-                    log.info("ledgerdir : " + ledger);
+                for (String ledger : sLedgerDirs) {
+                    log.info("ledgerdir : {}", ledger);
                 }
                 conf.setLedgerDirNames(sLedgerDirs);
             }
@@ -267,7 +271,7 @@ public class Main {
      * @param conf bookie server configuration
      * @return lifecycle stack
      */
-    private static LifecycleComponent buildBookieServer(BookieConfiguration conf) throws Exception {
+    static LifecycleComponentStack buildBookieServer(BookieConfiguration conf) throws Exception {
         LifecycleComponentStack.Builder serverBuilder = LifecycleComponentStack.newBuilder().withName("bookie-server");
 
         // 1. build stats provider
@@ -276,12 +280,14 @@ public class Main {
         StatsLogger rootStatsLogger = statsProviderService.getStatsProvider().getStatsLogger("");
 
         serverBuilder.addComponent(statsProviderService);
+        log.info("Load lifecycle component : {}", StatsProviderService.class.getName());
 
         // 2. build bookie server
         BookieService bookieService =
             new BookieService(conf, rootStatsLogger);
 
         serverBuilder.addComponent(bookieService);
+        log.info("Load lifecycle component : {}", BookieService.class.getName());
 
         // 3. build auto recovery
         if (conf.getServerConf().isAutoRecoveryDaemonEnabled()) {
@@ -289,6 +295,7 @@ public class Main {
                 new AutoRecoveryService(conf, rootStatsLogger.scope(REPLICATION_SCOPE));
 
             serverBuilder.addComponent(autoRecoveryService);
+            log.info("Load lifecycle component : {}", AutoRecoveryService.class.getName());
         }
 
         // 4. build http service
@@ -301,6 +308,20 @@ public class Main {
                 new HttpService(provider, conf, rootStatsLogger);
 
             serverBuilder.addComponent(httpService);
+            log.info("Load lifecycle component : {}", HttpService.class.getName());
+        }
+
+        // 5. build extra services
+        String[] extraComponents = conf.getServerConf().getExtraServerComponents();
+        if (null != extraComponents) {
+            List<ServerLifecycleComponent> components = loadServerComponents(
+                extraComponents,
+                conf,
+                rootStatsLogger);
+            for (ServerLifecycleComponent component : components) {
+                serverBuilder.addComponent(component);
+                log.info("Load lifecycle component : {}", component.getClass().getName());
+            }
         }
 
         return serverBuilder.build();

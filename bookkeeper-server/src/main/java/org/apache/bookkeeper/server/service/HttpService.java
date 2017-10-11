@@ -21,17 +21,17 @@ package org.apache.bookkeeper.server.service;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
-import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.http.BKHttpServiceProvider;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.HttpServerLoader;
+import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
 
 /**
- * A {@link org.apache.bookkeeper.common.component.LifecycleComponent} that runs http service.
+ * A {@link ServerLifecycleComponent} that runs http service.
  */
-public class HttpService extends AbstractLifecycleComponent<BookieConfiguration> {
+public class HttpService extends ServerLifecycleComponent {
 
     public static final String NAME = "http-service";
 
