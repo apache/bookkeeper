@@ -76,7 +76,7 @@ import org.slf4j.LoggerFactory;
  * Ledger handle contains ledger metadata and is used to access the read and
  * write operations to a ledger.
  */
-public class LedgerHandle implements WriteHandle, WriteAdvHandle {
+public class LedgerHandle implements WriteHandle {
     final static Logger LOG = LoggerFactory.getLogger(LedgerHandle.class);
 
     final byte[] ledgerKey;
@@ -695,16 +695,6 @@ public class LedgerHandle implements WriteHandle, WriteAdvHandle {
         SyncAddCallback callback = new SyncAddCallback();
         asyncAddEntry(data, callback, null);
         return callback;
-    }
-
-    /**
-     * {@inheritDoc }
-     */
-    @Override
-    public CompletableFuture<Long> write(long entryId, ByteBuf data) {
-        CompletableFuture<Long> res = new CompletableFuture<>();
-        FutureUtils.completeExceptionally(res, BKException.create(BKException.Code.IllegalOpException));
-        return res;
     }
 
     /**

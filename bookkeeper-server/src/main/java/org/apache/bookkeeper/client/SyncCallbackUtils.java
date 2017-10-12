@@ -94,6 +94,28 @@ class SyncCallbackUtils {
 
     }
 
+    static class SyncCreateAdvCallback implements AsyncCallback.CreateCallback {
+
+        private final CompletableFuture<? super LedgerHandleAdv> future;
+
+        public SyncCreateAdvCallback(CompletableFuture<? super LedgerHandleAdv> future) {
+            this.future = future;
+        }
+
+        /**
+         * Create callback implementation for synchronous create call.
+         *
+         * @param rc return code
+         * @param lh ledger handle object
+         * @param ctx optional control object
+         */
+        @Override
+        public void createComplete(int rc, LedgerHandle lh, Object ctx) {
+            finish(rc, (LedgerHandleAdv) lh, future);
+        }
+
+    }
+
     static class SyncOpenCallback implements AsyncCallback.OpenCallback {
 
         private final CompletableFuture<? super LedgerHandle> future;

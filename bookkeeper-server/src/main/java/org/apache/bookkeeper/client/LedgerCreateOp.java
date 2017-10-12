@@ -32,6 +32,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCreateAdvCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCreateCallback;
 import org.apache.bookkeeper.client.api.CreateAdvBuilder;
 import org.apache.bookkeeper.client.api.CreateBuilder;
@@ -346,7 +347,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
         @Override
         public CompletableFuture<WriteAdvHandle> execute() {
             CompletableFuture<WriteAdvHandle> future = new CompletableFuture<>();
-            SyncCreateCallback callback = new SyncCreateCallback(future);
+            SyncCreateAdvCallback callback = new SyncCreateAdvCallback(future);
             create(callback);
             return future;
         }

@@ -43,6 +43,7 @@ import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.IsClosedCallback;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCreateAdvCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCreateCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncDeleteCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncOpenCallback;
@@ -897,8 +898,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     public LedgerHandle createLedgerAdv(int ensSize, int writeQuorumSize, int ackQuorumSize,
                                         DigestType digestType, byte passwd[], final Map<String, byte[]> customMetadata)
             throws InterruptedException, BKException {
-        CompletableFuture<LedgerHandle> future = new CompletableFuture<>();
-        SyncCreateCallback result = new SyncCreateCallback(future);
+        CompletableFuture<LedgerHandleAdv> future = new CompletableFuture<>();
+        SyncCreateAdvCallback result = new SyncCreateAdvCallback(future);
 
         /*
          * Calls asynchronous version
@@ -989,8 +990,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                                         DigestType digestType,
                                         byte passwd[],
                                         final Map<String, byte[]> customMetadata) throws InterruptedException, BKException{
-        CompletableFuture<LedgerHandle> future = new CompletableFuture<>();
-        SyncCreateCallback result = new SyncCreateCallback(future);
+        CompletableFuture<LedgerHandleAdv> future = new CompletableFuture<>();
+        SyncCreateAdvCallback result = new SyncCreateAdvCallback(future);
 
         /*
          * Calls asynchronous version

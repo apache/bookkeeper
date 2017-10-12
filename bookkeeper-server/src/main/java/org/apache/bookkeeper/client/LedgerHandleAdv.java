@@ -39,13 +39,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import org.apache.bookkeeper.client.api.WriteAdvHandle;
 
 /**
  * Ledger Advanced handle extends {@link LedgerHandle} to provide API to add entries with
  * user supplied entryIds. Through this interface Ledger Length may not be accurate while the
  * ledger being written.
  */
-public class LedgerHandleAdv extends LedgerHandle {
+public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
     final static Logger LOG = LoggerFactory.getLogger(LedgerHandleAdv.class);
 
     static class PendingOpsComparator implements Comparator<PendingAddOp>, Serializable {
