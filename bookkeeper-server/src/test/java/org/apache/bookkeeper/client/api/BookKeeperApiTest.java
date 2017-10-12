@@ -34,8 +34,6 @@ import org.apache.bookkeeper.client.BKException.BKLedgerFencedException;
 import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
 import org.apache.bookkeeper.client.BKException.BKUnauthorizedAccessException;
 import org.apache.bookkeeper.client.MockBookKeeperTestCase;
-import org.apache.bookkeeper.proto.BookieProtocol;
-import static org.junit.Assert.fail;
 import org.junit.Test;
 
 /**
@@ -186,11 +184,6 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
             result(writer.append(ByteBuffer.wrap(data)));
         }
 
-        registerMockEntryForRead(lId, BookieProtocol.LAST_ADD_CONFIRMED, password, data, -1);
-        registerMockEntryForRead(lId, 0, password, data, -1);
-        registerMockEntryForRead(lId, 1, password, data, 0);
-        registerMockEntryForRead(lId, 2, password, data, 1);
-
         try (ReadHandle reader = result(newOpenLedgerOp()
             .withPassword(password)
             .withRecovery(false)
@@ -217,10 +210,6 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
 
             result(writer.append(ByteBuffer.wrap(data)));
             result(writer.append(ByteBuffer.wrap(data)));
-
-            registerMockEntryForRead(lId, BookieProtocol.LAST_ADD_CONFIRMED, password, data, -1);
-            registerMockEntryForRead(lId, 0, password, data, -1);
-            registerMockEntryForRead(lId, 1, password, data, 0);
 
             // open with fencing
             try (ReadHandle reader = result(newOpenLedgerOp()
@@ -269,7 +258,7 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
     private static void checkEntries(Iterable<LedgerEntry> entries, byte[] data)
         throws InterruptedException, BKException {
         for (LedgerEntry le : entries) {
-            assertArrayEquals(le.getEntry(), data);
+            assertArrayEquals(data, le.getEntry());
         }
     }
 

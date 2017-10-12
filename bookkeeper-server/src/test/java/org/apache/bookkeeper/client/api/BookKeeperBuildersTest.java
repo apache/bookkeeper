@@ -239,8 +239,12 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             writeQuorumSize, ackQuorumSize, password, customMetadata);
         registerMockLedgerMetadata(ledgerId, ledgerMetadata);
 
-        registerMockEntryForRead(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, password, entryData, -1);
-        registerMockEntryForRead(ledgerId, 0, password, entryData, -1);
+        ledgerMetadata.getEnsembles().values().forEach(bookieAddressList -> {
+            bookieAddressList.forEach(bookieAddress -> {
+                registerMockEntryForRead(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, bookieAddress, entryData, -1);
+                registerMockEntryForRead(ledgerId, 0, bookieAddress, entryData, -1);
+            });
+        });
 
         result(newOpenLedgerOp()
             .withPassword(ledgerMetadata.getPassword())
@@ -256,8 +260,12 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             writeQuorumSize, ackQuorumSize, password, customMetadata);
         registerMockLedgerMetadata(ledgerId, ledgerMetadata);
 
-        registerMockEntryForRead(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, password, entryData, -1);
-        registerMockEntryForRead(ledgerId, 0, password, entryData, -1);
+        ledgerMetadata.getEnsembles().values().forEach(bookieAddressList -> {
+            bookieAddressList.forEach(bookieAddress -> {
+                registerMockEntryForRead(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, bookieAddress, entryData, -1);
+                registerMockEntryForRead(ledgerId, 0, bookieAddress, entryData, -1);
+            });
+        });
         result(newOpenLedgerOp()
             .withPassword(ledgerMetadata.getPassword())
             .withDigestType(DigestType.CRC32)

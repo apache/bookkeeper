@@ -237,7 +237,7 @@ class SyncCallbackUtils {
             if (rc != BKException.Code.OK) {
                 this.completeExceptionally(BKException.create(rc).fillInStackTrace());
             } else {
-                this.complete((Iterable) Iterators.forEnumeration(seq));
+                this.complete((Iterable) () -> Iterators.forEnumeration(seq));
             }
         }
     }
