@@ -231,12 +231,22 @@ public class BookKeeperAdmin implements AutoCloseable {
     }
 
     /**
-     * Get a list of readonly bookies
+     * Get a list of readonly bookies synchronously.
+     *
+     * @return a collection of bookie addresses
+     * @throws BKException if there are issues trying to read the list.
+     */
+    public Collection<BookieSocketAddress> getReadOnlyBookiesSync() throws BKException {
+        return bkc.bookieWatcher.getReadOnlyBookiesSync();
+    }
+
+    /**
+     * Get a list of readonly bookies asynchronously (may be slightly out of date).
      *
      * @return a collection of bookie addresses
      */
-    public Collection<BookieSocketAddress> getReadOnlyBookies() {
-        return bkc.bookieWatcher.getReadOnlyBookies();
+    public Collection<BookieSocketAddress> getReadOnlyBookiesAsync() {
+        return bkc.bookieWatcher.getReadOnlyBookiesAsync();
     }
 
     /**
@@ -1186,7 +1196,7 @@ public class BookKeeperAdmin implements AutoCloseable {
     public void decommissionBookie(BookieSocketAddress bookieAddress)
             throws CompatibilityException, UnavailableException, KeeperException, InterruptedException, IOException,
             BKAuditException, TimeoutException, BKException {
-        if (getAvailableBookies().contains(bookieAddress) || getReadOnlyBookies().contains(bookieAddress)) {
+        if (getAvailableBookies().contains(bookieAddress) || getReadOnlyBookiesAsync().contains(bookieAddress)) {
             LOG.error("Bookie: {} is not shutdown yet", bookieAddress);
             throw BKException.create(BKException.Code.IllegalOpException);
         }
