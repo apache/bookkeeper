@@ -26,6 +26,7 @@ import com.google.common.annotations.Beta;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.SortedLedgerStorage;
+import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.stats.NullStatsProvider;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.bookkeeper.util.BookKeeperConstants;
@@ -64,6 +65,8 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String OPEN_FILE_LIMIT = "openFileLimit";
     protected final static String PAGE_LIMIT = "pageLimit";
     protected final static String PAGE_SIZE = "pageSize";
+    protected final static String FILEINFO_CACHE_INITIAL_CAPACITY = "fileInfoCacheInitialCapacity";
+    protected final static String FILEINFO_MAX_IDLE_TIME = "fileInfoMaxIdleTime";
     // Journal Parameters
     protected final static String MAX_JOURNAL_SIZE = "journalMaxSizeMB";
     protected final static String MAX_BACKUP_JOURNALS = "journalMaxBackups";
@@ -166,6 +169,9 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String TLS_TRUSTSTORE_TYPE = "tlsTrustStoreType";
     protected final static String TLS_TRUSTSTORE = "tlsTrustStore";
     protected final static String TLS_TRUSTSTORE_PASSWORD_PATH = "tlsTrustStorePasswordPath";
+
+    // Lifecycle Components
+    protected final static String EXTRA_SERVER_COMPONENTS = "extraServerComponents";
 
     /**
      * Construct a default configuration object
@@ -402,6 +408,56 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Get the minimum total size for the internal file info cache tables.
+     * Providing a large enough estimate at construction time avoids the need for
+     * expensive resizing operations later, but setting this value unnecessarily high
+     * wastes memory.
+     *
+     * @return minimum size of initial file info cache.
+     */
+    public int getFileInfoCacheInitialCapacity() {
+        return getInt(FILEINFO_CACHE_INITIAL_CAPACITY, 64);
+    }
+
+    /**
+     * Set the minimum total size for the internal file info cache tables for initialization.
+     *
+     * @param initialCapacity
+     *          Initial capacity of file info cache table.
+     * @return server configuration instance.
+     */
+    public ServerConfiguration setFileInfoCacheInitialCapacity(int initialCapacity) {
+        setProperty(FILEINFO_CACHE_INITIAL_CAPACITY, initialCapacity);
+        return this;
+    }
+
+    /**
+     * Get the max idle time allowed for a open file info existed in file info cache.
+     * If the file info is idle for a long time, exceed the given time period. The file
+     * info will be evicted and closed. If the value is zero, the file info is evicted
+     * only when opened files reached openFileLimit.
+     *
+     * @see #getOpenFileLimit
+     * @return max idle time of a file info in the file info cache.
+     */
+    public long getFileInfoMaxIdleTime() {
+        return this.getLong(FILEINFO_MAX_IDLE_TIME, 0L);
+    }
+
+    /**
+     * Set the max idle time allowed for a open file info existed in file info cache.
+     *
+     * @param idleTime
+     *          Idle time, in seconds.
+     * @see #getFileInfoMaxIdleTime
+     * @return server configuration object.
+     */
+    public ServerConfiguration setFileInfoMaxIdleTime(long idleTime) {
+        setProperty(FILEINFO_MAX_IDLE_TIME, idleTime);
+        return this;
+    }
+
+    /**
      * Max journal file size
      *
      * @return max journal file size
@@ -611,7 +667,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * {@link #setUseHostNameAsBookieID(boolean)}.
      *
      * @see #getAdvertisedAddress()
-     * @param allow
+     * @param advertisedAddress
      *            whether to allow loopback interfaces
      * @return server configuration
      */
@@ -2301,6 +2357,30 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public ServerConfiguration setHttpServerPort(int port) {
         setProperty(HTTP_SERVER_PORT, port);
+        return this;
+    }
+
+    /**
+     * Get the extra list of server lifecycle components to enable on a bookie server.
+     *
+     * @return the extra list of server lifecycle components to enable on a bookie server.
+     */
+    public String[] getExtraServerComponents() {
+        if (!this.containsKey(EXTRA_SERVER_COMPONENTS)) {
+            return null;
+        }
+        return this.getStringArray(EXTRA_SERVER_COMPONENTS);
+    }
+
+    /**
+     * Set the extra list of server lifecycle components to enable on a bookie server.
+     *
+     * @param componentClasses
+     *          the list of server lifecycle components to enable on a bookie server.
+     * @return server configuration.
+     */
+    public ServerConfiguration setExtraServerComponents(String[] componentClasses) {
+        this.setProperty(EXTRA_SERVER_COMPONENTS, componentClasses);
         return this;
     }
 

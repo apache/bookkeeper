@@ -227,7 +227,7 @@ public class LedgerHandle implements AutoCloseable {
      *
      * @return LedgerMetadata for the LedgerHandle
      */
-    LedgerMetadata getLedgerMetadata() {
+    public LedgerMetadata getLedgerMetadata() {
         return metadata;
     }
 

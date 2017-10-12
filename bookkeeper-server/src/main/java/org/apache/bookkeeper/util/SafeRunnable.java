@@ -1,7 +1,3 @@
-package org.apache.bookkeeper.util;
-
-import java.util.function.Consumer;
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -19,24 +15,11 @@ import java.util.function.Consumer;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.bookkeeper.util;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.function.Consumer;
 
-public abstract class SafeRunnable implements Runnable {
-
-    static final Logger logger = LoggerFactory.getLogger(SafeRunnable.class);
-
-    @Override
-    public void run() {
-        try {
-            safeRun();
-        } catch(Throwable t) {
-            logger.error("Unexpected throwable caught ", t);
-        }
-    }
-
-    public abstract void safeRun();
+public abstract class SafeRunnable implements org.apache.bookkeeper.common.util.SafeRunnable {
 
     /**
      * Utility method to use SafeRunnable from lambdas

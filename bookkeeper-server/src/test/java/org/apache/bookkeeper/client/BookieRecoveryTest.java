@@ -24,8 +24,6 @@ import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
-import org.apache.bookkeeper.meta.MSLedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
@@ -139,7 +137,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
      * @return List of LedgerHandles for each of the ledgers created
      */
     private List<LedgerHandle> createLedgers(int numLedgers)
-            throws BKException, IOException, InterruptedException
+      throws BKException, IOException, InterruptedException
     {
         return createLedgers(numLedgers, 3, 2);
     }
@@ -154,18 +152,18 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
      * @return List of LedgerHandles for each of the ledgers created
      */
     private List<LedgerHandle> createLedgers(int numLedgers, int ensemble, int quorum)
-            throws BKException, IOException,
-        InterruptedException {
+      throws BKException, IOException,
+      InterruptedException {
         List<LedgerHandle> lhs = new ArrayList<LedgerHandle>();
         for (int i = 0; i < numLedgers; i++) {
             lhs.add(bkc.createLedger(ensemble, quorum,
-                                     digestType, baseClientConf.getBookieRecoveryPasswd()));
+              digestType, baseClientConf.getBookieRecoveryPasswd()));
         }
         return lhs;
     }
 
     private List<LedgerHandle> openLedgers(List<LedgerHandle> oldLhs)
-            throws Exception {
+      throws Exception {
         List<LedgerHandle> newLhs = new ArrayList<LedgerHandle>();
         for (LedgerHandle oldLh : oldLhs) {
             newLhs.add(bkc.openLedger(oldLh.getId(), digestType, baseClientConf.getBookieRecoveryPasswd()));
@@ -187,7 +185,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
      */
     private void writeEntriestoLedgers(int numEntries, long startEntryId,
                                        List<LedgerHandle> lhs)
-        throws BKException, InterruptedException {
+      throws BKException, InterruptedException {
         for (LedgerHandle lh : lhs) {
             for (int i = 0; i < numEntries; i++) {
                 lh.addEntry(("LedgerId: " + lh.getId() + ", EntryId: " + (startEntryId + i)).getBytes());
@@ -214,7 +212,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
      * @throws InterruptedException
      */
     private void verifyRecoveredLedgers(List<LedgerHandle> oldLhs, long startEntryId, long endEntryId) throws BKException,
-        InterruptedException {
+      InterruptedException {
         // Get a set of LedgerHandles for all of the ledgers to verify
         List<LedgerHandle> lhs = new ArrayList<LedgerHandle>();
         for (int i = 0; i < oldLhs.size(); i++) {
@@ -227,7 +225,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
             while (entries.hasMoreElements()) {
                 LedgerEntry entry = entries.nextElement();
                 assertTrue(new String(entry.getEntry()).equals("LedgerId: " + entry.getLedgerId() + ", EntryId: "
-                           + entry.getEntryId()));
+                  + entry.getEntryId()));
             }
         }
 
@@ -323,11 +321,11 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
 
         // Call the async recover bookie method.
         BookieSocketAddress bookieSrc = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(),
-                initialPort);
+          initialPort);
         BookieSocketAddress bookieDest = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(),
-                newBookiePort);
+          newBookiePort);
         LOG.info("Now recover the data on the killed bookie (" + bookieSrc + ") and replicate it to the new one ("
-                 + bookieDest + ")");
+          + bookieDest + ")");
         // Initiate the sync object
         sync.value = false;
         bkAdmin.asyncRecoverBookieData(bookieSrc, bookieDest, bookieRecoverCb, sync);
@@ -381,10 +379,10 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
 
         // Call the async recover bookie method.
         BookieSocketAddress bookieSrc = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(),
-                initialPort);
+          initialPort);
         BookieSocketAddress bookieDest = null;
         LOG.info("Now recover the data on the killed bookie (" + bookieSrc
-                 + ") and replicate it to a random available one");
+          + ") and replicate it to a random available one");
         // Initiate the sync object
         sync.value = false;
         bkAdmin.asyncRecoverBookieData(bookieSrc, bookieDest, bookieRecoverCb, sync);
@@ -435,11 +433,11 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
 
         // Call the sync recover bookie method.
         BookieSocketAddress bookieSrc = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(),
-                initialPort);
+          initialPort);
         BookieSocketAddress bookieDest = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(),
-                newBookiePort);
+          newBookiePort);
         LOG.info("Now recover the data on the killed bookie (" + bookieSrc + ") and replicate it to the new one ("
-                 + bookieDest + ")");
+          + bookieDest + ")");
         bkAdmin.recoverBookieData(bookieSrc, bookieDest);
 
         // Verify the recovered ledger entries are okay.
@@ -483,10 +481,10 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
 
         // Call the sync recover bookie method.
         BookieSocketAddress bookieSrc = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(),
-                initialPort);
+          initialPort);
         BookieSocketAddress bookieDest = null;
         LOG.info("Now recover the data on the killed bookie (" + bookieSrc
-                 + ") and replicate it to a random available one");
+          + ") and replicate it to a random available one");
         bkAdmin.recoverBookieData(bookieSrc, bookieDest);
 
         // Verify the recovered ledger entries are okay.
@@ -530,7 +528,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
 
         HashMap<Long, Long> ranges = new HashMap<Long, Long>();
         ArrayList<Long> keyList = Collections.list(
-                Collections.enumeration(ensembles.keySet()));
+          Collections.enumeration(ensembles.keySet()));
         Collections.sort(keyList);
         for (int i = 0; i < keyList.size() - 1; i++) {
             ranges.put(keyList.get(i), keyList.get(i+1));
@@ -554,10 +552,10 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
             long numSuccess = cb.await();
             if (numSuccess < expectedSuccess) {
                 LOG.warn("Fragment not fully replicated ledgerId = " + lh.getId()
-                         + " startEntryId = " + startEntryId
-                         + " endEntryId = " + endEntryId
-                         + " expectedSuccess = " + expectedSuccess
-                         + " gotSuccess = " + numSuccess);
+                  + " startEntryId = " + startEntryId
+                  + " endEntryId = " + endEntryId
+                  + " expectedSuccess = " + expectedSuccess
+                  + " gotSuccess = " + numSuccess);
                 return false;
             }
         }
@@ -612,7 +610,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
                 for (BookieSocketAddress addr : e.getValue()) {
                     if (set.contains(addr)) {
                         LOG.error("Dupe " + addr + " found in ensemble for fragment " + fragment
-                                + " of ledger " + lh.getId());
+                          + " of ledger " + lh.getId());
                         numDupes++;
                     }
                     set.add(addr);
@@ -639,7 +637,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
 
         // Shutdown last bookie server in last ensemble
         ArrayList<BookieSocketAddress> lastEnsemble = lhs.get(0).getLedgerMetadata().getEnsembles()
-                                                       .entrySet().iterator().next().getValue();
+          .entrySet().iterator().next().getValue();
         BookieSocketAddress bookieToKill = lastEnsemble.get(lastEnsemble.size() - 1);
         killBookie(bookieToKill);
 
@@ -648,7 +646,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
 
         BookieSocketAddress bookieDest = null;
         LOG.info("Now recover the data on the killed bookie (" + bookieToKill
-               + ") and replicate it to a random available one");
+          + ") and replicate it to a random available one");
 
         bkAdmin.recoverBookieData(bookieToKill, bookieDest);
         for (LedgerHandle lh : lhs) {
@@ -669,7 +667,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
 
         // Shutdown the first bookie server
         ArrayList<BookieSocketAddress> lastEnsemble = lhs.get(0).getLedgerMetadata().getEnsembles()
-                                                       .entrySet().iterator().next().getValue();
+          .entrySet().iterator().next().getValue();
         BookieSocketAddress bookieToKill = lastEnsemble.get(lastEnsemble.size() - 1);
         killBookie(bookieToKill);
 
@@ -678,7 +676,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
 
         BookieSocketAddress bookieDest = null;
         LOG.info("Now recover the data on the killed bookie (" + bookieToKill
-               + ") and replicate it to a random available one");
+          + ") and replicate it to a random available one");
 
         bkAdmin.recoverBookieData(bookieToKill, bookieDest);
 
@@ -706,7 +704,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
 
         // Shutdown the first bookie server
         ArrayList<BookieSocketAddress> lastEnsemble = lhs.get(0).getLedgerMetadata().getEnsembles()
-                                                       .entrySet().iterator().next().getValue();
+          .entrySet().iterator().next().getValue();
         // removed bookie
         BookieSocketAddress bookieToKill = lastEnsemble.get(0);
         killBookie(bookieToKill);
@@ -749,7 +747,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         for (LedgerHandle newLh : newLhs) {
             // first ensemble should contains bookieToKill2 and not contain bookieToKill
             Map.Entry<Long, ArrayList<BookieSocketAddress>> entry =
-                newLh.getLedgerMetadata().getEnsembles().entrySet().iterator().next();
+              newLh.getLedgerMetadata().getEnsembles().entrySet().iterator().next();
             assertFalse(entry.getValue().contains(bookieToKill));
             assertTrue(entry.getValue().contains(bookieToKill2));
         }
@@ -774,9 +772,9 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
 
         // Call the async recover bookie method.
         BookieSocketAddress bookieSrc = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(),
-                initialPort);
+          initialPort);
         LOG.info("Now recover the data on the killed bookie (" + bookieSrc
-                 + ") and replicate it to a random available one");
+          + ") and replicate it to a random available one");
         // Initiate the sync object
         sync.value = false;
         try {
@@ -815,7 +813,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
 
         // Call the async recover bookie method.
         LOG.info("Now recover the data on the killed bookie (" + bookieSrc
-                 + ") and replicate it to a random available one");
+          + ") and replicate it to a random available one");
         // Initiate the sync object
         sync.value = false;
         bkAdmin.recoverBookieData(bookieSrc, null);
