@@ -50,7 +50,7 @@ var activeTableTab = "activeTableTab";
 <div class="subNav">
 <ul class="navList">
 <li><a href="../../../../org/apache/bookkeeper/client/LedgerChecker.InvalidFragmentException.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../../../org/apache/bookkeeper/client/LedgerDeleteOp.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../org/apache/bookkeeper/client/LedgerCreateOp.CreateBuilderImpl.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../index.html?org/apache/bookkeeper/client/LedgerCreateOp.html" target="_top">Frames</a></li>
@@ -74,7 +74,7 @@ var activeTableTab = "activeTableTab";
 <div>
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
-<li>Nested&nbsp;|&nbsp;</li>
+<li><a href="#nested.class.summary">Nested</a>&nbsp;|&nbsp;</li>
 <li><a href="#field.summary">Field</a>&nbsp;|&nbsp;</li>
 <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
@@ -123,6 +123,25 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallba
 <div class="summary">
 <ul class="blockList">
 <li class="blockList">
+<!-- ======== NESTED CLASS SUMMARY ======== -->
+<ul class="blockList">
+<li class="blockList"><a name="nested.class.summary">
+<!--   -->
+</a>
+<h3>Nested Class Summary</h3>
+<table class="memberSummary" border="0" cellpadding="3" cellspacing="0" summary="Nested Class Summary table, listing nested classes, and an explanation">
+<caption><span>Nested Classes</span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Class and Description</th>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) static class&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerCreateOp.CreateBuilderImpl.html" title="class in org.apache.bookkeeper.client">LedgerCreateOp.CreateBuilderImpl</a></span></code>&nbsp;</td>
+</tr>
+</table>
+</li>
+</ul>
 <!-- =========== FIELD SUMMARY =========== -->
 <ul class="blockList">
 <li class="blockList"><a name="field.summary">
@@ -164,7 +183,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallba
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerCreateOp.html#generateLedgerId">generateLedgerId</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>(package private) <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a></code></td>
+<td class="colFirst"><code>(package private) long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerCreateOp.html#ledgerId">ledgerId</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -289,7 +308,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallba
 <ul class="blockList">
 <li class="blockList">
 <h4>cb</h4>
-<pre><a href="../../../../org/apache/bookkeeper/client/AsyncCallback.CreateCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.CreateCallback</a> cb</pre>
+<pre>final&nbsp;<a href="../../../../org/apache/bookkeeper/client/AsyncCallback.CreateCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.CreateCallback</a> cb</pre>
 </li>
 </ul>
 <a name="metadata">
@@ -298,7 +317,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallba
 <ul class="blockList">
 <li class="blockList">
 <h4>metadata</h4>
-<pre><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a> metadata</pre>
+<pre>final&nbsp;<a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a> metadata</pre>
 </li>
 </ul>
 <a name="lh">
@@ -316,7 +335,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallba
 <ul class="blockList">
 <li class="blockList">
 <h4>ledgerId</h4>
-<pre><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a> ledgerId</pre>
+<pre>long ledgerId</pre>
 </li>
 </ul>
 <a name="ctx">
@@ -325,7 +344,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallba
 <ul class="blockList">
 <li class="blockList">
 <h4>ctx</h4>
-<pre><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a> ctx</pre>
+<pre>final&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a> ctx</pre>
 </li>
 </ul>
 <a name="passwd">
@@ -334,7 +353,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallba
 <ul class="blockList">
 <li class="blockList">
 <h4>passwd</h4>
-<pre>byte[] passwd</pre>
+<pre>final&nbsp;byte[] passwd</pre>
 </li>
 </ul>
 <a name="bk">
@@ -343,7 +362,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallba
 <ul class="blockList">
 <li class="blockList">
 <h4>bk</h4>
-<pre><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a> bk</pre>
+<pre>final&nbsp;<a href="../../../../org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a> bk</pre>
 </li>
 </ul>
 <a name="digestType">
@@ -352,7 +371,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallba
 <ul class="blockList">
 <li class="blockList">
 <h4>digestType</h4>
-<pre><a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a> digestType</pre>
+<pre>final&nbsp;<a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a> digestType</pre>
 </li>
 </ul>
 <a name="startTime">
@@ -361,7 +380,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallba
 <ul class="blockList">
 <li class="blockList">
 <h4>startTime</h4>
-<pre>long startTime</pre>
+<pre>final&nbsp;long startTime</pre>
 </li>
 </ul>
 <a name="createOpLogger">
@@ -370,7 +389,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallba
 <ul class="blockList">
 <li class="blockList">
 <h4>createOpLogger</h4>
-<pre><a href="../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a> createOpLogger</pre>
+<pre>final&nbsp;<a href="../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a> createOpLogger</pre>
 </li>
 </ul>
 <a name="adv">
@@ -511,7 +530,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallba
 <div class="subNav">
 <ul class="navList">
 <li><a href="../../../../org/apache/bookkeeper/client/LedgerChecker.InvalidFragmentException.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../../../org/apache/bookkeeper/client/LedgerDeleteOp.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../org/apache/bookkeeper/client/LedgerCreateOp.CreateBuilderImpl.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../index.html?org/apache/bookkeeper/client/LedgerCreateOp.html" target="_top">Frames</a></li>
@@ -535,7 +554,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallba
 <div>
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
-<li>Nested&nbsp;|&nbsp;</li>
+<li><a href="#nested.class.summary">Nested</a>&nbsp;|&nbsp;</li>
 <li><a href="#field.summary">Field</a>&nbsp;|&nbsp;</li>
 <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>

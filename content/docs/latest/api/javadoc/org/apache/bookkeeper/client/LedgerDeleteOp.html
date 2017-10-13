@@ -49,8 +49,8 @@ var activeTableTab = "activeTableTab";
 </div>
 <div class="subNav">
 <ul class="navList">
-<li><a href="../../../../org/apache/bookkeeper/client/LedgerCreateOp.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../org/apache/bookkeeper/client/LedgerCreateOp.CreateBuilderImpl.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
+<li><a href="../../../../org/apache/bookkeeper/client/LedgerDeleteOp.DeleteBuilderImpl.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../index.html?org/apache/bookkeeper/client/LedgerDeleteOp.html" target="_top">Frames</a></li>
@@ -74,7 +74,7 @@ var activeTableTab = "activeTableTab";
 <div>
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
-<li>Nested&nbsp;|&nbsp;</li>
+<li><a href="#nested.class.summary">Nested</a>&nbsp;|&nbsp;</li>
 <li><a href="#field.summary">Field</a>&nbsp;|&nbsp;</li>
 <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
@@ -127,6 +127,25 @@ extends org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallbac
 <div class="summary">
 <ul class="blockList">
 <li class="blockList">
+<!-- ======== NESTED CLASS SUMMARY ======== -->
+<ul class="blockList">
+<li class="blockList"><a name="nested.class.summary">
+<!--   -->
+</a>
+<h3>Nested Class Summary</h3>
+<table class="memberSummary" border="0" cellpadding="3" cellspacing="0" summary="Nested Class Summary table, listing nested classes, and an explanation">
+<caption><span>Nested Classes</span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Class and Description</th>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>(package private) static class&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerDeleteOp.DeleteBuilderImpl.html" title="class in org.apache.bookkeeper.client">LedgerDeleteOp.DeleteBuilderImpl</a></span></code>&nbsp;</td>
+</tr>
+</table>
+</li>
+</ul>
 <!-- =========== FIELD SUMMARY =========== -->
 <ul class="blockList">
 <li class="blockList"><a name="field.summary">
@@ -265,7 +284,7 @@ extends org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallbac
 <ul class="blockList">
 <li class="blockList">
 <h4>bk</h4>
-<pre><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a> bk</pre>
+<pre>final&nbsp;<a href="../../../../org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a> bk</pre>
 </li>
 </ul>
 <a name="ledgerId">
@@ -274,7 +293,7 @@ extends org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallbac
 <ul class="blockList">
 <li class="blockList">
 <h4>ledgerId</h4>
-<pre>long ledgerId</pre>
+<pre>final&nbsp;long ledgerId</pre>
 </li>
 </ul>
 <a name="cb">
@@ -283,7 +302,7 @@ extends org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallbac
 <ul class="blockList">
 <li class="blockList">
 <h4>cb</h4>
-<pre><a href="../../../../org/apache/bookkeeper/client/AsyncCallback.DeleteCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.DeleteCallback</a> cb</pre>
+<pre>final&nbsp;<a href="../../../../org/apache/bookkeeper/client/AsyncCallback.DeleteCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.DeleteCallback</a> cb</pre>
 </li>
 </ul>
 <a name="ctx">
@@ -292,7 +311,7 @@ extends org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallbac
 <ul class="blockList">
 <li class="blockList">
 <h4>ctx</h4>
-<pre><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a> ctx</pre>
+<pre>final&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a> ctx</pre>
 </li>
 </ul>
 <a name="startTime">
@@ -301,7 +320,7 @@ extends org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallbac
 <ul class="blockList">
 <li class="blockList">
 <h4>startTime</h4>
-<pre>long startTime</pre>
+<pre>final&nbsp;long startTime</pre>
 </li>
 </ul>
 <a name="deleteOpLogger">
@@ -310,7 +329,7 @@ extends org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallbac
 <ul class="blockListLast">
 <li class="blockList">
 <h4>deleteOpLogger</h4>
-<pre><a href="../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a> deleteOpLogger</pre>
+<pre>final&nbsp;<a href="../../../../org/apache/bookkeeper/stats/OpStatsLogger.html" title="interface in org.apache.bookkeeper.stats">OpStatsLogger</a> deleteOpLogger</pre>
 </li>
 </ul>
 </li>
@@ -415,8 +434,8 @@ extends org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallbac
 </div>
 <div class="subNav">
 <ul class="navList">
-<li><a href="../../../../org/apache/bookkeeper/client/LedgerCreateOp.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../org/apache/bookkeeper/client/LedgerCreateOp.CreateBuilderImpl.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
+<li><a href="../../../../org/apache/bookkeeper/client/LedgerDeleteOp.DeleteBuilderImpl.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../index.html?org/apache/bookkeeper/client/LedgerDeleteOp.html" target="_top">Frames</a></li>
@@ -440,7 +459,7 @@ extends org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallbac
 <div>
 <ul class="subNavList">
 <li>Summary:&nbsp;</li>
-<li>Nested&nbsp;|&nbsp;</li>
+<li><a href="#nested.class.summary">Nested</a>&nbsp;|&nbsp;</li>
 <li><a href="#field.summary">Field</a>&nbsp;|&nbsp;</li>
 <li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
