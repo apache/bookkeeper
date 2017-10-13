@@ -46,11 +46,19 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
-import org.apache.bookkeeper.client.AsyncCallback.AddLacCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.SyncCallbackUtils.FutureReadLastConfirmed;
+import org.apache.bookkeeper.client.SyncCallbackUtils.FutureReadResult;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncAddCallback;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCloseCallback;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadCallback;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadLastConfirmedCallback;
+import org.apache.bookkeeper.client.api.WriteAdvHandle;
+import org.apache.bookkeeper.client.api.WriteHandle;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
@@ -68,7 +76,7 @@ import org.slf4j.LoggerFactory;
  * Ledger handle contains ledger metadata and is used to access the read and
  * write operations to a ledger.
  */
-public class LedgerHandle implements AutoCloseable {
+public class LedgerHandle implements WriteHandle {
     final static Logger LOG = LoggerFactory.getLogger(LedgerHandle.class);
 
     final byte[] ledgerKey;
@@ -311,18 +319,24 @@ public class LedgerHandle implements AutoCloseable {
     }
 
     /**
-     * Close this ledger synchronously.
-     * @see #asyncClose
+     * {@inheritDoc }
      */
+    @Override
     public void close()
             throws InterruptedException, BKException {
-        CompletableFuture<Void> counter = new CompletableFuture<>();
+        SyncCallbackUtils.waitForResult(asyncClose());
+    }
 
-        asyncClose(new SyncCloseCallback(), counter);
-
+    /**
+     * {@inheritDoc }
+     */
+    @Override
+    public CompletableFuture<Void> asyncClose() {
+        CompletableFuture<Void> result = new CompletableFuture<>();
+        SyncCloseCallback callback = new SyncCloseCallback(result);
+        asyncClose(callback, null);
         explicitLacFlushPolicy.stopExplicitLacFlush();
-
-        SynchCallbackUtils.waitForResult(counter);
+        return result;
     }
 
     /**
@@ -370,7 +384,7 @@ public class LedgerHandle implements AutoCloseable {
      * @param rc
      */
     void doAsyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc) {
-        bk.mainWorkerPool.submitOrdered(ledgerId, new SafeRunnable() {
+        bk.getMainWorkerPool().submitOrdered(ledgerId, new SafeRunnable() {
             @Override
             public void safeRun() {
                 final long prevLastEntryId;
@@ -430,13 +444,13 @@ public class LedgerHandle implements AutoCloseable {
 
                 final class CloseCb extends OrderedSafeGenericCallback<Void> {
                     CloseCb() {
-                        super(bk.mainWorkerPool, ledgerId);
+                        super(bk.getMainWorkerPool(), ledgerId);
                     }
 
                     @Override
                     public void safeOperationComplete(final int rc, Void result) {
                         if (rc == BKException.Code.MetadataVersionException) {
-                            rereadMetadata(new OrderedSafeGenericCallback<LedgerMetadata>(bk.mainWorkerPool,
+                            rereadMetadata(new OrderedSafeGenericCallback<LedgerMetadata>(bk.getMainWorkerPool(),
                                                                                           ledgerId) {
                                 @Override
                                 public void safeOperationComplete(int newrc, LedgerMetadata newMeta) {
@@ -512,11 +526,11 @@ public class LedgerHandle implements AutoCloseable {
      */
     public Enumeration<LedgerEntry> readEntries(long firstEntry, long lastEntry)
             throws InterruptedException, BKException {
-        CompletableFuture<Enumeration<LedgerEntry>> counter = new CompletableFuture<>();
+        CompletableFuture<Enumeration<LedgerEntry>> result = new CompletableFuture<>();
 
-        asyncReadEntries(firstEntry, lastEntry, new SyncReadCallback(), counter);
+        asyncReadEntries(firstEntry, lastEntry, new SyncReadCallback(result), null);
 
-        return SynchCallbackUtils.waitForResult(counter);
+        return SyncCallbackUtils.waitForResult(result);
     }
 
     /**
@@ -535,11 +549,11 @@ public class LedgerHandle implements AutoCloseable {
      */
     public Enumeration<LedgerEntry> readUnconfirmedEntries(long firstEntry, long lastEntry)
             throws InterruptedException, BKException {
-        CompletableFuture<Enumeration<LedgerEntry>> counter = new CompletableFuture<>();
+        CompletableFuture<Enumeration<LedgerEntry>> result = new CompletableFuture<>();
 
-        asyncReadUnconfirmedEntries(firstEntry, lastEntry, new SyncReadCallback(), counter);
+        asyncReadUnconfirmedEntries(firstEntry, lastEntry, new SyncReadCallback(result), null);
 
-        return SynchCallbackUtils.waitForResult(counter);
+        return SyncCallbackUtils.waitForResult(result);
     }
 
     /**
@@ -612,8 +626,53 @@ public class LedgerHandle implements AutoCloseable {
         asyncReadEntriesInternal(firstEntry, lastEntry, cb, ctx);
     }
 
+    /**
+     * Read a sequence of entries asynchronously.
+     *
+     * @param firstEntry
+     *          id of first entry of sequence
+     * @param lastEntry
+     *          id of last entry of sequence
+     */
+    @Override
+    public CompletableFuture<Iterable<org.apache.bookkeeper.client.api.LedgerEntry>> read(long firstEntry, long lastEntry) {
+        FutureReadResult result = new FutureReadResult();
+        asyncReadEntries(firstEntry, lastEntry, result, null);
+        return result;
+    }
+
+    /**
+     * Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.
+     * <br>This is the same of
+     * {@link #asyncReadEntries(long, long, org.apache.bookkeeper.client.AsyncCallback.ReadCallback, java.lang.Object) }
+     * but it lets the client read without checking the local value of LastAddConfirmed, so that it is possibile to
+     * read entries for which the writer has not received the acknowledge yet. <br>
+     * For entries which are within the range 0..LastAddConfirmed BookKeeper guarantees that the writer has successfully
+     * received the acknowledge.<br>
+     * For entries outside that range it is possible that the writer never received the acknowledge
+     * and so there is the risk that the reader is seeing entries before the writer and this could result in a consistency
+     * issue in some cases.<br>
+     * With this method you can even read entries before the LastAddConfirmed and entries after it with one call,
+     * the expected consistency will be as described above for each subrange of ids.
+     *
+     * @param firstEntry
+     *          id of first entry of sequence
+     * @param lastEntry
+     *          id of last entry of sequence
+     *
+     * @see #asyncReadEntries(long, long, org.apache.bookkeeper.client.AsyncCallback.ReadCallback, java.lang.Object)
+     * @see #asyncReadLastConfirmed(org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback, java.lang.Object)
+     * @see #readUnconfirmedEntries(long, long)
+     */
+    @Override
+    public CompletableFuture<Iterable<org.apache.bookkeeper.client.api.LedgerEntry>> readUnconfirmed(long firstEntry, long lastEntry) {
+        FutureReadResult result = new FutureReadResult();
+        asyncReadUnconfirmedEntries(firstEntry, lastEntry, result, null);
+        return result;
+    }
+
     void asyncReadEntriesInternal(long firstEntry, long lastEntry, ReadCallback cb, Object ctx) {
-        new PendingReadOp(this, bk.scheduler,
+        new PendingReadOp(this, bk.getScheduler(),
                           firstEntry, lastEntry, cb, ctx).initiate();
     }
 
@@ -626,6 +685,16 @@ public class LedgerHandle implements AutoCloseable {
      */
     public long addEntry(byte[] data) throws InterruptedException, BKException {
         return addEntry(data, 0, data.length);
+    }
+
+    /**
+     * {@inheritDoc }
+     */
+    @Override
+    public CompletableFuture<Long> append(ByteBuf data) {
+        SyncAddCallback callback = new SyncAddCallback();
+        asyncAddEntry(data, callback, null);
+        return callback;
     }
 
     /**
@@ -662,12 +731,10 @@ public class LedgerHandle implements AutoCloseable {
             LOG.debug("Adding entry {}", data);
         }
 
-        CompletableFuture<Long> counter = new CompletableFuture<>();
-
         SyncAddCallback callback = new SyncAddCallback();
-        asyncAddEntry(data, offset, length, callback, counter);
+        asyncAddEntry(data, offset, length, callback, null);
 
-        return SynchCallbackUtils.waitForResult(counter);
+        return SyncCallbackUtils.waitForResult(callback);
     }
 
     /**
@@ -829,7 +896,7 @@ public class LedgerHandle implements AutoCloseable {
         if (wasClosed) {
             // make sure the callback is triggered in main worker pool
             try {
-                bk.mainWorkerPool.submit(new SafeRunnable() {
+                bk.getMainWorkerPool().submit(new SafeRunnable() {
                     @Override
                     public void safeRun() {
                         LOG.warn("Attempt to add to closed ledger: {}", ledgerId);
@@ -850,7 +917,7 @@ public class LedgerHandle implements AutoCloseable {
         }
 
         try {
-            bk.mainWorkerPool.submitOrdered(ledgerId, new SafeRunnable() {
+            bk.getMainWorkerPool().submitOrdered(ledgerId, new SafeRunnable() {
                 @Override
                 public void safeRun() {
                     ByteBuf toSend = macManager.computeDigestAndPackageForSending(entryId, lastAddConfirmed,
@@ -968,6 +1035,25 @@ public class LedgerHandle implements AutoCloseable {
         new TryReadLastConfirmedOp(this, innercb, getLastAddConfirmed()).initiate();
     }
 
+    /**
+     * @{@inheritDoc }
+     */
+    @Override
+    public CompletableFuture<Long> tryReadLastAddConfirmed() {
+        FutureReadLastConfirmed result = new FutureReadLastConfirmed();
+        asyncTryReadLastConfirmed(result, null);
+        return result;
+    }
+
+    /**
+     * @{@inheritDoc }
+     */
+    @Override
+    public CompletableFuture<Long> readLastAddConfirmed() {
+        FutureReadLastConfirmed result = new FutureReadLastConfirmed();
+        asyncReadLastConfirmed(result, null);
+        return result;
+    }
 
     /**
      * Asynchronous read next entry and the latest last add confirmed.
@@ -1040,7 +1126,7 @@ public class LedgerHandle implements AutoCloseable {
                 }
             }
         };
-        new ReadLastConfirmedAndEntryOp(this, innercb, entryId - 1, timeOutInMillis, bk.scheduler).parallelRead(parallel).initiate();
+        new ReadLastConfirmedAndEntryOp(this, innercb, entryId - 1, timeOutInMillis, bk.getScheduler()).parallelRead(parallel).initiate();
     }
 
     /**
@@ -1400,7 +1486,7 @@ public class LedgerHandle implements AutoCloseable {
         ChangeEnsembleCb(EnsembleInfo ensembleInfo,
                          int curBlockAddCompletions,
                          int ensembleChangeIdx) {
-            super(bk.mainWorkerPool, ledgerId);
+            super(bk.getMainWorkerPool(), ledgerId);
             this.ensembleInfo = ensembleInfo;
             this.curBlockAddCompletions = curBlockAddCompletions;
             this.ensembleChangeIdx = ensembleChangeIdx;
@@ -1460,7 +1546,7 @@ public class LedgerHandle implements AutoCloseable {
                                EnsembleInfo ensembleInfo,
                                int curBlockAddCompletions,
                                int ensembleChangeIdx) {
-            super(bk.mainWorkerPool, ledgerId);
+            super(bk.getMainWorkerPool(), ledgerId);
             this.rc = rc;
             this.ensembleInfo = ensembleInfo;
             this.curBlockAddCompletions = curBlockAddCompletions;
@@ -1702,11 +1788,11 @@ public class LedgerHandle implements AutoCloseable {
             return;
         }
 
-        writeLedgerConfig(new OrderedSafeGenericCallback<Void>(bk.mainWorkerPool, ledgerId) {
+        writeLedgerConfig(new OrderedSafeGenericCallback<Void>(bk.getMainWorkerPool(), ledgerId) {
             @Override
             public void safeOperationComplete(final int rc, Void result) {
                 if (rc == BKException.Code.MetadataVersionException) {
-                    rereadMetadata(new OrderedSafeGenericCallback<LedgerMetadata>(bk.mainWorkerPool,
+                    rereadMetadata(new OrderedSafeGenericCallback<LedgerMetadata>(bk.getMainWorkerPool(),
                                                                                   ledgerId) {
                         @Override
                         public void safeOperationComplete(int rc, LedgerMetadata newMeta) {
@@ -1757,100 +1843,4 @@ public class LedgerHandle implements AutoCloseable {
         }
     }
 
-    static class LastAddConfirmedCallback implements AddLacCallback {
-        static final LastAddConfirmedCallback INSTANCE = new LastAddConfirmedCallback();
-        /**
-         * Implementation of callback interface for synchronous read method.
-         *
-         * @param rc
-         *          return code
-         * @param lh
-         *          ledger identifier
-         * @param ctx
-         *          control object
-         */
-        @Override
-        public void addLacComplete(int rc, LedgerHandle lh, Object ctx) {
-            if (rc != BKException.Code.OK) {
-                LOG.warn("LastAddConfirmedUpdate failed: {} ", BKException.getMessage(rc));
-            } else {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Callback LAC Updated for: {} ", lh.getId());
-                }
-            }
-        }
-    }
-
-    static class SyncReadCallback implements ReadCallback {
-        /**
-         * Implementation of callback interface for synchronous read method.
-         *
-         * @param rc
-         *          return code
-         * @param lh
-         *          ledger handle
-         * @param seq
-         *          sequence of entries
-         * @param ctx
-         *          control object
-         */
-        @Override
-        @SuppressWarnings("unchecked")
-        public void readComplete(int rc, LedgerHandle lh,
-                                 Enumeration<LedgerEntry> seq, Object ctx) {
-            SynchCallbackUtils.finish(rc, seq, (CompletableFuture<Enumeration<LedgerEntry>>)ctx);
-        }
-    }
-
-    static class SyncAddCallback implements AddCallback {
-
-        /**
-         * Implementation of callback interface for synchronous read method.
-         *
-         * @param rc
-         *          return code
-         * @param lh
-         *          ledger handle
-         * @param entry
-         *          entry identifier
-         * @param ctx
-         *          control object
-         */
-        @Override
-        @SuppressWarnings("unchecked")
-        public void addComplete(int rc, LedgerHandle lh, long entry, Object ctx) {
-            SynchCallbackUtils.finish(rc, entry, (CompletableFuture<Long>)ctx);
-        }
-    }
-
-    static class SyncReadLastConfirmedCallback implements ReadLastConfirmedCallback {
-        /**
-         * Implementation of  callback interface for synchronous read last confirmed method.
-         */
-        @Override
-        public void readLastConfirmedComplete(int rc, long lastConfirmed, Object ctx) {
-            LastConfirmedCtx lcCtx = (LastConfirmedCtx) ctx;
-
-            synchronized(lcCtx) {
-                lcCtx.setRC(rc);
-                lcCtx.setLastConfirmed(lastConfirmed);
-                lcCtx.notify();
-            }
-        }
-    }
-
-    static class SyncCloseCallback implements CloseCallback {
-        /**
-         * Close callback method
-         *
-         * @param rc
-         * @param lh
-         * @param ctx
-         */
-        @Override
-        @SuppressWarnings("unchecked")
-        public void closeComplete(int rc, LedgerHandle lh, Object ctx) {
-            SynchCallbackUtils.finish(rc, null, (CompletableFuture<Void>)ctx);
-        }
-    }
 }

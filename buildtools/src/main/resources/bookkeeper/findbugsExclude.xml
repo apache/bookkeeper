@@ -47,6 +47,14 @@
     <Bug pattern="EI_EXPOSE_REP" />
   </Match>
   <Match>
+    <Class name="org.apache.bookkeeper.client.LedgerEntry" />
+    <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE" />
+  </Match>
+  <Match>
+    <Class name="org.apache.bookkeeper.client.BookKeeper" />
+    <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE" />
+  </Match>
+  <Match>
     <Class name="org.apache.bookkeeper.common.concurrent.FutureUtils"/>
     <Bug pattern="NP_NULL_PARAM_DEREF_NONVIRTUAL" />
   </Match>
@@ -70,5 +78,13 @@
   <And>
     <Bug category="MT_CORRECTNESS"/>
     <Class name="~org.apache.bookkeeper.util.collections\.[^.]+"/>
+  </And>
+  <And>
+    <Class name="org.apache.bookkeeper.client.BKException" />
+    <Bug pattern="NM_SAME_SIMPLE_NAME_AS_SUPERCLASS"/>
+  </And>
+  <And>
+    <Class name="org.apache.bookkeeper.client.BKException$Code" />
+    <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE"/>
   </And>
 </FindBugsFilter>

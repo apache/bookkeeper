@@ -94,8 +94,8 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
 
             this.ensemble = ensemble;
 
-            if (lh.bk.reorderReadSequence) {
-                this.writeSet = lh.bk.placementPolicy.reorderReadSequence(ensemble,
+            if (lh.bk.isReorderReadSequence()) {
+                this.writeSet = lh.bk.getPlacementPolicy().reorderReadSequence(ensemble,
                     lh.distributionSchedule.getWriteSet(entryId), lh.bookieFailureHistory.asMap());
             } else {
                 this.writeSet = lh.distributionSchedule.getWriteSet(entryId);
@@ -242,7 +242,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
          */
         @Override
         public ListenableFuture<Boolean> issueSpeculativeRequest() {
-            return lh.bk.mainWorkerPool.submitOrdered(lh.getId(), new Callable<Boolean>() {
+            return lh.bk.getMainWorkerPool().submitOrdered(lh.getId(), new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
                     if (!isComplete() && null != maybeSendSpeculativeRead(heardFromHostsBitSet)) {
@@ -480,7 +480,6 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         long nextEnsembleChange = startEntryId, i = startEntryId;
         this.requestTimeNanos = MathUtils.nowInNano();
         ArrayList<BookieSocketAddress> ensemble = null;
-
         do {
             if (i == nextEnsembleChange) {
                 ensemble = getLedgerMetadata().getEnsemble(i);
@@ -532,7 +531,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             lh.throttler.acquire();
         }
 
-        lh.bk.bookieClient.readEntry(to, lh.ledgerId, entry.entryId,
+        lh.bk.getBookieClient().readEntry(to, lh.ledgerId, entry.entryId,
                                      this, new ReadContext(bookieIndex, to, entry));
     }
 

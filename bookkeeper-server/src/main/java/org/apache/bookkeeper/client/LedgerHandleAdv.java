@@ -21,6 +21,9 @@
 
 package org.apache.bookkeeper.client;
 
+import static org.apache.bookkeeper.common.concurrent.FutureUtils.createFuture;
+import static org.apache.bookkeeper.common.concurrent.FutureUtils.completeExceptionally;
+
 import java.io.Serializable;
 import java.security.GeneralSecurityException;
 import java.util.Comparator;
@@ -28,22 +31,22 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
-
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncAddCallback;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import org.apache.bookkeeper.client.api.WriteAdvHandle;
 
 /**
  * Ledger Advanced handle extends {@link LedgerHandle} to provide API to add entries with
  * user supplied entryIds. Through this interface Ledger Length may not be accurate while the
  * ledger being written.
  */
-public class LedgerHandleAdv extends LedgerHandle {
+public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
     final static Logger LOG = LoggerFactory.getLogger(LedgerHandleAdv.class);
 
     static class PendingOpsComparator implements Comparator<PendingAddOp>, Serializable {
@@ -96,13 +99,11 @@ public class LedgerHandleAdv extends LedgerHandle {
             LOG.debug("Adding entry {}", data);
         }
 
-        CompletableFuture<Long> counter = new CompletableFuture<>();
-
         SyncAddCallback callback = new SyncAddCallback();
-        asyncAddEntry(entryId, data, offset, length, callback, counter);
+        asyncAddEntry(entryId, data, offset, length, callback, null);
 
         try {
-            return counter.get();
+            return callback.get();
         } catch (ExecutionException err) {
             throw (BKException) err.getCause();
         }
@@ -144,8 +145,13 @@ public class LedgerHandleAdv extends LedgerHandle {
      *             if offset or length is negative or offset and length sum to a
      *             value higher than the length of data.
      */
-
+    @Override
     public void asyncAddEntry(final long entryId, final byte[] data, final int offset, final int length,
+            final AddCallback cb, final Object ctx) {
+        asyncAddEntry(entryId, Unpooled.wrappedBuffer(data, offset, length), cb, ctx);
+    }
+
+    private void asyncAddEntry(final long entryId, ByteBuf data,
             final AddCallback cb, final Object ctx) {
         PendingAddOp op = new PendingAddOp(this, cb, ctx);
         op.setEntryId(entryId);
@@ -155,7 +161,7 @@ public class LedgerHandleAdv extends LedgerHandle {
                     LedgerHandleAdv.this, entryId, ctx);
             return;
         }
-        doAsyncAddEntry(op, Unpooled.wrappedBuffer(data, offset, length), cb, ctx);
+        doAsyncAddEntry(op, data, cb, ctx);
     }
 
     /**
@@ -187,7 +193,7 @@ public class LedgerHandleAdv extends LedgerHandle {
         if (wasClosed) {
             // make sure the callback is triggered in main worker pool
             try {
-                bk.mainWorkerPool.submit(new SafeRunnable() {
+                bk.getMainWorkerPool().submit(new SafeRunnable() {
                     @Override
                     public void safeRun() {
                         LOG.warn("Attempt to add to closed ledger: {}", ledgerId);
@@ -207,7 +213,7 @@ public class LedgerHandleAdv extends LedgerHandle {
         }
 
         try {
-            bk.mainWorkerPool.submit(new SafeRunnable() {
+            bk.getMainWorkerPool().submit(new SafeRunnable() {
                 @Override
                 public void safeRun() {
                     ByteBuf toSend = macManager.computeDigestAndPackageForSending(op.getEntryId(), lastAddConfirmed,
@@ -223,6 +229,13 @@ public class LedgerHandleAdv extends LedgerHandle {
             cb.addComplete(bk.getReturnRc(BKException.Code.InterruptedException),
                     LedgerHandleAdv.this, op.getEntryId(), ctx);
         }
+    }
+
+    @Override
+    public CompletableFuture<Long> write(long entryId, ByteBuf data) {
+        SyncAddCallback callback = new SyncAddCallback();
+        asyncAddEntry(entryId, data, callback, data);
+        return callback;
     }
 
     /**
