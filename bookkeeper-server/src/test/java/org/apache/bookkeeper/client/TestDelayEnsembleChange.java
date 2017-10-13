@@ -96,7 +96,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
             ArrayList<BookieSocketAddress> addresses = md.getEnsemble(eid);
             VerificationCallback callback = new VerificationCallback(addresses.size());
             for (BookieSocketAddress addr : addresses) {
-                bkc.bookieClient.readEntry(addr, lh.getId(), eid, callback, addr);
+                bkc.getBookieClient().readEntry(addr, lh.getId(), eid, callback, addr);
             }
             callback.latch.await();
             assertEquals(expectedSuccess, callback.numSuccess.get());
@@ -113,7 +113,7 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
             ArrayList<BookieSocketAddress> addresses = md.getEnsemble(eid);
             VerificationCallback callback = new VerificationCallback(addresses.size());
             for (BookieSocketAddress addr : addresses) {
-                bkc.bookieClient.readEntry(addr, lh.getId(), eid, callback, addr);
+                bkc.getBookieClient().readEntry(addr, lh.getId(), eid, callback, addr);
             }
             callback.latch.await();
             assertTrue(expectedSuccess >= callback.numSuccess.get());

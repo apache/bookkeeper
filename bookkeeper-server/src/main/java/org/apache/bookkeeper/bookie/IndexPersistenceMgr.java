@@ -196,8 +196,8 @@ public class IndexPersistenceMgr {
                 fileInfoLock.writeLock().lock();
                 try {
                     // We only close the fileInfo when we evict the FileInfo from both cache
-                    if (!readFileInfoCache.asMap().containsKey(ledgerId) &&
-                        !writeFileInfoCache.asMap().containsKey(ledgerId)) {
+                    if (!readFileInfoCache.asMap().containsKey(ledgerId)
+                            && !writeFileInfoCache.asMap().containsKey(ledgerId)) {
                         fileInfo.close(true);
                     }
                 } catch (IOException e) {
@@ -404,10 +404,10 @@ public class IndexPersistenceMgr {
         // because metadata will be recovered from the journal when we restart anyway.
         try {
             fileInfoLock.writeLock().lock();
-            for(Map.Entry<Long, FileInfo> entry : writeFileInfoCache.asMap().entrySet()) {
+            for (Map.Entry<Long, FileInfo> entry : writeFileInfoCache.asMap().entrySet()) {
                 entry.getValue().close(false);
             }
-            for(Map.Entry<Long, FileInfo> entry : readFileInfoCache.asMap().entrySet()) {
+            for (Map.Entry<Long, FileInfo> entry : readFileInfoCache.asMap().entrySet()) {
                 entry.getValue().close(false);
             }
             writeFileInfoCache.invalidateAll();
