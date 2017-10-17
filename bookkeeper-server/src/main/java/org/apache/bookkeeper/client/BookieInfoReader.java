@@ -402,7 +402,7 @@ public class BookieInfoReader {
 
         Collection<BookieSocketAddress> bookies;
         bookies = bk.bookieWatcher.getBookies();
-        bookies.addAll(bk.bookieWatcher.getReadOnlyBookies());
+        bookies.addAll(bk.bookieWatcher.getReadOnlyBookiesAsync());
 
         totalSent.set(bookies.size());
         for (BookieSocketAddress b : bookies) {

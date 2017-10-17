@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
-import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
@@ -71,7 +70,7 @@ public class ListBookiesService implements HttpEndpointService {
               params.get("print_hostnames").equals("true");
 
             if (readOnly) {
-                bookies.addAll(bka.getReadOnlyBookies());
+                bookies.addAll(bka.getReadOnlyBookiesAsync());
             } else {
                 bookies.addAll(bka.getAvailableBookies());
             }

@@ -190,7 +190,7 @@ public class ReplicationWorker implements Runnable {
 
     private void waitTillTargetBookieIsWritable() {
         LOG.info("Waiting for target bookie {} to be back in read/write mode", targetBookie);
-        while (workerRunning && admin.getReadOnlyBookies().contains(targetBookie)) {
+        while (workerRunning && admin.getReadOnlyBookiesAsync().contains(targetBookie)) {
             isInReadOnlyMode = true;
             waitBackOffTime();
         }
@@ -257,7 +257,7 @@ public class ReplicationWorker implements Runnable {
                 } catch (BKException.BKLedgerRecoveryException e) {
                     LOG.warn("BKLedgerRecoveryException "
                             + "while replicating the fragment", e);
-                    if (admin.getReadOnlyBookies().contains(targetBookie)) {
+                    if (admin.getReadOnlyBookiesAsync().contains(targetBookie)) {
                         underreplicationManager.releaseUnderreplicatedLedger(ledgerIdToReplicate);
                         throw new BKException.BKWriteOnReadOnlyBookieException();
                     }
