@@ -1125,7 +1125,7 @@ public class BookieShell implements Tool {
                 bookies.addAll(availableBookies);
             } else if (cmdLine.hasOption("ro")) {
                 Collection<BookieSocketAddress> roBookies = bka
-                        .getReadOnlyBookies();
+                        .getReadOnlyBookiesAsync();
                 bookies.addAll(roBookies);
             }
             for (BookieSocketAddress b : bookies) {

@@ -235,4 +235,16 @@ public class BookieServer {
     public static void main(String[] args) {
         Main.main(args);
     }
+
+    @Override
+    public  String toString() {
+        String id = "UNKNOWN";
+
+        try {
+            id = Bookie.getBookieAddress(conf).toString();
+        } catch (UnknownHostException e) {
+            //Ignored...
+        }
+        return "Bookie Server listening on " + id;
+    }
 }

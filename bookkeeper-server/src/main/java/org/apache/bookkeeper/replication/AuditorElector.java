@@ -365,6 +365,11 @@ public class AuditorElector {
         return running.get();
     }
 
+    @Override
+    public String toString() {
+        return "AuditorElector for " + bookieId;
+    }
+
     /**
      * Compare the votes in the ascending order of the sequence number. Vote
      * format is 'V_sequencenumber', comparator will do sorting based on the
