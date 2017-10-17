@@ -111,7 +111,7 @@ class SyncCallbackUtils {
          */
         @Override
         public void createComplete(int rc, LedgerHandle lh, Object ctx) {
-            if (lh instanceof LedgerHandleAdv) {
+            if (lh == null || lh instanceof LedgerHandleAdv) {
                 finish(rc, (LedgerHandleAdv) lh, future);
             } else {
                 finish(BKException.Code.UnexpectedConditionException, null, future);
