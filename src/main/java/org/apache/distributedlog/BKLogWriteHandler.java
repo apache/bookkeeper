@@ -83,7 +83,7 @@ import org.slf4j.LoggerFactory;
  * </ul>
  */
 class BKLogWriteHandler extends BKLogHandler {
-    static final Logger LOG = LoggerFactory.getLogger(BKLogReadHandler.class);
+    static final Logger LOG = LoggerFactory.getLogger(BKLogWriteHandler.class);
 
     private static Transaction.OpListener<LogSegmentEntryWriter> NULL_OP_LISTENER =
             new Transaction.OpListener<LogSegmentEntryWriter>() {
