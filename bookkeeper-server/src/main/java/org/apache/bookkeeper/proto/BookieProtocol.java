@@ -342,7 +342,7 @@ public interface BookieProtocol {
         }
 
         boolean hasData() {
-            return data != null;
+            return data.readableBytes() > 0;
         }
 
         ByteBuf getData() {

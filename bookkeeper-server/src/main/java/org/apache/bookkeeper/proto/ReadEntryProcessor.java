@@ -83,6 +83,7 @@ class ReadEntryProcessor extends PacketProcessorBase {
                     if (null == fenced || !fenced) {
                         // if failed to fence, fail the read request to make it retry.
                         errorCode = BookieProtocol.EIO;
+                        data.release();
                         data = null;
                     } else {
                         errorCode = BookieProtocol.EOK;
@@ -90,14 +91,17 @@ class ReadEntryProcessor extends PacketProcessorBase {
                 } catch (InterruptedException ie) {
                     LOG.error("Interrupting fence read entry " + read, ie);
                     errorCode = BookieProtocol.EIO;
+                    data.release();
                     data = null;
                 } catch (ExecutionException ee) {
                     LOG.error("Failed to fence read entry " + read, ee);
                     errorCode = BookieProtocol.EIO;
+                    data.release();
                     data = null;
                 } catch (TimeoutException te) {
                     LOG.error("Timeout to fence read entry " + read, te);
                     errorCode = BookieProtocol.EIO;
+                    data.release();
                     data = null;
                 }
             } else {
