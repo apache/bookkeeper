@@ -726,9 +726,16 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     .build();
         }
 
-        completionObjects.put(completionKey,
-                              new ReadCompletion(completionKey, cb,
-                                                 ctx, ledgerId, entryId));
+        CompletionValue existingValue = completionObjects.putIfAbsent(
+                completionKey, new ReadCompletion(completionKey, cb,
+                                                  ctx, ledgerId, entryId));
+        if (existingValue != null) {
+            // There's a pending read request on same ledger/entry. This is not supported in V2 protocol
+            LOG.warn("Failing concurrent request to read at ledger: {} entry: {}", ledgerId, entryId);
+            cb.readEntryComplete(BKException.Code.UnexpectedConditionException, ledgerId, entryId, null, ctx);
+            return;
+        }
+
         writeAndFlush(channel, completionKey, request);
     }
 
