@@ -36,6 +36,7 @@ import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCreateAdvCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCreateCallback;
 import org.apache.bookkeeper.client.api.CreateAdvBuilder;
 import org.apache.bookkeeper.client.api.CreateBuilder;
+import org.apache.bookkeeper.client.api.LedgerType;
 import org.apache.bookkeeper.client.api.WriteAdvHandle;
 import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
@@ -62,6 +63,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
     final byte[] passwd;
     final BookKeeper bk;
     final DigestType digestType;
+    final LedgerType ledgerType;
     final long startTime;
     final OpStatsLogger createOpLogger;
     boolean adv = false;
@@ -80,6 +82,8 @@ class LedgerCreateOp implements GenericCallback<Void> {
      *       ack quorum size
      * @param digestType
      *       digest type, either MAC or CRC32
+     * @param ledgerType
+     *       ledger type
      * @param passwd
      *       password
      * @param cb
@@ -91,13 +95,15 @@ class LedgerCreateOp implements GenericCallback<Void> {
      *       preserve the order(e.g. sortedMap) upon later retireval.
      */
     LedgerCreateOp(BookKeeper bk, int ensembleSize, int writeQuorumSize, int ackQuorumSize, DigestType digestType,
-            byte[] passwd, CreateCallback cb, Object ctx, final Map<String, byte[]> customMetadata) {
+            byte[] passwd, CreateCallback cb, Object ctx, final Map<String, byte[]> customMetadata, LedgerType ledgerType) {
         this.bk = bk;
-        this.metadata = new LedgerMetadata(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, passwd, customMetadata);
+        this.metadata = new LedgerMetadata(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, passwd,
+            customMetadata, ledgerType);
         this.digestType = digestType;
         this.passwd = passwd;
         this.cb = cb;
         this.ctx = ctx;
+        this.ledgerType = ledgerType;
         this.startTime = MathUtils.nowInNano();
         this.createOpLogger = bk.getCreateOpLogger();
     }
@@ -218,6 +224,8 @@ class LedgerCreateOp implements GenericCallback<Void> {
         private byte[] builderPassword;
         private org.apache.bookkeeper.client.api.DigestType builderDigestType
             = org.apache.bookkeeper.client.api.DigestType.CRC32;
+        private org.apache.bookkeeper.client.api.LedgerType builderLedgerType
+            = org.apache.bookkeeper.client.api.LedgerType.PD_JOURNAL;
         private Map<String, byte[]> builderCustomMetadata = Collections.emptyMap();
 
         CreateBuilderImpl(BookKeeper bk) {
@@ -261,11 +269,22 @@ class LedgerCreateOp implements GenericCallback<Void> {
         }
 
         @Override
+        public CreateBuilder withLedgerType(LedgerType ledgerType) {
+            this.builderLedgerType = ledgerType;
+            return this;
+        }
+
+        @Override
         public CreateAdvBuilder makeAdv() {
             return new CreateAdvBuilderImpl(this);
         }
 
         private boolean validate() {
+            if (builderLedgerType == null) {
+                LOG.error("invalid null builderLedgerType");
+                return false;
+            }
+
             if (builderWriteQuorumSize > builderEnsembleSize) {
                 LOG.error("invalid writeQuorumSize {} > ensembleSize {}", builderWriteQuorumSize, builderEnsembleSize);
                 return false;
@@ -314,7 +333,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
             }
             LedgerCreateOp op = new LedgerCreateOp(bk, builderEnsembleSize,
                 builderWriteQuorumSize, builderAckQuorumSize, DigestType.fromApiDigestType(builderDigestType),
-                builderPassword, cb, null, builderCustomMetadata);
+                builderPassword, cb, null, builderCustomMetadata, builderLedgerType);
             ReentrantReadWriteLock closeLock = bk.getCloseLock();
             closeLock.readLock().lock();
             try {
@@ -371,7 +390,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
             LedgerCreateOp op = new LedgerCreateOp(parent.bk, parent.builderEnsembleSize,
                     parent.builderWriteQuorumSize, parent.builderAckQuorumSize,
                     DigestType.fromApiDigestType(parent.builderDigestType),
-                    parent.builderPassword, cb, null, parent.builderCustomMetadata);
+                    parent.builderPassword, cb, null, parent.builderCustomMetadata, parent.builderLedgerType);
             ReentrantReadWriteLock closeLock = parent.bk.getCloseLock();
             closeLock.readLock().lock();
             try {

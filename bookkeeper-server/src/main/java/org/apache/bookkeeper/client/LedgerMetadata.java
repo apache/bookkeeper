@@ -44,6 +44,7 @@ import static com.google.common.base.Charsets.UTF_8;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.Maps;
+import org.apache.bookkeeper.client.api.LedgerType;
 
 /**
  * This class encapsulates all the ledger metadata that is persistently stored
@@ -84,12 +85,14 @@ public class LedgerMetadata {
 
     private boolean hasPassword = false;
     private LedgerMetadataFormat.DigestType digestType;
+    private LedgerMetadataFormat.LedgerType ledgerType;
     private byte[] password;
 
     private Map<String, byte[]> customMetadata = Maps.newHashMap();
 
     public LedgerMetadata(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
-                          BookKeeper.DigestType digestType, byte[] password, Map<String, byte[]> customMetadata) {
+                          BookKeeper.DigestType digestType, byte[] password, Map<String, byte[]> customMetadata,
+                          LedgerType ledgerType) {
         this.ensembleSize = ensembleSize;
         this.writeQuorumSize = writeQuorumSize;
         this.ackQuorumSize = ackQuorumSize;
@@ -106,6 +109,8 @@ public class LedgerMetadata {
 
         this.digestType = digestType.equals(BookKeeper.DigestType.MAC) ?
             LedgerMetadataFormat.DigestType.HMAC : LedgerMetadataFormat.DigestType.CRC32;
+        this.ledgerType = ledgerType.equals(LedgerType.VD_JOURNAL) ?
+            LedgerMetadataFormat.LedgerType.VD_JOURNAL : LedgerMetadataFormat.LedgerType.PD_JOURNAL;
         this.password = Arrays.copyOf(password, password.length);
         this.hasPassword = true;
         if (customMetadata != null) {
@@ -115,7 +120,7 @@ public class LedgerMetadata {
 
     public LedgerMetadata(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
             BookKeeper.DigestType digestType, byte[] password) {
-        this(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, password, null);
+        this(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, password, null, LedgerType.PD_JOURNAL);
     }
 
     /**
@@ -133,6 +138,7 @@ public class LedgerMetadata {
         this.version = other.version;
         this.hasPassword = other.hasPassword;
         this.digestType = other.digestType;
+        this.ledgerType = other.ledgerType;
         this.password = new byte[other.password.length];
         System.arraycopy(other.password, 0, this.password, 0, other.password.length);
         // copy the ensembles
@@ -204,6 +210,15 @@ public class LedgerMetadata {
             return BookKeeper.DigestType.MAC;
         } else {
             return BookKeeper.DigestType.CRC32;
+        }
+    }
+
+    @VisibleForTesting
+    public LedgerType getLedgerType() {
+        if (ledgerType.equals(LedgerMetadataFormat.LedgerType.VD_JOURNAL)) {
+            return LedgerType.VD_JOURNAL;
+        } else {
+            return LedgerType.PD_JOURNAL;
         }
     }
 
@@ -298,6 +313,10 @@ public class LedgerMetadata {
 
         if (hasPassword) {
             builder.setDigestType(digestType).setPassword(ByteString.copyFrom(password));
+        }
+
+        if (!ledgerType.equals(LedgerMetadataFormat.LedgerType.PD_JOURNAL)) {
+            builder.setLedgerType(ledgerType);
         }
 
         if (customMetadata != null) {
@@ -436,6 +455,12 @@ public class LedgerMetadata {
             lc.hasPassword = true;
         }
 
+        if (data.hasLedgerType()) {
+            lc.ledgerType = data.getLedgerType();
+        } else {
+            lc.ledgerType = LedgerMetadataFormat.LedgerType.PD_JOURNAL;
+        }
+
         for (LedgerMetadataFormat.Segment s : data.getSegmentList()) {
             ArrayList<BookieSocketAddress> addrs = new ArrayList<BookieSocketAddress>();
             for (String member : s.getEnsembleMemberList()) {
@@ -460,6 +485,7 @@ public class LedgerMetadata {
             lc.writeQuorumSize = lc.ackQuorumSize = Integer.parseInt(reader.readLine());
             lc.ensembleSize = Integer.parseInt(reader.readLine());
             lc.length = Long.parseLong(reader.readLine());
+            lc.ledgerType = LedgerMetadataFormat.LedgerType.PD_JOURNAL;
 
             String line = reader.readLine();
             while (line != null) {

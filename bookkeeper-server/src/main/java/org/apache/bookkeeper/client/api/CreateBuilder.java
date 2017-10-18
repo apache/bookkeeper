@@ -88,6 +88,15 @@ public interface CreateBuilder extends OpBuilder<WriteHandle> {
     CreateBuilder withDigestType(DigestType digestType);
 
     /**
+     * Set the Type of ledger. It defaults to {@link LedgerType#PD_JOURNAL}
+     *
+     * @param ledgerType the type of ledger
+     *
+     * @return the builder itself
+     */
+    CreateBuilder withLedgerType(LedgerType ledgerType);
+
+    /**
      * Switch the ledger into 'Advanced' mode. A ledger used in Advanced mode will explicitly generate the sequence of
      * entry identifiers. Advanced ledgers can be created with a client side defined ledgerId
      *
