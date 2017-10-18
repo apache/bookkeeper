@@ -71,6 +71,14 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
      */
     List<LogSegmentMetadata> getLogSegments() throws IOException;
 
+
+    /**
+     * Get the log segments asynchronously.
+     *
+     * @return the log segments
+     */
+    CompletableFuture<List<LogSegmentMetadata>> getLogSegmentsAsync();
+
     /**
      * Register <i>listener</i> on log segment updates of this stream.
      *
@@ -294,6 +302,22 @@ public interface DistributedLogManager extends AsyncCloseable, Closeable {
      * @return latest log record with DLSN
      */
     CompletableFuture<LogRecordWithDLSN> getLastLogRecordAsync();
+
+    /**
+     * Get the first log record in the stream.
+     *
+     * @return the first log record in the stream
+     * @throws IOException if a stream cannot be found.
+     */
+    LogRecordWithDLSN getFirstLogRecord()
+        throws IOException;
+
+    /**
+     * Get first log record with DLSN in the log - async.
+     *
+     * @return latest log record with DLSN
+     */
+    CompletableFuture<LogRecordWithDLSN> getFirstLogRecordAsync();
 
     /**
      * Get the earliest Transaction Id available in the log.

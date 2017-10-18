@@ -83,8 +83,8 @@ public class LogSegmentMetadata {
     /**
      * TruncationStatus.
      */
-    public  enum TruncationStatus {
-        ACTIVE (0), PARTIALLY_TRUNCATED(1), TRUNCATED (2);
+    public enum TruncationStatus {
+        UNKNOWN(-1), ACTIVE (0), PARTIALLY_TRUNCATED(1), TRUNCATED (2);
         private final int value;
 
         private TruncationStatus(int value) {
@@ -503,6 +503,19 @@ public class LogSegmentMetadata {
                 ? startSequenceId : Long.MIN_VALUE + (getLogSegmentSequenceNumber() << 32L);
     }
 
+    public TruncationStatus getTruncationStatus() {
+        switch ((int) (status & METADATA_TRUNCATION_STATUS_MASK)) {
+            case 0:
+                return TruncationStatus.ACTIVE;
+            case 1:
+                return TruncationStatus.PARTIALLY_TRUNCATED;
+            case 2:
+                return TruncationStatus.TRUNCATED;
+            default:
+                return TruncationStatus.UNKNOWN;
+        }
+    }
+
     public boolean isTruncated() {
         return ((status & METADATA_TRUNCATION_STATUS_MASK)
                 == TruncationStatus.TRUNCATED.value);
@@ -528,6 +541,14 @@ public class LogSegmentMetadata {
 
     public DLSN getMinActiveDLSN() {
         return minActiveDLSN;
+    }
+
+    public long getMinActiveEntryId() {
+        return minActiveDLSN.getEntryId();
+    }
+
+    public long getMinActiveSlotId() {
+        return minActiveDLSN.getSlotId();
     }
 
     public DLSN getFirstDLSN() {

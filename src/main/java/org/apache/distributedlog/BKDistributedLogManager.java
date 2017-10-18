@@ -273,7 +273,8 @@ class BKDistributedLogManager implements DistributedLogManager {
         return Utils.ioResult(getLogSegmentsAsync());
     }
 
-    protected CompletableFuture<List<LogSegmentMetadata>> getLogSegmentsAsync() {
+    @Override
+    public CompletableFuture<List<LogSegmentMetadata>> getLogSegmentsAsync() {
         final BKLogReadHandler readHandler = createReadHandler();
         return readHandler.readLogSegmentsFromStore(
                 LogSegmentMetadata.COMPARATOR,
@@ -899,6 +900,16 @@ class BKDistributedLogManager implements DistributedLogManager {
     @Override
     public CompletableFuture<DLSN> getFirstDLSNAsync() {
         return getFirstRecordAsyncInternal().thenApply(RECORD_2_DLSN_FUNCTION);
+    }
+
+    @Override
+    public LogRecordWithDLSN getFirstLogRecord() throws IOException {
+        return Utils.ioResult(getFirstRecordAsyncInternal());
+    }
+
+    @Override
+    public CompletableFuture<LogRecordWithDLSN> getFirstLogRecordAsync() {
+        return getFirstRecordAsyncInternal();
     }
 
     private CompletableFuture<LogRecordWithDLSN> getFirstRecordAsyncInternal() {
