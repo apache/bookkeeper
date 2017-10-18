@@ -34,7 +34,9 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.BookieThread;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.BKBookieHandleNotAvailableException;
+import org.apache.bookkeeper.client.BKException.BKLedgerRecoveryException;
 import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
+import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BKException.BKReadException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -79,6 +81,7 @@ public class ReplicationWorker implements Runnable {
     private final LedgerChecker ledgerChecker;
     private final BookKeeper bkc;
     private final Thread workerThread;
+    private final long rwRereplicateBackoffMs;
     private final long openLedgerRereplicationGracePeriod;
     private final Timer pendingReplicationTimer;
 
@@ -137,6 +140,7 @@ public class ReplicationWorker implements Runnable {
         this.workerThread = new BookieThread(this, "ReplicationWorker");
         this.openLedgerRereplicationGracePeriod = conf
                 .getOpenLedgerRereplicationGracePeriod();
+        this.rwRereplicateBackoffMs = conf.getRwRereplicateBackoffMs();
         this.pendingReplicationTimer = new Timer("PendingReplicationTimer");
 
         // Expose Stats
@@ -165,19 +169,19 @@ public class ReplicationWorker implements Runnable {
                 return;
             } catch (BKException e) {
                 LOG.error("BKException while replicating fragments", e);
-                waitBackOffTime();
+                waitBackOffTime(rwRereplicateBackoffMs);
             } catch (UnavailableException e) {
                 LOG.error("UnavailableException "
                         + "while replicating fragments", e);
-                waitBackOffTime();
+                waitBackOffTime(rwRereplicateBackoffMs);
             }
         }
         LOG.info("ReplicationWorker exited loop!");
     }
 
-    private static void waitBackOffTime() {
+    private static void waitBackOffTime(long backoffMs) {
         try {
-            Thread.sleep(5000);
+            Thread.sleep(backoffMs);
         } catch (InterruptedException e) {
         }
     }
@@ -225,19 +229,9 @@ public class ReplicationWorker implements Runnable {
                     foundOpenFragments = true;
                     continue;
                 }
-                try {
-                    LOG.info("Going to replicate the fragments of the ledger: {}", ledgerIdToReplicate);
-                    admin.replicateLedgerFragment(lh, ledgerFragment);
-                    numFragsReplicated++;
-                } catch (BKException.BKBookieHandleNotAvailableException e) {
-                    LOG.warn("BKBookieHandleNotAvailableException "
-                            + "while replicating the fragment {}", ledgerFragment, e);
-                    getExceptionCounter("BKBookieHandleNotAvailableException").inc();
-                } catch (BKException.BKLedgerRecoveryException e) {
-                    LOG.warn("BKLedgerRecoveryException "
-                            + "while replicating the fragment {}", ledgerFragment, e);
-                    getExceptionCounter("BKLedgerRecoveryException").inc();
-                }
+                LOG.info("Going to replicate the fragments of the ledger: {}", ledgerIdToReplicate);
+                admin.replicateLedgerFragment(lh, ledgerFragment);
+                numFragsReplicated++;
             }
 
             if (numFragsReplicated > 0) {
@@ -271,22 +265,20 @@ public class ReplicationWorker implements Runnable {
             underreplicationManager.markLedgerReplicated(ledgerIdToReplicate);
             getExceptionCounter("BKNoSuchLedgerExistsException").inc();
             return false;
-        } catch (BKReadException e) {
-            LOG.info("BKReadException while"
-                    + " opening ledger {} for replication."
+        } catch (BKException e) {
+            LOG.info("{} while"
+                    + " rereplicating ledger {}."
                     + " Enough Bookies might not have available"
-                    + " So, no harm to continue", ledgerIdToReplicate);
+                    + " So, no harm to continue",
+                e.getClass().getSimpleName(),
+                ledgerIdToReplicate);
             underreplicationManager
                     .releaseUnderreplicatedLedger(ledgerIdToReplicate);
-            getExceptionCounter("BKReadException").inc();
-            return false;
-        } catch (BKBookieHandleNotAvailableException e) {
-            LOG.info("BKBookieHandleNotAvailableException while"
-                    + " opening ledger {} for replication."
-                    + " Enough Bookies might not have available"
-                    + " So, no harm to continue", ledgerIdToReplicate);
-            underreplicationManager
-                    .releaseUnderreplicatedLedger(ledgerIdToReplicate);
+            getExceptionCounter(e.getClass().getSimpleName()).inc();
+
+            if (e instanceof BKNotEnoughBookiesException) {
+                throw e;
+            }
             return false;
         }
     }
