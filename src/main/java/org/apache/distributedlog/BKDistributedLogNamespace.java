@@ -214,7 +214,14 @@ public class BKDistributedLogNamespace implements Namespace {
     @Override
     public Iterator<String> getLogs() throws IOException {
         checkState();
-        return Utils.ioResult(driver.getLogMetadataStore().getLogs());
+        return Utils.ioResult(driver.getLogMetadataStore().getLogs(""));
+    }
+
+    @Override
+    public Iterator<String> getLogs(String logNamePrefix) throws IOException {
+        checkState();
+        logNamePrefix = validateAndNormalizeName(logNamePrefix);
+        return Utils.ioResult(driver.getLogMetadataStore().getLogs(logNamePrefix));
     }
 
     @Override

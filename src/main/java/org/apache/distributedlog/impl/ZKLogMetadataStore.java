@@ -25,6 +25,7 @@ import java.net.URI;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import org.apache.commons.lang.StringUtils;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.callback.NamespaceListener;
@@ -70,9 +71,14 @@ public class ZKLogMetadataStore implements LogMetadataStore {
     }
 
     @Override
-    public CompletableFuture<Iterator<String>> getLogs() {
+    public CompletableFuture<Iterator<String>> getLogs(String logNamePrefix) {
         final CompletableFuture<Iterator<String>> promise = new CompletableFuture<Iterator<String>>();
-        final String nsRootPath = namespace.getPath();
+        final String nsRootPath;
+        if (StringUtils.isEmpty(logNamePrefix)) {
+            nsRootPath = namespace.getPath();
+        } else {
+            nsRootPath = namespace.getPath() + "/" + logNamePrefix;
+        }
         try {
             final ZooKeeper zk = zkc.get();
             zk.sync(nsRootPath, new AsyncCallback.VoidCallback() {

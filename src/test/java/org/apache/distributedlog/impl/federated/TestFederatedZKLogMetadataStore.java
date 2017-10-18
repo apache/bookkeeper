@@ -177,7 +177,7 @@ public class TestFederatedZKLogMetadataStore extends TestDistributedLogBase {
         assertEquals(logName, logsIter.next());
         assertFalse(logsIter.hasNext());
         // get logs should return the log
-        Iterator<String> newLogsIter = Utils.ioResult(metadataStore.getLogs());
+        Iterator<String> newLogsIter = Utils.ioResult(metadataStore.getLogs(""));
         assertTrue(newLogsIter.hasNext());
         assertEquals(logName, newLogsIter.next());
         assertFalse(newLogsIter.hasNext());
@@ -274,7 +274,7 @@ public class TestFederatedZKLogMetadataStore extends TestDistributedLogBase {
             assertTrue(metadataStore.duplicatedLogFound.get());
         }
         try {
-            Utils.ioResult(metadataStore.getLogs());
+            Utils.ioResult(metadataStore.getLogs(""));
             fail("should throw exception when duplicated log found");
         } catch (UnexpectedException ue) {
             // should throw unexpected exception
@@ -338,7 +338,7 @@ public class TestFederatedZKLogMetadataStore extends TestDistributedLogBase {
         do {
             TimeUnit.MILLISECONDS.sleep(20);
             receivedLogs = new TreeSet<String>();
-            Iterator<String> logs = Utils.ioResult(metadataStore.getLogs());
+            Iterator<String> logs = Utils.ioResult(metadataStore.getLogs(""));
             receivedLogs.addAll(Lists.newArrayList(logs));
         } while (receivedLogs.size() < numLogs);
         assertEquals(numLogs, receivedLogs.size());
@@ -387,7 +387,7 @@ public class TestFederatedZKLogMetadataStore extends TestDistributedLogBase {
         do {
             TimeUnit.MILLISECONDS.sleep(20);
             receivedLogs = new TreeSet<String>();
-            Iterator<String> logs = Utils.ioResult(metadataStore.getLogs());
+            Iterator<String> logs = Utils.ioResult(metadataStore.getLogs(""));
             receivedLogs.addAll(Lists.newArrayList(logs));
         } while (receivedLogs.size() < 3 * maxLogsPerSubnamespace - 1);
 

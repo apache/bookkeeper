@@ -18,6 +18,7 @@
 package org.apache.distributedlog.impl;
 
 import static org.junit.Assert.*;
+
 import com.google.common.base.Optional;
 import com.google.common.collect.Sets;
 import java.net.URI;
@@ -35,8 +36,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-
-
 
 /**
  * Test ZK based metadata store.
@@ -106,7 +105,20 @@ public class TestZKLogMetadataStore extends TestDistributedLogBase {
             logs.add(logName);
             createLogInNamespace(uri, logName);
         }
-        Set<String> result = Sets.newHashSet(Utils.ioResult(metadataStore.getLogs()));
+        Set<String> result = Sets.newHashSet(Utils.ioResult(metadataStore.getLogs("")));
+        assertEquals(10, result.size());
+        assertTrue(Sets.difference(logs, result).isEmpty());
+    }
+
+    @Test(timeout = 60000)
+    public void testGetLogsPrefix() throws Exception {
+        Set<String> logs = Sets.newHashSet();
+        for (int i = 0; i < 10; i++) {
+            String logName = "test-" + i;
+            logs.add(logName);
+            createLogInNamespace(uri, "test/" + logName);
+        }
+        Set<String> result = Sets.newHashSet(Utils.ioResult(metadataStore.getLogs("test")));
         assertEquals(10, result.size());
         assertTrue(Sets.difference(logs, result).isEmpty());
     }

@@ -715,7 +715,12 @@ public class FederatedZKLogMetadataStore
     }
 
     @Override
-    public CompletableFuture<Iterator<String>> getLogs() {
+    public CompletableFuture<Iterator<String>> getLogs(String logNamePrefix) {
+        if (!"".equals(logNamePrefix)) {
+            return FutureUtils.exception(
+                new UnexpectedException("Get logs by prefix is not supported by federated metadata store"));
+        }
+
         if (duplicatedLogFound.get()) {
             return duplicatedLogException(duplicatedLogName.get());
         }

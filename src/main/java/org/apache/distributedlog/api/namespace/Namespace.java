@@ -163,6 +163,16 @@ public interface Namespace extends AutoCloseable{
     Iterator<String> getLogs()
             throws IOException;
 
+    /**
+     * Retrieve the logs under a given <i>logNamePrefix</i>.
+     *
+     * @param logNamePrefix log name prefix
+     * @return iterator of the logs under the log name prefix
+     * @throws IOException when encountered issues with backend.
+     */
+    Iterator<String> getLogs(String logNamePrefix)
+            throws IOException;
+
     //
     // Methods for namespace
     //
