@@ -70,7 +70,7 @@ import org.apache.distributedlog.namespace.NamespaceDriver;
  */
 @Public
 @Evolving
-public interface Namespace {
+public interface Namespace extends AutoCloseable{
 
     /**
      * Get the namespace driver used by this namespace.
@@ -187,6 +187,7 @@ public interface Namespace {
     /**
      * Close the namespace.
      */
+    @Override
     void close();
 
 }

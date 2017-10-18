@@ -298,16 +298,17 @@ public class BKDistributedLogNamespace implements Namespace {
 
     /**
      * Close the distributed log manager factory, freeing any resources it may hold.
+     * close the resource in reverse order v.s. in which they are started
      */
     @Override
     public void close() {
         if (!closed.compareAndSet(false, true)) {
             return;
         }
-        // shutdown the driver
-        Utils.close(driver);
         // close the write limiter
         this.writeLimiter.close();
+        // shutdown the driver
+        Utils.close(driver);
         // Shutdown the schedulers
         SchedulerUtils.shutdownScheduler(scheduler, conf.getSchedulerShutdownTimeoutMs(),
                 TimeUnit.MILLISECONDS);
