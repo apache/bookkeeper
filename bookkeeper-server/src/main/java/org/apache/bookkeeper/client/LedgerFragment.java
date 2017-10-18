@@ -20,19 +20,20 @@
 package org.apache.bookkeeper.client;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.SortedMap;
-
 import org.apache.bookkeeper.net.BookieSocketAddress;
 
 /**
- * Represents the entries of a segment of a ledger which are stored on a single
- * bookie in the segments bookie ensemble.
- * 
+ * Represents the entries of a segment of a ledger which are stored on subset of
+ * bookies in the segments bookie ensemble.
+ *
  * Used for checking and recovery
  */
 public class LedgerFragment {
-    private final int bookieIndex;
+    private final Set<Integer> bookieIndexes;
     private final List<BookieSocketAddress> ensemble;
     private final long firstEntryId;
     private final long lastKnownEntryId;
@@ -40,18 +41,41 @@ public class LedgerFragment {
     private final DistributionSchedule schedule;
     private final boolean isLedgerClosed;
 
-    LedgerFragment(LedgerHandle lh, long firstEntryId,
-            long lastKnownEntryId, int bookieIndex) {
+    LedgerFragment(LedgerHandle lh,
+                   long firstEntryId,
+                   long lastKnownEntryId,
+                   Set<Integer> bookieIndexes) {
         this.ledgerId = lh.getId();
         this.firstEntryId = firstEntryId;
         this.lastKnownEntryId = lastKnownEntryId;
-        this.bookieIndex = bookieIndex;
+        this.bookieIndexes = bookieIndexes;
         this.ensemble = lh.getLedgerMetadata().getEnsemble(firstEntryId);
         this.schedule = lh.getDistributionSchedule();
         SortedMap<Long, ArrayList<BookieSocketAddress>> ensembles = lh
                 .getLedgerMetadata().getEnsembles();
         this.isLedgerClosed = lh.getLedgerMetadata().isClosed()
                 || !ensemble.equals(ensembles.get(ensembles.lastKey()));
+    }
+
+    LedgerFragment(LedgerFragment lf, Set<Integer> subset) {
+        this.ledgerId = lf.ledgerId;
+        this.firstEntryId = lf.firstEntryId;
+        this.lastKnownEntryId = lf.lastKnownEntryId;
+        this.bookieIndexes = subset;
+        this.ensemble = lf.ensemble;
+        this.schedule = lf.schedule;
+        this.isLedgerClosed = lf.isLedgerClosed;
+    }
+
+    /**
+     * Return a ledger fragment contains subset of bookies.
+     *
+     * @param subset
+     *          subset of bookies.
+     * @return ledger fragment contains subset of bookies
+     */
+    public LedgerFragment subset(Set<Integer> subset) {
+        return new LedgerFragment(this, subset);
     }
 
     /**
@@ -83,23 +107,51 @@ public class LedgerFragment {
     /**
      * Gets the failedBookie address
      */
-    public BookieSocketAddress getAddress() {
+    public BookieSocketAddress getAddress(int bookieIndex) {
         return ensemble.get(bookieIndex);
     }
-    
-    /**
-     * Gets the failedBookie index
-     */
-    public int getBookiesIndex() {
-        return bookieIndex;
+
+    public Set<BookieSocketAddress> getAddresses() {
+        Set<BookieSocketAddress> addresses = new HashSet<BookieSocketAddress>();
+        for (int bookieIndex : bookieIndexes) {
+            addresses.add(ensemble.get(bookieIndex));
+        }
+        return addresses;
     }
 
     /**
-     * Gets the first stored entry id of the fragment in failed bookie.
-     * 
+     * Gets the failedBookie index
+     */
+    public Set<Integer> getBookiesIndexes() {
+        return bookieIndexes;
+    }
+
+    /**
+     * Gets the first stored entry id of the fragment in failed bookies.
+     *
      * @return entryId
      */
     public long getFirstStoredEntryId() {
+        Long firstEntry = null;
+        for (int bookieIndex : bookieIndexes) {
+            Long firstStoredEntryForBookie = getFirstStoredEntryId(bookieIndex);
+            if (null == firstEntry) {
+                firstEntry = firstStoredEntryForBookie;
+            } else if (null != firstStoredEntryForBookie) {
+                firstEntry = Math.min(firstEntry, firstStoredEntryForBookie);
+            }
+        }
+        return null == firstEntry ? LedgerHandle.INVALID_ENTRY_ID : firstEntry;
+    }
+
+    /**
+     * Get the first stored entry id of the fragment in the given failed bookies.
+     *
+     * @param bookieIndex
+     *          the bookie index in the ensemble.
+     * @return first stored entry id on the bookie.
+     */
+    public Long getFirstStoredEntryId(int bookieIndex) {
         long firstEntry = firstEntryId;
 
         for (int i = 0; i < ensemble.size() && firstEntry <= lastKnownEntryId; i++) {
@@ -114,10 +166,30 @@ public class LedgerFragment {
 
     /**
      * Gets the last stored entry id of the fragment in failed bookie.
-     * 
+     *
      * @return entryId
      */
     public long getLastStoredEntryId() {
+        Long lastEntry = null;
+        for (int bookieIndex : bookieIndexes) {
+            Long lastStoredEntryIdForBookie = getLastStoredEntryId(bookieIndex);
+            if (null == lastEntry) {
+                lastEntry = lastStoredEntryIdForBookie;
+            } else if (null != lastStoredEntryIdForBookie) {
+                lastEntry = Math.max(lastEntry, lastStoredEntryIdForBookie);
+            }
+        }
+        return null == lastEntry ? LedgerHandle.INVALID_ENTRY_ID : lastEntry;
+    }
+
+    /**
+     * Get the last stored entry id of the fragment in the given failed bookie.
+     *
+     * @param bookieIndex
+     *          the bookie index in the ensemble.
+     * @return first stored entry id on the bookie.
+     */
+    public Long getLastStoredEntryId(int bookieIndex) {
         long lastEntry = lastKnownEntryId;
         for (int i = 0; i < ensemble.size() && lastEntry >= firstEntryId; i++) {
             if (schedule.hasEntry(lastEntry, bookieIndex)) {
@@ -131,7 +203,7 @@ public class LedgerFragment {
 
     /**
      * Gets the ensemble of fragment
-     * 
+     *
      * @return the ensemble for the segment which this fragment is a part of
      */
     public List<BookieSocketAddress> getEnsemble() {
@@ -143,6 +215,6 @@ public class LedgerFragment {
         return String.format("Fragment(LedgerID: %d, FirstEntryID: %d[%d], "
                 + "LastKnownEntryID: %d[%d], Host: %s, Closed: %s)", ledgerId, firstEntryId,
                 getFirstStoredEntryId(), lastKnownEntryId, getLastStoredEntryId(),
-                getAddress(), isLedgerClosed);
+                getAddresses(), isLedgerClosed);
     }
 }

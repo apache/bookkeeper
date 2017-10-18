@@ -322,13 +322,9 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         // Call the async recover bookie method.
         BookieSocketAddress bookieSrc = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(),
           initialPort);
-        BookieSocketAddress bookieDest = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(),
-          newBookiePort);
-        LOG.info("Now recover the data on the killed bookie (" + bookieSrc + ") and replicate it to the new one ("
-          + bookieDest + ")");
         // Initiate the sync object
         sync.value = false;
-        bkAdmin.asyncRecoverBookieData(bookieSrc, bookieDest, bookieRecoverCb, sync);
+        bkAdmin.asyncRecoverBookieData(bookieSrc, bookieRecoverCb, sync);
 
         // Wait for the async method to complete.
         synchronized (sync) {
@@ -380,12 +376,11 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         // Call the async recover bookie method.
         BookieSocketAddress bookieSrc = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(),
           initialPort);
-        BookieSocketAddress bookieDest = null;
         LOG.info("Now recover the data on the killed bookie (" + bookieSrc
           + ") and replicate it to a random available one");
         // Initiate the sync object
         sync.value = false;
-        bkAdmin.asyncRecoverBookieData(bookieSrc, bookieDest, bookieRecoverCb, sync);
+        bkAdmin.asyncRecoverBookieData(bookieSrc, bookieRecoverCb, sync);
 
         // Wait for the async method to complete.
         synchronized (sync) {
