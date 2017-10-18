@@ -28,7 +28,6 @@ import static org.junit.Assert.fail;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.bookkeeper.client.BKException.BKClientClosedException;
-import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.BKException.BKIncorrectParameterException;
 import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -46,7 +45,7 @@ import org.junit.Test;
 public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
 
     private final static int ensembleSize = 3;
-    private final static int writeQuorumSize = 2;
+    private final static int writeQuorumSize = 3;
     private final static int ackQuorumSize = 1;
     private final static long ledgerId = 12342L;
     private final static Map<String, byte[]> customMetadata = new HashMap<>();
@@ -92,6 +91,19 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         assertEquals(writeQuorumSize, metadata.getWriteQuorumSize());
         assertArrayEquals(password, metadata.getPassword());
         assertEquals(LedgerType.VD_JOURNAL, metadata.getLedgerType());
+    }
+
+    @Test(expected = BKIncorrectParameterException.class)
+    public void testCreateLedgerLedgerTypeVD_JOURNALNoStriping() throws Exception {
+        setNewGeneratedLedgerId(ledgerId);
+        result(newCreateLedgerOp()
+            .withAckQuorumSize(ackQuorumSize)
+            .withEnsembleSize(writeQuorumSize +1 )
+            .withWriteQuorumSize(writeQuorumSize)
+            .withCustomMetadata(customMetadata)
+            .withLedgerType(LedgerType.VD_JOURNAL)
+            .withPassword(password)
+            .execute());
     }
 
     @Test

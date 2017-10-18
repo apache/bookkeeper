@@ -70,7 +70,7 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
 
         BookkeeperInternalCallbacks.WriteCallback wcb = new BookkeeperInternalCallbacks.WriteCallback() {
             @Override
-            public void writeComplete(int rc, long ledgerId, long entryId,
+            public void writeComplete(int rc, long ledgerId, long entryId, long lastAddSyncedEntry,
                                       BookieSocketAddress addr, Object ctx) {
                 if (BookieProtocol.EOK == rc) {
                     requestProcessor.addEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
@@ -79,6 +79,8 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
                     requestProcessor.addEntryStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
                             TimeUnit.NANOSECONDS);
                 }
+
+                // TODO: lastAddSyncedEntry, see next commits
 
                 StatusCode status;
                 switch (rc) {

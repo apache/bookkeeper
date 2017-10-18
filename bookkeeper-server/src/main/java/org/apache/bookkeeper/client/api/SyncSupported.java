@@ -26,30 +26,29 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Provide write access to a ledger.
+ * Marks Handles which support the 'sync' primitive
  *
+ * @see WriteHandle
  * @see WriteAdvHandle
  *
  * @since 4.6
  */
-public interface WriteHandle extends ReadHandle, SyncSupported {
+public interface SyncSupported {
 
     /**
-     * Add entry asynchronously to an open ledger.
+     * Waits for all data written by this Handle to have been persisted durably on a quorum of bookies and advances
+     * the LastAddConfirmed client side pointer.
      *
-     * @param data array of bytes to be written
-     * @return an handle to the result, in case of success it will return the id of the newly appended entry
+     * In case of volatile durability ledgers, for instance {@link LedgerType#VD_JOURNAL}, this operation is
+     * required in order to let the LastAddConfirmed pointer to advance.
+     * <p>
+     * <b>Beware that closing a volatile durability ledger does not imply a sync operation</b>
+     * <p>
+     * Even without calling this primitive entry could be readable using {@link ReadHandle#readUnconfirmed(long, long) }
+     * function
+     *     
+     * @return an handle to the result, in case of success it will return the id of last persisted entry id
      */
-    CompletableFuture<Long> append(ByteBuf data);
-
-    /**
-     * Add entry asynchronously to an open ledger.
-     *
-     * @param data array of bytes to be written
-     * @return an handle to the result, in case of success it will return the id of the newly appended entry
-     */
-    default CompletableFuture<Long> append(ByteBuffer data) {
-        return append(Unpooled.wrappedBuffer(data));
-    }
+    CompletableFuture<Long> sync();
 
 }

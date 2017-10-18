@@ -42,6 +42,7 @@ import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.DataFormats;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
@@ -287,6 +288,11 @@ class LedgerCreateOp implements GenericCallback<Void> {
 
             if (builderWriteQuorumSize > builderEnsembleSize) {
                 LOG.error("invalid writeQuorumSize {} > ensembleSize {}", builderWriteQuorumSize, builderEnsembleSize);
+                return false;
+            }
+            if (builderLedgerType.equals(LedgerType.VD_JOURNAL) && builderWriteQuorumSize != builderEnsembleSize) {
+                LOG.error("invalid writeQuorumSize {} != ensembleSize {} for VD_JOURNAL ledger. Striping is not allowed",
+                    builderWriteQuorumSize, builderEnsembleSize);
                 return false;
             }
 

@@ -167,7 +167,7 @@ public class ConcurrentLedgerTest {
         throttle = new Semaphore(10000);
         WriteCallback cb = new WriteCallback() {
             @Override
-            public void writeComplete(int rc, long ledgerId, long entryId,
+            public void writeComplete(int rc, long ledgerId, long entryId, long lastAddSyncedEntry,
                     BookieSocketAddress addr, Object ctx) {
                 AtomicInteger counter = (AtomicInteger)ctx;
                 counter.getAndIncrement();

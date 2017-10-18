@@ -177,6 +177,8 @@ message ReadResponse {
     // Piggyback LAC
     optional int64 maxLAC = 5;
     optional int64 lacUpdateTimestamp = 6;
+    // Piggyback LastAddSynced
+    optional int64 lastAddSynced = 7;
 }
 
 message AddResponse {

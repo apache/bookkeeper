@@ -291,7 +291,7 @@ public class LedgerFragmentReplicator {
                         new WriteCallback() {
                             @Override
                             public void writeComplete(int rc, long ledgerId,
-                                    long entryId, BookieSocketAddress addr,
+                                    long entryId, long lastAddSyncedEntry, BookieSocketAddress addr,
                                     Object ctx) {
                                 if (rc != BKException.Code.OK) {
                                     LOG.error(
@@ -317,7 +317,7 @@ public class LedgerFragmentReplicator {
                                 ledgerFragmentEntryMcb.processResult(rc, null,
                                         null);
                             }
-                        }, null, BookieProtocol.FLAG_RECOVERY_ADD);
+                        }, null, BookieProtocol.FLAG_RECOVERY_ADD, lh.getLedgerType());
             }
         }, null);
     }
