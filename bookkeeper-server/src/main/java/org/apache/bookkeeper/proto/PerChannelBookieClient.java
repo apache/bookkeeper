@@ -478,7 +478,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
     }
 
-    void sync(final long ledgerId, final long entryId,
+    void sync(final long ledgerId,
               BookkeeperInternalCallbacks.SyncCallback cb, final Object ctx) {
         final long txnId = getTxnId();
         final CompletionKey completionKey = new V3CompletionKey(txnId,

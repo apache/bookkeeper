@@ -17,19 +17,14 @@
  */
 package org.apache.bookkeeper.client;
 
-
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.apache.bookkeeper.proto.BookieProtocol;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.SyncCallback;
 
 /**
  * This represents a pending Sync operation. When it has got
@@ -39,17 +34,17 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.SyncCallback;
  */
 class PendingSyncOp implements BookkeeperInternalCallbacks.SyncCallback {
     private final static Logger LOG = LoggerFactory.getLogger(PendingSyncOp.class);
-    CompletableFuture<Long> cb;
-    Set<Integer> writeSet;
-    Set<Integer> receivedResponseSet;
+    final CompletableFuture<Long> cb;
+    final Set<Integer> writeSet;
+    final Set<Integer> receivedResponseSet;
 
-    DistributionSchedule.AckSet ackSet;
+    final DistributionSchedule.AckSet ackSet;
     boolean completed = false;
     int lastSeenError = BKException.Code.WriteException;
     final long lastAddPushed;
 
-    LedgerHandle lh;
-    OpStatsLogger syncOpLogger;
+    final LedgerHandle lh;
+    final OpStatsLogger syncOpLogger;
 
     PendingSyncOp(LedgerHandle lh, CompletableFuture<Long> cb) {
         this.lh = lh;
@@ -63,7 +58,7 @@ class PendingSyncOp implements BookkeeperInternalCallbacks.SyncCallback {
 
     void sendSyncRequest(int bookieIndex) {
         lh.bk.getBookieClient().sync(lh.metadata.currentEnsemble.get(bookieIndex), lh.ledgerId,
-                lastAddPushed, this, bookieIndex);
+                                     this, bookieIndex);
     }
 
     void initiate() {
@@ -79,6 +74,9 @@ class PendingSyncOp implements BookkeeperInternalCallbacks.SyncCallback {
     @Override
     public void syncComplete(int rc, long ledgerId, long lastSyncedEntryId, BookieSocketAddress addr, Object ctx) {
         int bookieIndex = (Integer) ctx;
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("syncComplete {} {} {} {}", rc, ledgerId, lastSyncedEntryId, addr);
+        }
 
         if (completed) {
             return;
@@ -100,7 +98,7 @@ class PendingSyncOp implements BookkeeperInternalCallbacks.SyncCallback {
                 return;
             }
         } else {
-            LOG.warn("Sync did not succeed: Ledger {} on {}", new Object[] { ledgerId, addr });
+            LOG.warn("Sync did not succeed: Ledger {} on {} code {}", new Object[] { ledgerId, addr, rc});
         }
 
         if (receivedResponseSet.isEmpty()){

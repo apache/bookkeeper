@@ -27,8 +27,8 @@ import static org.mockito.Mockito.when;
 import com.google.common.base.Optional;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.util.internal.ConcurrentSet;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -52,6 +52,7 @@ import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
+import org.apache.bookkeeper.util.SafeRunnable;
 import org.junit.After;
 import org.junit.Before;
 import org.mockito.Mockito;
@@ -129,7 +130,7 @@ public abstract class MockBookKeeperTestCase {
         mockNextLedgerId = new AtomicLong(1);
         fencedLedgers = new ConcurrentSkipListSet<>();
         scheduler = new ScheduledThreadPoolExecutor(4);
-        executor = OrderedSafeExecutor.newBuilder().build();
+        executor = OrderedSafeExecutor.newBuilder().numThreads(4).build();
         bookieWatcher = mock(BookieWatcher.class);
 
         bookieClient = mock(BookieClient.class);
@@ -241,9 +242,9 @@ public abstract class MockBookKeeperTestCase {
             });
     }
 
-    private void submit(Runnable operation) {
+    private void submit(Object key, Runnable operation) {
         try {
-            scheduler.submit(operation);
+            executor.submitOrdered(key, SafeRunnable.safeRun(operation));
         } catch (RejectedExecutionException rejected) {
             operation.run();
         }
@@ -370,7 +371,7 @@ public abstract class MockBookKeeperTestCase {
 
             DigestManager macManager = new CRC32DigestManager(ledgerId);
             fencedLedgers.add(ledgerId);
-            submit(() -> {
+            submit(ledgerId, () -> {
 
                 if (pausedBookies.containsKey(bookieSocketAddress)) {
                     callback.readEntryComplete(BKException.Code.BookieHandleNotAvailableException, ledgerId, entryId, null, ctx);
@@ -403,7 +404,7 @@ public abstract class MockBookKeeperTestCase {
 
             DigestManager macManager = new CRC32DigestManager(ledgerId);
 
-            submit(() -> {
+            submit(ledgerId, () -> {
                 if (pausedBookies.containsKey(bookieSocketAddress)) {
                     callback.readEntryComplete(BKException.Code.BookieHandleNotAvailableException, ledgerId, entryId, null, ctx);
                     return;
@@ -449,8 +450,10 @@ public abstract class MockBookKeeperTestCase {
 
             byte[] entry = extractEntryPayload(ledgerId, entryId, toSend);
 
-            submit(() -> {
-                LOG.info("addEntry "+ledgerId+", "+entryId+" "+bookieSocketAddress+" "+pausedBookies);
+            submit(ledgerId, () -> {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("addEntry "+ledgerId+", "+entryId+" "+bookieSocketAddress+" "+pausedBookies);
+                }
                 if (pausedBookies.containsKey(bookieSocketAddress)) {
                     callback.writeComplete(BKException.Code.BookieHandleNotAvailableException,
                         ledgerId, entryId, BookieProtocol.INVALID_ENTRY_ID, bookieSocketAddress, ctx);
@@ -487,11 +490,10 @@ public abstract class MockBookKeeperTestCase {
 
             BookieSocketAddress bookieSocketAddress = (BookieSocketAddress) args[0];
             long ledgerId = (Long) args[1];
-            long entryId = (Long) args[2];
-            BookkeeperInternalCallbacks.SyncCallback callback = (BookkeeperInternalCallbacks.SyncCallback) args[3];
-            Object ctx = args[4];
+            BookkeeperInternalCallbacks.SyncCallback callback = (BookkeeperInternalCallbacks.SyncCallback) args[2];
+            Object ctx = args[3];
 
-            submit(() -> {
+            submit(ledgerId, () -> {
 
                 if (pausedBookies.containsKey(bookieSocketAddress)) {
                     callback.syncComplete(BKException.Code.BookieHandleNotAvailableException,
@@ -504,14 +506,18 @@ public abstract class MockBookKeeperTestCase {
                     callback.syncComplete(BKException.Code.LedgerFencedException,
                         ledgerId, BookieProtocol.INVALID_ENTRY_ID, bookieSocketAddress, ctx);
                 } else {
-                    setMockLastAddPersistedInBookie(ledgerId, bookieSocketAddress, entryId);
-                    callback.syncComplete(BKException.Code.OK, ledgerId, entryId,
+                    long lastAddSynced = getMockLedgerContentsInBookie(ledgerId, bookieSocketAddress)
+                        .keySet()
+                        .stream()
+                        .max(Comparator.naturalOrder())
+                        .orElse(-1L);
+                    setMockLastAddPersistedInBookie(ledgerId, bookieSocketAddress, lastAddSynced);
+                    callback.syncComplete(BKException.Code.OK, ledgerId, lastAddSynced,
                         bookieSocketAddress, ctx);
                 }
             });
             return null;
         }).when(bookieClient).sync(any(BookieSocketAddress.class),
-            anyLong(),
             anyLong(),
             any(BookkeeperInternalCallbacks.SyncCallback.class),
             any());

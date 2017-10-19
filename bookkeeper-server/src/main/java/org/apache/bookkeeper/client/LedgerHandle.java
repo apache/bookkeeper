@@ -385,14 +385,6 @@ public class LedgerHandle implements WriteHandle {
         return metadata.isClosed();
     }
 
-    /**
-     * Is ensemble change supported ?
-     * @return
-     */
-    boolean isDelayEnsembleChangeSupported() {
-        return ledgerType.equals(LedgerType.PD_JOURNAL);
-    }
-
     void asyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc) {
         try {
             doAsyncCloseInternal(cb, ctx, rc);
@@ -1403,7 +1395,7 @@ public class LedgerHandle implements WriteHandle {
                 return;
             }
             // Check if it is the next entry in the sequence.
-             if (pendingAddOp.entryId != 0 && pendingAddOp.entryId != pendingAddsSequenceHead) {
+            if (pendingAddOp.entryId != 0 && pendingAddOp.entryId != pendingAddsSequenceHead) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Head of the queue entryId: {} is not the expected value: {}", pendingAddOp.entryId,
                                pendingAddsSequenceHead);

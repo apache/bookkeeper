@@ -138,6 +138,13 @@ public class RoundRobinDistributionScheduleTest {
         assertCalculateLastAddSynced(3, 3, 5, Arrays.asList(1L, 2L, 3L), 1);
     }
 
+    @Test
+    public void testCalculateLastAddSyncedNoEnoughData() throws Exception {
+        assertCalculateLastAddSynced(3, 3, 3, Arrays.asList(), -1);
+        assertCalculateLastAddSynced(3, 3, 3, Arrays.asList(1L), -1);
+        assertCalculateLastAddSynced(3, 3, 3, Arrays.asList(1L, 2L), -1);
+    }
+
     private void assertCalculateLastAddSynced(int writeQuorumSize, int ackQuorumSize, int ensembleSize, List<Long> lastAddSynced, long expectedLastAddSynced) {
         RoundRobinDistributionSchedule schedule = new RoundRobinDistributionSchedule(writeQuorumSize, ackQuorumSize, ensembleSize);
         List<Integer> wSet = schedule.getWriteSet(1);

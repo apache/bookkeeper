@@ -147,9 +147,12 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
             List<Long> sorted = new ArrayList<>(lastAddSyncedMap.values());
             sorted.sort(Comparator.naturalOrder());
             int maxIndex = writeQuorumSize - ackQuorumSize;
+            if (sorted.size() < maxIndex || sorted.size() < ackQuorumSize) {
+                return -1;
+            }
             long max = -1;
-            for (int i  = 0; i <= maxIndex; i++) {
-                long value =sorted.get(i);
+            for (int i = 0; i <= maxIndex; i++) {
+                long value = sorted.get(i);
                 if (max < value) {
                     max = value;
                 }

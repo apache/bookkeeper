@@ -206,7 +206,7 @@ class PendingAddOp implements WriteCallback, TimerTask {
             // ensemble has already changed, failure of this addr is immaterial
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Write did not succeed: " + ledgerId + ", " + entryId + ". But we have already fixed it.");
-            }            
+            }
             return;
         }
 
