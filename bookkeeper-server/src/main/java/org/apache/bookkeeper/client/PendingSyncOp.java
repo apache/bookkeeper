@@ -20,15 +20,16 @@ package org.apache.bookkeeper.client;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.bookkeeper.client.AsyncCallback.SyncCallback;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.SyncCallback;
 
 /**
  * This represents a pending Sync operation. When it has got
@@ -38,7 +39,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
  */
 class PendingSyncOp implements BookkeeperInternalCallbacks.SyncCallback {
     private final static Logger LOG = LoggerFactory.getLogger(PendingSyncOp.class);
-    SyncCallback cb;
+    CompletableFuture<Long> cb;
     Set<Integer> writeSet;
     Set<Integer> receivedResponseSet;
 
@@ -50,7 +51,7 @@ class PendingSyncOp implements BookkeeperInternalCallbacks.SyncCallback {
     LedgerHandle lh;
     OpStatsLogger syncOpLogger;
 
-    PendingSyncOp(LedgerHandle lh, SyncCallback cb) {
+    PendingSyncOp(LedgerHandle lh, CompletableFuture<Long> cb) {
         this.lh = lh;
         this.cb = cb;
         this.lastAddPushed = lh.getLastAddPushed();
@@ -67,7 +68,7 @@ class PendingSyncOp implements BookkeeperInternalCallbacks.SyncCallback {
 
     void initiate() {
         if (lastAddPushed == -1) {
-            cb.syncComplete(BKException.Code.OK, -1);
+            cb.complete(-1L);
             return;
         }
         for (int bookieIndex: writeSet) {
@@ -95,7 +96,7 @@ class PendingSyncOp implements BookkeeperInternalCallbacks.SyncCallback {
                 completed = true;
                 long estimatedLastAddConfirmed = ackSet.calculateCurrentLastAddSynced();
                 lh.syncCompleted(estimatedLastAddConfirmed);
-                cb.syncComplete(rc, estimatedLastAddConfirmed);
+                cb.complete(estimatedLastAddConfirmed);
                 return;
             }
         } else {
@@ -104,7 +105,7 @@ class PendingSyncOp implements BookkeeperInternalCallbacks.SyncCallback {
 
         if (receivedResponseSet.isEmpty()){
             completed = true;
-            cb.syncComplete(lastSeenError, BookieProtocol.INVALID_ENTRY_ID);
+            cb.completeExceptionally(BKException.create(lastSeenError));
         }
     }
 }

@@ -57,7 +57,6 @@ import org.apache.bookkeeper.client.SyncCallbackUtils.SyncAddCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCloseCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadLastConfirmedCallback;
-import org.apache.bookkeeper.client.SyncCallbackUtils.SyncSyncCallback;
 import org.apache.bookkeeper.client.api.LedgerType;
 import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -992,22 +991,9 @@ public class LedgerHandle implements WriteHandle {
      */
     @Override
     public CompletableFuture<Long> sync() {
-        CompletableFuture<Long> future = new CompletableFuture<>();
-        SyncSyncCallback callback = new SyncSyncCallback(future);
-        doAsyncSync(callback);
-        return future;
-    }
-
-    /**
-     * Make a Sync request.
-     * @since 4.6
-     */
-    private void doAsyncSync(SyncSyncCallback cb) {
-        final PendingSyncOp op = new PendingSyncOp(this, cb);
+        CompletableFuture<Long> result = new CompletableFuture<>();
+        final PendingSyncOp op = new PendingSyncOp(this, result);
         try {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Sending Sync");
-            }
             bk.getMainWorkerPool().submit(new SafeRunnable() {
                 @Override
                 public void safeRun() {
@@ -1015,8 +1001,9 @@ public class LedgerHandle implements WriteHandle {
                 }
             });
         } catch (RejectedExecutionException e) {
-            cb.syncComplete(bk.getReturnRc(BKException.Code.InterruptedException), BookieProtocol.INVALID_ENTRY_ID);
+            result.completeExceptionally(BKException.create(BKException.Code.InterruptedException));
         }
+        return result;
     }
 
 
@@ -1449,7 +1436,7 @@ public class LedgerHandle implements WriteHandle {
             removed.entryId, pendingAddOp.entryId);
 
             if (ledgerType == LedgerType.VD_JOURNAL) {
-                 this.lastAddSynced = pendingAddOp.ackSet.calculateCurrentLastAddSynced();
+                this.lastAddSynced = pendingAddOp.ackSet.calculateCurrentLastAddSynced();
             } else {
                 this.lastAddSynced = Math.max(lastAddSynced, pendingAddOp.entryId);
             }

@@ -225,7 +225,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
             executor.submitOrdered(ledgerId, new SafeRunnable() {
                 @Override
                 public void safeRun() {
-                    // TODO: lastAddSyncedEntry, see next commits
+                    // we are using lastAddSyncedEntry = -1 as mock implementation, next commits will provide an implementation
                     long lastAddSyncedEntry = BookieProtocol.INVALID_ENTRY_ID;
                     cb.writeComplete(rc, ledgerId, entryId, lastAddSyncedEntry, addr, ctx);
                 }

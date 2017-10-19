@@ -80,7 +80,9 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
                             TimeUnit.NANOSECONDS);
                 }
 
-                // TODO: lastAddSyncedEntry, see next commits
+                if (lastAddSyncedEntry!= BookieProtocol.INVALID_ENTRY_ID) {
+                    addResponse.setLastAddSynced(lastAddSyncedEntry);
+                }
 
                 StatusCode status;
                 switch (rc) {

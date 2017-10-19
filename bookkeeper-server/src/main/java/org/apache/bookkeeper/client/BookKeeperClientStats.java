@@ -32,7 +32,6 @@ public interface BookKeeperClientStats {
     public final static String CREATE_OP = "LEDGER_CREATE";
     public final static String DELETE_OP = "LEDGER_DELETE";
     public final static String OPEN_OP = "LEDGER_OPEN";
-    public final static String SYNC_OP = "LEDGER_SYNC";
     public final static String RECOVER_OP = "LEDGER_RECOVER";
     public final static String LEDGER_RECOVER_READ_ENTRIES = "LEDGER_RECOVER_READ_ENTRIES";
     public final static String LEDGER_RECOVER_ADD_ENTRIES = "LEDGER_RECOVER_ADD_ENTRIES";
@@ -43,6 +42,7 @@ public interface BookKeeperClientStats {
     public final static String READ_OP = "READ_ENTRY";
     public final static String WRITE_LAC_OP = "WRITE_LAC";
     public final static String READ_LAC_OP = "READ_LAC";
+    public final static String SYNC_OP = "SYNC";
     public final static String READ_LAST_CONFIRMED_AND_ENTRY = "READ_LAST_CONFIRMED_AND_ENTRY";
     public final static String READ_LAST_CONFIRMED_AND_ENTRY_RESPONSE = "READ_LAST_CONFIRMED_AND_ENTRY_RESPONSE";
     public final static String PENDING_ADDS = "NUM_PENDING_ADD";
@@ -56,7 +56,7 @@ public interface BookKeeperClientStats {
 
     public final static String CHANNEL_READ_OP = "READ_ENTRY";
     public final static String CHANNEL_TIMEOUT_READ = "TIMEOUT_READ_ENTRY";
-    public final static String CHANNEL_SYNC = "CHANNEL_SYNC";
+    public final static String CHANNEL_SYNC = "SYNC";
     public final static String CHANNEL_ADD_OP = "ADD_ENTRY";
     public final static String CHANNEL_TIMEOUT_ADD = "TIMEOUT_ADD_ENTRY";
     public final static String CHANNEL_WRITE_LAC_OP = "WRITE_LAC";

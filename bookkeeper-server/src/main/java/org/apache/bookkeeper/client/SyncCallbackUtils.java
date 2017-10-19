@@ -120,21 +120,6 @@ class SyncCallbackUtils {
 
     }
 
-    static class SyncSyncCallback implements AsyncCallback.SyncCallback {
-
-        private final CompletableFuture<Long> future;
-
-        public SyncSyncCallback(CompletableFuture<Long> future) {
-            this.future = future;
-        }
-
-        @Override
-        public void syncComplete(int rc, long lastSyncedEntryId) {
-             finish(rc, lastSyncedEntryId, future);
-        }
-
-    }
-
     static class SyncOpenCallback implements AsyncCallback.OpenCallback {
 
         private final CompletableFuture<? super LedgerHandle> future;

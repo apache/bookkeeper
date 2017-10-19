@@ -294,7 +294,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 LOG.debug("Acknowledge Ledger: {}, Entry: {}", ledgerId, entryId);
             }
             journalAddEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueTime), TimeUnit.NANOSECONDS);
-            // TODO: lastAddSyncedEntry, see next commits
+            // we are using lastAddSyncedEntry = -1 as mock implementation, next commits will provide an implementation
             final long lastSyncedEntryId = BookieProtocol.INVALID_ENTRY_ID;
             cb.writeComplete(0, ledgerId, entryId, lastSyncedEntryId, null, ctx);
         }

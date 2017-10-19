@@ -160,25 +160,6 @@ public interface AsyncCallback {
     }
 
     /**
-     * Async Callback for handling sync responses
-     *
-     * @since 4.0
-     */
-    @InterfaceAudience.Private
-    @InterfaceStability.Stable
-    interface SyncCallback {
-        /**
-         * Callback declaration
-         *
-         * @param rc
-         *          return code
-         * @param lastSyncedEntryId
-         *          id of the last entry which is known to have been persisted durably by a qquorum of bookies
-         */
-        void syncComplete(int rc, long lastSyncedEntryId);
-    }
-
-    /**
      * Async Callback for deleting ledgers.
      *
      * @since 4.0
