@@ -45,6 +45,7 @@ import static com.google.common.base.Charsets.UTF_8;
 import com.google.common.base.Optional;
 import com.google.common.collect.Maps;
 import org.apache.bookkeeper.client.api.LedgerType;
+import org.apache.bookkeeper.proto.DataFormats;
 
 /**
  * This class encapsulates all the ledger metadata that is persistently stored
@@ -85,7 +86,7 @@ public class LedgerMetadata {
 
     private boolean hasPassword = false;
     private LedgerMetadataFormat.DigestType digestType;
-    private LedgerMetadataFormat.LedgerType ledgerType;
+    private DataFormats.LedgerType ledgerType;
     private byte[] password;
 
     private Map<String, byte[]> customMetadata = Maps.newHashMap();
@@ -110,7 +111,7 @@ public class LedgerMetadata {
         this.digestType = digestType.equals(BookKeeper.DigestType.MAC) ?
             LedgerMetadataFormat.DigestType.HMAC : LedgerMetadataFormat.DigestType.CRC32;
         this.ledgerType = ledgerType.equals(LedgerType.VD_JOURNAL) ?
-            LedgerMetadataFormat.LedgerType.VD_JOURNAL : LedgerMetadataFormat.LedgerType.PD_JOURNAL;
+            DataFormats.LedgerType.VD_JOURNAL : DataFormats.LedgerType.PD_JOURNAL;
         this.password = Arrays.copyOf(password, password.length);
         this.hasPassword = true;
         if (customMetadata != null) {
@@ -215,7 +216,7 @@ public class LedgerMetadata {
 
     @VisibleForTesting
     public LedgerType getLedgerType() {
-        if (ledgerType.equals(LedgerMetadataFormat.LedgerType.VD_JOURNAL)) {
+        if (ledgerType.equals(DataFormats.LedgerType.VD_JOURNAL)) {
             return LedgerType.VD_JOURNAL;
         } else {
             return LedgerType.PD_JOURNAL;
@@ -315,7 +316,7 @@ public class LedgerMetadata {
             builder.setDigestType(digestType).setPassword(ByteString.copyFrom(password));
         }
 
-        if (!ledgerType.equals(LedgerMetadataFormat.LedgerType.PD_JOURNAL)) {
+        if (!ledgerType.equals(DataFormats.LedgerType.PD_JOURNAL)) {
             builder.setLedgerType(ledgerType);
         }
 
@@ -458,7 +459,7 @@ public class LedgerMetadata {
         if (data.hasLedgerType()) {
             lc.ledgerType = data.getLedgerType();
         } else {
-            lc.ledgerType = LedgerMetadataFormat.LedgerType.PD_JOURNAL;
+            lc.ledgerType = DataFormats.LedgerType.PD_JOURNAL;
         }
 
         for (LedgerMetadataFormat.Segment s : data.getSegmentList()) {
@@ -485,7 +486,7 @@ public class LedgerMetadata {
             lc.writeQuorumSize = lc.ackQuorumSize = Integer.parseInt(reader.readLine());
             lc.ensembleSize = Integer.parseInt(reader.readLine());
             lc.length = Long.parseLong(reader.readLine());
-            lc.ledgerType = LedgerMetadataFormat.LedgerType.PD_JOURNAL;
+            lc.ledgerType = DataFormats.LedgerType.PD_JOURNAL;
 
             String line = reader.readLine();
             while (line != null) {

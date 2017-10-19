@@ -28,7 +28,6 @@ import static org.junit.Assert.fail;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.bookkeeper.client.BKException.BKClientClosedException;
-import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.BKException.BKIncorrectParameterException;
 import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
 import org.apache.bookkeeper.client.BookKeeper;
