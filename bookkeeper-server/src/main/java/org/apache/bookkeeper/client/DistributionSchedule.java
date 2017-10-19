@@ -49,13 +49,7 @@ interface DistributionSchedule {
          * Add a bookie response and check if quorum has been met
          * @return true if quorum has been met, false otherwise
          */
-        public boolean completeBookieAndCheck(int bookieIndexHeardFrom, long lastAddSynced);
-
-        /**
-         * Estimates the LastAddConfirmed entry
-         * @return the estimated value, considering the lastAddSynced piggybacked value from each bookie
-         */
-        public long calculateCurrentLastAddSynced();
+        public boolean completeBookieAndCheck(int bookieIndexHeardFrom);
 
         /**
          * Received failure response from a bookie and check if ack quorum

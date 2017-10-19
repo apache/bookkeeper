@@ -90,11 +90,11 @@ class PendingSyncOp implements BookkeeperInternalCallbacks.SyncCallback {
         receivedResponseSet.remove(bookieIndex);
 
         if (rc == BKException.Code.OK) {
-            if (ackSet.completeBookieAndCheck(bookieIndex, lastSyncedEntryId) && !completed) {
+            if (ackSet.completeBookieAndCheck(bookieIndex) && !completed) {
+                lh.lastAddSyncedManager.updateBookie(bookieIndex, lastSyncedEntryId);
                 completed = true;
-                long estimatedLastAddConfirmed = ackSet.calculateCurrentLastAddSynced();
-                lh.syncCompleted(estimatedLastAddConfirmed);
-                cb.complete(estimatedLastAddConfirmed);
+                long actualLastAddConfirmed = lh.syncCompleted();
+                cb.complete(actualLastAddConfirmed);
                 return;
             }
         } else {

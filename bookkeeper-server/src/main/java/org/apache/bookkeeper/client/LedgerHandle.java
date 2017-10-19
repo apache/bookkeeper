@@ -100,6 +100,7 @@ public class LedgerHandle implements WriteHandle {
     final DigestManager macManager;
     final DistributionSchedule distributionSchedule;
     final RateLimiter throttler;
+    final LastAddSyncedManager lastAddSyncedManager;
     final LoadingCache<BookieSocketAddress, Long> bookieFailureHistory;
     final boolean enableParallelRecoveryRead;
     final int recoveryReadBatchSize;
@@ -165,6 +166,7 @@ public class LedgerHandle implements WriteHandle {
         this.ledgerKey = password.length > 0 ? MacDigestManager.genDigest("ledger", password) : emptyLedgerKey;
         distributionSchedule = new RoundRobinDistributionSchedule(
                 metadata.getWriteQuorumSize(), metadata.getAckQuorumSize(), metadata.getEnsembleSize());
+        this.lastAddSyncedManager = new LastAddSyncedManager(metadata.getWriteQuorumSize(), metadata.getAckQuorumSize());
         this.bookieFailureHistory = CacheBuilder.newBuilder()
             .expireAfterWrite(bk.getConf().getBookieFailureHistoryExpirationMSec(), TimeUnit.MILLISECONDS)
             .build(new CacheLoader<BookieSocketAddress, Long>() {
@@ -1373,12 +1375,10 @@ public class LedgerHandle implements WriteHandle {
         }
     }
 
-    synchronized void syncCompleted(long minLastSyncedEntryId) {
-        LOG.info("syncCompleted minLastSyncedEntryId {} lastAddConfirmed{}", minLastSyncedEntryId,
-            lastAddConfirmed);
-        if (lastAddConfirmed < minLastSyncedEntryId) {
-            lastAddConfirmed = minLastSyncedEntryId;
-        }
+    synchronized long syncCompleted() {
+        lastAddConfirmed = lastAddSyncedManager.calculateCurrentLastAddSynced();
+        LOG.info("syncCompleted lastAddConfirmed {}", lastAddConfirmed);
+        return lastAddConfirmed;
     }
 
     void sendAddSuccessCallbacks() {
@@ -1410,7 +1410,7 @@ public class LedgerHandle implements WriteHandle {
 
             explicitLacFlushPolicy.updatePiggyBackedLac(lastAddConfirmed);
             if (ledgerType.equals(LedgerType.VD_JOURNAL)) {
-                this.lastAddConfirmed = pendingAddOp.ackSet.calculateCurrentLastAddSynced();
+                this.lastAddConfirmed = lastAddSyncedManager.calculateCurrentLastAddSynced();
             } else {
                 this.lastAddConfirmed = Math.max(lastAddConfirmed, pendingAddOp.entryId);
             }

@@ -213,7 +213,8 @@ class PendingAddOp implements WriteCallback, TimerTask {
         // must record all acks, even if complete (completion can be undone by an ensemble change)
         boolean ackQuorum = false;
         if (BKException.Code.OK == rc) {
-            ackQuorum = ackSet.completeBookieAndCheck(bookieIndex, lastAddSyncedEntry);
+            ackQuorum = ackSet.completeBookieAndCheck(bookieIndex);
+            lh.lastAddSyncedManager.updateBookie(bookieIndex, lastAddSyncedEntry);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("writeComplete lastAddSyncedEntry {}", lastAddSyncedEntry);
             }
