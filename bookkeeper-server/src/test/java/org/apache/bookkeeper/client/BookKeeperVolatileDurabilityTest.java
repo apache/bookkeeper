@@ -58,7 +58,6 @@ public class BookKeeperVolatileDurabilityTest extends MockBookKeeperTestCase {
             assertEquals(numEntries - 1, lastEntryID);
             LedgerHandle lh = (LedgerHandle) wh;
             assertEquals(numEntries - 1, lh.getLastAddPushed());
-            assertEquals(-1, lh.getLastAddSynced());
             assertEquals(-1, lh.getLastAddConfirmed());
         }
     }
@@ -80,11 +79,9 @@ public class BookKeeperVolatileDurabilityTest extends MockBookKeeperTestCase {
             assertEquals(numEntries - 1, lastEntryID);
             LedgerHandle lh = (LedgerHandle) wh;
             assertEquals(numEntries - 1, lh.getLastAddPushed());
-            assertEquals(-1, lh.getLastAddSynced());
             assertEquals(-1, lh.getLastAddConfirmed());
 
             long lastSynced = result(wh.sync());
-            assertEquals(lastSynced, lh.getLastAddSynced());
             assertEquals(lastSynced, lh.getLastAddConfirmed());
 
         }
@@ -102,7 +99,6 @@ public class BookKeeperVolatileDurabilityTest extends MockBookKeeperTestCase {
                 .execute())) {
             assertEquals(Long.valueOf(-1), result(wh.sync()));
             LedgerHandle lh = (LedgerHandle) wh;
-            assertEquals(-1, lh.getLastAddSynced());
             assertEquals(-1, lh.getLastAddConfirmed());
             assertEquals(-1, lh.getLastAddPushed());
         }
@@ -125,7 +121,6 @@ public class BookKeeperVolatileDurabilityTest extends MockBookKeeperTestCase {
             assertEquals(numEntries - 1, lastEntryID);
             LedgerHandle lh = (LedgerHandle) wh;
             assertEquals(numEntries - 1, lh.getLastAddPushed());
-            assertEquals(-1, lh.getLastAddSynced());
             assertEquals(-1, lh.getLastAddConfirmed());
             assertEquals(3, lh.getLedgerMetadata().currentEnsemble.size());
             for (BookieSocketAddress addr : lh.getLedgerMetadata().currentEnsemble) {
@@ -152,7 +147,6 @@ public class BookKeeperVolatileDurabilityTest extends MockBookKeeperTestCase {
             assertEquals(numEntries - 1, lastEntryID);
             LedgerHandle lh = (LedgerHandle) wh;
             assertEquals(numEntries - 1, lh.getLastAddPushed());
-            assertEquals(-1, lh.getLastAddSynced());
             assertEquals(-1, lh.getLastAddConfirmed());
             assertEquals(3, lh.getLedgerMetadata().currentEnsemble.size());
             for (BookieSocketAddress addr : lh.getLedgerMetadata().currentEnsemble) {
@@ -188,7 +182,6 @@ public class BookKeeperVolatileDurabilityTest extends MockBookKeeperTestCase {
             assertEquals(numEntries - 1, lastEntryID);
             LedgerHandle lh = (LedgerHandle) wh;
             assertEquals(numEntries - 1, lh.getLastAddPushed());
-            assertEquals(-1, lh.getLastAddSynced());
             assertEquals(-1, lh.getLastAddConfirmed());
             assertEquals(3, lh.getLedgerMetadata().currentEnsemble.size());
 

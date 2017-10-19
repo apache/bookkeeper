@@ -90,12 +90,6 @@ public class LedgerHandle implements WriteHandle {
       */
     volatile long lastAddConfirmed;
 
-    /**
-      * Last entryId which has been confirmed to be written durably to the bookies,
-      * this is an internal variable used to track the status of entries and to handle correcly the lastAddConfirmed
-      * value
-      */
-     volatile long lastAddSynced;
      /**
       * Next entryId which is expected to move forward during {@link #sendAddSuccessCallbacks() }. This is important
       * in order to have an ordered sequence of addEntry ackknowledged to the writer
@@ -145,7 +139,6 @@ public class LedgerHandle implements WriteHandle {
         this.pendingAddOps = new ConcurrentLinkedQueue<PendingAddOp>();
         this.enableParallelRecoveryRead = bk.getConf().getEnableParallelRecoveryRead();
         this.recoveryReadBatchSize = bk.getConf().getRecoveryReadBatchSize();
-        this.lastAddSynced = INVALID_ENTRY_ID;
 
         if (metadata.isClosed()) {
             lastAddConfirmed = lastAddPushed = metadata.getLastEntryId();
@@ -249,15 +242,6 @@ public class LedgerHandle implements WriteHandle {
      */
     synchronized public long getLastAddPushed() {
         return lastAddPushed;
-    }
-
-    /**
-     * Get the entry id of the last entry that is known to have been persisted durably to a quorum of bookies
-     *
-     * @return the entry id of the last entry that is known to have been persisted durably to a quorum of bookies
-     */
-    synchronized long getLastAddSynced() {
-        return lastAddSynced;
     }
 
     /**
@@ -1398,13 +1382,10 @@ public class LedgerHandle implements WriteHandle {
     }
 
     synchronized void syncCompleted(long minLastSyncedEntryId) {
-        LOG.info("syncCompleted minLastSyncedEntryId {} lastAddSynced {} lastAddConfirmed{}", minLastSyncedEntryId,
-            lastAddSynced, lastAddConfirmed);
-        if (lastAddSynced < minLastSyncedEntryId) {
-            lastAddSynced = minLastSyncedEntryId;
-            if (lastAddConfirmed < lastAddSynced) {
-                lastAddConfirmed = lastAddSynced;
-            }
+        LOG.info("syncCompleted minLastSyncedEntryId {} lastAddConfirmed{}", minLastSyncedEntryId,
+            lastAddConfirmed);
+        if (lastAddConfirmed < minLastSyncedEntryId) {
+            lastAddConfirmed = minLastSyncedEntryId;
         }
     }
 
@@ -1435,13 +1416,12 @@ public class LedgerHandle implements WriteHandle {
             Preconditions.checkState(removed == pendingAddOp, "removed unexpected entry %s, expected %s",
             removed.entryId, pendingAddOp.entryId);
 
-            if (ledgerType == LedgerType.VD_JOURNAL) {
-                this.lastAddSynced = pendingAddOp.ackSet.calculateCurrentLastAddSynced();
-            } else {
-                this.lastAddSynced = Math.max(lastAddSynced, pendingAddOp.entryId);
-            }
             explicitLacFlushPolicy.updatePiggyBackedLac(lastAddConfirmed);
-            lastAddConfirmed = this.lastAddSynced;
+            if (ledgerType.equals(LedgerType.VD_JOURNAL)) {
+                this.lastAddConfirmed = pendingAddOp.ackSet.calculateCurrentLastAddSynced();
+            } else {
+                this.lastAddConfirmed = Math.max(lastAddConfirmed, pendingAddOp.entryId);
+            }
 
             pendingAddsSequenceHead = pendingAddOp.entryId + 1;
 

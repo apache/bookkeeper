@@ -489,7 +489,7 @@ public abstract class MockBookKeeperTestCase {
             long ledgerId = (Long) args[1];
             long entryId = (Long) args[2];
             BookkeeperInternalCallbacks.SyncCallback callback = (BookkeeperInternalCallbacks.SyncCallback) args[3];
-            Object ctx = args[5];
+            Object ctx = args[4];
 
             submit(() -> {
 
