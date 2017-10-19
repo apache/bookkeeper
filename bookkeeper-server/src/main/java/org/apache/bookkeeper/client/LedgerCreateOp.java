@@ -225,8 +225,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
         private byte[] builderPassword;
         private org.apache.bookkeeper.client.api.DigestType builderDigestType
             = org.apache.bookkeeper.client.api.DigestType.CRC32;
-        private org.apache.bookkeeper.client.api.LedgerType builderLedgerType
-            = org.apache.bookkeeper.client.api.LedgerType.PD_JOURNAL;
+        private LedgerType builderLedgerType = LedgerType.PD_JOURNAL;
         private Map<String, byte[]> builderCustomMetadata = Collections.emptyMap();
 
         CreateBuilderImpl(BookKeeper bk) {

@@ -117,7 +117,7 @@
     <findbugs-maven-plugin.version>3.0.5</findbugs-maven-plugin.version>
     <puppycrawl.checkstyle.version>6.19</puppycrawl.checkstyle.version>
     <maven-checkstyle-plugin.version>2.17</maven-checkstyle-plugin.version>
-    <maven-compiler-plugin.version>3.5.1</maven-compiler-plugin.version>
+    <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
     <maven-deploy-plugin.version>2.7</maven-deploy-plugin.version>
     <maven-jar-plugin.version>2.2</maven-jar-plugin.version>
     <maven-javadoc-plugin.version>2.10.4</maven-javadoc-plugin.version>
@@ -204,7 +204,8 @@
           <target>1.8</target>
           <compilerArgs>
             <compilerArg>-Werror</compilerArg>
-            <compilerArg>-Xlint:deprecation</compilerArg>
+            <!-- Protobuf generates code with warnings for top level 'enums' like LedgerType https://github.com/google/protobuf/issues/2054 -->
+            <!-- <compilerArg>-Xlint:deprecation</compilerArg> -->
             <compilerArg>-Xlint:unchecked</compilerArg>
 	  </compilerArgs>
         </configuration>

@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 syntax = "proto2";
+import "DataFormats.proto";
 
 option java_package = "org.apache.bookkeeper.proto";
 option optimize_for = SPEED;
@@ -72,14 +73,6 @@ message BKPacketHeader {
     required ProtocolVersion version = 1;
     required OperationType operation = 2;
     required uint64 txnId = 3;
-}
-
-/**
- * Type of Ledger
- */
-enum LedgerType {
-    PD_JOURNAL = 0;
-    VD_JOURNAL = 1;
 }
 
 message Request {
@@ -149,7 +142,6 @@ message GetBookieInfoRequest {
 
 message SyncRequest {
    required int64 ledgerId = 1;
-   required bytes masterKey = 2;
 }
 
 message Response {
@@ -218,5 +210,5 @@ message StartTLSResponse {
 message SyncResponse {
     required StatusCode status = 1;
     required int64 ledgerId = 2;
-    required int64 lastPersistedEntryId = 3;
+    required int64 lastAddSynced = 3;
 }

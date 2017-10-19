@@ -63,6 +63,7 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.proto.BookieClient;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -968,7 +969,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
                                ackQuorumSize, digestType, passwd, cb, ctx, customMetadata, LedgerType.PD_JOURNAL)
-                .initiateAdv((long)(-1));
+                .initiateAdv(BookieProtocol.INVALID_LEDGER_ID);
         } finally {
             closeLock.readLock().unlock();
         }
