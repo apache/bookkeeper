@@ -487,8 +487,8 @@ public abstract class MockBookKeeperTestCase {
 
             BookieSocketAddress bookieSocketAddress = (BookieSocketAddress) args[0];
             long ledgerId = (Long) args[1];
-            long entryId = (Long) args[3];
-            BookkeeperInternalCallbacks.SyncCallback callback = (BookkeeperInternalCallbacks.SyncCallback) args[4];
+            long entryId = (Long) args[2];
+            BookkeeperInternalCallbacks.SyncCallback callback = (BookkeeperInternalCallbacks.SyncCallback) args[3];
             Object ctx = args[5];
 
             submit(() -> {
@@ -511,7 +511,7 @@ public abstract class MockBookKeeperTestCase {
             });
             return null;
         }).when(bookieClient).sync(any(BookieSocketAddress.class),
-            anyLong(), any(byte[].class),
+            anyLong(),
             anyLong(),
             any(BookkeeperInternalCallbacks.SyncCallback.class),
             any());

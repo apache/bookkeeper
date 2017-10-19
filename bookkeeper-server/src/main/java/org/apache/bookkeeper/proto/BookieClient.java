@@ -242,7 +242,6 @@ public class BookieClient implements PerChannelBookieClientFactory {
 
     public void sync(final BookieSocketAddress addr,
                          final long ledgerId,
-                         final byte[] masterKey,
                          final long entryId,
                          final BookkeeperInternalCallbacks.SyncCallback cb,
                          final Object ctx) {
@@ -260,7 +259,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                     if (rc != BKException.Code.OK) {
                         cb.syncComplete(rc, ledgerId, BookieProtocol.INVALID_ENTRY_ID, addr, ctx);
                     } else {
-                        pcbc.sync(ledgerId, masterKey, entryId, cb, ctx);
+                        pcbc.sync(ledgerId, entryId, cb, ctx);
                     }                    
                 }
             }, ledgerId);

@@ -478,7 +478,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
     }
 
-    void sync(final long ledgerId, final byte[] masterKey, final long entryId,
+    void sync(final long ledgerId, final long entryId,
               BookkeeperInternalCallbacks.SyncCallback cb, final Object ctx) {
         final long txnId = getTxnId();
         final CompletionKey completionKey = new V3CompletionKey(txnId,
@@ -492,8 +492,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 .setOperation(OperationType.WRITE_LAC)
                 .setTxnId(txnId);
         SyncRequest.Builder syncBuilder = SyncRequest.newBuilder()
-                .setLedgerId(ledgerId)            
-                .setMasterKey(ByteString.copyFrom(masterKey));
+                .setLedgerId(ledgerId);
 
         final Request syncRequest = Request.newBuilder()
                 .setHeader(headerBuilder)
@@ -589,7 +588,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             // do not write PD_JOURNAL in order to support writes to old bookies for PD_JOURNAL ledger type
             if (!ledgerType.equals(LedgerType.PD_JOURNAL)) {
                 if (ledgerType.equals(LedgerType.VD_JOURNAL)) {
-                    addBuilder.setLedgerType(BookkeeperProtocol.LedgerType.VD_JOURNAL);
+                    addBuilder.setLedgerType(DataFormats.LedgerType.VD_JOURNAL);
                 } else {
                     LOG.error("invalid ledger type {}", ledgerType);
                     cb.writeComplete(BKException.Code.IllegalOpException, ledgerId, entryId, BookieProtocol.INVALID_ENTRY_ID,
@@ -1406,7 +1405,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             StatusCode status = response.getStatus() == StatusCode.EOK ?
                 syncResponse.getStatus() : response.getStatus();
             long ledgerId = syncResponse.getLedgerId();
-            long lastSynchedEntryId = syncResponse.getLastPersistedEntryId();
+            long lastSynchedEntryId = syncResponse.getLastAddSynced();
 
             int rc = logAndConvertStatus(status,
                                          BKException.Code.WriteException,
