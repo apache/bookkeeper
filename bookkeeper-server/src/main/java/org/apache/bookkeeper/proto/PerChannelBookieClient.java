@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.proto;
 
 CHANGE1;
+CHANGE2;
 import static org.apache.bookkeeper.client.LedgerHandle.INVALID_ENTRY_ID;
 
 import com.google.common.collect.Sets;
