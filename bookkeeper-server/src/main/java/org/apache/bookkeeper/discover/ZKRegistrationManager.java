@@ -90,8 +90,8 @@ public class ZKRegistrationManager implements RegistrationManager {
         this.statsLogger = statsLogger;
 
         this.cookiePath = conf.getZkLedgersRootPath() + "/" + COOKIE_NODE;
-        this.bookieRegistrationPath = conf.getZkAvailableBookiesPath() + "/";
-        this.bookieReadonlyRegistrationPath = this.bookieRegistrationPath + READONLY;
+        this.bookieRegistrationPath = conf.getZkAvailableBookiesPath();
+        this.bookieReadonlyRegistrationPath = this.bookieRegistrationPath + "/" + READONLY;
 
         try {
             this.zk = newZookeeper(conf, listener);
@@ -143,7 +143,7 @@ public class ZKRegistrationManager implements RegistrationManager {
                 .sessionTimeoutMs(conf.getZkTimeout())
                 .watchers(watchers)
                 .operationRetryPolicy(new BoundExponentialBackoffRetryPolicy(conf.getZkRetryBackoffStartMs(),
-                        conf.getZkRetryBackoffMaxMs(), Integer.MAX_VALUE))
+                        conf.getZkRetryBackoffMaxMs(), 0))
                 .requestRateLimit(conf.getZkRequestRateLimit())
                 .statsLogger(this.statsLogger.scope(BOOKIE_SCOPE))
                 .build();
@@ -233,7 +233,6 @@ public class ZKRegistrationManager implements RegistrationManager {
             if (!checkRegNodeAndWaitExpired(regPath)) {
                 // Create the ZK ephemeral node for this Bookie.
                 zk.create(regPath, new byte[0], zkAcls, CreateMode.EPHEMERAL);
-                log.info("Registered myself in ZooKeeper at {}.", regPath);
             }
         } catch (KeeperException ke) {
             log.error("ZK exception registering ephemeral Znode for Bookie!", ke);

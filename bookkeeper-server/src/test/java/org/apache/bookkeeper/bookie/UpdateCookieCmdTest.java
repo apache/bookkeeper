@@ -27,6 +27,9 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.List;
 
+import org.apache.bookkeeper.discover.RegistrationManager;
+import org.apache.bookkeeper.discover.ZKRegistrationManager;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.junit.Assert;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -45,8 +48,27 @@ public class UpdateCookieCmdTest extends BookKeeperClusterTestCase {
 
     private final static Logger LOG = LoggerFactory.getLogger(UpdateCookieCmdTest.class);
 
+    RegistrationManager rm;
+
     public UpdateCookieCmdTest() {
         super(1);
+    }
+
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+        LOG.info("setUp ZKRegistrationManager");
+        rm = new ZKRegistrationManager();
+        baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        rm.initialize(baseConf, () -> {}, NullStatsLogger.INSTANCE);
+    }
+
+    @Override
+    public void tearDown() throws Exception {
+        super.tearDown();
+        if(rm != null) {
+            rm.close();
+        }
     }
 
     /**

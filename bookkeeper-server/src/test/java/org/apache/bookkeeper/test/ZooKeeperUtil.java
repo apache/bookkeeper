@@ -27,8 +27,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.discover.ZKRegistrationManager;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
@@ -60,7 +58,6 @@ public class ZooKeeperUtil {
 
     protected ZooKeeperServer zks;
     protected ZooKeeper zkc; // zookeeper client
-    protected RegistrationManager rm;
     protected NIOServerCnxnFactory serverFactory;
     protected File ZkTmpDir;
     private String connectString;
@@ -73,10 +70,6 @@ public class ZooKeeperUtil {
 
     public ZooKeeper getZooKeeperClient() {
         return zkc;
-    }
-
-    public RegistrationManager getRegistrationManager() {
-        return rm;
     }
 
     public String getZooKeeperConnectString() {
@@ -127,10 +120,6 @@ public class ZooKeeperUtil {
                 .connectString(getZooKeeperConnectString())
                 .sessionTimeoutMs(10000)
                 .build();
-
-        // create ZKRegistrationManager
-        LOG.debug("Instantiate ZKRegistrationManager");
-        rm = new ZKRegistrationManager();
     }
 
     public void sleepServer(final int time,
@@ -174,9 +163,6 @@ public class ZooKeeperUtil {
     public void stopServer() throws Exception {
         if (zkc != null) {
             zkc.close();
-        }
-        if (rm != null) {
-            rm.close();
         }
 
         // shutdown ZK server

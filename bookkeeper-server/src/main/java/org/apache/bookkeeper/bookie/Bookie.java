@@ -96,6 +96,7 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -237,6 +238,16 @@ public class Bookie extends BookieCriticalThread {
                 throw new IOException(err);
             }
         }
+    }
+
+    @VisibleForTesting
+    public void setRegistrationManager(RegistrationManager rm) {
+        this.registrationManager = rm;
+    }
+
+    @VisibleForTesting
+    public RegistrationManager getRegistrationManager() {
+        return this.registrationManager;
     }
 
     /**
@@ -634,10 +645,14 @@ public class Bookie extends BookieCriticalThread {
         this.registrationManager = instantiateRegistrationManager(conf);
         checkEnvironment(this.registrationManager);
         try {
+            ZooKeeper zooKeeper = null;  // ZooKeeper is null existing only for testing
+            if (registrationManager != null) {
+                zooKeeper = ((ZKRegistrationManager) this.registrationManager).getZk();
+            }
             // current the registration manager is zookeeper only
             ledgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(
                 conf,
-                ((ZKRegistrationManager) this.registrationManager).getZk());
+                zooKeeper);
         } catch (KeeperException e) {
             throw new MetadataStoreException("Failed to initialize ledger manager", e);
         }
@@ -931,8 +946,11 @@ public class Bookie extends BookieCriticalThread {
     }
 
     private void doRegisterBookie(boolean isReadOnly) throws IOException {
-        if (null == registrationManager) {
-            // registration manager is null, means not register itself to zk
+        if (null == registrationManager ||
+            ((ZKRegistrationManager) this.registrationManager).getZk() == null) {
+            // registration manager is null, means not register itself to zk.
+            // ZooKeeper is null existing only for testing.
+            LOG.info("null zk while do register");
             return;
         }
 

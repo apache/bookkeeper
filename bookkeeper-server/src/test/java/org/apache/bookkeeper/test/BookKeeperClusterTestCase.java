@@ -41,7 +41,6 @@ import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
-import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.metastore.InMemoryMetaStore;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
@@ -77,7 +76,6 @@ public abstract class BookKeeperClusterTestCase {
     // ZooKeeper related variables
     protected final ZooKeeperUtil zkUtil = new ZooKeeperUtil();
     protected ZooKeeper zkc;
-    protected RegistrationManager rm;
 
     // BookKeeper related variables
     protected final List<File> tmpDirs = new LinkedList<File>();
@@ -150,7 +148,6 @@ public abstract class BookKeeperClusterTestCase {
     protected void startZKCluster() throws Exception {
         zkUtil.startServer();
         zkc = zkUtil.getZooKeeperClient();
-        rm = zkUtil.getRegistrationManager();
     }
 
     /**
