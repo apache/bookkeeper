@@ -1263,7 +1263,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                 bAddress = c.remoteAddress().toString();
                             }
                             if (LOG.isDebugEnabled()) {
-                                LOG.debug("Could not write {} request writeLac to bookie {} for ledger {}, entry {}",
+                                LOG.debug("Could not write {} request to bookie {} for ledger {}, entry {}",
                                           operationName, bAddress,
                                           ledgerId, entryId);
                             }
