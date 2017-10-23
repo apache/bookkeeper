@@ -163,9 +163,6 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>findbugs-maven-plugin</artifactId>
-        <configuration>
-          <excludeFilterFile>${basedir}/src/main/resources/findbugsExclude.xml</excludeFilterFile>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -225,6 +222,7 @@
                   <include>net.jpountz.lz4:lz4</include>
                   <include>org.apache.bookkeeper.stats:bookkeeper-stats-api</include>
                   <include>org.apache.bookkeeper:bookkeeper-server</include>
+                  <include>org.apache.bookkeeper:bookkeeper-common</include>
                   <include>org.apache.commons:commons-lang3</include>
                   <include>org.apache.distributedlog:distributedlog-common</include>
                   <include>org.apache.distributedlog:distributedlog-protocol</include>
@@ -297,10 +295,10 @@
                   <shadedPattern>dlshade.com.google</shadedPattern>
                 </relocation>
                 <!-- netty -->
-                <relocation>
-                  <pattern>io.netty</pattern>
-                  <shadedPattern>dlshade.io.netty</shadedPattern>
-                </relocation>
+                <!--<relocation>-->
+                  <!--<pattern>io.netty</pattern>-->
+                  <!--<shadedPattern>dlshade.io.netty</shadedPattern>-->
+                <!--</relocation>-->
                 <relocation>
                   <pattern>org.jboss.netty</pattern>
                   <shadedPattern>dlshade.org.jboss.netty</shadedPattern>
