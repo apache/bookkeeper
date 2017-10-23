@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Iterator;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.feature.FeatureProvider;
@@ -33,6 +34,7 @@ import org.apache.distributedlog.acl.AccessControlManager;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.callback.NamespaceListener;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.common.util.PermitLimiter;
 import org.apache.distributedlog.common.util.SchedulerUtils;
 import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
@@ -191,6 +193,28 @@ public class BKDistributedLogNamespace implements Namespace {
                 logName,
                 logConf,
                 dynamicLogConf);
+    }
+
+    @Override
+    public CompletableFuture<Void> renameLog(String oldName, String newName) {
+        try {
+            checkState();
+            final String oldLogName = validateAndNormalizeName(oldName);
+            final String newLogName = validateAndNormalizeName(newName);
+
+            return driver.getLogMetadataStore().getLogLocation(oldName)
+                .thenCompose(uriOptional -> {
+                    if (uriOptional.isPresent()) {
+                        return driver.getLogStreamMetadataStore(WRITER)
+                            .renameLog(uriOptional.get(), oldLogName, newLogName);
+                    } else {
+                        return FutureUtils.exception(
+                            new LogNotFoundException("Log " + oldLogName + " isn't found."));
+                    }
+                });
+        } catch (IOException ioe) {
+            return FutureUtils.exception(ioe);
+        }
     }
 
     @Override

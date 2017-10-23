@@ -95,6 +95,18 @@ public interface LogStreamMetadataStore extends Closeable {
     CompletableFuture<Void> deleteLog(URI uri, String streamName);
 
     /**
+     * Rename the log from <i>oldStreamName</i> to <i>newStreamName</i>.
+     *
+     * @param uri the location to store the metadata of the log
+     * @param oldStreamName the old name of the log stream
+     * @param newStreamName the new name of the log stream
+     * @return future represents the result of the rename operation.
+     */
+    CompletableFuture<Void> renameLog(URI uri,
+                                      String oldStreamName,
+                                      String newStreamName);
+
+    /**
      * Get the log segment metadata store.
      *
      * @return the log segment metadata store.

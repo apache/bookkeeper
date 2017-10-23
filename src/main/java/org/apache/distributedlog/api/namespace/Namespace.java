@@ -20,6 +20,7 @@ package org.apache.distributedlog.api.namespace;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -105,6 +106,19 @@ public interface Namespace extends AutoCloseable{
      */
     void deleteLog(String logName)
             throws InvalidStreamNameException, LogNotFoundException, IOException;
+
+    /**
+     * Rename a log from <i>oldName</i> to <i>newName</i>.
+     *
+     * @param oldName old log name
+     * @param newName new log name
+     * @return a future represents the rename result.
+     * @throws InvalidStreamNameException if log name is invalid
+     * @throws LogNotFoundException if old log doesn't exist
+     * @throws org.apache.distributedlog.exceptions.LogExistsException if the new log exists
+     * @throws IOException when encountered issues with backend.
+     */
+    CompletableFuture<Void> renameLog(String oldName, String newName);
 
     /**
      * Open a log named <i>logName</i>.
