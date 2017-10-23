@@ -216,7 +216,7 @@ public class Bookie extends BookieCriticalThread {
     // Write Callback do nothing
     static class NopWriteCallback implements WriteCallback {
         @Override
-        public void writeComplete(int rc, long ledgerId, long entryId,
+        public void writeComplete(int rc, long ledgerId, long entryId, long lastAddSyncedEntry,
                                   BookieSocketAddress addr, Object ctx) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Finished writing entry {} @ ledger {} for {} : {}",
@@ -1491,7 +1491,7 @@ public class Bookie extends BookieCriticalThread {
         SettableFuture<Boolean> result = SettableFuture.create();
 
         @Override
-        public void writeComplete(int rc, long ledgerId, long entryId,
+        public void writeComplete(int rc, long ledgerId, long entryId, long lastAddSyncedEntry,
                                   BookieSocketAddress addr, Object ctx) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Finished writing entry {} @ ledger {} for {} : {}",
@@ -1560,7 +1560,8 @@ public class Bookie extends BookieCriticalThread {
         int count;
 
         @Override
-        public synchronized void writeComplete(int rc, long l, long e, BookieSocketAddress addr, Object ctx) {
+        public synchronized void writeComplete(int rc, long l, long e, long lastAddSyncedEntry,
+                                               BookieSocketAddress addr, Object ctx) {
             count--;
             if (count == 0) {
                 notifyAll();

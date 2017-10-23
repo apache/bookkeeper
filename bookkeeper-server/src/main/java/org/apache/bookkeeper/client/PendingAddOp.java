@@ -103,7 +103,7 @@ class PendingAddOp implements WriteCallback, TimerTask {
         int flags = isRecoveryAdd ? BookieProtocol.FLAG_RECOVERY_ADD : BookieProtocol.FLAG_NONE;
 
         lh.bk.getBookieClient().addEntry(lh.metadata.currentEnsemble.get(bookieIndex), lh.ledgerId, lh.ledgerKey, entryId, toSend,
-                this, bookieIndex, flags);
+                this, bookieIndex, flags, lh.ledgerType);
     }
 
     @Override
@@ -198,7 +198,8 @@ class PendingAddOp implements WriteCallback, TimerTask {
     }
 
     @Override
-    public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
+    public void writeComplete(int rc, long ledgerId, long entryId, long lastAddSyncedEntry,
+                              BookieSocketAddress addr, Object ctx) {        
         int bookieIndex = (Integer) ctx;
 
         if (!lh.metadata.currentEnsemble.get(bookieIndex).equals(addr)) {
@@ -213,6 +214,10 @@ class PendingAddOp implements WriteCallback, TimerTask {
         boolean ackQuorum = false;
         if (BKException.Code.OK == rc) {
             ackQuorum = ackSet.completeBookieAndCheck(bookieIndex);
+            lh.lastAddSyncedManager.updateBookie(bookieIndex, lastAddSyncedEntry);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("writeComplete lastAddSyncedEntry {}", lastAddSyncedEntry);
+            }
         }
 
         if (completed) {
@@ -255,7 +260,7 @@ class PendingAddOp implements WriteCallback, TimerTask {
             lh.handleUnrecoverableErrorDuringAdd(rc);
             return;
         default:
-            if (lh.bk.delayEnsembleChange) {
+            if (lh.bk.isDelayEnsembleChange()) {
                 if (ackSet.failBookieAndCheck(bookieIndex, addr) || rc == BKException.Code.WriteOnReadOnlyBookieException) {
                     Map<Integer, BookieSocketAddress> failedBookies = ackSet.getFailedBookies();
                     LOG.warn("Failed to write entry ({}, {}) to bookies {}, handling failures.",

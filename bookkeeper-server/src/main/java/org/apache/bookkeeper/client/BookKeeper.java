@@ -50,6 +50,7 @@ import org.apache.bookkeeper.client.SyncCallbackUtils.SyncOpenCallback;
 import org.apache.bookkeeper.client.api.BookKeeperBuilder;
 import org.apache.bookkeeper.client.api.CreateBuilder;
 import org.apache.bookkeeper.client.api.DeleteBuilder;
+import org.apache.bookkeeper.client.api.LedgerType;
 import org.apache.bookkeeper.client.api.OpenBuilder;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.Feature;
@@ -62,6 +63,7 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.proto.BookieClient;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -101,6 +103,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     private final StatsLogger statsLogger;
     private OpStatsLogger createOpLogger;
     private OpStatsLogger openOpLogger;
+    private OpStatsLogger syncOpLogger;
     private OpStatsLogger deleteOpLogger;
     private OpStatsLogger recoverOpLogger;
     private OpStatsLogger readOpLogger;
@@ -622,6 +625,11 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         return reorderReadSequence;
     }
 
+    @VisibleForTesting
+    boolean isDelayEnsembleChange() {
+        return delayEnsembleChange;
+    }
+
     /**
      * There are 2 digest types that can be used for verification. The CRC32 is
      * cheap to compute but does not protect against byzantine bookies (i.e., a
@@ -757,7 +765,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata)
+                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata, LedgerType.PD_JOURNAL)
                 .initiate();
         } finally {
             closeLock.readLock().unlock();
@@ -960,7 +968,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata).initiateAdv((long)(-1));
+                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata, LedgerType.PD_JOURNAL)
+                .initiateAdv(BookieProtocol.INVALID_LEDGER_ID);
         } finally {
             closeLock.readLock().unlock();
         }
@@ -1068,7 +1077,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata).initiateAdv(ledgerId);
+                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata, LedgerType.PD_JOURNAL)
+                .initiateAdv(ledgerId);
         } finally {
             closeLock.readLock().unlock();
         }
@@ -1380,6 +1390,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         createOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.CREATE_OP);
         deleteOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.DELETE_OP);
         openOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.OPEN_OP);
+        syncOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.SYNC_OP);
         recoverOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.RECOVER_OP);
         readOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_OP);
         readLacAndEntryOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY);
@@ -1393,6 +1404,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
     OpStatsLogger getCreateOpLogger() { return createOpLogger; }
     OpStatsLogger getOpenOpLogger() { return openOpLogger; }
+    OpStatsLogger getSyncOpLogger() { return syncOpLogger; }
     OpStatsLogger getDeleteOpLogger() { return deleteOpLogger; }
     OpStatsLogger getRecoverOpLogger() { return recoverOpLogger; }
     OpStatsLogger getReadOpLogger() { return readOpLogger; }

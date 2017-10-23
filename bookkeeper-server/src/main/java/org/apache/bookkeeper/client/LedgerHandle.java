@@ -22,6 +22,7 @@ package org.apache.bookkeeper.client;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
+import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -56,9 +57,8 @@ import org.apache.bookkeeper.client.SyncCallbackUtils.SyncAddCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCloseCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadLastConfirmedCallback;
-import org.apache.bookkeeper.client.api.WriteAdvHandle;
+import org.apache.bookkeeper.client.api.LedgerType;
 import org.apache.bookkeeper.client.api.WriteHandle;
-import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
@@ -84,15 +84,27 @@ public class LedgerHandle implements WriteHandle {
     final BookKeeper bk;
     final long ledgerId;
     long lastAddPushed;
+    /**
+      * Last entryId which has been confirmed to be written durably to the bookies.
+      * This value is used by readers, the the LAC protocol
+      */
     volatile long lastAddConfirmed;
+
+     /**
+      * Next entryId which is expected to move forward during {@link #sendAddSuccessCallbacks() }. This is important
+      * in order to have an ordered sequence of addEntry ackknowledged to the writer
+      */
+     volatile long pendingAddsSequenceHead;
 
     long length;
     final DigestManager macManager;
     final DistributionSchedule distributionSchedule;
     final RateLimiter throttler;
+    final LastAddSyncedManager lastAddSyncedManager;
     final LoadingCache<BookieSocketAddress, Long> bookieFailureHistory;
     final boolean enableParallelRecoveryRead;
     final int recoveryReadBatchSize;
+    final LedgerType ledgerType;
 
     /**
      * Invalid entry id. This value is returned from methods which
@@ -124,6 +136,7 @@ public class LedgerHandle implements WriteHandle {
             throws GeneralSecurityException, NumberFormatException {
         this.bk = bk;
         this.metadata = metadata;
+        this.ledgerType = metadata.getLedgerType();
         this.pendingAddOps = new ConcurrentLinkedQueue<PendingAddOp>();
         this.enableParallelRecoveryRead = bk.getConf().getEnableParallelRecoveryRead();
         this.recoveryReadBatchSize = bk.getConf().getRecoveryReadBatchSize();
@@ -135,6 +148,8 @@ public class LedgerHandle implements WriteHandle {
             lastAddConfirmed = lastAddPushed = INVALID_ENTRY_ID;
             length = 0;
         }
+
+        this.pendingAddsSequenceHead = lastAddConfirmed + 1;
 
         this.ledgerId = ledgerId;
 
@@ -151,6 +166,7 @@ public class LedgerHandle implements WriteHandle {
         this.ledgerKey = password.length > 0 ? MacDigestManager.genDigest("ledger", password) : emptyLedgerKey;
         distributionSchedule = new RoundRobinDistributionSchedule(
                 metadata.getWriteQuorumSize(), metadata.getAckQuorumSize(), metadata.getEnsembleSize());
+        this.lastAddSyncedManager = new LastAddSyncedManager(metadata.getWriteQuorumSize(), metadata.getAckQuorumSize());
         this.bookieFailureHistory = CacheBuilder.newBuilder()
             .expireAfterWrite(bk.getConf().getBookieFailureHistoryExpirationMSec(), TimeUnit.MILLISECONDS)
             .build(new CacheLoader<BookieSocketAddress, Long>() {
@@ -189,6 +205,15 @@ public class LedgerHandle implements WriteHandle {
      */
     public long getId() {
         return ledgerId;
+    }
+
+    /**
+     * The the type of the current ledger
+     *
+     * @return the type of ledger
+     */
+    public LedgerType getLedgerType() {
+        return ledgerType;
     }
 
     /**
@@ -939,6 +964,27 @@ public class LedgerHandle implements WriteHandle {
         }
     }
 
+    /**
+     * {@inheritDoc }
+     */
+    @Override
+    public CompletableFuture<Long> sync() {
+        CompletableFuture<Long> result = new CompletableFuture<>();
+        final PendingSyncOp op = new PendingSyncOp(this, result);
+        try {
+            bk.getMainWorkerPool().submit(new SafeRunnable() {
+                @Override
+                public void safeRun() {
+                    op.initiate();
+                }
+            });
+        } catch (RejectedExecutionException e) {
+            result.completeExceptionally(BKException.create(BKException.Code.InterruptedException));
+        }
+        return result;
+    }
+
+
     synchronized void updateLastConfirmed(long lac, long len) {
         if (lac > lastAddConfirmed) {
             lastAddConfirmed = lac;
@@ -1329,6 +1375,12 @@ public class LedgerHandle implements WriteHandle {
         }
     }
 
+    synchronized long syncCompleted() {
+        lastAddConfirmed = lastAddSyncedManager.calculateCurrentLastAddSynced();
+        LOG.info("syncCompleted lastAddConfirmed {}", lastAddConfirmed);
+        return lastAddConfirmed;
+    }
+
     void sendAddSuccessCallbacks() {
         // Start from the head of the queue and proceed while there are
         // entries that have had all their responses come back
@@ -1343,17 +1395,27 @@ public class LedgerHandle implements WriteHandle {
                 return;
             }
             // Check if it is the next entry in the sequence.
-            if (pendingAddOp.entryId != 0 && pendingAddOp.entryId != lastAddConfirmed + 1) {
+            if (pendingAddOp.entryId != 0 && pendingAddOp.entryId != pendingAddsSequenceHead) {
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Head of the queue entryId: {} is not lac: {} + 1", pendingAddOp.entryId,
-                            lastAddConfirmed);
+                    LOG.debug("Head of the queue entryId: {} is not the expected value: {}", pendingAddOp.entryId,
+                               pendingAddsSequenceHead);
                 }
                 return;
             }
 
-            pendingAddOps.remove();
+
+            PendingAddOp removed = pendingAddOps.remove();
+            Preconditions.checkState(removed == pendingAddOp, "removed unexpected entry %s, expected %s",
+            removed.entryId, pendingAddOp.entryId);
+
             explicitLacFlushPolicy.updatePiggyBackedLac(lastAddConfirmed);
-            lastAddConfirmed = pendingAddOp.entryId;
+            if (ledgerType.equals(LedgerType.VD_JOURNAL)) {
+                this.lastAddConfirmed = lastAddSyncedManager.calculateCurrentLastAddSynced();
+            } else {
+                this.lastAddConfirmed = Math.max(lastAddConfirmed, pendingAddOp.entryId);
+            }
+
+            pendingAddsSequenceHead = pendingAddOp.entryId + 1;
 
             pendingAddOp.submitCallback(BKException.Code.OK);
         }
@@ -1417,7 +1479,7 @@ public class LedgerHandle implements WriteHandle {
     void handleBookieFailure(final Map<Integer, BookieSocketAddress> failedBookies) {
         int curBlockAddCompletions = blockAddCompletions.incrementAndGet();
 
-        if (bk.disableEnsembleChangeFeature.isAvailable()) {
+        if (bk.disableEnsembleChangeFeature.isAvailable() || ledgerType == LedgerType.VD_JOURNAL) {
             blockAddCompletions.decrementAndGet();
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Ensemble change is disabled. Retry sending to failed bookies {} for ledger {}.",

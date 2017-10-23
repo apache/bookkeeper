@@ -19,16 +19,12 @@ package org.apache.bookkeeper.proto;
 
 import static org.apache.bookkeeper.client.LedgerHandle.INVALID_ENTRY_ID;
 
-import com.google.common.collect.Sets;
 import com.google.common.base.Joiner;
 import com.google.protobuf.ByteString;
-import com.google.protobuf.ExtensionRegistry;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
-import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -57,7 +53,6 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 
 import java.io.IOException;
-import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayDeque;
 import java.util.Collections;
@@ -69,7 +64,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import org.apache.bookkeeper.auth.BookKeeperPrincipal;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperClientStats;
@@ -116,7 +110,6 @@ import com.google.common.collect.Sets;
 import com.google.protobuf.ExtensionRegistry;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
-import java.net.SocketAddress;
 
 import java.net.SocketAddress;
 import java.security.cert.Certificate;
@@ -125,6 +118,10 @@ import java.util.Arrays;
 import java.util.List;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import org.apache.bookkeeper.auth.BookKeeperPrincipal;
+import org.apache.bookkeeper.client.api.LedgerType;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.SyncCallback;
+import org.apache.bookkeeper.proto.BookkeeperProtocol.SyncRequest;
+import org.apache.bookkeeper.proto.BookkeeperProtocol.SyncResponse;
 
 /**
  * This class manages all details of connection to a particular bookie. It also
@@ -170,6 +167,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     private final OpStatsLogger readLacTimeoutOpLogger;
     private final OpStatsLogger getBookieInfoOpLogger;
     private final OpStatsLogger getBookieInfoTimeoutOpLogger;
+    private final OpStatsLogger syncOpLogger;
+    private final OpStatsLogger syncTimeoutOpLogger;
     private final OpStatsLogger startTLSOpLogger;
     private final OpStatsLogger startTLSTimeoutOpLogger;
 
@@ -266,10 +265,12 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         readLacOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_READ_LAC_OP);
         getBookieInfoOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.GET_BOOKIE_INFO_OP);
         readTimeoutOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_TIMEOUT_READ);
+        syncOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_SYNC);
         addTimeoutOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_TIMEOUT_ADD);
         writeLacTimeoutOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_TIMEOUT_WRITE_LAC);
         readLacTimeoutOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_TIMEOUT_READ_LAC);
         getBookieInfoTimeoutOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.TIMEOUT_GET_BOOKIE_INFO);
+        syncTimeoutOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.TIMEOUT_SYNC);
         startTLSOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_START_TLS_OP);
         startTLSTimeoutOpLogger = statsLogger.getOpStatsLogger(BookKeeperClientStats.CHANNEL_TIMEOUT_START_TLS_OP);
 
@@ -477,6 +478,29 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
     }
 
+    void sync(final long ledgerId,
+              BookkeeperInternalCallbacks.SyncCallback cb, final Object ctx) {
+        final long txnId = getTxnId();
+        final CompletionKey completionKey = new V3CompletionKey(txnId,
+                                                                OperationType.SYNC);
+        completionObjects.put(completionKey,
+                              new SyncCompletion(completionKey, cb, ledgerId, ctx));
+
+        // Build the request
+        BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
+                .setVersion(ProtocolVersion.VERSION_THREE)
+                .setOperation(OperationType.WRITE_LAC)
+                .setTxnId(txnId);
+        SyncRequest.Builder syncBuilder = SyncRequest.newBuilder()
+                .setLedgerId(ledgerId);
+
+        final Request syncRequest = Request.newBuilder()
+                .setHeader(headerBuilder)
+                .setSyncRequest(syncBuilder)
+                .build();
+        writeAndFlush(channel, completionKey, syncRequest);
+    }
+
     void writeLac(final long ledgerId, final byte[] masterKey, final long lac, ByteBuf toSend, WriteLacCallback cb,
             Object ctx) {
         final long txnId = getTxnId();
@@ -525,10 +549,18 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
      *          Add options
      */
     void addEntry(final long ledgerId, byte[] masterKey, final long entryId, ByteBuf toSend, WriteCallback cb,
-                  Object ctx, final int options) {
+                  Object ctx, final int options, final LedgerType ledgerType) {
         Object request = null;
         CompletionKey completionKey = null;
         if (useV2WireProtocol) {
+            if (!ledgerType.equals(LedgerType.PD_JOURNAL)) {
+                // V2 protocol supports only PD_JOURNAL ledgers
+                LOG.error("invalid ledger type {} for v2 protocol", ledgerType);
+                toSend.release();
+                cb.writeComplete(BKException.Code.IllegalOpException, ledgerId, entryId, BookieProtocol.INVALID_ENTRY_ID,
+                    addr, ctx);
+                return;
+            }
             completionKey = new V2CompletionKey(ledgerId, entryId, OperationType.ADD_ENTRY);
             request = new BookieProtocol.AddRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId, entryId,
                     (short) options, masterKey, toSend);
@@ -551,6 +583,18 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
             if (((short) options & BookieProtocol.FLAG_RECOVERY_ADD) == BookieProtocol.FLAG_RECOVERY_ADD) {
                 addBuilder.setFlag(AddRequest.Flag.RECOVERY_ADD);
+            }
+
+            // do not write PD_JOURNAL in order to support writes to old bookies for PD_JOURNAL ledger type
+            if (!ledgerType.equals(LedgerType.PD_JOURNAL)) {
+                if (ledgerType.equals(LedgerType.VD_JOURNAL)) {
+                    addBuilder.setLedgerType(DataFormats.LedgerType.VD_JOURNAL);
+                } else {
+                    LOG.error("invalid ledger type {}", ledgerType);
+                    cb.writeComplete(BKException.Code.IllegalOpException, ledgerId, entryId, BookieProtocol.INVALID_ENTRY_ID,
+                    addr, ctx);
+                    return;
+                }
             }
 
             request = Request.newBuilder()
@@ -1331,6 +1375,52 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
     }
 
+    private class SyncCompletion extends CompletionValue {
+        final SyncCallback cb;
+
+        public SyncCompletion(CompletionKey key,
+                                  final SyncCallback originalCallback,
+                                  final long ledgerId,
+                                  final Object originalCtx) {
+            super("Sync",
+                  originalCtx, ledgerId, BookieProtocol.LAST_ADD_CONFIRMED,
+                  syncOpLogger, syncTimeoutOpLogger,
+                  scheduleTimeout(key, addEntryTimeout));
+            this.cb = new SyncCallback() {
+                @Override
+                public void syncComplete(int rc, long ledgerId, long lastSyncedEntryId, BookieSocketAddress addr, Object ctx) {
+                      cancelTimeoutAndLogOp(rc);
+                      originalCallback.syncComplete(rc, ledgerId, lastSyncedEntryId, addr, originalCtx);
+                };
+            };
+        }
+
+        @Override
+        public void errorOut() {
+            errorOut(BKException.Code.BookieHandleNotAvailableException);
+        }
+
+        @Override
+        public void errorOut(final int rc) {
+            errorOutAndRunCallback(
+                    () -> cb.syncComplete(rc, ledgerId, BookieProtocol.INVALID_ENTRY_ID, addr, ctx));
+        }
+
+        @Override
+        public void handleV3Response(BookkeeperProtocol.Response response) {
+            SyncResponse syncResponse = response.getSyncResponse();
+            StatusCode status = response.getStatus() == StatusCode.EOK ?
+                syncResponse.getStatus() : response.getStatus();
+            long ledgerId = syncResponse.getLedgerId();
+            long lastSynchedEntryId = syncResponse.getLastAddSynced();
+
+            int rc = logAndConvertStatus(status,
+                                         BKException.Code.WriteException,
+                                         "ledger", ledgerId);
+            cb.syncComplete(rc, ledgerId, lastSynchedEntryId, addr, ctx);
+        }
+    }
+
     // visible for testing
     class ReadLacCompletion extends CompletionValue {
         final ReadLacCallback cb;
@@ -1604,10 +1694,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             this.cb = new WriteCallback() {
                 @Override
                 public void writeComplete(int rc, long ledgerId, long entryId,
-                                          BookieSocketAddress addr,
+                                          long lastAddSyncedEntry, BookieSocketAddress addr,
                                           Object ctx) {
                     cancelTimeoutAndLogOp(rc);
-                    originalCallback.writeComplete(rc, ledgerId, entryId,
+                    originalCallback.writeComplete(rc, ledgerId, entryId, lastAddSyncedEntry,
                                                    addr, originalCtx);
                 }
             };
@@ -1621,14 +1711,15 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         @Override
         public void errorOut(final int rc) {
             errorOutAndRunCallback(
-                    () -> cb.writeComplete(rc, ledgerId, entryId, addr, ctx));
+                    () -> cb.writeComplete(rc, ledgerId, entryId, BookieProtocol.INVALID_ENTRY_ID,
+                                           addr, ctx));
         }
 
         @Override
         public void handleV2Response(
                 long ledgerId, long entryId, StatusCode status,
                 BookieProtocol.Response response) {
-            handleResponse(ledgerId, entryId, status);
+            handleResponse(ledgerId, entryId, BookieProtocol.INVALID_ENTRY_ID, status);
         }
 
         @Override
@@ -1637,17 +1728,19 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             AddResponse addResponse = response.getAddResponse();
             StatusCode status = response.getStatus() == StatusCode.EOK
                 ? addResponse.getStatus() : response.getStatus();
+            long lastAddSyncedEntry = addResponse.hasLastAddSynced() ?
+                                        addResponse.getLastAddSynced() : BookieProtocol.INVALID_ENTRY_ID;
             handleResponse(addResponse.getLedgerId(), addResponse.getEntryId(),
-                           status);
+                           lastAddSyncedEntry, status);
         }
 
-        private void handleResponse(long ledgerId, long entryId,
+        private void handleResponse(long ledgerId, long entryId, long lastAddSyncedEntry,
                                     StatusCode status) {
             int rc = logAndConvertStatus(status,
                                          BKException.Code.WriteException,
                                          "ledger", ledgerId,
                                          "entry", entryId);
-            cb.writeComplete(rc, ledgerId, entryId, addr, ctx);
+            cb.writeComplete(rc, ledgerId, entryId, lastAddSyncedEntry, addr, ctx);
         }
     }
 

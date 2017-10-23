@@ -62,6 +62,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
+import org.apache.bookkeeper.client.api.LedgerType;
 
 /**
  * Implements the client-side part of the BookKeeper protocol.
@@ -224,7 +225,9 @@ public class BookieClient implements PerChannelBookieClientFactory {
             executor.submitOrdered(ledgerId, new SafeRunnable() {
                 @Override
                 public void safeRun() {
-                    cb.writeComplete(rc, ledgerId, entryId, addr, ctx);
+                    // we are using lastAddSyncedEntry = -1 as mock implementation, next commits will provide an implementation
+                    long lastAddSyncedEntry = BookieProtocol.INVALID_ENTRY_ID;
+                    cb.writeComplete(rc, ledgerId, entryId, lastAddSyncedEntry, addr, ctx);
                 }
                 @Override
                 public String toString() {
@@ -232,7 +235,35 @@ public class BookieClient implements PerChannelBookieClientFactory {
                 }
             });
         } catch (RejectedExecutionException ree) {
-            cb.writeComplete(getRc(BKException.Code.InterruptedException), ledgerId, entryId, addr, ctx);
+            cb.writeComplete(getRc(BKException.Code.InterruptedException), ledgerId, entryId,
+                             BookieProtocol.INVALID_ENTRY_ID, addr, ctx);
+        }
+    }
+
+    public void sync(final BookieSocketAddress addr,
+                         final long ledgerId,
+                         final BookkeeperInternalCallbacks.SyncCallback cb,
+                         final Object ctx) {
+        closeLock.readLock().lock();
+        try {
+            final PerChannelBookieClientPool client = lookupClient(addr, null);
+            if (client == null) {
+                cb.syncComplete(getRc(BKException.Code.BookieHandleNotAvailableException),
+                                ledgerId, BookieProtocol.INVALID_ENTRY_ID, addr, ctx);
+                return;
+            }
+            client.obtain(new GenericCallback<PerChannelBookieClient>() {
+                @Override
+                public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
+                    if (rc != BKException.Code.OK) {
+                        cb.syncComplete(rc, ledgerId, BookieProtocol.INVALID_ENTRY_ID, addr, ctx);
+                    } else {
+                        pcbc.sync(ledgerId,  cb, ctx);
+                    }                    
+                }
+            }, ledgerId);
+        } finally {
+            closeLock.readLock().unlock();
         }
     }
 
@@ -243,7 +274,8 @@ public class BookieClient implements PerChannelBookieClientFactory {
                          final ByteBuf toSend,
                          final WriteCallback cb,
                          final Object ctx,
-                         final int options) {
+                         final int options,
+                         final LedgerType ledgerType) {
         closeLock.readLock().lock();
         try {
             final PerChannelBookieClientPool client = lookupClient(addr, entryId);
@@ -263,7 +295,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                     if (rc != BKException.Code.OK) {
                         completeAdd(rc, ledgerId, entryId, addr, cb, ctx);
                     } else {
-                        pcbc.addEntry(ledgerId, masterKey, entryId, toSend, cb, ctx, options);
+                        pcbc.addEntry(ledgerId, masterKey, entryId, toSend, cb, ctx, options, ledgerType);
                     }
                     toSend.release();
                 }
@@ -510,7 +542,8 @@ public class BookieClient implements PerChannelBookieClientFactory {
         }
         WriteCallback cb = new WriteCallback() {
 
-            public void writeComplete(int rc, long ledger, long entry, BookieSocketAddress addr, Object ctx) {
+            public void writeComplete(int rc, long ledger, long entry, long lastAddSyncedEntry,
+                                      BookieSocketAddress addr, Object ctx) {
                 Counter counter = (Counter) ctx;
                 counter.dec();
                 if (rc != 0) {
@@ -531,7 +564,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
 
         for (int i = 0; i < 100000; i++) {
             counter.inc();
-            bc.addEntry(addr, ledger, new byte[0], i, Unpooled.wrappedBuffer(hello), cb, counter, 0);
+            bc.addEntry(addr, ledger, new byte[0], i, Unpooled.wrappedBuffer(hello), cb, counter, 0, LedgerType.PD_JOURNAL);
         }
         counter.wait(0);
         System.out.println("Total = " + counter.total());
