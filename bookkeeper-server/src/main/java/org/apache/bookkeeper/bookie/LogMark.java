@@ -24,7 +24,7 @@ import java.nio.ByteBuffer;
 /**
  * Journal stream position.
  */
-class LogMark {
+public class LogMark {
     long logFileId;
     long logFileOffset;
 

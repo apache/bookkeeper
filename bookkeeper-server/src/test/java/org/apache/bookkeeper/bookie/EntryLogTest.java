@@ -152,12 +152,12 @@ public class EntryLogTest {
         for (int i=0; i<2*numLogs; i++) {
             for (int j=0; j<numEntries; j++) {
                 String expectedValue = "ledger-" + i + "-" + j;
-                byte[] value = newLogger.readEntry(i, j, positions[i][j]);
-                ByteBuffer buf = ByteBuffer.wrap(value);
-                long ledgerId = buf.getLong();
-                long entryId = buf.getLong();
-                byte[] data = new byte[buf.remaining()];
-                buf.get(data);
+                ByteBuf value = newLogger.readEntry(i, j, positions[i][j]);
+                long ledgerId = value.readLong();
+                long entryId = value.readLong();
+                byte[] data = new byte[value.readableBytes()];
+                value.readBytes(data);
+                value.release();
                 assertEquals(i, ledgerId);
                 assertEquals(j, entryId);
                 assertEquals(expectedValue, new String(data));

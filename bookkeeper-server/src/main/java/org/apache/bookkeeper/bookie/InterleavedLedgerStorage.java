@@ -316,9 +316,9 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         startTimeNanos = MathUtils.nowInNano();
         success = false;
         try {
-            byte[] retBytes = entryLogger.readEntry(ledgerId, entryId, offset);
+            ByteBuf retBytes = entryLogger.readEntry(ledgerId, entryId, offset);
             success = true;
-            return Unpooled.wrappedBuffer(retBytes);
+            return retBytes;
         } finally {
             if (success) {
                 getEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);

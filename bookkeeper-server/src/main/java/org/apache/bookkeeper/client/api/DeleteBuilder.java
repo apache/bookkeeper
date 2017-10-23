@@ -18,13 +18,22 @@
  * under the License.
  *
  */
-package org.apache.bookkeeper.http.service;
+package org.apache.bookkeeper.client.api;
 
 /**
- * Service provides the abstraction for how to handle the logic
- * for a specific endpoint.
+ * Builder-style interface to delete exiting ledgers.
+ *
+ * @since 4.6
  */
-public interface Service {
+public interface DeleteBuilder extends OpBuilder<Void> {
 
-    ServiceResponse handle(ServiceRequest request) throws Exception;
+    /**
+     * Set the id of the ledger to be deleted.
+     *
+     * @param ledgerId
+     *
+     * @return the builder itself
+     */
+    DeleteBuilder withLedgerId(long ledgerId);
+
 }

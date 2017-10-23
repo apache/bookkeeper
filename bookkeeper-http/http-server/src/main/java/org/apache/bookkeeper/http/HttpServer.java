@@ -33,6 +33,7 @@ public interface HttpServer {
     enum StatusCode {
         OK(200),
         REDIRECT(302),
+        FORBIDDEN(403),
         NOT_FOUND(404),
         INTERNAL_ERROR(500);
 
@@ -54,13 +55,40 @@ public interface HttpServer {
         GET,
         POST,
         PUT,
-        DELETE;
+        DELETE
+    }
+
+    /**
+     * Http ApiTypes.
+     */
+    enum ApiType {
+        HEARTBEAT,
+        SERVER_CONFIG,
+
+        // ledger
+        DELETE_LEDGER,
+        LIST_LEDGER,
+        GET_LEDGER_META,
+        READ_LEDGER_ENTRY,
+        // bookie
+        LIST_BOOKIES,
+        LIST_BOOKIE_INFO,
+        LAST_LOG_MARK,
+        LIST_DISK_FILE,
+        EXPAND_STORAGE,
+        // autorecovery
+        RECOVERY_BOOKIE,
+        LIST_UNDER_REPLICATED_LEDGER,
+        WHO_IS_AUDITOR,
+        TRIGGER_AUDIT,
+        LOST_BOOKIE_RECOVERY_DELAY,
+        DECOMMISSION
     }
 
     /**
      * Initialize the HTTP server with underline service provider.
      */
-    void initialize(ServiceProvider serviceProvider);
+    void initialize(HttpServiceProvider httpServiceProvider);
 
     /**
      * Start the HTTP server on given port.

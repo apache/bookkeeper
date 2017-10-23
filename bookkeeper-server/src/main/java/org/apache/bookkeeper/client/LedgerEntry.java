@@ -32,8 +32,10 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
  * the entry content.
  *
  */
-public class LedgerEntry {
-    long ledgerId;
+public class LedgerEntry
+    implements org.apache.bookkeeper.client.api.LedgerEntry {
+
+    final long ledgerId;
     long entryId;
     long length;
     ByteBuf data;
@@ -43,14 +45,17 @@ public class LedgerEntry {
         this.entryId = eId;
     }
 
+    @Override
     public long getLedgerId() {
         return ledgerId;
     }
 
+    @Override
     public long getEntryId() {
         return entryId;
     }
 
+    @Override
     public long getLength() {
         return length;
     }
@@ -63,6 +68,7 @@ public class LedgerEntry {
      * @return the content of the entry
      * @throws IllegalStateException if this method is called twice
      */
+    @Override
     public byte[] getEntry() {
         Preconditions.checkState(null != data, "entry content can be accessed only once");
         byte[] entry = new byte[data.readableBytes()];
@@ -99,6 +105,7 @@ public class LedgerEntry {
      * @throws IllegalStateException if the entry has been retrieved by {@link #getEntry()}
      * or {@link #getEntryInputStream()}.
      */
+    @Override
     public ByteBuf getEntryBuffer() {
         Preconditions.checkState(null != data, "entry content has been retrieved" +
             " by #getEntry or #getEntryInputStream");

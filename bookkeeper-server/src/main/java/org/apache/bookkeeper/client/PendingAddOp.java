@@ -102,7 +102,7 @@ class PendingAddOp implements WriteCallback, TimerTask {
     void sendWriteRequest(int bookieIndex) {
         int flags = isRecoveryAdd ? BookieProtocol.FLAG_RECOVERY_ADD : BookieProtocol.FLAG_NONE;
 
-        lh.bk.bookieClient.addEntry(lh.metadata.currentEnsemble.get(bookieIndex), lh.ledgerId, lh.ledgerKey, entryId, toSend,
+        lh.bk.getBookieClient().addEntry(lh.metadata.currentEnsemble.get(bookieIndex), lh.ledgerId, lh.ledgerKey, entryId, toSend,
                 this, bookieIndex, flags);
     }
 
@@ -113,7 +113,7 @@ class PendingAddOp implements WriteCallback, TimerTask {
 
     void timeoutQuorumWait() {
         try {
-            lh.bk.mainWorkerPool.submitOrdered(lh.ledgerId, new SafeRunnable() {
+            lh.bk.getMainWorkerPool().submitOrdered(lh.ledgerId, new SafeRunnable() {
                 @Override
                 public void safeRun() {
                     if (completed) {
@@ -185,7 +185,7 @@ class PendingAddOp implements WriteCallback, TimerTask {
         }
 
         if (timeoutSec > -1) {
-            this.timeout = lh.bk.bookieClient.scheduleTimeout(this, timeoutSec, TimeUnit.SECONDS);
+            this.timeout = lh.bk.getBookieClient().scheduleTimeout(this, timeoutSec, TimeUnit.SECONDS);
         }
         this.requestTimeNanos = MathUtils.nowInNano();
         this.toSend = toSend;

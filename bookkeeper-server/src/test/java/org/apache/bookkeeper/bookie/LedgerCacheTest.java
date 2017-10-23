@@ -303,9 +303,9 @@ public class LedgerCacheTest {
 
         assertFalse("After flush index file should be changed", before.equals(after));
         // Verify written entries
-        Assert.assertArrayEquals(generateEntry(1, 1).array(), ledgerStorage.getEntry(1, 1).array());
-        Assert.assertArrayEquals(generateEntry(1, 2).array(), ledgerStorage.getEntry(1, 2).array());
-        Assert.assertArrayEquals(generateEntry(1, 3).array(), ledgerStorage.getEntry(1, 3).array());
+        Assert.assertEquals(generateEntry(1, 1), ledgerStorage.getEntry(1, 1));
+        Assert.assertEquals(generateEntry(1, 2), ledgerStorage.getEntry(1, 2));
+        Assert.assertEquals(generateEntry(1, 3), ledgerStorage.getEntry(1, 3));
     }
 
     /**

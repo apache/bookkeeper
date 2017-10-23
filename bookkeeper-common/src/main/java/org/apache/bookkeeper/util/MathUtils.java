@@ -18,9 +18,9 @@
 package org.apache.bookkeeper.util;
 
 /**
- * Provides misc math functions that don't come standard
+ * Provides misc math functions that don't come standard.
  *
- * @Deprecated since 4.6.0, in favor of using {@link org.apache.bookkeeper.common.util.MathUtils}.
+ * <p>Deprecated since 4.6.0, in favor of using {@link org.apache.bookkeeper.common.util.MathUtils}.
  */
 public class MathUtils extends org.apache.bookkeeper.common.util.MathUtils {
 }

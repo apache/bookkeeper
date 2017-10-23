@@ -214,7 +214,7 @@ public class BookieWriteLedgerTest extends
             CompletableFuture<Object> done = new CompletableFuture<>();
             lh.asyncAddEntry(Unpooled.wrappedBuffer(entry.array()),
                 (int rc, LedgerHandle lh1, long entryId, Object ctx) -> {
-                SynchCallbackUtils.finish(rc, null, done);
+                SyncCallbackUtils.finish(rc, null, done);
             }, null);
             done.get();
         } catch (ExecutionException ee) {
@@ -227,7 +227,7 @@ public class BookieWriteLedgerTest extends
             CompletableFuture<Object> done = new CompletableFuture<>();
             lh.asyncAddEntry(entry.array(),
                 (int rc, LedgerHandle lh1, long entryId, Object ctx) -> {
-                SynchCallbackUtils.finish(rc, null, done);
+                SyncCallbackUtils.finish(rc, null, done);
             }, null);
             done.get();
         } catch (ExecutionException ee) {
@@ -240,7 +240,7 @@ public class BookieWriteLedgerTest extends
             CompletableFuture<Object> done = new CompletableFuture<>();
             lh.asyncAddEntry(entry.array(),0, 4,
                 (int rc, LedgerHandle lh1, long entryId, Object ctx) -> {
-                SynchCallbackUtils.finish(rc, null, done);
+                SyncCallbackUtils.finish(rc, null, done);
             }, null);
             done.get();
         } catch (ExecutionException ee) {

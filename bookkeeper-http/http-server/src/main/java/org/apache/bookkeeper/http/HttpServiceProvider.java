@@ -18,25 +18,22 @@
  * under the License.
  *
  */
-package org.apache.bookkeeper.http.service;
+package org.apache.bookkeeper.http;
 
-import org.apache.bookkeeper.http.HttpServer;
+import java.io.Closeable;
+import org.apache.bookkeeper.http.service.HttpEndpointService;
 
 /**
- * Service that return internal server error.
+ * Provider to provide services for different http endpoint handlers.
  */
-public class ErrorService implements Service {
+public interface HttpServiceProvider extends Closeable{
 
-    private HttpServer.StatusCode statusCode = HttpServer.StatusCode.INTERNAL_ERROR;
+    /**
+     * Provide http endpoint service.
+     *
+     * @param type the service type
+     * @return the http endpoint service
+     */
+    HttpEndpointService provideHttpEndpointService(HttpServer.ApiType type);
 
-    public ErrorService() {}
-
-    public ErrorService(HttpServer.StatusCode statusCode) {
-        this.statusCode = statusCode;
-    }
-
-    @Override
-    public ServiceResponse handle(ServiceRequest request) {
-        return new ServiceResponse().setCode(statusCode);
-    }
 }

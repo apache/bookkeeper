@@ -21,7 +21,7 @@ package org.apache.bookkeeper.server.service;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
-import org.apache.bookkeeper.http.BKServiceProvider;
+import org.apache.bookkeeper.http.BKHttpServiceProvider;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.HttpServerLoader;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
@@ -37,7 +37,7 @@ public class HttpService extends ServerLifecycleComponent {
 
     private HttpServer server;
 
-    public HttpService(BKServiceProvider provider,
+    public HttpService(BKHttpServiceProvider provider,
                        BookieConfiguration conf,
                        StatsLogger statsLogger) {
         super(NAME, conf, statsLogger);

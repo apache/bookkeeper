@@ -28,8 +28,8 @@ import java.net.URL;
 
 import org.apache.bookkeeper.http.HttpRouter;
 import org.apache.bookkeeper.http.HttpServer;
-import org.apache.bookkeeper.http.NullServiceProvider;
-import org.apache.bookkeeper.http.ServiceProvider;
+import org.apache.bookkeeper.http.NullHttpServiceProvider;
+import org.apache.bookkeeper.http.HttpServiceProvider;
 import org.apache.bookkeeper.http.service.HeartbeatService;
 import org.junit.Test;
 
@@ -42,8 +42,8 @@ public class TestVertxHttpServer {
     @Test
     public void testStartBasicHttpServer() throws Exception {
         VertxHttpServer httpServer = new VertxHttpServer();
-        ServiceProvider serviceProvider = NullServiceProvider.getInstance();
-        httpServer.initialize(serviceProvider);
+        HttpServiceProvider httpServiceProvider = NullHttpServiceProvider.getInstance();
+        httpServer.initialize(httpServiceProvider);
         int port = getNextPort();
         while (!httpServer.startServer(port)) {
             httpServer.stopServer();

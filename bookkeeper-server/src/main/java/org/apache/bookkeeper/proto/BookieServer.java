@@ -32,7 +32,7 @@ import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.bookie.ReadOnlyBookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.http.BKServiceProvider;
+import org.apache.bookkeeper.http.BKHttpServiceProvider;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.HttpServerLoader;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -107,7 +107,7 @@ public class BookieServer {
                 new Bookie(conf, statsLogger.scope(BOOKIE_SCOPE));
     }
 
-    public void start() throws IOException, UnavailableException, InterruptedException {
+    public void start() throws IOException, UnavailableException, InterruptedException, KeeperException {
         this.bookie.start();
         // fail fast, when bookie startup is not successful
         if (!this.bookie.isRunning()) {
@@ -115,7 +115,7 @@ public class BookieServer {
             return;
         }
         if (conf.isHttpServerEnabled()) {
-            BKServiceProvider serviceProvider = new BKServiceProvider.Builder()
+            BKHttpServiceProvider serviceProvider = new BKHttpServiceProvider.Builder()
                 .setBookieServer(this)
                 .setServerConfiguration(conf)
                 .build();
@@ -234,5 +234,17 @@ public class BookieServer {
      */
     public static void main(String[] args) {
         Main.main(args);
+    }
+
+    @Override
+    public  String toString() {
+        String id = "UNKNOWN";
+
+        try {
+            id = Bookie.getBookieAddress(conf).toString();
+        } catch (UnknownHostException e) {
+            //Ignored...
+        }
+        return "Bookie Server listening on " + id;
     }
 }

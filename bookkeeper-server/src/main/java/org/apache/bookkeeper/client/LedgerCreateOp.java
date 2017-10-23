@@ -23,12 +23,21 @@ package org.apache.bookkeeper.client;
 
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCreateAdvCallback;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCreateCallback;
+import org.apache.bookkeeper.client.api.CreateAdvBuilder;
+import org.apache.bookkeeper.client.api.CreateBuilder;
+import org.apache.bookkeeper.client.api.WriteAdvHandle;
+import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -45,16 +54,16 @@ class LedgerCreateOp implements GenericCallback<Void> {
 
     static final Logger LOG = LoggerFactory.getLogger(LedgerCreateOp.class);
 
-    CreateCallback cb;
-    LedgerMetadata metadata;
+    final CreateCallback cb;
+    final LedgerMetadata metadata;
     LedgerHandle lh;
-    Long ledgerId = -1L;
-    Object ctx;
-    byte[] passwd;
-    BookKeeper bk;
-    DigestType digestType;
-    long startTime;
-    OpStatsLogger createOpLogger;
+    long ledgerId = -1L;
+    final Object ctx;
+    final byte[] passwd;
+    final BookKeeper bk;
+    final DigestType digestType;
+    final long startTime;
+    final OpStatsLogger createOpLogger;
     boolean adv = false;
     boolean generateLedgerId = true;
 
@@ -105,7 +114,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
 
         ArrayList<BookieSocketAddress> ensemble;
         try {
-            ensemble = bk.bookieWatcher
+            ensemble = bk.getBookieWatcher()
                     .newEnsemble(metadata.getEnsembleSize(),
                             metadata.getWriteQuorumSize(),
                             metadata.getAckQuorumSize(),
@@ -200,4 +209,180 @@ class LedgerCreateOp implements GenericCallback<Void> {
         cb.createComplete(rc, lh, ctx);
     }
 
+    static class CreateBuilderImpl implements CreateBuilder {
+
+        private final BookKeeper bk;
+        private int builderEnsembleSize = 3;
+        private int builderAckQuorumSize = 2;
+        private int builderWriteQuorumSize = 2;
+        private byte[] builderPassword;
+        private org.apache.bookkeeper.client.api.DigestType builderDigestType
+            = org.apache.bookkeeper.client.api.DigestType.CRC32;
+        private Map<String, byte[]> builderCustomMetadata = Collections.emptyMap();
+
+        CreateBuilderImpl(BookKeeper bk) {
+            this.bk = bk;
+        }
+
+        @Override
+        public CreateBuilder withEnsembleSize(int ensembleSize) {
+            this.builderEnsembleSize = ensembleSize;
+            return this;
+        }
+
+        @Override
+        public CreateBuilder withWriteQuorumSize(int writeQuorumSize) {
+            this.builderWriteQuorumSize = writeQuorumSize;
+            return this;
+        }
+
+        @Override
+        public CreateBuilder withAckQuorumSize(int ackQuorumSize) {
+            this.builderAckQuorumSize = ackQuorumSize;
+            return this;
+        }
+
+        @Override
+        public CreateBuilder withPassword(byte[] password) {
+            this.builderPassword = password;
+            return this;
+        }
+
+        @Override
+        public CreateBuilder withCustomMetadata(Map<String, byte[]> customMetadata) {
+            this.builderCustomMetadata = customMetadata;
+            return this;
+        }
+
+        @Override
+        public CreateBuilder withDigestType(org.apache.bookkeeper.client.api.DigestType digestType) {
+            this.builderDigestType = digestType;
+            return this;
+        }
+
+        @Override
+        public CreateAdvBuilder makeAdv() {
+            return new CreateAdvBuilderImpl(this);
+        }
+
+        private boolean validate() {
+            if (builderWriteQuorumSize > builderEnsembleSize) {
+                LOG.error("invalid writeQuorumSize {} > ensembleSize {}", builderWriteQuorumSize, builderEnsembleSize);
+                return false;
+            }
+
+            if (builderAckQuorumSize > builderWriteQuorumSize) {
+                LOG.error("invalid ackQuorumSize {} > writeQuorumSize {}", builderAckQuorumSize, builderWriteQuorumSize);
+                return false;
+            }
+
+            if (builderAckQuorumSize <= 0) {
+                LOG.error("invalid ackQuorumSize {} <= 0", builderAckQuorumSize);
+                return false;
+            }
+
+            if (builderPassword == null) {
+                LOG.error("invalid null password");
+                return false;
+            }
+
+            if (builderDigestType == null) {
+                LOG.error("invalid null digestType");
+                return false;
+            }
+
+            if (builderCustomMetadata == null) {
+                LOG.error("invalid null customMetadata");
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public CompletableFuture<WriteHandle> execute() {
+            CompletableFuture<WriteHandle> future = new CompletableFuture<>();
+            SyncCreateCallback callback = new SyncCreateCallback(future);
+            create(callback);
+            return future;
+        }
+
+        private void create(CreateCallback cb) {
+            if (!validate()) {
+                cb.createComplete(BKException.Code.IncorrectParameterException, null, null);
+                return;
+            }
+            LedgerCreateOp op = new LedgerCreateOp(bk, builderEnsembleSize,
+                builderWriteQuorumSize, builderAckQuorumSize, DigestType.fromApiDigestType(builderDigestType),
+                builderPassword, cb, null, builderCustomMetadata);
+            ReentrantReadWriteLock closeLock = bk.getCloseLock();
+            closeLock.readLock().lock();
+            try {
+                if (bk.isClosed()) {
+                    cb.createComplete(BKException.Code.ClientClosedException, null, null);
+                    return;
+                }
+                op.initiate();
+            } finally {
+                closeLock.readLock().unlock();
+            }
+        }
+    }
+
+    private static class CreateAdvBuilderImpl implements CreateAdvBuilder {
+
+        private Long builderLedgerId;
+        private final CreateBuilderImpl parent;
+
+         private CreateAdvBuilderImpl(CreateBuilderImpl parent) {
+            this.parent = parent;
+        }
+
+        @Override
+        public CreateAdvBuilder withLedgerId(long ledgerId) {
+            builderLedgerId = ledgerId;
+            return this;
+        }
+
+        @Override
+        public CompletableFuture<WriteAdvHandle> execute() {
+            CompletableFuture<WriteAdvHandle> future = new CompletableFuture<>();
+            SyncCreateAdvCallback callback = new SyncCreateAdvCallback(future);
+            create(callback);
+            return future;
+        }
+
+        private boolean validate() {
+            if (!parent.validate()) {
+                return false;
+            }
+            if (builderLedgerId != null && builderLedgerId < 0) {
+                LOG.error("invalid ledgerId {} < 0. Do not set en explicit value if you want automatic generation", builderLedgerId);
+                return false;
+            }
+            return true;
+        }
+
+        private void create(CreateCallback cb) {
+            if (!validate()) {
+                cb.createComplete(BKException.Code.IncorrectParameterException, null, null);
+                return;
+            }
+            LedgerCreateOp op = new LedgerCreateOp(parent.bk, parent.builderEnsembleSize,
+                    parent.builderWriteQuorumSize, parent.builderAckQuorumSize,
+                    DigestType.fromApiDigestType(parent.builderDigestType),
+                    parent.builderPassword, cb, null, parent.builderCustomMetadata);
+            ReentrantReadWriteLock closeLock = parent.bk.getCloseLock();
+            closeLock.readLock().lock();
+            try {
+                if (parent.bk.isClosed()) {
+                    cb.createComplete(BKException.Code.ClientClosedException, null, null);
+                    return;
+                }
+                op.initiateAdv(builderLedgerId == null ? -1L : builderLedgerId);
+            } finally {
+                closeLock.readLock().unlock();
+            }
+        }
+    }
 }

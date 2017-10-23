@@ -437,7 +437,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
      */
     @Override
     public ListenableFuture<Boolean> issueSpeculativeRequest() {
-        return lh.bk.mainWorkerPool.submitOrdered(lh.getId(), new Callable<Boolean>() {
+        return lh.bk.getMainWorkerPool().submitOrdered(lh.getId(), new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
                 if (!requestComplete.get() && !request.isComplete() &&
@@ -471,7 +471,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
             LOG.debug("Calling Read LAC and Entry with {} and long polling interval {} on Bookie {} - Parallel {}",
                     new Object[] { prevEntryId, timeOutInMillis, to, parallelRead });
         }
-        lh.bk.bookieClient.readEntryWaitForLACUpdate(to,
+        lh.bk.getBookieClient().readEntryWaitForLACUpdate(to,
             lh.ledgerId,
             BookieProtocol.LAST_ADD_CONFIRMED,
             prevEntryId,

@@ -23,35 +23,20 @@ package org.apache.bookkeeper.http.service;
 import org.apache.bookkeeper.http.HttpServer;
 
 /**
- * A wrapper class that wrap the result from service, which
- * can then be parsed into http response.
+ * HttpEndpointService that return internal server error.
  */
-public class ServiceResponse {
-    private String body;
-    private HttpServer.StatusCode code = HttpServer.StatusCode.OK;
+public class ErrorHttpService implements HttpEndpointService {
 
-    public ServiceResponse() {}
+    private HttpServer.StatusCode statusCode = HttpServer.StatusCode.INTERNAL_ERROR;
 
-    public ServiceResponse(String body, HttpServer.StatusCode code) {
-        this.body = body;
-        this.code = code;
+    public ErrorHttpService() {}
+
+    public ErrorHttpService(HttpServer.StatusCode statusCode) {
+        this.statusCode = statusCode;
     }
 
-    public String getBody() {
-        return body;
-    }
-
-    public int getStatusCode() {
-        return code.getValue();
-    }
-
-    public ServiceResponse setBody(String body) {
-        this.body = body;
-        return this;
-    }
-
-    public ServiceResponse setCode(HttpServer.StatusCode code) {
-        this.code = code;
-        return this;
+    @Override
+    public HttpServiceResponse handle(HttpServiceRequest request) {
+        return new HttpServiceResponse().setCode(statusCode);
     }
 }

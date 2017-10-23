@@ -1129,7 +1129,7 @@ public class BookieShell implements Tool {
                 bookies.addAll(availableBookies);
             } else if (cmdLine.hasOption("ro")) {
                 Collection<BookieSocketAddress> roBookies = bka
-                        .getReadOnlyBookies();
+                        .getReadOnlyBookiesAsync();
                 bookies.addAll(roBookies);
             }
             for (BookieSocketAddress b : bookies) {
@@ -1629,8 +1629,7 @@ public class BookieShell implements Tool {
             RegistrationManager rm = new ZKRegistrationManager();
             try {
                 try {
-                    rm.initialize(bkConf, () -> {
-                    }, NullStatsLogger.INSTANCE);
+                    rm.initialize(bkConf, () -> {}, NullStatsLogger.INSTANCE);
                 } catch (BookieException e) {
                     LOG.error("Exception while establishing zookeeper connection.", e);
                     return -1;
@@ -2086,7 +2085,7 @@ public class BookieShell implements Tool {
      * @param extensions - the file extensions, which we are interested in
      * @return sorted list of files
      */
-    private static List<File> listFilesAndSort(File[] folderNames, String... extensions) {
+    public static List<File> listFilesAndSort(File[] folderNames, String... extensions) {
         List<File> completeFilesList = new ArrayList<File>();
         for (int i = 0; i < folderNames.length; i++) {
             Collection<File> filesCollection = FileUtils.listFiles(folderNames[i], extensions, true);

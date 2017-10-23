@@ -63,7 +63,7 @@ import org.slf4j.LoggerFactory;
  * but the bookie would be up, so the client would think that everything is ok
  * with the cluster. It's better to fail early and obviously.
  */
-class Cookie {
+public class Cookie {
     private static final Logger LOG = LoggerFactory.getLogger(Cookie.class);
 
     static final int CURRENT_COOKIE_LAYOUT_VERSION = 4;
@@ -210,7 +210,7 @@ class Cookie {
         return cBuilder;
     }
 
-    void writeToDirectory(File directory) throws IOException {
+    public void writeToDirectory(File directory) throws IOException {
         File versionFile = new File(directory,
                 BookKeeperConstants.VERSION_FILENAME);
 
@@ -235,7 +235,7 @@ class Cookie {
      * @param version version
      * @throws BookieException when fail to write the cookie.
      */
-    void writeToRegistrationManager(RegistrationManager rm, ServerConfiguration conf, Version version)
+    public void writeToRegistrationManager(RegistrationManager rm, ServerConfiguration conf, Version version)
             throws BookieException {
         BookieSocketAddress address = null;
         try {
@@ -310,7 +310,7 @@ class Cookie {
      * @return versioned cookie object
      * @throws BookieException when fail to read cookie
      */
-    static Versioned<Cookie> readFromRegistrationManager(RegistrationManager rm, ServerConfiguration conf)
+    public static Versioned<Cookie> readFromRegistrationManager(RegistrationManager rm, ServerConfiguration conf)
             throws BookieException {
         try {
             return readFromRegistrationManager(rm, Bookie.getBookieAddress(conf));
@@ -327,7 +327,7 @@ class Cookie {
      * @return versioned cookie object
      * @throws BookieException when fail to read cookie
      */
-    static Versioned<Cookie> readFromRegistrationManager(RegistrationManager rm,
+    public static Versioned<Cookie> readFromRegistrationManager(RegistrationManager rm,
                                                          BookieSocketAddress address) throws BookieException {
         Versioned<byte[]> cookieData = rm.readCookie(address.toString());
         BufferedReader reader = new BufferedReader(new StringReader(new String(cookieData.getValue(), UTF_8)));
@@ -351,7 +351,7 @@ class Cookie {
      * @return cookie object
      * @throws IOException
      */
-    static Cookie readFromDirectory(File directory) throws IOException {
+    public static Cookie readFromDirectory(File directory) throws IOException {
         File versionFile = new File(directory, BookKeeperConstants.VERSION_FILENAME);
         BufferedReader reader = new BufferedReader(
                 new InputStreamReader(new FileInputStream(versionFile), UTF_8));
@@ -444,7 +444,7 @@ class Cookie {
      *
      * @return cookie builder
      */
-    static Builder newBuilder() {
+    public static Builder newBuilder() {
         return new Builder();
     }
 
@@ -454,7 +454,7 @@ class Cookie {
      * @param oldCookie build new cookie from this cookie
      * @return cookie builder
      */
-    static Builder newBuilder(Cookie oldCookie) {
+    public static Builder newBuilder(Cookie oldCookie) {
         return new Builder(oldCookie.layoutVersion, oldCookie.bookieHost, oldCookie.journalDirs, oldCookie.ledgerDirs,
                 oldCookie.instanceId);
     }

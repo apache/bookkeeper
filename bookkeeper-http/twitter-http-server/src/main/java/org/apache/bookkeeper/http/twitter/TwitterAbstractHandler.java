@@ -29,9 +29,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.bookkeeper.http.HttpServer;
-import org.apache.bookkeeper.http.service.ErrorService;
-import org.apache.bookkeeper.http.service.ServiceRequest;
-import org.apache.bookkeeper.http.service.ServiceResponse;
+import org.apache.bookkeeper.http.service.ErrorHttpService;
+import org.apache.bookkeeper.http.service.HttpEndpointService;
+import org.apache.bookkeeper.http.service.HttpServiceRequest;
+import org.apache.bookkeeper.http.service.HttpServiceResponse;
 
 /**
  * Http handler for TwitterServer.
@@ -39,22 +40,22 @@ import org.apache.bookkeeper.http.service.ServiceResponse;
 public abstract class TwitterAbstractHandler extends Service<Request, Response> {
 
     /**
-     * Process the request using the given service.
+     * Process the request using the given httpEndpointService.
      */
-    Future<Response> processRequest(org.apache.bookkeeper.http.service.Service service, Request request) {
-        ServiceRequest serviceRequest = new ServiceRequest()
+    Future<Response> processRequest(HttpEndpointService httpEndpointService, Request request) {
+        HttpServiceRequest httpServiceRequest = new HttpServiceRequest()
             .setMethod(convertMethod(request))
             .setParams(convertParams(request))
             .setBody(request.contentString());
-        ServiceResponse serviceResponse = null;
+        HttpServiceResponse httpServiceResponse = null;
         try {
-            serviceResponse = service.handle(serviceRequest);
+            httpServiceResponse = httpEndpointService.handle(httpServiceRequest);
         } catch (Exception e) {
-            serviceResponse = new ErrorService().handle(serviceRequest);
+            httpServiceResponse = new ErrorHttpService().handle(httpServiceRequest);
         }
         Response response = Response.apply();
-        response.setContentString(serviceResponse.getBody());
-        response.statusCode(serviceResponse.getStatusCode());
+        response.setContentString(httpServiceResponse.getBody());
+        response.statusCode(httpServiceResponse.getStatusCode());
         return Future.value(response);
     }
 

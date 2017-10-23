@@ -22,7 +22,7 @@
     <suppress checks="JavadocPackage" files=".*[\\/]examples[\\/].*"/>
     <!-- suppress packages by packages -->
     <suppress checks=".*" files=".*[\\/]bookie[\\/].*"/>
-    <suppress checks=".*" files=".*[\\/]client[\\/].*"/>
+    <suppress checks=".*" files=".*[\\/]client[\\/](?:[^\\/]+$|(?!api)|(?!impl)[^\\/]+[\\/])"/>
     <suppress checks=".*" files=".*[\\/]conf[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]feature[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]http[\\/].*"/>

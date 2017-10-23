@@ -23,35 +23,28 @@ package org.apache.bookkeeper.http.vertx;
 
 import io.vertx.ext.web.RoutingContext;
 
-import org.apache.bookkeeper.http.AbstractHandlerFactory;
-import org.apache.bookkeeper.http.ServiceProvider;
+import org.apache.bookkeeper.http.AbstractHttpHandlerFactory;
+import org.apache.bookkeeper.http.HttpServer;
+import org.apache.bookkeeper.http.HttpServiceProvider;
+import org.apache.bookkeeper.http.service.HttpEndpointService;
 
 /**
  * Factory which provide http handlers for Vertx based Http Server.
  */
-public class VertxHandlerFactory extends AbstractHandlerFactory<VertxAbstractHandler> {
+public class VertxHttpHandlerFactory extends AbstractHttpHandlerFactory<VertxAbstractHandler> {
 
 
-    public VertxHandlerFactory(ServiceProvider serviceProvider) {
-        super(serviceProvider);
+    public VertxHttpHandlerFactory(HttpServiceProvider httpServiceProvider) {
+        super(httpServiceProvider);
     }
 
     @Override
-    public VertxAbstractHandler newHeartbeatHandler() {
+    public VertxAbstractHandler newHandler(HttpServer.ApiType type) {
         return new VertxAbstractHandler() {
             @Override
             public void handle(RoutingContext context) {
-                processRequest(getServiceProvider().provideHeartbeatService(), context);
-            }
-        };
-    }
-
-    @Override
-    public VertxAbstractHandler newConfigurationHandler() {
-        return new VertxAbstractHandler() {
-            @Override
-            public void handle(RoutingContext context) {
-                processRequest(getServiceProvider().provideConfigurationService(), context);
+                HttpEndpointService service = getHttpServiceProvider().provideHttpEndpointService(type);
+                processRequest(service, context);
             }
         };
     }

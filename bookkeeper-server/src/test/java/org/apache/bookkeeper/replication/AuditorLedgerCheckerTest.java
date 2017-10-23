@@ -40,6 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
@@ -168,6 +169,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
 
         // grace period for publishing the bk-ledger
         LOG.debug("Waiting for ledgers to be marked as under replicated");
+        waitForAuditToComplete();
         underReplicaLatch.await(5, TimeUnit.SECONDS);
         Map<Long, String> urLedgerData = getUrLedgerData(urLedgerList);
         assertEquals("Missed identifying under replicated ledgers", 1,
@@ -296,6 +298,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
 
         // grace period for publishing the bk-ledger
         LOG.debug("Waiting for Auditor to finish ledger check.");
+        waitForAuditToComplete();
         assertFalse("latch should not have completed", underReplicaLatch.await(5, TimeUnit.SECONDS));
     }
 
@@ -313,6 +316,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         final CountDownLatch underReplicaLatch = registerUrLedgerWatcher(count);
 
         int bkIndex = bs.size() - 1;
+        LOG.debug("Moving bookie {} {} to read only...", bkIndex, bs.get(bkIndex));
         ServerConfiguration bookieConf = bsConfs.get(bkIndex);
         BookieServer bk = bs.get(bkIndex);
         bookieConf.setReadOnlyModeEnabled(true);
@@ -320,12 +324,14 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
 
         // grace period for publishing the bk-ledger
         LOG.debug("Waiting for Auditor to finish ledger check.");
-        assertFalse("latch should not have completed", underReplicaLatch.await(5, TimeUnit.SECONDS));
+        waitForAuditToComplete();
+        assertFalse("latch should not have completed", underReplicaLatch.await(1, TimeUnit.SECONDS));
 
         String shutdownBookie = shutdownBookie(bkIndex);
 
         // grace period for publishing the bk-ledger
         LOG.debug("Waiting for ledgers to be marked as under replicated");
+        waitForAuditToComplete();
         underReplicaLatch.await(5, TimeUnit.SECONDS);
         Map<Long, String> urLedgerData = getUrLedgerData(urLedgerList);
         assertEquals("Missed identifying under replicated ledgers", 1, urLedgerList.size());
@@ -765,6 +771,20 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
                    + " is not listed in the ledger as missing replicas :" + data,
                    data.contains(shutdownBookie2));
         LOG.info("*****************Test Complete");
+    }
+
+    private void waitForAuditToComplete() throws Exception {
+        long endTime = System.currentTimeMillis() + 5_000;
+        while (System.currentTimeMillis() < endTime) {
+            Auditor auditor = getAuditorBookiesAuditor();
+            if (auditor != null) {
+                Future<?> task = auditor.submitAuditTask();
+                task.get(5, TimeUnit.SECONDS);
+                return;
+            }
+            Thread.sleep(100);
+        }
+        throw new TimeoutException("Could not find an audit within 5 seconds");
     }
 
     /**

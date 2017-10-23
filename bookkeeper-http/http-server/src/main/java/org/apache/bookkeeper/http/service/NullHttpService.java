@@ -18,23 +18,14 @@
  * under the License.
  *
  */
-package org.apache.bookkeeper.http;
-
-import org.apache.bookkeeper.http.service.Service;
+package org.apache.bookkeeper.http.service;
 
 /**
- * Provider to provide services for different http endpoint handlers.
+ * HttpEndpointService that return empty content.
  */
-public interface ServiceProvider {
-
-    /**
-     * Provide heartbeat service for heartbeat api.
-     */
-    Service provideHeartbeatService();
-
-    /**
-     * Provide service for configuration api.
-     */
-    Service provideConfigurationService();
-
+public class NullHttpService implements HttpEndpointService {
+    @Override
+    public HttpServiceResponse handle(HttpServiceRequest request) {
+        return new HttpServiceResponse();
+    }
 }
