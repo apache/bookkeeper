@@ -784,7 +784,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                     // Get bookies to replace
                     Map<Integer, BookieSocketAddress> targetBookieAddresses;
                     try {
-                        targetBookieAddresses = getReplacedBookies(lh, ensemble, bookiesSrc);
+                        targetBookieAddresses = getReplacementBookies(lh, ensemble, bookiesSrc);
                     } catch (BKException.BKNotEnoughBookiesException e) {
                         if (!dryrun) {
                             ledgerFragmentsMcb.processResult(BKException.Code.NotEnoughBookiesException, null, null);
@@ -811,7 +811,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                     }
                     try {
                         LedgerFragmentReplicator.SingleFragmentCallback cb = new LedgerFragmentReplicator.SingleFragmentCallback(
-                                ledgerFragmentsMcb, lh, startEntryId, getReplacedBookiesMap(ensemble, targetBookieAddresses));
+                                ledgerFragmentsMcb, lh, startEntryId, getReplacementBookiesMap(ensemble, targetBookieAddresses));
                         LedgerFragment ledgerFragment = new LedgerFragment(lh,
                                 startEntryId, endEntryId, targetBookieAddresses.keySet());
                         asyncRecoverLedgerFragment(lh, ledgerFragment, cb, Sets.newHashSet(targetBookieAddresses.values()));
@@ -868,7 +868,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         lfr.replicate(lh, ledgerFragment, ledgerFragmentMcb, newBookies);
     }
 
-    private Map<Integer, BookieSocketAddress> getReplacedBookies(
+    private Map<Integer, BookieSocketAddress> getReplacementBookies(
                 LedgerHandle lh,
                 List<BookieSocketAddress> ensemble,
                 Set<BookieSocketAddress> bookiesToRereplicate)
@@ -880,11 +880,11 @@ public class BookKeeperAdmin implements AutoCloseable {
                 bookieIndexesToRereplicate.add(bookieIndex);
             }
         }
-        return getReplacedBookiesByIndexes(
+        return getReplacementBookiesByIndexes(
                 lh, ensemble, bookieIndexesToRereplicate, Optional.of(bookiesToRereplicate));
     }
 
-    private Map<Integer, BookieSocketAddress> getReplacedBookiesByIndexes(
+    private Map<Integer, BookieSocketAddress> getReplacementBookiesByIndexes(
                 LedgerHandle lh,
                 List<BookieSocketAddress> ensemble,
                 Set<Integer> bookieIndexesToRereplicate,
@@ -947,7 +947,7 @@ public class BookKeeperAdmin implements AutoCloseable {
             throws InterruptedException, BKException {
         Optional<Set<BookieSocketAddress>> excludedBookies = Optional.empty();
         Map<Integer, BookieSocketAddress> targetBookieAddresses =
-                getReplacedBookiesByIndexes(lh, ledgerFragment.getEnsemble(),
+                getReplacementBookiesByIndexes(lh, ledgerFragment.getEnsemble(),
                         ledgerFragment.getBookiesIndexes(), excludedBookies);
         replicateLedgerFragment(lh, ledgerFragment, targetBookieAddresses);
     }
@@ -962,7 +962,7 @@ public class BookKeeperAdmin implements AutoCloseable {
             resultCallBack,
             lh,
             ledgerFragment.getFirstEntryId(),
-            getReplacedBookiesMap(ledgerFragment, targetBookieAddresses));
+            getReplacementBookiesMap(ledgerFragment, targetBookieAddresses));
 
         Set<BookieSocketAddress> targetBookieSet = Sets.newHashSet();
         targetBookieSet.addAll(targetBookieAddresses.values());
@@ -975,7 +975,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         }
     }
 	
-	private static Map<BookieSocketAddress, BookieSocketAddress> getReplacedBookiesMap(
+	private static Map<BookieSocketAddress, BookieSocketAddress> getReplacementBookiesMap(
             ArrayList<BookieSocketAddress> ensemble,
             Map<Integer, BookieSocketAddress> targetBookieAddresses) {
         Map<BookieSocketAddress, BookieSocketAddress> bookiesMap =
@@ -988,7 +988,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         return bookiesMap;
     }
 
-    private static Map<BookieSocketAddress, BookieSocketAddress> getReplacedBookiesMap(
+    private static Map<BookieSocketAddress, BookieSocketAddress> getReplacementBookiesMap(
             LedgerFragment ledgerFragment,
             Map<Integer, BookieSocketAddress> targetBookieAddresses) {
         Map<BookieSocketAddress, BookieSocketAddress> bookiesMap =
