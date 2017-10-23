@@ -25,6 +25,10 @@
     <Class name="~org\.apache\.bookkeeper\.proto\.BookkeeperProtocol.*" />
   </Match>
   <Match>
+    <!-- generated code, we can't be held responsible for findbugs in it //-->
+    <Class name="~org\.apache\.bookkeeper\.tests\.generated.*" />
+  </Match>
+  <Match>
     <!-- it is safe to store external bytes reference here. since we are using
          bytes from a slab. //-->
     <Class name="org.apache.bookkeeper.bookie.EntryKeyValue" />
@@ -42,8 +46,45 @@
     <Method name="getData" />
     <Bug pattern="EI_EXPOSE_REP" />
   </Match>
+  <Match>
+    <Class name="org.apache.bookkeeper.client.LedgerEntry" />
+    <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE" />
+  </Match>
+  <Match>
+    <Class name="org.apache.bookkeeper.client.BookKeeper" />
+    <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE" />
+  </Match>
+  <Match>
+    <Class name="org.apache.bookkeeper.common.concurrent.FutureUtils"/>
+    <Bug pattern="NP_NULL_PARAM_DEREF_NONVIRTUAL" />
+  </Match>
+  <Match>
+    <Class name="org.apache.bookkeeper.common.concurrent.FutureUtils$1"/>
+    <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
+  </Match>
+  <Match>
+    <Class name="org.apache.bookkeeper.common.concurrent.FutureUtils"/>
+    <Method name="Void" />
+    <Bug pattern="NM_METHOD_NAMING_CONVENTION" />
+  </Match>
+  <Match>
+    <Class name="org.apache.bookkeeper.util.MathUtils"/>
+    <Bug pattern="NM_SAME_SIMPLE_NAME_AS_SUPERCLASS" />
+  </Match>
+  <Match>
+    <Class name="org.apache.bookkeeper.util.SafeRunnable"/>
+    <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE" />
+  </Match>
   <And>
     <Bug category="MT_CORRECTNESS"/>
     <Class name="~org.apache.bookkeeper.util.collections\.[^.]+"/>
+  </And>
+  <And>
+    <Class name="org.apache.bookkeeper.client.BKException" />
+    <Bug pattern="NM_SAME_SIMPLE_NAME_AS_SUPERCLASS"/>
+  </And>
+  <And>
+    <Class name="org.apache.bookkeeper.client.BKException$Code" />
+    <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE"/>
   </And>
 </FindBugsFilter>

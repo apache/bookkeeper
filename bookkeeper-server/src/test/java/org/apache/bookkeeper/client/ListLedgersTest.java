@@ -14,31 +14,25 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package org.apache.bookkeeper.client;
 
 import java.util.Iterator;
-
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.test.BaseTestCase;
-
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Assert;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class ListLedgersTest extends BaseTestCase {
-    private final static Logger LOG = LoggerFactory.getLogger(ListLedgersTest.class);
+public class ListLedgersTest extends BookKeeperClusterTestCase {
 
-    DigestType digestType;
+    private final DigestType digestType;
 
-    public ListLedgersTest (DigestType digestType) {
+    public ListLedgersTest () {
         super(4);
-        this.digestType = digestType;
+        this.digestType = DigestType.CRC32;
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testListLedgers()
     throws Exception {
         int numOfLedgers = 10;
@@ -65,7 +59,7 @@ public class ListLedgersTest extends BaseTestCase {
                 counter == numOfLedgers);
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testEmptyList()
     throws Exception {
         ClientConfiguration conf = new ClientConfiguration()
@@ -78,7 +72,7 @@ public class ListLedgersTest extends BaseTestCase {
         Assert.assertFalse("There should be no ledger", iterable.iterator().hasNext());
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testRemoveNotSupported()
     throws Exception {
         int numOfLedgers = 1;
@@ -107,7 +101,7 @@ public class ListLedgersTest extends BaseTestCase {
 
     }
     
-    @Test(timeout = 60000)
+    @Test
     public void testCtimeRecorded()
             throws Exception {
 

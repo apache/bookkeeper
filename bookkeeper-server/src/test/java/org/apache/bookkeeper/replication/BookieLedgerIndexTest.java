@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -34,7 +33,7 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.MSLedgerManagerFactory;
 import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
-import org.apache.bookkeeper.test.MultiLedgerManagerTestCase;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.commons.io.FileUtils;
 import org.apache.zookeeper.KeeperException;
 import org.junit.After;
@@ -48,7 +47,7 @@ import static org.junit.Assert.*;
 /**
  * Tests verifies bookie vs ledger mapping generating by the BookieLedgerIndexer
  */
-public class BookieLedgerIndexTest extends MultiLedgerManagerTestCase {
+public class BookieLedgerIndexTest extends BookKeeperClusterTestCase {
 
     // Depending on the taste, select the amount of logging
     // by decommenting one of the two lines below
@@ -64,7 +63,12 @@ public class BookieLedgerIndexTest extends MultiLedgerManagerTestCase {
     private LedgerManagerFactory newLedgerManagerFactory;
     private LedgerManager ledgerManager;
 
-    public BookieLedgerIndexTest(String ledgerManagerFactory)
+    public BookieLedgerIndexTest()
+        throws IOException, KeeperException, InterruptedException {
+        this("org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory");
+    }
+
+    BookieLedgerIndexTest(String ledgerManagerFactory)
             throws IOException, KeeperException, InterruptedException {
         super(3);
         LOG.info("Running test case using ledger manager : "
@@ -104,7 +108,7 @@ public class BookieLedgerIndexTest extends MultiLedgerManagerTestCase {
      * Verify the bookie-ledger mapping with minimum number of bookies and few
      * ledgers
      */
-    @Test(timeout=60000)
+    @Test
     public void testSimpleBookieLedgerMapping() throws Exception {
 
         for (int i = 0; i < numberOfLedgers; i++) {
@@ -133,7 +137,7 @@ public class BookieLedgerIndexTest extends MultiLedgerManagerTestCase {
     /**
      * Verify ledger index with failed bookies and throws exception
      */
-    @Test(timeout=60000)
+    @Test
     public void testWithoutZookeeper() throws Exception {
         // This test case is for ledger metadata that stored in ZooKeeper. As
         // far as MSLedgerManagerFactory, ledger metadata are stored in other
@@ -160,7 +164,7 @@ public class BookieLedgerIndexTest extends MultiLedgerManagerTestCase {
     /**
      * Verify indexing with multiple ensemble reformation
      */
-    @Test(timeout=60000)
+    @Test
     public void testEnsembleReformation() throws Exception {
         try {
             LedgerHandle lh1 = createAndAddEntriesToLedger();

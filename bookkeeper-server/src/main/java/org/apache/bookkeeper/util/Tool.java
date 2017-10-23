@@ -18,7 +18,7 @@
 
 package org.apache.bookkeeper.util;
 
-import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.CompositeConfiguration;
 
 /**
  * A tool interface that supports handling of generic command-line options.
@@ -39,5 +39,5 @@ public interface Tool {
      * @param conf configuration object
      * @throws Exception
      */
-    public void setConf(Configuration conf) throws Exception;
+    public void setConf(CompositeConfiguration conf) throws Exception;
 }

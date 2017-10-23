@@ -71,7 +71,7 @@ class PendingWriteLacOp implements WriteLacCallback {
     }
 
     void sendWriteLacRequest(int bookieIndex) {
-        lh.bk.bookieClient.writeLac(lh.metadata.currentEnsemble.get(bookieIndex), lh.ledgerId, lh.ledgerKey,
+        lh.bk.getBookieClient().writeLac(lh.metadata.currentEnsemble.get(bookieIndex), lh.ledgerId, lh.ledgerKey,
                 lac, toSend, this, bookieIndex);
     }
 

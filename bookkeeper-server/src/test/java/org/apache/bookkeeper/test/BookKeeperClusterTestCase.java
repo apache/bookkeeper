@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.test;
 
+import com.google.common.base.Stopwatch;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -53,6 +54,9 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
+import org.junit.rules.TestName;
+import org.junit.rules.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,26 +67,37 @@ public abstract class BookKeeperClusterTestCase {
 
     static final Logger LOG = LoggerFactory.getLogger(BookKeeperClusterTestCase.class);
 
+    @Rule
+    public final TestName runtime = new TestName();
+
+    @Rule
+    public final Timeout globalTimeout;
+
     // ZooKeeper related variables
-    protected ZooKeeperUtil zkUtil = new ZooKeeperUtil();
+    protected final ZooKeeperUtil zkUtil = new ZooKeeperUtil();
     protected ZooKeeper zkc;
 
     // BookKeeper related variables
-    protected List<File> tmpDirs = new LinkedList<File>();
-    protected List<BookieServer> bs = new LinkedList<BookieServer>();
-    protected List<ServerConfiguration> bsConfs = new LinkedList<ServerConfiguration>();
+    protected final List<File> tmpDirs = new LinkedList<File>();
+    protected final List<BookieServer> bs = new LinkedList<BookieServer>();
+    protected final List<ServerConfiguration> bsConfs = new LinkedList<ServerConfiguration>();
     protected int numBookies;
     protected BookKeeperTestClient bkc;
 
-    protected ServerConfiguration baseConf = TestBKConfiguration.newServerConfiguration();
-    protected ClientConfiguration baseClientConf = new ClientConfiguration();
+    protected final ServerConfiguration baseConf = TestBKConfiguration.newServerConfiguration();
+    protected final ClientConfiguration baseClientConf = new ClientConfiguration();
 
-    private Map<BookieServer, AutoRecoveryMain> autoRecoveryProcesses = new HashMap<BookieServer, AutoRecoveryMain>();
+    private final Map<BookieServer, AutoRecoveryMain> autoRecoveryProcesses = new HashMap<>();
 
     private boolean isAutoRecoveryEnabled;
 
     public BookKeeperClusterTestCase(int numBookies) {
+        this(numBookies, 120);
+    }
+
+    public BookKeeperClusterTestCase(int numBookies, int testTimeoutSecs) {
         this.numBookies = numBookies;
+        this.globalTimeout = Timeout.seconds(testTimeoutSecs);
         baseConf.setAllowLoopback(true);
     }
 
@@ -93,11 +108,13 @@ public abstract class BookKeeperClusterTestCase {
         setMetastoreImplClass(baseConf);
         setMetastoreImplClass(baseClientConf);
 
+        Stopwatch sw = Stopwatch.createStarted();
         try {
             // start zookeeper service
             startZKCluster();
             // start bookkeeper service
             startBKCluster();
+            LOG.info("Setup testcase {} in {} ms.", runtime.getMethodName(), sw.elapsed(TimeUnit.MILLISECONDS));
         } catch (Exception e) {
             LOG.error("Error setting up", e);
             throw e;
@@ -106,6 +123,7 @@ public abstract class BookKeeperClusterTestCase {
 
     @After
     public void tearDown() throws Exception {
+        Stopwatch sw = Stopwatch.createStarted();
         LOG.info("TearDown");
         // stop bookkeeper service
         stopBKCluster();
@@ -113,7 +131,7 @@ public abstract class BookKeeperClusterTestCase {
         stopZKCluster();
         // cleanup temp dirs
         cleanupTempDirs();
-        LOG.info("Tearing down test {}", getClass());
+        LOG.info("Tearing down test {} in {} ms.", runtime.getMethodName(), sw.elapsed(TimeUnit.MILLISECONDS));
     }
 
     protected File createTempDir(String prefix, String suffix) throws IOException {
@@ -191,7 +209,12 @@ public abstract class BookKeeperClusterTestCase {
     protected ServerConfiguration newServerConfiguration() throws Exception {
         File f = createTempDir("bookie", "test");
 
-        int port = PortManager.nextFreePort();
+        int port;
+        if (baseConf.isEnableLocalTransport() || !baseConf.getAllowEphemeralPorts()) {
+            port = PortManager.nextFreePort();
+        } else {
+            port = 0;
+        }
         return newServerConfiguration(port, zkUtil.getZooKeeperConnectString(),
                                       f, new File[] { f });
     }
@@ -492,9 +515,12 @@ public abstract class BookKeeperClusterTestCase {
         Thread.sleep(1000);
         // restart them to ensure we can't
         for (ServerConfiguration conf : bsConfs) {
+            // ensure the bookie port is loaded correctly
+            int port = conf.getBookiePort();
             if (null != newConf) {
                 conf.loadConf(newConf);
             }
+            conf.setBookiePort(port);
             bs.add(startBookie(conf));
         }
     }
@@ -539,12 +565,10 @@ public abstract class BookKeeperClusterTestCase {
             host = InetAddress.getLocalHost().getCanonicalHostName();
         }
         
-        while ( (!conf.isForceReadOnlyBookie() && (bkc.getZkHandle().exists(
-                    "/ledgers/available/" + host + ":" + port, false) == null)) ||
-                ( conf.isForceReadOnlyBookie() && ((bkc.getZkHandle().exists(
-                    "/ledgers/available/readonly/" + host + ":" + port, false) == null)))
-              ) {
-            Thread.sleep(500);
+        while (conf.isForceReadOnlyBookie()
+            && bkc.getZkHandle().exists(conf.getZkLedgersRootPath() +"/available/readonly/" + host + ":" + port,
+            false) == null) {
+            Thread.sleep(100);
         }
 
         bkc.readBookiesBlocking();
@@ -580,7 +604,7 @@ public abstract class BookKeeperClusterTestCase {
             host = InetAddress.getLocalHost().getCanonicalHostName();
         }
         while (bkc.getZkHandle().exists(
-                "/ledgers/available/" + host + ":" + port, false) == null) {
+                conf.getZkLedgersRootPath() + "/available/" + host + ":" + port, false) == null) {
             Thread.sleep(500);
         }
 

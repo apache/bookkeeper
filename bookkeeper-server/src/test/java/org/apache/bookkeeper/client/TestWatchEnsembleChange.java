@@ -78,7 +78,7 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
         });
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testWatchEnsembleChange() throws Exception {
         int numEntries = 10;
         LedgerHandle lh = bkc.createLedger(3, 3, 3, digestType, "".getBytes());
@@ -106,7 +106,7 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
         lh.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testWatchMetadataRemoval() throws Exception {
         LedgerManagerFactory factory = ReflectionUtils.newInstance(lmFactoryCls);
         factory.initialize(baseConf, super.zkc, factory.getCurrentVersion());

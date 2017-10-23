@@ -17,26 +17,15 @@
  */
 package org.apache.bookkeeper.util;
 
-import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListeningScheduledExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import java.util.Random;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.bookkeeper.stats.Gauge;
-import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,59 +43,15 @@ import org.slf4j.LoggerFactory;
  * achieved by hashing the key objects to threads by their {@link #hashCode()}
  * method.
  *
+ * @Deprecated since 4.6.0, in favor of using {@link org.apache.bookkeeper.common.util.OrderedScheduler}.
  */
-public class OrderedSafeExecutor {
-    final static long WARN_TIME_MICRO_SEC_DEFAULT = TimeUnit.SECONDS.toMicros(1);
-    final String name;
-    final ListeningScheduledExecutorService threads[];
-    final long threadIds[];
-    final Random rand = new Random();
-    final OpStatsLogger taskExecutionStats;
-    final OpStatsLogger taskPendingStats;
-    final boolean traceTaskExecution;
-    final long warnTimeMicroSec;
+public class OrderedSafeExecutor extends org.apache.bookkeeper.common.util.OrderedScheduler {
 
     public static Builder newBuilder() {
         return new Builder();
     }
 
-    public static class Builder {
-        private String name = "OrderedSafeExecutor";
-        private int numThreads = Runtime.getRuntime().availableProcessors();
-        private ThreadFactory threadFactory = null;
-        private StatsLogger statsLogger = NullStatsLogger.INSTANCE;
-        private boolean traceTaskExecution = false;
-        private long warnTimeMicroSec = WARN_TIME_MICRO_SEC_DEFAULT;
-
-        public Builder name(String name) {
-            this.name = name;
-            return this;
-        }
-
-        public Builder numThreads(int num) {
-            this.numThreads = num;
-            return this;
-        }
-
-        public Builder threadFactory(ThreadFactory threadFactory) {
-            this.threadFactory = threadFactory;
-            return this;
-        }
-
-        public Builder statsLogger(StatsLogger statsLogger) {
-            this.statsLogger = statsLogger;
-            return this;
-        }
-
-        public Builder traceTaskExecution(boolean enabled) {
-            this.traceTaskExecution = enabled;
-            return this;
-        }
-
-        public Builder traceTaskWarnTimeMicroSec(long warnTimeMicroSec) {
-            this.warnTimeMicroSec = warnTimeMicroSec;
-            return this;
-        }
+    public static class Builder extends AbstractBuilder<OrderedSafeExecutor> {
 
         public OrderedSafeExecutor build() {
             if (null == threadFactory) {
@@ -116,35 +61,6 @@ public class OrderedSafeExecutor {
                                            traceTaskExecution, warnTimeMicroSec);
         }
 
-    }
-
-    private class TimedRunnable extends SafeRunnable {
-        final SafeRunnable runnable;
-        final long initNanos;
-
-        TimedRunnable(SafeRunnable runnable) {
-            this.runnable = runnable;
-            this.initNanos = MathUtils.nowInNano();
-         }
-
-        @Override
-        public void safeRun() {
-            taskPendingStats.registerSuccessfulEvent(initNanos, TimeUnit.NANOSECONDS);
-            long startNanos = MathUtils.nowInNano();
-            this.runnable.safeRun();
-            long elapsedMicroSec = MathUtils.elapsedMicroSec(startNanos);
-            taskExecutionStats.registerSuccessfulEvent(elapsedMicroSec, TimeUnit.MICROSECONDS);
-            if (elapsedMicroSec >= warnTimeMicroSec) {
-                logger.warn("Runnable {}:{} took too long {} micros to execute.",
-                            new Object[] { runnable, runnable.getClass(), elapsedMicroSec });
-            }
-        }
-     }
-
-    @Deprecated
-    public OrderedSafeExecutor(int numThreads, String threadName) {
-        this(threadName, numThreads, Executors.defaultThreadFactory(), NullStatsLogger.INSTANCE,
-             false, WARN_TIME_MICRO_SEC_DEFAULT);
     }
 
     /**
@@ -166,121 +82,14 @@ public class OrderedSafeExecutor {
     private OrderedSafeExecutor(String baseName, int numThreads, ThreadFactory threadFactory,
                                 StatsLogger statsLogger, boolean traceTaskExecution,
                                 long warnTimeMicroSec) {
-        Preconditions.checkArgument(numThreads > 0);
-        Preconditions.checkArgument(!StringUtils.isBlank(baseName));
-
-        this.warnTimeMicroSec = warnTimeMicroSec;
-        name = baseName;
-        threads = new ListeningScheduledExecutorService[numThreads];
-        threadIds = new long[numThreads];
-        for (int i = 0; i < numThreads; i++) {
-            final ScheduledThreadPoolExecutor thread =  new ScheduledThreadPoolExecutor(1,
-                    new ThreadFactoryBuilder()
-                        .setNameFormat(name + "-orderedsafeexecutor-" + i + "-%d")
-                        .setThreadFactory(threadFactory)
-                        .build());
-            threads[i] = MoreExecutors.listeningDecorator(thread);
-            final int idx = i;
-            try {
-                threads[idx].submit(new SafeRunnable() {
-                    @Override
-                    public void safeRun() {
-                        threadIds[idx] = Thread.currentThread().getId();
-                    }
-                }).get();
-            } catch (InterruptedException e) {
-                throw new RuntimeException("Couldn't start thread " + i, e);
-            } catch (ExecutionException e) {
-                throw new RuntimeException("Couldn't start thread " + i, e);
-            }
-
-            // Register gauges
-            statsLogger.registerGauge(String.format("%s-queue-%d", name, idx), new Gauge<Number>() {
-                @Override
-                public Number getDefaultValue() {
-                    return 0;
-                }
-
-                @Override
-                public Number getSample() {
-                    return thread.getQueue().size();
-                }
-            });
-            statsLogger.registerGauge(String.format("%s-completed-tasks-%d", name, idx), new Gauge<Number>() {
-                @Override
-                public Number getDefaultValue() {
-                    return 0;
-                }
-
-                @Override
-                public Number getSample() {
-                    return thread.getCompletedTaskCount();
-                }
-            });
-            statsLogger.registerGauge(String.format("%s-total-tasks-%d", name, idx), new Gauge<Number>() {
-                @Override
-                public Number getDefaultValue() {
-                    return 0;
-                }
-
-                @Override
-                public Number getSample() {
-                    return thread.getTaskCount();
-                }
-            });
-        }
-
-        // Stats
-        this.taskExecutionStats = statsLogger.scope(name).getOpStatsLogger("task_execution");
-        this.taskPendingStats = statsLogger.scope(name).getOpStatsLogger("task_queued");
-        this.traceTaskExecution = traceTaskExecution;
-    }
-
-    public ListeningScheduledExecutorService chooseThread() {
-        // skip random # generation in this special case
-        if (threads.length == 1) {
-            return threads[0];
-        }
-
-        return threads[rand.nextInt(threads.length)];
-    }
-
-    public ListeningScheduledExecutorService chooseThread(Object orderingKey) {
-        // skip hashcode generation in this special case
-        if (threads.length == 1) {
-            return threads[0];
-        }
-
-        return threads[MathUtils.signSafeMod(orderingKey.hashCode(), threads.length)];
-    }
-
-    /**
-     * skip hashcode generation in this special case
-     *
-     * @param orderingKey long ordering key
-     * @return the thread for executing this order key
-     */
-    public ListeningScheduledExecutorService chooseThread(long orderingKey) {
-        if (threads.length == 1) {
-            return threads[0];
-        }
-
-        return threads[MathUtils.signSafeMod(orderingKey, threads.length)];
-    }
-
-    private SafeRunnable timedRunnable(SafeRunnable r) {
-        if (traceTaskExecution) {
-            return new TimedRunnable(r);
-        } else {
-            return r;
-        }
+        super(baseName, numThreads, threadFactory, statsLogger, traceTaskExecution, warnTimeMicroSec);
     }
 
     /**
      * schedules a one time action to execute
      */
     public void submit(SafeRunnable r) {
-        chooseThread().submit(timedRunnable(r));
+        super.submit(r);
     }
 
     /**
@@ -289,7 +98,7 @@ public class OrderedSafeExecutor {
      * @param r
      */
     public ListenableFuture<?> submitOrdered(Object orderingKey, SafeRunnable r) {
-        return chooseThread(orderingKey).submit(timedRunnable(r));
+        return super.submitOrdered(orderingKey, r);
     }
 
     /**
@@ -298,7 +107,7 @@ public class OrderedSafeExecutor {
      * @param r
      */
     public void submitOrdered(long orderingKey, SafeRunnable r) {
-        chooseThread(orderingKey).execute(r);
+        super.submitOrdered(orderingKey, r);
     }
 
     /**
@@ -307,18 +116,7 @@ public class OrderedSafeExecutor {
      * @param r
      */
     public void submitOrdered(int orderingKey, SafeRunnable r) {
-        chooseThread(orderingKey).execute(r);
-    }
-
-    /**
-     * schedules a one time action to execute with an ordering guarantee on the key.
-     *
-     * @param orderingKey
-     * @param callable
-     */
-    public <T> ListenableFuture<T> submitOrdered(Object orderingKey,
-                                                 java.util.concurrent.Callable<T> callable) {
-        return chooseThread(orderingKey).submit(callable);
+        super.submitOrdered(orderingKey, r);
     }
 
     /**
@@ -330,7 +128,7 @@ public class OrderedSafeExecutor {
      * @return a ScheduledFuture representing pending completion of the task and whose get() method will return null upon completion
      */
     public ScheduledFuture<?> schedule(SafeRunnable command, long delay, TimeUnit unit) {
-        return chooseThread().schedule(command, delay, unit);
+        return super.schedule(command, delay, unit);
     }
 
     /**
@@ -343,7 +141,7 @@ public class OrderedSafeExecutor {
      * @return a ScheduledFuture representing pending completion of the task and whose get() method will return null upon completion
      */
     public ScheduledFuture<?> scheduleOrdered(Object orderingKey, SafeRunnable command, long delay, TimeUnit unit) {
-        return chooseThread(orderingKey).schedule(command, delay, unit);
+        return super.scheduleOrdered(orderingKey, command, delay, unit);
     }
 
     /**
@@ -360,7 +158,7 @@ public class OrderedSafeExecutor {
      * method will throw an exception upon cancellation
      */
     public ScheduledFuture<?> scheduleAtFixedRate(SafeRunnable command, long initialDelay, long period, TimeUnit unit) {
-        return chooseThread().scheduleAtFixedRate(command, initialDelay, period, unit);
+        return super.scheduleAtFixedRate(command, initialDelay, period, unit);
     }
 
     /**
@@ -379,7 +177,7 @@ public class OrderedSafeExecutor {
      */
     public ScheduledFuture<?> scheduleAtFixedRateOrdered(Object orderingKey, SafeRunnable command, long initialDelay,
             long period, TimeUnit unit) {
-        return chooseThread(orderingKey).scheduleAtFixedRate(command, initialDelay, period, unit);
+        return super.scheduleAtFixedRateOrdered(orderingKey, command, initialDelay, period, unit);
     }
 
     /**
@@ -397,7 +195,7 @@ public class OrderedSafeExecutor {
      */
     public ScheduledFuture<?> scheduleWithFixedDelay(SafeRunnable command, long initialDelay, long delay,
             TimeUnit unit) {
-        return chooseThread().scheduleWithFixedDelay(command, initialDelay, delay, unit);
+        return super.scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
 
     /**
@@ -416,48 +214,7 @@ public class OrderedSafeExecutor {
      */
     public ScheduledFuture<?> scheduleWithFixedDelayOrdered(Object orderingKey, SafeRunnable command, long initialDelay,
             long delay, TimeUnit unit) {
-        return chooseThread(orderingKey).scheduleWithFixedDelay(command, initialDelay, delay, unit);
-    }
-
-    private long getThreadID(long orderingKey) {
-        // skip hashcode generation in this special case
-        if (threadIds.length == 1) {
-            return threadIds[0];
-        }
-
-        return threadIds[MathUtils.signSafeMod(orderingKey, threadIds.length)];
-    }
-
-    public void shutdown() {
-        for (int i = 0; i < threads.length; i++) {
-            threads[i].shutdown();
-        }
-    }
-
-    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-        boolean ret = true;
-        for (int i = 0; i < threads.length; i++) {
-            ret = ret && threads[i].awaitTermination(timeout, unit);
-        }
-        return ret;
-    }
-
-    /**
-     * Force threads shutdown (cancel active requests) after specified delay,
-     * to be used after shutdown() rejects new requests.
-     */
-    public void forceShutdown(long timeout, TimeUnit unit) {
-        for (int i = 0; i < threads.length; i++) {
-            try {
-                if (!threads[i].awaitTermination(timeout, unit)) {
-                    threads[i].shutdownNow();
-                }
-            }
-            catch (InterruptedException exception) {
-                threads[i].shutdownNow();
-                Thread.currentThread().interrupt();
-            }
-        }
+        return super.scheduleWithFixedDelayOrdered(orderingKey, command, initialDelay, delay, unit);
     }
 
     /**

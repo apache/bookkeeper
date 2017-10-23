@@ -40,8 +40,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -57,7 +57,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
-import org.apache.bookkeeper.test.MultiLedgerManagerTestCase;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -72,7 +72,7 @@ import org.slf4j.LoggerFactory;
  * Tests publishing of under replicated ledgers by the Auditor bookie node when
  * corresponding bookies identifes as not running
  */
-public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
+public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
 
     // Depending on the taste, select the amount of logging
     // by decommenting one of the two lines below
@@ -95,7 +95,13 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
 
     private List<Long> ledgerList;
 
-    public AuditorLedgerCheckerTest(String ledgerManagerFactoryClass)
+    public AuditorLedgerCheckerTest()
+        throws IOException, KeeperException, InterruptedException,
+        CompatibilityException {
+        this("org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory");
+    }
+
+    AuditorLedgerCheckerTest(String ledgerManagerFactoryClass)
             throws IOException, KeeperException, InterruptedException,
             CompatibilityException {
         super(3);
@@ -147,7 +153,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
     /**
      * Test publishing of under replicated ledgers by the auditor bookie
      */
-    @Test(timeout=60000)
+    @Test
     public void testSimpleLedger() throws Exception {
         LedgerHandle lh1 = createAndAddEntriesToLedger();
         Long ledgerId = lh1.getId();
@@ -163,6 +169,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
 
         // grace period for publishing the bk-ledger
         LOG.debug("Waiting for ledgers to be marked as under replicated");
+        waitForAuditToComplete();
         underReplicaLatch.await(5, TimeUnit.SECONDS);
         Map<Long, String> urLedgerData = getUrLedgerData(urLedgerList);
         assertEquals("Missed identifying under replicated ledgers", 1,
@@ -185,7 +192,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
      * Test once published under replicated ledger should exists even after
      * restarting respective bookie
      */
-    @Test(timeout=60000)
+    @Test
     public void testRestartBookie() throws Exception {
         LedgerHandle lh1 = createAndAddEntriesToLedger();
         LedgerHandle lh2 = createAndAddEntriesToLedger();
@@ -207,7 +214,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
      * Test publishing of under replicated ledgers when multiple bookie failures
      * one after another.
      */
-    @Test(timeout=60000)
+    @Test
     public void testMultipleBookieFailures() throws Exception {
         LedgerHandle lh1 = createAndAddEntriesToLedger();
 
@@ -226,7 +233,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
                    waitForLedgerMissingReplicas(lh1.getId(), 10, shutdownBookie));
     }
 
-    @Test(timeout = 30000)
+    @Test
     public void testToggleLedgerReplication() throws Exception {
         LedgerHandle lh1 = createAndAddEntriesToLedger();
         ledgerList.add(lh1.getId());
@@ -251,7 +258,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
                 5, TimeUnit.SECONDS));
     }
 
-    @Test(timeout = 20000)
+    @Test
     public void testDuplicateEnDisableAutoRecovery() throws Exception {
         urLedgerMgr.disableLedgerReplication();
         try {
@@ -275,7 +282,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
      * Test Auditor should consider Readonly bookie as available bookie. Should not publish ur ledgers for
      * readonly bookies.
      */
-    @Test(timeout = 20000)
+    @Test
     public void testReadOnlyBookieExclusionFromURLedgersCheck() throws Exception {
         LedgerHandle lh = createAndAddEntriesToLedger();
         ledgerList.add(lh.getId());
@@ -291,13 +298,14 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
 
         // grace period for publishing the bk-ledger
         LOG.debug("Waiting for Auditor to finish ledger check.");
+        waitForAuditToComplete();
         assertFalse("latch should not have completed", underReplicaLatch.await(5, TimeUnit.SECONDS));
     }
 
     /**
      * Test Auditor should consider Readonly bookie fail and publish ur ledgers for readonly bookies.
      */
-    @Test(timeout = 20000)
+    @Test
     public void testReadOnlyBookieShutdown() throws Exception {
         LedgerHandle lh = createAndAddEntriesToLedger();
         long ledgerId = lh.getId();
@@ -308,6 +316,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
         final CountDownLatch underReplicaLatch = registerUrLedgerWatcher(count);
 
         int bkIndex = bs.size() - 1;
+        LOG.debug("Moving bookie {} {} to read only...", bkIndex, bs.get(bkIndex));
         ServerConfiguration bookieConf = bsConfs.get(bkIndex);
         BookieServer bk = bs.get(bkIndex);
         bookieConf.setReadOnlyModeEnabled(true);
@@ -315,12 +324,14 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
 
         // grace period for publishing the bk-ledger
         LOG.debug("Waiting for Auditor to finish ledger check.");
-        assertFalse("latch should not have completed", underReplicaLatch.await(5, TimeUnit.SECONDS));
+        waitForAuditToComplete();
+        assertFalse("latch should not have completed", underReplicaLatch.await(1, TimeUnit.SECONDS));
 
         String shutdownBookie = shutdownBookie(bkIndex);
 
         // grace period for publishing the bk-ledger
         LOG.debug("Waiting for ledgers to be marked as under replicated");
+        waitForAuditToComplete();
         underReplicaLatch.await(5, TimeUnit.SECONDS);
         Map<Long, String> urLedgerData = getUrLedgerData(urLedgerList);
         assertEquals("Missed identifying under replicated ledgers", 1, urLedgerList.size());
@@ -373,7 +384,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
      * Test publishing of under replicated ledgers by the auditor
      * bookie is delayed if LostBookieRecoveryDelay option is set
      */
-    @Test(timeout=60000)
+    @Test
     public void testDelayedAuditOfLostBookies() throws Exception {
         // wait for a second so that the initial periodic check finishes
         Thread.sleep(1000);
@@ -388,7 +399,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
      *  is set to run every 2 secs. I.e. periodic bookie check doesn't
      *  override the delay
      */
-    @Test(timeout=60000)
+    @Test
     public void testDelayedAuditWithPeriodicBookieCheck() throws Exception {
         // enable periodic bookie check on a cadence of every 2 seconds.
         // this requires us to stop the auditor/auditorElectors, set the
@@ -405,7 +416,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
         _testDelayedAuditOfLostBookies();
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testRescheduleOfDelayedAuditOfLostBookiesToStartImmediately() throws Exception {
      // wait for a second so that the initial periodic check finishes
         Thread.sleep(1000);
@@ -445,7 +456,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
                 data.contains(shutdownBookie));
     }
     
-    @Test(timeout=60000)
+    @Test
     public void testRescheduleOfDelayedAuditOfLostBookiesToStartLater() throws Exception {
      // wait for a second so that the initial periodic check finishes
         Thread.sleep(1000);
@@ -490,7 +501,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
                 data.contains(shutdownBookie));
     }
     
-    @Test(timeout=60000)
+    @Test
     public void testTriggerAuditorWithNoPendingAuditTask() throws Exception {
         // wait for a second so that the initial periodic check finishes
         Thread.sleep(1000);
@@ -552,7 +563,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
                 lostBookieRecoveryDelayBeforeChange, auditorBookiesAuditor.getLostBookieRecoveryDelayBeforeChange());
     }
     
-    @Test(timeout=60000)
+    @Test
     public void testTriggerAuditorWithPendingAuditTask() throws Exception {
      // wait for a second so that the initial periodic check finishes
         Thread.sleep(1000);
@@ -599,7 +610,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
                 lostBookieRecoveryDelay, auditorBookiesAuditor.getLostBookieRecoveryDelayBeforeChange());
     }
     
-    @Test(timeout=60000)
+    @Test
     public void testTriggerAuditorBySettingDelayToZeroWithPendingAuditTask() throws Exception {
      // wait for a second so that the initial periodic check finishes
         Thread.sleep(1000);
@@ -650,7 +661,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
      * Test audit of bookies is delayed when one bookie is down. But when
      * another one goes down, the audit is started immediately.
      */
-    @Test(timeout=60000)
+    @Test
     public void testDelayedAuditWithMultipleBookieFailures() throws Exception {
         // wait for the periodic bookie check to finish
         Thread.sleep(1000);
@@ -703,7 +714,7 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
      * a bookies goes down and comes up, the next bookie go down and up and so on.
      * At any time only one bookie is down.
      */
-    @Test(timeout=60000)
+    @Test
     public void testDelayedAuditWithRollingUpgrade() throws Exception {
         // wait for the periodic bookie check to finish
         Thread.sleep(1000);
@@ -760,6 +771,20 @@ public class AuditorLedgerCheckerTest extends MultiLedgerManagerTestCase {
                    + " is not listed in the ledger as missing replicas :" + data,
                    data.contains(shutdownBookie2));
         LOG.info("*****************Test Complete");
+    }
+
+    private void waitForAuditToComplete() throws Exception {
+        long endTime = System.currentTimeMillis() + 5_000;
+        while (System.currentTimeMillis() < endTime) {
+            Auditor auditor = getAuditorBookiesAuditor();
+            if (auditor != null) {
+                Future<?> task = auditor.submitAuditTask();
+                task.get(5, TimeUnit.SECONDS);
+                return;
+            }
+            Thread.sleep(100);
+        }
+        throw new TimeoutException("Could not find an audit within 5 seconds");
     }
 
     /**

@@ -1,0 +1,71 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.bookkeeper.common.component;
+
+import java.util.concurrent.CountDownLatch;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * Utils to start components.
+ */
+@Slf4j
+public class ComponentStarter {
+
+    static class ComponentShutdownHook implements Runnable {
+
+        private final LifecycleComponent component;
+        private final CountDownLatch aliveLatch;
+
+        ComponentShutdownHook(LifecycleComponent component,
+                              CountDownLatch aliveLatch) {
+            this.component = component;
+            this.aliveLatch = aliveLatch;
+        }
+
+        @Override
+        public void run() {
+            aliveLatch.countDown();
+            log.info("Closing component {} in shutdown hook.", component.getName());
+            try {
+                component.close();
+                log.info("Closed component {} in shutdown hook successfully. Exiting.", component.getName());
+            } catch (Exception e) {
+                log.error("Failed to close component {} in shutdown hook gracefully, Exiting anyway",
+                    component.getName(), e);
+            }
+        }
+
+    }
+
+    /**
+     * Start a component and register a shutdown hook.
+     *
+     * @param component component to start.
+     */
+    public static void startComponent(LifecycleComponent component,
+                                      CountDownLatch aliveLatch) {
+        Runtime.getRuntime().addShutdownHook(new Thread(
+            new ComponentShutdownHook(component, aliveLatch), "component-shutdown-thread"));
+
+        log.info("Starting component {}.", component.getName());
+        component.start();
+        log.info("Started component {}.", component.getName());
+    }
+
+}

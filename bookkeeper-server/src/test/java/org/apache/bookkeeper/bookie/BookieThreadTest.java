@@ -67,7 +67,7 @@ public class BookieThreadTest {
     /**
      * Test verifies uncaught exception handling of BookieThread
      */
-    @Test(timeout = 30000)
+    @Test
     public void testUncaughtException() throws Exception {
         MyThread myThread = new MyThread("Test-Thread");
         myThread.start();

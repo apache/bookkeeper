@@ -25,7 +25,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.Iterator;
-
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.BKException.BKIllegalOpException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -33,6 +32,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.test.annotations.FlakyTest;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -47,13 +47,13 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
     private final int lostBookieRecoveryDelayInitValue = 1800;
 
     public BookKeeperAdminTest() {
-        super(numOfBookies);
-        baseConf.setAutoRecoveryDaemonEnabled(true);
+        super(numOfBookies, 480);
         baseConf.setLostBookieRecoveryDelay(lostBookieRecoveryDelayInitValue);
         baseConf.setOpenLedgerRereplicationGracePeriod(String.valueOf(30000));
+        setAutoRecoveryEnabled(true);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testLostBookieRecoveryDelayValue() throws Exception {
         BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString());
         assertEquals("LostBookieRecoveryDelay", lostBookieRecoveryDelayInitValue, bkAdmin.getLostBookieRecoveryDelay());
@@ -67,7 +67,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         bkAdmin.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testTriggerAudit() throws Exception {
         ZkLedgerUnderreplicationManager urLedgerMgr = new ZkLedgerUnderreplicationManager(baseClientConf, zkc);
         BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString());
@@ -103,7 +103,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         bkAdmin.close();
     }
 
-    @Test(timeout = 480000)
+    @FlakyTest("https://github.com/apache/bookkeeper/issues/502")
     public void testDecommissionBookie() throws Exception {
         ZkLedgerUnderreplicationManager urLedgerMgr = new ZkLedgerUnderreplicationManager(baseClientConf, zkc);
         BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString());
@@ -168,7 +168,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         bkAdmin.close();
     }
 
-    @Test(timeout = 240000)
+    @Test
     public void testDecommissionForLedgersWithMultipleSegmentsAndNotWriteClosed() throws Exception {
         ZkLedgerUnderreplicationManager urLedgerMgr = new ZkLedgerUnderreplicationManager(baseClientConf, zkc);
         BookKeeperAdmin bkAdmin = new BookKeeperAdmin(zkUtil.getZooKeeperConnectString());
@@ -193,7 +193,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
 
         /*
          * since one of the bookie is killed, ensemble change happens when next
-         * write is made.So new segment will be created for those 2 ledgers.
+         * write is made.So new fragment will be created for those 2 ledgers.
          */
         for (int j = numOfEntries; j < 2 * numOfEntries; j++) {
             lh1.addEntry(j, "data".getBytes());
@@ -201,14 +201,14 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         }
         
         /*
-         * Here lh1 and lh2 have multiple segments and are writeclosed. But lh3 and lh4 are 
-         * not writeclosed and contains only one segment.
+         * Here lh1 and lh2 have multiple fragments and are writeclosed. But lh3 and lh4 are
+         * not writeclosed and contains only one fragment.
          */
         lh1.close();
         lh2.close();
         
         /*
-         * If the last segment of the ledger is underreplicated and if the
+         * If the last fragment of the ledger is underreplicated and if the
          * ledger is not closed then it will remain underreplicated for
          * openLedgerRereplicationGracePeriod (by default 30 secs). For more
          * info. Check BOOKKEEPER-237 and BOOKKEEPER-325. But later

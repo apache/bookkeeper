@@ -40,6 +40,8 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetworkTopology;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.StaticDNSResolver;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -60,9 +62,9 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         StaticDNSResolver.reset();
-        StaticDNSResolver.addNodeToRack(InetAddress.getLocalHost().getHostAddress(), NetworkTopology.DEFAULT_RACK);
-        StaticDNSResolver.addNodeToRack("127.0.0.1", NetworkTopology.DEFAULT_RACK);
-        StaticDNSResolver.addNodeToRack("localhost", NetworkTopology.DEFAULT_RACK);
+        StaticDNSResolver.addNodeToRack(InetAddress.getLocalHost().getHostAddress(), NetworkTopology.DEFAULT_REGION_AND_RACK);
+        StaticDNSResolver.addNodeToRack("127.0.0.1", NetworkTopology.DEFAULT_REGION_AND_RACK);
+        StaticDNSResolver.addNodeToRack("localhost", NetworkTopology.DEFAULT_REGION_AND_RACK);
         LOG.info("Set up static DNS Resolver.");
         conf.setProperty(REPP_DNS_RESOLVER_CLASS, StaticDNSResolver.class.getName());
         addr1 = new BookieSocketAddress("127.0.0.2", 3181);
@@ -71,8 +73,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         addr4 = new BookieSocketAddress("127.0.0.5", 3181);
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getHostName(), NetworkTopology.DEFAULT_REGION + "/rack1");
-        StaticDNSResolver.addNodeToRack(addr2.getHostName(), NetworkTopology.DEFAULT_RACK);
-        StaticDNSResolver.addNodeToRack(addr3.getHostName(), NetworkTopology.DEFAULT_RACK);
+        StaticDNSResolver.addNodeToRack(addr2.getHostName(), NetworkTopology.DEFAULT_REGION_AND_RACK);
+        StaticDNSResolver.addNodeToRack(addr3.getHostName(), NetworkTopology.DEFAULT_REGION_AND_RACK);
         StaticDNSResolver.addNodeToRack(addr4.getHostName(), NetworkTopology.DEFAULT_REGION + "/rack2");
         ensemble.add(addr1);
         ensemble.add(addr2);
@@ -88,7 +90,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                 conf.getTimeoutTimerNumTicks());
 
         repp = new RackawareEnsemblePlacementPolicy();
-        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, null);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
     }
 
     @Override
@@ -104,13 +107,14 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         StaticDNSResolver.addNodeToRack("localhost", rack);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNodeDown() throws Exception {
         repp.uninitalize();
-        updateMyRack(NetworkTopology.DEFAULT_RACK);
+        updateMyRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
 
         repp = new RackawareEnsemblePlacementPolicy();
-        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, null);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
 
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);
@@ -132,13 +136,14 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertEquals(expectedSet, reoderSet);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNodeReadOnly() throws Exception {
         repp.uninitalize();
         updateMyRack("/r1/rack1");
 
         repp = new RackawareEnsemblePlacementPolicy();
-        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, null);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
 
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
@@ -163,13 +168,14 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertEquals(expectedSet, reoderSet);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testTwoNodesDown() throws Exception {
         repp.uninitalize();
         updateMyRack("/r1/rack1");
 
         repp = new RackawareEnsemblePlacementPolicy();
-        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, null);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
 
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
@@ -193,13 +199,14 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertEquals(expectedSet, reoderSet);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNodeDownAndReadOnly() throws Exception {
         repp.uninitalize();
         updateMyRack("/r1/rack1");
 
         repp = new RackawareEnsemblePlacementPolicy();
-        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, null);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
 
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
@@ -223,14 +230,14 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertEquals(expectedSet, reoderSet);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReplaceBookieWithEnoughBookiesInSameRack() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);
         BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.4", 3181);
         BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.5", 3181);
         // update dns mapping
-        StaticDNSResolver.addNodeToRack(addr1.getHostName(), NetworkTopology.DEFAULT_RACK);
+        StaticDNSResolver.addNodeToRack(addr1.getHostName(), NetworkTopology.DEFAULT_REGION_AND_RACK);
         StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/default-region/r2");
         StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/default-region/r2");
         StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/default-region/r3");
@@ -246,14 +253,14 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertEquals(addr3, replacedBookie);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReplaceBookieWithEnoughBookiesInDifferentRack() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);
         BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.4", 3181);
         BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.5", 3181);
         // update dns mapping
-        StaticDNSResolver.addNodeToRack(addr1.getHostName(), NetworkTopology.DEFAULT_RACK);
+        StaticDNSResolver.addNodeToRack(addr1.getHostName(), NetworkTopology.DEFAULT_REGION_AND_RACK);
         StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/default-region/r2");
         StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/default-region/r3");
         StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/default-region/r4");
@@ -273,14 +280,14 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertTrue(addr3.equals(replacedBookie) || addr4.equals(replacedBookie));
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testReplaceBookieWithNotEnoughBookies() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);
         BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.4", 3181);
         BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.5", 3181);
         // update dns mapping
-        StaticDNSResolver.addNodeToRack(addr1.getHostName(), NetworkTopology.DEFAULT_RACK);
+        StaticDNSResolver.addNodeToRack(addr1.getHostName(), NetworkTopology.DEFAULT_REGION_AND_RACK);
         StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/default-region/r2");
         StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/default-region/r3");
         StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/default-region/r4");
@@ -304,7 +311,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNewEnsembleWithSingleRack() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.6", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.7", 3181);
@@ -327,14 +334,14 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNewEnsembleWithMultipleRacks() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
         BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.3", 3181);
         BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181);
         // update dns mapping
-        StaticDNSResolver.addNodeToRack(addr1.getHostName(), NetworkTopology.DEFAULT_RACK);
+        StaticDNSResolver.addNodeToRack(addr1.getHostName(), NetworkTopology.DEFAULT_REGION_AND_RACK);
         StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/default-region/r2");
         StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/default-region/r2");
         StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/default-region/r2");
@@ -357,7 +364,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNewEnsembleWithEnoughRacks() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);
@@ -368,11 +375,11 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         BookieSocketAddress addr7 = new BookieSocketAddress("127.0.0.8", 3181);
         BookieSocketAddress addr8 = new BookieSocketAddress("127.0.0.9", 3181);
         // update dns mapping
-        StaticDNSResolver.addNodeToRack(addr1.getHostName(), NetworkTopology.DEFAULT_RACK);
+        StaticDNSResolver.addNodeToRack(addr1.getHostName(), NetworkTopology.DEFAULT_REGION_AND_RACK);
         StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/default-region/r2");
         StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/default-region/r3");
         StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/default-region/r4");
-        StaticDNSResolver.addNodeToRack(addr5.getHostName(), NetworkTopology.DEFAULT_RACK);
+        StaticDNSResolver.addNodeToRack(addr5.getHostName(), NetworkTopology.DEFAULT_REGION_AND_RACK);
         StaticDNSResolver.addNodeToRack(addr6.getHostName(), "/default-region/r2");
         StaticDNSResolver.addNodeToRack(addr7.getHostName(), "/default-region/r3");
         StaticDNSResolver.addNodeToRack(addr8.getHostName(), "/default-region/r4");
@@ -400,14 +407,14 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
     /**
      * Test for BOOKKEEPER-633
      */
-    @Test(timeout = 60000)
+    @Test
     public void testRemoveBookieFromCluster() {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.2", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.3", 3181);
         BookieSocketAddress addr3 = new BookieSocketAddress("127.0.0.4", 3181);
         BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.5", 3181);
         // update dns mapping
-        StaticDNSResolver.addNodeToRack(addr1.getHostName(), NetworkTopology.DEFAULT_RACK);
+        StaticDNSResolver.addNodeToRack(addr1.getHostName(), NetworkTopology.DEFAULT_REGION_AND_RACK);
         StaticDNSResolver.addNodeToRack(addr2.getHostName(), "/default-region/r2");
         StaticDNSResolver.addNodeToRack(addr3.getHostName(), "/default-region/r2");
         StaticDNSResolver.addNodeToRack(addr4.getHostName(), "/default-region/r3");
@@ -422,7 +429,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testWeightedPlacementAndReplaceBookieWithEnoughBookiesInSameRack() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
@@ -430,7 +437,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181);
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getSocketAddress().getAddress().getHostAddress(),
-                NetworkTopology.DEFAULT_RACK);
+                NetworkTopology.DEFAULT_REGION_AND_RACK);
         StaticDNSResolver.addNodeToRack(addr2.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
         StaticDNSResolver.addNodeToRack(addr3.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
         StaticDNSResolver.addNodeToRack(addr4.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
@@ -444,7 +451,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         int multiple = 10;
         conf.setDiskWeightBasedPlacementEnabled(true);
         conf.setBookieMaxWeightMultipleForWeightBasedPlacement(-1); // no max cap on weight
-        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, null);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
 
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
         Map<BookieSocketAddress, BookieInfo> bookieInfoMap = new HashMap<BookieSocketAddress, BookieInfo>();
@@ -469,7 +477,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertTrue("Weights not being honored " + observedMultiple, Math.abs(observedMultiple-multiple) < 1);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testWeightedPlacementAndReplaceBookieWithoutEnoughBookiesInSameRack() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
@@ -477,7 +485,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181);
         // update dns mapping
         StaticDNSResolver.reset();
-        StaticDNSResolver.addNodeToRack(addr1.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_RACK);
+        StaticDNSResolver.addNodeToRack(addr1.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION_AND_RACK);
         StaticDNSResolver.addNodeToRack(addr2.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
         StaticDNSResolver.addNodeToRack(addr3.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r3");
         StaticDNSResolver.addNodeToRack(addr4.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r4");
@@ -491,7 +499,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         int multiple = 10, maxMultiple = 4;
         conf.setDiskWeightBasedPlacementEnabled(true);
         conf.setBookieMaxWeightMultipleForWeightBasedPlacement(maxMultiple);
-        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, null);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
 
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
         Map<BookieSocketAddress, BookieInfo> bookieInfoMap = new HashMap<BookieSocketAddress, BookieInfo>();
@@ -529,7 +538,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                 Math.abs(observedMultiple2-expected) < 1);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testWeightedPlacementAndNewEnsembleWithEnoughBookiesInSameRack() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
@@ -542,7 +551,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         BookieSocketAddress addr9 = new BookieSocketAddress("127.0.0.9", 3181);
 
         // update dns mapping
-        StaticDNSResolver.addNodeToRack(addr1.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_RACK);
+        StaticDNSResolver.addNodeToRack(addr1.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION_AND_RACK);
         StaticDNSResolver.addNodeToRack(addr2.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
         StaticDNSResolver.addNodeToRack(addr3.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
         StaticDNSResolver.addNodeToRack(addr4.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
@@ -567,7 +576,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         int maxMultiple = 4;
         conf.setDiskWeightBasedPlacementEnabled(true);
         conf.setBookieMaxWeightMultipleForWeightBasedPlacement(maxMultiple);
-        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, null);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
 
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
         Map<BookieSocketAddress, BookieInfo> bookieInfoMap = new HashMap<BookieSocketAddress, BookieInfo>();
@@ -612,7 +622,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
                 Math.abs(observedMultiple2-maxMultiple) < 0.5);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testWeightedPlacementAndNewEnsembleWithoutEnoughBookies() throws Exception {
         BookieSocketAddress addr1 = new BookieSocketAddress("127.0.0.1", 3181);
         BookieSocketAddress addr2 = new BookieSocketAddress("127.0.0.2", 3181);
@@ -621,7 +631,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.5", 3181);
 
         // update dns mapping
-        StaticDNSResolver.addNodeToRack(addr1.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_RACK);
+        StaticDNSResolver.addNodeToRack(addr1.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION_AND_RACK);
         StaticDNSResolver.addNodeToRack(addr2.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
         StaticDNSResolver.addNodeToRack(addr3.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
         StaticDNSResolver.addNodeToRack(addr4.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r3");
@@ -637,7 +647,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         int maxMultiple = 4;
         conf.setDiskWeightBasedPlacementEnabled(true);
         conf.setBookieMaxWeightMultipleForWeightBasedPlacement(maxMultiple);
-        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, null);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
 
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
         Map<BookieSocketAddress, BookieInfo> bookieInfoMap = new HashMap<BookieSocketAddress, BookieInfo>();
@@ -684,13 +695,14 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         return numCoveredWriteQuorums;
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNodeWithFailures() throws Exception {
         repp.uninitalize();
-        updateMyRack(NetworkTopology.DEFAULT_RACK);
+        updateMyRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
 
         repp = new RackawareEnsemblePlacementPolicy();
-        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, null);
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
 
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);
@@ -712,16 +724,17 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertEquals(ensemble.get(reoderSet.get(1)), addr4);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testPlacementOnStabilizeNetworkTopology() throws Exception {
         repp.uninitalize();
-        updateMyRack(NetworkTopology.DEFAULT_RACK);
+        updateMyRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
 
         repp = new RackawareEnsemblePlacementPolicy();
         ClientConfiguration confLocal = new ClientConfiguration();
         confLocal.addConfiguration(conf);
         confLocal.setNetworkTopologyStabilizePeriodSeconds(99999);
-        repp.initialize(confLocal, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, null);
+        repp.initialize(confLocal, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+        repp.withDefaultRack(NetworkTopology.DEFAULT_REGION_AND_RACK);
 
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);

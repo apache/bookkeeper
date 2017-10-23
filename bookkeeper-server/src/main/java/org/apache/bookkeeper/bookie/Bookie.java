@@ -575,15 +575,28 @@ public class Bookie extends BookieCriticalThread {
      */
     public static BookieSocketAddress getBookieAddress(ServerConfiguration conf)
             throws UnknownHostException {
+        // Advertised address takes precedence over the listening interface and the
+        // useHostNameAsBookieID settings
+        if (conf.getAdvertisedAddress() != null && conf.getAdvertisedAddress().trim().length() > 0) {
+            String hostAddress = conf.getAdvertisedAddress().trim();
+            return new BookieSocketAddress(hostAddress, conf.getBookiePort());
+        }
+
         String iface = conf.getListeningInterface();
         if (iface == null) {
             iface = "default";
         }
-        InetSocketAddress inetAddr = new InetSocketAddress(DNS.getDefaultHost(iface), conf.getBookiePort());
+        String hostName = DNS.getDefaultHost(iface);
+        InetSocketAddress inetAddr = new InetSocketAddress(hostName, conf.getBookiePort());
+        if (inetAddr.isUnresolved()) {
+            throw new UnknownHostException("Unable to resolve default hostname: "
+                    + hostName + " for interface: " + iface);
+        }
         String hostAddress = inetAddr.getAddress().getHostAddress();
         if (conf.getUseHostNameAsBookieID()) {
             hostAddress = inetAddr.getAddress().getCanonicalHostName();
         }
+
         BookieSocketAddress addr =
                 new BookieSocketAddress(hostAddress, conf.getBookiePort());
         if (addr.getSocketAddress().getAddress().isLoopbackAddress()

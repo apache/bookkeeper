@@ -29,9 +29,3 @@ Have you checked our documentation at http://bookkeeper.apache.org/ , If you cou
 
 - What did you see instead?
 
----------------------------------------------------------------------------------
-
-Please label the issue with proper labels. It would help us triage the issues.
-
-- "release/": please mark the issue with the release. 
-- "type/": please mark the issue with corresponding issue type.

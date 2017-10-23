@@ -53,12 +53,12 @@ public class TestDisableEnsembleChange extends BookKeeperClusterTestCase {
         super(4);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testDisableEnsembleChange() throws Exception {
         disableEnsembleChangeTest(true);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testDisableEnsembleChangeNotEnoughBookies() throws Exception {
         disableEnsembleChangeTest(false);
     }
@@ -165,7 +165,7 @@ public class TestDisableEnsembleChange extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout=20000)
+    @Test
     public void testRetryFailureBookie() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         conf.setZkServers(zkUtil.getZooKeeperConnectString())
@@ -206,11 +206,11 @@ public class TestDisableEnsembleChange extends BookKeeperClusterTestCase {
         bsConfs.add(killedConf);
         bs.add(startBookie(killedConf));
         assertTrue("Add entry operation should complete at this point.",
-                addLatch.await(1000, TimeUnit.MILLISECONDS));
+                addLatch.await(10000, TimeUnit.MILLISECONDS));
         assertEquals(res.get(), BKException.Code.OK);
     }
 
-    @Test(timeout=20000)
+    @Test
     public void testRetrySlowBookie() throws Exception {
         final int readTimeout = 2;
 
@@ -270,7 +270,7 @@ public class TestDisableEnsembleChange extends BookKeeperClusterTestCase {
         // wakeup the sleep bookie
         wakeupLatch.countDown();
         assertTrue("Add entry operation should complete at this point.",
-                addLatch.await(1000, TimeUnit.MILLISECONDS));
+                addLatch.await(10000, TimeUnit.MILLISECONDS));
         assertEquals(res.get(), BKException.Code.OK);
     }
 

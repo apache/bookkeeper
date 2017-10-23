@@ -40,15 +40,15 @@ import static org.junit.Assert.*;
 public class AuditorRollingRestartTest extends BookKeeperClusterTestCase {
 
     public AuditorRollingRestartTest() {
-        super(3);
+        super(3, 600);
         // run the daemon within the bookie
-        baseConf.setAutoRecoveryDaemonEnabled(true);
+        setAutoRecoveryEnabled(true);
     }
 
     /**
      * Test no auditing during restart if disabled
      */
-    @Test(timeout=600000) // 10 minutes
+    @Test
     public void testAuditingDuringRollingRestart() throws Exception {
         LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(bsConfs.get(0), zkc);
         final LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();

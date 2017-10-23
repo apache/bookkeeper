@@ -21,9 +21,13 @@
 
 package org.apache.bookkeeper.client;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
+import org.apache.bookkeeper.client.SyncCallbackUtils.SyncDeleteCallback;
+import org.apache.bookkeeper.client.api.DeleteBuilder;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallback;
@@ -39,12 +43,12 @@ class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
 
     static final Logger LOG = LoggerFactory.getLogger(LedgerDeleteOp.class);
 
-    BookKeeper bk;
-    long ledgerId;
-    DeleteCallback cb;
-    Object ctx;
-    long startTime;
-    OpStatsLogger deleteOpLogger;
+    final BookKeeper bk;
+    final long ledgerId;
+    final DeleteCallback cb;
+    final Object ctx;
+    final long startTime;
+    final OpStatsLogger deleteOpLogger;
 
     /**
      * Constructor
@@ -59,7 +63,7 @@ class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
      *            optional control object
      */
     LedgerDeleteOp(BookKeeper bk, long ledgerId, DeleteCallback cb, Object ctx) {
-        super(bk.mainWorkerPool, ledgerId);
+        super(bk.getMainWorkerPool(), ledgerId);
         this.bk = bk;
         this.ledgerId = ledgerId;
         this.cb = cb;
@@ -94,4 +98,56 @@ class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
     public String toString() {
         return String.format("LedgerDeleteOp(%d)", ledgerId);
     }
+
+    static class DeleteBuilderImpl  implements DeleteBuilder {
+
+        private Long builderLedgerId;
+        private final BookKeeper bk;
+
+        DeleteBuilderImpl(BookKeeper bk) {
+            this.bk = bk;
+        }
+
+        @Override
+        public DeleteBuilder withLedgerId(long ledgerId) {
+            this.builderLedgerId = ledgerId;
+            return this;
+        }
+
+        @Override
+        public CompletableFuture<Void> execute() {
+            CompletableFuture<Void> future = new CompletableFuture<>();
+            SyncDeleteCallback result = new SyncDeleteCallback(future);
+            delete(builderLedgerId, result);
+            return future;
+        }
+
+        private boolean validate() {
+            if (builderLedgerId == null || builderLedgerId < 0) {
+                LOG.error("invalid ledgerId {} < 0", builderLedgerId);
+                return false;
+            }
+            return true;
+        }
+
+        private void delete(Long ledgerId, AsyncCallback.DeleteCallback cb) {
+            if (!validate()) {
+                cb.deleteComplete(BKException.Code.IncorrectParameterException, null);
+                return;
+            }
+            LedgerDeleteOp op = new LedgerDeleteOp(bk, ledgerId, cb, null);
+            ReentrantReadWriteLock closeLock = bk.getCloseLock();
+            closeLock.readLock().lock();
+            try {
+                if (bk.isClosed()) {
+                    cb.deleteComplete(BKException.Code.ClientClosedException, null);
+                    return;
+                }
+                op.initiate();
+            } finally {
+                closeLock.readLock().unlock();
+            }
+        }
+    }
+
 }

@@ -57,7 +57,7 @@ public class UpdateLedgerCmdTest extends BookKeeperClusterTestCase {
     /**
      * updateledgers to hostname
      */
-    @Test(timeout = 120000)
+    @Test
     public void testUpdateLedgersToHostname() throws Exception {
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
         LOG.info("Create ledger and add entries to it");

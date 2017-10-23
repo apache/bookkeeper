@@ -96,7 +96,7 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
 
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testNormalParallelRead() throws Exception {
         int numEntries = 10;
 
@@ -140,7 +140,7 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
         lh.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testParallelReadMissingEntries() throws Exception {
         int numEntries = 10;
 
@@ -165,7 +165,7 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
         lh.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testFailParallelReadMissingEntryImmediately() throws Exception {
         int numEntries = 1;
 
@@ -200,7 +200,7 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
         newBk.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testParallelReadWithFailedBookies() throws Exception {
         int numEntries = 10;
 
@@ -241,7 +241,7 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
         newBk.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testParallelReadFailureWithFailedBookies() throws Exception {
         int numEntries = 10;
 

@@ -32,8 +32,10 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
  * the entry content.
  *
  */
-public class LedgerEntry {
-    long ledgerId;
+public class LedgerEntry
+    implements org.apache.bookkeeper.client.api.LedgerEntry {
+
+    final long ledgerId;
     long entryId;
     long length;
     ByteBuf data;
@@ -43,14 +45,17 @@ public class LedgerEntry {
         this.entryId = eId;
     }
 
+    @Override
     public long getLedgerId() {
         return ledgerId;
     }
 
+    @Override
     public long getEntryId() {
         return entryId;
     }
 
+    @Override
     public long getLength() {
         return length;
     }
@@ -61,9 +66,11 @@ public class LedgerEntry {
      * the internal ByteBuf
      * 
      * @return the content of the entry
+     * @throws IllegalStateException if this method is called twice
      */
+    @Override
     public byte[] getEntry() {
-        Preconditions.checkNotNull(data, "entry content can be accessed only once");
+        Preconditions.checkState(null != data, "entry content can be accessed only once");
         byte[] entry = new byte[data.readableBytes()];
         data.readBytes(entry);
         data.release();
@@ -78,9 +85,10 @@ public class LedgerEntry {
      * method of the returned InputStream
      *
      * @return an InputStream which gives access to the content of the entry
+     * @throws IllegalStateException if this method is called twice
      */
     public InputStream getEntryInputStream() {
-        Preconditions.checkNotNull(data, "entry content can be accessed only once");
+        Preconditions.checkState(null != data, "entry content can be accessed only once");
         ByteBufInputStream res = new ByteBufInputStream(data);
         data = null;
         return res;
@@ -94,8 +102,13 @@ public class LedgerEntry {
      * @return a ByteBuf which contains the data
      *
      * @see ClientConfiguration#setNettyUsePooledBuffers(boolean)
+     * @throws IllegalStateException if the entry has been retrieved by {@link #getEntry()}
+     * or {@link #getEntryInputStream()}.
      */
+    @Override
     public ByteBuf getEntryBuffer() {
+        Preconditions.checkState(null != data, "entry content has been retrieved" +
+            " by #getEntry or #getEntryInputStream");
         return data;
     }
 }

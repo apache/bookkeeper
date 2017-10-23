@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static com.google.common.base.Charsets.UTF_8;
+import static org.apache.bookkeeper.util.BookKeeperConstants.BOOKIE_STATUS_FILENAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -35,7 +37,6 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-
 import org.apache.bookkeeper.bookie.BookieException.DiskPartitionDuplicationException;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -52,17 +53,17 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.PortManager;
+import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static com.google.common.base.Charsets.UTF_8;
-import static org.apache.bookkeeper.util.BookKeeperConstants.BOOKIE_STATUS_FILENAME;
 
 /**
  * Testing bookie initialization cases
@@ -71,8 +72,20 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
     private static final Logger LOG = LoggerFactory
             .getLogger(BookieInitializationTest.class);
 
+    @Rule
+    public final TestName runtime = new TestName();
+
     public BookieInitializationTest() {
         super(0);
+        String ledgersPath = "/" + runtime.getMethodName();
+        baseClientConf.setZkLedgersRootPath(ledgersPath);
+        baseConf.setZkLedgersRootPath(ledgersPath);
+    }
+
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+        zkUtil.createBKEnsemble("/" + runtime.getMethodName());
     }
 
     private static class MockBookie extends Bookie {
@@ -90,7 +103,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
      * Verify the bookie server exit code. On ZooKeeper exception, should return
      * exit code ZK_REG_FAIL = 4
      */
-    @Test(timeout = 20000)
+    @Test
     public void testExitCodeZK_REG_FAIL() throws Exception {
         File tmpDir = createTempDir("bookie", "test");
 
@@ -116,7 +129,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                 ExitCode.ZK_REG_FAIL, bkServer.getExitCode());
     }
 
-    @Test(timeout = 20000)
+    @Test
     public void testBookieRegistrationWithSameZooKeeperClient() throws Exception {
         File tmpDir = createTempDir("bookie", "test");
 
@@ -145,7 +158,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
      * timeout when previous reg node exists in zk. On zNode delete event,
      * should continue startup
      */
-    @Test(timeout = 20000)
+    @Test
     public void testBookieRegistration() throws Exception {
         File tmpDir = createTempDir("bookie", "test");
 
@@ -210,7 +223,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
      * KeeperException.NodeExistsException if the znode still exists even after
      * the zk session timeout.
      */
-    @Test(timeout = 30000)
+    @Test
     public void testRegNodeExistsAfterSessionTimeOut() throws Exception {
         File tmpDir = createTempDir("bookie", "test");
 
@@ -265,7 +278,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
      * Verify duplicate bookie server startup. Should throw
      * java.net.BindException if already BK server is running
      */
-    @Test(timeout = 20000)
+    @Test
     public void testDuplicateBookieServerStartup() throws Exception {
         File tmpDir = createTempDir("bookie", "test");
 
@@ -298,7 +311,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
     /**
      * Verify bookie server starts up on ephemeral ports.
      */
-    @Test(timeout = 20000)
+    @Test
     public void testBookieServerStartupOnEphemeralPorts() throws Exception {
         File tmpDir = createTempDir("bookie", "test");
 
@@ -330,7 +343,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
     /**
      * Verify bookie start behaviour when ZK Server is not running.
      */
-    @Test(timeout = 20000)
+    @Test
     public void testStartBookieWithoutZKServer() throws Exception {
         zkUtil.killServer();
 
@@ -352,7 +365,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
      * Verify that if I try to start a bookie without zk initialized, it won't
      * prevent me from starting the bookie when zk is initialized
      */
-    @Test(timeout = 20000)
+    @Test
     public void testStartBookieWithoutZKInitialized() throws Exception {
         File tmpDir = createTempDir("bookie", "test");
         final String ZK_ROOT = "/ledgers2";
@@ -380,7 +393,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
     /**
      * Check disk full. Expected to fail on start.
      */
-    @Test(timeout = 30000)
+    @Test
     public void testWithDiskFullReadOnlyDisabledOrForceGCAllowDisabled() throws Exception {
         File tmpDir = createTempDir("DiskCheck", "test");
         long usableSpace = tmpDir.getUsableSpace();
@@ -427,7 +440,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
     /**
      * Check disk full. Expected to start as read-only.
      */
-    @Test(timeout = 30000)
+    @Test
     public void testWithDiskFullReadOnlyEnabledAndForceGCAllowAllowed() throws Exception {
         File tmpDir = createTempDir("DiskCheck", "test");
         long usableSpace = tmpDir.getUsableSpace();
@@ -457,7 +470,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         ServerConfiguration conf;
 
         public MockBookieServer(ServerConfiguration conf) throws IOException, KeeperException, InterruptedException,
-                BookieException, UnavailableException, CompatibilityException {
+                BookieException, UnavailableException, CompatibilityException, SecurityException {
             super(conf);
             this.conf = conf;
         }
@@ -486,7 +499,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         }
     }
     
-    @Test(timeout = 30000)
+    @Test
     public void testWithDiskFullAndAbilityToCreateNewIndexFile() throws Exception {
         File tmpDir = createTempDir("DiskCheck", "test");
 
@@ -546,7 +559,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
     /**
      * Check disk error for file. Expected to throw DiskErrorException.
      */
-    @Test(timeout = 30000)
+    @Test
     public void testWithDiskError() throws Exception {
         File parent = createTempDir("DiskCheck", "test");
         File child = File.createTempFile("DiskCheck", "test", parent);
@@ -572,7 +585,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
      * if ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION is disabled then Bookie initialization
      * will fail if there are multiple ledger/index/journal dirs are in same partition/filesystem.
      */
-    @Test(timeout = 2000000)
+    @Test
     public void testAllowDiskPartitionDuplicationDisabled() throws Exception {
         File tmpDir1 = createTempDir("bookie", "test");
         File tmpDir2 = createTempDir("bookie", "test");
@@ -645,7 +658,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
      * if ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION is enabled then Bookie initialization
      * should succeed even if there are multiple ledger/index/journal dirs in the same diskpartition/filesystem.
      */
-    @Test(timeout = 2000000)
+    @Test
     public void testAllowDiskPartitionDuplicationAllowed() throws Exception {
         File tmpDir1 = createTempDir("bookie", "test");
         File tmpDir2 = createTempDir("bookie", "test");

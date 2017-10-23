@@ -24,7 +24,6 @@ import java.nio.ByteBuffer;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
@@ -43,6 +42,7 @@ public class BookieShutdownTest extends BookKeeperClusterTestCase {
 
     public BookieShutdownTest() {
         super(3);
+        baseConf.setAllowEphemeralPorts(false);
     }
 
     private LedgerHandle lh;
@@ -59,9 +59,9 @@ public class BookieShutdownTest extends BookKeeperClusterTestCase {
      * Continuously restarting the bookie server to see all the external
      * resources are releasing properly. BOOKKEEPER-678
      */
-    @Test(timeout = 150000)
+    @Test
     public void testBookieRestartContinuously() throws Exception {
-        for (int index = 0; index < 100; index++) {
+        for (int index = 0; index < 10; index++) {
             SyncObj sync = new SyncObj();
             try {
                 // Create a ledger
@@ -111,7 +111,7 @@ public class BookieShutdownTest extends BookKeeperClusterTestCase {
      *
      * @throws Exception
      */
-    @Test(timeout = 60000)
+    @Test
     public void testBookieShutdownFromBookieThread() throws Exception {
         ServerConfiguration conf = bsConfs.get(0);
         killBookie(0);

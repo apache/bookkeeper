@@ -63,7 +63,7 @@ public class EntryLogTest {
         tempDirs.clear();
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testCorruptEntryLog() throws Exception {
         File tmpDir = createTempDir("bkTest", ".dir");
         File curDir = Bookie.getCurrentDirectory(tmpDir);
@@ -104,7 +104,7 @@ public class EntryLogTest {
         return bb;
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testMissingLogId() throws Exception {
         File tmpDir = createTempDir("entryLogTest", ".dir");
         File curDir = Bookie.getCurrentDirectory(tmpDir);
@@ -152,12 +152,12 @@ public class EntryLogTest {
         for (int i=0; i<2*numLogs; i++) {
             for (int j=0; j<numEntries; j++) {
                 String expectedValue = "ledger-" + i + "-" + j;
-                byte[] value = newLogger.readEntry(i, j, positions[i][j]);
-                ByteBuffer buf = ByteBuffer.wrap(value);
-                long ledgerId = buf.getLong();
-                long entryId = buf.getLong();
-                byte[] data = new byte[buf.remaining()];
-                buf.get(data);
+                ByteBuf value = newLogger.readEntry(i, j, positions[i][j]);
+                long ledgerId = value.readLong();
+                long entryId = value.readLong();
+                byte[] data = new byte[value.readableBytes()];
+                value.readBytes(data);
+                value.release();
                 assertEquals(i, ledgerId);
                 assertEquals(j, entryId);
                 assertEquals(expectedValue, new String(data));
@@ -165,7 +165,7 @@ public class EntryLogTest {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     /** Test that EntryLogger Should fail with FNFE, if entry logger directories does not exist*/
     public void testEntryLoggerShouldThrowFNFEIfDirectoriesDoesNotExist()
             throws Exception {
@@ -190,7 +190,7 @@ public class EntryLogTest {
     /**
      * Test to verify the DiskFull during addEntry
      */
-    @Test(timeout=60000)
+    @Test
     public void testAddEntryFailureOnDiskFull() throws Exception {
         File ledgerDir1 = createTempDir("bkTest", ".dir");
         File ledgerDir2 = createTempDir("bkTest", ".dir");
@@ -221,7 +221,7 @@ public class EntryLogTest {
     /**
      * Explicitely try to recover using the ledgers map index at the end of the entry log
      */
-    @Test(timeout=60000)
+    @Test
     public void testRecoverFromLedgersMap() throws Exception {
         File tmpDir = createTempDir("bkTest", ".dir");
         File curDir = Bookie.getCurrentDirectory(tmpDir);
@@ -255,7 +255,7 @@ public class EntryLogTest {
     /**
      * Explicitely try to recover using the ledgers map index at the end of the entry log
      */
-    @Test(timeout = 60000)
+    @Test
     public void testRecoverFromLedgersMapOnV0EntryLog() throws Exception {
         File tmpDir = createTempDir("bkTest", ".dir");
         File curDir = Bookie.getCurrentDirectory(tmpDir);

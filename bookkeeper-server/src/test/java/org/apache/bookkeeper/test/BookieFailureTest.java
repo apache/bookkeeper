@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.test;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,13 +18,13 @@ package org.apache.bookkeeper.test;
  * under the License.
  *
  */
+package org.apache.bookkeeper.test;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Random;
-
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperTestClient;
@@ -50,7 +48,7 @@ import static org.junit.Assert.*;
  *
  */
 
-public class BookieFailureTest extends MultiLedgerManagerMultiDigestTestCase
+public class BookieFailureTest extends BookKeeperClusterTestCase
     implements AddCallback, ReadCallback {
 
     // Depending on the taste, select the amount of logging
@@ -68,7 +66,7 @@ public class BookieFailureTest extends MultiLedgerManagerMultiDigestTestCase
     Random rng; // Random Number Generator
     ArrayList<byte[]> entries; // generated entries
     ArrayList<Integer> entriesSize;
-    DigestType digestType;
+    private final DigestType digestType;
 
     class SyncObj {
         int counter;
@@ -84,9 +82,10 @@ public class BookieFailureTest extends MultiLedgerManagerMultiDigestTestCase
         }
     }
 
-    public BookieFailureTest(String ledgerManagerFactory, DigestType digestType) {
+    public BookieFailureTest() {
         super(4);
-        this.digestType = digestType;
+        this.digestType = DigestType.CRC32;
+        String ledgerManagerFactory = "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory";
         // set ledger manager
         baseConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
         baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
@@ -97,31 +96,31 @@ public class BookieFailureTest extends MultiLedgerManagerMultiDigestTestCase
      *
      * @throws {@link IOException}
      */
-    @Test(timeout=60000)
+    @Test
     public void testAsyncBK1() throws IOException {
         LOG.info("#### BK1 ####");
         auxTestReadWriteAsyncSingleClient(bs.get(0));
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testAsyncBK2() throws IOException {
         LOG.info("#### BK2 ####");
         auxTestReadWriteAsyncSingleClient(bs.get(1));
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testAsyncBK3() throws IOException {
         LOG.info("#### BK3 ####");
         auxTestReadWriteAsyncSingleClient(bs.get(2));
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testAsyncBK4() throws IOException {
         LOG.info("#### BK4 ####");
         auxTestReadWriteAsyncSingleClient(bs.get(3));
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testBookieRecovery() throws Exception {
         //Shutdown all but 1 bookie
         bs.get(0).shutdown();
@@ -284,7 +283,7 @@ public class BookieFailureTest extends MultiLedgerManagerMultiDigestTestCase
         zkc.close();
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testLedgerNoRecoveryOpenAfterBKCrashed() throws Exception {
         // Create a ledger
         LedgerHandle beforelh = bkc.createLedger(numBookies, numBookies, digestType, "".getBytes());
@@ -322,7 +321,7 @@ public class BookieFailureTest extends MultiLedgerManagerMultiDigestTestCase
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testLedgerOpenAfterBKCrashed() throws Exception {
         // Create a ledger
         LedgerHandle beforelh = bkc.createLedger(numBookies, numBookies, digestType, "".getBytes());
@@ -370,7 +369,7 @@ public class BookieFailureTest extends MultiLedgerManagerMultiDigestTestCase
      *
      * BOOKKEEPER-326
      */
-    @Test(timeout=60000)
+    @Test
     public void testReadLastConfirmedOp() throws Exception {
         startNewBookie();
         startNewBookie();

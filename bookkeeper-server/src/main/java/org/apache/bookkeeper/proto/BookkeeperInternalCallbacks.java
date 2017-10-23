@@ -79,6 +79,10 @@ public class BookkeeperInternalCallbacks {
         void writeLacComplete(int rc, long ledgerId, BookieSocketAddress addr, Object ctx);
     }
 
+    public interface StartTLSCallback {
+        void startTLSComplete(int rc, Object ctx);
+    }
+
     public interface GenericCallback<T> {
         void operationComplete(int rc, T result);
     }

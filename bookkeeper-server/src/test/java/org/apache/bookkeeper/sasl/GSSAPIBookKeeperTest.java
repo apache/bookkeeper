@@ -198,7 +198,7 @@ public class GSSAPIBookKeeperTest extends BookKeeperClusterTestCase {
     /**
      * Test an connection will authorize with a single message to the server and a single response.
      */
-    @Test(timeout = 30000)
+    @Test
     public void testSingleMessageAuth() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration();
         bookieConf.setUseHostNameAsBookieID(true);
@@ -218,7 +218,7 @@ public class GSSAPIBookKeeperTest extends BookKeeperClusterTestCase {
         assertEquals("Should have entry", 1, entryCount(ledgerId.get(), bookieConf, clientConf));
     }
 
-    @Test(timeout = 30000)
+    @Test
     public void testNotAllowedClientId() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration();
         bookieConf.setUseHostNameAsBookieID(true);

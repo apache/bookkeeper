@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Map.Entry;
 import java.util.Set;
-
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.ClientUtil;
@@ -41,7 +40,7 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.bookkeeper.test.MultiLedgerManagerTestCase;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.ZooKeeper;
@@ -53,7 +52,7 @@ import org.slf4j.LoggerFactory;
  * Test the ReplicationWroker, where it has to replicate the fragments from
  * failed Bookies to given target Bookie.
  */
-public class TestReplicationWorker extends MultiLedgerManagerTestCase {
+public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
     private static final byte[] TESTPASSWD = "testpasswd".getBytes();
     private static final Logger LOG = LoggerFactory
@@ -64,7 +63,11 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
     private LedgerUnderreplicationManager underReplicationManager;
     private static byte[] data = "TestReplicationWorker".getBytes();
 
-    public TestReplicationWorker(String ledgerManagerFactory) {
+    public TestReplicationWorker() {
+        this("org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory");
+    }
+
+    TestReplicationWorker(String ledgerManagerFactory) {
         super(3);
         LOG.info("Running test case using ledger manager : "
                 + ledgerManagerFactory);
@@ -106,7 +109,7 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
      * Tests that replication worker should replicate the failed bookie
      * fragments to target bookie given to the worker.
      */
-    @Test(timeout = 30000)
+    @Test
     public void testRWShouldReplicateFragmentsToTargetBookie() throws Exception {
         LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32,
                 TESTPASSWD);
@@ -155,7 +158,7 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
      * Tests that replication worker should retry for replication until enough
      * bookies available for replication
      */
-    @Test(timeout = 60000)
+    @Test
     public void testRWShouldRetryUntilThereAreEnoughBksAvailableForReplication()
             throws Exception {
         LedgerHandle lh = bkc.createLedger(1, 1, BookKeeper.DigestType.CRC32,
@@ -207,7 +210,7 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
      * Tests that replication worker1 should take one fragment replication and
      * other replication worker also should compete for the replication.
      */
-    @Test(timeout = 90000)
+    @Test
     public void test2RWsShouldCompeteForReplicationOf2FragmentsAndCompleteReplication()
             throws Exception {
         LedgerHandle lh = bkc.createLedger(2, 2, BookKeeper.DigestType.CRC32,
@@ -274,7 +277,7 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
      * Tests that Replication worker should clean the leadger under replication
      * node of the ledger already deleted
      */
-    @Test(timeout = 3000)
+    @Test
     public void testRWShouldCleanTheLedgerFromUnderReplicationIfLedgerAlreadyDeleted()
             throws Exception {
         LedgerHandle lh = bkc.createLedger(2, 2, BookKeeper.DigestType.CRC32,
@@ -311,7 +314,7 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
 
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testMultipleLedgerReplicationWithReplicationWorker()
             throws Exception {
         // Ledger1
@@ -387,7 +390,7 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
      * Tests that ReplicationWorker should fence the ledger and release ledger
      * lock after timeout. Then replication should happen normally.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testRWShouldReplicateTheLedgersAfterTimeoutIfLastFragmentIsUR()
             throws Exception {
         LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32,
@@ -444,7 +447,7 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
      * the replication if ledger is in open state and lastFragment is not in
      * underReplication state. Note that RW should not fence such ledgers.
      */
-    @Test(timeout = 30000)
+    @Test
     public void testRWShouldReplicateTheLedgersAfterTimeoutIfLastFragmentIsNotUR()
             throws Exception {
         LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32,
@@ -508,7 +511,7 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
     /**
      * Test that if the local bookie turns out to be read-only, then the replicator will pause but not shutdown.
      */
-    @Test(timeout = 20000)
+    @Test
     public void testRWOnLocalBookieReadonlyTransition() throws Exception {
         LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32, TESTPASSWD);
 
@@ -551,7 +554,7 @@ public class TestReplicationWorker extends MultiLedgerManagerTestCase {
     /**
      * Test that the replication worker will not shutdown on a simple ZK disconnection
      */
-    @Test(timeout=30000)
+    @Test
     public void testRWZKConnectionLost() throws Exception {
         ZooKeeper zk = ZooKeeperClient.newBuilder()
                 .connectString(zkUtil.getZooKeeperConnectString())

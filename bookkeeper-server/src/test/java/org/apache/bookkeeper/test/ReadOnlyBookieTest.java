@@ -53,7 +53,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
     /**
      * Check readonly bookie
      */
-    @Test(timeout = 60000)
+    @Test
     public void testBookieShouldServeAsReadOnly() throws Exception {
         killBookie(0);
         baseConf.setReadOnlyModeEnabled(true);
@@ -96,7 +96,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testBookieShouldTurnWritableFromReadOnly() throws Exception {
         killBookie(0);
         baseConf.setReadOnlyModeEnabled(true);
@@ -176,7 +176,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
     /**
      * check readOnlyModeEnabled=false
      */
-    @Test(timeout = 60000)
+    @Test
     public void testBookieShutdownIfReadOnlyModeNotEnabled() throws Exception {
         killBookie(1);
         baseConf.setReadOnlyModeEnabled(false);
@@ -215,7 +215,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
     /**
      * Check multiple ledger dirs
      */
-    @Test(timeout = 60000)
+    @Test
     public void testBookieContinueWritingIfMultipleLedgersPresent()
             throws Exception {
         startNewBookieWithMultipleLedgerDirs(2);
@@ -265,7 +265,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
     /**
      * Test ledger creation with readonly bookies
      */
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCreationShouldFailWithReadonlyBookie() throws Exception {
         killBookie(1);
         baseConf.setReadOnlyModeEnabled(true);

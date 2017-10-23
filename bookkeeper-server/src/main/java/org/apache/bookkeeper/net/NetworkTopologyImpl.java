@@ -379,12 +379,13 @@ public class NetworkTopologyImpl implements NetworkTopology {
         netlock.writeLock().lock();
         try {
             if ((depthOfAllLeaves != -1) && (depthOfAllLeaves != newDepth)) {
-                LOG.error("Error: can't add leaf node at depth " + newDepth + " to topology:\n" + oldTopoStr);
+                LOG.error("Error: can't add leaf node {} at depth {} to topology:\n{}", node, newDepth, oldTopoStr);
                 throw new InvalidTopologyException("Invalid network topology. "
                         + "You cannot have a rack and a non-rack node at the same level of the network topology.");
             }
             Node rack = getNodeForNetworkLocation(node);
             if (rack != null && !(rack instanceof InnerNode)) {
+                LOG.error("Unexpected data node {} at an illegal network location", node);
                 throw new IllegalArgumentException("Unexpected data node " + node.toString()
                         + " at an illegal network location");
             }

@@ -17,18 +17,18 @@
  */
 package org.apache.bookkeeper.conf;
 
+import static org.apache.bookkeeper.conf.ClientConfiguration.CLIENT_AUTH_PROVIDER_FACTORY_CLASS;
+
 import java.net.URL;
-
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.configuration.SystemConfiguration;
-
+import java.util.Iterator;
+import javax.net.ssl.SSLEngine;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.util.ReflectionUtils;
-
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration.SystemConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,8 +67,27 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     protected final static String METASTORE_IMPL_CLASS = "metastoreImplClass";
     protected final static String METASTORE_MAX_ENTRIES_PER_SCAN = "metastoreMaxEntriesPerScan";
 
-    // Client auth provider factory class name. It must be configured on Bookies to for the Auditor
-    protected final static String CLIENT_AUTH_PROVIDER_FACTORY_CLASS = "clientAuthProviderFactoryClass";
+    // Common TLS configuration
+    // TLS Provider (JDK or OpenSSL)
+    protected final static String TLS_PROVIDER = "tlsProvider";
+
+    // TLS provider factory class name
+    protected final static String TLS_PROVIDER_FACTORY_CLASS = "tlsProviderFactoryClass";
+
+    // Enable authentication of the other connection end point (mutual authentication)
+    protected final static String TLS_CLIENT_AUTHENTICATION = "tlsClientAuthentication";
+
+    /**
+     * This list will be passed to {@link SSLEngine#setEnabledCipherSuites(java.lang.String[]) }.
+     * Please refer to official JDK JavaDocs
+    */
+    protected final static String TLS_ENABLED_CIPHER_SUITES = "tlsEnabledCipherSuites";
+
+    /**
+     * This list will be passed to {@link SSLEngine#setEnabledProtocols(java.lang.String[]) }.
+     * Please refer to official JDK JavaDocs
+    */
+    protected final static String TLS_ENABLED_PROTOCOLS = "tlsEnabledProtocols";
 
     //Netty configuration
     protected final static String NETTY_MAX_FRAME_SIZE = "nettyMaxFrameSizeBytes";
@@ -95,9 +114,13 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      * @param confURL
      *          Configuration URL
      */
+    @SuppressWarnings("unchecked")
     public void loadConf(URL confURL) throws ConfigurationException {
-        Configuration loadedConf = new PropertiesConfiguration(confURL);
-        addConfiguration(loadedConf);
+        PropertiesConfiguration loadedConf = new PropertiesConfiguration(confURL);
+        for (Iterator<String> iter = loadedConf.getKeys(); iter.hasNext(); ) {
+            String key = iter.next();
+            setProperty(key, loadedConf.getProperty(key));
+        }
     }
 
     /**
@@ -106,18 +129,12 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      * @param baseConf
      *          Other Configuration
      */
-    public void loadConf(AbstractConfiguration baseConf) {
-        addConfiguration(baseConf); 
-    }
-
-    /**
-     * Load configuration from other configuration object
-     *
-     * @param otherConf
-     *          Other configuration object
-     */
-    public void loadConf(Configuration otherConf) {
-        addConfiguration(otherConf);
+    @SuppressWarnings("unchecked")
+    public void loadConf(CompositeConfiguration baseConf) {
+        for (Iterator<String> iter = baseConf.getKeys(); iter.hasNext(); ) {
+            String key = iter.next();
+            setProperty(key, baseConf.getProperty(key));
+        }
     }
 
     /**
@@ -323,8 +340,8 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     }
 
     /**
-     * Get the client authentication provider factory class name. If this returns null, no authentication will take
-     * place.
+     * Get the client authentication provider factory class name.
+     * If this returns null, no authentication will take place.
      *
      * @return the client authentication provider factory class name or null.
      */
@@ -353,5 +370,119 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     public AbstractConfiguration setNettyMaxFrameSizeBytes(int maxSize) {
         setProperty(NETTY_MAX_FRAME_SIZE, String.valueOf(maxSize));
         return this;
+    }
+
+    /**
+     * Get the security provider factory class name. If this returns null, no security will be enforced on the channel.
+     *
+     * @return the security provider factory class name or null.
+     */
+    public String getTLSProviderFactoryClass() {
+        return getString(TLS_PROVIDER_FACTORY_CLASS, null);
+    }
+
+    /**
+     * Set the client security provider factory class name. If this is not set, no security will be used on the channel.
+     *
+     * @param factoryClass
+     *            the client security provider factory class name
+     * @return client configuration
+     */
+    public AbstractConfiguration setTLSProviderFactoryClass(String factoryClass) {
+        setProperty(TLS_PROVIDER_FACTORY_CLASS, factoryClass);
+        return this;
+    }
+
+    /**
+     * Get TLS Provider (JDK or OpenSSL)
+     * 
+     * @return the TLS provider to use in creating TLS Context
+     */
+    public String getTLSProvider() {
+        return getString(TLS_PROVIDER, "OpenSSL");
+    }
+
+    /**
+     * Set TLS Provider (JDK or OpenSSL)
+     * 
+     * @param provider
+     *            TLS Provider type
+     * @return Client Configuration
+     */
+    public AbstractConfiguration setTLSProvider(String provider) {
+        setProperty(TLS_PROVIDER, provider);
+        return this;
+    }
+
+    /**
+     * Whether the client will send an TLS certificate on TLS-handshake
+     * 
+     * @see #setTLSAuthentication(boolean)
+     * @return whether TLS is enabled on the bookie or not.
+     */
+    public boolean getTLSClientAuthentication() {
+        return getBoolean(TLS_CLIENT_AUTHENTICATION, false);
+    }
+
+    /**
+     * Specify whether the client will send an TLS certificate on TLS-handshake
+     * 
+     * @param enabled
+     *            Whether to send a certificate or not
+     * @return client configuration
+     */
+    public AbstractConfiguration setTLSClientAuthentication(boolean enabled) {
+        setProperty(TLS_CLIENT_AUTHENTICATION, enabled);
+        return this;
+    }
+
+    /**
+     * Set the list of enabled TLS cipher suites. Leave null not to override default JDK list. This list will be passed
+     * to {@link SSLEngine#setEnabledCipherSuites(java.lang.String[]) }. Please refer to official JDK JavaDocs
+     *
+     * @param list
+     *            comma separated list of enabled TLS cipher suites
+     * @return current configuration
+     */
+    public AbstractConfiguration setTLSEnabledCipherSuites(
+            String list) {
+        setProperty(TLS_ENABLED_CIPHER_SUITES, list);
+        return this;
+    }
+
+    /**
+     * Get the list of enabled TLS cipher suites
+     *
+     * @return this list of enabled TLS cipher suites
+     *
+     * @see #setTLSEnabledCipherSuites(java.lang.String)
+     */
+    public String getTLSEnabledCipherSuites() {
+        return getString(TLS_ENABLED_CIPHER_SUITES, null);
+    }
+
+    /**
+     * Set the list of enabled TLS protocols. Leave null not to override default JDK list. This list will be passed to
+     * {@link SSLEngine#setEnabledProtocols(java.lang.String[]) }. Please refer to official JDK JavaDocs
+     *
+     * @param list
+     *            comma separated list of enabled TLS cipher suites
+     * @return current configuration
+     */
+    public AbstractConfiguration setTLSEnabledProtocols(
+            String list) {
+        setProperty(TLS_ENABLED_PROTOCOLS, list);
+        return this;
+    }
+
+    /**
+     * Get the list of enabled TLS protocols
+     *
+     * @return the list of enabled TLS protocols.
+     *
+     * @see #setTLSEnabledProtocols(java.lang.String)
+     */
+    public String getTLSEnabledProtocols() {
+        return getString(TLS_ENABLED_PROTOCOLS, null);
     }
 }

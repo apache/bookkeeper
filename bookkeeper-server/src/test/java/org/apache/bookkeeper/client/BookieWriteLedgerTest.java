@@ -20,10 +20,11 @@
  */
 package org.apache.bookkeeper.client;
 
-import io.netty.buffer.Unpooled;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import io.netty.buffer.Unpooled;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -34,12 +35,11 @@ import java.util.UUID;
 import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.test.MultiLedgerManagerMultiDigestTestCase;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -49,7 +49,7 @@ import org.slf4j.LoggerFactory;
  * Testing ledger write entry cases
  */
 public class BookieWriteLedgerTest extends
-        MultiLedgerManagerMultiDigestTestCase implements AddCallback {
+    BookKeeperClusterTestCase implements AddCallback {
 
     private final static Logger LOG = LoggerFactory
             .getLogger(BookieWriteLedgerTest.class);
@@ -65,7 +65,7 @@ public class BookieWriteLedgerTest extends
     ArrayList<byte[]> entries1; // generated entries
     ArrayList<byte[]> entries2; // generated entries
 
-    DigestType digestType;
+    private final DigestType digestType;
 
     private static class SyncObj {
         volatile int counter;
@@ -86,10 +86,10 @@ public class BookieWriteLedgerTest extends
         entries2 = new ArrayList<byte[]>(); // initialize the entries list
     }
 
-    public BookieWriteLedgerTest(String ledgerManagerFactory,
-            DigestType digestType) {
-        super(5);
-        this.digestType = digestType;
+    public BookieWriteLedgerTest() {
+        super(5, 180);
+        this.digestType = DigestType.CRC32;
+        String ledgerManagerFactory = "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory";
         // set ledger manager
         baseConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
         baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
@@ -99,7 +99,7 @@ public class BookieWriteLedgerTest extends
      * Verify write when few bookie failures in last ensemble and forcing
      * ensemble reformation
      */
-    @Test(timeout=60000)
+    @Test
     public void testWithMultipleBookieFailuresInLastEnsemble() throws Exception {
         // Create a ledger
         lh = bkc.createLedger(5, 4, digestType, ledgerPassword);
@@ -146,7 +146,7 @@ public class BookieWriteLedgerTest extends
      *
      * @throws Exception
      */
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCreateAdv() throws Exception {
         // Create a ledger
         lh = bkc.createLedgerAdv(5, 3, 2, digestType, ledgerPassword);
@@ -186,7 +186,7 @@ public class BookieWriteLedgerTest extends
      *
      * @throws Exception
      */
-    @Test(timeout = 60000)
+    @Test
     public void testNoAddEntryLedgerCreateAdv() throws Exception {
 
         ByteBuffer entry = ByteBuffer.allocate(4);
@@ -214,7 +214,7 @@ public class BookieWriteLedgerTest extends
             CompletableFuture<Object> done = new CompletableFuture<>();
             lh.asyncAddEntry(Unpooled.wrappedBuffer(entry.array()),
                 (int rc, LedgerHandle lh1, long entryId, Object ctx) -> {
-                SynchCallbackUtils.finish(rc, null, done);
+                SyncCallbackUtils.finish(rc, null, done);
             }, null);
             done.get();
         } catch (ExecutionException ee) {
@@ -227,7 +227,7 @@ public class BookieWriteLedgerTest extends
             CompletableFuture<Object> done = new CompletableFuture<>();
             lh.asyncAddEntry(entry.array(),
                 (int rc, LedgerHandle lh1, long entryId, Object ctx) -> {
-                SynchCallbackUtils.finish(rc, null, done);
+                SyncCallbackUtils.finish(rc, null, done);
             }, null);
             done.get();
         } catch (ExecutionException ee) {
@@ -240,7 +240,7 @@ public class BookieWriteLedgerTest extends
             CompletableFuture<Object> done = new CompletableFuture<>();
             lh.asyncAddEntry(entry.array(),0, 4,
                 (int rc, LedgerHandle lh1, long entryId, Object ctx) -> {
-                SynchCallbackUtils.finish(rc, null, done);
+                SyncCallbackUtils.finish(rc, null, done);
             }, null);
             done.get();
         } catch (ExecutionException ee) {
@@ -258,7 +258,7 @@ public class BookieWriteLedgerTest extends
      *
      * @throws Exception
      */
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCreateAdvWithLedgerId() throws Exception {
         // Create a ledger
         long ledgerId = 0xABCDEF;
@@ -301,7 +301,7 @@ public class BookieWriteLedgerTest extends
      *
      * @throws Exception
      */
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCreateWithCustomMetadata() throws Exception {
         // Create a ledger
         long ledgerId;
@@ -347,7 +347,7 @@ public class BookieWriteLedgerTest extends
      *
      * @throws Exception
      */
-    @Test(timeout = 180000)
+    @Test
     public void testLedgerCreateAdvWithLedgerIdInLoop() throws Exception {
         long ledgerId;
         int ledgerCount = 40;
@@ -393,7 +393,7 @@ public class BookieWriteLedgerTest extends
     /**
      * Verify asynchronous writing when few bookie failures in last ensemble.
      */
-    @Test(timeout=60000)
+    @Test
     public void testAsyncWritesWithMultipleFailuresInLastEnsemble()
             throws Exception {
         // Create ledgers
@@ -466,7 +466,7 @@ public class BookieWriteLedgerTest extends
     /**
      * Verify Advanced asynchronous writing with entryIds in reverse order
      */
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCreateAdvWithAsyncWritesWithBookieFailures() throws Exception {
         // Create ledgers
         lh = bkc.createLedgerAdv(5, 3, 2, digestType, ledgerPassword);
@@ -520,7 +520,7 @@ public class BookieWriteLedgerTest extends
     /**
      * Verify Advanced asynchronous writing with entryIds in pseudo random order with bookie failures between writes
      */
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCreateAdvWithRandomAsyncWritesWithBookieFailuresBetweenWrites() throws Exception {
         // Create ledgers
         lh = bkc.createLedgerAdv(5, 3, 2, digestType, ledgerPassword);
@@ -588,7 +588,7 @@ public class BookieWriteLedgerTest extends
     /**
      * Verify Advanced asynchronous writing with entryIds in pseudo random order
      */
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCreateAdvWithRandomAsyncWritesWithBookieFailures() throws Exception {
         // Create ledgers
         lh = bkc.createLedgerAdv(5, 3, 2, digestType, ledgerPassword);
@@ -657,7 +657,7 @@ public class BookieWriteLedgerTest extends
      *
      * @throws Exception
      */
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCreateAdvWithSkipEntries() throws Exception {
         long ledgerId;
         SyncObj syncObj1 = new SyncObj();
@@ -703,7 +703,7 @@ public class BookieWriteLedgerTest extends
      *
      * @throws Exception
      */
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCreateAdvSyncAddDuplicateEntryIds() throws Exception {
         // Create a ledger
         lh = bkc.createLedgerAdv(5, 3, 2, digestType, ledgerPassword);
@@ -740,7 +740,7 @@ public class BookieWriteLedgerTest extends
      *
      * @throws Exception
      */
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCreateAdvSyncAsyncAddDuplicateEntryIds() throws Exception {
         long ledgerId;
         SyncObj syncObj1 = new SyncObj();

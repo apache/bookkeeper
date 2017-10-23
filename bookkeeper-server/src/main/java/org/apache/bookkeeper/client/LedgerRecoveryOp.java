@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
+import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.DigestManager.RecoveryData;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener;
@@ -63,7 +64,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
         RecoveryReadOp(LedgerHandle lh, ScheduledExecutorService scheduler,
                        long startEntryId, long endEntryId,
                        ReadEntryListener cb, Object ctx) {
-            super(lh, scheduler, startEntryId, endEntryId, cb, ctx);
+            super(lh, scheduler, startEntryId, endEntryId, cb, ctx, true);
         }
 
         @Override
@@ -153,7 +154,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
         if (!callbackDone.get()) {
             startEntryToRead = endEntryToRead + 1;
             endEntryToRead = endEntryToRead + readBatchSize;
-            new RecoveryReadOp(lh, lh.bk.scheduler, startEntryToRead, endEntryToRead, this, null)
+            new RecoveryReadOp(lh, lh.bk.getScheduler(), startEntryToRead, endEntryToRead, this, null)
                     .parallelRead(parallelRead).initiate();
         }
     }

@@ -130,7 +130,7 @@ public class TestZooKeeperClient extends TestCase {
 
     }
 
-    @Test(timeout=12000)
+    @Test
     public void testReconnectAfterExipred() throws Exception {
         final CountDownLatch expireLatch = new CountDownLatch(1);
         Watcher testWatcher = new Watcher() {
@@ -190,7 +190,7 @@ public class TestZooKeeperClient extends TestCase {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testRetrySyncOperations() throws Exception {
         final int timeout = 2000;
         ZooKeeperClient client = ZooKeeperClient.createConnectedZooKeeperClient(
@@ -239,7 +239,7 @@ public class TestZooKeeperClient extends TestCase {
         logger.info("Delete children from znode " + path);
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testRetryOnCreatingEphemeralZnode() throws Exception {
         final int timeout = 2000;
         ZooKeeperClient client = ZooKeeperClient.createConnectedZooKeeperClient(
@@ -262,7 +262,7 @@ public class TestZooKeeperClient extends TestCase {
         logger.info("Created znode w/ new session : " + path);
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testRetryAsyncOperations() throws Exception {
         final int timeout = 2000;
         ZooKeeperClient client = ZooKeeperClient.createConnectedZooKeeperClient(

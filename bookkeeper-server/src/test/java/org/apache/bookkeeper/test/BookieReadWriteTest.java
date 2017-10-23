@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.test;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,6 +18,7 @@ package org.apache.bookkeeper.test;
  * under the License.
  *
  */
+package org.apache.bookkeeper.test;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,7 +30,6 @@ import java.util.Random;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
@@ -57,8 +55,7 @@ import static org.junit.Assert.*;
  * and three BookKeepers.
  *
  */
-
-public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
+public class BookieReadWriteTest extends BookKeeperClusterTestCase
     implements AddCallback, ReadCallback, ReadLastConfirmedCallback {
 
     // Depending on the taste, select the amount of logging
@@ -77,11 +74,12 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
     ArrayList<byte[]> entries; // generated entries
     ArrayList<Integer> entriesSize;
 
-    DigestType digestType;
+    private final DigestType digestType;
 
-    public BookieReadWriteTest(String ledgerManagerFactory, DigestType digestType) {
+    public BookieReadWriteTest() {
         super(3);
-        this.digestType = digestType;
+        this.digestType = DigestType.CRC32;
+        String ledgerManagerFactory = "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory";
         // set ledger manager
         baseConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
         baseClientConf.setLedgerManagerFactoryClassName(ledgerManagerFactory);
@@ -117,7 +115,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testOpenException() throws IOException, InterruptedException {
         try {
             lh = bkc.openLedger(0, digestType, ledgerPassword);
@@ -132,7 +130,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
      *
      * @throws {@link IOException}
      */
-    @Test(timeout=60000)
+    @Test
     public void testStreamingClients() throws IOException, BKException, InterruptedException {
         lh = bkc.createLedger(digestType, ledgerPassword);
         // write a string so that we cna
@@ -260,7 +258,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testReadWriteAsyncSingleClient200() throws IOException {
         testReadWriteAsyncSingleClient(200);
     }
@@ -270,7 +268,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
      * First try varying the offset. Then the length with a fixed non-zero
      * offset.
      */
-    @Test(timeout=60000)
+    @Test
     public void testReadWriteRangeAsyncSingleClient() throws IOException {
         SyncObj sync = new SyncObj();
         try {
@@ -416,7 +414,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testSyncReadAsyncWriteStringsSingleClient() throws IOException {
         SyncObj sync = new SyncObj();
         LOG.info("TEST READ WRITE STRINGS MIXED SINGLE CLIENT");
@@ -491,7 +489,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
 
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testReadWriteSyncSingleClient() throws IOException {
         try {
             // Create a ledger
@@ -534,7 +532,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testReadWriteZero() throws IOException {
         try {
             // Create a ledger
@@ -590,7 +588,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testMultiLedger() throws IOException {
         try {
             // Create a ledger
@@ -663,7 +661,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testReadWriteAsyncLength() throws IOException {
         SyncObj sync = new SyncObj();
         try {
@@ -748,7 +746,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
         return lh.getLastAddConfirmed();
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testReadFromOpenLedger() throws Exception {
         try {
             // Create a ledger
@@ -828,7 +826,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testReadFromOpenLedgerOpenOnce() throws Exception {
         try {
             // Create a ledger
@@ -884,7 +882,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testReadFromOpenLedgerZeroAndOne() throws Exception {
         try {
             // Create a ledger
@@ -952,7 +950,7 @@ public class BookieReadWriteTest extends MultiLedgerManagerMultiDigestTestCase
     }
 
 
-    @Test(timeout=60000)
+    @Test
     public void testLastConfirmedAdd() throws Exception {
         try {
             // Create a ledger

@@ -21,10 +21,6 @@
 
 package org.apache.bookkeeper.bookie;
 
-import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.test.PortManager;
-import org.apache.bookkeeper.util.IOUtils;
-
 import static org.apache.bookkeeper.bookie.UpgradeTest.newV1JournalDirectory;
 import static org.apache.bookkeeper.bookie.UpgradeTest.newV1LedgerDirectory;
 import static org.apache.bookkeeper.bookie.UpgradeTest.newV2JournalDirectory;
@@ -32,25 +28,25 @@ import static org.apache.bookkeeper.bookie.UpgradeTest.newV2LedgerDirectory;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.google.common.collect.Sets;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import org.junit.Assert;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
-import org.apache.bookkeeper.meta.ZkVersion;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.test.PortManager;
+import org.apache.bookkeeper.util.IOUtils;
+import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.io.FileUtils;
+import org.junit.Assert;
 import org.junit.Test;
-
-
-import com.google.common.collect.Sets;
 
 public class CookieTest extends BookKeeperClusterTestCase {
     final int bookiePort = PortManager.nextFreePort();
@@ -75,7 +71,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
     /**
      * Test starting bookie with clean state.
      */
-    @Test(timeout=60000)
+    @Test
     public void testCleanStart() throws Exception {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
             .setZkServers(zkUtil.getZooKeeperConnectString())
@@ -94,7 +90,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
      * is different to a local cookie, the bookie
      * will fail to start
      */
-    @Test(timeout=60000)
+    @Test
     public void testBadJournalCookie() throws Exception {
         ServerConfiguration conf1 = TestBKConfiguration.newServerConfiguration()
             .setJournalDirName(newDirectory())
@@ -129,7 +125,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
      * the configuration, the bookie will fail to
      * start
      */
-    @Test(timeout=60000)
+    @Test
     public void testDirectoryMissing() throws Exception {
         String[] ledgerDirs = new String[] {
             newDirectory(), newDirectory(), newDirectory() };
@@ -171,7 +167,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
      * preexisting bookie, the bookie will fail
      * to start
      */
-    @Test(timeout=60000)
+    @Test
     public void testDirectoryAdded() throws Exception {
         String ledgerDir0 = newDirectory();
         String journalDir = newDirectory();
@@ -203,7 +199,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
      * Test that if a directory is added to an existing bookie, and
      * allowStorageExpansion option is true, the bookie should come online.
      */
-    @Test(timeout=60000)
+    @Test
     public void testStorageExpansionOption() throws Exception {
         String ledgerDir0 = newDirectory();
         String indexDir0 = newDirectory();
@@ -286,7 +282,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
      * Test that adding of a non-empty directory is not allowed
      * even when allowStorageExpansion option is true
      */
-    @Test(timeout=60000)
+    @Test
     public void testNonEmptyDirAddWithStorageExpansionOption() throws Exception {
         String ledgerDir0 = newDirectory();
         String indexDir0 = newDirectory();
@@ -341,7 +337,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
      * Test that if a directory's contents
      * are emptied, the bookie will fail to start
      */
-    @Test(timeout=60000)
+    @Test
     public void testDirectoryCleared() throws Exception {
         String ledgerDir0 = newDirectory();
         String journalDir = newDirectory();
@@ -368,7 +364,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
      * Test that if a bookie's port is changed
      * the bookie will fail to start
      */
-    @Test(timeout=60000)
+    @Test
     public void testBookiePortChanged() throws Exception {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
             .setZkServers(zkUtil.getZooKeeperConnectString())
@@ -394,7 +390,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
      * existed in the system, then the bookie will fail
      * to start
      */
-    @Test(timeout=60000)
+    @Test
     public void testNewBookieStartingWithAnotherBookiesPort() throws Exception {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
             .setZkServers(zkUtil.getZooKeeperConnectString())
@@ -421,7 +417,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
     /*
      * Test Cookie verification with format.
      */
-    @Test(timeout=60000)
+    @Test
     public void testVerifyCookieWithFormat() throws Exception {
         ClientConfiguration adminConf = new ClientConfiguration()
             .setZkServers(zkUtil.getZooKeeperConnectString());
@@ -459,7 +455,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
      * Test that if a bookie is started with directories with
      * version 2 data, that it will fail to start (it needs upgrade)
      */
-    @Test(timeout=60000)
+    @Test
     public void testV2data() throws Exception {
         File journalDir = newV2JournalDirectory();
         tmpDirs.add(journalDir);
@@ -484,7 +480,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
      * Test that if a bookie is started with directories with
      * version 1 data, that it will fail to start (it needs upgrade)
      */
-    @Test(timeout=60000)
+    @Test
     public void testV1data() throws Exception {
         File journalDir = newV1JournalDirectory();
         tmpDirs.add(journalDir);
@@ -509,7 +505,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
      * Test restart bookie with useHostNameAsBookieID=true, which had cookie generated
      * with ipaddress.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testRestartWithHostNameAsBookieID() throws Exception {
         String[] ledgerDirs = new String[] { newDirectory(), newDirectory(),
                 newDirectory() };
@@ -533,7 +529,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
      * Test restart bookie with useHostNameAsBookieID=false, which had cookie generated
      * with hostname.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testRestartWithIpAddressAsBookieID() throws Exception {
         String[] ledgerDirs = new String[] { newDirectory(), newDirectory(),
                 newDirectory() };
@@ -558,7 +554,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
      * Test old version bookie starts with the cookies generated by new version
      * (with useHostNameAsBookieID=true)
      */
-    @Test(timeout = 60000)
+    @Test
     public void testV2dataWithHostNameAsBookieID() throws Exception {
         File journalDir = newV2JournalDirectory();
         tmpDirs.add(journalDir);
@@ -584,7 +580,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
     /**
      * Test write cookie multiple times.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testWriteToZooKeeper() throws Exception {
         String[] ledgerDirs = new String[] { newDirectory(), newDirectory(), newDirectory() };
         String journalDir = newDirectory();
@@ -596,22 +592,25 @@ public class CookieTest extends BookKeeperClusterTestCase {
         b.shutdown();
         Versioned<Cookie> zkCookie = Cookie.readFromZooKeeper(zkc, conf);
         Version version1 = zkCookie.getVersion();
-        Assert.assertTrue("Invalid type expected ZkVersion type", version1 instanceof ZkVersion);
-        ZkVersion zkVersion1 = (ZkVersion) version1;
+        Assert.assertTrue("Invalid type expected ZkVersion type",
+            version1 instanceof LongVersion);
+        LongVersion zkVersion1 = (LongVersion) version1;
         Cookie cookie = zkCookie.getValue();
         cookie.writeToZooKeeper(zkc, conf, version1);
 
         zkCookie = Cookie.readFromZooKeeper(zkc, conf);
         Version version2 = zkCookie.getVersion();
-        Assert.assertTrue("Invalid type expected ZkVersion type", version2 instanceof ZkVersion);
-        ZkVersion zkVersion2 = (ZkVersion) version2;
-        Assert.assertEquals("Version mismatches!", zkVersion1.getZnodeVersion() + 1, zkVersion2.getZnodeVersion());
+        Assert.assertTrue("Invalid type expected ZkVersion type",
+            version2 instanceof LongVersion);
+        LongVersion zkVersion2 = (LongVersion) version2;
+        Assert.assertEquals("Version mismatches!",
+            zkVersion1.getLongVersion() + 1, zkVersion2.getLongVersion());
     }
 
     /**
      * Test delete cookie.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testDeleteFromZooKeeper() throws Exception {
         String[] ledgerDirs = new String[] { newDirectory(), newDirectory(), newDirectory() };
         String journalDir = newDirectory();

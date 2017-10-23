@@ -135,7 +135,7 @@ public class BookieClientTest {
         }
     };
 
-    @Test(timeout=60000)
+    @Test
     public void testWriteGaps() throws Exception {
         final Object notifyObject = new Object();
         byte[] passwd = new byte[20];
@@ -239,7 +239,7 @@ public class BookieClientTest {
         return bb;
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testNoLedger() throws Exception {
         ResultStruct arc = new ResultStruct();
         BookieSocketAddress addr = new BookieSocketAddress("127.0.0.1", port);
@@ -251,7 +251,7 @@ public class BookieClientTest {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testGetBookieInfo() throws IOException, InterruptedException {
         BookieSocketAddress addr = new BookieSocketAddress("127.0.0.1", port);
         BookieClient bc = new BookieClient(new ClientConfiguration(), new NioEventLoopGroup(), executor);

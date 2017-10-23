@@ -51,6 +51,7 @@ public class TestReadLastConfirmedAndEntry extends BookKeeperClusterTestCase {
     public TestReadLastConfirmedAndEntry() {
         super(3);
         this.digestType = BookKeeper.DigestType.CRC32;
+        this.baseConf.setAllowEphemeralPorts(false);
     }
 
     static class FakeBookie extends Bookie {
@@ -83,7 +84,7 @@ public class TestReadLastConfirmedAndEntry extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testAdvancedLacWithEmptyResponse() throws Exception {
         byte[] passwd = "advanced-lac-with-empty-response".getBytes(UTF_8);
 
@@ -199,7 +200,7 @@ public class TestReadLastConfirmedAndEntry extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testRaceOnLastAddConfirmed() throws Exception {
         byte[] passwd = "race-on-last-add-confirmed".getBytes(UTF_8);
 

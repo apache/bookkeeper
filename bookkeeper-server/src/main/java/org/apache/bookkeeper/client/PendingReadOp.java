@@ -74,6 +74,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
     OpStatsLogger readOpLogger;
 
     final int maxMissedReadsAllowed;
+    final boolean isRecoveryRead;
     boolean parallelRead = false;
     final AtomicBoolean complete = new AtomicBoolean(false);
 
@@ -93,8 +94,8 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
 
             this.ensemble = ensemble;
 
-            if (lh.bk.reorderReadSequence) {
-                this.writeSet = lh.bk.placementPolicy.reorderReadSequence(ensemble,
+            if (lh.bk.isReorderReadSequence()) {
+                this.writeSet = lh.bk.getPlacementPolicy().reorderReadSequence(ensemble,
                     lh.distributionSchedule.getWriteSet(entryId), lh.bookieFailureHistory.asMap());
             } else {
                 this.writeSet = lh.distributionSchedule.getWriteSet(entryId);
@@ -241,7 +242,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
          */
         @Override
         public ListenableFuture<Boolean> issueSpeculativeRequest() {
-            return lh.bk.mainWorkerPool.submitOrdered(lh.getId(), new Callable<Boolean>() {
+            return lh.bk.getMainWorkerPool().submitOrdered(lh.getId(), new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
                     if (!isComplete() && null != maybeSendSpeculativeRead(heardFromHostsBitSet)) {
@@ -419,8 +420,29 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
 
     }
 
-    PendingReadOp(LedgerHandle lh, ScheduledExecutorService scheduler,
-                  long startEntryId, long endEntryId, ReadCallback cb, Object ctx) {
+    PendingReadOp(LedgerHandle lh,
+                  ScheduledExecutorService scheduler,
+                  long startEntryId,
+                  long endEntryId,
+                  ReadCallback cb,
+                  Object ctx) {
+        this(
+            lh,
+            scheduler,
+            startEntryId,
+            endEntryId,
+            cb,
+            ctx,
+            false);
+    }
+
+    PendingReadOp(LedgerHandle lh,
+                  ScheduledExecutorService scheduler,
+                  long startEntryId,
+                  long endEntryId,
+                  ReadCallback cb,
+                  Object ctx,
+                  boolean isRecoveryRead) {
         seq = new ArrayBlockingQueue<LedgerEntryRequest>((int) ((endEntryId + 1) - startEntryId));
         this.cb = cb;
         this.ctx = ctx;
@@ -428,6 +450,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         this.startEntryId = startEntryId;
         this.endEntryId = endEntryId;
         this.scheduler = scheduler;
+        this.isRecoveryRead = isRecoveryRead;
         numPendingEntries = endEntryId - startEntryId + 1;
         maxMissedReadsAllowed = getLedgerMetadata().getWriteQuorumSize()
                 - getLedgerMetadata().getAckQuorumSize();
@@ -457,7 +480,6 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         long nextEnsembleChange = startEntryId, i = startEntryId;
         this.requestTimeNanos = MathUtils.nowInNano();
         ArrayList<BookieSocketAddress> ensemble = null;
-
         do {
             if (i == nextEnsembleChange) {
                 ensemble = getLedgerMetadata().getEnsemble(i);
@@ -509,7 +531,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             lh.throttler.acquire();
         }
 
-        lh.bk.bookieClient.readEntry(to, lh.ledgerId, entry.entryId,
+        lh.bk.getBookieClient().readEntry(to, lh.ledgerId, entry.entryId,
                                      this, new ReadContext(bookieIndex, to, entry));
     }
 
@@ -527,7 +549,10 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         heardFromHostsBitSet.set(rctx.bookieIndex, true);
 
         if (entry.complete(rctx.bookieIndex, rctx.to, buffer)) {
-            lh.updateLastConfirmed(rctx.getLastAddConfirmed(), 0L);
+            if (!isRecoveryRead) {
+                // do not advance LastAddConfirmed for recovery reads
+                lh.updateLastConfirmed(rctx.getLastAddConfirmed(), 0L);
+            }
             submitCallback(BKException.Code.OK);
         }
 

@@ -66,10 +66,9 @@ public class AuthAutoRecoveryTest extends BookKeeperClusterTestCase {
             final AuthCallbacks.GenericCallback<Void> completeCb) {
             return new ClientAuthProvider() {
                 public void init(AuthCallbacks.GenericCallback<AuthToken> cb) {
-
                     completeCb.operationComplete(BKException.Code.OK, null);
                 }
-
+                
                 public void process(AuthToken m, AuthCallbacks.GenericCallback<AuthToken> cb) {
                 }
             };
@@ -89,7 +88,7 @@ public class AuthAutoRecoveryTest extends BookKeeperClusterTestCase {
     /*
      * test the client role of the auditor
      */
-    @Test(timeout = 60000)
+    @Test
     public void testAuthClientRole() throws Exception {
         ServerConfiguration config = bsConfs.get(0);
         assertEquals(AuditorClientAuthInterceptorFactory.class.getName(), config.getClientAuthProviderFactoryClass());

@@ -30,8 +30,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.bookkeeper.common.annotation.InterfaceAudience;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.bookkeeper.client.WeightedRandomSelection.WeightedObject;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -403,7 +402,7 @@ public class BookieInfoReader {
 
         Collection<BookieSocketAddress> bookies;
         bookies = bk.bookieWatcher.getBookies();
-        bookies.addAll(bk.bookieWatcher.getReadOnlyBookies());
+        bookies.addAll(bk.bookieWatcher.getReadOnlyBookiesAsync());
 
         totalSent.set(bookies.size());
         for (BookieSocketAddress b : bookies) {

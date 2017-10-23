@@ -82,7 +82,7 @@ public class TestSequenceRead extends BookKeeperClusterTestCase {
         return lh;
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testSequenceReadOnDuplicatedBookies() throws Exception {
         final LedgerHandle lh = createLedgerWithDuplicatedBookies();
 

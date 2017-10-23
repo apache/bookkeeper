@@ -21,17 +21,18 @@ import java.io.File;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.annotations.Beta;
+
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.SortedLedgerStorage;
+import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.stats.NullStatsProvider;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang.StringUtils;
-
-import com.google.common.annotations.Beta;
 
 /**
  * Configuration manages server-side settings
@@ -64,6 +65,8 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String OPEN_FILE_LIMIT = "openFileLimit";
     protected final static String PAGE_LIMIT = "pageLimit";
     protected final static String PAGE_SIZE = "pageSize";
+    protected final static String FILEINFO_CACHE_INITIAL_CAPACITY = "fileInfoCacheInitialCapacity";
+    protected final static String FILEINFO_MAX_IDLE_TIME = "fileInfoMaxIdleTime";
     // Journal Parameters
     protected final static String MAX_JOURNAL_SIZE = "journalMaxSizeMB";
     protected final static String MAX_BACKUP_JOURNALS = "journalMaxBackups";
@@ -82,6 +85,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String BOOKIE_PORT = "bookiePort";
     protected final static String LISTENING_INTERFACE = "listeningInterface";
     protected final static String ALLOW_LOOPBACK = "allowLoopback";
+    protected final static String ADVERTISED_ADDRESS = "advertisedAddress";
     protected final static String ALLOW_EPHEMERAL_PORTS = "allowEphemeralPorts";
 
     protected final static String JOURNAL_DIR = "journalDirectory";
@@ -151,10 +155,25 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     // Bookie auth provider factory class name
     protected final static String BOOKIE_AUTH_PROVIDER_FACTORY_CLASS = "bookieAuthProviderFactoryClass";
-    
+
     protected final static String MIN_USABLESIZE_FOR_INDEXFILE_CREATION = "minUsableSizeForIndexFileCreation";
 
     protected final static String ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION = "allowMultipleDirsUnderSameDiskPartition";
+
+    // Http Server parameters
+    protected final static String HTTP_SERVER_ENABLED = "httpServerEnabled";
+    protected final static String HTTP_SERVER_PORT = "httpServerPort";
+
+    // TLS parameters
+    protected final static String TLS_KEYSTORE_TYPE = "tlsKeyStoreType";
+    protected final static String TLS_KEYSTORE = "tlsKeyStore";
+    protected final static String TLS_KEYSTORE_PASSWORD_PATH = "tlsKeyStorePasswordPath";
+    protected final static String TLS_TRUSTSTORE_TYPE = "tlsTrustStoreType";
+    protected final static String TLS_TRUSTSTORE = "tlsTrustStore";
+    protected final static String TLS_TRUSTSTORE_PASSWORD_PATH = "tlsTrustStorePasswordPath";
+
+    // Lifecycle Components
+    protected final static String EXTRA_SERVER_COMPONENTS = "extraServerComponents";
 
     /**
      * Construct a default configuration object
@@ -391,6 +410,56 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Get the minimum total size for the internal file info cache tables.
+     * Providing a large enough estimate at construction time avoids the need for
+     * expensive resizing operations later, but setting this value unnecessarily high
+     * wastes memory.
+     *
+     * @return minimum size of initial file info cache.
+     */
+    public int getFileInfoCacheInitialCapacity() {
+        return getInt(FILEINFO_CACHE_INITIAL_CAPACITY, 64);
+    }
+
+    /**
+     * Set the minimum total size for the internal file info cache tables for initialization.
+     *
+     * @param initialCapacity
+     *          Initial capacity of file info cache table.
+     * @return server configuration instance.
+     */
+    public ServerConfiguration setFileInfoCacheInitialCapacity(int initialCapacity) {
+        setProperty(FILEINFO_CACHE_INITIAL_CAPACITY, initialCapacity);
+        return this;
+    }
+
+    /**
+     * Get the max idle time allowed for a open file info existed in file info cache.
+     * If the file info is idle for a long time, exceed the given time period. The file
+     * info will be evicted and closed. If the value is zero, the file info is evicted
+     * only when opened files reached openFileLimit.
+     *
+     * @see #getOpenFileLimit
+     * @return max idle time of a file info in the file info cache.
+     */
+    public long getFileInfoMaxIdleTime() {
+        return this.getLong(FILEINFO_MAX_IDLE_TIME, 0L);
+    }
+
+    /**
+     * Set the max idle time allowed for a open file info existed in file info cache.
+     *
+     * @param idleTime
+     *          Idle time, in seconds.
+     * @see #getFileInfoMaxIdleTime
+     * @return server configuration object.
+     */
+    public ServerConfiguration setFileInfoMaxIdleTime(long idleTime) {
+        setProperty(FILEINFO_MAX_IDLE_TIME, idleTime);
+        return this;
+    }
+
+    /**
      * Max journal file size
      *
      * @return max journal file size
@@ -569,6 +638,43 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public ServerConfiguration setAllowLoopback(boolean allow) {
         this.setProperty(ALLOW_LOOPBACK, allow);
+        return this;
+    }
+
+    /**
+     * Get the configured advertised address for the bookie.
+     *
+     * If present, this setting will take precedence over the
+     * {@link #setListeningInterface(String)} and
+     * {@link #setUseHostNameAsBookieID(boolean)}.
+     *
+     * @see #setAdvertisedAddress(String)
+     * @return the configure address to be advertised
+     */
+    public String getAdvertisedAddress() {
+        return this.getString(ADVERTISED_ADDRESS, null);
+    }
+
+    /**
+     * Configure the bookie to advertise a specific address.
+     *
+     * By default, a bookie will advertise either its own IP or hostname,
+     * depending on the {@link getUseHostNameAsBookieID()} setting.
+     *
+     * When the advertised is set to a non-empty string, the bookie will
+     * register and advertise using this address.
+     *
+     * If present, this setting will take precedence over the
+     * {@link #setListeningInterface(String)} and
+     * {@link #setUseHostNameAsBookieID(boolean)}.
+     *
+     * @see #getAdvertisedAddress()
+     * @param advertisedAddress
+     *            whether to allow loopback interfaces
+     * @return server configuration
+     */
+    public ServerConfiguration setAdvertisedAddress(String advertisedAddress) {
+        this.setProperty(ADVERTISED_ADDRESS, advertisedAddress);
         return this;
     }
 
@@ -820,7 +926,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * sent or the linger timeout has been reached. Otherwise, the call returns immediately and the closing is done in
      * the background.
      *
-     * @param noDelay
+     * @param linger
      *            NoDelay setting
      * @return server configuration
      */
@@ -1339,7 +1445,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set the number of bytes w used as chunk allocation for
+     * Set the number of bytes we used as chunk allocation for
      * org.apache.bookkeeper.bookie.SkipListArena
      *
      * @param size chunk size.
@@ -1907,7 +2013,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     /**
      * Configure the bookie to listen for BookKeeper clients executed on the local JVM
      *
-     * @see #getEnableLocalTransport
+     * @see #isEnableLocalTransport
      * @param enableLocalTransport
      *            whether to use listen for local JVM clients
      * @return server configuration
@@ -1930,7 +2036,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * Configure the bookie to disable bind on network interfaces,
      * this bookie will be available only to BookKeeper clients executed on the local JVM
      *
-     * @see #getDisableServerSocketBind
+     * @see #isDisableServerSocketBind
      * @param disableServerSocketBind
      *            whether to disable binding on network interfaces
      * @return server configuration
@@ -2077,6 +2183,122 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Get the truststore type for client. Default is JKS.
+     *
+     * @return
+     */
+    public String getTLSTrustStoreType() {
+        return getString(TLS_TRUSTSTORE_TYPE, "JKS");
+    }
+
+    /**
+     * Set the keystore type for client.
+     * 
+     * @return
+     */
+    public ServerConfiguration setTLSKeyStoreType(String arg) {
+        setProperty(TLS_KEYSTORE_TYPE, arg);
+        return this;
+    }
+
+    /**
+     * Get the keystore path for the client.
+     *
+     * @return
+     */
+    public String getTLSKeyStore() {
+        return getString(TLS_KEYSTORE, null);
+    }
+
+    /**
+     * Set the keystore path for the client.
+     *
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setTLSKeyStore(String arg) {
+        setProperty(TLS_KEYSTORE, arg);
+        return this;
+    }
+
+    /**
+     * Gets the minimum safe Usable size to be available in index directory for Bookie to create Index File while replaying
+     * Get the path to file containing keystore password if the client keystore is password protected. Default is null.
+     * 
+     * @return
+     */
+    public String getTLSKeyStorePasswordPath() {
+        return getString(TLS_KEYSTORE_PASSWORD_PATH, null);
+    }
+
+    /**
+     * Set the path to file containing keystore password, if the client keystore is password protected.
+     * 
+     * @return
+     */
+    public ServerConfiguration setTLSKeyStorePasswordPath(String arg) {
+        setProperty(TLS_KEYSTORE_PASSWORD_PATH, arg);
+        return this;
+    }
+
+    /**
+     * Get the keystore type for client. Default is JKS.
+     * 
+     * @return
+     */
+    public String getTLSKeyStoreType() {
+        return getString(TLS_KEYSTORE_TYPE, "JKS");
+    }
+
+    /**
+     * Set the truststore type for client.
+     * 
+     * @return
+     */
+    public ServerConfiguration setTLSTrustStoreType(String arg) {
+        setProperty(TLS_TRUSTSTORE_TYPE, arg);
+        return this;
+    }
+
+    /**
+     * Get the truststore path for the client.
+     * 
+     * @return
+     */
+    public String getTLSTrustStore() {
+        return getString(TLS_TRUSTSTORE, null);
+    }
+
+    /**
+     * Set the truststore path for the client.
+     * 
+     * @return
+     */
+    public ServerConfiguration setTLSTrustStore(String arg) {
+        setProperty(TLS_TRUSTSTORE, arg);
+        return this;
+    }
+
+    /**
+     * Get the path to file containing truststore password if the client truststore is password protected. Default is
+     * null.
+     * 
+     * @return
+     */
+    public String getTLSTrustStorePasswordPath() {
+        return getString(TLS_TRUSTSTORE_PASSWORD_PATH, null);
+    }
+
+    /**
+     * Set the path to file containing truststore password, if the client truststore is password protected.
+     * 
+     * @return
+     */
+    public ServerConfiguration setTLSTrustStorePasswordPath(String arg) {
+        setProperty(TLS_TRUSTSTORE_PASSWORD_PATH, arg);
+        return this;
+    }
+
+    /**
      * Gets the minimum safe Usable size to be available in index directory for Bookie to create Index File while replaying 
      * journal at the time of Bookie Start in Readonly Mode (in bytes)
      * 
@@ -2120,4 +2342,71 @@ public class ServerConfiguration extends AbstractConfiguration {
         this.setProperty(ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION, allow);
         return this;
     }
+
+    /**
+     * Get whether to start the http server or not
+     *
+     * @return true - if http server should start
+     */
+    public boolean isHttpServerEnabled() {
+        return getBoolean(HTTP_SERVER_ENABLED, false);
+    }
+
+    /**
+     * Set whether to start the http server or not
+     *
+     * @param enabled
+     *            - true if we should start http server
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setHttpServerEnabled(boolean enabled) {
+        setProperty(HTTP_SERVER_ENABLED, enabled);
+        return this;
+    }
+
+    /**
+     * Get the http server port
+     *
+     * @return http server port
+     */
+    public int getHttpServerPort() {
+        return getInt(HTTP_SERVER_PORT, 8080);
+    }
+
+    /**
+     * Set Http server port listening on
+     *
+     * @param port
+     *          Port to listen on
+     * @return server configuration
+     */
+    public ServerConfiguration setHttpServerPort(int port) {
+        setProperty(HTTP_SERVER_PORT, port);
+        return this;
+    }
+
+    /**
+     * Get the extra list of server lifecycle components to enable on a bookie server.
+     *
+     * @return the extra list of server lifecycle components to enable on a bookie server.
+     */
+    public String[] getExtraServerComponents() {
+        if (!this.containsKey(EXTRA_SERVER_COMPONENTS)) {
+            return null;
+        }
+        return this.getStringArray(EXTRA_SERVER_COMPONENTS);
+    }
+
+    /**
+     * Set the extra list of server lifecycle components to enable on a bookie server.
+     *
+     * @param componentClasses
+     *          the list of server lifecycle components to enable on a bookie server.
+     * @return server configuration.
+     */
+    public ServerConfiguration setExtraServerComponents(String[] componentClasses) {
+        this.setProperty(EXTRA_SERVER_COMPONENTS, componentClasses);
+        return this;
+    }
+
 }

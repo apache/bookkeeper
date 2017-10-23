@@ -31,7 +31,7 @@ public class LedgerStorageTest extends BookKeeperClusterTestCase {
         super(1);
     }
 
-    @Test(timeout = 20000)
+    @Test
     public void testLedgerDeleteNotification() throws Exception {
         LedgerStorage ledgerStorage = bs.get(0).getBookie().ledgerStorage;
 

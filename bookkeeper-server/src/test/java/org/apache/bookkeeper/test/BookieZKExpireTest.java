@@ -40,7 +40,7 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
     }
 
     @SuppressWarnings("deprecation")
-    @Test(timeout=60000)
+    @Test
     public void testBookieServerZKExpireBehaviour() throws Exception {
         BookieServer server = null;
         try {

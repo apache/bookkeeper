@@ -1,2 +1,2 @@
-baseurl: /test/content/
+baseurl: /
 destination: generated_site/content

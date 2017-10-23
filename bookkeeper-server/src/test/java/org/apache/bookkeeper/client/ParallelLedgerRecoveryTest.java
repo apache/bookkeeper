@@ -160,62 +160,62 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         this.digestType = DigestType.CRC32;
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testRecoverBeforeWriteMetadata1() throws Exception {
         rereadDuringRecovery(true, 1, false, false);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testRecoverBeforeWriteMetadata2() throws Exception {
         rereadDuringRecovery(true, 3, false, false);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testRecoverBeforeWriteMetadata3() throws Exception {
         rereadDuringRecovery(false, 1, false, false);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testRecoverBeforeWriteMetadata4() throws Exception {
         rereadDuringRecovery(false, 3, false, false);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testRereadDuringRecovery1() throws Exception {
         rereadDuringRecovery(true, 1, true, false);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testRereadDuringRecovery2() throws Exception {
         rereadDuringRecovery(true, 3, true, false);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testRereadDuringRecovery3() throws Exception {
         rereadDuringRecovery(false, 1, true, false);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testRereadDuringRecovery4() throws Exception {
         rereadDuringRecovery(false, 3, true, false);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testConcurrentRecovery1() throws Exception {
         rereadDuringRecovery(true, 1, true, false);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testConcurrentRecovery2() throws Exception {
         rereadDuringRecovery(true, 3, true, false);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testConcurrentRecovery3() throws Exception {
         rereadDuringRecovery(false, 1, true, false);
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testConcurrentRecovery4() throws Exception {
         rereadDuringRecovery(false, 3, true, false);
     }
@@ -342,7 +342,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         newBk.close();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testRecoveryOnEntryGap() throws Exception {
         byte[] passwd = "recovery-on-entry-gap".getBytes(UTF_8);
         LedgerHandle lh = bkc.createLedger(1, 1, 1, DigestType.CRC32, passwd);
@@ -361,7 +361,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         final CountDownLatch addLatch = new CountDownLatch(1);
         final AtomicBoolean addSuccess = new AtomicBoolean(false);
         LOG.info("Add entry {} with lac = {}", entryId, lac);
-        lh.bk.bookieClient.addEntry(lh.metadata.currentEnsemble.get(0), lh.getId(), lh.ledgerKey, entryId, toSend,
+        lh.bk.getBookieClient().addEntry(lh.metadata.currentEnsemble.get(0), lh.getId(), lh.ledgerKey, entryId, toSend,
             new WriteCallback() {
                 @Override
                 public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
@@ -493,7 +493,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
 
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testRecoveryWhenClosingLedgerHandle() throws Exception {
         byte[] passwd = "recovery-when-closing-ledger-handle".getBytes(UTF_8);
 

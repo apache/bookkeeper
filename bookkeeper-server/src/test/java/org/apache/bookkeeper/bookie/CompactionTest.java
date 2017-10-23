@@ -124,6 +124,12 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         super.setUp();
     }
 
+    private GarbageCollectorThread getGCThread() {
+        assertEquals(1, bs.size());
+        BookieServer server = bs.get(0);
+        return ((InterleavedLedgerStorage) server.getBookie().ledgerStorage).gcThread;
+    }
+
     LedgerHandle[] prepareData(int numEntryLogs, boolean changeNum)
         throws Exception {
         // since an entry log file can hold at most 100 entries
@@ -168,7 +174,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testDisableCompaction() throws Exception {
         // prepare data
         LedgerHandle[] lhs = prepareData(3, false);
@@ -180,13 +186,22 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         // restart bookies
         restartBookies(baseConf);
 
+        long lastMinorCompactionTime = getGCThread().lastMinorCompactionTime;
+        long lastMajorCompactionTime = getGCThread().lastMajorCompactionTime;
+
         // remove ledger2 and ledger3
         // so entry log 1 and 2 would have ledger1 entries left
         bkc.deleteLedger(lhs[1].getId());
         bkc.deleteLedger(lhs[2].getId());
         LOG.info("Finished deleting the ledgers contains most entries.");
-        Thread.sleep(baseConf.getMajorCompactionInterval() * 1000
-                   + baseConf.getGcWaitTime());
+
+        assertFalse(getGCThread().enableMajorCompaction);
+        assertFalse(getGCThread().enableMinorCompaction);
+        getGCThread().triggerGC().get();
+
+        // after garbage collection, compaction should not be executed
+        assertEquals(lastMinorCompactionTime, getGCThread().lastMinorCompactionTime);
+        assertEquals(lastMajorCompactionTime, getGCThread().lastMajorCompactionTime);
 
         // entry logs ([0,1].log) should not be compacted.
         for (File ledgerDirectory : tmpDirs) {
@@ -195,7 +210,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testForceGarbageCollection() throws Exception {
         ServerConfiguration conf = newServerConfiguration();
         conf.setGcWaitTime(60000);
@@ -240,7 +255,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         storage.shutdown();
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testMinorCompaction() throws Exception {
         // prepare data
         LedgerHandle[] lhs = prepareData(3, false);
@@ -251,17 +266,29 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
 
         // disable major compaction
         baseConf.setMajorCompactionThreshold(0.0f);
+        baseConf.setGcWaitTime(60000);
+        baseConf.setMinorCompactionInterval(120000);
+        baseConf.setMajorCompactionInterval(240000);
 
         // restart bookies
         restartBookies(baseConf);
+
+        long lastMinorCompactionTime = getGCThread().lastMinorCompactionTime;
+        long lastMajorCompactionTime = getGCThread().lastMajorCompactionTime;
+        assertFalse(getGCThread().enableMajorCompaction);
+        assertTrue(getGCThread().enableMinorCompaction);
 
         // remove ledger2 and ledger3
         bkc.deleteLedger(lhs[1].getId());
         bkc.deleteLedger(lhs[2].getId());
 
         LOG.info("Finished deleting the ledgers contains most entries.");
-        Thread.sleep(baseConf.getMinorCompactionInterval() * 1000
-                   + baseConf.getGcWaitTime());
+        getGCThread().enableForceGC();
+        getGCThread().triggerGC().get();
+
+        // after garbage collection, major compaction should not be executed
+        assertEquals(lastMajorCompactionTime, getGCThread().lastMajorCompactionTime);
+        assertTrue(getGCThread().lastMinorCompactionTime > lastMinorCompactionTime);
 
         // entry logs ([0,1,2].log) should be compacted.
         for (File ledgerDirectory : tmpDirs) {
@@ -274,7 +301,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         verifyLedger(lhs[0].getId(), 0, lhs[0].getLastAddConfirmed());
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testMinorCompactionWithNoWritableLedgerDirs() throws Exception {
         // prepare data
         LedgerHandle[] lhs = prepareData(3, false);
@@ -285,9 +312,17 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
 
         // disable major compaction
         baseConf.setMajorCompactionThreshold(0.0f);
+        baseConf.setGcWaitTime(60000);
+        baseConf.setMinorCompactionInterval(120000);
+        baseConf.setMajorCompactionInterval(240000);
 
         // restart bookies
         restartBookies(baseConf);
+
+        long lastMinorCompactionTime = getGCThread().lastMinorCompactionTime;
+        long lastMajorCompactionTime = getGCThread().lastMajorCompactionTime;
+        assertFalse(getGCThread().enableMajorCompaction);
+        assertTrue(getGCThread().enableMinorCompaction);
 
         for (BookieServer bookieServer : bs) {
             Bookie bookie = bookieServer.getBookie();
@@ -305,7 +340,11 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         bkc.deleteLedger(lhs[2].getId());
 
         LOG.info("Finished deleting the ledgers contains most entries.");
-        Thread.sleep(baseConf.getMinorCompactionInterval() * 1000 + baseConf.getGcWaitTime());
+        getGCThread().triggerGC().get();
+
+        // after garbage collection, major compaction should not be executed
+        assertEquals(lastMajorCompactionTime, getGCThread().lastMajorCompactionTime);
+        assertEquals(lastMinorCompactionTime, getGCThread().lastMinorCompactionTime);
 
         // entry logs ([0,1,2].log) should still remain, because both major and Minor compaction are disabled.
         for (File ledgerDirectory : tmpDirs) {
@@ -315,7 +354,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testMinorCompactionWithNoWritableLedgerDirsButIsForceGCAllowWhenNoSpaceIsSet() throws Exception {
         // prepare data
         LedgerHandle[] lhs = prepareData(3, false);
@@ -330,9 +369,17 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         // here we are setting isForceGCAllowWhenNoSpace to true, so Major and Minor compaction wont be disabled in case
         // when discs are full
         baseConf.setIsForceGCAllowWhenNoSpace(true);
+        baseConf.setGcWaitTime(60000);
+        baseConf.setMinorCompactionInterval(120000);
+        baseConf.setMajorCompactionInterval(240000);
 
         // restart bookies
         restartBookies(baseConf);
+
+        long lastMinorCompactionTime = getGCThread().lastMinorCompactionTime;
+        long lastMajorCompactionTime = getGCThread().lastMajorCompactionTime;
+        assertFalse(getGCThread().enableMajorCompaction);
+        assertTrue(getGCThread().enableMinorCompaction);
 
         for (BookieServer bookieServer : bs) {
             Bookie bookie = bookieServer.getBookie();
@@ -350,7 +397,12 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         bkc.deleteLedger(lhs[2].getId());
 
         LOG.info("Finished deleting the ledgers contains most entries.");
-        Thread.sleep(baseConf.getMinorCompactionInterval() * 1000 + baseConf.getGcWaitTime() + 500);
+        getGCThread().enableForceGC();
+        getGCThread().triggerGC().get();
+
+        // after garbage collection, major compaction should not be executed
+        assertEquals(lastMajorCompactionTime, getGCThread().lastMajorCompactionTime);
+        assertTrue(getGCThread().lastMinorCompactionTime > lastMinorCompactionTime);
 
         // though all discs are added to filled dirs list, compaction would succeed, because in EntryLogger for
         // allocating newlog
@@ -379,7 +431,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         }
     }
     
-    @Test(timeout=60000)
+    @Test
     public void testMajorCompaction() throws Exception {
 
         // prepare data
@@ -391,17 +443,28 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
 
         // disable minor compaction
         baseConf.setMinorCompactionThreshold(0.0f);
+        baseConf.setGcWaitTime(60000);
+        baseConf.setMinorCompactionInterval(120000);
+        baseConf.setMajorCompactionInterval(240000);
 
         // restart bookies
         restartBookies(baseConf);
+
+        long lastMinorCompactionTime = getGCThread().lastMinorCompactionTime;
+        long lastMajorCompactionTime = getGCThread().lastMajorCompactionTime;
+        assertTrue(getGCThread().enableMajorCompaction);
+        assertFalse(getGCThread().enableMinorCompaction);
 
         // remove ledger1 and ledger3
         bkc.deleteLedger(lhs[0].getId());
         bkc.deleteLedger(lhs[2].getId());
         LOG.info("Finished deleting the ledgers contains most entries.");
+        getGCThread().enableForceGC();
+        getGCThread().triggerGC().get();
 
-        Thread.sleep(baseConf.getMajorCompactionInterval() * 1000
-                   + baseConf.getGcWaitTime());
+        // after garbage collection, minor compaction should not be executed
+        assertTrue(getGCThread().lastMinorCompactionTime > lastMinorCompactionTime);
+        assertTrue(getGCThread().lastMajorCompactionTime > lastMajorCompactionTime);
 
         // entry logs ([0,1,2].log) should be compacted
         for (File ledgerDirectory : tmpDirs) {
@@ -414,7 +477,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         verifyLedger(lhs[1].getId(), 0, lhs[1].getLastAddConfirmed());
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testMajorCompactionAboveThreshold() throws Exception {
         // prepare data
         LedgerHandle[] lhs = prepareData(3, false);
@@ -423,12 +486,21 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             lh.close();
         }
 
+        long lastMinorCompactionTime = getGCThread().lastMinorCompactionTime;
+        long lastMajorCompactionTime = getGCThread().lastMajorCompactionTime;
+        assertTrue(getGCThread().enableMajorCompaction);
+        assertTrue(getGCThread().enableMinorCompaction);
+
         // remove ledger1 and ledger2
         bkc.deleteLedger(lhs[0].getId());
         bkc.deleteLedger(lhs[1].getId());
         LOG.info("Finished deleting the ledgers contains less entries.");
-        Thread.sleep(baseConf.getMajorCompactionInterval() * 1000
-                   + baseConf.getGcWaitTime());
+        getGCThread().enableForceGC();
+        getGCThread().triggerGC().get();
+
+        // after garbage collection, minor compaction should not be executed
+        assertTrue(getGCThread().lastMinorCompactionTime > lastMinorCompactionTime);
+        assertTrue(getGCThread().lastMajorCompactionTime > lastMajorCompactionTime);
 
         // entry logs ([0,1,2].log) should not be compacted
         for (File ledgerDirectory : tmpDirs) {
@@ -437,7 +509,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         }
     }
 
-    @Test(timeout=60000)
+    @Test
     public void testCompactionSmallEntryLogs() throws Exception {
 
         // create a ledger to write a few entries
@@ -463,8 +535,9 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         LOG.info("Finished deleting the ledgers contains most entries.");
         // restart bookies again to roll entry log files.
         restartBookies();
-        Thread.sleep(baseConf.getMajorCompactionInterval() * 1000
-                   + baseConf.getGcWaitTime());
+
+        getGCThread().enableForceGC();
+        getGCThread().triggerGC().get();
 
         // entry logs (0.log) should not be compacted
         // entry logs ([1,2,3].log) should be compacted.
@@ -486,7 +559,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
      * {@see https://issues.apache.org/jira/browse/BOOKKEEPER-530}
      * {@see https://issues.apache.org/jira/browse/BOOKKEEPER-664}
      */
-    @Test(timeout=60000)
+    @Test
     public void testCompactionSafety() throws Exception {
         tearDown(); // I dont want the test infrastructure
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
@@ -641,7 +714,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
      * Test that compaction should execute silently when there is no entry logs
      * to compact. {@see https://issues.apache.org/jira/browse/BOOKKEEPER-700}
      */
-    @Test(timeout = 60000)
+    @Test
     public void testWhenNoLogsToCompact() throws Exception {
         tearDown(); // I dont want the test infrastructure
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
@@ -688,7 +761,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
     /**
      * Suspend garbage collection when suspendMajor/suspendMinor is set.
      */
-    @Test(timeout=60000)
+    @Test
     public void testSuspendGarbageCollection() throws Exception {
         ServerConfiguration conf = newServerConfiguration();
         conf.setGcWaitTime(500);
@@ -744,13 +817,13 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         storage.gcThread.resumeMajorGC();
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testCompactionWithEntryLogRollover() throws Exception {
         // Disable bookie gc during this test
         baseConf.setGcWaitTime(60000);
         baseConf.setMinorCompactionInterval(0);
         baseConf.setMajorCompactionInterval(0);
-        restartBookies();
+        restartBookies(baseConf);
 
         // prepare data
         LedgerHandle[] lhs = prepareData(3, false);

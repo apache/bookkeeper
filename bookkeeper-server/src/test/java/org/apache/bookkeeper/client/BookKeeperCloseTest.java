@@ -121,7 +121,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
      * Test that createledger using bookkeeper client which is closed should
      * throw ClientClosedException
      */
-    @Test(timeout = 60000)
+    @Test
     public void testCreateLedger() throws Exception {
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
         LOG.info("Closing bookkeeper client");
@@ -158,7 +158,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
      * Test that opening a ledger using bookkeeper client which is closed should
      * throw ClientClosedException
      */
-    @Test(timeout = 60000)
+    @Test
     public void testFenceLedger() throws Exception {
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
         LOG.info("Create ledger and add entries to it");
@@ -205,7 +205,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
      * Test that deleting a ledger using bookkeeper client which is closed
      * should throw ClientClosedException
      */
-    @Test(timeout = 60000)
+    @Test
     public void testDeleteLedger() throws Exception {
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
         LOG.info("Create ledger and add entries to it");
@@ -241,7 +241,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
      * Test that adding entry to a ledger using bookkeeper client which is
      * closed should throw ClientClosedException
      */
-    @Test(timeout = 60000)
+    @Test
     public void testAddLedgerEntry() throws Exception {
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
         LOG.info("Create ledger and add entries to it");
@@ -281,7 +281,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
      * Test that closing a ledger using bookkeeper client which is closed should
      * throw ClientClosedException
      */
-    @Test(timeout = 60000)
+    @Test
     public void testCloseLedger() throws Exception {
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
         LOG.info("Create ledger and add entries to it");
@@ -319,7 +319,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
      * Test that reading entry from a ledger using bookkeeper client which is
      * closed should throw ClientClosedException
      */
-    @Test(timeout = 60000)
+    @Test
     public void testReadLedgerEntry() throws Exception {
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
         LOG.info("Create ledger and add entries to it");
@@ -362,7 +362,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
      * Test that readlastconfirmed entry from a ledger using bookkeeper client
      * which is closed should throw ClientClosedException
      */
-    @Test(timeout = 60000)
+    @Test
     public void testReadLastConfirmed() throws Exception {
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
         LOG.info("Create ledger and add entries to it");
@@ -408,7 +408,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
      * Test that checking a ledger using a closed BK client will
      * throw a ClientClosedException
      */
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerCheck() throws Exception {
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
         LOG.info("Create ledger and add entries to it");
@@ -465,7 +465,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
      * Test that BookKeeperAdmin operationg using a closed BK client will
      * throw a ClientClosedException
      */
-    @Test(timeout = 60000)
+    @Test
     public void testBookKeeperAdmin() throws Exception {
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
         try (BookKeeperAdmin bkadmin = new BookKeeperAdmin(bk)) {
@@ -530,7 +530,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
      * Test that the bookkeeper client doesn't leave any threads hanging around.
      * See {@link https://issues.apache.org/jira/browse/BOOKKEEPER-804}
      */
-    @Test(timeout = 60000)
+    @Test
     public void testBookKeeperCloseThreads() throws Exception {
         ThreadGroup group = new ThreadGroup("test-group");
         final SettableFuture<Void> future = SettableFuture.<Void>create();
