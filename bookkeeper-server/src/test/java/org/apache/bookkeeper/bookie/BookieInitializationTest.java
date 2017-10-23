@@ -123,9 +123,9 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                     throws IOException, KeeperException, InterruptedException,
                     BookieException {
                 MockBookie bookie = new MockBookie(conf);
-                conf.setZkServers(zkUtil.getZooKeeperConnectString());
                 rm.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
                 bookie.registrationManager = rm;
+                ((ZKRegistrationManager) bookie.registrationManager).setZk(zkc);
                 ((ZKRegistrationManager) bookie.registrationManager).getZk().close();
                 return bookie;
             }

@@ -102,6 +102,11 @@ public class ZKRegistrationManager implements RegistrationManager {
     }
 
     @VisibleForTesting
+    public void setZk(ZooKeeper zk) {
+        this.zk = zk;
+    }
+
+    @VisibleForTesting
     public ZooKeeper getZk() {
         return this.zk;
     }
@@ -143,7 +148,7 @@ public class ZKRegistrationManager implements RegistrationManager {
                 .sessionTimeoutMs(conf.getZkTimeout())
                 .watchers(watchers)
                 .operationRetryPolicy(new BoundExponentialBackoffRetryPolicy(conf.getZkRetryBackoffStartMs(),
-                        conf.getZkRetryBackoffMaxMs(), 0))
+                        conf.getZkRetryBackoffMaxMs(), Integer.MAX_VALUE))
                 .requestRateLimit(conf.getZkRequestRateLimit())
                 .statsLogger(this.statsLogger.scope(BOOKIE_SCOPE))
                 .build();
