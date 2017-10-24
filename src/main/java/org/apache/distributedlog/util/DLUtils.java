@@ -279,7 +279,7 @@ public class DLUtils {
      * @return true if it is reserved name, otherwise false.
      */
     public static boolean isReservedStreamName(String name) {
-        return name.startsWith(".");
+        return name.startsWith(".") || name.startsWith("<");
     }
 
     /**
