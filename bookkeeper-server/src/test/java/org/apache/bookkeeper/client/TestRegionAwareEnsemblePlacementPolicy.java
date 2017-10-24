@@ -145,7 +145,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         expectedSet.add(3);
         expectedSet.add(1);
         expectedSet.add(2);
-        LOG.info("reorder set : {}", reoderSet);
+        LOG.info("reorder set : {}", reorderSet);
         assertFalse(reorderSet == writeSet);
         assertEquals(expectedSet, reorderSet);
     }
