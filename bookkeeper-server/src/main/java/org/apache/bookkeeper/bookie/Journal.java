@@ -23,7 +23,6 @@ package org.apache.bookkeeper.bookie;
 
 import com.google.common.base.Stopwatch;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -40,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.proto.DataFormats.LedgerType;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -271,20 +271,23 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
      * Journal Entry to Record.
      */
     private class QueueEntry implements Runnable {
-        ByteBuf entry;
-        long ledgerId;
-        long entryId;
-        WriteCallback cb;
-        Object ctx;
-        long enqueueTime;
+        final ByteBuf entry;
+        final long ledgerId;
+        final long entryId;
+        final WriteCallback cb;
+        final Object ctx;
+        final long enqueueTime;
+        final LedgerType ledgerType;
 
-        QueueEntry(ByteBuf entry, long ledgerId, long entryId, WriteCallback cb, Object ctx, long enqueueTime) {
+        QueueEntry(ByteBuf entry, long ledgerId, long entryId, WriteCallback cb, Object ctx, long enqueueTime,
+                   LedgerType ledgerType) {
             this.entry = entry.duplicate();
             this.cb = cb;
             this.ctx = ctx;
             this.ledgerId = ledgerId;
             this.entryId = entryId;
             this.enqueueTime = enqueueTime;
+            this.ledgerType = ledgerType;
         }
 
         @Override
@@ -751,21 +754,17 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         }
     }
 
-    public void logAddEntry(ByteBuffer entry, WriteCallback cb, Object ctx) {
-        logAddEntry(Unpooled.wrappedBuffer(entry), cb, ctx);
-    }
-
     /**
      * record an add entry operation in journal.
      */
-    public void logAddEntry(ByteBuf entry, WriteCallback cb, Object ctx) {
+    public void logAddEntry(ByteBuf entry, LedgerType ledgerType, WriteCallback cb, Object ctx) {
         long ledgerId = entry.getLong(entry.readerIndex() + 0);
         long entryId = entry.getLong(entry.readerIndex() + 8);
         journalQueueSize.inc();
 
         //Retain entry until it gets written to journal
         entry.retain();
-        queue.add(new QueueEntry(entry, ledgerId, entryId, cb, ctx, MathUtils.nowInNano()));
+        queue.add(new QueueEntry(entry, ledgerId, entryId, cb, ctx, MathUtils.nowInNano(), ledgerType));
     }
 
     /**

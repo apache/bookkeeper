@@ -58,6 +58,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.bookkeeper.proto.DataFormats.LedgerType;
 
 public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
 
@@ -368,7 +369,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
                     addSuccess.set(BKException.Code.OK == rc);
                     addLatch.countDown();
                 }
-            }, 0, BookieProtocol.FLAG_NONE);
+            }, 0, BookieProtocol.FLAG_NONE, LedgerType.FORCE_ON_JOURNAL);
         addLatch.await();
         assertTrue("add entry 14 should succeed", addSuccess.get());
 
@@ -450,7 +451,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public void addEntry(ByteBuf entry, final WriteCallback cb, Object ctx, byte[] masterKey)
+        public void addEntry(ByteBuf entry, final WriteCallback cb, Object ctx, byte[] masterKey, LedgerType ledgerType)
                 throws IOException, BookieException {
             super.addEntry(entry, new WriteCallback() {
                 @Override
@@ -462,7 +463,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
                         cb.writeComplete(rc, ledgerId, entryId, addr, ctx);
                     }
                 }
-            }, ctx, masterKey);
+            }, ctx, masterKey, ledgerType);
         }
 
         @Override

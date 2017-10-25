@@ -47,6 +47,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.bookkeeper.proto.DataFormats.LedgerType;
 
 import static org.junit.Assert.*;
 
@@ -88,7 +89,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
                 @Override
                 public void addEntry(ByteBuf entry, WriteCallback cb,
-                                     Object ctx, byte[] masterKey)
+                                     Object ctx, byte[] masterKey, LedgerType ledgerType)
                         throws IOException, BookieException {
                     try {
                         Thread.sleep(5000);
@@ -97,7 +98,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
                         // and an exception would spam the logs
                         Thread.currentThread().interrupt();
                     }
-                    super.addEntry(entry, cb, ctx, masterKey);
+                    super.addEntry(entry, cb, ctx, masterKey, ledgerType);
                 }
 
                 @Override
