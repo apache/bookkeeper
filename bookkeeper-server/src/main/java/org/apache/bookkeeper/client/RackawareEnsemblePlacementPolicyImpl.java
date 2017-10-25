@@ -19,6 +19,7 @@ package org.apache.bookkeeper.client;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -42,6 +43,9 @@ import org.apache.bookkeeper.net.*;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.ReflectionUtils;
+import static org.apache.bookkeeper.util.collections.ArrayUtils2.addMissingIndices;
+import static org.apache.bookkeeper.util.collections.ArrayUtils2.moveAndShift;
+import static org.apache.bookkeeper.util.collections.ArrayUtils2.shuffleWithMask;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -769,13 +773,20 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
     }
 
     @Override
-    public List<Integer> reorderReadSequence(ArrayList<BookieSocketAddress> ensemble, List<Integer> writeSet, Map<BookieSocketAddress, Long> bookieFailureHistory) {
+    public int[] reorderReadSequence(
+            ArrayList<BookieSocketAddress> ensemble,
+            Map<BookieSocketAddress, Long> bookieFailureHistory,
+            int[] writeSet) {
         int ensembleSize = ensemble.size();
-        List<Integer> finalList = new ArrayList<Integer>(writeSet.size());
-        List<Long> observedFailuresList = new ArrayList<Long>(writeSet.size());
-        List<Integer> readOnlyList = new ArrayList<Integer>(writeSet.size());
-        List<Integer> unAvailableList = new ArrayList<Integer>(writeSet.size());
-        for (Integer idx : writeSet) {
+
+        int localMask      = 0x01 << 24;
+        int failureMask    = 0x02 << 24;
+        int readOnlyMask   = 0x10 << 24;
+        int unavailMask    = 0x20 << 24;
+        int maskBits       = 0xFF << 24;
+
+        for (int i = 0; i < writeSet.length; i++) {
+            int idx = writeSet[i];
             BookieSocketAddress address = ensemble.get(idx);
             Long lastFailedEntryOnBookie = bookieFailureHistory.get(address);
             if (null == knownBookies.get(address)) {
@@ -783,33 +794,40 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
                 // is no write requests to them, so we shouldn't try reading from readonly bookie in prior to writable
                 // bookies.
                 if ((null == readOnlyBookies) || !readOnlyBookies.contains(address)) {
-                    unAvailableList.add(idx);
+                    writeSet[i] = idx | unavailMask;
                 } else {
-                    readOnlyList.add(idx);
+                    writeSet[i] = idx | readOnlyMask;
                 }
             } else {
                 if ((lastFailedEntryOnBookie == null) || (lastFailedEntryOnBookie < 0)) {
-                    finalList.add(idx);
+                    writeSet[i] = idx | localMask;
                 } else {
-                    observedFailuresList.add(lastFailedEntryOnBookie * ensembleSize + idx);
+                    writeSet[i] = (int)(((lastFailedEntryOnBookie * ensembleSize + idx) & ~maskBits) | failureMask);
                 }
             }
         }
 
+        Arrays.sort(writeSet);
+
         if (reorderReadsRandom) {
-            Collections.shuffle(finalList);
-            Collections.shuffle(readOnlyList);
-            Collections.shuffle(unAvailableList);
+            shuffleWithMask(writeSet, localMask, maskBits);
+            shuffleWithMask(writeSet, readOnlyMask, maskBits);
+            shuffleWithMask(writeSet, unavailMask, maskBits);
         }
 
-        Collections.sort(observedFailuresList);
-
-        for(long value: observedFailuresList) {
-            finalList.add((int)(value % ensembleSize));
+        for (int i = 0; i < writeSet.length; i++) {
+            int mask = writeSet[i] & maskBits;
+            if (mask == failureMask) {
+                writeSet[i] = localMask
+                        | ((writeSet[i] & ~maskBits) % ensembleSize);
+            }
         }
 
-        finalList.addAll(readOnlyList);
-        finalList.addAll(unAvailableList);
-        return finalList;
+        // remove all masks
+        for (int i = 0; i < writeSet.length; i++) {
+            writeSet[i] = writeSet[i] & ~maskBits;
+        }
+
+        return writeSet;
     }
 }

@@ -22,6 +22,7 @@ import static org.apache.bookkeeper.feature.SettableFeatureProvider.DISABLE_ALL;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -53,7 +54,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
     RackawareEnsemblePlacementPolicy repp;
     final ArrayList<BookieSocketAddress> ensemble = new ArrayList<BookieSocketAddress>();
-    final List<Integer> writeSet = new ArrayList<Integer>();
+    final int[] writeSet = new int[4];
     ClientConfiguration conf = new ClientConfiguration();
     BookieSocketAddress addr1, addr2, addr3, addr4;
     io.netty.util.HashedWheelTimer timer;
@@ -81,7 +82,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         ensemble.add(addr3);
         ensemble.add(addr4);
         for (int i = 0; i < 4; i++) {
-            writeSet.add(i);
+            writeSet[i] = i;
         }
 
         timer = new HashedWheelTimer(
@@ -125,15 +126,14 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         addrs.remove(addr1);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
 
-        List<Integer> reoderSet = repp.reorderReadSequence(ensemble, writeSet, new HashMap<BookieSocketAddress, Long>());
-        List<Integer> expectedSet = new ArrayList<Integer>();
-        expectedSet.add(1);
-        expectedSet.add(2);
-        expectedSet.add(3);
-        expectedSet.add(0);
+        int[] origWriteSet = Arrays.copyOf(writeSet, writeSet.length);
+        int[] reoderSet = repp.reorderReadSequence(
+                ensemble, new HashMap<BookieSocketAddress, Long>(),
+                writeSet);
+        int[] expectedSet = {1, 2, 3, 0};
         LOG.info("reorder set : {}", reoderSet);
-        assertFalse(reoderSet == writeSet);
-        assertEquals(expectedSet, reoderSet);
+        assertFalse(Arrays.equals(reoderSet, origWriteSet));
+        assertTrue(Arrays.equals(expectedSet, reoderSet));
     }
 
     @Test
@@ -157,15 +157,13 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         ro.add(addr1);
         repp.onClusterChanged(addrs, ro);
 
-        List<Integer> reoderSet = repp.reorderReadSequence(ensemble, writeSet, new HashMap<BookieSocketAddress, Long>());
-        List<Integer> expectedSet = new ArrayList<Integer>();
-        expectedSet.add(1);
-        expectedSet.add(2);
-        expectedSet.add(3);
-        expectedSet.add(0);
-        LOG.info("reorder set : {}", reoderSet);
-        assertFalse(reoderSet == writeSet);
-        assertEquals(expectedSet, reoderSet);
+        int[] origWriteSet = Arrays.copyOf(writeSet, writeSet.length);
+        int[] reorderSet = repp.reorderReadSequence(
+                ensemble, new HashMap<BookieSocketAddress, Long>(), writeSet);
+        int[] expectedSet = {1, 2, 3, 0};
+        LOG.info("reorder set : {}", reorderSet);
+        assertFalse(Arrays.equals(reorderSet, origWriteSet));
+        assertTrue(Arrays.equals(expectedSet, reorderSet));
     }
 
     @Test
@@ -188,15 +186,13 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         addrs.remove(addr2);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
 
-        List<Integer> reoderSet = repp.reorderReadSequence(ensemble, writeSet, new HashMap<BookieSocketAddress, Long>());
-        List<Integer> expectedSet = new ArrayList<Integer>();
-        expectedSet.add(2);
-        expectedSet.add(3);
-        expectedSet.add(0);
-        expectedSet.add(1);
-        LOG.info("reorder set : {}", reoderSet);
-        assertFalse(reoderSet == writeSet);
-        assertEquals(expectedSet, reoderSet);
+        int[] origWriteSet = Arrays.copyOf(writeSet, writeSet.length);
+        int[] reorderSet = repp.reorderReadSequence(
+                ensemble, new HashMap<BookieSocketAddress, Long>(), writeSet);
+        int[] expectedSet = {2, 3, 0, 1};
+        LOG.info("reorder set : {}", reorderSet);
+        assertFalse(Arrays.equals(reorderSet, origWriteSet));
+        assertTrue(Arrays.equals(expectedSet, reorderSet));
     }
 
     @Test
@@ -220,14 +216,12 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         Set<BookieSocketAddress> roAddrs = new HashSet<BookieSocketAddress>();
         roAddrs.add(addr2);
         repp.onClusterChanged(addrs, roAddrs);
-        List<Integer> reoderSet = repp.reorderReadSequence(ensemble, writeSet, new HashMap<BookieSocketAddress, Long>());
-        List<Integer> expectedSet = new ArrayList<Integer>();
-        expectedSet.add(2);
-        expectedSet.add(3);
-        expectedSet.add(1);
-        expectedSet.add(0);
-        assertFalse(reoderSet == writeSet);
-        assertEquals(expectedSet, reoderSet);
+        int[] origWriteSet = Arrays.copyOf(writeSet, writeSet.length);
+        int[] reorderSet = repp.reorderReadSequence(
+                ensemble, new HashMap<BookieSocketAddress, Long>(), writeSet);
+        int[] expectedSet = {2, 3, 1, 0};
+        assertFalse(Arrays.equals(reorderSet, origWriteSet));
+        assertTrue(Arrays.equals(expectedSet, reorderSet));
     }
 
     @Test
@@ -716,12 +710,13 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         bookieFailures.put(addr1, 20L);
         bookieFailures.put(addr2, 22L);
 
-        List<Integer> reoderSet = repp.reorderReadSequence(ensemble, writeSet, bookieFailures);
+        int[] reoderSet = repp.reorderReadSequence(
+                ensemble, bookieFailures, writeSet);
         LOG.info("reorder set : {}", reoderSet);
-        assertEquals(ensemble.get(reoderSet.get(2)), addr1);
-        assertEquals(ensemble.get(reoderSet.get(3)), addr2);
-        assertEquals(ensemble.get(reoderSet.get(0)), addr3);
-        assertEquals(ensemble.get(reoderSet.get(1)), addr4);
+        assertEquals(ensemble.get(reoderSet[2]), addr1);
+        assertEquals(ensemble.get(reoderSet[3]), addr2);
+        assertEquals(ensemble.get(reoderSet[0]), addr3);
+        assertEquals(ensemble.get(reoderSet[1]), addr4);
     }
 
     @Test

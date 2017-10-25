@@ -19,7 +19,6 @@ package org.apache.bookkeeper.client;
 
 import org.apache.bookkeeper.net.BookieSocketAddress;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -37,7 +36,7 @@ interface DistributionSchedule {
     /**
      * return the set of bookie indices to send the message to
      */
-    public List<Integer> getWriteSet(long entryId);
+    public void getWriteSet(long entryId, int[] target);
 
     /**
      * An ack set represents the set of bookies from which
@@ -75,6 +74,11 @@ interface DistributionSchedule {
          * Used for reissuing write requests.
          */
         public boolean removeBookieAndCheck(int bookie);
+
+        /**
+         * Recycle this ack set when not used anymore
+         */
+        public void recycle();
     }
 
     /**

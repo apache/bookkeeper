@@ -294,16 +294,17 @@ public interface EnsemblePlacementPolicy {
      *
      * @param ensemble
      *          Ensemble to read entries.
-     * @param writeSet
-     *          Write quorum to read entries.
      * @param bookieFailureHistory
      *          Observed failures on the bookies
-     * @return read sequence of bookies
+     * @param writeSet
+     *          Write quorum to read entries. This array is modified in-place.
+     * @return The read sequence. This may differ from the modified writeSet,
+     *         if the size of the array has changed.
      * @since 4.5
      */
-    public List<Integer> reorderReadSequence(ArrayList<BookieSocketAddress> ensemble,
-                                             List<Integer> writeSet,
-                                             Map<BookieSocketAddress, Long> bookieFailureHistory);
+    public int[] reorderReadSequence(ArrayList<BookieSocketAddress> ensemble,
+                                     Map<BookieSocketAddress, Long> bookieFailureHistory,
+                                     int[] writeSet);
 
 
     /**
@@ -311,16 +312,17 @@ public interface EnsemblePlacementPolicy {
      *
      * @param ensemble
      *          Ensemble to read entries.
-     * @param writeSet
-     *          Write quorum to read entries.
      * @param bookieFailureHistory
      *          Observed failures on the bookies
-     * @return read sequence of bookies
+     * @param writeSet
+     *          Write quorum to read entries. This array is modified in place.
+     * @return The read sequence. This may differ from the modified writeSet,
+     *         if the size of the array has changed.
      * @since 4.5
      */
-    public List<Integer> reorderReadLACSequence(ArrayList<BookieSocketAddress> ensemble,
-                                                List<Integer> writeSet,
-                                                Map<BookieSocketAddress, Long> bookieFailureHistory);
+    public int[] reorderReadLACSequence(ArrayList<BookieSocketAddress> ensemble,
+                                        Map<BookieSocketAddress, Long> bookieFailureHistory,
+                                        int[] writeSet);
 
     /**
      * Send the bookie info details.

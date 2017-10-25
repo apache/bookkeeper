@@ -34,6 +34,7 @@ import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.ReadLastConfirmedAndEntryContext;
 import org.apache.bookkeeper.util.MathUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,17 +74,18 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         int numMissedEntryReads = 0;
 
         final ArrayList<BookieSocketAddress> ensemble;
-        final List<Integer> writeSet;
-        final List<Integer> orderedEnsemble;
+        final int[] writeSet;
+        final int[] orderedEnsemble;
 
         ReadLACAndEntryRequest(ArrayList<BookieSocketAddress> ensemble, long lId, long eId) {
             super(lId, eId);
 
             this.ensemble = ensemble;
-            this.writeSet = lh.distributionSchedule.getWriteSet(entryId);
+            this.writeSet = new int[lh.metadata.getWriteQuorumSize()];
+            lh.distributionSchedule.getWriteSet(entryId, this.writeSet);
             if (lh.bk.reorderReadSequence) {
                 this.orderedEnsemble = lh.bk.placementPolicy.reorderReadLACSequence(ensemble,
-                    writeSet, lh.bookieFailureHistory.asMap());
+                        lh.bookieFailureHistory.asMap(), writeSet);
             } else {
                 this.orderedEnsemble = writeSet;
             }
@@ -187,7 +189,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
                 // Since we send all long poll requests to every available node, we should only
                 // treat these errors as failures if the node from which we received this is part of
                 // the writeSet
-                if (this.writeSet.contains(bookieIndex)) {
+                if (ArrayUtils.contains(this.writeSet, bookieIndex)) {
                     lh.registerOperationFailureOnBookie(host, entryId);
                 }
                 ++numMissedEntryReads;
@@ -239,15 +241,15 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
 
         ParallelReadRequest(ArrayList<BookieSocketAddress> ensemble, long lId, long eId) {
             super(ensemble, lId, eId);
-            numPendings = orderedEnsemble.size();
+            numPendings = orderedEnsemble.length;
         }
 
         @Override
         void read() {
-            for (int bookieIndex : orderedEnsemble) {
-                BookieSocketAddress to = ensemble.get(bookieIndex);
+            for (int i = 0; i < orderedEnsemble.length; i++) {
+                BookieSocketAddress to = ensemble.get(orderedEnsemble[i]);
                 try {
-                    sendReadTo(bookieIndex, to, this);
+                    sendReadTo(orderedEnsemble[i], to, this);
                 } catch (InterruptedException ie) {
                     LOG.error("Interrupted reading entry {} : ", this, ie);
                     Thread.currentThread().interrupt();
@@ -290,9 +292,9 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         SequenceReadRequest(ArrayList<BookieSocketAddress> ensemble, long lId, long eId) {
             super(ensemble, lId, eId);
 
-            this.sentReplicas = new BitSet(orderedEnsemble.size());
-            this.erroredReplicas = new BitSet(orderedEnsemble.size());
-            this.emptyResponseReplicas = new BitSet(orderedEnsemble.size());
+            this.sentReplicas = new BitSet(orderedEnsemble.length);
+            this.erroredReplicas = new BitSet(orderedEnsemble.length);
+            this.emptyResponseReplicas = new BitSet(orderedEnsemble.length);
         }
 
         private synchronized int getNextReplicaIndexToReadFrom() {
@@ -300,7 +302,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         }
 
         private int getReplicaIndex(int bookieIndex) {
-            return orderedEnsemble.indexOf(bookieIndex);
+            return ArrayUtils.indexOf(orderedEnsemble, bookieIndex);
         }
 
         private BitSet getSentToBitSet() {
@@ -308,7 +310,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
 
             for (int i = 0; i < sentReplicas.length(); i++) {
                 if (sentReplicas.get(i)) {
-                    b.set(orderedEnsemble.get(i));
+                    b.set(orderedEnsemble[i]);
                 }
             }
             return b;
@@ -363,7 +365,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
             }
 
             int replica = nextReplicaIndexToReadFrom;
-            int bookieIndex = orderedEnsemble.get(nextReplicaIndexToReadFrom);
+            int bookieIndex = orderedEnsemble[nextReplicaIndexToReadFrom];
             nextReplicaIndexToReadFrom++;
 
             try {

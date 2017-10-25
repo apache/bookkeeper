@@ -34,6 +34,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
+import org.apache.bookkeeper.util.collections.ArrayUtils2;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
@@ -146,21 +147,19 @@ public class DefaultEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
     }
 
     @Override
-    public List<Integer> reorderReadSequence(ArrayList<BookieSocketAddress> ensemble, List<Integer> writeSet, Map<BookieSocketAddress, Long> bookieFailureHistory) {
+    public int[] reorderReadSequence(
+            ArrayList<BookieSocketAddress> ensemble,
+            Map<BookieSocketAddress, Long> bookieFailureHistory,
+            int[] writeSet) {
         return writeSet;
     }
 
     @Override
-    public List<Integer> reorderReadLACSequence(ArrayList<BookieSocketAddress> ensemble, List<Integer> writeSet, Map<BookieSocketAddress, Long> bookieFailureHistory) {
-        List<Integer> retList = new ArrayList<Integer>(writeSet);
-        if (retList.size() < ensemble.size()) {
-            for (int i = 0; i < ensemble.size(); i++) {
-                if (!retList.contains(i)) {
-                    retList.add(i);
-                }
-            }
-        }
-        return retList;
+    public int[] reorderReadLACSequence(
+            ArrayList<BookieSocketAddress> ensemble,
+            Map<BookieSocketAddress, Long> bookieFailureHistory,
+            int[] writeSet) {
+        return ArrayUtils2.addMissingIndices(writeSet, ensemble.size());
     }
 
     @Override

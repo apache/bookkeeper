@@ -17,7 +17,7 @@
  */
 package org.apache.bookkeeper.client;
 
-
+import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -45,8 +45,8 @@ class PendingWriteLacOp implements WriteLacCallback {
     AddLacCallback cb;
     long lac;
     Object ctx;
-    Set<Integer> writeSet;
-    Set<Integer> receivedResponseSet;
+    int[] writeSet;
+    BitSet receivedResponseSet;
 
     DistributionSchedule.AckSet ackSet;
     boolean completed = false;
@@ -66,8 +66,10 @@ class PendingWriteLacOp implements WriteLacCallback {
 
     void setLac(long lac) {
         this.lac = lac;
-        this.writeSet = new HashSet<Integer>(lh.distributionSchedule.getWriteSet(lac));
-        this.receivedResponseSet = new HashSet<Integer>(writeSet);
+        this.writeSet = new int[lh.metadata.getWriteQuorumSize()];
+        lh.distributionSchedule.getWriteSet(lac, writeSet);
+        this.receivedResponseSet = new BitSet(writeSet.length);
+        this.receivedResponseSet.set(0, writeSet.length);
     }
 
     void sendWriteLacRequest(int bookieIndex) {
@@ -77,8 +79,9 @@ class PendingWriteLacOp implements WriteLacCallback {
 
     void initiate(ByteBuf toSend) {
         this.toSend = toSend;
-        for (int bookieIndex: writeSet) {
-            sendWriteLacRequest(bookieIndex);
+
+        for (int i = 0; i < writeSet.length; i++) {
+            sendWriteLacRequest(writeSet[i]);
         }
     }
 
@@ -95,7 +98,7 @@ class PendingWriteLacOp implements WriteLacCallback {
         }
 
         // We got response.
-        receivedResponseSet.remove(bookieIndex);
+        receivedResponseSet.clear(bookieIndex);
 
         if (rc == BKException.Code.OK) {
             if (ackSet.completeBookieAndCheck(bookieIndex) && !completed) {

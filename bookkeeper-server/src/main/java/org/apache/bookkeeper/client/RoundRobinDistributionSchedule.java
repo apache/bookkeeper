@@ -19,12 +19,17 @@ package org.apache.bookkeeper.client;
 
 import com.google.common.collect.ImmutableMap;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.commons.lang3.ArrayUtils;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.BitSet;
 import java.util.Map;
+import java.util.Arrays;
+
+import com.google.common.base.MoreObjects;
+
+import io.netty.util.Recycler;
+import io.netty.util.Recycler.Handle;
+
 
 /**
  * A specific {@link DistributionSchedule} that places entries in round-robin
@@ -34,56 +39,136 @@ import java.util.Map;
  *
  */
 class RoundRobinDistributionSchedule implements DistributionSchedule {
-    private int writeQuorumSize;
-    private int ackQuorumSize;
-    private int ensembleSize;
+    private final int writeQuorumSize;
+    private final int ackQuorumSize;
+    private final int ensembleSize;
 
+    private final int[][] writeSets;
 
     public RoundRobinDistributionSchedule(int writeQuorumSize, int ackQuorumSize, int ensembleSize) {
         this.writeQuorumSize = writeQuorumSize;
         this.ackQuorumSize = ackQuorumSize;
         this.ensembleSize = ensembleSize;
+
+        // Pre-compute possible write sets
+        writeSets = new int[ensembleSize][];
+        for (int i = 0; i < ensembleSize; i++) {
+            writeSets[i] = new int[writeQuorumSize];
+            for (int w = 0; w < this.writeQuorumSize; w++) {
+                writeSets[i][w] = (i + w) % ensembleSize;
+            }
+        }
     }
 
     @Override
-    public List<Integer> getWriteSet(long entryId) {
-        List<Integer> set = new ArrayList<Integer>();
-        for (int i = 0; i < this.writeQuorumSize; i++) {
-            set.add((int)((entryId + i) % ensembleSize));
+    public void getWriteSet(long entryId, int[] target) {
+        if (target.length != writeQuorumSize) {
+            throw new IllegalArgumentException(
+                    "Target array size should match write quorum");
         }
-        return set;
+        int[] set = writeSets[(int) (entryId % ensembleSize)];
+        System.arraycopy(set, 0, target, 0, writeQuorumSize);
     }
 
     @Override
     public AckSet getAckSet() {
-        final HashSet<Integer> ackSet = new HashSet<Integer>();
-        final HashMap<Integer, BookieSocketAddress> failureMap =
-                new HashMap<Integer, BookieSocketAddress>();
-        return new AckSet() {
-            public boolean completeBookieAndCheck(int bookieIndexHeardFrom) {
-                failureMap.remove(bookieIndexHeardFrom);
-                ackSet.add(bookieIndexHeardFrom);
-                return ackSet.size() >= ackQuorumSize;
-            }
+        return AckSetImpl.create(ensembleSize, writeQuorumSize, ackQuorumSize);
+    }
 
-            @Override
-            public boolean failBookieAndCheck(int bookieIndexHeardFrom, BookieSocketAddress address) {
-                ackSet.remove(bookieIndexHeardFrom);
-                failureMap.put(bookieIndexHeardFrom, address);
-                return failureMap.size() > (writeQuorumSize - ackQuorumSize);
-            }
+    private static class AckSetImpl implements AckSet {
+        private int writeQuorumSize;
+        private int ackQuorumSize;
+        private final BitSet ackSet = new BitSet();
+        // grows on reset()
+        private BookieSocketAddress[] failureMap = new BookieSocketAddress[0];
 
-            @Override
-            public Map<Integer, BookieSocketAddress> getFailedBookies() {
-                return ImmutableMap.copyOf(failureMap);
-            }
-
-            public boolean removeBookieAndCheck(int bookie) {
-                ackSet.remove(bookie);
-                failureMap.remove(bookie);
-                return ackSet.size() >= ackQuorumSize;
+        private final Handle<AckSetImpl> recyclerHandle;
+        private static final Recycler<AckSetImpl> RECYCLER = new Recycler<AckSetImpl>() {
+            protected AckSetImpl newObject(Recycler.Handle<AckSetImpl> handle) {
+                return new AckSetImpl(handle);
             }
         };
+
+        private AckSetImpl(Handle<AckSetImpl> recyclerHandle) {
+            this.recyclerHandle = recyclerHandle;
+        }
+
+        static AckSetImpl create(int ensembleSize,
+                                 int writeQuorumSize,
+                                 int ackQuorumSize) {
+            AckSetImpl ackSet = RECYCLER.get();
+            ackSet.reset(ensembleSize, writeQuorumSize, ackQuorumSize);
+            return ackSet;
+        }
+
+        private void reset(int ensembleSize,
+                           int writeQuorumSize,
+                           int ackQuorumSize) {
+            this.ackQuorumSize = ackQuorumSize;
+            this.writeQuorumSize = writeQuorumSize;
+            ackSet.clear();
+            if (failureMap.length < ensembleSize) {
+                failureMap = new BookieSocketAddress[ensembleSize];
+            }
+            Arrays.fill(failureMap, null);
+        }
+
+        @Override
+        public boolean completeBookieAndCheck(int bookieIndexHeardFrom) {
+            failureMap[bookieIndexHeardFrom] = null;
+            ackSet.set(bookieIndexHeardFrom);
+            return ackSet.cardinality() >= ackQuorumSize;
+        }
+
+        @Override
+        public boolean failBookieAndCheck(int bookieIndexHeardFrom,
+                                          BookieSocketAddress address) {
+            ackSet.clear(bookieIndexHeardFrom);
+            failureMap[bookieIndexHeardFrom] = address;
+            return failed() > (writeQuorumSize - ackQuorumSize);
+        }
+
+        @Override
+        public Map<Integer, BookieSocketAddress> getFailedBookies() {
+            ImmutableMap.Builder<Integer, BookieSocketAddress> builder
+                = new ImmutableMap.Builder<>();
+            for (int i = 0; i < failureMap.length; i++) {
+                if (failureMap[i] != null) {
+                    builder.put(i, failureMap[i]);
+                }
+            }
+            return builder.build();
+        }
+
+        @Override
+        public boolean removeBookieAndCheck(int bookie) {
+            ackSet.clear(bookie);
+            failureMap[bookie] = null;
+            return ackSet.cardinality() >= ackQuorumSize;
+        }
+
+        @Override
+        public void recycle() {
+            recyclerHandle.recycle(this);
+        }
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                .add("ackQuorumSize", ackQuorumSize)
+                .add("ackSet", ackSet)
+                .add("failureMap", failureMap).toString();
+        }
+
+        private int failed() {
+            int count = 0;
+            for (int i = 0; i < failureMap.length; i++) {
+                if (failureMap[i] != null) {
+                    count++;
+                }
+            }
+            return count;
+        }
     }
 
     private class RRQuorumCoverageSet implements QuorumCoverageSet {
@@ -136,6 +221,7 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
 
     @Override
     public boolean hasEntry(long entryId, int bookieIndex) {
-        return getWriteSet(entryId).contains(bookieIndex);
+        int[] set = writeSets[(int) (entryId % ensembleSize)];
+        return ArrayUtils.contains(set, bookieIndex);
     }
 }

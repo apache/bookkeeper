@@ -19,12 +19,14 @@ package org.apache.bookkeeper.client;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.primitives.Ints;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import io.netty.util.HashedWheelTimer;
@@ -57,7 +59,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
     RegionAwareEnsemblePlacementPolicy repp;
     final ClientConfiguration conf = new ClientConfiguration();
     final ArrayList<BookieSocketAddress> ensemble = new ArrayList<BookieSocketAddress>();
-    final List<Integer> writeSet = new ArrayList<Integer>();
+    int[] writeSet = new int[4];
     BookieSocketAddress addr1, addr2, addr3, addr4;
     HashedWheelTimer timer;
 
@@ -90,7 +92,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         ensemble.add(addr3);
         ensemble.add(addr4);
         for (int i = 0; i < 4; i++) {
-            writeSet.add(i);
+            writeSet[i] = i;
         }
 
         timer = new HashedWheelTimer(
@@ -116,9 +118,10 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         repp = new RegionAwareEnsemblePlacementPolicy();
         repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
 
-        List<Integer> reorderSet = repp.reorderReadSequence(ensemble, writeSet, new HashMap<BookieSocketAddress, Long>());
-        assertFalse(reorderSet == writeSet);
-        assertEquals(writeSet, reorderSet);
+        int[] origWriteSet = Arrays.copyOf(writeSet, writeSet.length);
+        int[] reorderSet = repp.reorderReadSequence(
+                ensemble, new HashMap<BookieSocketAddress, Long>(), writeSet);
+        assertTrue(Arrays.equals(origWriteSet, reorderSet));
     }
 
     @Test
@@ -139,15 +142,13 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr4);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
 
-        List<Integer> reorderSet = repp.reorderReadSequence(ensemble, writeSet, new HashMap<BookieSocketAddress, Long>());
-        List<Integer> expectedSet = new ArrayList<Integer>();
-        expectedSet.add(0);
-        expectedSet.add(3);
-        expectedSet.add(1);
-        expectedSet.add(2);
+        int[] origWriteSet = Arrays.copyOf(writeSet, writeSet.length);
+        int[] reorderSet = repp.reorderReadSequence(
+                ensemble, new HashMap<BookieSocketAddress, Long>(), writeSet);
+        int[] expectedSet = {0, 3, 1, 2};
         LOG.info("reorder set : {}", reorderSet);
-        assertFalse(reorderSet == writeSet);
-        assertEquals(expectedSet, reorderSet);
+        assertFalse(Arrays.equals(reorderSet, origWriteSet));
+        assertTrue(Arrays.equals(expectedSet, reorderSet));
     }
 
     @Test
@@ -158,10 +159,11 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         repp = new RegionAwareEnsemblePlacementPolicy();
         repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
 
-        List<Integer> reoderSet = repp.reorderReadSequence(ensemble, writeSet, new HashMap<BookieSocketAddress, Long>());
-        LOG.info("reorder set : {}", reoderSet);
-        assertFalse(reoderSet == writeSet);
-        assertEquals(writeSet, reoderSet);
+        int[] origWriteSet = Arrays.copyOf(writeSet, writeSet.length);
+        int[] reorderSet = repp.reorderReadSequence(
+                ensemble, new HashMap<BookieSocketAddress, Long>(), writeSet);
+        LOG.info("reorder set : {}", reorderSet);
+        assertTrue(Arrays.equals(origWriteSet, reorderSet));
     }
 
     @Test
@@ -182,15 +184,13 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         addrs.remove(addr1);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
 
-        List<Integer> reoderSet = repp.reorderReadSequence(ensemble, writeSet, new HashMap<BookieSocketAddress, Long>());
-        List<Integer> expectedSet = new ArrayList<Integer>();
-        expectedSet.add(3);
-        expectedSet.add(1);
-        expectedSet.add(2);
-        expectedSet.add(0);
-        LOG.info("reorder set : {}", reoderSet);
-        assertFalse(reoderSet == writeSet);
-        assertEquals(expectedSet, reoderSet);
+        int[] origWriteSet = Arrays.copyOf(writeSet, writeSet.length);
+        int[] reorderSet = repp.reorderReadSequence(
+                ensemble, new HashMap<BookieSocketAddress, Long>(), writeSet);
+        int[] expectedSet = {3, 1, 2, 0};
+        LOG.info("reorder set : {}", reorderSet);
+        assertFalse(Arrays.equals(reorderSet, origWriteSet));
+        assertTrue(Arrays.equals(expectedSet, reorderSet));
     }
 
     @Test
@@ -213,15 +213,13 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         ro.add(addr1);
         repp.onClusterChanged(addrs, ro);
 
-        List<Integer> reoderSet = repp.reorderReadSequence(ensemble, writeSet, new HashMap<BookieSocketAddress, Long>());
-        List<Integer> expectedSet = new ArrayList<Integer>();
-        expectedSet.add(3);
-        expectedSet.add(1);
-        expectedSet.add(2);
-        expectedSet.add(0);
-        LOG.info("reorder set : {}", reoderSet);
-        assertFalse(reoderSet == writeSet);
-        assertEquals(expectedSet, reoderSet);
+        int[] origWriteSet = Arrays.copyOf(writeSet, writeSet.length);
+        int[] reorderSet = repp.reorderReadSequence(
+                ensemble, new HashMap<BookieSocketAddress, Long>(), writeSet);
+        int[] expectedSet = {3, 1, 2, 0};
+        LOG.info("reorder set : {}", reorderSet);
+        assertFalse(Arrays.equals(reorderSet, origWriteSet));
+        assertTrue(Arrays.equals(expectedSet, reorderSet));
     }
 
     @Test
@@ -243,15 +241,13 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         addrs.remove(addr2);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
 
-        List<Integer> reoderSet = repp.reorderReadSequence(ensemble, writeSet, new HashMap<BookieSocketAddress, Long>());
-        List<Integer> expectedSet = new ArrayList<Integer>();
-        expectedSet.add(3);
-        expectedSet.add(2);
-        expectedSet.add(0);
-        expectedSet.add(1);
-        LOG.info("reorder set : {}", reoderSet);
-        assertFalse(reoderSet == writeSet);
-        assertEquals(expectedSet, reoderSet);
+        int[] origWriteSet = Arrays.copyOf(writeSet, writeSet.length);
+        int[] reorderSet = repp.reorderReadSequence(
+                ensemble, new HashMap<BookieSocketAddress, Long>(), writeSet);
+        int[] expectedSet = {3, 2, 0, 1};
+        LOG.info("reorder set : {}", reorderSet);
+        assertFalse(Arrays.equals(reorderSet, origWriteSet));
+        assertTrue(Arrays.equals(expectedSet, reorderSet));
     }
 
     @Test
@@ -1038,12 +1034,17 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
 
         int ensembleSize = ensemble.size();
         for (int i = 0; i < ensembleSize; i++) {
-            List<Integer> writeSet = ds.getWriteSet(i);
-            List<Integer> readSet;
+            int[] writeSet = new int[9];
+            ds.getWriteSet(i, writeSet);
+            int[] readSet;
             if (isReadLAC) {
-                readSet = repp.reorderReadLACSequence(ensemble, writeSet, new HashMap<BookieSocketAddress, Long>());
+                readSet = repp.reorderReadLACSequence(
+                        ensemble,
+                        new HashMap<BookieSocketAddress, Long>(), writeSet);
             } else {
-                readSet = repp.reorderReadSequence(ensemble, writeSet, new HashMap<BookieSocketAddress, Long>());
+                readSet = repp.reorderReadSequence(
+                        ensemble,
+                        new HashMap<BookieSocketAddress, Long>(), writeSet);
             }
 
             LOG.info("Reorder {} => {}.", writeSet, readSet);
@@ -1051,17 +1052,17 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             // first few nodes less than REMOTE_NODE_IN_REORDER_SEQUENCE should be local region
             int k = 0;
             for (; k < RegionAwareEnsemblePlacementPolicy.REMOTE_NODE_IN_REORDER_SEQUENCE; k++) {
-                BookieSocketAddress address = ensemble.get(readSet.get(k));
+                BookieSocketAddress address = ensemble.get(readSet[k]);
                 assertEquals(myRegion, StaticDNSResolver.getRegion(address.getHostName()));
             }
-            BookieSocketAddress remoteAddress = ensemble.get(readSet.get(k));
+            BookieSocketAddress remoteAddress = ensemble.get(readSet[k]);
             assertFalse(myRegion.equals(StaticDNSResolver.getRegion(remoteAddress.getHostName())));
             k++;
-            BookieSocketAddress localAddress = ensemble.get(readSet.get(k));
+            BookieSocketAddress localAddress = ensemble.get(readSet[k]);
             assertEquals(myRegion, StaticDNSResolver.getRegion(localAddress.getHostName()));
             k++;
             for (; k < ensembleSize; k++) {
-                BookieSocketAddress address = ensemble.get(readSet.get(k));
+                BookieSocketAddress address = ensemble.get(readSet[k]);
                 assertFalse(myRegion.equals(StaticDNSResolver.getRegion(address.getHostName())));
             }
         }
@@ -1088,14 +1089,19 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         LOG.info("My region is {}, ensemble : {}", repp.myRegion, ensemble);
 
         int ensembleSize = ensemble.size();
+        int[] writeSet = new int[9];
         for (int i = 0; i < ensembleSize; i++) {
-            List<Integer> writeSet = ds.getWriteSet(i);
-            List<Integer> readSet;
+            ds.getWriteSet(i, writeSet);
+            int[] readSet;
 
             if (isReadLAC) {
-                readSet = repp.reorderReadLACSequence(ensemble, writeSet, new HashMap<BookieSocketAddress, Long>());
+                readSet = repp.reorderReadLACSequence(
+                        ensemble,
+                        new HashMap<BookieSocketAddress, Long>(), writeSet);
             } else {
-                readSet = repp.reorderReadSequence(ensemble, writeSet, new HashMap<BookieSocketAddress, Long>());
+                readSet = repp.reorderReadSequence(
+                        ensemble,
+                        new HashMap<BookieSocketAddress, Long>(), writeSet);
             }
 
             assertEquals(writeSet, readSet);
@@ -1124,7 +1130,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
     }
 
     static void appendBookieIndexByRegion(ArrayList<BookieSocketAddress> ensemble,
-                                          List<Integer> writeSet,
+                                          int[] writeSet,
                                           String region,
                                           List<Integer> finalSet) {
         for (int bi : writeSet) {
@@ -1158,13 +1164,18 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         LOG.info("Writable Bookies {}, ReadOnly Bookies {}.", repp.knownBookies.keySet(), repp.readOnlyBookies);
 
         int ensembleSize = ensemble.size();
+        int[] writeSet = new int[9];
         for (int i = 0; i < ensembleSize; i++) {
-            List<Integer> writeSet = ds.getWriteSet(i);
-            List<Integer> readSet;
+            ds.getWriteSet(i, writeSet);
+            int[] readSet;
             if (isReadLAC) {
-                readSet = repp.reorderReadLACSequence(ensemble, writeSet, new HashMap<BookieSocketAddress, Long>());
+                readSet = repp.reorderReadLACSequence(
+                        ensemble, new HashMap<BookieSocketAddress, Long>(),
+                        writeSet);
             } else {
-                readSet = repp.reorderReadSequence(ensemble, writeSet, new HashMap<BookieSocketAddress, Long>());
+                readSet = repp.reorderReadSequence(
+                        ensemble, new HashMap<BookieSocketAddress, Long>(),
+                        writeSet);
             }
 
             LOG.info("Reorder {} => {}.", writeSet, readSet);
@@ -1176,8 +1187,8 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             appendBookieIndexByRegion(ensemble, writeSet, readOnlyRegion, expectedReadSet);
             // unavailable bookies
             appendBookieIndexByRegion(ensemble, writeSet, unavailableRegion, expectedReadSet);
-
-            assertEquals(expectedReadSet, readSet);
+            int[] expected = Ints.toArray(expectedReadSet);
+            assertTrue(Arrays.equals(expected, readSet));
         }
     }
 
@@ -1229,8 +1240,10 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         ensemble.add(addr7);
         ensemble.add(addr8);
 
+        int[] writeSet2 = new int[8];
+        System.arraycopy(writeSet, 0, writeSet2, 0, 4);
         for (int i = 4; i < 8; i++) {
-            writeSet.add(i);
+            writeSet2[i] = i;
         }
 
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
@@ -1251,16 +1264,18 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         bookieFailures.put(addr3, 24L);
         bookieFailures.put(addr4, 25L);
 
-        List<Integer> reoderSet = repp.reorderReadSequence(ensemble, writeSet, bookieFailures);
+        LOG.info("write set : {}", writeSet2);
+        int[] reoderSet = repp.reorderReadSequence(
+                ensemble, bookieFailures, writeSet2);
         LOG.info("reorder set : {}", reoderSet);
-        assertEquals(ensemble.get(reoderSet.get(0)), addr6);
-        assertEquals(ensemble.get(reoderSet.get(1)), addr7);
-        assertEquals(ensemble.get(reoderSet.get(2)), addr5);
-        assertEquals(ensemble.get(reoderSet.get(3)), addr2);
-        assertEquals(ensemble.get(reoderSet.get(4)), addr3);
-        assertEquals(ensemble.get(reoderSet.get(5)), addr8);
-        assertEquals(ensemble.get(reoderSet.get(6)), addr1);
-        assertEquals(ensemble.get(reoderSet.get(7)), addr4);
+        assertEquals(ensemble.get(reoderSet[0]), addr6);
+        assertEquals(ensemble.get(reoderSet[1]), addr7);
+        assertEquals(ensemble.get(reoderSet[2]), addr5);
+        assertEquals(ensemble.get(reoderSet[3]), addr2);
+        assertEquals(ensemble.get(reoderSet[4]), addr3);
+        assertEquals(ensemble.get(reoderSet[5]), addr8);
+        assertEquals(ensemble.get(reoderSet[6]), addr1);
+        assertEquals(ensemble.get(reoderSet[7]), addr4);
     }
 
 }

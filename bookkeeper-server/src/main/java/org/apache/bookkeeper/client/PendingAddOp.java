@@ -22,9 +22,7 @@ import io.netty.util.ReferenceCountUtil;
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
 
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.ImmutableMap;
@@ -35,6 +33,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.SafeRunnable;
+import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.concurrent.RejectedExecutionException;
@@ -56,7 +55,7 @@ class PendingAddOp implements WriteCallback, TimerTask {
     Object ctx;
     long entryId;
     int entryLength;
-    Set<Integer> writeSet;
+    int[] writeSet;
 
     DistributionSchedule.AckSet ackSet;
     boolean completed = false;
@@ -76,6 +75,8 @@ class PendingAddOp implements WriteCallback, TimerTask {
         this.cb = cb;
         this.ctx = ctx;
         this.entryId = LedgerHandle.INVALID_ENTRY_ID;
+
+        writeSet = new int[lh.metadata.getWriteQuorumSize()];
         this.ackSet = lh.distributionSchedule.getAckSet();
         this.addOpLogger = lh.bk.getAddOpLogger();
         this.timeoutSec = lh.bk.getConf().getAddEntryQuorumTimeout();
@@ -92,7 +93,8 @@ class PendingAddOp implements WriteCallback, TimerTask {
 
     void setEntryId(long entryId) {
         this.entryId = entryId;
-        writeSet = new HashSet<Integer>(lh.distributionSchedule.getWriteSet(entryId));
+
+        lh.distributionSchedule.getWriteSet(entryId, writeSet);
     }
 
     long getEntryId() {
@@ -152,7 +154,7 @@ class PendingAddOp implements WriteCallback, TimerTask {
         // completes.
         //
         // We call sendAddSuccessCallback when unsetting t cover this case.
-        if (!writeSet.contains(bookieIndex)) {
+        if (!ArrayUtils.contains(writeSet, bookieIndex)) {
             lh.sendAddSuccessCallbacks();
             return;
         }
@@ -192,8 +194,10 @@ class PendingAddOp implements WriteCallback, TimerTask {
         // Retain the buffer until all writes are complete
         this.toSend.retain();
         this.entryLength = entryLength;
-        for (int bookieIndex : writeSet) {
-            sendWriteRequest(bookieIndex);
+
+        // Iterate over set and trigger the sendWriteRequests
+        for (int i = 0; i < writeSet.length; i++) {
+            sendWriteRequest(writeSet[i]);
         }
     }
 
@@ -279,6 +283,7 @@ class PendingAddOp implements WriteCallback, TimerTask {
 
         if (ackQuorum && !completed) {
             completed = true;
+            ackSet.recycle();
 
             sendAddSuccessCallbacks();
         }

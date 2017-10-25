@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.Set;
@@ -87,19 +86,25 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         int numMissedEntryReads = 0;
 
         final ArrayList<BookieSocketAddress> ensemble;
-        final List<Integer> writeSet;
+        final int[] writeSet;
 
         LedgerEntryRequest(ArrayList<BookieSocketAddress> ensemble, long lId, long eId) {
             super(lId, eId);
 
             this.ensemble = ensemble;
 
+            int[] writeSet = new int[lh.metadata.getWriteQuorumSize()];
             if (lh.bk.isReorderReadSequence()) {
-                this.writeSet = lh.bk.getPlacementPolicy().reorderReadSequence(ensemble,
-                    lh.distributionSchedule.getWriteSet(entryId), lh.bookieFailureHistory.asMap());
+                lh.distributionSchedule.getWriteSet(entryId, writeSet);
+                writeSet = lh.bk.getPlacementPolicy()
+                    .reorderReadSequence(
+                            ensemble,
+                            lh.bookieFailureHistory.asMap(),
+                            writeSet);
             } else {
-                this.writeSet = lh.distributionSchedule.getWriteSet(entryId);
+                lh.distributionSchedule.getWriteSet(entryId, writeSet);
             }
+            this.writeSet = writeSet;
         }
 
         /**
@@ -264,15 +269,15 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
 
         ParallelReadRequest(ArrayList<BookieSocketAddress> ensemble, long lId, long eId) {
             super(ensemble, lId, eId);
-            numPendings = writeSet.size();
+            numPendings = writeSet.length;
         }
 
         @Override
         void read() {
-            for (int bookieIndex : writeSet) {
-                BookieSocketAddress to = ensemble.get(bookieIndex);
+            for (int i = 0; i < writeSet.length; i++) {
+                BookieSocketAddress to = ensemble.get(writeSet[i]);
                 try {
-                    sendReadTo(bookieIndex, to, this);
+                    sendReadTo(writeSet[i], to, this);
                 } catch (InterruptedException ie) {
                     LOG.error("Interrupted reading entry {} : ", this, ie);
                     Thread.currentThread().interrupt();
@@ -323,7 +328,12 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         }
 
         private int getReplicaIndex(int bookieIndex) {
-            return writeSet.indexOf(bookieIndex);
+            for (int i = 0; i < writeSet.length; i++) {
+                if (writeSet[i] == bookieIndex) {
+                    return i;
+                }
+            }
+            return -1;
         }
 
         private BitSet getSentToBitSet() {
@@ -331,7 +341,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
 
             for (int i = 0; i < sentReplicas.length(); i++) {
                 if (sentReplicas.get(i)) {
-                    b.set(writeSet.get(i));
+                    b.set(writeSet[i]);
                 }
             }
             return b;
@@ -386,7 +396,9 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             }
 
             int replica = nextReplicaIndexToReadFrom;
-            int bookieIndex = lh.distributionSchedule.getWriteSet(entryId).get(nextReplicaIndexToReadFrom);
+            int[] writeSet = new int[getLedgerMetadata().getWriteQuorumSize()];
+            lh.distributionSchedule.getWriteSet(entryId, writeSet);
+            int bookieIndex = writeSet[nextReplicaIndexToReadFrom];
             nextReplicaIndexToReadFrom++;
 
             try {

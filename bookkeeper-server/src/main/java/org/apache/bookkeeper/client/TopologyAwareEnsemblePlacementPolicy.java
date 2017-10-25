@@ -30,6 +30,7 @@ import com.google.common.collect.Sets;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.net.NodeBase;
+import org.apache.bookkeeper.util.collections.ArrayUtils2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -452,20 +453,20 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements ITopologyAwareEns
     }
 
     @Override
-    public List<Integer> reorderReadSequence(ArrayList<BookieSocketAddress> ensemble, List<Integer> writeSet, Map<BookieSocketAddress, Long> bookieFailureHistory) {
+    public int[] reorderReadSequence(
+            ArrayList<BookieSocketAddress> ensemble,
+            Map<BookieSocketAddress, Long> bookieFailureHistory,
+            int[] writeSet) {
         return writeSet;
     }
 
     @Override
-    public List<Integer> reorderReadLACSequence(ArrayList<BookieSocketAddress> ensemble, List<Integer> writeSet, Map<BookieSocketAddress, Long> bookieFailureHistory) {
-        List<Integer> retList = new ArrayList<Integer>(reorderReadSequence(ensemble, writeSet, bookieFailureHistory));
-        if (retList.size() < ensemble.size()) {
-            for (int i = 0; i < ensemble.size(); i++) {
-                if (!retList.contains(i)) {
-                    retList.add(i);
-                }
-            }
-        }
-        return retList;
+    public int[] reorderReadLACSequence(
+            ArrayList<BookieSocketAddress> ensemble,
+            Map<BookieSocketAddress, Long> bookieFailureHistory,
+            int[] writeSet) {
+        int[] retList = reorderReadSequence(
+                ensemble, bookieFailureHistory, writeSet);
+        return ArrayUtils2.addMissingIndices(retList, ensemble.size());
     }
 }

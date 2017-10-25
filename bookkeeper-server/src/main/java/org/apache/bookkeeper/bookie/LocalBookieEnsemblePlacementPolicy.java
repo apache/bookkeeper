@@ -88,14 +88,18 @@ public class LocalBookieEnsemblePlacementPolicy implements EnsemblePlacementPoli
     }
 
     @Override
-    public List<Integer> reorderReadSequence(ArrayList<BookieSocketAddress> ensemble, List<Integer> writeSet,
-                                             Map<BookieSocketAddress, Long> bookieFailureHistory) {
+    public int[] reorderReadSequence(
+            ArrayList<BookieSocketAddress> ensemble,
+            Map<BookieSocketAddress, Long> bookieFailureHistory,
+            int[] writeSet) {
         return null;
     }
 
     @Override
-    public List<Integer> reorderReadLACSequence(ArrayList<BookieSocketAddress> ensemble, List<Integer> writeSet,
-                                                Map<BookieSocketAddress, Long> bookieFailureHistory) {
+    public int[] reorderReadLACSequence(
+            ArrayList<BookieSocketAddress> ensemble,
+            Map<BookieSocketAddress, Long> bookieFailureHistory,
+            int[] writeSet) {
         return null;
     }
 

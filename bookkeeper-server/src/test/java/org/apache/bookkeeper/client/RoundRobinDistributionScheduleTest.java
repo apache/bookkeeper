@@ -21,9 +21,9 @@
 
 package org.apache.bookkeeper.client;
 
-import java.util.List;
 import java.util.Set;
 import java.util.HashSet;
+
 import com.google.common.collect.Sets;
 
 import org.junit.Test;
@@ -39,14 +39,14 @@ public class RoundRobinDistributionScheduleTest {
     public void testDistributionSchedule() throws Exception {
         RoundRobinDistributionSchedule schedule = new RoundRobinDistributionSchedule(3, 2, 5);
 
-        List<Integer> wSet = schedule.getWriteSet(1);
-        assertEquals("Write set is wrong size", wSet.size(), 3);
-
+        int[] wSet = new int[3];
+        schedule.getWriteSet(1, wSet);
+        assertEquals("Write set is wrong size", wSet.length, 3);
         DistributionSchedule.AckSet ackSet = schedule.getAckSet();
-        assertFalse("Shouldn't ack yet", ackSet.completeBookieAndCheck(wSet.get(0)));
-        assertFalse("Shouldn't ack yet", ackSet.completeBookieAndCheck(wSet.get(0)));
-        assertTrue("Should ack after 2 unique", ackSet.completeBookieAndCheck(wSet.get(2)));
-        assertTrue("Should still be acking", ackSet.completeBookieAndCheck(wSet.get(1)));
+        assertFalse("Shouldn't ack yet", ackSet.completeBookieAndCheck(wSet[0]));
+        assertFalse("Shouldn't ack yet", ackSet.completeBookieAndCheck(wSet[0]));
+        assertTrue("Should ack after 2 unique", ackSet.completeBookieAndCheck(wSet[2]));
+        assertTrue("Should still be acking", ackSet.completeBookieAndCheck(wSet[1]));
     }
 
     /**

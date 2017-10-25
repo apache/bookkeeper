@@ -17,6 +17,7 @@
  */
 package org.apache.bookkeeper.client;
 
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -40,6 +41,9 @@ import org.apache.bookkeeper.net.Node;
 import org.apache.bookkeeper.net.NodeBase;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
+import static org.apache.bookkeeper.util.collections.ArrayUtils2.addMissingIndices;
+import static org.apache.bookkeeper.util.collections.ArrayUtils2.moveAndShift;
+import static org.apache.bookkeeper.util.collections.ArrayUtils2.shuffleWithMask;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -500,19 +504,26 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
     }
 
     @Override
-    public final List<Integer> reorderReadSequence(ArrayList<BookieSocketAddress> ensemble, List<Integer> writeSet, Map<BookieSocketAddress, Long> bookieFailureHistory) {
+    public final int[] reorderReadSequence(
+            ArrayList<BookieSocketAddress> ensemble,
+            Map<BookieSocketAddress, Long> bookieFailureHistory,
+            int[] writeSet) {
         if (UNKNOWN_REGION.equals(myRegion)) {
-            return super.reorderReadSequence(ensemble, writeSet, bookieFailureHistory);
+            return super.reorderReadSequence(ensemble, bookieFailureHistory,
+                                             writeSet);
         } else {
             int ensembleSize = ensemble.size();
-            List<Integer> finalList = new ArrayList<Integer>(writeSet.size());
-            List<Integer> localList = new ArrayList<Integer>(writeSet.size());
-            List<Long> localFailures = new ArrayList<Long>(writeSet.size());
-            List<Integer> remoteList = new ArrayList<Integer>(writeSet.size());
-            List<Long> remoteFailures = new ArrayList<Long>(writeSet.size());
-            List<Integer> readOnlyList = new ArrayList<Integer>(writeSet.size());
-            List<Integer> unAvailableList = new ArrayList<Integer>(writeSet.size());
-            for (Integer idx : writeSet) {
+
+            int localMask      = 0x01 << 24;
+            int localFailMask  = 0x02 << 24;
+            int remoteMask     = 0x04 << 24;
+            int remoteFailMask = 0x08 << 24;
+            int readOnlyMask   = 0x10 << 24;
+            int unavailMask    = 0x20 << 24;
+            int maskBits       = 0xFF << 24;
+
+            for (int i = 0; i < writeSet.length; i++) {
+                int idx = writeSet[i];
                 BookieSocketAddress address = ensemble.get(idx);
                 String region = getRegion(address);
                 Long lastFailedEntryOnBookie = bookieFailureHistory.get(address);
@@ -521,86 +532,91 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                     // is no write requests to them, so we shouldn't try reading from readonly bookie in prior to writable
                     // bookies.
                     if ((null == readOnlyBookies) || !readOnlyBookies.contains(address)) {
-                        unAvailableList.add(idx);
+                        writeSet[i] = idx | unavailMask;
                     } else {
-                        readOnlyList.add(idx);
+                        writeSet[i] = idx | readOnlyMask;
                     }
                 } else if (region.equals(myRegion)) {
                     if ((lastFailedEntryOnBookie == null) || (lastFailedEntryOnBookie < 0)) {
-                        localList.add(idx);
+                        writeSet[i] = idx | localMask;
                     } else {
-                         localFailures.add(lastFailedEntryOnBookie * ensembleSize + idx);
+                        writeSet[i] = (int)(((lastFailedEntryOnBookie * ensembleSize + idx) & ~maskBits) | localFailMask);
                     }
                 } else {
                     if ((lastFailedEntryOnBookie == null) || (lastFailedEntryOnBookie < 0)) {
-                        remoteList.add(idx);
+                        writeSet[i] = idx | remoteMask;
                     } else {
-                        remoteFailures.add(lastFailedEntryOnBookie * ensembleSize + idx);
+                        writeSet[i] = (int)(((lastFailedEntryOnBookie * ensembleSize + idx) & ~maskBits) | remoteFailMask);
                     }
                 }
             }
 
-            // Given that idx is less than ensemble size the order of the elements in these two lists
-            // is determined by the lastFailedEntryOnBookie
-            Collections.sort(localFailures);
-            Collections.sort(remoteFailures);
+            Arrays.sort(writeSet);
 
             if (reorderReadsRandom) {
-                Collections.shuffle(localList);
-                Collections.shuffle(remoteList);
-                Collections.shuffle(readOnlyList);
-                Collections.shuffle(unAvailableList);
+                shuffleWithMask(writeSet, localMask, maskBits);
+                shuffleWithMask(writeSet, remoteMask, maskBits);
+                shuffleWithMask(writeSet, readOnlyMask, maskBits);
+                shuffleWithMask(writeSet, unavailMask, maskBits);
             }
 
             // nodes within a region are ordered as follows
             // (Random?) list of nodes that have no history of failure
             // Nodes with Failure history are ordered in the reverse
             // order of the most recent entry that generated an error
-            for(long value: localFailures) {
-                localList.add((int)(value % ensembleSize));
-            }
-
-            for(long value: remoteFailures) {
-                remoteList.add((int)(value % ensembleSize));
+            // The sort will have put them in correct order,
+            // so remove the bits that sort by age.
+            for (int i = 0; i < writeSet.length; i++) {
+                int mask = writeSet[i] & maskBits;
+                if (mask == localFailMask) {
+                    writeSet[i] = localMask
+                        | ((writeSet[i] & ~maskBits) % ensembleSize);
+                } else if (mask == remoteFailMask) {
+                    writeSet[i] = remoteMask
+                        | ((writeSet[i] & ~maskBits) % ensembleSize);
+                }
             }
 
             // Insert a node from the remote region at the specified location so we
             // try more than one region within the max allowed latency
-            for (int i = 0; i < REMOTE_NODE_IN_REORDER_SEQUENCE; i++) {
-                if (localList.size() > 0) {
-                    finalList.add(localList.remove(0));
-                } else {
+            int firstRemote = -1;
+            for (int i = 0; i < writeSet.length; i++) {
+                if ((writeSet[i] & maskBits) == remoteMask) {
+                    firstRemote = i;
                     break;
                 }
             }
-
-            if (remoteList.size() > 0) {
-                finalList.add(remoteList.remove(0));
+            if (firstRemote != -1) {
+                int i = 0;
+                for (;i < REMOTE_NODE_IN_REORDER_SEQUENCE
+                         && i < writeSet.length; i++) {
+                    if ((writeSet[i] & maskBits) != localMask) {
+                        break;
+                    }
+                }
+                moveAndShift(writeSet, firstRemote, i);
             }
 
-            // Add all the local nodes
-            finalList.addAll(localList);
-            finalList.addAll(remoteList);
-            finalList.addAll(readOnlyList);
-            finalList.addAll(unAvailableList);
-            return finalList;
+
+            // remove all masks
+            for (int i = 0; i < writeSet.length; i++) {
+                writeSet[i] = writeSet[i] & ~maskBits;
+            }
+            return writeSet;
         }
     }
 
     @Override
-    public final List<Integer> reorderReadLACSequence(ArrayList<BookieSocketAddress> ensemble, List<Integer> writeSet, Map<BookieSocketAddress, Long> bookieFailureHistory) {
+    public final int[] reorderReadLACSequence(
+            ArrayList<BookieSocketAddress> ensemble,
+            Map<BookieSocketAddress, Long> bookieFailureHistory,
+            int[] writeSet) {
         if (UNKNOWN_REGION.equals(myRegion)) {
-            return super.reorderReadLACSequence(ensemble, writeSet, bookieFailureHistory);
+            return super.reorderReadLACSequence(ensemble, bookieFailureHistory,
+                                                writeSet);
         }
-        List<Integer> finalList = reorderReadSequence(ensemble, writeSet, bookieFailureHistory);
-
-        if (finalList.size() < ensemble.size()) {
-            for (int i = 0; i < ensemble.size(); i++) {
-                if (!finalList.contains(i)) {
-                    finalList.add(i);
-                }
-            }
-        }
-        return finalList;
+        int[] finalList = reorderReadSequence(ensemble, bookieFailureHistory,
+                                              writeSet);
+        return addMissingIndices(finalList, ensemble.size());
     }
 }
