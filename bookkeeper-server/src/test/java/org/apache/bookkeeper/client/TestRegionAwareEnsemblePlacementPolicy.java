@@ -65,7 +65,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         StaticDNSResolver.addNodeToRack(InetAddress.getLocalHost().getHostAddress(), rack);
         StaticDNSResolver.addNodeToRack(InetAddress.getLocalHost().getHostName(), rack);
         StaticDNSResolver.addNodeToRack("127.0.0.1", rack);
-        StaticDNSResolver.addNodeToRack("localhost", rack);        
+        StaticDNSResolver.addNodeToRack("localhost", rack);
     }
 
     @Override
@@ -128,10 +128,10 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
 
         repp = new RegionAwareEnsemblePlacementPolicy();
         repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
-        
+
         // make sure we've detected the right region
         assertEquals("r1", repp.myRegion);
-        
+
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);
         addrs.add(addr2);
