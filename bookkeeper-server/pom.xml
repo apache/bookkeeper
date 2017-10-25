@@ -477,7 +477,7 @@
               <artifactId>maven-surefire-plugin</artifactId>
               <version>${maven-surefire-plugin.version}</version>
               <configuration>
-                <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true -Dlog4j.configuration=log4j_debug.properties</argLine>
+                <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true -Dbookkeeper.root.logger=DEBUG,CONSOLE</argLine>
                 <redirectTestOutputToFile>false</redirectTestOutputToFile>
                 <reuseForks>false</reuseForks>
                 <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
