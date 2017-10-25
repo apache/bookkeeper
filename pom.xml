@@ -204,7 +204,8 @@
           <target>1.8</target>
           <compilerArgs>
             <compilerArg>-Werror</compilerArg>
-            <compilerArg>-Xlint:deprecation</compilerArg>
+            <!-- Protobuf generates code with warnings for top level 'enums' like LedgerType https://github.com/google/protobuf/issues/2054 -->
+            <!-- <compilerArg>-Xlint:deprecation</compilerArg> -->
             <compilerArg>-Xlint:unchecked</compilerArg>
             <!-- https://issues.apache.org/jira/browse/MCOMPILER-205 -->
             <compilerArg>-Xpkginfo:always</compilerArg>

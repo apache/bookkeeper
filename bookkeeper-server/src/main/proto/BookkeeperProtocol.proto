@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 syntax = "proto2";
+import "DataFormats.proto";
 
 option java_package = "org.apache.bookkeeper.proto";
 option optimize_for = SPEED;
@@ -62,6 +63,7 @@ enum OperationType {
     READ_LAC = 7;
     GET_BOOKIE_INFO = 8;
     START_TLS = 9;
+    SYNC = 10;
 }
 
 /**
@@ -83,6 +85,7 @@ message Request {
     optional ReadLacRequest readLacRequest = 104;
     optional GetBookieInfoRequest getBookieInfoRequest = 105;
     optional StartTLSRequest startTLSRequest = 106;
+    optional SyncRequest syncRequest = 107;
 }
 
 message ReadRequest {
@@ -111,6 +114,7 @@ message AddRequest {
     required int64 entryId = 2;
     required bytes masterKey = 3;
     required bytes body = 4;
+    optional LedgerType ledgerType = 5;
 }
 
 message StartTLSRequest {
@@ -136,6 +140,11 @@ message GetBookieInfoRequest {
     optional int64 requested = 1;
 }
 
+message SyncRequest {
+   required int64 ledgerId = 1;
+   required bytes masterKey = 2;
+}
+
 message Response {
 
     required BKPacketHeader header = 1;
@@ -150,6 +159,7 @@ message Response {
     optional ReadLacResponse readLacResponse = 104;
     optional GetBookieInfoResponse getBookieInfoResponse = 105;
     optional StartTLSResponse startTLSResponse = 106;
+    optional SyncResponse syncResponse = 107;
 }
 
 message ReadResponse {
@@ -166,6 +176,8 @@ message AddResponse {
     required StatusCode status = 1;
     required int64 ledgerId = 2;
     required int64 entryId = 3;
+    // Piggyback LastAddSynced
+    optional int64 lastAddSynced = 4;
 }
 
 message AuthMessage {
@@ -192,4 +204,10 @@ message GetBookieInfoResponse {
 }
 
 message StartTLSResponse {
+}
+
+message SyncResponse {
+    required StatusCode status = 1;
+    required int64 ledgerId = 2;
+    required int64 lastAddSynced = 3;
 }
