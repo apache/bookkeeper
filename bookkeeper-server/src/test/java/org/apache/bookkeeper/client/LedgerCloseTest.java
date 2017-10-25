@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
 
 import static org.junit.Assert.*;
 import static com.google.common.base.Charsets.UTF_8;
+import org.apache.bookkeeper.proto.DataFormats.LedgerType;
 
 /**
  * This class tests the ledger close logic.
@@ -195,7 +196,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
             throws Exception {
         Bookie sBookie = new Bookie(conf) {
             @Override
-            public void addEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey)
+            public void addEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey, LedgerType ledgerType)
                     throws IOException, BookieException {
                 try {
                     latch.await();
@@ -219,7 +220,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
     private void startDeadBookie(ServerConfiguration conf, final CountDownLatch latch) throws Exception {
         Bookie dBookie = new Bookie(conf) {
             @Override
-            public void addEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey)
+            public void addEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey, LedgerType ledgerType)
                     throws IOException, BookieException {
                 try {
                     latch.await();

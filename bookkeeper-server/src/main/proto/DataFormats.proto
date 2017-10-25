@@ -21,6 +21,14 @@ option java_package = "org.apache.bookkeeper.proto";
 option optimize_for = SPEED;
 
 /**
+ * Ledger Type
+ */
+enum LedgerType {
+    FORCE_ON_JOURNAL = 0;
+    FORCE_DEFERRED_ON_JOURNAL = 1;
+}
+
+/**
 * Metadata format for storing ledger information
 */
 message LedgerMetadataFormat {
@@ -58,6 +66,8 @@ message LedgerMetadataFormat {
         optional bytes value = 2;
     }
     repeated cMetadataMapEntry customMetadata = 11;
+
+    optional LedgerType ledgerType = 12 [default = FORCE_ON_JOURNAL];
 }
 
 message LedgerRereplicationLayoutFormat {

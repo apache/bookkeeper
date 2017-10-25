@@ -20,14 +20,6 @@
  */
 package org.apache.bookkeeper.client;
 
-import com.google.common.util.concurrent.SettableFuture;
-import io.netty.buffer.ByteBuf;
-import java.io.IOException;
-import java.util.Enumeration;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
@@ -44,6 +36,16 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.util.concurrent.SettableFuture;
+import io.netty.buffer.ByteBuf;
+import java.io.IOException;
+import java.util.Enumeration;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.bookkeeper.proto.DataFormats.LedgerType;
 
 import static org.junit.Assert.*;
 
@@ -85,7 +87,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
                 @Override
                 public void addEntry(ByteBuf entry, WriteCallback cb,
-                                     Object ctx, byte[] masterKey)
+                                     Object ctx, byte[] masterKey, LedgerType ledgerType)
                         throws IOException, BookieException {
                     try {
                         Thread.sleep(5000);
@@ -94,7 +96,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
                         // and an exception would spam the logs
                         Thread.currentThread().interrupt();
                     }
-                    super.addEntry(entry, cb, ctx, masterKey);
+                    super.addEntry(entry, cb, ctx, masterKey, ledgerType);
                 }
 
                 @Override

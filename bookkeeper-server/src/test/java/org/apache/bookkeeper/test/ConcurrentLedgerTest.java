@@ -38,6 +38,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.proto.DataFormats.LedgerType;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -187,7 +188,7 @@ public class ConcurrentLedgerTest {
                 bytes.position(0);
                 bytes.limit(bytes.capacity());
                 throttle.acquire();
-                bookie.addEntry(Unpooled.wrappedBuffer(bytes), cb, counter, zeros);
+                bookie.addEntry(Unpooled.wrappedBuffer(bytes), cb, counter, zeros, LedgerType.FORCE_ON_JOURNAL);
             }
         }
         long finish = System.currentTimeMillis();
