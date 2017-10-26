@@ -77,6 +77,9 @@ class PendingAddOp implements WriteCallback, TimerTask {
         this.entryId = LedgerHandle.INVALID_ENTRY_ID;
 
         writeSet = new int[lh.metadata.getWriteQuorumSize()];
+        // require writeSet be populated for it to be usable
+        Arrays.fill(writeSet, -12345);
+
         this.ackSet = lh.distributionSchedule.getAckSet();
         this.addOpLogger = lh.bk.getAddOpLogger();
         this.timeoutSec = lh.bk.getConf().getAddEntryQuorumTimeout();

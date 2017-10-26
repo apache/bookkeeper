@@ -21,12 +21,12 @@
 package org.apache.bookkeeper.util.collections;
 
 import java.util.Arrays;
+import org.junit.Test;
+
+import static org.apache.bookkeeper.util.collections.ArrayUtils2.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.apache.bookkeeper.util.collections.ArrayUtils2.*;
-
-import org.junit.Test;
 
 public class ArrayUtils2Test {
 
