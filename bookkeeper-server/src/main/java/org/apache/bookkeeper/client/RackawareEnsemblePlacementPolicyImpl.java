@@ -446,6 +446,7 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
             Ensemble<BookieNode> parentEnsemble,
             Predicate<BookieNode> parentPredicate) throws BKNotEnoughBookiesException {
         rwLock.readLock().lock();
+
         try {
             Set<Node> excludeNodes = convertBookiesToNodes(excludeBookies);
             RRTopologyAwareCoverageEnsemble ensemble =

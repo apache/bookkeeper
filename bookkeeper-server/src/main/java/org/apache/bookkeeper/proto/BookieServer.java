@@ -31,6 +31,7 @@ import org.apache.bookkeeper.bookie.BookieCriticalThread;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.bookie.ReadOnlyBookie;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.BKHttpServiceProvider;
 import org.apache.bookkeeper.http.HttpServer;
@@ -107,7 +108,7 @@ public class BookieServer {
                 new Bookie(conf, statsLogger.scope(BOOKIE_SCOPE));
     }
 
-    public void start() throws IOException, UnavailableException, InterruptedException, KeeperException {
+    public void start() throws IOException, UnavailableException, InterruptedException, KeeperException, BKException {
         this.bookie.start();
         // fail fast, when bookie startup is not successful
         if (!this.bookie.isRunning()) {

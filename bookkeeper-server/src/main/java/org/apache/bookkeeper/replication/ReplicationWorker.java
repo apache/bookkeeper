@@ -132,10 +132,14 @@ public class ReplicationWorker implements Runnable {
                 .newLedgerManagerFactory(this.conf, this.zkc);
         this.underreplicationManager = mFactory
                 .newLedgerUnderreplicationManager();
-        this.bkc = BookKeeper.forConfig(new ClientConfiguration(conf))
-                .zk(zkc)
-                .statsLogger(statsLogger.scope(BK_CLIENT_SCOPE))
-                .build();
+        try {
+            this.bkc = BookKeeper.forConfig(new ClientConfiguration(conf))
+                    .zk(zkc)
+                    .statsLogger(statsLogger.scope(BK_CLIENT_SCOPE))
+                    .build();
+        } catch (BKException e) {
+            throw new IOException("Failed to instantiate replication worker", e);
+        }
         this.admin = new BookKeeperAdmin(bkc, statsLogger);
         this.ledgerChecker = new LedgerChecker(bkc);
         this.workerThread = new BookieThread(this, "ReplicationWorker");
@@ -190,9 +194,17 @@ public class ReplicationWorker implements Runnable {
 
     private void waitTillTargetBookieIsWritable() {
         LOG.info("Waiting for target bookie {} to be back in read/write mode", targetBookie);
-        while (workerRunning && admin.getReadOnlyBookiesAsync().contains(targetBookie)) {
-            isInReadOnlyMode = true;
-            waitBackOffTime();
+        while (workerRunning) {
+            try {
+                if (admin.getReadOnlyBookies().contains(targetBookie)) {
+                    isInReadOnlyMode = true;
+                    waitBackOffTime();
+                } else {
+                    break;
+                }
+            } catch (BKException e) {
+                continue;
+            }
         }
 
         isInReadOnlyMode = false;
@@ -257,7 +269,7 @@ public class ReplicationWorker implements Runnable {
                 } catch (BKException.BKLedgerRecoveryException e) {
                     LOG.warn("BKLedgerRecoveryException "
                             + "while replicating the fragment", e);
-                    if (admin.getReadOnlyBookiesAsync().contains(targetBookie)) {
+                    if (admin.getReadOnlyBookies().contains(targetBookie)) {
                         underreplicationManager.releaseUnderreplicatedLedger(ledgerIdToReplicate);
                         throw new BKException.BKWriteOnReadOnlyBookieException();
                     }

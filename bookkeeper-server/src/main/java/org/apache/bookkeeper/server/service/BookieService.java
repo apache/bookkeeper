@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.server.service;
 
 import java.io.IOException;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
@@ -50,7 +51,7 @@ public class BookieService extends ServerLifecycleComponent {
     protected void doStart() {
         try {
             this.server.start();
-        } catch (IOException | UnavailableException | InterruptedException | KeeperException e) {
+        } catch (IOException | UnavailableException | InterruptedException | KeeperException | BKException e) {
             throw new RuntimeException("Failed to start bookie server", e);
         }
     }

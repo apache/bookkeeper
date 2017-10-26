@@ -22,10 +22,10 @@ package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.base.Preconditions.checkArgument;
+import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
 import com.google.common.util.concurrent.AbstractFuture;
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -34,11 +34,11 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
-import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -50,8 +50,9 @@ import org.apache.bookkeeper.client.SyncCallbackUtils.SyncOpenCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadCallback;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
+import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
@@ -64,16 +65,16 @@ import org.apache.bookkeeper.replication.BookieLedgerIndexer;
 import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.IOUtils;
+import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.Code;
-import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.ZKUtil;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
@@ -85,12 +86,6 @@ import org.slf4j.LoggerFactory;
  */
 public class BookKeeperAdmin implements AutoCloseable {
     private final static Logger LOG = LoggerFactory.getLogger(BookKeeperAdmin.class);
-    // ZK client instance
-    private ZooKeeper zk;
-    private final boolean ownsZK;
-
-    // ZK ledgers related String constants
-    private final String bookiesPath;
 
     // BookKeeper client instance
     private BookKeeper bkc;
@@ -132,7 +127,7 @@ public class BookKeeperAdmin implements AutoCloseable {
      *             Throws this exception if there is an error instantiating the
      *             BookKeeper client.
      */
-    public BookKeeperAdmin(String zkServers) throws IOException, InterruptedException, KeeperException {
+    public BookKeeperAdmin(String zkServers) throws IOException, InterruptedException, BKException {
         this(new ClientConfiguration().setZkServers(zkServers));
     }
 
@@ -154,18 +149,9 @@ public class BookKeeperAdmin implements AutoCloseable {
      *             Throws this exception if there is an error instantiating the
      *             BookKeeper client.
      */
-    public BookKeeperAdmin(ClientConfiguration conf) throws IOException, InterruptedException, KeeperException {
-        // Create the ZooKeeper client instance
-        zk = ZooKeeperClient.newBuilder()
-                .connectString(conf.getZkServers())
-                .sessionTimeoutMs(conf.getZkTimeout())
-                .build();
-        ownsZK = true;
-
-        // Create the bookie path
-        bookiesPath = conf.getZkAvailableBookiesPath();
+    public BookKeeperAdmin(ClientConfiguration conf) throws IOException, InterruptedException, BKException {
         // Create the BookKeeper client instance
-        bkc = new BookKeeper(conf, zk);
+        bkc = new BookKeeper(conf);
         ownsBK = true;
         this.lfr = new LedgerFragmentReplicator(bkc, NullStatsLogger.INSTANCE);
         this.mFactory = bkc.ledgerManagerFactory;
@@ -183,9 +169,6 @@ public class BookKeeperAdmin implements AutoCloseable {
     public BookKeeperAdmin(final BookKeeper bkc, StatsLogger statsLogger) {
         this.bkc = bkc;
         ownsBK = false;
-        this.zk = bkc.zk;
-        ownsZK = false;
-        this.bookiesPath = bkc.getConf().getZkAvailableBookiesPath();
         this.lfr = new LedgerFragmentReplicator(bkc, statsLogger);
         this.mFactory = bkc.ledgerManagerFactory;
     }
@@ -206,18 +189,6 @@ public class BookKeeperAdmin implements AutoCloseable {
         if (ownsBK) {
             bkc.close();
         }
-        if (ownsZK) {
-            zk.close();
-        }
-    }
-
-    /**
-     * Get {@link org.apache.zookeeper.ZooKeeper} used by bookkeeper admin client.
-     *
-     * @return zookeeper client used by bookkeeper admin client
-     */
-    public ZooKeeper getZooKeeper() {
-        return zk;
     }
 
     /**
@@ -236,17 +207,8 @@ public class BookKeeperAdmin implements AutoCloseable {
      * @return a collection of bookie addresses
      * @throws BKException if there are issues trying to read the list.
      */
-    public Collection<BookieSocketAddress> getReadOnlyBookiesSync() throws BKException {
-        return bkc.bookieWatcher.getReadOnlyBookiesSync();
-    }
-
-    /**
-     * Get a list of readonly bookies asynchronously (may be slightly out of date).
-     *
-     * @return a collection of bookie addresses
-     */
-    public Collection<BookieSocketAddress> getReadOnlyBookiesAsync() {
-        return bkc.bookieWatcher.getReadOnlyBookiesAsync();
+    public Collection<BookieSocketAddress> getReadOnlyBookies() throws BKException {
+        return bkc.bookieWatcher.getReadOnlyBookies();
     }
 
     /**
@@ -256,9 +218,9 @@ public class BookKeeperAdmin implements AutoCloseable {
      *
      * @param listener the listener to notify
      */
-    public void notifyBookiesChanged(final BookiesListener listener)
+    public void watchWritableBookiesChanged(final RegistrationListener listener)
             throws BKException {
-        bkc.bookieWatcher.notifyBookiesChanged(listener);
+        bkc.regClient.watchWritableBookies(listener);
     }
 
     /**
@@ -268,9 +230,9 @@ public class BookKeeperAdmin implements AutoCloseable {
      *
      * @param listener the listener to notify
      */
-    public void notifyReadOnlyBookiesChanged(final BookiesListener listener)
+    public void watchReadOnlyBookiesChanged(final RegistrationListener listener)
             throws BKException {
-        bkc.bookieWatcher.notifyReadOnlyBookiesChanged(listener);
+        bkc.regClient.watchReadOnlyBookies(listener);
     }
 
     /**
@@ -546,77 +508,23 @@ public class BookKeeperAdmin implements AutoCloseable {
      */
     public void asyncRecoverBookieData(final BookieSocketAddress bookieSrc, final BookieSocketAddress bookieDest,
                                        final RecoverCallback cb, final Object context) {
-        // Sync ZK to make sure we're reading the latest bookie data.
-        zk.sync(bookiesPath, new AsyncCallback.VoidCallback() {
-            @Override
-            public void processResult(int rc, String path, Object ctx) {
-                if (rc != Code.OK.intValue()) {
-                    LOG.error("ZK error syncing: ", KeeperException.create(KeeperException.Code.get(rc), path));
-                    cb.recoverComplete(BKException.Code.ZKException, context);
-                    return;
-                }
-                getAvailableBookies(bookieSrc, bookieDest, cb, context);
-            }
-
-        }, null);
-    }
-
-    /**
-     * This method asynchronously gets the set of available Bookies that the
-     * dead input bookie's data will be copied over into. If the user passed in
-     * a specific destination bookie, then just use that one. Otherwise, we'll
-     * randomly pick one of the other available bookies to use for each ledger
-     * fragment we are replicating.
-     *
-     * @param bookieSrc
-     *            Source bookie that had a failure. We want to replicate the
-     *            ledger fragments that were stored there.
-     * @param bookieDest
-     *            Optional destination bookie that if passed, we will copy all
-     *            of the ledger fragments from the source bookie over to it.
-     * @param cb
-     *            RecoverCallback to invoke once all of the data on the dead
-     *            bookie has been recovered and replicated.
-     * @param context
-     *            Context for the RecoverCallback to call.
-     */
-    private void getAvailableBookies(final BookieSocketAddress bookieSrc, final BookieSocketAddress bookieDest,
-                                     final RecoverCallback cb, final Object context) {
         final List<BookieSocketAddress> availableBookies = new LinkedList<BookieSocketAddress>();
         if (bookieDest != null) {
             availableBookies.add(bookieDest);
             // Now poll ZK to get the active ledgers
             getActiveLedgers(bookieSrc, bookieDest, cb, context, availableBookies);
         } else {
-            zk.getChildren(bookiesPath, null, new AsyncCallback.ChildrenCallback() {
-                @Override
-                public void processResult(int rc, String path, Object ctx, List<String> children) {
-                    if (rc != Code.OK.intValue()) {
-                        LOG.error("ZK error getting bookie nodes: ", KeeperException.create(KeeperException.Code
-                                  .get(rc), path));
-                        cb.recoverComplete(BKException.Code.ZKException, context);
-                        return;
-                    }
-                    for (String bookieNode : children) {
-                        if (BookKeeperConstants.READONLY
-                                        .equals(bookieNode)) {
-                            // exclude the readonly node from available bookies.
-                            continue;
-                        }
-                        BookieSocketAddress addr;
-                        try {
-                            addr = new BookieSocketAddress(bookieNode);
-                        } catch (UnknownHostException nhe) {
-                            LOG.error("Bookie Node retrieved from ZK has invalid name format: " + bookieNode);
-                            cb.recoverComplete(BKException.Code.ZKException, context);
-                            return;
-                        }
-                        availableBookies.add(addr);
-                    }
-                    // Now poll ZK to get the active ledgers
-                    getActiveLedgers(bookieSrc, null, cb, context, availableBookies);
+            bkc.regClient.getWritableBookies().whenComplete((bookies, cause) -> {
+                if (null != cause) {
+                    LOG.error("Error getting bookie nodes: ", cause);
+                    cb.recoverComplete(BKException.Code.ZKException, context);
+                    return;
                 }
-            }, null);
+                availableBookies.addAll(bookies.getValue());
+                // Now poll ZK to get the active ledgers
+                getActiveLedgers(bookieSrc, null, cb, context, availableBookies);
+            }
+            );
         }
     }
 
@@ -954,6 +862,15 @@ public class BookKeeperAdmin implements AutoCloseable {
                         zkAcls, CreateMode.PERSISTENT);
             }
 
+            // create readonly bookies node if not exists
+            if (null == zkc.exists(conf.getZkAvailableBookiesPath() + "/" + READONLY, false)) {
+                zkc.create(
+                    conf.getZkAvailableBookiesPath() + "/" + READONLY,
+                    new byte[0],
+                    zkAcls,
+                    CreateMode.PERSISTENT);
+            }
+
             // If old data was there then confirm with admin.
             if (ledgerRootExists) {
                 boolean confirm = false;
@@ -1162,7 +1079,8 @@ public class BookKeeperAdmin implements AutoCloseable {
             throw new UnavailableException("Autorecovery is disabled. So giving up!");
         }
         
-        BookieSocketAddress auditorId = AuditorElector.getCurrentAuditor(new ServerConfiguration(bkc.conf), zk);
+        BookieSocketAddress auditorId =
+            AuditorElector.getCurrentAuditor(new ServerConfiguration(bkc.conf), bkc.getZkHandle());
         if (auditorId == null) {
             LOG.error("No auditor elected, though Autorecovery is enabled. So giving up.");
             throw new UnavailableException("No auditor elected, though Autorecovery is enabled. So giving up.");
@@ -1196,7 +1114,7 @@ public class BookKeeperAdmin implements AutoCloseable {
     public void decommissionBookie(BookieSocketAddress bookieAddress)
             throws CompatibilityException, UnavailableException, KeeperException, InterruptedException, IOException,
             BKAuditException, TimeoutException, BKException {
-        if (getAvailableBookies().contains(bookieAddress) || getReadOnlyBookiesAsync().contains(bookieAddress)) {
+        if (getAvailableBookies().contains(bookieAddress) || getReadOnlyBookies().contains(bookieAddress)) {
             LOG.error("Bookie: {} is not shutdown yet", bookieAddress);
             throw BKException.create(BKException.Code.IllegalOpException);
         }

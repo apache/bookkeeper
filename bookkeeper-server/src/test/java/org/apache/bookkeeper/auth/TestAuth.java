@@ -111,21 +111,21 @@ public class TestAuth extends BookKeeperClusterTestCase {
      */
     @Test
     public void testSingleMessageAuth() throws Exception {
-        ServerConfiguration bookieConf = newServerConfiguration();
-        bookieConf.setBookieAuthProviderFactoryClass(
+            ServerConfiguration bookieConf = newServerConfiguration();
+            bookieConf.setBookieAuthProviderFactoryClass(
                 AlwaysSucceedBookieAuthProviderFactory.class.getName());
-        
-        ClientConfiguration clientConf = newClientConfiguration();
-        clientConf.setClientAuthProviderFactoryClass(
+
+            ClientConfiguration clientConf = newClientConfiguration();
+            clientConf.setClientAuthProviderFactoryClass(
                 SendUntilCompleteClientAuthProviderFactory.class.getName());
-        
-        startAndStoreBookie(bookieConf);
 
-        AtomicLong ledgerId = new AtomicLong(-1);
-        connectAndWriteToBookie(clientConf, ledgerId); // should succeed
+            startAndStoreBookie(bookieConf);
 
-        assertFalse(ledgerId.get() == -1);
-        assertEquals("Should have entry", 1, entryCount(ledgerId.get(), bookieConf, clientConf));
+            AtomicLong ledgerId = new AtomicLong(-1);
+            connectAndWriteToBookie(clientConf, ledgerId); // should succeed
+
+            assertFalse(ledgerId.get() == -1);
+            assertEquals("Should have entry", 1, entryCount(ledgerId.get(), bookieConf, clientConf));
     }
     
     @Test

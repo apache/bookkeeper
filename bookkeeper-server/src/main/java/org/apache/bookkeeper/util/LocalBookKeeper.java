@@ -27,6 +27,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.shims.zk.ZooKeeperServerShim;
 import org.apache.bookkeeper.shims.zk.ZooKeeperServerShimFactory;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
@@ -132,7 +133,7 @@ public class LocalBookKeeper {
 
     private List<File> runBookies(ServerConfiguration baseConf, String dirSuffix)
             throws IOException, KeeperException, InterruptedException, BookieException,
-            UnavailableException, CompatibilityException, SecurityException {
+            UnavailableException, CompatibilityException, SecurityException, BKException {
         List<File> tempDirs = new ArrayList<File>();
         try {
             runBookies(baseConf, tempDirs, dirSuffix);
@@ -161,7 +162,7 @@ public class LocalBookKeeper {
     @SuppressWarnings("deprecation")
     private void runBookies(ServerConfiguration baseConf, List<File> tempDirs, String dirSuffix)
             throws IOException, KeeperException, InterruptedException, BookieException, UnavailableException,
-            CompatibilityException, SecurityException {
+            CompatibilityException, SecurityException, BKException {
         LOG.info("Starting Bookie(s)");
         // Create Bookie Servers (B1, B2, B3)
 
