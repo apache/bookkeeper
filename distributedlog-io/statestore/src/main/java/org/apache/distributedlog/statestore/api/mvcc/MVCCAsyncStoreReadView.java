@@ -18,11 +18,12 @@
 
 package org.apache.distributedlog.statestore.api.mvcc;
 
+import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.statestore.api.mvcc.op.RangeOp;
 import org.apache.distributedlog.statestore.api.mvcc.result.RangeResult;
 
-public interface MVCCStoreReadView<K, V> {
+public interface MVCCAsyncStoreReadView<K, V> {
 
-    RangeResult<K, V> range(RangeOp<K, V> rangeOp);
+    CompletableFuture<RangeResult<K, V>> range(RangeOp<K, V> rangeOp);
 
 }

@@ -20,5 +20,5 @@ package org.apache.distributedlog.statestore.api.mvcc;
 
 import org.apache.distributedlog.statestore.api.StateStore;
 
-public interface MVCCStore<K, V> extends StateStore, MVCCStoreWriteView<K, V> {
+public interface MVCCStore<K, V> extends StateStore, MVCCStoreWriteView<K, V>, MVCCStoreReadView<K, V> {
 }

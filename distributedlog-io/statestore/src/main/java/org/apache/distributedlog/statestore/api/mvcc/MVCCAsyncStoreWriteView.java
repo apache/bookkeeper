@@ -18,11 +18,27 @@
 
 package org.apache.distributedlog.statestore.api.mvcc;
 
-import org.apache.distributedlog.statestore.api.mvcc.op.RangeOp;
-import org.apache.distributedlog.statestore.api.mvcc.result.RangeResult;
+import java.util.concurrent.CompletableFuture;
+import org.apache.distributedlog.statestore.api.mvcc.op.DeleteOp;
+import org.apache.distributedlog.statestore.api.mvcc.op.PutOp;
+import org.apache.distributedlog.statestore.api.mvcc.op.TxnOp;
+import org.apache.distributedlog.statestore.api.mvcc.result.DeleteResult;
+import org.apache.distributedlog.statestore.api.mvcc.result.PutResult;
+import org.apache.distributedlog.statestore.api.mvcc.result.TxnResult;
 
-public interface MVCCStoreReadView<K, V> {
+/**
+ * The write view of a mvcc key/value store that supports write operations, such as put and delete.
+ *
+ * @param <K> the key type
+ * @param <V> the value type
+ */
+public interface MVCCAsyncStoreWriteView<K, V> {
 
-    RangeResult<K, V> range(RangeOp<K, V> rangeOp);
+    CompletableFuture<PutResult<K, V>> put(PutOp<K, V> op);
+
+    CompletableFuture<DeleteResult<K, V>> delete(DeleteOp<K, V> op);
+
+    CompletableFuture<TxnResult<K, V>> txn(TxnOp<K, V> op);
+
 
 }

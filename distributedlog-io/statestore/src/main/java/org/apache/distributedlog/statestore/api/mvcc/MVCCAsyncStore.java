@@ -18,11 +18,7 @@
 
 package org.apache.distributedlog.statestore.api.mvcc;
 
-import org.apache.distributedlog.statestore.api.mvcc.op.RangeOp;
-import org.apache.distributedlog.statestore.api.mvcc.result.RangeResult;
+import org.apache.distributedlog.statestore.api.AsyncStateStore;
 
-public interface MVCCStoreReadView<K, V> {
-
-    RangeResult<K, V> range(RangeOp<K, V> rangeOp);
-
+public interface MVCCAsyncStore<K, V> extends AsyncStateStore, MVCCAsyncStoreWriteView<K, V>, MVCCAsyncStoreReadView<K, V> {
 }

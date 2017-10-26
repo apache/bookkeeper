@@ -16,28 +16,40 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.statestore.api.mvcc;
+package org.apache.distributedlog.statestore.api;
 
-import org.apache.distributedlog.statestore.api.mvcc.op.DeleteOp;
-import org.apache.distributedlog.statestore.api.mvcc.op.PutOp;
-import org.apache.distributedlog.statestore.api.mvcc.op.TxnOp;
-import org.apache.distributedlog.statestore.api.mvcc.result.DeleteResult;
-import org.apache.distributedlog.statestore.api.mvcc.result.PutResult;
-import org.apache.distributedlog.statestore.api.mvcc.result.TxnResult;
+import java.util.concurrent.CompletableFuture;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 
 /**
- * The write view of a mvcc key/value store that supports write operations, such as put and delete.
- *
- * @param <K> the key type
- * @param <V> the value type
+ * A asynchronous state store that holds the states for stateful applications.
  */
-public interface MVCCStoreWriteView<K, V> {
+public interface AsyncStateStore extends AutoCloseable {
 
-    PutResult<K, V> put(PutOp<K, V> op);
+    /**
+     * Returns the name of the state store.
+     *
+     * @return the name of the state store.
+     */
+    String name();
 
-    DeleteResult<K, V> delete(DeleteOp<K, V> op);
+    /**
+     * Initialize the state store.
+     */
+    CompletableFuture<Void> init(StateStoreSpec spec);
 
-    TxnResult<K, V> txn(TxnOp<K, V> op);
+    /**
+     * Close the state store in an asynchronous way.
+     */
+    CompletableFuture<Void> closeAsync();
 
+    @Override
+    default void close() {
+        try {
+            FutureUtils.result(closeAsync());
+        } catch (Exception e) {
+            // no-op
+        }
+    }
 
 }
