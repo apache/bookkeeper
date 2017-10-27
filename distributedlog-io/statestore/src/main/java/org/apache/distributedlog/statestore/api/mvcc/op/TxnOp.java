@@ -19,6 +19,8 @@
 package org.apache.distributedlog.statestore.api.mvcc.op;
 
 import java.util.List;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 
 /**
  * A transactional operator on updating the mvcc store.
@@ -26,6 +28,8 @@ import java.util.List;
  * @param <K> key type
  * @param <V> val type
  */
+@Public
+@Evolving
 public interface TxnOp<K, V> extends Op<K, V> {
 
     List<CompareOp<K, V>> compareOps();
@@ -33,11 +37,5 @@ public interface TxnOp<K, V> extends Op<K, V> {
     List<Op<K, V>> successOps();
 
     List<Op<K, V>> failureOps();
-
-    /**
-     * A builder to build transaction operator.
-     */
-    interface Builder<K, V> extends OpBuilder<K, V, TxnOp<K, V>, Builder<K, V>> {
-    }
 
 }

@@ -16,20 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.statestore.api.mvcc.op;
-
 /**
- * A delete operator to delete a single key or a key range.
- *
- * @param <K> key type
- * @param <V> value type.
+ * The implementation of a mvcc store.
  */
-public interface DeleteOp<K, V> extends Op<K, V> {
-
-    K endKey();
-
-    boolean prevKV();
-
-
-
-}
+package org.apache.distributedlog.statestore.impl.mvcc;

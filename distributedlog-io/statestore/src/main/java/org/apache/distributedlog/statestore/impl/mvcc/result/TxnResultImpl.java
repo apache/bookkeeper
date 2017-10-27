@@ -26,6 +26,9 @@ import org.apache.distributedlog.statestore.api.mvcc.op.OpType;
 import org.apache.distributedlog.statestore.api.mvcc.result.Result;
 import org.apache.distributedlog.statestore.api.mvcc.result.TxnResult;
 
+/**
+ * A implementation of {@link TxnResult}.
+ */
 @Setter
 public class TxnResultImpl<K, V> extends ResultImpl<K, V, TxnResultImpl<K, V>> implements TxnResult<K, V> {
 

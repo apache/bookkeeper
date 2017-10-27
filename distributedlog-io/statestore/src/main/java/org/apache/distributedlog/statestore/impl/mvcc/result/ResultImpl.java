@@ -24,6 +24,9 @@ import org.apache.distributedlog.statestore.api.mvcc.op.OpType;
 import org.apache.distributedlog.statestore.api.mvcc.result.Code;
 import org.apache.distributedlog.statestore.api.mvcc.result.Result;
 
+/**
+ * A base implementation of {@link Result}.
+ */
 @Setter
 abstract class ResultImpl<K, V, T extends ResultImpl<K, V, T>> implements Result<K, V> {
 

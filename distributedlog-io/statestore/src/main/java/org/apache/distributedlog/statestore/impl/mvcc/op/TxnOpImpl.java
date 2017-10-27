@@ -22,14 +22,18 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import org.apache.distributedlog.statestore.api.mvcc.op.OpType;
 import org.apache.distributedlog.statestore.api.mvcc.op.TxnOp;
+import org.apache.distributedlog.statestore.api.mvcc.op.TxnOpBuilder;
 import org.inferred.freebuilder.FreeBuilder;
 
 @FreeBuilder
 interface TxnOpImpl<K, V> extends TxnOp<K, V> {
 
-    class BuilderImpl<K, V> extends TxnOpImpl_Builder<K, V> implements Builder<K, V> {
+    /**
+     * Builder to build a txn operator.
+     */
+    class Builder<K, V> extends TxnOpImpl_Builder<K, V> implements TxnOpBuilder<K, V> {
 
-        private BuilderImpl() {
+        private Builder() {
             type(OpType.TXN);
         }
 
@@ -41,8 +45,8 @@ interface TxnOpImpl<K, V> extends TxnOp<K, V> {
         }
     }
 
-    static <K, V> Builder<K, V> newBuilder() {
-        return new BuilderImpl<>();
+    static <K, V> TxnOpBuilder<K, V> newBuilder() {
+        return new Builder<>();
     }
 
 }

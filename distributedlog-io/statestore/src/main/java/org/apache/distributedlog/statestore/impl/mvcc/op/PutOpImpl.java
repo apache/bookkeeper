@@ -23,14 +23,18 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import org.apache.distributedlog.statestore.api.mvcc.op.OpType;
 import org.apache.distributedlog.statestore.api.mvcc.op.PutOp;
+import org.apache.distributedlog.statestore.api.mvcc.op.PutOpBuilder;
 import org.inferred.freebuilder.FreeBuilder;
 
 @FreeBuilder
 interface PutOpImpl<K, V> extends PutOp<K, V> {
 
-    class BuilderImpl<K, V> extends PutOpImpl_Builder<K, V> implements Builder<K, V> {
+    /**
+     * A builder to build put operators.
+     */
+    class Builder<K, V> extends PutOpImpl_Builder<K, V> implements PutOpBuilder<K, V> {
 
-        private BuilderImpl() {
+        private Builder() {
             type(OpType.PUT);
             revision(-1L);
             prevKV(false);
@@ -45,8 +49,8 @@ interface PutOpImpl<K, V> extends PutOp<K, V> {
 
     }
 
-    static <K, V> Builder<K, V> newBuilder() {
-        return new BuilderImpl<>();
+    static <K, V> PutOpBuilder<K, V> newBuilder() {
+        return new Builder<>();
     }
 
 }

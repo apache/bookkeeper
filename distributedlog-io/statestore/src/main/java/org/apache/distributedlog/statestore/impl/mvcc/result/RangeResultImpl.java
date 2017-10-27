@@ -26,6 +26,9 @@ import org.apache.distributedlog.statestore.api.mvcc.KVRecord;
 import org.apache.distributedlog.statestore.api.mvcc.op.OpType;
 import org.apache.distributedlog.statestore.api.mvcc.result.RangeResult;
 
+/**
+ * A implementation of {@link RangeResult}.
+ */
 @Setter
 public class RangeResultImpl<K, V>
         extends ResultImpl<K, V, RangeResultImpl<K, V>>

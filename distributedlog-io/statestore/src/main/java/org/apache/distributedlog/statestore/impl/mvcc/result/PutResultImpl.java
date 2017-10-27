@@ -24,6 +24,9 @@ import org.apache.distributedlog.statestore.api.mvcc.KVRecord;
 import org.apache.distributedlog.statestore.api.mvcc.op.OpType;
 import org.apache.distributedlog.statestore.api.mvcc.result.PutResult;
 
+/**
+ * An implementation of {@link PutResult}.
+ */
 @Setter
 public class PutResultImpl<K, V> extends ResultImpl<K, V, PutResultImpl<K, V>> implements PutResult<K, V> {
 

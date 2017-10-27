@@ -23,6 +23,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.function.Predicate;
 import org.apache.distributedlog.statestore.api.mvcc.op.OpType;
 import org.apache.distributedlog.statestore.api.mvcc.op.RangeOp;
+import org.apache.distributedlog.statestore.api.mvcc.op.RangeOpBuilder;
 import org.apache.distributedlog.statestore.impl.mvcc.MVCCRecord;
 import org.inferred.freebuilder.FreeBuilder;
 
@@ -42,9 +43,12 @@ public interface RangeOpImpl<K, V> extends RangeOp<K, V>, Predicate<MVCCRecord> 
 
     }
 
-    class BuilderImpl<K, V> extends RangeOpImpl_Builder<K, V> implements Builder<K, V> {
+    /**
+     * Builder to build a range operator.
+     */
+    class Builder<K, V> extends RangeOpImpl_Builder<K, V> implements RangeOpBuilder<K, V> {
 
-        private BuilderImpl() {
+        private Builder() {
             type(OpType.RANGE);
             revision(-1L);
             limit(-1);
@@ -61,8 +65,8 @@ public interface RangeOpImpl<K, V> extends RangeOp<K, V>, Predicate<MVCCRecord> 
         }
     }
 
-    static <K, V> Builder<K, V> newBuilder() {
-        return new BuilderImpl<>();
+    static <K, V> RangeOpBuilder<K, V> newBuilder() {
+        return new Builder<>();
     }
 
 }

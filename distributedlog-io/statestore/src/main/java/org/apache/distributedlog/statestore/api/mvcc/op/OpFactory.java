@@ -31,13 +31,13 @@ import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 @Evolving
 public interface OpFactory<K, V> {
 
-    PutOp.Builder<K, V> buildPutOp();
+    PutOpBuilder<K, V> buildPutOp();
 
-    DeleteOp.Builder<K, V> buildDeleteOp();
+    DeleteOpBuilder<K, V> buildDeleteOp();
 
-    RangeOp.Builder<K, V> buildRangeOp();
+    RangeOpBuilder<K, V> buildRangeOp();
 
-    TxnOp.Builder<K, V> buildTxnOp();
+    TxnOpBuilder<K, V> buildTxnOp();
 
     CompareOp<K, V> compareVersion(CompareResult result, K key, long version);
 

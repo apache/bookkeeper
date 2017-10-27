@@ -21,15 +21,19 @@ package org.apache.distributedlog.statestore.impl.mvcc.op;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import org.apache.distributedlog.statestore.api.mvcc.op.DeleteOp;
+import org.apache.distributedlog.statestore.api.mvcc.op.DeleteOpBuilder;
 import org.apache.distributedlog.statestore.api.mvcc.op.OpType;
 import org.inferred.freebuilder.FreeBuilder;
 
 @FreeBuilder
 interface DeleteOpImpl<K, V> extends DeleteOp<K, V> {
 
-    class BuilderImpl<K, V> extends DeleteOpImpl_Builder<K, V> implements Builder<K, V> {
+    /**
+     * A builder to build delete operators.
+     */
+    class Builder<K, V> extends DeleteOpImpl_Builder<K, V> implements DeleteOpBuilder<K, V> {
 
-        private BuilderImpl() {
+        private Builder() {
             type(OpType.DELETE);
             revision(-1L);
             prevKV(false);
@@ -42,8 +46,8 @@ interface DeleteOpImpl<K, V> extends DeleteOp<K, V> {
         }
     }
 
-    static <K, V> Builder<K, V> newBuilder() {
-        return new BuilderImpl<>();
+    static <K, V> DeleteOpBuilder<K, V> newBuilder() {
+        return new Builder<>();
     }
 
 }

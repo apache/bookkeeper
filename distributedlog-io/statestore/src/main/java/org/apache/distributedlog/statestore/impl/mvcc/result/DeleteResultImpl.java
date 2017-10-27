@@ -26,6 +26,9 @@ import org.apache.distributedlog.statestore.api.mvcc.KVRecord;
 import org.apache.distributedlog.statestore.api.mvcc.op.OpType;
 import org.apache.distributedlog.statestore.api.mvcc.result.DeleteResult;
 
+/**
+ * An implementation of {@link DeleteResult}.
+ */
 @Setter
 public class DeleteResultImpl<K, V> extends ResultImpl<K, V, DeleteResultImpl<K, V>> implements DeleteResult<K, V> {
 

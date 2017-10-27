@@ -21,31 +21,34 @@ package org.apache.distributedlog.statestore.impl.mvcc.op;
 import org.apache.distributedlog.statestore.api.mvcc.op.CompareOp;
 import org.apache.distributedlog.statestore.api.mvcc.op.CompareResult;
 import org.apache.distributedlog.statestore.api.mvcc.op.CompareTarget;
-import org.apache.distributedlog.statestore.api.mvcc.op.DeleteOp;
+import org.apache.distributedlog.statestore.api.mvcc.op.DeleteOpBuilder;
 import org.apache.distributedlog.statestore.api.mvcc.op.OpFactory;
-import org.apache.distributedlog.statestore.api.mvcc.op.PutOp.Builder;
-import org.apache.distributedlog.statestore.api.mvcc.op.RangeOp;
-import org.apache.distributedlog.statestore.api.mvcc.op.TxnOp;
+import org.apache.distributedlog.statestore.api.mvcc.op.PutOpBuilder;
+import org.apache.distributedlog.statestore.api.mvcc.op.RangeOpBuilder;
+import org.apache.distributedlog.statestore.api.mvcc.op.TxnOpBuilder;
 
+/**
+ * A default implementation of {@link OpFactory} to create operators.
+ */
 public class OpFactoryImpl<K, V> implements OpFactory<K, V> {
 
     @Override
-    public Builder<K, V> buildPutOp() {
+    public PutOpBuilder<K, V> buildPutOp() {
         return PutOpImpl.newBuilder();
     }
 
     @Override
-    public DeleteOp.Builder<K, V> buildDeleteOp() {
+    public DeleteOpBuilder<K, V> buildDeleteOp() {
         return DeleteOpImpl.newBuilder();
     }
 
     @Override
-    public RangeOp.Builder<K, V> buildRangeOp() {
+    public RangeOpBuilder<K, V> buildRangeOp() {
         return RangeOpImpl.newBuilder();
     }
 
     @Override
-    public TxnOp.Builder<K, V> buildTxnOp() {
+    public TxnOpBuilder<K, V> buildTxnOp() {
         return TxnOpImpl.newBuilder();
     }
 

@@ -35,15 +35,6 @@ public interface PutOp<K, V> extends Op<K, V> {
 
     boolean prevKV();
 
-    /**
-     * Builder to build a put operator.
-     */
-    interface Builder<K, V> extends OpBuilder<K, V, PutOp<K, V>, Builder<K, V>> {
 
-        Builder<K, V> value(V value);
-
-        Builder<K, V> prevKV(boolean prevKV);
-
-    }
 
 }

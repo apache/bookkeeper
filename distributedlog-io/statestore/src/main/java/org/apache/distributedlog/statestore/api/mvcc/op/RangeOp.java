@@ -40,23 +40,4 @@ public interface RangeOp<K, V> extends Op<K, V> {
 
     long maxCreateRev();
 
-    /**
-     * Builder to build a range operator.
-     */
-    interface Builder<K, V> extends OpBuilder<K, V, RangeOp<K, V>, Builder<K, V>> {
-
-        Builder<K, V> endKey(K endKey);
-
-        Builder<K, V> limit(int limit);
-
-        Builder<K, V> minModRev(long rev);
-
-        Builder<K, V> maxModRev(long rev);
-
-        Builder<K, V> minCreateRev(long rev);
-
-        Builder<K, V> maxCreateRev(long rev);
-
-    }
-
 }

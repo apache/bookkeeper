@@ -18,18 +18,18 @@
 
 package org.apache.distributedlog.statestore.api.mvcc.op;
 
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
+
 /**
- * A delete operator to delete a single key or a key range.
- *
- * @param <K> key type
- * @param <V> value type.
+ * Builder to build a put operator.
  */
-public interface DeleteOp<K, V> extends Op<K, V> {
+@Public
+@Evolving
+public interface PutOpBuilder<K, V> extends OpBuilder<K, V, PutOp<K, V>, PutOpBuilder<K, V>> {
 
-    K endKey();
+    PutOpBuilder<K, V> value(V value);
 
-    boolean prevKV();
-
-
+    PutOpBuilder<K, V> prevKV(boolean prevKV);
 
 }
