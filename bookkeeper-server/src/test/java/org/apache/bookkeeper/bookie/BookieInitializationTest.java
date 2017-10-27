@@ -81,7 +81,6 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        LOG.info("setUp");
         zkUtil.createBKEnsemble("/" + runtime.getMethodName());
         rm = new ZKRegistrationManager();
     }
