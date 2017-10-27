@@ -32,9 +32,6 @@ import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.bookie.ReadOnlyBookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.http.BKHttpServiceProvider;
-import org.apache.bookkeeper.http.HttpServer;
-import org.apache.bookkeeper.http.HttpServerLoader;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.processor.RequestProcessor;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
@@ -62,9 +59,6 @@ public class BookieServer {
     private final static Logger LOG = LoggerFactory.getLogger(BookieServer.class);
 
     int exitCode = ExitCode.OK;
-
-    // operation stats
-    HttpServer httpServer = null;
 
     // request processor
     private final RequestProcessor requestProcessor;
@@ -114,18 +108,6 @@ public class BookieServer {
             exitCode = bookie.getExitCode();
             return;
         }
-        if (conf.isHttpServerEnabled()) {
-            BKHttpServiceProvider serviceProvider = new BKHttpServiceProvider.Builder()
-                .setBookieServer(this)
-                .setServerConfiguration(conf)
-                .build();
-            HttpServerLoader.loadHttpServer(conf);
-            this.httpServer = HttpServerLoader.get();
-            if (this.httpServer != null) {
-                this.httpServer.initialize(serviceProvider);
-                this.httpServer.startServer(conf.getHttpServerPort());
-            }
-        }
         this.nettyServer.start();
 
         running = true;
@@ -173,9 +155,6 @@ public class BookieServer {
         }
         exitCode = bookie.shutdown();
         this.requestProcessor.close();
-        if (this.httpServer != null && this.httpServer.isRunning()) {
-            this.httpServer.stopServer();
-        }
         running = false;
     }
 
