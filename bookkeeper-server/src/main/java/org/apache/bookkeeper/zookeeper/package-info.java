@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,28 +15,9 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-package org.apache.bookkeeper.feature;
 
 /**
- * Provider to provide features.
+ * A simple retryable zookeeper wrapper provided in bookkeeper.
  */
-public interface FeatureProvider {
-    /**
-     * Return the feature with given name.
-     *
-     * @param name feature name
-     * @return feature instance
-     */
-    Feature getFeature(String name);
-
-    /**
-     * Provide the feature provider under scope <i>name</i>.
-     *
-     * @param name
-     *          scope name.
-     * @return feature provider under scope <i>name</i>
-     */
-    FeatureProvider scope(String name);
-}
+package org.apache.bookkeeper.zookeeper;

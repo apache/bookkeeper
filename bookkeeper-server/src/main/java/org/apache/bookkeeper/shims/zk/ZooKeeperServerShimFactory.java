@@ -23,6 +23,9 @@ package org.apache.bookkeeper.shims.zk;
 import java.io.File;
 import java.io.IOException;
 
+/**
+ * A factory to create zookeeper server.
+ */
 public class ZooKeeperServerShimFactory {
 
     public static ZooKeeperServerShim createServer(File snapDir, File logDir, int zkPort, int maxCC)
