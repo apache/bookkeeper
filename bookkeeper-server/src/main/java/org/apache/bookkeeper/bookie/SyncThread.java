@@ -24,7 +24,9 @@ package org.apache.bookkeeper.bookie;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.IOException;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
@@ -61,6 +63,10 @@ class SyncThread {
     final LedgerDirsListener dirsListener;
     final CheckpointSource checkpointSource;
 
+    private final Object suspensionLock = new Object();
+    private boolean suspended = false;
+    private boolean disableCheckpoint = false;
+
     public SyncThread(ServerConfiguration conf,
                       LedgerDirsListener dirsListener,
                       LedgerStorage ledgerStorage,
@@ -79,25 +85,41 @@ class SyncThread {
 
     void start() {
         executor.scheduleAtFixedRate(new Runnable() {
-                public void run() {
-                    try {
-                        synchronized (suspensionLock) {
-                            while (suspended) {
-                                try {
-                                    suspensionLock.wait();
-                                } catch (InterruptedException e) {
-                                    Thread.currentThread().interrupt();
-                                    continue;
-                                }
+            public void run() {
+                try {
+                    synchronized (suspensionLock) {
+                        while (suspended) {
+                            try {
+                                suspensionLock.wait();
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                continue;
                             }
                         }
-                        checkpoint(checkpointSource.newCheckpoint());
-                    } catch (Throwable t) {
-                        LOG.error("Exception in SyncThread", t);
-                        dirsListener.fatalError();
                     }
+                    if (!disableCheckpoint) {
+                        checkpoint(checkpointSource.newCheckpoint());
+                    }
+                } catch (Throwable t) {
+                    LOG.error("Exception in SyncThread", t);
+                    dirsListener.fatalError();
                 }
-            }, flushInterval, flushInterval, TimeUnit.MILLISECONDS);
+            }
+        }, flushInterval, flushInterval, TimeUnit.MILLISECONDS);
+    }
+
+    public Future<Void> requestFlush() {
+        return executor.submit(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                try {
+                    flush();
+                } catch (Throwable t) {
+                    LOG.error("Exception flushing ledgers ", t);
+                }
+                return null;
+            }
+        });
     }
 
     private void flush() {
@@ -113,6 +135,11 @@ class SyncThread {
             return;
         }
 
+        if (disableCheckpoint) {
+            return;
+        }
+
+        LOG.info("Flush ledger storage at checkpoint {}.", checkpoint);
         try {
             checkpointSource.checkpointComplete(checkpoint, false);
         } catch (IOException e) {
@@ -142,9 +169,6 @@ class SyncThread {
         }
     }
 
-    private Object suspensionLock = new Object();
-    private boolean suspended = false;
-
     /**
      * Suspend sync thread. (for testing)
      */
@@ -166,18 +190,15 @@ class SyncThread {
         }
     }
 
+    @VisibleForTesting
+    public void disableCheckpoint() {
+        disableCheckpoint = true;
+    }
+
     // shutdown sync thread
     void shutdown() throws InterruptedException {
         LOG.info("Shutting down SyncThread");
-        executor.submit(new Runnable() {
-                public void run() {
-                    try {
-                        flush();
-                    } catch (Throwable t) {
-                        LOG.error("Exception flushing ledgers at shutdown", t);
-                    }
-                }
-            });
+        requestFlush();
         executor.shutdown();
         long start = MathUtils.now();
         while (!executor.awaitTermination(5, TimeUnit.MINUTES)) {

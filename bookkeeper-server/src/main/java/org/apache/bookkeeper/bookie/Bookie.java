@@ -58,6 +58,7 @@ import java.util.Observable;
 import java.util.Observer;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -134,6 +135,8 @@ public class Bookie extends BookieCriticalThread {
     private volatile boolean running = false;
     // Flag identify whether it is in shutting down progress
     private volatile boolean shuttingdown = false;
+    // Bookie status
+    private final BookieStatus bookieStatus = new BookieStatus();
 
     private int exitCode = ExitCode.OK;
 
@@ -142,7 +145,7 @@ public class Bookie extends BookieCriticalThread {
     protected final String bookieId;
 
     private final AtomicBoolean rmRegistered = new AtomicBoolean(false);
-    protected final AtomicBoolean readOnly = new AtomicBoolean(false);
+    protected final AtomicBoolean forceReadOnly = new AtomicBoolean(false);
     // executor to manage the state changes for a bookie.
     final ExecutorService stateService = Executors.newSingleThreadExecutor(
             new ThreadFactoryBuilder().setNameFormat("BookieStateService-%d").build());
@@ -728,7 +731,13 @@ public class Bookie extends BookieCriticalThread {
 
             @Override
             public Number getSample() {
-                return rmRegistered.get() ? (readOnly.get() ? 0 : 1) : -1;
+                if (!rmRegistered.get()){
+                    return -1;
+                } else if (forceReadOnly.get() || bookieStatus.isInReadOnlyMode()) {
+                    return 0;
+                } else {
+                    return 1;
+                }
             }
         });
     }
@@ -812,6 +821,12 @@ public class Bookie extends BookieCriticalThread {
         if (indexDirsManager != ledgerDirsManager) {
             idxMonitor.start();
         }
+
+        // start sync thread first, so during replaying journals, we could do checkpoint
+        // which reduce the chance that we need to replay journals again if bookie restarted
+        // again before finished journal replays.
+        syncThread.start();
+
         // replay journals
         try {
             readJournal();
@@ -824,7 +839,19 @@ public class Bookie extends BookieCriticalThread {
             shutdown(ExitCode.BOOKIE_EXCEPTION);
             return;
         }
+
+        // Do a fully flush after journal replay
+        try {
+            syncThread.requestFlush().get();
+        } catch (InterruptedException e) {
+            LOG.warn("Interrupting the fully flush after replaying journals : ", e);
+            Thread.currentThread().interrupt();
+        } catch (ExecutionException e) {
+            LOG.error("Error on executing a fully flush after replaying journals.");
+            shutdown(ExitCode.BOOKIE_EXCEPTION);
+        }
         LOG.info("Finished reading journal, starting bookie");
+
         // start bookie thread
         super.start();
 
@@ -837,7 +864,13 @@ public class Bookie extends BookieCriticalThread {
 
         ledgerStorage.start();
 
-        syncThread.start();
+        // check the bookie status to start with
+        if (forceReadOnly.get()) {
+            this.bookieStatus.setToReadOnlyMode();
+        } else if (conf.isPersistBookieStatusEnabled()) {
+            this.bookieStatus.readFromDirectories(ledgerDirsManager.getAllLedgerDirs());
+        }
+
         // set running here.
         // since bookie server use running as a flag to tell bookie server whether it is alive
         // if setting it in bookie thread, the watcher might run before bookie thread.
@@ -942,7 +975,7 @@ public class Bookie extends BookieCriticalThread {
     }
 
     protected void doRegisterBookie() throws IOException {
-        doRegisterBookie(readOnly.get());
+        doRegisterBookie(forceReadOnly.get() || bookieStatus.isInReadOnlyMode());
     }
 
     private void doRegisterBookie(boolean isReadOnly) throws IOException {
@@ -979,13 +1012,18 @@ public class Bookie extends BookieCriticalThread {
 
     @VisibleForTesting
     public void doTransitionToWritableMode() {
-        if (shuttingdown) {
+        if (shuttingdown || forceReadOnly.get()) {
             return;
         }
-        if (!readOnly.compareAndSet(true, false)) {
+
+        if (!bookieStatus.setToWritableMode()) {
+            // do nothing if already in writable mode
             return;
         }
         LOG.info("Transitioning Bookie to Writable mode and will serve read/write requests.");
+        if (conf.isPersistBookieStatusEnabled()) {
+            bookieStatus.writeToDirectories(ledgerDirsManager.getAllLedgerDirs());
+        }
         // change zookeeper state only when using zookeeper
         if (null == registrationManager) {
             return;
@@ -1026,7 +1064,7 @@ public class Bookie extends BookieCriticalThread {
         if (shuttingdown) {
             return;
         }
-        if (!readOnly.compareAndSet(false, true)) {
+        if (!bookieStatus.setToReadOnlyMode()) {
             return;
         }
         if (!conf.isReadOnlyModeEnabled()) {
@@ -1039,6 +1077,10 @@ public class Bookie extends BookieCriticalThread {
         }
         LOG.info("Transitioning Bookie to ReadOnly mode,"
                 + " and will serve only read requests from clients!");
+        // persist the bookie status if we enable this
+        if (conf.isPersistBookieStatusEnabled()) {
+            this.bookieStatus.writeToDirectories(ledgerDirsManager.getAllLedgerDirs());
+        }
         // change zookeeper state only when using zookeeper
         if (null == registrationManager) {
             return;
@@ -1057,7 +1099,7 @@ public class Bookie extends BookieCriticalThread {
      * Check whether Bookie is writable
      */
     public boolean isReadOnly() {
-        return readOnly.get();
+        return forceReadOnly.get() || bookieStatus.isInReadOnlyMode();
     }
 
     public boolean isRunning() {
@@ -1133,7 +1175,7 @@ public class Bookie extends BookieCriticalThread {
 
                 // turn bookie to read only during shutting down process
                 LOG.info("Turning bookie to read only during shut down");
-                this.readOnly.set(true);
+                this.forceReadOnly.set(true);
 
                 // Shutdown Sync thread
                 syncThread.shutdown();
