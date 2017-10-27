@@ -19,7 +19,9 @@ package org.apache.bookkeeper.proto;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
+import io.netty.util.Recycler;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.Recycler.Handle;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
@@ -37,9 +39,11 @@ import org.slf4j.LoggerFactory;
 class ReadEntryProcessor extends PacketProcessorBase {
     private final static Logger LOG = LoggerFactory.getLogger(ReadEntryProcessor.class);
 
-    public ReadEntryProcessor(Request request, Channel channel,
+    public static ReadEntryProcessor create(Request request, Channel channel,
                               BookieRequestProcessor requestProcessor) {
-        super(request, channel, requestProcessor);
+        ReadEntryProcessor rep = RECYCLER.get();
+        rep.init(request, channel, requestProcessor);
+        return rep;
     }
 
     @Override
@@ -144,10 +148,29 @@ class ReadEntryProcessor extends PacketProcessorBase {
             sendResponse(errorCode, ResponseBuilder.buildErrorResponse(errorCode, read),
                          requestProcessor.readRequestStats);
         }
+        recycle();
     }
 
     @Override
     public String toString() {
         return String.format("ReadEntry(%d, %d)", request.getLedgerId(), request.getEntryId());
     }
+
+    private void recycle() {
+        super.reset();
+        this.recyclerHandle.recycle(this);
+    }
+
+    private final Recycler.Handle<ReadEntryProcessor> recyclerHandle;
+
+    private ReadEntryProcessor(Recycler.Handle<ReadEntryProcessor> recyclerHandle) {
+        this.recyclerHandle = recyclerHandle;
+    }
+
+    private static final Recycler<ReadEntryProcessor> RECYCLER = new Recycler<ReadEntryProcessor>() {
+        @Override
+        protected ReadEntryProcessor newObject(Recycler.Handle<ReadEntryProcessor> handle) {
+            return new ReadEntryProcessor(handle);
+        }
+    };
 }
