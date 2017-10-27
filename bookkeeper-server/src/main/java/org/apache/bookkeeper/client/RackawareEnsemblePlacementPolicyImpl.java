@@ -73,6 +73,15 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
 
     static final int RACKNAME_DISTANCE_FROM_LEAVES = 1;
 
+    // masks for reordering
+    static final int LOCAL_MASK       = 0x01 << 24;
+    static final int LOCAL_FAIL_MASK  = 0x02 << 24;
+    static final int REMOTE_MASK      = 0x04 << 24;
+    static final int REMOTE_FAIL_MASK = 0x08 << 24;
+    static final int READ_ONLY_MASK   = 0x10 << 24;
+    static final int UNAVAIL_MASK     = 0x20 << 24;
+    static final int MASK_BITS        = 0xFFF << 20;
+
     static class DefaultResolver implements DNSToSwitchMapping {
 
         final Supplier<String> defaultRackSupplier;
@@ -777,31 +786,30 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
             DistributionSchedule.WriteSet writeSet) {
         int ensembleSize = ensemble.size();
 
-        int localMask      = 0x01 << 24;
-        int failureMask    = 0x02 << 24;
-        int readOnlyMask   = 0x10 << 24;
-        int unavailMask    = 0x20 << 24;
-        int maskBits       = 0xFFF << 20;
-
         for (int i = 0; i < writeSet.size(); i++) {
             int idx = writeSet.get(i);
             BookieSocketAddress address = ensemble.get(idx);
             Long lastFailedEntryOnBookie = bookieFailureHistory.get(address);
             if (null == knownBookies.get(address)) {
-                // there isn't too much differences between readonly bookies from unavailable bookies. since there
-                // is no write requests to them, so we shouldn't try reading from readonly bookie in prior to writable
+                // there isn't too much differences between readonly bookies
+                // from unavailable bookies. since there
+                // is no write requests to them, so we shouldn't try reading
+                // from readonly bookie in prior to writable
                 // bookies.
-                if ((null == readOnlyBookies) || !readOnlyBookies.contains(address)) {
-                    writeSet.set(i, idx | unavailMask);
+                if ((null == readOnlyBookies)
+                        || !readOnlyBookies.contains(address)) {
+                    writeSet.set(i, idx | UNAVAIL_MASK);
                 } else {
-                    writeSet.set(i, idx | readOnlyMask);
+                    writeSet.set(i, idx | READ_ONLY_MASK);
                 }
             } else {
-                if ((lastFailedEntryOnBookie == null) || (lastFailedEntryOnBookie < 0)) {
-                    writeSet.set(i, idx | localMask);
+                if ((lastFailedEntryOnBookie == null)
+                        || (lastFailedEntryOnBookie < 0)) {
+                    writeSet.set(i, idx | LOCAL_MASK);
                 } else {
                     long failIdx = lastFailedEntryOnBookie * ensembleSize + idx;
-                    writeSet.set(i, (int)(failIdx & ~maskBits) | failureMask);
+                    writeSet.set(i,
+                                 (int)(failIdx & ~MASK_BITS) | LOCAL_FAIL_MASK);
                 }
             }
         }
@@ -818,14 +826,14 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
         }
 
         if (reorderReadsRandom) {
-            shuffleWithMask(writeSet, localMask, maskBits);
-            shuffleWithMask(writeSet, readOnlyMask, maskBits);
-            shuffleWithMask(writeSet, unavailMask, maskBits);
+            shuffleWithMask(writeSet, LOCAL_MASK, MASK_BITS);
+            shuffleWithMask(writeSet, READ_ONLY_MASK, MASK_BITS);
+            shuffleWithMask(writeSet, UNAVAIL_MASK, MASK_BITS);
         }
 
         // remove all masks
         for (int i = 0; i < writeSet.size(); i++) {
-            writeSet.set(i, (writeSet.get(i) & ~maskBits) % ensembleSize);
+            writeSet.set(i, (writeSet.get(i) & ~MASK_BITS) % ensembleSize);
         }
 
         return writeSet;

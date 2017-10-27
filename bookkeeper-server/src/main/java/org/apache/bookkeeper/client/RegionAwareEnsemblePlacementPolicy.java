@@ -511,45 +511,41 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
         } else {
             int ensembleSize = ensemble.size();
 
-            int localMask      = 0x01 << 24;
-            int localFailMask  = 0x02 << 24;
-            int remoteMask     = 0x04 << 24;
-            int remoteFailMask = 0x08 << 24;
-            int readOnlyMask   = 0x10 << 24;
-            int unavailMask    = 0x20 << 24;
-            int maskBits       = 0xFFF << 20;
-
             for (int i = 0; i < writeSet.size(); i++) {
                 int idx = writeSet.get(i);
                 BookieSocketAddress address = ensemble.get(idx);
                 String region = getRegion(address);
                 Long lastFailedEntryOnBookie = bookieFailureHistory.get(address);
                 if (null == knownBookies.get(address)) {
-                    // there isn't too much differences between readonly bookies from unavailable bookies. since there
-                    // is no write requests to them, so we shouldn't try reading from readonly bookie in prior to writable
-                    // bookies.
-                    if ((null == readOnlyBookies) || !readOnlyBookies.contains(address)) {
-                        writeSet.set(i, idx | unavailMask);
+                    // there isn't too much differences between readonly bookies
+                    // from unavailable bookies. since there
+                    // is no write requests to them, so we shouldn't try reading
+                    // from readonly bookie in prior to writable bookies.
+                    if ((null == readOnlyBookies)
+                            || !readOnlyBookies.contains(address)) {
+                        writeSet.set(i, idx | UNAVAIL_MASK);
                     } else {
-                        writeSet.set(i, idx | readOnlyMask);
+                        writeSet.set(i, idx | READ_ONLY_MASK);
                     }
                 } else if (region.equals(myRegion)) {
-                    if ((lastFailedEntryOnBookie == null) || (lastFailedEntryOnBookie < 0)) {
-                        writeSet.set(i, idx | localMask);
+                    if ((lastFailedEntryOnBookie == null)
+                            || (lastFailedEntryOnBookie < 0)) {
+                        writeSet.set(i, idx | LOCAL_MASK);
                     } else {
                         long failIdx
                             = lastFailedEntryOnBookie * ensembleSize + idx;
-                        writeSet.set(i, (int)(failIdx & ~maskBits)
-                                     | localFailMask);
+                        writeSet.set(i, (int)(failIdx & ~MASK_BITS)
+                                     | LOCAL_FAIL_MASK);
                     }
                 } else {
-                    if ((lastFailedEntryOnBookie == null) || (lastFailedEntryOnBookie < 0)) {
-                        writeSet.set(i, idx | remoteMask);
+                    if ((lastFailedEntryOnBookie == null)
+                            || (lastFailedEntryOnBookie < 0)) {
+                        writeSet.set(i, idx | REMOTE_MASK);
                     } else {
                         long failIdx
                             = lastFailedEntryOnBookie * ensembleSize + idx;
-                        writeSet.set(i, (int)(failIdx & ~maskBits)
-                                     | remoteFailMask);
+                        writeSet.set(i, (int)(failIdx & ~MASK_BITS)
+                                     | REMOTE_FAIL_MASK);
                     }
                 }
             }
@@ -566,10 +562,10 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             }
 
             if (reorderReadsRandom) {
-                shuffleWithMask(writeSet, localMask, maskBits);
-                shuffleWithMask(writeSet, remoteMask, maskBits);
-                shuffleWithMask(writeSet, readOnlyMask, maskBits);
-                shuffleWithMask(writeSet, unavailMask, maskBits);
+                shuffleWithMask(writeSet, LOCAL_MASK, MASK_BITS);
+                shuffleWithMask(writeSet, REMOTE_MASK, MASK_BITS);
+                shuffleWithMask(writeSet, READ_ONLY_MASK, MASK_BITS);
+                shuffleWithMask(writeSet, UNAVAIL_MASK, MASK_BITS);
             }
 
             // nodes within a region are ordered as follows
@@ -579,12 +575,12 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             // The sort will have put them in correct order,
             // so remove the bits that sort by age.
             for (int i = 0; i < writeSet.size(); i++) {
-                int mask = writeSet.get(i) & maskBits;
-                int idx = (writeSet.get(i) & ~maskBits) % ensembleSize;
-                if (mask == localFailMask) {
-                    writeSet.set(i, localMask | idx);
-                } else if (mask == remoteFailMask) {
-                    writeSet.set(i, remoteMask | idx);
+                int mask = writeSet.get(i) & MASK_BITS;
+                int idx = (writeSet.get(i) & ~MASK_BITS) % ensembleSize;
+                if (mask == LOCAL_FAIL_MASK) {
+                    writeSet.set(i, LOCAL_MASK | idx);
+                } else if (mask == REMOTE_FAIL_MASK) {
+                    writeSet.set(i, REMOTE_MASK | idx);
                 }
             }
 
@@ -592,7 +588,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             // we try more than one region within the max allowed latency
             int firstRemote = -1;
             for (int i = 0; i < writeSet.size(); i++) {
-                if ((writeSet.get(i) & maskBits) == remoteMask) {
+                if ((writeSet.get(i) & MASK_BITS) == REMOTE_MASK) {
                     firstRemote = i;
                     break;
                 }
@@ -601,7 +597,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                 int i = 0;
                 for (;i < REMOTE_NODE_IN_REORDER_SEQUENCE
                          && i < writeSet.size(); i++) {
-                    if ((writeSet.get(i) & maskBits) != localMask) {
+                    if ((writeSet.get(i) & MASK_BITS) != LOCAL_MASK) {
                         break;
                     }
                 }
@@ -611,7 +607,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
 
             // remove all masks
             for (int i = 0; i < writeSet.size(); i++) {
-                writeSet.set(i, writeSet.get(i) & ~maskBits);
+                writeSet.set(i, writeSet.get(i) & ~MASK_BITS);
             }
             return writeSet;
         }
