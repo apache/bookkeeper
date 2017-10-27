@@ -18,11 +18,15 @@
 
 package org.apache.distributedlog.statestore.api.mvcc;
 
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.distributedlog.common.util.Recycled;
 
 /**
  * A mvcc key/value record.
  */
+@Public
+@Evolving
 public interface KVRecord<K, V> extends Recycled {
 
     K key();

@@ -18,12 +18,17 @@
 
 package org.apache.distributedlog.statestore.api;
 
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
+
 /**
  * A class represents a key value pair.
  *
  * @param <K> key type
  * @param <V> value type
  */
+@Public
+@Evolving
 public interface KV<K, V> {
 
     K key();

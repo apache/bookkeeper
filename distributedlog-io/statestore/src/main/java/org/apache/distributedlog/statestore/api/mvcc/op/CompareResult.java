@@ -18,6 +18,15 @@
 
 package org.apache.distributedlog.statestore.api.mvcc.op;
 
+
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
+
+/**
+ * Define the compare result for a given {@link CompareOp}.
+ */
+@Public
+@Evolving
 public enum CompareResult {
     EQUAL,
     GREATER,

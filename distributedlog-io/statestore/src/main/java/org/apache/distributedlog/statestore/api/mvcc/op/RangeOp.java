@@ -18,13 +18,15 @@
 
 package org.apache.distributedlog.statestore.api.mvcc.op;
 
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.distributedlog.statestore.api.mvcc.op.RangeOp.Builder;
-import org.inferred.freebuilder.FreeBuilder;
 
 /**
  * A range operation.
  */
-@FreeBuilder
+@Public
+@Evolving
 public interface RangeOp<K, V> extends Op<K, V, Builder<K, V>, RangeOp<K, V>> {
 
     K endKey();

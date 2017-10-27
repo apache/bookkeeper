@@ -18,6 +18,17 @@
 
 package org.apache.distributedlog.statestore.api.mvcc.op;
 
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
+
+/**
+ * A factory used for building operators to access the mvcc store.
+ *
+ * @param <K> key type.
+ * @param <V> value type.
+ */
+@Public
+@Evolving
 public interface OpFactory<K, V> {
 
     PutOp.Builder<K, V> buildPutOp();

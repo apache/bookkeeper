@@ -19,8 +19,18 @@
 package org.apache.distributedlog.statestore.api.mvcc.result;
 
 import java.util.List;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.distributedlog.statestore.api.mvcc.KVRecord;
 
+/**
+ * The result of a {@link org.apache.distributedlog.statestore.api.mvcc.op.DeleteOp}.
+ *
+ * @param <K> key type.
+ * @param <V> value type.
+ */
+@Public
+@Evolving
 public interface DeleteResult<K, V> extends Result<K, V> {
 
     long numDeleted();

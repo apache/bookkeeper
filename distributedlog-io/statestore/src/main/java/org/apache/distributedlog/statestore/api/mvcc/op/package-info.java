@@ -15,26 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.apache.distributedlog.statestore.api.mvcc.result;
-
-import java.util.List;
-import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
-import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
-import org.apache.distributedlog.statestore.api.mvcc.KVRecord;
-
 /**
- * A range operation result.
+ * Operators defined in a mvcc store.
  */
-@Public
-@Evolving
-public interface RangeResult<K, V> extends Result<K, V> {
-
-    List<KVRecord<K, V>> kvs();
-
-    long count();
-
-    boolean hasMore();
-
-
-}
+package org.apache.distributedlog.statestore.api.mvcc.op;

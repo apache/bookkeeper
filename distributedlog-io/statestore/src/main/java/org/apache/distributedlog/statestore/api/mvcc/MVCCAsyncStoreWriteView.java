@@ -19,6 +19,8 @@
 package org.apache.distributedlog.statestore.api.mvcc;
 
 import java.util.concurrent.CompletableFuture;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.distributedlog.statestore.api.mvcc.op.DeleteOp;
 import org.apache.distributedlog.statestore.api.mvcc.op.PutOp;
 import org.apache.distributedlog.statestore.api.mvcc.op.TxnOp;
@@ -32,6 +34,8 @@ import org.apache.distributedlog.statestore.api.mvcc.result.TxnResult;
  * @param <K> the key type
  * @param <V> the value type
  */
+@Public
+@Evolving
 public interface MVCCAsyncStoreWriteView<K, V> {
 
     CompletableFuture<PutResult<K, V>> put(PutOp<K, V> op);

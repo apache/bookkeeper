@@ -19,9 +19,19 @@
 package org.apache.distributedlog.statestore.api.mvcc;
 
 import java.util.concurrent.CompletableFuture;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.distributedlog.statestore.api.mvcc.op.RangeOp;
 import org.apache.distributedlog.statestore.api.mvcc.result.RangeResult;
 
+/**
+ * The read view for a {@link MVCCAsyncStore}.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
+@Public
+@Evolving
 public interface MVCCAsyncStoreReadView<K, V> {
 
     CompletableFuture<RangeResult<K, V>> range(RangeOp<K, V> rangeOp);

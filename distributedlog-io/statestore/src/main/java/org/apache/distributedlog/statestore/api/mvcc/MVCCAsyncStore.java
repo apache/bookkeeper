@@ -18,7 +18,17 @@
 
 package org.apache.distributedlog.statestore.api.mvcc;
 
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.distributedlog.statestore.api.AsyncStateStore;
 
+/**
+ * A mvcc store that supports asynchronous operations.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
+@Public
+@Evolving
 public interface MVCCAsyncStore<K, V> extends AsyncStateStore, MVCCAsyncStoreWriteView<K, V>, MVCCAsyncStoreReadView<K, V> {
 }

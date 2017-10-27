@@ -18,8 +18,18 @@
 
 package org.apache.distributedlog.statestore.api.mvcc.result;
 
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.distributedlog.statestore.api.mvcc.KVRecord;
 
+/**
+ * The result for a {@link org.apache.distributedlog.statestore.api.mvcc.op.PutOp}.
+ *
+ * @param <K> key type.
+ * @param <V> value type.
+ */
+@Public
+@Evolving
 public interface PutResult<K, V> extends Result<K, V> {
 
     KVRecord<K, V> prevKV();

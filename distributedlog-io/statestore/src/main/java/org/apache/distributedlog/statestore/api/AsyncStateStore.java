@@ -19,11 +19,15 @@
 package org.apache.distributedlog.statestore.api;
 
 import java.util.concurrent.CompletableFuture;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 
 /**
  * A asynchronous state store that holds the states for stateful applications.
  */
+@Public
+@Evolving
 public interface AsyncStateStore extends AutoCloseable {
 
     /**

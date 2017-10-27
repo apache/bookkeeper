@@ -22,7 +22,12 @@ import java.util.List;
 import org.apache.distributedlog.statestore.api.mvcc.op.TxnOp.Builder;
 import org.inferred.freebuilder.FreeBuilder;
 
-@FreeBuilder
+/**
+ * A transactional operator on updating the mvcc store.
+ *
+ * @param <K> key type
+ * @param <V> val type
+ */
 public interface TxnOp<K, V> extends Op<K, V, Builder<K, V>, TxnOp<K, V>> {
 
     List<CompareOp<K, V>> compareOps();

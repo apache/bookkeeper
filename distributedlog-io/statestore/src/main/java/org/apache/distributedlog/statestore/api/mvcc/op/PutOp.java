@@ -18,10 +18,18 @@
 
 package org.apache.distributedlog.statestore.api.mvcc.op;
 
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.distributedlog.statestore.api.mvcc.op.PutOp.Builder;
-import org.inferred.freebuilder.FreeBuilder;
 
-@FreeBuilder
+/**
+ * A put operator that update a value associated with a given key.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
+@Public
+@Evolving
 public interface PutOp<K, V> extends Op<K, V, Builder<K, V>, PutOp<K, V>> {
 
     V value();

@@ -18,6 +18,17 @@
 
 package org.apache.distributedlog.statestore.api.mvcc.op;
 
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
+
+/**
+ * A compare operator used in a {@link TxnOp}.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
+@Public
+@Evolving
 public interface CompareOp<K, V> {
 
     CompareTarget getTarget();
