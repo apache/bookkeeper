@@ -44,21 +44,10 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
     private final int ackQuorumSize;
     private final int ensembleSize;
 
-    private final int[][] writeSets;
-
     public RoundRobinDistributionSchedule(int writeQuorumSize, int ackQuorumSize, int ensembleSize) {
         this.writeQuorumSize = writeQuorumSize;
         this.ackQuorumSize = ackQuorumSize;
         this.ensembleSize = ensembleSize;
-
-        // Pre-compute possible write sets
-        writeSets = new int[ensembleSize][];
-        for (int i = 0; i < ensembleSize; i++) {
-            writeSets[i] = new int[writeQuorumSize];
-            for (int w = 0; w < this.writeQuorumSize; w++) {
-                writeSets[i][w] = (i + w) % ensembleSize;
-            }
-        }
     }
 
     @Override
@@ -403,7 +392,11 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
 
     @Override
     public boolean hasEntry(long entryId, int bookieIndex) {
-        int[] set = writeSets[(int) (entryId % ensembleSize)];
-        return ArrayUtils.contains(set, bookieIndex);
+        WriteSet w = getWriteSet(entryId);
+        try {
+            return w.contains(bookieIndex);
+        } finally {
+            w.recycle();
+        }
     }
 }
