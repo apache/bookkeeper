@@ -31,7 +31,6 @@ public class TestBKConfiguration {
         confReturn.setAllowLoopback(true);
         confReturn.setAllowEphemeralPorts(true);
         confReturn.setBookiePort(0);
-        confReturn.setAdvertisedAddress("127.0.0.1");
         confReturn.setGcWaitTime(1000);
         confReturn.setDiskUsageThreshold(0.999f);
         confReturn.setDiskUsageWarnThreshold(0.99f);
