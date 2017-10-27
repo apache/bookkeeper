@@ -28,16 +28,21 @@ import static org.apache.bookkeeper.bookie.UpgradeTest.newV2LedgerDirectory;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.Sets;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.discover.RegistrationManager;
+import org.apache.bookkeeper.discover.ZKRegistrationManager;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.PortManager;
 import org.apache.bookkeeper.util.IOUtils;
@@ -45,6 +50,7 @@ import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.io.FileUtils;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -66,6 +72,24 @@ public class CookieTest extends BookKeeperClusterTestCase {
         }
         tmpDirs.add(d);
         return d.getPath();
+    }
+
+    RegistrationManager rm;
+
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+        rm = new ZKRegistrationManager();
+        baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        rm.initialize(baseConf, () -> {}, NullStatsLogger.INSTANCE);
+    }
+
+    @Override
+    public void tearDown() throws Exception {
+        super.tearDown();
+        if(rm != null) {
+            rm.close();
+        }
     }
 
     /**
@@ -98,7 +122,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
             .setBookiePort(bookiePort);
         Cookie.Builder cookieBuilder = Cookie.generateCookie(conf1);
         Cookie c = cookieBuilder.build();
-        c.writeToZooKeeper(zkc, conf1, Version.NEW);
+        c.writeToRegistrationManager(rm, conf1, Version.NEW);
 
         String journalDir = newDirectory();
         String ledgerDir = newDirectory();
@@ -590,15 +614,15 @@ public class CookieTest extends BookKeeperClusterTestCase {
         Bookie b = new Bookie(conf); // should work fine
         b.start();
         b.shutdown();
-        Versioned<Cookie> zkCookie = Cookie.readFromZooKeeper(zkc, conf);
+        Versioned<Cookie> zkCookie = Cookie.readFromRegistrationManager(rm, conf);
         Version version1 = zkCookie.getVersion();
         Assert.assertTrue("Invalid type expected ZkVersion type",
             version1 instanceof LongVersion);
         LongVersion zkVersion1 = (LongVersion) version1;
         Cookie cookie = zkCookie.getValue();
-        cookie.writeToZooKeeper(zkc, conf, version1);
+        cookie.writeToRegistrationManager(rm, conf, version1);
 
-        zkCookie = Cookie.readFromZooKeeper(zkc, conf);
+        zkCookie = Cookie.readFromRegistrationManager(rm, conf);
         Version version2 = zkCookie.getVersion();
         Assert.assertTrue("Invalid type expected ZkVersion type",
             version2 instanceof LongVersion);
@@ -620,8 +644,8 @@ public class CookieTest extends BookKeeperClusterTestCase {
         Bookie b = new Bookie(conf); // should work fine
         b.start();
         b.shutdown();
-        Versioned<Cookie> zkCookie = Cookie.readFromZooKeeper(zkc, conf);
+        Versioned<Cookie> zkCookie = Cookie.readFromRegistrationManager(rm, conf);
         Cookie cookie = zkCookie.getValue();
-        cookie.deleteFromZooKeeper(zkc, conf, zkCookie.getVersion());
+        cookie.deleteFromRegistrationManager(rm, conf, zkCookie.getVersion());
     }
 }

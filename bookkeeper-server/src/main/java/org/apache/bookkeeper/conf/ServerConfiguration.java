@@ -26,6 +26,8 @@ import com.google.common.annotations.Beta;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.SortedLedgerStorage;
+import org.apache.bookkeeper.discover.RegistrationManager;
+import org.apache.bookkeeper.discover.ZKRegistrationManager;
 import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.stats.NullStatsProvider;
 import org.apache.bookkeeper.stats.StatsProvider;
@@ -172,6 +174,9 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     // Lifecycle Components
     protected final static String EXTRA_SERVER_COMPONENTS = "extraServerComponents";
+
+    // Registration
+    protected final static String REGISTRATION_MANAGER_CLASS = "registrationManagerClass";
 
     /**
      * Construct a default configuration object
@@ -2382,6 +2387,29 @@ public class ServerConfiguration extends AbstractConfiguration {
     public ServerConfiguration setExtraServerComponents(String[] componentClasses) {
         this.setProperty(EXTRA_SERVER_COMPONENTS, componentClasses);
         return this;
+    }
+
+    /**
+     * Set registration manager class
+     *
+     * @param regManagerClass
+     *            ManagerClass
+     */
+    public void setRegistrationManagerClass(
+            Class<? extends RegistrationManager> regManagerClass) {
+        setProperty(REGISTRATION_MANAGER_CLASS, regManagerClass);
+    }
+
+    /**
+     * Get Registration Manager Class.
+     *
+     * @return registration manager class.
+     */
+    public Class<? extends RegistrationManager> getRegistrationManagerClass()
+            throws ConfigurationException {
+        return ReflectionUtils.getClass(this, REGISTRATION_MANAGER_CLASS,
+                ZKRegistrationManager.class, RegistrationManager.class,
+                defaultLoader);
     }
 
 }
