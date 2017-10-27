@@ -24,24 +24,16 @@
     <suppress checks=".*" files=".*[\\/]bookie[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]client[\\/](?:[^\\/]+$|(?!api)|(?!impl)[^\\/]+[\\/])"/>
     <suppress checks=".*" files=".*[\\/]conf[\\/].*"/>
-    <suppress checks=".*" files=".*[\\/]feature[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]http[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]meta[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]metastore[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]net[\\/].*"/>
-    <suppress checks=".*" files=".*[\\/]processor[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]proto[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]replication[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]sasl[\\/].*"/>
-    <suppress checks=".*" files=".*[\\/]shims[\\/].*"/>
-    <suppress checks=".*" files=".*[\\/]stats[\\/].*"/>
-    <suppress checks=".*" files=".*[\\/]streaming[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]test[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]tls[\\/].*"/>
-    <suppress checks=".*" files=".*[\\/]tools[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]util[\\/].*"/>
-    <suppress checks=".*" files=".*[\\/]versioning[\\/].*"/>
-    <suppress checks=".*" files=".*[\\/]zookeeper[\\/].*"/>
 
     <!-- suppress all checks in the generated directories -->
     <suppress checks=".*" files=".+[\\/]generated[\\/].+\.java" />

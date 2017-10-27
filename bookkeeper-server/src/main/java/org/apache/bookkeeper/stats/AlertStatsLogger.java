@@ -20,7 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This class is used to raise alert when we detect an event that should never happen in production
+ * This class is used to raise alert when we detect an event that should never happen in production.
  */
 public class AlertStatsLogger {
     private static final Logger logger = LoggerFactory.getLogger(AlertStatsLogger.class);
@@ -49,7 +49,7 @@ public class AlertStatsLogger {
 
     private String format(String msg) {
         return msg.startsWith("ALERT!: ") ? msg :
-                ("ALERT!: " + (scope != null ? "(" + scope + "):" : "" ) + msg);
+                ("ALERT!: " + (scope != null ? "(" + scope + "):" : "") + msg);
     }
 
     private void initializeCountersIfNeeded() {

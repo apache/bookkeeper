@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,28 +15,19 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-package org.apache.bookkeeper.feature;
 
 /**
- * Provider to provide features.
+ * A <a href="https://en.wikipedia.org/wiki/Feature_toggle">feature-flag</a> system
+ * that is used to proportionally control what features are enabled for the system.
+ *
+ * <p>In other words, it is a way of altering the control in a system without restarting it.
+ * It can be used during all stages of developement, its most visible use case is on production.
+ * For instance, during a production release, you can enable or disable individual features,
+ * control the data flow through the system, thereby minimizing risk of system failures
+ * in real time.
+ *
+ * <p>The <i>feature provider</i> interface is pluggable and easy to integrate with
+ * any configuration management system.
  */
-public interface FeatureProvider {
-    /**
-     * Return the feature with given name.
-     *
-     * @param name feature name
-     * @return feature instance
-     */
-    Feature getFeature(String name);
-
-    /**
-     * Provide the feature provider under scope <i>name</i>.
-     *
-     * @param name
-     *          scope name.
-     * @return feature provider under scope <i>name</i>
-     */
-    FeatureProvider scope(String name);
-}
+package org.apache.bookkeeper.feature;

@@ -18,28 +18,17 @@
 
 package org.apache.bookkeeper.versioning;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
+/**
+ * A <code>Versioned</code> value represents a value associated with a version.
+ *
+ * @param <T> value type.
+ */
+@Data
+@AllArgsConstructor
 public class Versioned<T> {
     T value;
     Version version;
-
-    public Versioned(T value, Version version) {
-        this.value = value;
-        this.version = version;
-    }
-
-    public void setValue(T value) {
-        this.value = value;
-    }
-
-    public T getValue() {
-        return value;
-    }
-
-    public void setVersion(Version version) {
-        this.version = version;
-    }
-
-    public Version getVersion() {
-        return version;
-    }
 }
