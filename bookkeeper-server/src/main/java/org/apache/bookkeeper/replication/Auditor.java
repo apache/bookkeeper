@@ -20,6 +20,10 @@
  */
 package org.apache.bookkeeper.replication;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Stopwatch;
+import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.SettableFuture;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,7 +37,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -62,11 +65,6 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Stopwatch;
-import com.google.common.collect.Sets;
-import com.google.common.util.concurrent.SettableFuture;
 
 /**
  * Auditor is a single entity in the entire Bookie cluster and will be watching
@@ -570,7 +568,7 @@ public class Auditor implements BookiesListener {
                 if (rc == BKException.Code.OK) {
                     Set<BookieSocketAddress> bookies = Sets.newHashSet();
                     for (LedgerFragment f : fragments) {
-                        bookies.add(f.getAddress());
+                        bookies.addAll(f.getAddresses());
                     }
                     for (BookieSocketAddress bookie : bookies) {
                         publishSuspectedLedgers(bookie.toString(), Sets.newHashSet(lh.getId()));
