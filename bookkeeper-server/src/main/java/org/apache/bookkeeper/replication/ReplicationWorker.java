@@ -265,22 +265,26 @@ public class ReplicationWorker implements Runnable {
             underreplicationManager.markLedgerReplicated(ledgerIdToReplicate);
             getExceptionCounter("BKNoSuchLedgerExistsException").inc();
             return false;
+        } catch (BKNotEnoughBookiesException e) {
+            logBKExceptionAndReleaseLedger(e, ledgerIdToReplicate);
+            throw e;
         } catch (BKException e) {
-            LOG.info("{} while"
-                    + " rereplicating ledger {}."
-                    + " Enough Bookies might not have available"
-                    + " So, no harm to continue",
-                e.getClass().getSimpleName(),
-                ledgerIdToReplicate);
-            underreplicationManager
-                    .releaseUnderreplicatedLedger(ledgerIdToReplicate);
-            getExceptionCounter(e.getClass().getSimpleName()).inc();
-
-            if (e instanceof BKNotEnoughBookiesException) {
-                throw e;
-            }
+            logBKExceptionAndReleaseLedger(e, ledgerIdToReplicate);
             return false;
         }
+    }
+
+    private void logBKExceptionAndReleaseLedger(BKException e, long ledgerIdToReplicate)
+            throws UnavailableException {
+        LOG.info("{} while"
+                + " rereplicating ledger {}."
+                + " Enough Bookies might not have available"
+                + " So, no harm to continue",
+            e.getClass().getSimpleName(),
+            ledgerIdToReplicate);
+        underreplicationManager
+                .releaseUnderreplicatedLedger(ledgerIdToReplicate);
+        getExceptionCounter(e.getClass().getSimpleName()).inc();
     }
 
     /**

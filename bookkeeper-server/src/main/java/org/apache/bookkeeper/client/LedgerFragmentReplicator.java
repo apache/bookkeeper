@@ -19,6 +19,8 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.apache.bookkeeper.client.LedgerHandle.INVALID_ENTRY_ID;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.ArrayList;
@@ -101,7 +103,7 @@ public class LedgerFragmentReplicator {
             ledgerFragmentMcb.processResult(BKException.Code.OK, null, null);
             return;
         }
-        if (startEntryId > endEntryId || endEntryId <= -1L) {
+        if (startEntryId > endEntryId || endEntryId <= INVALID_ENTRY_ID) {
             // for open ledger which there is no entry, the start entry id is 0,
             // the end entry id is -1.
             // we can return immediately to trigger forward read
