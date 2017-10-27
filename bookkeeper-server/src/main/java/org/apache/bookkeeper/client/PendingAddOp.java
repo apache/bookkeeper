@@ -57,7 +57,6 @@ class PendingAddOp implements WriteCallback, TimerTask {
     long entryId;
     int entryLength;
 
-    DistributionSchedule.WriteSet writeSet;
     DistributionSchedule.AckSet ackSet;
     boolean completed = false;
 
@@ -77,8 +76,6 @@ class PendingAddOp implements WriteCallback, TimerTask {
         this.ctx = ctx;
         this.entryId = LedgerHandle.INVALID_ENTRY_ID;
 
-        writeSet = DistributionSchedule.NULL_WRITE_SET;
-
         this.ackSet = lh.distributionSchedule.getAckSet();
         this.addOpLogger = lh.bk.getAddOpLogger();
         this.timeoutSec = lh.bk.getConf().getAddEntryQuorumTimeout();
@@ -95,8 +92,6 @@ class PendingAddOp implements WriteCallback, TimerTask {
 
     void setEntryId(long entryId) {
         this.entryId = entryId;
-
-        writeSet = lh.distributionSchedule.getWriteSet(entryId);
     }
 
     long getEntryId() {
@@ -156,9 +151,15 @@ class PendingAddOp implements WriteCallback, TimerTask {
         // completes.
         //
         // We call sendAddSuccessCallback when unsetting t cover this case.
-        if (!writeSet.contains(bookieIndex)) {
-            lh.sendAddSuccessCallbacks();
-            return;
+        DistributionSchedule.WriteSet writeSet
+            = lh.distributionSchedule.getWriteSet(entryId);
+        try {
+            if (!writeSet.contains(bookieIndex)) {
+                lh.sendAddSuccessCallbacks();
+                return;
+            }
+        } finally {
+            writeSet.recycle();
         }
 
         if (callbackTriggered) {
@@ -198,9 +199,12 @@ class PendingAddOp implements WriteCallback, TimerTask {
         this.entryLength = entryLength;
 
         // Iterate over set and trigger the sendWriteRequests
+        DistributionSchedule.WriteSet writeSet
+            = lh.distributionSchedule.getWriteSet(entryId);
         for (int i = 0; i < writeSet.size(); i++) {
             sendWriteRequest(writeSet.get(i));
         }
+        writeSet.recycle();
     }
 
     @Override

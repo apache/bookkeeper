@@ -139,6 +139,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
                  */
                 length = buffer.getLong(DigestManager.METADATA_LENGTH - 8);
                 data = content;
+                writeSet.recycle();
                 return true;
             } else {
                 buffer.release();
@@ -157,6 +158,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             if (complete.compareAndSet(false, true)) {
                 this.rc = rc;
                 submitCallback(rc);
+                writeSet.recycle();
                 return true;
             } else {
                 return false;
@@ -393,10 +395,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             }
 
             int replica = nextReplicaIndexToReadFrom;
-            DistributionSchedule.WriteSet writeSet
-                = lh.distributionSchedule.getWriteSet(entryId);
             int bookieIndex = writeSet.get(nextReplicaIndexToReadFrom);
-            writeSet.recycle();
             nextReplicaIndexToReadFrom++;
 
             try {

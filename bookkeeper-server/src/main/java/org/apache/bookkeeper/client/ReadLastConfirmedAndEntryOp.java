@@ -84,9 +84,9 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
             this.writeSet = lh.distributionSchedule.getWriteSet(entryId);
             if (lh.bk.reorderReadSequence) {
                 this.orderedEnsemble = lh.bk.placementPolicy.reorderReadLACSequence(ensemble,
-                        lh.bookieFailureHistory.asMap(), writeSet);
+                        lh.bookieFailureHistory.asMap(), writeSet.copy());
             } else {
-                this.orderedEnsemble = writeSet;
+                this.orderedEnsemble = writeSet.copy();
             }
         }
 
@@ -122,6 +122,8 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
             }
 
             if (!complete.getAndSet(true)) {
+                writeSet.recycle();
+                orderedEnsemble.recycle();
                 rc = BKException.Code.OK;
                 this.entryId = entryId;
                 /*
@@ -145,6 +147,8 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
          */
         boolean fail(int rc) {
             if (complete.compareAndSet(false, true)) {
+                writeSet.recycle();
+                orderedEnsemble.recycle();
                 this.rc = rc;
                 translateAndSetFirstError(rc);
                 completeRequest();
