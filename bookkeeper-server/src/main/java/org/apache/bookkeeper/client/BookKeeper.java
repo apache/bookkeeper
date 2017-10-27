@@ -106,6 +106,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     private OpStatsLogger deleteOpLogger;
     private OpStatsLogger recoverOpLogger;
     private OpStatsLogger readOpLogger;
+    private OpStatsLogger forceOpLogger;
     private OpStatsLogger readLacAndEntryOpLogger;
     private OpStatsLogger readLacAndEntryRespLogger;
     private OpStatsLogger addOpLogger;
@@ -597,6 +598,11 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     @VisibleForTesting
     boolean isClosed() {
         return closed;
+    }
+
+    @VisibleForTesting
+    boolean isDelayEnsembleChange() {
+        return delayEnsembleChange;
     }
 
     @VisibleForTesting
@@ -1386,6 +1392,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         openOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.OPEN_OP);
         recoverOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.RECOVER_OP);
         readOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_OP);
+        forceOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.FORCE_OP);
         readLacAndEntryOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY);
         readLacAndEntryRespLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY_RESPONSE);
         addOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.ADD_OP);
@@ -1400,6 +1407,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     OpStatsLogger getDeleteOpLogger() { return deleteOpLogger; }
     OpStatsLogger getRecoverOpLogger() { return recoverOpLogger; }
     OpStatsLogger getReadOpLogger() { return readOpLogger; }
+    OpStatsLogger getForceOpLogger() { return forceOpLogger; }
     OpStatsLogger getReadLacAndEntryOpLogger() { return readLacAndEntryOpLogger; }
     OpStatsLogger getReadLacAndEntryRespLogger() { return readLacAndEntryRespLogger; }
     OpStatsLogger getAddOpLogger() { return addOpLogger; }

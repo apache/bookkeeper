@@ -32,11 +32,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.ClientUtil;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
+import org.apache.bookkeeper.proto.DataFormats;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.ZeroBuffer;
 import org.apache.commons.io.FileUtils;
@@ -742,5 +747,84 @@ public class BookieJournalTest {
         } catch (Bookie.NoEntryException e) {
             // correct behaviour
         }
+    }
+
+    @Test
+    public void testMantainLastAddSynced() throws Exception {
+        File journalDir = createTempDir("bookie", "journal");
+        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+
+        File ledgerDir = createTempDir("bookie", "ledger");
+        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
+
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
+            .setZkServers(null)
+            .setJournalDirName(journalDir.getPath())
+            .setLedgerDirNames(new String[]{ledgerDir.getPath()});
+
+        Bookie b = new Bookie(conf);
+
+        long ledgerId = 1;
+        long entryId = 0;
+        long lastAddConfirmedFromClient = -1;
+        long length = 0;
+        Journal journal = b.getJournal(ledgerId);
+        journal.start();
+        byte[] data = "JournalTestData".getBytes();
+        String testCtx = "dummyContext";
+
+        ByteBuf toSend = ClientUtil.generatePacket(ledgerId, entryId, lastAddConfirmedFromClient, length, data);
+        ByteBuf toSendCopy = Unpooled.copiedBuffer(toSend);
+        toSendCopy.resetReaderIndex();
+        writeEntryToJournal(testCtx, journal, ledgerId, toSendCopy, -1);
+
+        forceSyncOnJournal(testCtx, journal, ledgerId, entryId);
+
+        entryId++;
+        toSend = ClientUtil.generatePacket(ledgerId, entryId, lastAddConfirmedFromClient, length, data);
+        toSendCopy = Unpooled.copiedBuffer(toSend);
+        toSendCopy.resetReaderIndex();
+        writeEntryToJournal(testCtx, journal, ledgerId, toSendCopy, entryId - 1);
+
+        forceSyncOnJournal(testCtx, journal, ledgerId, entryId);
+        assertEquals(entryId, journal.getSyncCursorForLedger(ledgerId).getCurrentMinAddSynced());
+
+        b.shutdown();
+    }
+
+    void forceSyncOnJournal(String testCtx, Journal journal, long ledgerId, long entryId) throws InterruptedException {
+        // force sync
+        CountDownLatch latchSync = new CountDownLatch(1);
+        BookkeeperInternalCallbacks.ForceCallback cbSync = (int rc, long ledgerId1, long lastAddSynced,
+            BookieSocketAddress addr, Object ctx) -> {
+            assertEquals(testCtx, ctx);
+            latchSync.countDown();
+        };
+        journal.forceLedger(ledgerId, cbSync, testCtx);
+        assertTrue(latchSync.await(10, TimeUnit.SECONDS));
+
+        assertEquals(entryId, journal.getSyncCursorForLedger(ledgerId).getCurrentMinAddSynced());
+    }
+
+    void writeEntryToJournal(String testCtx, Journal journal, long ledgerId, ByteBuf toSendCopy,
+        long expectedCurrentMinAddSynced) throws InterruptedException {
+        // write an entry, no sync
+        CountDownLatch latchWrite = new CountDownLatch(1);
+        BookkeeperInternalCallbacks.WriteCallback cb = (int rc, long ledgerId1, long entryId1,
+            BookieSocketAddress addr, Object ctx) -> {
+            assertEquals(testCtx, ctx);
+            latchWrite.countDown();
+        };
+        long currentMinAddSynced = journal.getSyncCursorForLedger(ledgerId).getCurrentMinAddSynced();
+        LOG.info("currentMinAddSynced {} expecting {}", currentMinAddSynced, expectedCurrentMinAddSynced);
+        assertTrue("unexpected value " + currentMinAddSynced
+            + " expecting at max " + expectedCurrentMinAddSynced, expectedCurrentMinAddSynced <= currentMinAddSynced);
+
+        journal.logAddEntry(toSendCopy, DataFormats.LedgerType.FORCE_DEFERRED_ON_JOURNAL, cb, testCtx);
+        assertTrue(latchWrite.await(10, TimeUnit.SECONDS));
+        currentMinAddSynced = journal.getSyncCursorForLedger(ledgerId).getCurrentMinAddSynced();
+        LOG.info("currentMinAddSynced {} expecting {}", currentMinAddSynced, expectedCurrentMinAddSynced);
+        assertTrue("unexpected value " + currentMinAddSynced
+            + " expecting at max " + expectedCurrentMinAddSynced, expectedCurrentMinAddSynced <= currentMinAddSynced);
     }
 }

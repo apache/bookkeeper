@@ -237,6 +237,31 @@ public class BookieClient implements PerChannelBookieClientFactory {
         }
     }
 
+    public void force(final BookieSocketAddress addr,
+                         final long ledgerId,
+                         final byte[] masterKey,
+                         final BookkeeperInternalCallbacks.ForceCallback cb,
+                         final Object ctx) {
+        closeLock.readLock().lock();
+        try {
+            final PerChannelBookieClientPool client = lookupClient(addr);
+            if (client == null) {
+                cb.forceComplete(getRc(BKException.Code.BookieHandleNotAvailableException),
+                                ledgerId, BookieProtocol.INVALID_ENTRY_ID, addr, ctx);
+                return;
+            }
+            client.obtain((final int rc, PerChannelBookieClient pcbc) -> {
+                if (rc != BKException.Code.OK) {
+                    cb.forceComplete(rc, ledgerId, BookieProtocol.INVALID_ENTRY_ID, addr, ctx);
+                } else {
+                    pcbc.force(ledgerId, masterKey, cb, ctx);
+                }
+            }, ledgerId);
+        } finally {
+            closeLock.readLock().unlock();
+         }
+     }
+
     public void addEntry(final BookieSocketAddress addr,
                          final long ledgerId,
                          final byte[] masterKey,

@@ -42,6 +42,7 @@ import com.google.common.util.concurrent.SettableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
@@ -68,6 +69,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_FORCE;
 import org.apache.bookkeeper.bookie.BookieException.DiskPartitionDuplicationException;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
@@ -77,6 +79,8 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNS;
+import org.apache.bookkeeper.proto.BookieProtocol;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ForceCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.proto.DataFormats.LedgerType;
 import org.apache.bookkeeper.stats.Counter;
@@ -129,6 +133,7 @@ public class Bookie extends BookieCriticalThread {
 
     static final long METAENTRY_ID_LEDGER_KEY = -0x1000;
     static final long METAENTRY_ID_FENCE_KEY  = -0x2000;
+    static final long METAENTRY_ID_FORCE_KEY  = -0x3000;
 
     // ZK registration path for this bookie
     protected final String bookieRegistrationPath;
@@ -168,6 +173,7 @@ public class Bookie extends BookieCriticalThread {
     private final Counter readBytes;
     // Bookie Operation Latency Stats
     private final OpStatsLogger addEntryStats;
+    private final OpStatsLogger forceStats;
     private final OpStatsLogger recoveryAddEntryStats;
     private final OpStatsLogger readEntryStats;
     // Bookie Operation Bytes Stats
@@ -748,6 +754,7 @@ public class Bookie extends BookieCriticalThread {
         writeBytes = statsLogger.getCounter(WRITE_BYTES);
         readBytes = statsLogger.getCounter(READ_BYTES);
         addEntryStats = statsLogger.getOpStatsLogger(BOOKIE_ADD_ENTRY);
+        forceStats = statsLogger.getOpStatsLogger(BOOKIE_FORCE);
         recoveryAddEntryStats = statsLogger.getOpStatsLogger(BOOKIE_RECOVERY_ADD_ENTRY);
         readEntryStats = statsLogger.getOpStatsLogger(BOOKIE_READ_ENTRY);
         addBytesStats = statsLogger.getOpStatsLogger(BOOKIE_ADD_ENTRY_BYTES);
@@ -772,65 +779,66 @@ public class Bookie extends BookieCriticalThread {
 
     void readJournal() throws IOException, BookieException {
         long startTs = MathUtils.now();
-        JournalScanner scanner = new JournalScanner() {
-            @Override
-            public void process(int journalVersion, long offset, ByteBuffer recBuff) throws IOException {
-                long ledgerId = recBuff.getLong();
-                long entryId = recBuff.getLong();
-                try {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Replay journal - ledger id : {}, entry id : {}.", ledgerId, entryId);
-                    }
-                    if (entryId == METAENTRY_ID_LEDGER_KEY) {
-                        if (journalVersion >= JournalChannel.V3) {
-                            int masterKeyLen = recBuff.getInt();
-                            byte[] masterKey = new byte[masterKeyLen];
+        for (Journal journal : journals) {
+            replayJournal(journal);
+        }
+        long elapsedTs = MathUtils.now() - startTs;
+        LOG.info("Finished replaying journal in {} ms.", elapsedTs);
+    }
 
-                            recBuff.get(masterKey);
-                            masterKeyCache.put(ledgerId, masterKey);
-                        } else {
-                            throw new IOException("Invalid journal. Contains journalKey "
-                                    + " but layout version (" + journalVersion
-                                    + ") is too old to hold this");
-                        }
-                    } else if (entryId == METAENTRY_ID_FENCE_KEY) {
-                        if (journalVersion >= JournalChannel.V4) {
-                            byte[] key = masterKeyCache.get(ledgerId);
-                            if (key == null) {
-                                key = ledgerStorage.readMasterKey(ledgerId);
-                            }
-                            LedgerDescriptor handle = handles.getHandle(ledgerId, key);
-                            handle.setFenced();
-                        } else {
-                            throw new IOException("Invalid journal. Contains fenceKey "
-                                    + " but layout version (" + journalVersion
-                                    + ") is too old to hold this");
-                        }
+    private void replayJournal(Journal journal) throws IOException {
+        JournalScanner scanner = (int journalVersion, long offset, ByteBuffer recBuff) -> {
+            long ledgerId = recBuff.getLong();
+            long entryId = recBuff.getLong();
+            LOG.info("process {}@{}",ledgerId,entryId);
+            try {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Replay journal - ledger id : {}, entry id : {}.", ledgerId, entryId);
+                }
+                if (entryId == METAENTRY_ID_LEDGER_KEY) {
+                    if (journalVersion >= JournalChannel.V3) {
+                        int masterKeyLen = recBuff.getInt();
+                        byte[] masterKey = new byte[masterKeyLen];
+                        recBuff.get(masterKey);
+                        masterKeyCache.put(ledgerId, masterKey);
                     } else {
+                        throw new IOException("Invalid journal. Contains journalKey "
+                            + " but layout version (" + journalVersion
+                            + ") is too old to hold this");
+                    }
+                } else if (entryId == METAENTRY_ID_FENCE_KEY) {
+                    if (journalVersion >= JournalChannel.V4) {
                         byte[] key = masterKeyCache.get(ledgerId);
                         if (key == null) {
                             key = ledgerStorage.readMasterKey(ledgerId);
                         }
                         LedgerDescriptor handle = handles.getHandle(ledgerId, key);
+                        handle.setFenced();
+                    } else {
+                        throw new IOException("Invalid journal. Contains fenceKey "
+                            + " but layout version (" + journalVersion
+                            + ") is too old to hold this");
+                    }
+                } else {
+                    byte[] key = masterKeyCache.get(ledgerId);
+                    if (key == null) {
+                        key = ledgerStorage.readMasterKey(ledgerId);
+                    }
+                    LedgerDescriptor handle = handles.getHandle(ledgerId, key);
 
-                        recBuff.rewind();
-                        handle.addEntry(Unpooled.wrappedBuffer(recBuff));
-                    }
-                } catch (NoLedgerException nsle) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Skip replaying entries of ledger {} since it was deleted.", ledgerId);
-                    }
-                } catch (BookieException be) {
-                    throw new IOException(be);
+                    recBuff.rewind();
+                    handle.addEntry(Unpooled.wrappedBuffer(recBuff));
+                    journal.updateLastAddSynced(ledgerId, entryId);
                 }
+            } catch (NoLedgerException nsle) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Skip replaying entries of ledger {} since it was deleted.", ledgerId);
+                }
+            } catch (BookieException be) {
+                throw new IOException(be);
             }
         };
-
-        for (Journal journal : journals) {
-            journal.replay(scanner);
-        }
-        long elapsedTs = MathUtils.now() - startTs;
-        LOG.info("Finished replaying journal in {} ms.", elapsedTs);
+        journal.replay(scanner);
     }
 
     @Override
@@ -1351,6 +1359,18 @@ public class Bookie extends BookieCriticalThread {
     private LedgerDescriptor getLedgerForEntry(ByteBuf entry, final byte[] masterKey)
             throws IOException, BookieException {
         final long ledgerId = entry.getLong(entry.readerIndex());
+        return getLedger(ledgerId, masterKey);
+    }
+
+    /**
+     * Retrieve the ledger descriptor for the ledger which entry should be added to.
+     * The LedgerDescriptor returned from this method should be eventually freed with
+     * #putHandle().
+     *
+     * @throws BookieException if masterKey does not match the master key of the ledger
+     */
+    private LedgerDescriptor getLedger(final long ledgerId, final byte[] masterKey)
+            throws IOException, BookieException {
 
         LedgerDescriptor l = handles.getHandle(ledgerId, masterKey);
         if (masterKeyCache.get(ledgerId) == null) {
@@ -1372,7 +1392,8 @@ public class Bookie extends BookieCriticalThread {
         return l;
     }
 
-    private Journal getJournal(long ledgerId) {
+    @VisibleForTesting
+    Journal getJournal(long ledgerId) {
         return journals.get(MathUtils.signSafeMod(ledgerId, journals.size()));
     }
 
@@ -1518,6 +1539,60 @@ public class Bookie extends BookieCriticalThread {
         LedgerDescriptor handle = handles.getHandle(ledgerId, masterKey);
         return handle.fenceAndLogInJournal(getJournal(ledgerId));
     }
+
+    public void force(long ledgerId, ForceCallback wcb, Channel channel, byte[] masterKey)
+        throws IOException, BookieException {
+        long requestNanos = MathUtils.nowInNano();
+        boolean success = false;
+        try {
+            LedgerDescriptor handle = getLedger(ledgerId, masterKey);
+            synchronized (handle) {
+                if (handle.isFenced()) {
+                    throw BookieException
+                            .create(BookieException.Code.LedgerFencedException);
+                }
+                forceInternal(handle, wcb);
+            }
+            success = true;
+        } catch (NoWritableLedgerDirException e) {
+            transitionToReadOnlyMode();
+            throw new IOException(e);
+        } finally {
+            long elapsedNanos = MathUtils.elapsedNanos(requestNanos);
+            if (success) {
+                forceStats.registerSuccessfulEvent(elapsedNanos, TimeUnit.NANOSECONDS);
+            } else {
+                forceStats.registerFailedEvent(elapsedNanos, TimeUnit.NANOSECONDS);
+            }
+        }
+    }
+
+     private void forceInternal(LedgerDescriptor handle, ForceCallback originalCallback)
+            throws IOException, BookieException {
+        long ledgerId = handle.getLedgerId();
+
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("Force ledger {}", ledgerId);
+        }
+        Journal journal = getJournal(ledgerId);
+        ForceCallback cb = (int rc, long ledgerId1, long lastAddSynced, BookieSocketAddress addr, Object ctx) -> {
+            if (lastAddSynced == BookieProtocol.INVALID_ENTRY_ID) {
+                try {
+                    lastAddSynced = ledgerStorage.getLastAddConfirmed(ledgerId1);
+                    LOG.info("recovered LastAddConfirmed {} for ledger {} from storage", lastAddSynced, ledgerId1);
+                    if (lastAddSynced != BookieProtocol.INVALID_ENTRY_ID) {
+                        journal.updateLastAddSynced(ledgerId1, lastAddSynced);
+                    }
+                } catch (IOException error) {
+                    LOG.error("Could not read LastAddConfirmed for ledger " + ledgerId1, error);
+                }
+            }
+            originalCallback.forceComplete(rc, ledgerId1, lastAddSynced, addr, ctx);
+        };
+        // actually we are going to write an entry and this will guarantee
+        // that all the entries up to that id have been persisteded durably (synced)
+        journal.forceLedger(ledgerId, cb, null);
+     }
 
     public ByteBuf readEntry(long ledgerId, long entryId)
             throws IOException, NoLedgerException {
