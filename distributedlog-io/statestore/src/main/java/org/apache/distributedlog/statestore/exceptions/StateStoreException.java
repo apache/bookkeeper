@@ -23,7 +23,7 @@ package org.apache.distributedlog.statestore.exceptions;
  */
 public class StateStoreException extends Exception {
 
-    private final static long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     public StateStoreException(String msg) {
         super(msg);

@@ -39,7 +39,6 @@ import java.util.Comparator;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import lombok.AccessLevel;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.distributedlog.common.coder.Coder;
@@ -62,7 +61,7 @@ import org.rocksdb.WriteBatch;
 import org.rocksdb.WriteOptions;
 
 /**
- * A key/value store implemented using {@link ://rocksdb.org/}.
+ * A key/value store implemented using {@link http://rocksdb.org/}.
  *
  * @param <K> key type
  * @param <V> value type
@@ -103,6 +102,10 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         if (!isInitialized) {
             throw new InvalidStateStoreException("State Store " + name + " is not initialized yet");
         }
+    }
+
+    synchronized RocksDB getDb() {
+        return db;
     }
 
     @Override
@@ -176,7 +179,7 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
 
     @Override
     public synchronized void flush() throws StateStoreException {
-        if (null != db) {
+        if (null == db) {
             return;
         }
         try {
@@ -388,7 +391,7 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
             executed = true;
 
             try {
-                db.write(writeOpts, batch);
+                getDb().write(writeOpts, batch);
             } catch (RocksDBException e) {
                 throw new StateStoreRuntimeException("Error while executing a multi operation from store " + name, e);
             }
@@ -402,7 +405,6 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
     /**
      * KV iterator over a rocksdb instance.
      */
-    @Data(staticConstructor = "of")
     @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
     class RocksdbKVIterator implements KVIterator<K, V> {
 
@@ -470,6 +472,8 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
             checkNotNull(endKey, "End key cannot be null");
             this.endKeyBytes = keyCoder.encode(endKey);
         }
+
+
 
         @Override
         public boolean hasNext() {

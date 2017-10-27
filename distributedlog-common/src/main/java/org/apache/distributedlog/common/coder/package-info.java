@@ -16,24 +16,10 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.statestore.exceptions;
-
 /**
- * Exceptions thrown from state store.
+ * Defines {@link org.apache.distributedlog.common.coder.Coder} to specify
+ * how data is encoded to and decoded from byte buffer.
+ *
+ * <p>Most of the coder implementations are basically borrowed from Apache Beam.
  */
-public class StateStoreRuntimeException extends RuntimeException {
-
-    private static final long serialVersionUID = 1L;
-
-    public StateStoreRuntimeException(String msg) {
-        super(msg);
-    }
-
-    public StateStoreRuntimeException(Throwable t) {
-        super(t);
-    }
-
-    public StateStoreRuntimeException(String msg, Throwable t) {
-        super(msg, t);
-    }
-}
+package org.apache.distributedlog.common.coder;

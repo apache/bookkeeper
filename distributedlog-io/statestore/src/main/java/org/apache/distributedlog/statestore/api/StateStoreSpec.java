@@ -24,7 +24,7 @@ import org.apache.distributedlog.common.coder.Coder;
 import org.inferred.freebuilder.FreeBuilder;
 
 /**
- * Specification for a state store
+ * Specification for a state store.
  */
 @FreeBuilder
 public interface StateStoreSpec {
@@ -71,6 +71,9 @@ public interface StateStoreSpec {
      */
     Map<String, Object> configs();
 
+    /**
+     * Builder to build a store specification.
+     */
     class Builder extends StateStoreSpec_Builder {}
 
     /**

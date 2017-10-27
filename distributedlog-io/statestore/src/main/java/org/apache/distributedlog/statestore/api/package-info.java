@@ -16,24 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.statestore.exceptions;
-
 /**
- * Exceptions thrown from state store.
+ * State Store API.
  */
-public class StateStoreRuntimeException extends RuntimeException {
-
-    private static final long serialVersionUID = 1L;
-
-    public StateStoreRuntimeException(String msg) {
-        super(msg);
-    }
-
-    public StateStoreRuntimeException(Throwable t) {
-        super(t);
-    }
-
-    public StateStoreRuntimeException(String msg, Throwable t) {
-        super(msg, t);
-    }
-}
+package org.apache.distributedlog.statestore.api;

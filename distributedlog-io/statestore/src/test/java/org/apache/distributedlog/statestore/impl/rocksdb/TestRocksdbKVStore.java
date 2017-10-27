@@ -291,8 +291,8 @@ public class TestRocksdbKVStore {
         int idx = 0;
         while (iter.hasNext()) {
             KV<String, String> kv = iter.next();
-            assertEquals("key-" + idx, kv.getKey());
-            assertEquals("value-" + idx, kv.getValue());
+            assertEquals("key-" + idx, kv.key());
+            assertEquals("value-" + idx, kv.value());
             ++idx;
         }
         assertEquals(10, idx);
@@ -307,8 +307,8 @@ public class TestRocksdbKVStore {
         int idx = 0;
         while (iter.hasNext()) {
             KV<String, String> kv = iter.next();
-            assertEquals("key-" + idx, kv.getKey());
-            assertEquals("value-" + idx, kv.getValue());
+            assertEquals("key-" + idx, kv.key());
+            assertEquals("value-" + idx, kv.value());
             ++idx;
         }
         assertEquals(6, idx);
@@ -323,8 +323,8 @@ public class TestRocksdbKVStore {
         int idx = 5;
         while (iter.hasNext()) {
             KV<String, String> kv = iter.next();
-            assertEquals("key-" + idx, kv.getKey());
-            assertEquals("value-" + idx, kv.getValue());
+            assertEquals("key-" + idx, kv.key());
+            assertEquals("value-" + idx, kv.value());
             ++idx;
         }
         assertEquals(10, idx);
@@ -339,8 +339,8 @@ public class TestRocksdbKVStore {
         int idx = 5;
         while (iter.hasNext()) {
             KV<String, String> kv = iter.next();
-            assertEquals("key-" + idx, kv.getKey());
-            assertEquals("value-" + idx, kv.getValue());
+            assertEquals("key-" + idx, kv.key());
+            assertEquals("value-" + idx, kv.value());
             ++idx;
         }
         assertEquals(8, idx);

@@ -18,6 +18,12 @@
 
 package org.apache.distributedlog.statestore.api;
 
+/**
+ * A class represents a key value pair.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
 public interface KV<K, V> {
 
     K key();
