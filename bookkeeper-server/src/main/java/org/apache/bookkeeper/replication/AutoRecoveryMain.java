@@ -20,14 +20,12 @@
  */
 package org.apache.bookkeeper.replication;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashSet;
 import java.util.Set;
-
-import com.google.common.annotations.VisibleForTesting;
-
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieCriticalThread;
 import org.apache.bookkeeper.bookie.ExitCode;
@@ -105,8 +103,7 @@ public class AutoRecoveryMain {
                 .build();
         auditorElector = new AuditorElector(Bookie.getBookieAddress(conf).toString(), conf,
                 zk, statsLogger.scope(AUDITOR_SCOPE));
-        replicationWorker = new ReplicationWorker(zk, conf,
-                Bookie.getBookieAddress(conf), statsLogger.scope(REPLICATION_WORKER_SCOPE));
+        replicationWorker = new ReplicationWorker(zk, conf, statsLogger.scope(REPLICATION_WORKER_SCOPE));
         deathWatcher = new AutoRecoveryDeathWatcher(this);
     }
 
@@ -115,7 +112,7 @@ public class AutoRecoveryMain {
         this.conf = conf;
         this.zk = zk;
         auditorElector = new AuditorElector(Bookie.getBookieAddress(conf).toString(), conf, zk);
-        replicationWorker = new ReplicationWorker(zk, conf, Bookie.getBookieAddress(conf));
+        replicationWorker = new ReplicationWorker(zk, conf);
         deathWatcher = new AutoRecoveryDeathWatcher(this);
     }
 

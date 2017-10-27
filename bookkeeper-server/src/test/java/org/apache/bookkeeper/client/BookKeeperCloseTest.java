@@ -20,6 +20,14 @@
  */
 package org.apache.bookkeeper.client;
 
+import com.google.common.util.concurrent.SettableFuture;
+import io.netty.buffer.ByteBuf;
+import java.io.IOException;
+import java.util.Enumeration;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
@@ -36,17 +44,6 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.util.concurrent.SettableFuture;
-
-import io.netty.buffer.ByteBuf;
-
-import java.io.IOException;
-import java.util.Enumeration;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
@@ -518,7 +515,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
             try {
                 bkadmin.replicateLedgerFragment(lh3,
-                        checkercb.getResult(10, TimeUnit.SECONDS).iterator().next(), newBookie);
+                        checkercb.getResult(10, TimeUnit.SECONDS).iterator().next());
                 fail("Shouldn't be able to replicate with a closed client");
             } catch (BKException.BKClientClosedException cce) {
                 // correct behaviour
