@@ -20,14 +20,13 @@ package org.apache.distributedlog.statestore.api.mvcc.op;
 
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
-import org.apache.distributedlog.statestore.api.mvcc.op.RangeOp.Builder;
 
 /**
  * A range operation.
  */
 @Public
 @Evolving
-public interface RangeOp<K, V> extends Op<K, V, Builder<K, V>, RangeOp<K, V>> {
+public interface RangeOp<K, V> extends Op<K, V> {
 
     K endKey();
 
@@ -41,7 +40,10 @@ public interface RangeOp<K, V> extends Op<K, V, Builder<K, V>, RangeOp<K, V>> {
 
     long maxCreateRev();
 
-    interface Builder<K, V> extends OpBuilder<K, V, Builder<K, V>, RangeOp<K, V>> {
+    /**
+     * Builder to build a range operator.
+     */
+    interface Builder<K, V> extends OpBuilder<K, V, RangeOp<K, V>, Builder<K, V>> {
 
         Builder<K, V> endKey(K endKey);
 

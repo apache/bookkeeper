@@ -20,31 +20,18 @@ package org.apache.distributedlog.statestore.api.mvcc.op;
 
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
-import org.apache.distributedlog.statestore.api.mvcc.op.Op.OpBuilder;
 
 /**
  * Abstract Operation.
  */
 @Public
 @Evolving
-public interface Op<K, V, BuilderT extends OpBuilder<K, V, BuilderT, OpT>, OpT extends Op<K, V, BuilderT, OpT>> {
+public interface Op<K, V> {
 
     OpType type();
 
     K key();
 
     long revision();
-
-    interface OpBuilder<K, V, BuilderT, OpT> {
-
-        BuilderT type(OpType type);
-
-        BuilderT key(K key);
-
-        BuilderT revision(long revision);
-
-        OpT build();
-
-    }
 
 }

@@ -19,8 +19,6 @@
 package org.apache.distributedlog.statestore.api.mvcc.op;
 
 import java.util.List;
-import org.apache.distributedlog.statestore.api.mvcc.op.TxnOp.Builder;
-import org.inferred.freebuilder.FreeBuilder;
 
 /**
  * A transactional operator on updating the mvcc store.
@@ -28,16 +26,18 @@ import org.inferred.freebuilder.FreeBuilder;
  * @param <K> key type
  * @param <V> val type
  */
-public interface TxnOp<K, V> extends Op<K, V, Builder<K, V>, TxnOp<K, V>> {
+public interface TxnOp<K, V> extends Op<K, V> {
 
     List<CompareOp<K, V>> compareOps();
 
-    List<Op> successOps();
+    List<Op<K, V>> successOps();
 
-    List<Op> failureOps();
+    List<Op<K, V>> failureOps();
 
-    interface Builder<K, V> extends OpBuilder<K, V, Builder<K, V>, TxnOp<K, V>> {
-
+    /**
+     * A builder to build transaction operator.
+     */
+    interface Builder<K, V> extends OpBuilder<K, V, TxnOp<K, V>, Builder<K, V>> {
     }
 
 }

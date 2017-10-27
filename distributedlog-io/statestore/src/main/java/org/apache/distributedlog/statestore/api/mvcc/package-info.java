@@ -16,16 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.statestore.api.mvcc.op;
-
 /**
- * Target to compare.
+ * API for a mvcc store.
  */
-public enum CompareTarget {
-
-    VERSION,
-    CREATE,
-    MOD,
-    VALUE
-
-}
+package org.apache.distributedlog.statestore.api.mvcc;

@@ -20,7 +20,6 @@ package org.apache.distributedlog.statestore.api.mvcc.op;
 
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
-import org.apache.distributedlog.statestore.api.mvcc.op.PutOp.Builder;
 
 /**
  * A put operator that update a value associated with a given key.
@@ -30,13 +29,16 @@ import org.apache.distributedlog.statestore.api.mvcc.op.PutOp.Builder;
  */
 @Public
 @Evolving
-public interface PutOp<K, V> extends Op<K, V, Builder<K, V>, PutOp<K, V>> {
+public interface PutOp<K, V> extends Op<K, V> {
 
     V value();
 
     boolean prevKV();
 
-    interface Builder<K, V> extends OpBuilder<K, V, Builder<K, V>, PutOp<K, V>> {
+    /**
+     * Builder to build a put operator.
+     */
+    interface Builder<K, V> extends OpBuilder<K, V, PutOp<K, V>, Builder<K, V>> {
 
         Builder<K, V> value(V value);
 

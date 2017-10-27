@@ -30,5 +30,8 @@ import org.apache.distributedlog.statestore.api.AsyncStateStore;
  */
 @Public
 @Evolving
-public interface MVCCAsyncStore<K, V> extends AsyncStateStore, MVCCAsyncStoreWriteView<K, V>, MVCCAsyncStoreReadView<K, V> {
+public interface MVCCAsyncStore<K, V>
+    extends AsyncStateStore,
+            MVCCAsyncStoreWriteView<K, V>,
+            MVCCAsyncStoreReadView<K, V> {
 }

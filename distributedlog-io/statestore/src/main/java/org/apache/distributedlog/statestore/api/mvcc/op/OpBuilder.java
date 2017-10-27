@@ -19,13 +19,16 @@
 package org.apache.distributedlog.statestore.api.mvcc.op;
 
 /**
- * Target to compare.
+ * Builder to build {@link Op}s.
  */
-public enum CompareTarget {
+public interface OpBuilder<K, V, OpT extends Op<K, V>, BuilderT extends OpBuilder<K, V, OpT, BuilderT>> {
 
-    VERSION,
-    CREATE,
-    MOD,
-    VALUE
+    BuilderT type(OpType type);
+
+    BuilderT key(K key);
+
+    BuilderT revision(long revision);
+
+    OpT build();
 
 }

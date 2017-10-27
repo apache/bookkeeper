@@ -18,21 +18,22 @@
 
 package org.apache.distributedlog.statestore.api.mvcc.op;
 
-import org.apache.distributedlog.statestore.api.mvcc.op.DeleteOp.Builder;
-
 /**
  * A delete operator to delete a single key or a key range.
  *
  * @param <K> key type
  * @param <V> value type.
  */
-public interface DeleteOp<K, V> extends Op<K, V, Builder<K, V>, DeleteOp<K, V>> {
+public interface DeleteOp<K, V> extends Op<K, V> {
 
     K endKey();
 
     boolean prevKV();
 
-    interface Builder<K, V> extends OpBuilder<K, V, Builder<K, V>, DeleteOp<K, V>> {
+    /**
+     * Builder to build a delete operator.
+     */
+    interface Builder<K, V> extends OpBuilder<K, V, DeleteOp<K, V>, Builder<K, V>> {
 
         Builder<K, V> endKey(K endKey);
 
