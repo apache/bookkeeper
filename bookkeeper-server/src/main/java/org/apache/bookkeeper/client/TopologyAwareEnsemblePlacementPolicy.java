@@ -30,7 +30,6 @@ import com.google.common.collect.Sets;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.net.NodeBase;
-import org.apache.bookkeeper.util.collections.ArrayUtils2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -453,20 +452,21 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements ITopologyAwareEns
     }
 
     @Override
-    public int[] reorderReadSequence(
+    public DistributionSchedule.WriteSet reorderReadSequence(
             ArrayList<BookieSocketAddress> ensemble,
             Map<BookieSocketAddress, Long> bookieFailureHistory,
-            int[] writeSet) {
+            DistributionSchedule.WriteSet writeSet) {
         return writeSet;
     }
 
     @Override
-    public int[] reorderReadLACSequence(
+    public DistributionSchedule.WriteSet reorderReadLACSequence(
             ArrayList<BookieSocketAddress> ensemble,
             Map<BookieSocketAddress, Long> bookieFailureHistory,
-            int[] writeSet) {
-        int[] retList = reorderReadSequence(
+            DistributionSchedule.WriteSet writeSet) {
+        DistributionSchedule.WriteSet retList = reorderReadSequence(
                 ensemble, bookieFailureHistory, writeSet);
-        return ArrayUtils2.addMissingIndices(retList, ensemble.size());
+        retList.addMissingIndices(ensemble.size());
+        return retList;
     }
 }

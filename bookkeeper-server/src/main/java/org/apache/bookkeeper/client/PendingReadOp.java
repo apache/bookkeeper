@@ -86,25 +86,22 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         int numMissedEntryReads = 0;
 
         final ArrayList<BookieSocketAddress> ensemble;
-        final int[] writeSet;
+        final DistributionSchedule.WriteSet writeSet;
 
         LedgerEntryRequest(ArrayList<BookieSocketAddress> ensemble, long lId, long eId) {
             super(lId, eId);
 
             this.ensemble = ensemble;
 
-            int[] writeSet = new int[lh.metadata.getWriteQuorumSize()];
             if (lh.bk.isReorderReadSequence()) {
-                lh.distributionSchedule.getWriteSet(entryId, writeSet);
                 writeSet = lh.bk.getPlacementPolicy()
                     .reorderReadSequence(
                             ensemble,
                             lh.bookieFailureHistory.asMap(),
-                            writeSet);
+                            lh.distributionSchedule.getWriteSet(entryId));
             } else {
-                lh.distributionSchedule.getWriteSet(entryId, writeSet);
+                writeSet = lh.distributionSchedule.getWriteSet(entryId);
             }
-            this.writeSet = writeSet;
         }
 
         /**
@@ -269,15 +266,15 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
 
         ParallelReadRequest(ArrayList<BookieSocketAddress> ensemble, long lId, long eId) {
             super(ensemble, lId, eId);
-            numPendings = writeSet.length;
+            numPendings = writeSet.size();
         }
 
         @Override
         void read() {
-            for (int i = 0; i < writeSet.length; i++) {
-                BookieSocketAddress to = ensemble.get(writeSet[i]);
+            for (int i = 0; i < writeSet.size(); i++) {
+                BookieSocketAddress to = ensemble.get(writeSet.get(i));
                 try {
-                    sendReadTo(writeSet[i], to, this);
+                    sendReadTo(writeSet.get(i), to, this);
                 } catch (InterruptedException ie) {
                     LOG.error("Interrupted reading entry {} : ", this, ie);
                     Thread.currentThread().interrupt();
@@ -328,8 +325,8 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         }
 
         private int getReplicaIndex(int bookieIndex) {
-            for (int i = 0; i < writeSet.length; i++) {
-                if (writeSet[i] == bookieIndex) {
+            for (int i = 0; i < writeSet.size(); i++) {
+                if (writeSet.get(i) == bookieIndex) {
                     return i;
                 }
             }
@@ -341,7 +338,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
 
             for (int i = 0; i < sentReplicas.length(); i++) {
                 if (sentReplicas.get(i)) {
-                    b.set(writeSet[i]);
+                    b.set(writeSet.get(i));
                 }
             }
             return b;
@@ -396,9 +393,10 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             }
 
             int replica = nextReplicaIndexToReadFrom;
-            int[] writeSet = new int[getLedgerMetadata().getWriteQuorumSize()];
-            lh.distributionSchedule.getWriteSet(entryId, writeSet);
-            int bookieIndex = writeSet[nextReplicaIndexToReadFrom];
+            DistributionSchedule.WriteSet writeSet
+                = lh.distributionSchedule.getWriteSet(entryId);
+            int bookieIndex = writeSet.get(nextReplicaIndexToReadFrom);
+            writeSet.recycle();
             nextReplicaIndexToReadFrom++;
 
             try {

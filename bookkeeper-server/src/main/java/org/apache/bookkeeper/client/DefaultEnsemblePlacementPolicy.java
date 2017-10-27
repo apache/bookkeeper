@@ -34,7 +34,6 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
-import org.apache.bookkeeper.util.collections.ArrayUtils2;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
@@ -147,19 +146,20 @@ public class DefaultEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
     }
 
     @Override
-    public int[] reorderReadSequence(
+    public DistributionSchedule.WriteSet reorderReadSequence(
             ArrayList<BookieSocketAddress> ensemble,
             Map<BookieSocketAddress, Long> bookieFailureHistory,
-            int[] writeSet) {
+            DistributionSchedule.WriteSet writeSet) {
         return writeSet;
     }
 
     @Override
-    public int[] reorderReadLACSequence(
+    public DistributionSchedule.WriteSet reorderReadLACSequence(
             ArrayList<BookieSocketAddress> ensemble,
             Map<BookieSocketAddress, Long> bookieFailureHistory,
-            int[] writeSet) {
-        return ArrayUtils2.addMissingIndices(writeSet, ensemble.size());
+            DistributionSchedule.WriteSet writeSet) {
+        writeSet.addMissingIndices(ensemble.size());
+        return writeSet;
     }
 
     @Override

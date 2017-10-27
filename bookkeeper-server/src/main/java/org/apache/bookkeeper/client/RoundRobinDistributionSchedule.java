@@ -25,6 +25,7 @@ import java.util.BitSet;
 import java.util.Map;
 import java.util.Arrays;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
 
 import io.netty.util.Recycler;
@@ -61,13 +62,194 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
     }
 
     @Override
-    public void getWriteSet(long entryId, int[] target) {
-        if (target.length != writeQuorumSize) {
-            throw new IllegalArgumentException(
-                    "Target array size should match write quorum");
+    public WriteSet getWriteSet(long entryId) {
+        return WriteSetImpl.create(ensembleSize, writeQuorumSize, entryId);
+    }
+
+    @VisibleForTesting
+    static WriteSet writeSetFromValues(Integer... values) {
+        WriteSetImpl writeSet = WriteSetImpl.create(0, 0, 0);
+        writeSet.setSize(values.length);
+        for (int i = 0; i < values.length; i++) {
+            writeSet.set(i, values[i]);
         }
-        int[] set = writeSets[(int) (entryId % ensembleSize)];
-        System.arraycopy(set, 0, target, 0, writeQuorumSize);
+        return writeSet;
+    }
+
+    private static class WriteSetImpl implements WriteSet {
+        int[] array = null;
+        int size;
+
+        private final Handle<WriteSetImpl> recyclerHandle;
+        private static final Recycler<WriteSetImpl> RECYCLER
+            = new Recycler<WriteSetImpl>() {
+                    protected WriteSetImpl newObject(
+                            Recycler.Handle<WriteSetImpl> handle) {
+                        return new WriteSetImpl(handle);
+                    }
+                };
+
+        private WriteSetImpl(Handle<WriteSetImpl> recyclerHandle) {
+            this.recyclerHandle = recyclerHandle;
+        }
+
+        static WriteSetImpl create(int ensembleSize,
+                                   int writeQuorumSize,
+                                   long entryId) {
+            WriteSetImpl writeSet = RECYCLER.get();
+            writeSet.reset(ensembleSize, writeQuorumSize, entryId);
+            return writeSet;
+        }
+
+        private void reset(int ensembleSize, int writeQuorumSize,
+                           long entryId) {
+            setSize(writeQuorumSize);
+            for (int w = 0; w < writeQuorumSize; w++) {
+                set(w, (int)((entryId + w) % ensembleSize));
+            }
+        }
+
+        private void setSize(int newSize) {
+            if (array == null) {
+                array = new int[newSize];
+            } else if (newSize > array.length) {
+                int[] newArray = new int[newSize];
+                System.arraycopy(array, 0,
+                                 newArray, 0, array.length);
+                array = newArray;
+            }
+            size = newSize;
+        }
+
+        @Override
+        public int size() { return size; }
+
+        @Override
+        public boolean contains(int i) {
+            return indexOf(i) != -1;
+        }
+
+        @Override
+        public int get(int i) {
+            checkBounds(i);
+            return array[i];
+        }
+
+        @Override
+        public int set(int i, int index) {
+            checkBounds(i);
+            int oldVal = array[i];
+            array[i] = index;
+            return oldVal;
+        }
+
+        @Override
+        public void sort() {
+            Arrays.sort(array, 0, size);
+        }
+
+        @Override
+        public int indexOf(int index) {
+            for (int j = 0; j < size; j++) {
+                if (array[j] == index) {
+                    return j;
+                }
+            }
+            return -1;
+        }
+
+        @Override
+        public void addMissingIndices(int maxIndex) {
+            if (size < maxIndex) {
+                int oldSize = size;
+                setSize(maxIndex);
+                for (int i = 0, j = oldSize;
+                     i < maxIndex && j < maxIndex; i++) {
+                    if (!contains(i)) {
+                        set(j, i);
+                        j++;
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void moveAndShift(int from, int to) {
+            checkBounds(from);
+            checkBounds(to);
+            if (from > to) {
+                int tmp = array[from];
+                for (int i = from; i > to; i--) {
+                    array[i] = array[i-1];
+                }
+                array[to] = tmp;
+            } else if (from < to) {
+                int tmp = array[from];
+                for (int i = from; i < to; i++) {
+                    array[i] = array[i+1];
+                }
+                array[to] = tmp;
+            }
+        }
+
+        @Override
+        public void recycle() {
+            recyclerHandle.recycle(this);
+        }
+
+        @Override
+        public WriteSet copy() {
+            WriteSetImpl copy = RECYCLER.get();
+            copy.setSize(size);
+            for (int i = 0; i < size; i++) {
+                copy.set(i, array[i]);
+            }
+            return copy;
+        }
+
+        @Override
+        public int hashCode() {
+            int sum = 0;
+            for (int i = 0; i < size; i++) {
+                sum += sum * 31 + i;
+            }
+            return sum;
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (other instanceof WriteSetImpl) {
+                WriteSetImpl o = (WriteSetImpl)other;
+                if (o.size() != size()) {
+                    return false;
+                }
+                for (int i = 0; i < size(); i++) {
+                    if (o.get(i) != get(i)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder b = new StringBuilder("WriteSet[");
+            int i = 0;
+            for (; i < size() - 1; i++) {
+                b.append(get(i)).append(",");
+            }
+            b.append(get(i)).append("]");
+            return b.toString();
+        }
+
+        private void checkBounds(int i) {
+            if (i < 0 || i > size) {
+                throw new IndexOutOfBoundsException(
+                        "Index " + i + " out of bounds, array size = " + size);
+            }
+        }
     }
 
     @Override

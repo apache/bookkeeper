@@ -27,6 +27,7 @@ import java.util.HashSet;
 import com.google.common.collect.Sets;
 
 import org.junit.Test;
+import static org.apache.bookkeeper.client.RoundRobinDistributionSchedule.writeSetFromValues;
 import static org.junit.Assert.*;
 
 import org.slf4j.Logger;
@@ -39,14 +40,17 @@ public class RoundRobinDistributionScheduleTest {
     public void testDistributionSchedule() throws Exception {
         RoundRobinDistributionSchedule schedule = new RoundRobinDistributionSchedule(3, 2, 5);
 
-        int[] wSet = new int[3];
-        schedule.getWriteSet(1, wSet);
-        assertEquals("Write set is wrong size", wSet.length, 3);
+        DistributionSchedule.WriteSet wSet = schedule.getWriteSet(1);
+        assertEquals("Write set is wrong size", wSet.size(), 3);
         DistributionSchedule.AckSet ackSet = schedule.getAckSet();
-        assertFalse("Shouldn't ack yet", ackSet.completeBookieAndCheck(wSet[0]));
-        assertFalse("Shouldn't ack yet", ackSet.completeBookieAndCheck(wSet[0]));
-        assertTrue("Should ack after 2 unique", ackSet.completeBookieAndCheck(wSet[2]));
-        assertTrue("Should still be acking", ackSet.completeBookieAndCheck(wSet[1]));
+        assertFalse("Shouldn't ack yet",
+                    ackSet.completeBookieAndCheck(wSet.get(0)));
+        assertFalse("Shouldn't ack yet",
+                    ackSet.completeBookieAndCheck(wSet.get(0)));
+        assertTrue("Should ack after 2 unique",
+                   ackSet.completeBookieAndCheck(wSet.get(2)));
+        assertTrue("Should still be acking",
+                   ackSet.completeBookieAndCheck(wSet.get(1)));
     }
 
     /**
@@ -128,5 +132,28 @@ public class RoundRobinDistributionScheduleTest {
             }
         }
         return errors;
+    }
+
+    @Test
+    public void testMoveAndShift() {
+        DistributionSchedule.WriteSet w = writeSetFromValues(1,2,3,4,5);
+        w.moveAndShift(3, 1);
+        assertEquals(w, writeSetFromValues(1,4,2,3,5));
+
+        w = writeSetFromValues(1,2,3,4,5);
+        w.moveAndShift(1, 3);
+        assertEquals(w, writeSetFromValues(1,3,4,2,5));
+
+        w = writeSetFromValues(1,2,3,4,5);
+        w.moveAndShift(0, 4);
+        assertEquals(w, writeSetFromValues(2,3,4,5,1));
+
+        w = writeSetFromValues(1,2,3,4,5);
+        w.moveAndShift(0, 0);
+        assertEquals(w, writeSetFromValues(1,2,3,4,5));
+
+        w = writeSetFromValues(1,2,3,4,5);
+        w.moveAndShift(4, 4);
+        assertEquals(w, writeSetFromValues(1,2,3,4,5));
     }
 }

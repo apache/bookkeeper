@@ -45,9 +45,9 @@ class PendingWriteLacOp implements WriteLacCallback {
     AddLacCallback cb;
     long lac;
     Object ctx;
-    int[] writeSet;
     BitSet receivedResponseSet;
 
+    DistributionSchedule.WriteSet writeSet;
     DistributionSchedule.AckSet ackSet;
     boolean completed = false;
     int lastSeenError = BKException.Code.WriteException;
@@ -66,10 +66,9 @@ class PendingWriteLacOp implements WriteLacCallback {
 
     void setLac(long lac) {
         this.lac = lac;
-        this.writeSet = new int[lh.metadata.getWriteQuorumSize()];
-        lh.distributionSchedule.getWriteSet(lac, writeSet);
-        this.receivedResponseSet = new BitSet(writeSet.length);
-        this.receivedResponseSet.set(0, writeSet.length);
+        this.writeSet = lh.distributionSchedule.getWriteSet(lac);
+        this.receivedResponseSet = new BitSet(writeSet.size());
+        this.receivedResponseSet.set(0, writeSet.size());
     }
 
     void sendWriteLacRequest(int bookieIndex) {
@@ -80,8 +79,8 @@ class PendingWriteLacOp implements WriteLacCallback {
     void initiate(ByteBuf toSend) {
         this.toSend = toSend;
 
-        for (int i = 0; i < writeSet.length; i++) {
-            sendWriteLacRequest(writeSet[i]);
+        for (int i = 0; i < writeSet.size(); i++) {
+            sendWriteLacRequest(writeSet.get(i));
         }
     }
 

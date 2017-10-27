@@ -297,14 +297,16 @@ public interface EnsemblePlacementPolicy {
      * @param bookieFailureHistory
      *          Observed failures on the bookies
      * @param writeSet
-     *          Write quorum to read entries. This array is modified in-place.
-     * @return The read sequence. This may differ from the modified writeSet,
-     *         if the size of the array has changed.
+     *          Write quorum to read entries. This will be modified, rather than
+     *          allocating a new WriteSet.
+     * @return The read sequence. This will be the same object as the passed in
+     *         writeSet.
      * @since 4.5
      */
-    public int[] reorderReadSequence(ArrayList<BookieSocketAddress> ensemble,
-                                     Map<BookieSocketAddress, Long> bookieFailureHistory,
-                                     int[] writeSet);
+    public DistributionSchedule.WriteSet reorderReadSequence(
+            ArrayList<BookieSocketAddress> ensemble,
+            Map<BookieSocketAddress, Long> bookieFailureHistory,
+            DistributionSchedule.WriteSet writeSet);
 
 
     /**
@@ -315,14 +317,16 @@ public interface EnsemblePlacementPolicy {
      * @param bookieFailureHistory
      *          Observed failures on the bookies
      * @param writeSet
-     *          Write quorum to read entries. This array is modified in place.
-     * @return The read sequence. This may differ from the modified writeSet,
-     *         if the size of the array has changed.
+     *          Write quorum to read entries. This will be modified, rather than
+     *          allocating a new WriteSet.
+     * @return The read sequence. This will be the same object as the passed in
+     *         writeSet.
      * @since 4.5
      */
-    public int[] reorderReadLACSequence(ArrayList<BookieSocketAddress> ensemble,
-                                        Map<BookieSocketAddress, Long> bookieFailureHistory,
-                                        int[] writeSet);
+    public DistributionSchedule.WriteSet reorderReadLACSequence(
+            ArrayList<BookieSocketAddress> ensemble,
+            Map<BookieSocketAddress, Long> bookieFailureHistory,
+            DistributionSchedule.WriteSet writeSet);
 
     /**
      * Send the bookie info details.

@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import com.google.common.base.Preconditions;
@@ -43,9 +44,6 @@ import org.apache.bookkeeper.net.*;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.ReflectionUtils;
-import static org.apache.bookkeeper.util.collections.ArrayUtils2.addMissingIndices;
-import static org.apache.bookkeeper.util.collections.ArrayUtils2.moveAndShift;
-import static org.apache.bookkeeper.util.collections.ArrayUtils2.shuffleWithMask;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -773,20 +771,20 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
     }
 
     @Override
-    public int[] reorderReadSequence(
+    public DistributionSchedule.WriteSet reorderReadSequence(
             ArrayList<BookieSocketAddress> ensemble,
             Map<BookieSocketAddress, Long> bookieFailureHistory,
-            int[] writeSet) {
+            DistributionSchedule.WriteSet writeSet) {
         int ensembleSize = ensemble.size();
 
         int localMask      = 0x01 << 24;
         int failureMask    = 0x02 << 24;
         int readOnlyMask   = 0x10 << 24;
         int unavailMask    = 0x20 << 24;
-        int maskBits       = 0xFF << 24;
+        int maskBits       = 0xFFF << 20;
 
-        for (int i = 0; i < writeSet.length; i++) {
-            int idx = writeSet[i];
+        for (int i = 0; i < writeSet.size(); i++) {
+            int idx = writeSet.get(i);
             BookieSocketAddress address = ensemble.get(idx);
             Long lastFailedEntryOnBookie = bookieFailureHistory.get(address);
             if (null == knownBookies.get(address)) {
@@ -794,20 +792,30 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
                 // is no write requests to them, so we shouldn't try reading from readonly bookie in prior to writable
                 // bookies.
                 if ((null == readOnlyBookies) || !readOnlyBookies.contains(address)) {
-                    writeSet[i] = idx | unavailMask;
+                    writeSet.set(i, idx | unavailMask);
                 } else {
-                    writeSet[i] = idx | readOnlyMask;
+                    writeSet.set(i, idx | readOnlyMask);
                 }
             } else {
                 if ((lastFailedEntryOnBookie == null) || (lastFailedEntryOnBookie < 0)) {
-                    writeSet[i] = idx | localMask;
+                    writeSet.set(i, idx | localMask);
                 } else {
-                    writeSet[i] = (int)(((lastFailedEntryOnBookie * ensembleSize + idx) & ~maskBits) | failureMask);
+                    long failIdx = lastFailedEntryOnBookie * ensembleSize + idx;
+                    writeSet.set(i, (int)(failIdx & ~maskBits) | failureMask);
                 }
             }
         }
 
-        Arrays.sort(writeSet);
+        // Add a mask to ensure the sort is stable, sort,
+        // and then remove mask. This maintains stability as
+        // long as there are fewer than 16 bookies in the write set.
+        for (int i = 0; i < writeSet.size(); i++) {
+            writeSet.set(i, writeSet.get(i) | ((i & 0xF) << 20));
+        }
+        writeSet.sort();
+        for (int i = 0; i < writeSet.size(); i++) {
+            writeSet.set(i, writeSet.get(i) & ~((0xF) << 20));
+        }
 
         if (reorderReadsRandom) {
             shuffleWithMask(writeSet, localMask, maskBits);
@@ -815,19 +823,35 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
             shuffleWithMask(writeSet, unavailMask, maskBits);
         }
 
-        for (int i = 0; i < writeSet.length; i++) {
-            int mask = writeSet[i] & maskBits;
-            if (mask == failureMask) {
-                writeSet[i] = localMask
-                        | ((writeSet[i] & ~maskBits) % ensembleSize);
-            }
-        }
-
         // remove all masks
-        for (int i = 0; i < writeSet.length; i++) {
-            writeSet[i] = writeSet[i] & ~maskBits;
+        for (int i = 0; i < writeSet.size(); i++) {
+            writeSet.set(i, (writeSet.get(i) & ~maskBits) % ensembleSize);
         }
 
         return writeSet;
+    }
+
+    /**
+     * Shuffle all the entries of an array that matches a mask.
+     * It assumes all entries with the same mask are contiguous in the array.
+     */
+    static void shuffleWithMask(DistributionSchedule.WriteSet writeSet,
+                                int mask, int bits) {
+        int first = -1;
+        int last = -1;
+        for (int i = 0; i < writeSet.size(); i++) {
+            if ((writeSet.get(i) & bits) == mask) {
+                if (first == -1) {
+                    first = i;
+                }
+                last = i;
+            }
+        }
+        if (first != -1) {
+            for (int i = last + 1; i > first; i--) {
+                int swapWith = ThreadLocalRandom.current().nextInt(i);
+                writeSet.set(swapWith, writeSet.set(i, writeSet.get(swapWith)));
+            }
+        }
     }
 }

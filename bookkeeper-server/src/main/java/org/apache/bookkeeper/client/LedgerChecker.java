@@ -243,13 +243,13 @@ public class LedgerChecker {
                                                   }
                                               });
 
-                final ArrayList<BookieSocketAddress> curEnsembleFinal = curEnsemble;
-                int[] writeSet = new int[lh.getLedgerMetadata().getWriteQuorumSize()];
-                lh.getDistributionSchedule().getWriteSet(entryToRead, writeSet);
-                for (int i = 0; i < writeSet.length; i++) {
-                    BookieSocketAddress addr = curEnsembleFinal.get(writeSet[i]);
+                DistributionSchedule.WriteSet writeSet
+                    = lh.getDistributionSchedule().getWriteSet(entryToRead);
+                for (int i = 0; i < writeSet.size(); i++) {
+                    BookieSocketAddress addr = curEnsemble.get(writeSet.get(i));
                     bookieClient.readEntry(addr, lh.getId(), entryToRead, eecb, null);
                 }
+                writeSet.recycle();
                 return;
             } else {
                 fragments.addAll(finalFragments);
