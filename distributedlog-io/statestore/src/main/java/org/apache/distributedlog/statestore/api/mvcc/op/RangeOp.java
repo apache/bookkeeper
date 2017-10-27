@@ -18,17 +18,14 @@
 
 package org.apache.distributedlog.statestore.api.mvcc.op;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
-import lombok.Data;
-import lombok.Getter;
+import org.apache.distributedlog.statestore.api.mvcc.op.RangeOp.Builder;
 import org.inferred.freebuilder.FreeBuilder;
 
 /**
  * A range operation.
  */
 @FreeBuilder
-public interface RangeOp<K, V> extends Op<K, V> {
+public interface RangeOp<K, V> extends Op<K, V, Builder<K, V>, RangeOp<K, V>> {
 
     K endKey();
 
@@ -42,27 +39,20 @@ public interface RangeOp<K, V> extends Op<K, V> {
 
     long maxCreateRev();
 
-    class Builder<K, V> extends RangeOp_Builder<K, V> {
+    interface Builder<K, V> extends OpBuilder<K, V, Builder<K, V>, RangeOp<K, V>> {
 
-        private Builder() {
-            type(OpType.RANGE);
-            revision(-1L);
-            limit(-1);
-            minModRev(Long.MIN_VALUE);
-            maxModRev(Long.MAX_VALUE);
-            minCreateRev(Long.MIN_VALUE);
-            maxCreateRev(Long.MAX_VALUE);
-        }
+        Builder<K, V> endKey(K endKey);
 
-        @Override
-        public RangeOp<K, V> build() {
-            checkArgument(type() == OpType.RANGE, "Invalid type "  + type() + " is configured");
-            return super.build();
-        }
-    }
+        Builder<K, V> limit(int limit);
 
-    static <K, V> Builder<K, V> newBuilder() {
-        return new Builder<>();
+        Builder<K, V> minModRev(long rev);
+
+        Builder<K, V> maxModRev(long rev);
+
+        Builder<K, V> minCreateRev(long rev);
+
+        Builder<K, V> maxCreateRev(long rev);
+
     }
 
 }

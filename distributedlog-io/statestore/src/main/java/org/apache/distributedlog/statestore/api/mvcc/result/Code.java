@@ -30,7 +30,8 @@ public enum Code {
 
     OK(0),
     INVALID_ARGUMENT(-1),
-    BAD_REVISION(-2);
+    BAD_REVISION(-2),
+    SMALLER_REVISION(-3);
 
     private final int code;
 

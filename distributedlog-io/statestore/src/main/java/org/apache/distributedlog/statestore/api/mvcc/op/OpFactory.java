@@ -16,23 +16,24 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.statestore.api.mvcc;
+package org.apache.distributedlog.statestore.api.mvcc.op;
 
-import org.apache.distributedlog.common.util.Recycled;
+public interface OpFactory<K, V> {
 
-/**
- * A mvcc key/value record.
- */
-public interface KVRecord<K, V> extends Recycled {
+    PutOp.Builder<K, V> buildPutOp();
 
-    K key();
+    DeleteOp.Builder<K, V> buildDeleteOp();
 
-    V value();
+    RangeOp.Builder<K, V> buildRangeOp();
 
-    long createRevision();
+    TxnOp.Builder<K, V> buildTxnOp();
 
-    long modifiedRevision();
+    CompareOp<K, V> compareVersion(CompareResult result, K key, long version);
 
-    long version();
+    CompareOp<K, V> compareModRevision(CompareResult result, K key, long revision);
+
+    CompareOp<K, V> compareCreateRevision(CompareResult result, K key, long revision);
+
+    CompareOp<K, V> compareValue(CompareResult result, K key, V value);
 
 }

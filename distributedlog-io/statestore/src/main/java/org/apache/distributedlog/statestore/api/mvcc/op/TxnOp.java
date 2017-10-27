@@ -18,36 +18,21 @@
 
 package org.apache.distributedlog.statestore.api.mvcc.op;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import java.util.List;
+import org.apache.distributedlog.statestore.api.mvcc.op.TxnOp.Builder;
 import org.inferred.freebuilder.FreeBuilder;
 
 @FreeBuilder
-public interface TxnOp<K, V> extends Op<K, V> {
+public interface TxnOp<K, V> extends Op<K, V, Builder<K, V>, TxnOp<K, V>> {
 
     List<CompareOp<K, V>> compareOps();
 
-    List<Op<K, V>> successOps();
+    List<Op> successOps();
 
-    List<Op<K, V>> failureOps();
+    List<Op> failureOps();
 
-    class Builder<K, V> extends TxnOp_Builder<K, V> {
+    interface Builder<K, V> extends OpBuilder<K, V, Builder<K, V>, TxnOp<K, V>> {
 
-        private Builder() {
-            type(OpType.TXN);
-        }
-
-        @Override
-        public TxnOp<K, V> build() {
-            checkArgument(type() == OpType.TXN, "Invalid type "  + type() + " is configured");
-            checkArgument(!compareOps().isEmpty(), "No compare op is specified");
-            return super.build();
-        }
-    }
-
-    static <K, V> Builder<K, V> newBuilder() {
-        return new Builder<>();
     }
 
 }

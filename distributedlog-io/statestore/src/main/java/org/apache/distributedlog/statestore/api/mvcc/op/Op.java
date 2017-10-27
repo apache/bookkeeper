@@ -18,15 +18,29 @@
 
 package org.apache.distributedlog.statestore.api.mvcc.op;
 
+import org.apache.distributedlog.statestore.api.mvcc.op.Op.OpBuilder;
+
 /**
  * Abstract Operation.
  */
-public interface Op<K, V> {
+public interface Op<K, V, BuilderT extends OpBuilder<K, V, BuilderT, OpT>, OpT extends Op<K, V, BuilderT, OpT>> {
 
     OpType type();
 
     K key();
 
     long revision();
+
+    interface OpBuilder<K, V, BuilderT, OpT> {
+
+        BuilderT type(OpType type);
+
+        BuilderT key(K key);
+
+        BuilderT revision(long revision);
+
+        OpT build();
+
+    }
 
 }

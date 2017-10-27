@@ -18,9 +18,10 @@
 
 package org.apache.distributedlog.statestore.api.mvcc.result;
 
+import org.apache.distributedlog.common.util.Recycled;
 import org.apache.distributedlog.statestore.api.mvcc.op.OpType;
 
-public interface Result<K, V> {
+public interface Result<K, V> extends Recycled {
 
     OpType type();
 

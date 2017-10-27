@@ -18,37 +18,22 @@
 
 package org.apache.distributedlog.statestore.api.mvcc.op;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
-
+import org.apache.distributedlog.statestore.api.mvcc.op.PutOp.Builder;
 import org.inferred.freebuilder.FreeBuilder;
 
 @FreeBuilder
-public interface PutOp<K, V> extends Op<K, V> {
+public interface PutOp<K, V> extends Op<K, V, Builder<K, V>, PutOp<K, V>> {
 
     V value();
 
     boolean prevKV();
 
-    class Builder<K, V> extends PutOp_Builder<K, V> {
+    interface Builder<K, V> extends OpBuilder<K, V, Builder<K, V>, PutOp<K, V>> {
 
-        private Builder() {
-            type(OpType.PUT);
-            revision(-1L);
-            prevKV(false);
-        }
+        Builder<K, V> value(V value);
 
-        @Override
-        public PutOp<K, V> build() {
-            checkArgument(type() == OpType.PUT, "Invalid type "  + type() + " is configured");
-            checkNotNull(key(), "No key is specified");
-            return super.build();
-        }
+        Builder<K, V> prevKV(boolean prevKV);
 
-    }
-
-    static <K, V> Builder<K, V> newBuilder() {
-        return new Builder<>();
     }
 
 }

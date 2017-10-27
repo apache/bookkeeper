@@ -18,35 +18,20 @@
 
 package org.apache.distributedlog.statestore.api.mvcc.op;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
+import org.apache.distributedlog.statestore.api.mvcc.op.DeleteOp.Builder;
 
-import org.inferred.freebuilder.FreeBuilder;
-
-@FreeBuilder
-public interface DeleteOp<K, V> extends Op<K, V> {
+public interface DeleteOp<K, V> extends Op<K, V, Builder<K, V>, DeleteOp<K, V>> {
 
     K endKey();
 
     boolean prevKV();
 
-    class Builder<K, V> extends DeleteOp_Builder<K, V> {
+    interface Builder<K, V> extends OpBuilder<K, V, Builder<K, V>, DeleteOp<K, V>> {
 
-        private Builder() {
-            type(OpType.DELETE);
-            revision(-1L);
-            prevKV(false);
-        }
+        Builder<K, V> endKey(K endKey);
 
-        @Override
-        public DeleteOp<K, V> build() {
-            checkArgument(type() == OpType.DELETE, "Invalid type " + type() + " is configured.");
-            return super.build();
-        }
-    }
+        Builder<K, V> prevKV(boolean prevKV);
 
-    static <K, V> Builder<K, V> newBuilder() {
-        return new Builder<>();
     }
 
 }
