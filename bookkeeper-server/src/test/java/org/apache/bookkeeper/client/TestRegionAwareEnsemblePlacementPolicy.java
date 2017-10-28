@@ -129,6 +129,9 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         repp = new RegionAwareEnsemblePlacementPolicy();
         repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
 
+        // make sure we've detected the right region
+        assertEquals("r1", repp.myRegion);
+
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);
         addrs.add(addr2);
@@ -136,15 +139,15 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr4);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
 
-        List<Integer> reoderSet = repp.reorderReadSequence(ensemble, writeSet, new HashMap<BookieSocketAddress, Long>());
+        List<Integer> reorderSet = repp.reorderReadSequence(ensemble, writeSet, new HashMap<BookieSocketAddress, Long>());
         List<Integer> expectedSet = new ArrayList<Integer>();
         expectedSet.add(0);
         expectedSet.add(3);
         expectedSet.add(1);
         expectedSet.add(2);
-        LOG.info("reorder set : {}", reoderSet);
-        assertFalse(reoderSet == writeSet);
-        assertEquals(expectedSet, reoderSet);
+        LOG.info("reorder set : {}", reorderSet);
+        assertFalse(reorderSet == writeSet);
+        assertEquals(expectedSet, reorderSet);
     }
 
     @Test

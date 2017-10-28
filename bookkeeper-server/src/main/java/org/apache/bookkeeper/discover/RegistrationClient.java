@@ -31,6 +31,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.ZooKeeper;
 
+
 /**
  * A registration client, which the bookkeeper client will use to interact with registration service.
  */
@@ -111,6 +112,4 @@ public interface RegistrationClient extends AutoCloseable {
      * @param listener listener to receive the topology changes of bookies.
      */
     void unwatchReadOnlyBookies(RegistrationListener listener);
-
-
 }

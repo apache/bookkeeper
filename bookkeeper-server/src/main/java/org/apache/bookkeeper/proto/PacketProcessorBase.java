@@ -30,16 +30,23 @@ import io.netty.channel.Channel;
 
 abstract class PacketProcessorBase extends SafeRunnable {
     private final static Logger logger = LoggerFactory.getLogger(PacketProcessorBase.class);
-    final Request request;
-    final Channel channel;
-    final BookieRequestProcessor requestProcessor;
-    final long enqueueNanos;
+    Request request;
+    Channel channel;
+    BookieRequestProcessor requestProcessor;
+    long enqueueNanos;
 
-    PacketProcessorBase(Request request, Channel channel, BookieRequestProcessor requestProcessor) {
+    protected void init(Request request, Channel channel, BookieRequestProcessor requestProcessor) {
         this.request = request;
         this.channel = channel;
         this.requestProcessor = requestProcessor;
         this.enqueueNanos = MathUtils.nowInNano();
+    }
+
+    protected void reset() {
+        request = null;
+        channel = null;
+        requestProcessor = null;
+        enqueueNanos = -1;
     }
 
     protected boolean isVersionCompatible() {

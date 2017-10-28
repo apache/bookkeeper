@@ -564,7 +564,7 @@ public class Auditor {
                 if (rc == BKException.Code.OK) {
                     Set<BookieSocketAddress> bookies = Sets.newHashSet();
                     for (LedgerFragment f : fragments) {
-                        bookies.add(f.getAddress());
+                        bookies.addAll(f.getAddresses());
                     }
                     for (BookieSocketAddress bookie : bookies) {
                         publishSuspectedLedgers(bookie.toString(), Sets.newHashSet(lh.getId()));

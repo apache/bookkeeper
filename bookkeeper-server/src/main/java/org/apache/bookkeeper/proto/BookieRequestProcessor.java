@@ -374,7 +374,7 @@ public class BookieRequestProcessor implements RequestProcessor {
     }
 
     private void processAddRequest(final BookieProtocol.Request r, final Channel c) {
-        WriteEntryProcessor write = new WriteEntryProcessor(r, c, this);
+        WriteEntryProcessor write = WriteEntryProcessor.create(r, c, this);
         if (null == writeThreadPool) {
             write.run();
         } else {
@@ -383,7 +383,7 @@ public class BookieRequestProcessor implements RequestProcessor {
     }
 
     private void processReadRequest(final BookieProtocol.Request r, final Channel c) {
-        ReadEntryProcessor read = new ReadEntryProcessor(r, c, this);
+        ReadEntryProcessor read = ReadEntryProcessor.create(r, c, this);
         if (null == readThreadPool) {
             read.run();
         } else {

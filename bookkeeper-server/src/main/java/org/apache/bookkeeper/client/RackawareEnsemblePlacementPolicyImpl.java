@@ -131,7 +131,7 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
                 for (int i = 0; i < rNames.size(); ++i) {
                     if (rNames.get(i) == null) {
                         LOG.warn("Failed to resolve network location for {}, using default rack for it : {}.",
-                                rNames.get(i), defaultRack);
+                                names.get(i), defaultRack);
                         rNames.set(i, defaultRack);
                     }
                 }

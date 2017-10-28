@@ -110,15 +110,20 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String READ_ONLY_MODE_ENABLED = "readOnlyModeEnabled";
     //Whether the bookie is force started in ReadOnly mode
     protected final static String FORCE_READ_ONLY_BOOKIE = "forceReadOnlyBookie";
+    //Whether to persist the bookie status
+    protected final static String PERSIST_BOOKIE_STATUS_ENABLED = "persistBookieStatusEnabled";
     //Disk utilization
     protected final static String DISK_USAGE_THRESHOLD = "diskUsageThreshold";
     protected final static String DISK_USAGE_WARN_THRESHOLD = "diskUsageWarnThreshold";
     protected final static String DISK_USAGE_LWM_THRESHOLD = "diskUsageLwmThreshold";
     protected final static String DISK_CHECK_INTERVAL = "diskCheckInterval";
+
+    // Replication parameters
     protected final static String AUDITOR_PERIODIC_CHECK_INTERVAL = "auditorPeriodicCheckInterval";
     protected final static String AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL = "auditorPeriodicBookieCheckInterval";
     protected final static String AUTO_RECOVERY_DAEMON_ENABLED = "autoRecoveryDaemonEnabled";
     protected final static String LOST_BOOKIE_RECOVERY_DELAY = "lostBookieRecoveryDelay";
+    protected final static String RW_REREPLICATE_BACKOFF_MS = "rwRereplicateBackoffMs";
 
     // Worker Thread parameters.
     protected final static String NUM_ADD_WORKER_THREADS = "numAddWorkerThreads";
@@ -1605,6 +1610,29 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Whether to persist the bookie status so that when bookie server restarts,
+     * it will continue using the previous status
+     *
+     * @param enabled
+     *            - true if persist the bookie status. Otherwise false.
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setPersistBookieStatusEnabled(boolean enabled) {
+        setProperty(PERSIST_BOOKIE_STATUS_ENABLED, enabled);
+        return this;
+    }
+
+    /**
+     * Get whether to persist the bookie status so that when bookie server restarts,
+     * it will continue using the previous status.
+     *
+     * @return true - if need to start a bookie in read only mode. Otherwise false.
+     */
+    public boolean isPersistBookieStatusEnabled() {
+        return getBoolean(PERSIST_BOOKIE_STATUS_ENABLED, false);
+    }
+
+    /**
      * Set the Disk free space threshold as a fraction of the total
      * after which disk will be considered as full during disk check.
      *
@@ -1757,6 +1785,24 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public void setLostBookieRecoveryDelay(int interval) {
         setProperty(LOST_BOOKIE_RECOVERY_DELAY, interval);
+    }
+
+    /**
+     * Get how long to backoff when encountering exception on rereplicating a ledger.
+     *
+     * @return backoff time in milliseconds
+     */
+    public int getRwRereplicateBackoffMs() {
+        return getInt(RW_REREPLICATE_BACKOFF_MS, 5000);
+    }
+
+    /**
+     * Set how long to backoff when encountering exception on rereplicating a ledger.
+     *
+     * @param backoffMs backoff time in milliseconds
+     */
+    public void setRwRereplicateBackoffMs(int backoffMs) {
+        setProperty(RW_REREPLICATE_BACKOFF_MS, backoffMs);
     }
 
     /**

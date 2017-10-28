@@ -342,7 +342,8 @@ groups:
   - param: forceReadOnlyBookie
     description: Whether the bookie is force started in read only mode or not.
     default: 'false'
-
+  - param: persistBookieStatusEnabled
+    description: Persist the bookie status locally on the disks. So the bookies can keep their status upon restarts.
 
 - name: Disk utilization
   params:

@@ -43,6 +43,7 @@ public interface ReplicationStats {
     public final static String NUM_BYTES_READ = "NUM_BYTES_READ";
     public final static String NUM_ENTRIES_WRITTEN = "NUM_ENTRIES_WRITTEN";
     public final static String NUM_BYTES_WRITTEN = "NUM_BYTES_WRITTEN";
+    public final static String REPLICATE_EXCEPTION = "exceptions";
 
     public final static String BK_CLIENT_SCOPE = "bk_client";
 
