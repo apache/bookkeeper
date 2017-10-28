@@ -59,15 +59,6 @@ For each Bookie:
 
 We describes the general upgrade method in Apache BookKeeper as above. We will cover the details for individual versions.
 
-### 4.4.x to 4.5.x upgrade
+### 4.5.0 to 4.5.1 upgrade
 
-There isn't any protocol related backward compabilities changes in 4.5.0. So you can follow the general upgrade sequence to upgrade from 4.4.x to 4.5.x.
-However, we list a list of things that you might want to know.
-
-1. 4.5.x upgrades netty from 3.x to 4.x. The memory usage pattern might be changed a bit. Netty 4 uses more direct memory. Please pay attention to your memory usage
-    and adjust the JVM settings accordingly.
-2. `multi journals` is a non-rollbackable feature. If you configure a bookie to use multiple journals on 4.5.x you can not roll the bookie back to use 4.4.x. You have
-    to take a bookie out and recover it if you want to rollback to 4.4.x.
-
-If you are planning to upgrade a non-secured cluster to a secured cluster enabling security features in 4.5.0, please read [BookKeeper Security](../../security/overview) for more details.
-
+There isn't any incompatible protocol changes in 4.5.1. So you can follow the general upgrade sequence to upgrade from 4.5.0 to 4.5.1.

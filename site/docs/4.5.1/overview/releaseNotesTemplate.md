@@ -1,5 +1,5 @@
 ---
-title: Apache BookKeeper 4.5.0 Release Notes
+title: Apache BookKeeper x.x.x Release Notes
 ---
 
 [provide a summary of this release]
