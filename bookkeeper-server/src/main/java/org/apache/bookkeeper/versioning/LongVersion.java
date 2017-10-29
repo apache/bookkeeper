@@ -39,7 +39,7 @@ public class LongVersion implements Version {
         } else if (!(v instanceof LongVersion)) {
             throw new IllegalArgumentException("Invalid version type");
         }
-        LongVersion zv = (LongVersion)v;
+        LongVersion zv = (LongVersion) v;
         int res = Long.compare(version, zv.version);
         if (res == 0) {
             return Occurred.CONCURRENTLY;

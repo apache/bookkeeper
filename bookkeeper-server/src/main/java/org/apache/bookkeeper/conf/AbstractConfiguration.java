@@ -29,15 +29,12 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
- * Abstract configuration
+ * Abstract configuration.
  */
 public abstract class AbstractConfiguration extends CompositeConfiguration {
 
-    static final Logger LOG = LoggerFactory.getLogger(AbstractConfiguration.class);
     public static final String READ_SYSTEM_PROPERTIES_PROPERTY
                             = "org.apache.bookkeeper.conf.readsystemproperties";
     /**

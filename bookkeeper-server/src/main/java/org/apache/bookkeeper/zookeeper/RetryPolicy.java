@@ -28,7 +28,7 @@ public interface RetryPolicy {
     /**
      * Called when retrying an operation failed for some reason. Return true if
      * another attempt is allowed to make.
-     * 
+     *
      * @param retryCount
      *            The number of times retried so far (1 for the first time).
      * @param elapsedRetryTime
@@ -36,12 +36,12 @@ public interface RetryPolicy {
      *            milliseconds)
      * @return true if anther attempt is allowed to make. otherwise, false.
      */
-    public boolean allowRetry(int retryCount, long elapsedRetryTime);
+    boolean allowRetry(int retryCount, long elapsedRetryTime);
 
     /**
      * Called before making an attempt to retry a failed operation. Return 0 if
      * an attempt needs to be made immediately.
-     * 
+     *
      * @param retryCount
      *            The number of times retried so far (0 for the first time).
      * @param elapsedRetryTime
@@ -50,6 +50,6 @@ public interface RetryPolicy {
      * @return the elapsed time that the attempt needs to wait before retrying.
      *         (in milliseconds)
      */
-    public long nextRetryWaitTime(int retryCount, long elapsedRetryTime);
+    long nextRetryWaitTime(int retryCount, long elapsedRetryTime);
 
 }

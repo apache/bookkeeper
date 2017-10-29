@@ -25,7 +25,8 @@ package org.apache.bookkeeper.feature;
  * This interface represents a feature.
  */
 public interface Feature {
-    public static int FEATURE_AVAILABILITY_MAX_VALUE = 100;
+
+    int FEATURE_AVAILABILITY_MAX_VALUE = 100;
 
     /**
      * Returns a textual representation of the feature.

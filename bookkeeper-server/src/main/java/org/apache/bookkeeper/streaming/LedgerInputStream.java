@@ -24,15 +24,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Enumeration;
-
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+/**
+ * An input stream on reading data from a ledger.
+ */
 public class LedgerInputStream extends InputStream {
-    private final static Logger LOG = LoggerFactory.getLogger(LedgerInputStream.class);
+
     private final LedgerHandle lh;
     private ByteBuffer bytebuff;
     byte[] bbytes;
@@ -42,11 +42,12 @@ public class LedgerInputStream extends InputStream {
     Enumeration<LedgerEntry> ledgerSeq = null;
 
     /**
-     * construct a outputstream from a ledger handle
+     * construct a outputstream from a ledger handle.
      *
      * @param lh
      *            ledger handle
-     * @throws {@link BKException}, {@link InterruptedException}
+     * @throws BKException when encountered bookkeeper exceptions
+     * @throws InterruptedException when opening a ledger input stream is interrupted.
      */
     public LedgerInputStream(LedgerHandle lh) throws BKException, InterruptedException {
         this.lh = lh;
@@ -58,13 +59,14 @@ public class LedgerInputStream extends InputStream {
     }
 
     /**
-     * construct a outputstream from a ledger handle
+     * construct a outputstream from a ledger handle.
      *
      * @param lh
      *            the ledger handle
      * @param size
      *            the size of the buffer
-     * @throws {@link BKException}, {@link InterruptedException}
+     * @throws BKException when encountered bookkeeper exceptions
+     * @throws InterruptedException when opening a ledger input stream is interrupted.
      */
     public LedgerInputStream(LedgerHandle lh, int size) throws BKException, InterruptedException {
         this.lh = lh;
@@ -88,7 +90,7 @@ public class LedgerInputStream extends InputStream {
     }
 
     /**
-     * refill the buffer, we need to read more bytes
+     * refill the buffer, we need to read more bytes.
      *
      * @return if we can refill or not
      */

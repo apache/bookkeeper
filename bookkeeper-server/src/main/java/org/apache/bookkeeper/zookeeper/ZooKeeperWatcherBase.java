@@ -26,7 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -132,7 +131,8 @@ public class ZooKeeperWatcherBase implements Watcher {
             clientConnectLatch.countDown();
             break;
         case Disconnected:
-            LOG.info("ZooKeeper client is disconnected from zookeeper now, but it is OK unless we received EXPIRED event.");
+            LOG.info("ZooKeeper client is disconnected from zookeeper now,"
+                + " but it is OK unless we received EXPIRED event.");
             break;
         case Expired:
             clientConnectLatch = new CountDownLatch(1);
@@ -147,7 +147,7 @@ public class ZooKeeperWatcherBase implements Watcher {
     }
 
     /**
-     * Waiting for the SyncConnected event from the ZooKeeper server
+     * Waiting for the SyncConnected event from the ZooKeeper server.
      *
      * @throws KeeperException
      *             when there is no connection
@@ -161,7 +161,7 @@ public class ZooKeeperWatcherBase implements Watcher {
     }
 
     /**
-     * Return zookeeper session time out
+     * Return zookeeper session time out.
      */
     public int getZkSessionTimeOut() {
         return zkSessionTimeOut;
