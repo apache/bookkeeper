@@ -154,6 +154,16 @@ spec:
                 app: bookkeeper
                 component: bookkeeper-replication
         spec:
+            affinity:
+              podAntiAffinity:
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  - labelSelector:
+                      matchExpressions:
+                        - key: "app"
+                          operator: In
+                          values: 
+                            - bookkeeper
+                    topologyKey: "kubernetes.io/hostname"
             containers:
               - name: replication-worker
                 image: apache/bookkeeper:latest
