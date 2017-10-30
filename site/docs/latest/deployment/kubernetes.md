@@ -97,10 +97,14 @@ $ zk-shell localhost 2181
 
 ### Deploy Bookies
 
-Once ZooKeeper cluster is Running, you can then deploy the bookies.
+Once ZooKeeper cluster is Running, you can then deploy the bookies. You can deploy the bookies either using a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) or a [StatefulSet](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/).
 
 ```bash
+# deploy bookies in a daemon set
 $ kubectl apply -f bookkeeper.yaml
+
+# deploy bookies in a stateful set
+$ kubectl apply -f bookkeeper.stateful.yaml
 ```
 
 You can check on the status of the Bookie pods for these components either in the Kubernetes Dashboard or using `kubectl`:
