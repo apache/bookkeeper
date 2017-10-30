@@ -22,7 +22,6 @@ package org.apache.bookkeeper.replication;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNull;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -39,7 +38,6 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
@@ -132,7 +130,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                 .getLocalHost().getHostAddress(), startNewBookie);
         LOG.info("New Bookie addr :" + newBkAddr);
 
-        ReplicationWorker rw = new ReplicationWorker(zkc, baseConf, newBkAddr);
+        ReplicationWorker rw = new ReplicationWorker(zkc, baseConf);
 
         rw.start();
         try {
@@ -179,7 +177,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         LOG.info("New Bookie addr :" + newBkAddr);
 
         killAllBookies(lh, newBkAddr);
-        ReplicationWorker rw = new ReplicationWorker(zkc, baseConf, newBkAddr);
+        ReplicationWorker rw = new ReplicationWorker(zkc, baseConf);
 
         rw.start();
         try {
@@ -231,7 +229,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         BookieSocketAddress newBkAddr1 = new BookieSocketAddress(InetAddress
                 .getLocalHost().getHostAddress(), startNewBookie1);
         LOG.info("New Bookie addr :" + newBkAddr1);
-        ReplicationWorker rw1 = new ReplicationWorker(zkc, baseConf, newBkAddr1);
+        ReplicationWorker rw1 = new ReplicationWorker(zkc, baseConf);
 
         // Starte RW2
         int startNewBookie2 = startNewBookie();
@@ -242,8 +240,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                 .connectString(zkUtil.getZooKeeperConnectString())
                 .sessionTimeoutMs(10000)
                 .build();
-        ReplicationWorker rw2 = new ReplicationWorker(zkc1, baseConf,
-                newBkAddr2);
+        ReplicationWorker rw2 = new ReplicationWorker(zkc1, baseConf);
         rw1.start();
         rw2.start();
 
@@ -296,7 +293,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         BookieSocketAddress newBkAddr = new BookieSocketAddress(InetAddress
                 .getLocalHost().getHostAddress(), startNewBookie);
         LOG.info("New Bookie addr :" + newBkAddr);
-        ReplicationWorker rw = new ReplicationWorker(zkc, baseConf, newBkAddr);
+        ReplicationWorker rw = new ReplicationWorker(zkc, baseConf);
         rw.start();
 
         try {
@@ -354,7 +351,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                 .getLocalHost().getHostAddress(), startNewBookie);
         LOG.info("New Bookie addr :" + newBkAddr);
 
-        ReplicationWorker rw = new ReplicationWorker(zkc, baseConf, newBkAddr);
+        ReplicationWorker rw = new ReplicationWorker(zkc, baseConf);
 
         rw.start();
         try {
@@ -413,7 +410,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
         // set to 3s instead of default 30s
         baseConf.setOpenLedgerRereplicationGracePeriod("3000");
-        ReplicationWorker rw = new ReplicationWorker(zkc, baseConf, newBkAddr);
+        ReplicationWorker rw = new ReplicationWorker(zkc, baseConf);
 
         LedgerManagerFactory mFactory = LedgerManagerFactory
                 .newLedgerManagerFactory(baseClientConf, zkc);
@@ -474,7 +471,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                 .getLocalHost().getHostAddress(), startNewBookie);
         LOG.info("New Bookie addr :" + newBkAddr);
 
-        ReplicationWorker rw = new ReplicationWorker(zkc, baseConf, newBkAddr);
+        ReplicationWorker rw = new ReplicationWorker(zkc, baseConf);
 
         LedgerManagerFactory mFactory = LedgerManagerFactory
                 .newLedgerManagerFactory(baseClientConf, zkc);
@@ -509,49 +506,6 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Test that if the local bookie turns out to be read-only, then the replicator will pause but not shutdown.
-     */
-    @Test
-    public void testRWOnLocalBookieReadonlyTransition() throws Exception {
-        LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32, TESTPASSWD);
-
-        for (int i = 0; i < 10; i++) {
-            lh.addEntry(data);
-        }
-        BookieSocketAddress replicaToKill =
-                LedgerHandleAdapter.getLedgerMetadata(lh).getEnsembles().get(0L).get(0);
-
-        LOG.info("Killing Bookie", replicaToKill);
-        killBookie(replicaToKill);
-
-        int newBkPort = startNewBookie();
-        for (int i = 0; i < 10; i++) {
-            lh.addEntry(data);
-        }
-
-        BookieSocketAddress newBkAddr = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(), newBkPort);
-        LOG.info("New Bookie addr :" + newBkAddr);
-
-        ReplicationWorker rw = new ReplicationWorker(zkc, baseConf, newBkAddr);
-
-        rw.start();
-        try {
-            BookieServer newBk = bs.get(bs.size() - 1);
-            bsConfs.get(bsConfs.size() - 1).setReadOnlyModeEnabled(true);
-            newBk.getBookie().doTransitionToReadOnlyMode();
-            underReplicationManager.markLedgerUnderreplicated(lh.getId(), replicaToKill.toString());
-            while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh.getId(), basePath) && rw.isRunning()
-                    && !rw.isInReadOnlyMode()) {
-                Thread.sleep(100);
-            }
-            assertNull(zkc.exists(String.format("%s/urL%010d", baseLockPath, lh.getId()), false));
-            assertTrue("RW should continue even if the bookie is readonly", rw.isRunning());
-        } finally {
-            rw.shutdown();
-        }
-    }
-
-    /**
      * Test that the replication worker will not shutdown on a simple ZK disconnection
      */
     @Test
@@ -562,7 +516,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
                 .build();
 
         try {
-            ReplicationWorker rw = new ReplicationWorker(zk, baseConf, getBookie(0));
+            ReplicationWorker rw = new ReplicationWorker(zk, baseConf);
             rw.start();
             for (int i = 0; i < 10; i++) {
                 if (rw.isRunning()) {

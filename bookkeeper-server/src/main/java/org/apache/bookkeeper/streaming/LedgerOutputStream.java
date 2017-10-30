@@ -23,7 +23,6 @@ package org.apache.bookkeeper.streaming;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.slf4j.Logger;
@@ -36,14 +35,16 @@ import org.slf4j.LoggerFactory;
  * out the entry to the ledger.
  */
 public class LedgerOutputStream extends OutputStream {
-    private final static Logger LOG = LoggerFactory.getLogger(LedgerOutputStream.class);
+
+    private static final Logger LOG = LoggerFactory.getLogger(LedgerOutputStream.class);
+
     private final LedgerHandle lh;
     private ByteBuffer bytebuff;
     byte[] bbytes;
     int defaultSize = 1024 * 1024; // 1MB default size
 
     /**
-     * construct a outputstream from a ledger handle
+     * construct a outputstream from a ledger handle.
      *
      * @param lh
      *            ledger handle
@@ -55,7 +56,7 @@ public class LedgerOutputStream extends OutputStream {
     }
 
     /**
-     * construct a outputstream from a ledger handle
+     * construct a outputstream from a ledger handle.
      *
      * @param lh
      *            the ledger handle

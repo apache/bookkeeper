@@ -62,7 +62,7 @@ public class Main {
         BK_OPTS.addOption("c", "conf", true, "Configuration for Bookie Server");
         BK_OPTS.addOption("withAutoRecovery", false,
                 "Start Autorecovery service Bookie server");
-        BK_OPTS.addOption("readOnly", false,
+        BK_OPTS.addOption("r", "readOnly", false,
                 "Force Start a ReadOnly Bookie server");
         BK_OPTS.addOption("z", "zkserver", true, "Zookeeper Server");
         BK_OPTS.addOption("m", "zkledgerpath", true, "Zookeeper ledgers root path");
@@ -129,7 +129,7 @@ public class Main {
                 conf.setAutoRecoveryDaemonEnabled(true);
             }
 
-            if (cmdLine.hasOption("readOnly")) {
+            if (cmdLine.hasOption("r")) {
                 conf.setForceReadOnlyBookie(true);
             }
 

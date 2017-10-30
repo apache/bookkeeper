@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.feature;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,7 +18,11 @@ package org.apache.bookkeeper.feature;
  * under the License.
  *
  */
+package org.apache.bookkeeper.feature;
 
+/**
+ * A feature implementation that allow changing availability programmatically.
+ */
 public class SettableFeature extends FixedValueFeature {
     public SettableFeature(String name, int initialAvailability) {
         super(name, initialAvailability);

@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,19 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.bookkeeper.versioning;
-
-import lombok.AllArgsConstructor;
-import lombok.Data;
-
 /**
- * A <code>Versioned</code> value represents a value associated with a version.
- *
- * @param <T> value type.
+ * Classes related to service discovery.
  */
-@Data
-@AllArgsConstructor
-public class Versioned<T> {
-    T value;
-    Version version;
-}
+package org.apache.bookkeeper.discover;

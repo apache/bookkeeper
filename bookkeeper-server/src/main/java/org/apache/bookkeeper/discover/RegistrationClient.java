@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,19 +16,21 @@
  * limitations under the License.
  */
 
-package org.apache.bookkeeper.versioning;
+package org.apache.bookkeeper.discover;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * A <code>Versioned</code> value represents a value associated with a version.
- *
- * @param <T> value type.
+ * A registration client, which the bookkeeper client will use to interact with registration service.
  */
-@Data
-@AllArgsConstructor
-public class Versioned<T> {
-    T value;
-    Version version;
+public interface RegistrationClient {
+
+    /**
+     * Get the list of available bookie identifiers.
+     *
+     * @return a future represents the list of available bookies
+     */
+    CompletableFuture<List<String>> getAvailableBookies();
+
 }
