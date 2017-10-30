@@ -18,6 +18,7 @@
 
 package org.apache.distributedlog.statestore.impl.rocksdb;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.distributedlog.statestore.impl.rocksdb.RocksConstants.BLOCK_CACHE_SIZE;
 import static org.apache.distributedlog.statestore.impl.rocksdb.RocksConstants.BLOCK_SIZE;
@@ -115,6 +116,9 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
 
     @Override
     public synchronized void init(StateStoreSpec spec) throws StateStoreException {
+        checkArgument(spec.localStateStoreDir().isPresent(),
+            "local state store directory is not configured");
+
         this.name = spec.name();
 
         // initialize the coders
@@ -159,7 +163,7 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
 
         // open the rocksdb
 
-        this.dbDir = spec.localStateStoreDir();
+        this.dbDir = spec.localStateStoreDir().get();
         this.db = openLocalDB(dbDir, opts);
     }
 

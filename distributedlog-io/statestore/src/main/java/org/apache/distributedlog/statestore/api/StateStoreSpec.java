@@ -20,6 +20,8 @@ package org.apache.distributedlog.statestore.api;
 
 import java.io.File;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ScheduledExecutorService;
 import org.apache.distributedlog.common.coder.Coder;
 import org.inferred.freebuilder.FreeBuilder;
 
@@ -55,14 +57,21 @@ public interface StateStoreSpec {
      *
      * @return the local directory that is used for storing state locally.
      */
-    File localStateStoreDir();
+    Optional<File> localStateStoreDir();
 
     /**
      * Returns the distributedlog stream name that is used for storing updates durably.
      *
      * @return the stream name.
      */
-    String stream();
+    Optional<String> stream();
+
+    /**
+     * Returns the i/o scheduler used by the state store.
+     *
+     * @return the i/o scheduler
+     */
+    Optional<ScheduledExecutorService> ioScheduler();
 
     /**
      * Returns all the store specific config properties as key/value pairs.
