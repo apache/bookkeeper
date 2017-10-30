@@ -424,8 +424,6 @@ class PendingAddOp extends SafeRunnable implements WriteCallback, TimerTask {
         lh = null;
         isRecoveryAdd = false;
         addOpLogger = null;
-        writeQuorumSize = -1;
-        Arrays.fill(writeSet, -12345);
         completed = false;
         pendingWriteRequests = 0;
         callbackTriggered = false;
