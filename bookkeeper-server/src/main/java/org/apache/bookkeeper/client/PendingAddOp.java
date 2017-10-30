@@ -201,10 +201,13 @@ class PendingAddOp implements WriteCallback, TimerTask {
         // Iterate over set and trigger the sendWriteRequests
         DistributionSchedule.WriteSet writeSet
             = lh.distributionSchedule.getWriteSet(entryId);
-        for (int i = 0; i < writeSet.size(); i++) {
-            sendWriteRequest(writeSet.get(i));
+        try {
+            for (int i = 0; i < writeSet.size(); i++) {
+                sendWriteRequest(writeSet.get(i));
+            }
+        } finally {
+            writeSet.recycle();
         }
-        writeSet.recycle();
     }
 
     @Override

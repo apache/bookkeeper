@@ -326,15 +326,6 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             return nextReplicaIndexToReadFrom;
         }
 
-        private int getReplicaIndex(int bookieIndex) {
-            for (int i = 0; i < writeSet.size(); i++) {
-                if (writeSet.get(i) == bookieIndex) {
-                    return i;
-                }
-            }
-            return -1;
-        }
-
         private BitSet getSentToBitSet() {
             BitSet b = new BitSet(ensemble.size());
 
@@ -415,7 +406,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         synchronized void logErrorAndReattemptRead(int bookieIndex, BookieSocketAddress host, String errMsg, int rc) {
             super.logErrorAndReattemptRead(bookieIndex, host, errMsg, rc);
 
-            int replica = getReplicaIndex(bookieIndex);
+            int replica = writeSet.indexOf(bookieIndex);
             if (replica == NOT_FOUND) {
                 LOG.error("Received error from a host which is not in the ensemble {} {}.", host, ensemble);
                 return;
