@@ -817,8 +817,7 @@ public class LedgerHandle implements WriteHandle {
                     +") or length("+length+")");
         }
 
-        PendingAddOp op = new PendingAddOp(LedgerHandle.this, cb, ctx);
-        doAsyncAddEntry(op, Unpooled.wrappedBuffer(data, offset, length), cb, ctx);
+        asyncAddEntry(Unpooled.wrappedBuffer(data, offset, length), cb, ctx);
     }
 
     public void asyncAddEntry(ByteBuf data, final AddCallback cb, final Object ctx) {

@@ -19,7 +19,6 @@ package org.apache.bookkeeper.client;
 
 import org.apache.bookkeeper.net.BookieSocketAddress;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -32,12 +31,108 @@ import java.util.Map;
  * to.
  */
 
-interface DistributionSchedule {
+public interface DistributionSchedule {
+
+    /**
+     * A write set represents the set of bookies to which
+     * a request will be written.
+     * The set consists of a list of indices which can be
+     * used to lookup the bookie in the ensemble.
+     */
+    public interface WriteSet {
+        /**
+         * The number of indexes in the write set.
+         */
+        public int size();
+
+        /**
+         * Whether the set contains the given index.
+         */
+        public boolean contains(int i);
+
+        /**
+         * Get the index at index i.
+         */
+        public int get(int i);
+
+        /**
+         * Set the index at index i.
+         * @return the previous value at that index.
+         */
+        public int set(int i, int index);
+
+        /**
+         * Sort the indices
+         */
+        public void sort();
+
+        /**
+         * Index of a specified bookie index.
+         * -1 if not found.
+         */
+        public int indexOf(int index);
+
+        /**
+         * If we want a write set to cover all bookies in an ensemble
+         * of size X, then all of the index from 0..X must exist in the
+         * write set. This method appends those which are missing to the
+         * end of the write set.
+         */
+        public void addMissingIndices(int maxIndex);
+
+        /**
+         * Move an index from one position to another,
+         * shifting the other indices accordingly.
+         */
+        public void moveAndShift(int from, int to);
+
+        /**
+         * Recycle write set object when not in use.
+         */
+        public void recycle();
+
+        /**
+         * Make a deep copy of this write set.
+         */
+        public WriteSet copy();
+    }
+
+    public static WriteSet NULL_WRITE_SET = new WriteSet() {
+            @Override
+            public int size() { return 0; }
+            @Override
+            public boolean contains(int i) { return false; }
+            @Override
+            public int get(int i) {
+                throw new ArrayIndexOutOfBoundsException();
+            }
+            @Override
+            public int set(int i, int index) {
+                throw new ArrayIndexOutOfBoundsException();
+            }
+            @Override
+            public void sort() {}
+            @Override
+            public int indexOf(int index) { return -1; }
+            @Override
+            public void addMissingIndices(int maxIndex) {
+                throw new ArrayIndexOutOfBoundsException();
+            }
+            @Override
+            public void moveAndShift(int from, int to) {
+                throw new ArrayIndexOutOfBoundsException();
+            }
+            @Override
+            public void recycle() {}
+            @Override
+            public WriteSet copy() { return this; }
+        };
 
     /**
      * return the set of bookie indices to send the message to
      */
-    public List<Integer> getWriteSet(long entryId);
+    public WriteSet getWriteSet(long entryId);
+
 
     /**
      * An ack set represents the set of bookies from which
@@ -75,6 +170,11 @@ interface DistributionSchedule {
          * Used for reissuing write requests.
          */
         public boolean removeBookieAndCheck(int bookie);
+
+        /**
+         * Recycle this ack set when not used anymore
+         */
+        public void recycle();
     }
 
     /**

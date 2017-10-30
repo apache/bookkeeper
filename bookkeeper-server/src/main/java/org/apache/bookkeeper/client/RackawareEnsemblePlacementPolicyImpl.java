@@ -19,6 +19,7 @@ package org.apache.bookkeeper.client;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -28,6 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import com.google.common.base.Preconditions;
@@ -70,6 +72,15 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
     public static final String REPP_RANDOM_READ_REORDERING = "ensembleRandomReadReordering";
 
     static final int RACKNAME_DISTANCE_FROM_LEAVES = 1;
+
+    // masks for reordering
+    static final int LOCAL_MASK       = 0x01 << 24;
+    static final int LOCAL_FAIL_MASK  = 0x02 << 24;
+    static final int REMOTE_MASK      = 0x04 << 24;
+    static final int REMOTE_FAIL_MASK = 0x08 << 24;
+    static final int READ_ONLY_MASK   = 0x10 << 24;
+    static final int UNAVAIL_MASK     = 0x20 << 24;
+    static final int MASK_BITS        = 0xFFF << 20;
 
     static class DefaultResolver implements DNSToSwitchMapping {
 
@@ -769,47 +780,86 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
     }
 
     @Override
-    public List<Integer> reorderReadSequence(ArrayList<BookieSocketAddress> ensemble, List<Integer> writeSet, Map<BookieSocketAddress, Long> bookieFailureHistory) {
+    public DistributionSchedule.WriteSet reorderReadSequence(
+            ArrayList<BookieSocketAddress> ensemble,
+            Map<BookieSocketAddress, Long> bookieFailureHistory,
+            DistributionSchedule.WriteSet writeSet) {
         int ensembleSize = ensemble.size();
-        List<Integer> finalList = new ArrayList<Integer>(writeSet.size());
-        List<Long> observedFailuresList = new ArrayList<Long>(writeSet.size());
-        List<Integer> readOnlyList = new ArrayList<Integer>(writeSet.size());
-        List<Integer> unAvailableList = new ArrayList<Integer>(writeSet.size());
-        for (Integer idx : writeSet) {
+
+        for (int i = 0; i < writeSet.size(); i++) {
+            int idx = writeSet.get(i);
             BookieSocketAddress address = ensemble.get(idx);
             Long lastFailedEntryOnBookie = bookieFailureHistory.get(address);
             if (null == knownBookies.get(address)) {
-                // there isn't too much differences between readonly bookies from unavailable bookies. since there
-                // is no write requests to them, so we shouldn't try reading from readonly bookie in prior to writable
+                // there isn't too much differences between readonly bookies
+                // from unavailable bookies. since there
+                // is no write requests to them, so we shouldn't try reading
+                // from readonly bookie in prior to writable
                 // bookies.
-                if ((null == readOnlyBookies) || !readOnlyBookies.contains(address)) {
-                    unAvailableList.add(idx);
+                if ((null == readOnlyBookies)
+                        || !readOnlyBookies.contains(address)) {
+                    writeSet.set(i, idx | UNAVAIL_MASK);
                 } else {
-                    readOnlyList.add(idx);
+                    writeSet.set(i, idx | READ_ONLY_MASK);
                 }
             } else {
-                if ((lastFailedEntryOnBookie == null) || (lastFailedEntryOnBookie < 0)) {
-                    finalList.add(idx);
+                if ((lastFailedEntryOnBookie == null)
+                        || (lastFailedEntryOnBookie < 0)) {
+                    writeSet.set(i, idx | LOCAL_MASK);
                 } else {
-                    observedFailuresList.add(lastFailedEntryOnBookie * ensembleSize + idx);
+                    long failIdx = lastFailedEntryOnBookie * ensembleSize + idx;
+                    writeSet.set(i,
+                                 (int)(failIdx & ~MASK_BITS) | LOCAL_FAIL_MASK);
                 }
             }
         }
 
+        // Add a mask to ensure the sort is stable, sort,
+        // and then remove mask. This maintains stability as
+        // long as there are fewer than 16 bookies in the write set.
+        for (int i = 0; i < writeSet.size(); i++) {
+            writeSet.set(i, writeSet.get(i) | ((i & 0xF) << 20));
+        }
+        writeSet.sort();
+        for (int i = 0; i < writeSet.size(); i++) {
+            writeSet.set(i, writeSet.get(i) & ~((0xF) << 20));
+        }
+
         if (reorderReadsRandom) {
-            Collections.shuffle(finalList);
-            Collections.shuffle(readOnlyList);
-            Collections.shuffle(unAvailableList);
+            shuffleWithMask(writeSet, LOCAL_MASK, MASK_BITS);
+            shuffleWithMask(writeSet, READ_ONLY_MASK, MASK_BITS);
+            shuffleWithMask(writeSet, UNAVAIL_MASK, MASK_BITS);
         }
 
-        Collections.sort(observedFailuresList);
-
-        for(long value: observedFailuresList) {
-            finalList.add((int)(value % ensembleSize));
+        // remove all masks
+        for (int i = 0; i < writeSet.size(); i++) {
+            writeSet.set(i, (writeSet.get(i) & ~MASK_BITS) % ensembleSize);
         }
 
-        finalList.addAll(readOnlyList);
-        finalList.addAll(unAvailableList);
-        return finalList;
+        return writeSet;
+    }
+
+    /**
+     * Shuffle all the entries of an array that matches a mask.
+     * It assumes all entries with the same mask are contiguous in the array.
+     */
+    static void shuffleWithMask(DistributionSchedule.WriteSet writeSet,
+                                int mask, int bits) {
+        int first = -1;
+        int last = -1;
+        for (int i = 0; i < writeSet.size(); i++) {
+            if ((writeSet.get(i) & bits) == mask) {
+                if (first == -1) {
+                    first = i;
+                }
+                last = i;
+            }
+        }
+        if (first != -1) {
+            for (int i = last + 1; i > first; i--) {
+                int swapWith = ThreadLocalRandom.current().nextInt(i);
+                writeSet.set(swapWith, writeSet.set(i, writeSet.get(swapWith)));
+            }
+        }
     }
 }
