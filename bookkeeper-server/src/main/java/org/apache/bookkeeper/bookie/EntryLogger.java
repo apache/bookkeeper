@@ -22,6 +22,8 @@
 package org.apache.bookkeeper.bookie;
 
 import static com.google.common.base.Charsets.UTF_8;
+
+import static org.apache.bookkeeper.bookie.TransactionalEntryLogCompactor.COMPACTING_SUFFIX;
 import static org.apache.bookkeeper.util.BookKeeperConstants.MAX_LOG_SIZE_LIMIT;
 
 import io.netty.buffer.ByteBuf;
@@ -50,7 +52,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -79,15 +80,24 @@ public class EntryLogger {
     private static class BufferedLogChannel extends BufferedChannel {
         private final long logId;
         private final EntryLogMetadata entryLogMetadata;
+        private final File logFile;
 
-        public BufferedLogChannel(FileChannel fc, int writeCapacity,
-                                  int readCapacity, long logId) throws IOException {
+        public BufferedLogChannel(FileChannel fc,
+                                  int writeCapacity,
+                                  int readCapacity,
+                                  long logId,
+                                  File logFile) throws IOException {
             super(fc, writeCapacity, readCapacity);
             this.logId = logId;
             this.entryLogMetadata = new EntryLogMetadata(logId);
+            this.logFile = logFile;
         }
         public long getLogId() {
             return logId;
+        }
+
+        public File getLogFile() {
+            return logFile;
         }
 
         public void registerWrittenEntry(long ledgerId, long entrySize) {
@@ -106,11 +116,17 @@ public class EntryLogger {
     private volatile long leastUnflushedLogId;
 
     /**
+     * locks for compaction log
+     */
+    private final Object compactionLogLock = new Object();
+
+    /**
      * The maximum size of a entry logger file.
      */
     final long logSizeLimit;
     private List<BufferedLogChannel> logChannelsToFlush;
     private volatile BufferedLogChannel logChannel;
+    private volatile BufferedLogChannel compactionLogChannel;
     private final EntryLoggerAllocator entryLoggerAllocator;
     private final boolean entryLogPreAllocationEnabled;
     private final CopyOnWriteArrayList<EntryLogListener> listeners = new CopyOnWriteArrayList<EntryLogListener>();
@@ -370,6 +386,18 @@ public class EntryLogger {
         return logChannel.getLogId();
     }
 
+    /**
+     * Get the current log file for compaction
+     */
+    File getCurCompactionLogFile() {
+        synchronized (compactionLogLock) {
+            if (compactionLogChannel == null) {
+                return null;
+            }
+            return compactionLogChannel.getLogFile();
+        }
+    }
+
     protected void initialize() throws IOException {
         // Register listener for disk full notifications.
         ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
@@ -461,6 +489,7 @@ public class EntryLogger {
         } else {
             logChannel = entryLoggerAllocator.createNewLog();
         }
+        currentDir = logChannel.getLogFile().getParentFile();
     }
 
     /**
@@ -517,50 +546,59 @@ public class EntryLogger {
      */
     class EntryLoggerAllocator {
 
-        long preallocatedLogId;
-        Future<BufferedLogChannel> preallocation = null;
-        ExecutorService allocatorExecutor;
+        private long preallocatedLogId;
+        private Future<BufferedLogChannel> preallocation = null;
+        private ExecutorService allocatorExecutor;
+        private final Object createEntryLogLock = new Object();
+        private final Object createCompactionLogLock = new Object();
 
         EntryLoggerAllocator(long logId) {
             preallocatedLogId = logId;
             allocatorExecutor = Executors.newSingleThreadExecutor();
         }
 
-        synchronized BufferedLogChannel createNewLog() throws IOException {
-            BufferedLogChannel bc;
-            if (!entryLogPreAllocationEnabled || null == preallocation) {
-                // initialization time to create a new log
-                bc = allocateNewLog();
-            } else {
-                // has a preallocated entry log
-                try {
-                    bc = preallocation.get();
-                } catch (ExecutionException ee) {
-                    if (ee.getCause() instanceof IOException) {
-                        throw (IOException) (ee.getCause());
-                    } else {
-                        throw new IOException("Error to execute entry log allocation.", ee);
+        BufferedLogChannel createNewLog() throws IOException {
+            synchronized (createEntryLogLock) {
+                BufferedLogChannel bc;
+                if (!entryLogPreAllocationEnabled || null == preallocation) {
+                    // initialization time to create a new log
+                    bc = allocateNewLog();
+                    return bc;
+                } else {
+                    // has a preallocated entry log
+                    try {
+                        bc = preallocation.get();
+                    } catch (ExecutionException ee) {
+                        if (ee.getCause() instanceof IOException) {
+                            throw (IOException) (ee.getCause());
+                        } else {
+                            throw new IOException("Error to execute entry log allocation.", ee);
+                        }
+                    } catch (CancellationException ce) {
+                        throw new IOException("Task to allocate a new entry log is cancelled.", ce);
+                    } catch (InterruptedException ie) {
+                        throw new IOException("Intrrupted when waiting a new entry log to be allocated.", ie);
                     }
-                } catch (CancellationException ce) {
-                    throw new IOException("Task to allocate a new entry log is cancelled.", ce);
-                } catch (InterruptedException ie) {
-                    throw new IOException("Intrrupted when waiting a new entry log to be allocated.", ie);
                 }
-                preallocation = allocatorExecutor.submit(new Callable<BufferedLogChannel>() {
-                    @Override
-                    public BufferedLogChannel call() throws IOException {
-                        return allocateNewLog();
-                    }
-                });
+                preallocation = allocatorExecutor.submit(() -> allocateNewLog());
+                return bc;
             }
-            LOG.info("Created new entry logger {}.", bc.getLogId());
-            return bc;
+        }
+
+        BufferedLogChannel createNewLogForCompaction() throws IOException {
+            synchronized (createCompactionLogLock) {
+                return allocateNewLog(COMPACTING_SUFFIX);
+            }
+        }
+
+        private BufferedLogChannel allocateNewLog() throws IOException {
+            return allocateNewLog(".log");
         }
 
         /**
          * Allocate a new log file.
          */
-        BufferedLogChannel allocateNewLog() throws IOException {
+        private BufferedLogChannel allocateNewLog(String suffix) throws IOException {
             List<File> list = ledgerDirsManager.getWritableLedgerDirsForNewLog();
             Collections.shuffle(list);
             // It would better not to overwrite existing entry log files
@@ -571,10 +609,9 @@ public class EntryLogger {
                 } else {
                     ++preallocatedLogId;
                 }
-                String logFileName = Long.toHexString(preallocatedLogId) + ".log";
+                String logFileName = Long.toHexString(preallocatedLogId) + suffix;
                 for (File dir : list) {
                     newLogFile = new File(dir, logFileName);
-                    currentDir = dir;
                     if (newLogFile.exists()) {
                         LOG.warn("Found existed entry log " + newLogFile
                                + " when trying to create it as a new log.");
@@ -586,13 +623,13 @@ public class EntryLogger {
 
             FileChannel channel = new RandomAccessFile(newLogFile, "rw").getChannel();
             BufferedLogChannel logChannel = new BufferedLogChannel(channel,
-                    conf.getWriteBufferBytes(), conf.getReadBufferBytes(), preallocatedLogId);
+                    conf.getWriteBufferBytes(), conf.getReadBufferBytes(), preallocatedLogId, newLogFile);
             logChannel.write((ByteBuffer) logfileHeader.clear());
 
             for (File f : list) {
                 setLastLogId(f, preallocatedLogId);
             }
-            LOG.info("Preallocated entry logger {}.", preallocatedLogId);
+            LOG.info("Created new entry log file {} for logId {}.", newLogFile, preallocatedLogId);
             return logChannel;
         }
 
@@ -665,12 +702,8 @@ public class EntryLogger {
         List<Long> logs = new ArrayList<Long>();
         if (logFiles != null) {
             for (File lf : logFiles) {
-                String idString = lf.getName().split("\\.")[0];
-                try {
-                    long lid = Long.parseLong(idString, 16);
-                    logs.add(lid);
-                } catch (NumberFormatException nfe) {
-                }
+                long logId = fileName2LogId(lf.getName());
+                logs.add(logId);
             }
         }
         // no log file found in this directory
@@ -776,35 +809,10 @@ public class EntryLogger {
         return addEntry(ledger, entry, true);
     }
 
-    private static final class RecyclableByteBuffer {
-        private static final Recycler<RecyclableByteBuffer> RECYCLER = new  Recycler<RecyclableByteBuffer>() {
-            @Override
-            protected RecyclableByteBuffer newObject(Handle<RecyclableByteBuffer> handle) {
-                return new RecyclableByteBuffer(handle);
-            }
-        };
-
-        private final ByteBuffer buffer;
-        private final Handle<RecyclableByteBuffer> handle;
-        public RecyclableByteBuffer(Handle<RecyclableByteBuffer> handle) {
-            this.buffer = ByteBuffer.allocate(4);
-            this.handle = handle;
-        }
-
-        public static RecyclableByteBuffer get() {
-            return RECYCLER.get();
-        }
-
-        public void recycle() {
-            buffer.rewind();
-            handle.recycle(this);
-        }
-    }
-
     synchronized long addEntry(long ledger, ByteBuffer entry, boolean rollLog) throws IOException {
         int entrySize = entry.remaining() + 4;
         boolean reachEntryLogLimit =
-                rollLog ? reachEntryLogLimit(entrySize) : readEntryLogHardLimit(entrySize);
+            rollLog ? reachEntryLogLimit(entrySize) : readEntryLogHardLimit(entrySize);
         // Create new log if logSizeLimit reached or current disk is full
         boolean createNewLog = shouldCreateNewEntryLog.get();
         if (createNewLog || reachEntryLogLimit) {
@@ -833,6 +841,93 @@ public class EntryLogger {
 
         return (logChannel.getLogId() << 32L) | pos;
     }
+
+    long addEntryForCompaction(long ledgerId, ByteBuffer entry) throws IOException {
+        synchronized (compactionLogLock) {
+            int entrySize = entry.remaining() + 4;
+            if (compactionLogChannel == null) {
+                createNewCompactionLog();
+            }
+            ByteBuffer buff = ByteBuffer.allocate(4);
+            buff.putInt(entry.remaining());
+            buff.flip();
+            compactionLogChannel.write(buff);
+            long pos = compactionLogChannel.position();
+            compactionLogChannel.write(entry);
+            compactionLogChannel.registerWrittenEntry(ledgerId, entrySize);
+            return (compactionLogChannel.getLogId() << 32L) | pos;
+        }
+    }
+
+    void flushCompactionLog() throws IOException {
+        synchronized (compactionLogLock) {
+            if (compactionLogChannel != null) {
+                compactionLogChannel.flush(true);
+                LOG.info("Flushed compaction log file {} with logId.",
+                    compactionLogChannel.getLogFile(),
+                    compactionLogChannel.getLogId());
+                // since this channel is only used for writing, after flushing the channel,
+                // we had to close the underlying file channel. Otherwise, we might end up
+                // leaking fds which cause the disk spaces could not be reclaimed.
+                closeFileChannel(compactionLogChannel);
+            } else {
+                throw new IOException("Failed to flush compaction log which has already been removed.");
+            }
+        }
+    }
+
+    void createNewCompactionLog() throws IOException {
+        synchronized (compactionLogLock) {
+            if (compactionLogChannel == null) {
+                compactionLogChannel = entryLoggerAllocator.createNewLogForCompaction();
+            }
+        }
+    }
+
+    /**
+     * Remove the current compaction log, usually invoked when compaction failed and
+     * we need to do some clean up to remove the compaction log file.
+     */
+    void removeCurCompactionLog() {
+        synchronized (compactionLogLock) {
+            if (compactionLogChannel != null) {
+                compactionLogChannel.getLogFile().delete();
+                try {
+                    closeFileChannel(compactionLogChannel);
+                } catch (IOException e) {
+                    LOG.error("Failed to close file channel for compaction log {}", compactionLogChannel.getLogId());
+                }
+                compactionLogChannel = null;
+            }
+        }
+    }
+
+
+    private static final class RecyclableByteBuffer {
+        private static final Recycler<RecyclableByteBuffer> RECYCLER = new  Recycler<RecyclableByteBuffer>() {
+            @Override
+            protected RecyclableByteBuffer newObject(Handle<RecyclableByteBuffer> handle) {
+                return new RecyclableByteBuffer(handle);
+            }
+        };
+
+        private final ByteBuffer buffer;
+        private final Handle<RecyclableByteBuffer> handle;
+        public RecyclableByteBuffer(Handle<RecyclableByteBuffer> handle) {
+            this.buffer = ByteBuffer.allocate(4);
+            this.handle = handle;
+        }
+
+        public static RecyclableByteBuffer get() {
+            return RECYCLER.get();
+        }
+
+        public void recycle() {
+            buffer.rewind();
+            handle.recycle(this);
+        }
+    }
+
 
     private void incrementBytesWrittenAndMaybeFlush(long bytesWritten) throws IOException {
         if (!doRegularFlushes) {
@@ -1185,6 +1280,10 @@ public class EntryLogger {
             logid2FileChannel.clear();
             // close current writing log file
             closeFileChannel(logChannel);
+            synchronized (compactionLogLock) {
+                closeFileChannel(compactionLogChannel);
+                compactionLogChannel = null;
+            }
         } catch (IOException ie) {
             // we have no idea how to avoid io exception during shutting down, so just ignore it
             LOG.error("Error flush entry log during shutting down, which may cause entry log corrupted.", ie);
@@ -1193,6 +1292,9 @@ public class EntryLogger {
                 IOUtils.close(LOG, fc);
             }
             forceCloseFileChannel(logChannel);
+            synchronized (compactionLogLock) {
+                forceCloseFileChannel(compactionLogChannel);
+            }
         }
         // shutdown the pre-allocation thread
         entryLoggerAllocator.stop();
@@ -1218,4 +1320,29 @@ public class EntryLogger {
         }
     }
 
+    protected LedgerDirsManager getLedgerDirsManager() {
+        return ledgerDirsManager;
+    }
+
+    /**
+     * Convert log filename (hex format with suffix) to logId in long.
+     */
+    static long fileName2LogId(String fileName) {
+        if (fileName != null && fileName.contains(".")) {
+            fileName = fileName.split("\\.")[0];
+        }
+        try {
+            return Long.parseLong(fileName, 16);
+        } catch (Exception nfe) {
+            LOG.error("Invalid log file name {} found when trying to convert to logId.", fileName, nfe);
+        }
+        return INVALID_LID;
+    }
+
+    /**
+     * Convert log Id to hex string
+     */
+    static String logId2HexString(long logId) {
+        return Long.toHexString(logId);
+    }
 }
