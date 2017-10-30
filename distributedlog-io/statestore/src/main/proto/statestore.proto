@@ -55,3 +55,93 @@ message ChangeEventMeta {
     KeyMeta kv                  = 2;
 
 }
+
+message PutRequest {
+    // key is the key, in bytes, to put into the key-value store.
+    bytes key = 1;
+    // value is the value, in bytes, to associate with the key in the key-value store.
+    bytes value = 2;
+    // lease is the lease ID to associate with the key in the key-value store. A lease
+    // value of 0 indicates no lease.
+    int64 lease = 3;
+
+    // If prev_kv is set, etcd gets the previous key-value pair before changing it.
+    // The previous key-value pair will be returned in the put response.
+    bool prev_kv = 4;
+}
+
+message DeleteRequest {
+    // key is the first key to delete in the range.
+    bytes key = 1;
+    // range_end is the key following the last key to delete for the range [key, range_end).
+    // If range_end is not given, the range is defined to contain only the key argument.
+    // If range_end is one bit larger than the given key, then the range is all
+    // the all keys with the prefix (the given key).
+    // If range_end is '\0', the range is all keys greater than or equal to the key argument.
+    bytes range_end = 2;
+
+    // If prev_kv is set, gets the previous key-value pairs before deleting it.
+    // The previous key-value pairs will be returned in the delte response.
+    bool prev_kv = 3;
+}
+
+message RequestOp {
+    oneof op {
+        // reserved for range request
+        // RangeRequest range_op = 1;
+        PutRequest put_op = 2; 
+        DeleteRequest delete_op = 3;
+    }
+}
+
+message Compare {
+    enum CompareResult {
+        EQUAL = 0;
+        GREATER = 1;
+        LESS = 2;
+        NOT_EQUAL = 3;
+    }
+    enum CompareTarget {
+        VERSION = 0;
+        CREATE = 1;
+        MOD = 2;
+        VALUE= 3;
+    }
+    // result is logical comparison operation for this comparison.
+    CompareResult result = 1;
+    // target is the key-value field to inspect for the comparison.
+    CompareTarget target = 2;
+    // key is the subject key for the comparison operation.
+    bytes key = 3;
+    oneof target_union {
+        // version is the version of the given key
+        int64 version = 4;
+        // create_revision is the creation revision of the given key
+        int64 create_revision = 5;
+        // mod_revision is the last modified revision of the given key.
+        int64 mod_revision = 6;
+        // value is the value of the given key, in bytes.
+        bytes value = 7;
+    }
+}
+
+message TxnRequest {
+    // compare is a list of predicates representing a conjunction of terms.
+    // If the comparisons succeed, then the success requests will be processed in order,
+    // and the response will contain their respective responses in order.
+    // If the comparisons fail, then the failure requests will be processed in order,
+    // and the response will contain their respective responses in order.
+    repeated Compare compare = 1;
+    // success is a list of requests which will be applied when compare evaluates to true.
+    repeated RequestOp success = 2;
+    // failure is a list of requests which will be applied when compare evaluates to false.
+    repeated RequestOp failure = 3;
+}
+
+message Request {
+    oneof req {
+        PutRequest put_req = 1;
+        DeleteRequest delete_req = 2;
+        TxnRequest txn_req = 3;
+    }
+}
