@@ -50,6 +50,7 @@ import org.apache.bookkeeper.client.SyncCallbackUtils.SyncOpenCallback;
 import org.apache.bookkeeper.client.api.BookKeeperBuilder;
 import org.apache.bookkeeper.client.api.CreateBuilder;
 import org.apache.bookkeeper.client.api.DeleteBuilder;
+import org.apache.bookkeeper.client.api.LedgerType;
 import org.apache.bookkeeper.client.api.OpenBuilder;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.Feature;
@@ -62,6 +63,7 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.proto.BookieClient;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -104,6 +106,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     private OpStatsLogger deleteOpLogger;
     private OpStatsLogger recoverOpLogger;
     private OpStatsLogger readOpLogger;
+    private OpStatsLogger forceOpLogger;
     private OpStatsLogger readLacAndEntryOpLogger;
     private OpStatsLogger readLacAndEntryRespLogger;
     private OpStatsLogger addOpLogger;
@@ -598,6 +601,11 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     }
 
     @VisibleForTesting
+    boolean isDelayEnsembleChange() {
+        return delayEnsembleChange;
+    }
+
+    @VisibleForTesting
     BookieWatcher getBookieWatcher() {
         return bookieWatcher;
     }
@@ -757,7 +765,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata)
+                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata, LedgerType.FORCE_ON_JOURNAL)
                 .initiate();
         } finally {
             closeLock.readLock().unlock();
@@ -960,7 +968,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata).initiateAdv((long)(-1));
+                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata, LedgerType.FORCE_ON_JOURNAL)
+                .initiateAdv(BookieProtocol.INVALID_LEDGER_ID);
         } finally {
             closeLock.readLock().unlock();
         }
@@ -1068,7 +1077,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata).initiateAdv(ledgerId);
+                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata, LedgerType.FORCE_ON_JOURNAL)
+                .initiateAdv(ledgerId);
         } finally {
             closeLock.readLock().unlock();
         }
@@ -1382,6 +1392,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         openOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.OPEN_OP);
         recoverOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.RECOVER_OP);
         readOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_OP);
+        forceOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.FORCE_OP);
         readLacAndEntryOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY);
         readLacAndEntryRespLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY_RESPONSE);
         addOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.ADD_OP);
@@ -1396,6 +1407,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     OpStatsLogger getDeleteOpLogger() { return deleteOpLogger; }
     OpStatsLogger getRecoverOpLogger() { return recoverOpLogger; }
     OpStatsLogger getReadOpLogger() { return readOpLogger; }
+    OpStatsLogger getForceOpLogger() { return forceOpLogger; }
     OpStatsLogger getReadLacAndEntryOpLogger() { return readLacAndEntryOpLogger; }
     OpStatsLogger getReadLacAndEntryRespLogger() { return readLacAndEntryRespLogger; }
     OpStatsLogger getAddOpLogger() { return addOpLogger; }

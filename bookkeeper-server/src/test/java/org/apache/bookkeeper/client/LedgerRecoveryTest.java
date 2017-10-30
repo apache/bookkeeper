@@ -37,6 +37,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.proto.DataFormats.LedgerType;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -188,7 +189,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
 
         Bookie fakeBookie = new Bookie(conf) {
             @Override
-            public void addEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey)
+            public void addEntry(ByteBuf entry, LedgerType ledgerType, WriteCallback cb, Object ctx, byte[] masterKey)
                     throws IOException, BookieException {
                 // drop request to simulate a slow and failed bookie
             }
@@ -247,7 +248,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
         ServerConfiguration conf = newServerConfiguration();
         Bookie deadBookie1 = new Bookie(conf) {
             @Override
-            public void recoveryAddEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey)
+            public void recoveryAddEntry(ByteBuf entry, LedgerType ledgerType, WriteCallback cb, Object ctx, byte[] masterKey)
                     throws IOException, BookieException {
                 // drop request to simulate a slow and failed bookie
                 throw new IOException("Couldn't write for some reason");
@@ -328,7 +329,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
         ServerConfiguration conf = newServerConfiguration();
         Bookie deadBookie1 = new Bookie(conf) {
             @Override
-            public void recoveryAddEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey)
+            public void recoveryAddEntry(ByteBuf entry, LedgerType ledgerType, WriteCallback cb, Object ctx, byte[] masterKey)
                     throws IOException, BookieException {
                 // drop request to simulate a slow and failed bookie
                 throw new IOException("Couldn't write for some reason");
@@ -412,7 +413,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
     private void startDeadBookie(ServerConfiguration conf) throws Exception {
         Bookie rBookie = new Bookie(conf) {
             @Override
-            public void recoveryAddEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey)
+            public void recoveryAddEntry(ByteBuf entry, LedgerType ledgerType, WriteCallback cb, Object ctx, byte[] masterKey)
                     throws IOException, BookieException {
                 // drop request to simulate a dead bookie
                 throw new IOException("Couldn't write entries for some reason");

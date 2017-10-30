@@ -34,12 +34,14 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SERVER_STATUS;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_BYTES;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
@@ -65,6 +67,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_FORCE;
 import org.apache.bookkeeper.bookie.BookieException.BookieIllegalOpException;
 import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.bookie.BookieException.DiskPartitionDuplicationException;
@@ -72,6 +75,7 @@ import org.apache.bookkeeper.bookie.BookieException.MetadataStoreException;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
+import org.apache.bookkeeper.client.api.BKException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.discover.ZKRegistrationManager;
@@ -79,7 +83,10 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNS;
+import org.apache.bookkeeper.proto.BookieProtocol;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ForceCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.proto.DataFormats.LedgerType;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -121,6 +128,7 @@ public class Bookie extends BookieCriticalThread {
 
     static final long METAENTRY_ID_LEDGER_KEY = -0x1000;
     static final long METAENTRY_ID_FENCE_KEY  = -0x2000;
+    static final long METAENTRY_ID_FORCE_KEY  = -0x3000;
 
     private final LedgerDirsManager ledgerDirsManager;
     private LedgerDirsManager indexDirsManager;
@@ -141,6 +149,7 @@ public class Bookie extends BookieCriticalThread {
     private int exitCode = ExitCode.OK;
 
     private final ConcurrentLongHashMap<byte[]> masterKeyCache = new ConcurrentLongHashMap<>();
+    private final ConcurrentLongHashMap<SyncCursor> syncCursors = new ConcurrentLongHashMap<>();
 
     protected final String bookieId;
 
@@ -156,6 +165,7 @@ public class Bookie extends BookieCriticalThread {
     private final Counter readBytes;
     // Bookie Operation Latency Stats
     private final OpStatsLogger addEntryStats;
+    private final OpStatsLogger forceStats;
     private final OpStatsLogger recoveryAddEntryStats;
     private final OpStatsLogger readEntryStats;
     // Bookie Operation Bytes Stats
@@ -718,6 +728,7 @@ public class Bookie extends BookieCriticalThread {
         writeBytes = statsLogger.getCounter(WRITE_BYTES);
         readBytes = statsLogger.getCounter(READ_BYTES);
         addEntryStats = statsLogger.getOpStatsLogger(BOOKIE_ADD_ENTRY);
+        forceStats = statsLogger.getOpStatsLogger(BOOKIE_FORCE);
         recoveryAddEntryStats = statsLogger.getOpStatsLogger(BOOKIE_RECOVERY_ADD_ENTRY);
         readEntryStats = statsLogger.getOpStatsLogger(BOOKIE_READ_ENTRY);
         addBytesStats = statsLogger.getOpStatsLogger(BOOKIE_ADD_ENTRY_BYTES);
@@ -791,6 +802,7 @@ public class Bookie extends BookieCriticalThread {
 
                         recBuff.rewind();
                         handle.addEntry(Unpooled.wrappedBuffer(recBuff));
+                        updateLastAddSynced(ledgerId, entryId);
                     }
                 } catch (NoLedgerException nsle) {
                     if (LOG.isDebugEnabled()) {
@@ -1230,6 +1242,18 @@ public class Bookie extends BookieCriticalThread {
     private LedgerDescriptor getLedgerForEntry(ByteBuf entry, final byte[] masterKey)
             throws IOException, BookieException {
         final long ledgerId = entry.getLong(entry.readerIndex());
+        return getLedger(ledgerId, masterKey);
+    }
+
+    /**
+     * Retrieve the ledger descriptor for the ledger which entry should be added to.
+     * The LedgerDescriptor returned from this method should be eventually freed with
+     * #putHandle().
+     *
+     * @throws BookieException if masterKey does not match the master key of the ledger
+     */
+    private LedgerDescriptor getLedger(final long ledgerId, final byte[] masterKey)
+            throws IOException, BookieException {
 
         LedgerDescriptor l = handles.getHandle(ledgerId, masterKey);
         if (masterKeyCache.get(ledgerId) == null) {
@@ -1244,21 +1268,22 @@ public class Bookie extends BookieCriticalThread {
                 bb.put(masterKey);
                 bb.flip();
 
-                getJournal(ledgerId).logAddEntry(bb, new NopWriteCallback(), null);
+                getJournal(ledgerId).logAddEntry(Unpooled.wrappedBuffer(bb), true, new NopWriteCallback(), null);
             }
         }
 
         return l;
     }
 
-    private Journal getJournal(long ledgerId) {
+    @VisibleForTesting
+    Journal getJournal(long ledgerId) {
         return journals.get(MathUtils.signSafeMod(ledgerId, journals.size()));
     }
 
     /**
      * Add an entry to a ledger as specified by handle.
      */
-    private void addEntryInternal(LedgerDescriptor handle, ByteBuf entry, WriteCallback cb, Object ctx)
+    private void addEntryInternal(LedgerDescriptor handle, ByteBuf entry, LedgerType ledgerType, WriteCallback cb, Object ctx)
             throws IOException, BookieException {
         long ledgerId = handle.getLedgerId();
         long entryId = handle.addEntry(entry);
@@ -1268,7 +1293,27 @@ public class Bookie extends BookieCriticalThread {
         if (LOG.isTraceEnabled()) {
             LOG.trace("Adding {}@{}", entryId, ledgerId);
         }
-        getJournal(ledgerId).logAddEntry(entry, cb, ctx);
+        final boolean requiresForce = ledgerType.equals(LedgerType.FORCE_ON_JOURNAL);
+        if (requiresForce) {
+            final WriteCallback originalCallback = cb;
+            cb = (int rc, long ledgerId1, long entryId1, BookieSocketAddress addr, Object ctx1) -> {
+                if (rc == BKException.Code.OK) {
+                    updateLastAddSynced(ledgerId1, entryId1);
+                }
+                originalCallback.writeComplete(rc, ledgerId1, entryId1, addr, ctx1);
+            };
+        }
+        getJournal(ledgerId).logAddEntry(entry, requiresForce, cb, ctx);
+    }
+
+    private SyncCursor getSyncCursorForLedeger(long ledgerId) {
+        return syncCursors.computeIfAbsent(ledgerId, l -> new SyncCursor());
+    }
+
+    void updateLastAddSynced(long ledgerId, long entryId) {
+        LOG.info("updateLastAddSynced {}@{}", entryId, ledgerId);
+        Preconditions.checkArgument(entryId != Bookie.METAENTRY_ID_FORCE_KEY, "entry Id must not be METAENTRY_ID_FORCE_KEY");
+        getSyncCursorForLedeger(ledgerId).update(entryId);
     }
 
     /**
@@ -1277,7 +1322,7 @@ public class Bookie extends BookieCriticalThread {
      * so that they exist on a quorum of bookies. The corresponding client side call for this
      * is not exposed to users.
      */
-    public void recoveryAddEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey)
+    public void recoveryAddEntry(ByteBuf entry, LedgerType ledgerType, WriteCallback cb, Object ctx, byte[] masterKey)
             throws IOException, BookieException {
         long requestNanos = MathUtils.nowInNano();
         boolean success = false;
@@ -1286,7 +1331,7 @@ public class Bookie extends BookieCriticalThread {
             LedgerDescriptor handle = getLedgerForEntry(entry, masterKey);
             synchronized (handle) {
                 entrySize = entry.readableBytes();
-                addEntryInternal(handle, entry, cb, ctx);
+                addEntryInternal(handle, entry, ledgerType, cb, ctx);
             }
             success = true;
         } catch (NoWritableLedgerDirException e) {
@@ -1333,7 +1378,7 @@ public class Bookie extends BookieCriticalThread {
      * Add entry to a ledger.
      * @throws BookieException.LedgerFencedException if the ledger is fenced
      */
-    public void addEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey)
+    public void addEntry(ByteBuf entry, LedgerType ledgerType, WriteCallback cb, Object ctx, byte[] masterKey)
             throws IOException, BookieException.LedgerFencedException, BookieException {
         long requestNanos = MathUtils.nowInNano();
         boolean success = false;
@@ -1346,7 +1391,7 @@ public class Bookie extends BookieCriticalThread {
                             .create(BookieException.Code.LedgerFencedException);
                 }
                 entrySize = entry.readableBytes();
-                addEntryInternal(handle, entry, cb, ctx);
+                addEntryInternal(handle, entry, ledgerType, cb, ctx);
             }
             success = true;
         } catch (NoWritableLedgerDirException e) {
@@ -1397,6 +1442,67 @@ public class Bookie extends BookieCriticalThread {
         LedgerDescriptor handle = handles.getHandle(ledgerId, masterKey);
         return handle.fenceAndLogInJournal(getJournal(ledgerId));
     }
+
+    public void force(long ledgerId, ForceCallback wcb, Channel channel, byte[] masterKey)
+        throws IOException, BookieException {
+        long requestNanos = MathUtils.nowInNano();
+        boolean success = false;
+        try {
+            LedgerDescriptor handle = getLedger(ledgerId, masterKey);
+            synchronized (handle) {
+                if (handle.isFenced()) {
+                    throw BookieException
+                            .create(BookieException.Code.LedgerFencedException);
+                }
+                forceInternal(handle, wcb);
+            }
+            success = true;
+        } catch (NoWritableLedgerDirException e) {
+            transitionToReadOnlyMode();
+            throw new IOException(e);
+        } finally {
+            long elapsedNanos = MathUtils.elapsedNanos(requestNanos);
+            if (success) {
+                forceStats.registerSuccessfulEvent(elapsedNanos, TimeUnit.NANOSECONDS);
+            } else {
+                forceStats.registerFailedEvent(elapsedNanos, TimeUnit.NANOSECONDS);
+            }
+        }
+    }
+
+     private void forceInternal(LedgerDescriptor handle, ForceCallback originalCallback)
+            throws IOException, BookieException {
+        long ledgerId = handle.getLedgerId();
+
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("Force ledger {}", ledgerId);
+        }
+        Journal journal = getJournal(ledgerId);
+        ForceCallback cb = (int rc, long ledgerId1, long lastAddSynced, BookieSocketAddress addr, Object ctx) -> {
+            if (lastAddSynced == BookieProtocol.INVALID_ENTRY_ID) {
+                try {
+                    lastAddSynced = ledgerStorage.getLastAddConfirmed(ledgerId1);
+                    try {
+                        while (true) {
+                            ledgerStorage.getEntry(ledgerId, lastAddSynced);
+                            lastAddSynced++;
+                        }
+                    } catch (NoEntryException noEntryException) {
+                    }
+                    LOG.info("recovered LastAddConfirmed {} for ledger {} from storage", lastAddSynced, ledgerId1);
+                    if (lastAddSynced != BookieProtocol.INVALID_ENTRY_ID) {
+                        updateLastAddSynced(ledgerId1, lastAddSynced);
+                    }
+                } catch (IOException error) {
+                    LOG.error("Could not read LastAddConfirmed for ledger " + ledgerId1, error);
+                }
+            }
+            originalCallback.forceComplete(rc, ledgerId1, lastAddSynced, addr, ctx);
+        };
+        // actually we are going to write an entry and this will guarantee
+        // that all the entries up to that id have been persisteded durably (synced)
+        journal.forceLedger(ledgerId, cb, null);
+     }
 
     public ByteBuf readEntry(long ledgerId, long entryId)
             throws IOException, NoLedgerException {
@@ -1560,7 +1666,7 @@ public class Bookie extends BookieCriticalThread {
             buff.writeLong(1);
             buff.writeLong(i);
             cb.incCount();
-            b.addEntry(buff, cb, null, new byte[0]);
+            b.addEntry(buff, LedgerType.FORCE_ON_JOURNAL, cb, null, new byte[0]);
         }
         cb.waitZero();
         long end = MathUtils.now();

@@ -34,7 +34,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @since 4.6
  */
-public interface WriteAdvHandle extends ReadHandle {
+public interface WriteAdvHandle extends ReadHandle, ForceSupported {
 
     /**
      * Add entry asynchronously to an open ledger.
