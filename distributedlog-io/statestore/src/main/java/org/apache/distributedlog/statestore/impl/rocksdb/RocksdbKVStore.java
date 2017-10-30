@@ -70,32 +70,32 @@ import org.rocksdb.WriteOptions;
 public class RocksdbKVStore<K, V> implements KVStore<K, V> {
 
     // parameters for the store
-    private String name;
-    private Coder<K> keyCoder;
-    private Coder<V> valCoder;
+    protected String name;
+    protected Coder<K> keyCoder;
+    protected Coder<V> valCoder;
 
     // rocksdb state
-    private File dbDir;
-    private RocksDB db;
+    protected File dbDir;
+    protected RocksDB db;
 
     // iterators
-    private final Set<KVIterator<K, V>> kvIters;
+    protected final Set<KVIterator<K, V>> kvIters;
 
     // options used by rocksdb
-    private Options opts;
-    private WriteOptions writeOpts;
-    private FlushOptions flushOpts;
+    protected Options opts;
+    protected WriteOptions writeOpts;
+    protected FlushOptions flushOpts;
 
     // states of the store
-    private volatile boolean isInitialized = false;
-    private volatile boolean closed = false;
+    protected volatile boolean isInitialized = false;
+    protected volatile boolean closed = false;
 
-    RocksdbKVStore() {
+    protected RocksdbKVStore() {
         // initialize the iterators set
         this.kvIters = Collections.synchronizedSet(Sets.newHashSet());
     }
 
-    private void checkStoreOpen() {
+    protected void checkStoreOpen() {
         if (closed) {
             throw new InvalidStateStoreException("State store " + name + " is already closed");
         }
@@ -127,7 +127,7 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         this.isInitialized = true;
     }
 
-    private void openRocksdb(StateStoreSpec spec) throws StateStoreException {
+    protected void openRocksdb(StateStoreSpec spec) throws StateStoreException {
 
         // initialize the db options
 
@@ -160,10 +160,14 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         // open the rocksdb
 
         this.dbDir = spec.localStateStoreDir();
-        this.db = openRocksdb(dbDir, opts);
+        this.db = openLocalDB(dbDir, opts);
     }
 
-    private static RocksDB openRocksdb(File dir, Options options) throws StateStoreException {
+    protected RocksDB openLocalDB(File dir, Options options) throws StateStoreException {
+        return openRocksdb(dir, options);
+    }
+
+    protected static RocksDB openRocksdb(File dir, Options options) throws StateStoreException {
         // make sure the db directory's parent dir is created
         try {
             Files.createDirectories(dir.getParentFile().toPath());
@@ -200,12 +204,16 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         closeIters();
 
         // close db
-        RocksUtils.close(db);
+        closeLocalDB();
 
         // release options
         RocksUtils.close(opts);
         RocksUtils.close(writeOpts);
         RocksUtils.close(flushOpts);
+    }
+
+    protected void closeLocalDB() {
+        RocksUtils.close(db);
     }
 
     private void closeIters() {
@@ -226,14 +234,16 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
     }
 
     private V getRaw(K key, byte[] keyBytes) {
+        byte[] valBytes = getRawBytes(key, keyBytes);
+        if (null == valBytes) {
+            return null;
+        }
+        return valCoder.decode(valBytes);
+    }
+
+    protected byte[] getRawBytes(K key, byte[] keyBytes) {
         try {
-
-            byte[] valBytes = this.db.get(keyBytes);
-
-            if (null == valBytes) {
-                return null;
-            }
-            return valCoder.decode(valBytes);
+            return this.db.get(keyBytes);
         } catch (RocksDBException e) {
             throw new StateStoreRuntimeException("Error while getting value for key " + key + " from store " + name, e);
         }
@@ -394,6 +404,8 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
                 getDb().write(writeOpts, batch);
             } catch (RocksDBException e) {
                 throw new StateStoreRuntimeException("Error while executing a multi operation from store " + name, e);
+            } finally {
+                RocksUtils.close(batch);
             }
         }
     }

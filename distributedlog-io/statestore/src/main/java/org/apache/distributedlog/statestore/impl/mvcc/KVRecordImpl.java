@@ -19,8 +19,10 @@
 package org.apache.distributedlog.statestore.impl.mvcc;
 
 import io.netty.util.Recycler.Handle;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import org.apache.distributedlog.statestore.api.mvcc.KVRecord;
 
 /**
@@ -28,6 +30,8 @@ import org.apache.distributedlog.statestore.api.mvcc.KVRecord;
  */
 @Setter
 @Getter
+@ToString
+@EqualsAndHashCode
 class KVRecordImpl<K, V> implements KVRecord<K, V> {
 
     private final Handle<KVRecordImpl<K, V>> handle;

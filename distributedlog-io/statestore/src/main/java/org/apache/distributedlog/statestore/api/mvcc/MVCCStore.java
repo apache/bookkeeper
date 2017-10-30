@@ -21,6 +21,7 @@ package org.apache.distributedlog.statestore.api.mvcc;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.distributedlog.statestore.api.StateStore;
+import org.apache.distributedlog.statestore.api.mvcc.op.OpFactory;
 
 /**
  * A mvcc store that supports synchronous operations.
@@ -31,4 +32,12 @@ import org.apache.distributedlog.statestore.api.StateStore;
 @Public
 @Evolving
 public interface MVCCStore<K, V> extends StateStore, MVCCStoreWriteView<K, V>, MVCCStoreReadView<K, V> {
+
+    /**
+     * Return the operator factory to build operators.
+     *
+     * @return operator factory.
+     */
+    OpFactory<K, V> getOpFactory();
+
 }

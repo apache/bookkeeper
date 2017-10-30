@@ -26,9 +26,9 @@ import org.rocksdb.AbstractImmutableNativeReference;
  * Utils for interacting with rocksdb classes.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-final class RocksUtils {
+public final class RocksUtils {
 
-    static void close(AbstractImmutableNativeReference ref) {
+    public static void close(AbstractImmutableNativeReference ref) {
         if (null == ref) {
             return;
         }

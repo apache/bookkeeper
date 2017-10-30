@@ -29,7 +29,7 @@ import org.rocksdb.InfoLogLevel;
  * Define the constants used by rocksdb based on state store.
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-final class RocksConstants {
+public final class RocksConstants {
 
     public static final CompressionType DEFAULT_COMPRESSION_TYPE = CompressionType.LZ4_COMPRESSION;
     public static final CompactionStyle DEFAULT_COMPACTION_STYLE = CompactionStyle.UNIVERSAL;

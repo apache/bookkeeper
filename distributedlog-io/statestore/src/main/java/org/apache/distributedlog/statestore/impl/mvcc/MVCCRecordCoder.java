@@ -62,6 +62,7 @@ final class MVCCRecordCoder implements Coder<MVCCRecord> {
         //       we can improve this if rocksdb jni support ByteBuffer or ByteBuf
         byte[] data = new byte[totalLen];
         ByteBuf buf = Unpooled.wrappedBuffer(data);
+        buf.writerIndex(0);
         buf.writeInt(metaLen);
         CodedOutputStream out = CodedOutputStream.newInstance(data, Integer.BYTES, metaLen);
         try {
@@ -91,7 +92,7 @@ final class MVCCRecordCoder implements Coder<MVCCRecord> {
         }
         copy.skipBytes(metaLen);
         int valLen = copy.readInt();
-        ByteBuf valBuf = data.retainedSlice(data.readerIndex(), valLen);
+        ByteBuf valBuf = copy.retainedSlice(copy.readerIndex(), valLen);
 
         MVCCRecord record = MVCCRecord.newRecord();
         record.setValue(valBuf);

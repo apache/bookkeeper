@@ -16,29 +16,35 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.statestore.api.mvcc.op;
+package org.apache.distributedlog.statestore.exceptions;
 
-import java.util.Optional;
-import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
-import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
+import org.apache.distributedlog.statestore.api.mvcc.result.Code;
 
 /**
- * A range operation.
+ * Exception thrown from a mvcc store.
  */
-@Public
-@Evolving
-public interface RangeOp<K, V> extends Op<K, V> {
+public class MVCCStoreException extends StateStoreRuntimeException {
 
-    Optional<K> endKey();
+    private static final long serialVersionUID = 1L;
 
-    int limit();
+    private final Code code;
 
-    long minModRev();
+    public MVCCStoreException(Code code, String msg) {
+        super(msg);
+        this.code = code;
+    }
 
-    long maxModRev();
+    public MVCCStoreException(Code code, Throwable t) {
+        super(t);
+        this.code = code;
+    }
 
-    long minCreateRev();
+    public MVCCStoreException(Code code, String msg, Throwable t) {
+        super(msg, t);
+        this.code = code;
+    }
 
-    long maxCreateRev();
-
+    public Code getCode() {
+        return code;
+    }
 }
