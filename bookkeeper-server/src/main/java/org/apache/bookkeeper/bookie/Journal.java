@@ -277,17 +277,16 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         final WriteCallback cb;
         final Object ctx;
         final long enqueueTime;
-        final LedgerType ledgerType;
+        final boolean requiresForce;
 
-        QueueEntry(ByteBuf entry, long ledgerId, long entryId, WriteCallback cb, Object ctx, long enqueueTime,
-                   LedgerType ledgerType) {
+        QueueEntry(ByteBuf entry, boolean requiresForce, long ledgerId, long entryId, WriteCallback cb, Object ctx, long enqueueTime) {
             this.entry = entry.duplicate();
             this.cb = cb;
             this.ctx = ctx;
             this.ledgerId = ledgerId;
             this.entryId = entryId;
             this.enqueueTime = enqueueTime;
-            this.ledgerType = ledgerType;
+            this.requiresForce = requiresForce;
         }
 
         @Override
@@ -757,14 +756,14 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     /**
      * record an add entry operation in journal.
      */
-    public void logAddEntry(ByteBuf entry, LedgerType ledgerType, WriteCallback cb, Object ctx) {
+    public void logAddEntry(ByteBuf entry, boolean requiresForce, WriteCallback cb, Object ctx) {
         long ledgerId = entry.getLong(entry.readerIndex() + 0);
         long entryId = entry.getLong(entry.readerIndex() + 8);
         journalQueueSize.inc();
 
         //Retain entry until it gets written to journal
         entry.retain();
-        queue.add(new QueueEntry(entry, ledgerId, entryId, cb, ctx, MathUtils.nowInNano(), ledgerType));
+        queue.add(new QueueEntry(entry, requiresForce, ledgerId, entryId, cb, ctx, MathUtils.nowInNano()));
     }
 
     /**

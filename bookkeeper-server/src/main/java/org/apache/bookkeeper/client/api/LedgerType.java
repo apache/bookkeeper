@@ -31,14 +31,14 @@ public enum LedgerType {
     /**
      * Persistent Durability, using Journal.<br>
      * Each entry is persisted to the journal and every writes receives and acknowledgement only with the guarantee that
-     * it has been persisted durabily to it (data is fsync'd to the disk)
+     * it has been persisted durably to it (data is fsync'd to the disk)
      */
     FORCE_ON_JOURNAL,
     /**
      * Volatile Durability, using Journal.<br>
      * Each entry is persisted to the journal and writes receive acknowledgement without guarantees of persistence (data
      * is eventually fsync'd to disk).<br>
-     * For this kind of ledgers the client MUST explicitly call {@link LedgerHandle#asyncSync(long, org.apache.bookkeeper.client.AsyncCallback.SyncCallback, java.lang.Object)
+     * For this kind of ledgers the client MUST explicitly call {@link ForceSupported#force()}
      * }
      * in order to have guarantees of the durability of writes and in order to advance the LastAddConfirmed entry id
      */

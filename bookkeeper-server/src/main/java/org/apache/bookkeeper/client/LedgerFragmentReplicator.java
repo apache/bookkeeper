@@ -262,6 +262,7 @@ public class LedgerFragmentReplicator {
             final LedgerHandle lh,
             final AsyncCallback.VoidCallback ledgerFragmentEntryMcb,
             final Set<BookieSocketAddress> newBookies) throws InterruptedException {
+        final LedgerType ledgerType = lh.getLedgerMetadata().getLedgerType();
         final AtomicInteger numCompleted = new AtomicInteger(0);
         final AtomicBoolean completed = new AtomicBoolean(false);
         final WriteCallback multiWriteCallback = new WriteCallback() {
@@ -320,7 +321,7 @@ public class LedgerFragmentReplicator {
                 for (BookieSocketAddress newBookie : newBookies) {
                     bkc.getBookieClient().addEntry(newBookie, lh.getId(),
                             lh.getLedgerKey(), entryId, toSend.retainedSlice(),
-                            multiWriteCallback, dataLength, BookieProtocol.FLAG_RECOVERY_ADD);
+                            multiWriteCallback, dataLength, BookieProtocol.FLAG_RECOVERY_ADD, ledgerType);
                 }
                 toSend.release();
             }

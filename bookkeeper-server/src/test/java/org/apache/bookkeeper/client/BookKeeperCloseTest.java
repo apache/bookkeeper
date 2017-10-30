@@ -72,7 +72,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
         Bookie delayBookie = new Bookie(conf) {
                 @Override
-                public void recoveryAddEntry(ByteBuf entry, WriteCallback cb,
+                public void recoveryAddEntry(ByteBuf entry, LedgerType ledgerType, WriteCallback cb,
                                              Object ctx, byte[] masterKey)
                         throws IOException, BookieException {
                     try {
@@ -82,12 +82,12 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
                         // and an exception would spam the logs
                         Thread.currentThread().interrupt();
                     }
-                    super.recoveryAddEntry(entry, cb, ctx, masterKey);
+                    super.recoveryAddEntry(entry, ledgerType, cb, ctx, masterKey);
                 }
 
                 @Override
-                public void addEntry(ByteBuf entry, WriteCallback cb,
-                                     Object ctx, byte[] masterKey, LedgerType ledgerType)
+                public void addEntry(ByteBuf entry, LedgerType ledgerType, WriteCallback cb,
+                                     Object ctx, byte[] masterKey)
                         throws IOException, BookieException {
                     try {
                         Thread.sleep(5000);
@@ -96,7 +96,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
                         // and an exception would spam the logs
                         Thread.currentThread().interrupt();
                     }
-                    super.addEntry(entry, cb, ctx, masterKey, ledgerType);
+                    super.addEntry(entry, ledgerType, cb, ctx, masterKey);
                 }
 
                 @Override

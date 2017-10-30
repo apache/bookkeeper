@@ -188,7 +188,7 @@ public class ConcurrentLedgerTest {
                 bytes.position(0);
                 bytes.limit(bytes.capacity());
                 throttle.acquire();
-                bookie.addEntry(Unpooled.wrappedBuffer(bytes), cb, counter, zeros, LedgerType.FORCE_ON_JOURNAL);
+                bookie.addEntry(Unpooled.wrappedBuffer(bytes), LedgerType.FORCE_ON_JOURNAL, cb, counter, zeros);
             }
         }
         long finish = System.currentTimeMillis();
