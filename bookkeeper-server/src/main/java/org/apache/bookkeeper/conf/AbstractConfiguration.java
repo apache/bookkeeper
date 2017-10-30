@@ -99,8 +99,6 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     // Kluge for compatibility testing. Never set this outside tests.
     public final static String LEDGER_MANAGER_FACTORY_DISABLE_CLASS_CHECK = "ledgerManagerFactoryDisableClassCheck";
 
-
-
     protected AbstractConfiguration() {
         super();
         if (READ_SYSTEM_PROPERTIES) {
@@ -487,6 +485,4 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     public String getTLSEnabledProtocols() {
         return getString(TLS_ENABLED_PROTOCOLS, null);
     }
-
-
 }

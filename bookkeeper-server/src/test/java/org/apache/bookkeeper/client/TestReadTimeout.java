@@ -25,7 +25,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -52,39 +51,39 @@ public class TestReadTimeout extends BookKeeperClusterTestCase {
     @SuppressWarnings("deprecation")
     @Test
     public void testReadTimeout() throws Exception {
-            final AtomicBoolean completed = new AtomicBoolean(false);
+        final AtomicBoolean completed = new AtomicBoolean(false);
 
-            LedgerHandle writelh = bkc.createLedger(3, 3, digestType, "testPasswd".getBytes());
-            String tmp = "Foobar";
+        LedgerHandle writelh = bkc.createLedger(3, 3, digestType, "testPasswd".getBytes());
+        String tmp = "Foobar";
 
-            final int numEntries = 10;
-            for (int i = 0; i < numEntries; i++) {
-                writelh.addEntry(tmp.getBytes());
-            }
+        final int numEntries = 10;
+        for (int i = 0; i < numEntries; i++) {
+            writelh.addEntry(tmp.getBytes());
+        }
 
-            Set<BookieSocketAddress> beforeSet = new HashSet<BookieSocketAddress>();
-            beforeSet.addAll(writelh.getLedgerMetadata().getEnsemble(numEntries));
+        Set<BookieSocketAddress> beforeSet = new HashSet<BookieSocketAddress>();
+        beforeSet.addAll(writelh.getLedgerMetadata().getEnsemble(numEntries));
 
-            final BookieSocketAddress bookieToSleep
-                = writelh.getLedgerMetadata().getEnsemble(numEntries).get(0);
-            int sleeptime = baseClientConf.getReadTimeout() * 3;
-            CountDownLatch latch = sleepBookie(bookieToSleep, sleeptime);
-            latch.await();
+        final BookieSocketAddress bookieToSleep
+            = writelh.getLedgerMetadata().getEnsemble(numEntries).get(0);
+        int sleeptime = baseClientConf.getReadTimeout() * 3;
+        CountDownLatch latch = sleepBookie(bookieToSleep, sleeptime);
+        latch.await();
 
-            writelh.asyncAddEntry(tmp.getBytes(),
-                new AddCallback() {
-                    public void addComplete(int rc, LedgerHandle lh,
-                                            long entryId, Object ctx) {
-                        completed.set(true);
-                    }
-                }, null);
-            Thread.sleep((baseClientConf.getReadTimeout() * 3) * 1000);
-            Assert.assertTrue("Write request did not finish", completed.get());
+        writelh.asyncAddEntry(tmp.getBytes(),
+            new AddCallback() {
+                public void addComplete(int rc, LedgerHandle lh,
+                                        long entryId, Object ctx) {
+                    completed.set(true);
+                }
+            }, null);
+        Thread.sleep((baseClientConf.getReadTimeout() * 3) * 1000);
+        Assert.assertTrue("Write request did not finish", completed.get());
 
-            Set<BookieSocketAddress> afterSet = new HashSet<BookieSocketAddress>();
-            afterSet.addAll(writelh.getLedgerMetadata().getEnsemble(numEntries + 1));
-            beforeSet.removeAll(afterSet);
-            Assert.assertTrue("Bookie set should not match", beforeSet.size() != 0);
+        Set<BookieSocketAddress> afterSet = new HashSet<BookieSocketAddress>();
+        afterSet.addAll(writelh.getLedgerMetadata().getEnsemble(numEntries + 1));
+        beforeSet.removeAll(afterSet);
+        Assert.assertTrue("Bookie set should not match", beforeSet.size() != 0);
 
     }
 }
