@@ -106,11 +106,11 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
         byte[] masterKey = addRequest.getMasterKey().toByteArray();
         ByteBuf entryToAdd = Unpooled.wrappedBuffer(addRequest.getBody().asReadOnlyByteBuffer());
         try {
+            LedgerType ledgerType = addRequest.hasLedgerType() ? addRequest.getLedgerType() : LedgerType.FORCE_ON_JOURNAL;
             if (addRequest.hasFlag() && addRequest.getFlag().equals(AddRequest.Flag.RECOVERY_ADD)) {
-                requestProcessor.bookie.recoveryAddEntry(entryToAdd, wcb, channel, masterKey);
+                requestProcessor.bookie.recoveryAddEntry(entryToAdd, ledgerType, wcb, channel, masterKey);
             } else {
-                LedgerType ledgerType = addRequest.hasLedgerType() ? addRequest.getLedgerType() : LedgerType.FORCE_ON_JOURNAL;
-                requestProcessor.bookie.addEntry(entryToAdd, wcb, channel, masterKey, ledgerType);
+                requestProcessor.bookie.addEntry(entryToAdd, ledgerType, wcb, channel, masterKey);
             }
             status = StatusCode.EOK;
         } catch (IOException e) {

@@ -18,14 +18,13 @@
 package org.apache.bookkeeper.conf;
 
 import static com.google.common.base.Charsets.UTF_8;
-import io.netty.buffer.ByteBuf;
 import static org.apache.bookkeeper.util.BookKeeperConstants.FEATURE_DISABLE_ENSEMBLE_CHANGE;
 
+import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -37,7 +36,7 @@ import org.apache.commons.lang.StringUtils;
 
 
 /**
- * Configuration settings for client side
+ * Configuration settings for client side.
  */
 public class ClientConfiguration extends AbstractConfiguration {
 

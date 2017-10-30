@@ -29,9 +29,12 @@ import java.util.List;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.RegistrationManager;
+import org.apache.bookkeeper.discover.ZKRegistrationManager;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,9 +83,11 @@ public class ExpandStorageService implements HttpEndpointService {
             }
 
             try {
-                Bookie.checkEnvironmentWithStorageExpansion(conf, zk,
+                RegistrationManager rm = new ZKRegistrationManager();
+                rm.initialize(conf, () -> { }, NullStatsLogger.INSTANCE);
+                Bookie.checkEnvironmentWithStorageExpansion(conf, rm,
                   Lists.newArrayList(journalDirectories), allLedgerDirs);
-            } catch (BookieException | IOException e) {
+            } catch (BookieException e) {
                 LOG.error("Exception occurred while updating cookie for storage expansion", e);
                 response.setCode(HttpServer.StatusCode.INTERNAL_ERROR);
                 response.setBody("Exception while updating cookie for storage expansion");

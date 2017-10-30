@@ -18,6 +18,8 @@
 package org.apache.bookkeeper.proto;
 
 import io.netty.channel.Channel;
+import io.netty.util.Recycler;
+import io.netty.util.Recycler.Handle;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -40,9 +42,16 @@ class WriteEntryProcessor extends PacketProcessorBase implements WriteCallback {
 
     long startTimeNanos;
 
-    public WriteEntryProcessor(Request request, Channel channel,
+    protected void reset() {
+        super.reset();
+        startTimeNanos = -1L;
+    }
+
+    public static WriteEntryProcessor create(Request request, Channel channel,
                                BookieRequestProcessor requestProcessor) {
-        super(request, channel, requestProcessor);
+        WriteEntryProcessor wep = RECYCLER.get();
+        wep.init(request, channel, requestProcessor);
+        return wep;
     }
 
     @Override
@@ -56,16 +65,18 @@ class WriteEntryProcessor extends PacketProcessorBase implements WriteCallback {
             sendResponse(BookieProtocol.EREADONLY,
                          ResponseBuilder.buildErrorResponse(BookieProtocol.EREADONLY, add),
                          requestProcessor.addRequestStats);
+            add.release();
             return;
         }
 
         startTimeNanos = MathUtils.nowInNano();
         int rc = BookieProtocol.EOK;
         try {
+            final LedgerType ledgerType = LedgerType.FORCE_ON_JOURNAL;
             if (add.isRecoveryAdd()) {
-                requestProcessor.bookie.recoveryAddEntry(add.getData(), this, channel, add.getMasterKey());
+                requestProcessor.bookie.recoveryAddEntry(add.getData(), ledgerType, this, channel, add.getMasterKey());
             } else {
-                requestProcessor.bookie.addEntry(add.getData(), this, channel, add.getMasterKey(), LedgerType.FORCE_ON_JOURNAL);
+                requestProcessor.bookie.addEntry(add.getData(), ledgerType, this, channel, add.getMasterKey());
             }
         } catch (IOException e) {
             LOG.error("Error writing " + add, e);
@@ -102,6 +113,7 @@ class WriteEntryProcessor extends PacketProcessorBase implements WriteCallback {
         sendResponse(rc,
                      ResponseBuilder.buildAddResponse(request),
                      requestProcessor.addRequestStats);
+        recycle();
     }
 
     @Override
@@ -109,4 +121,22 @@ class WriteEntryProcessor extends PacketProcessorBase implements WriteCallback {
         return String.format("WriteEntry(%d, %d)",
                              request.getLedgerId(), request.getEntryId());
     }
+    
+    private void recycle() {
+        reset();
+        recyclerHandle.recycle(this);
+    }
+
+    private final Recycler.Handle<WriteEntryProcessor> recyclerHandle;
+
+    private WriteEntryProcessor(Recycler.Handle<WriteEntryProcessor> recyclerHandle) {
+        this.recyclerHandle = recyclerHandle;
+    }
+
+    private static final Recycler<WriteEntryProcessor> RECYCLER = new Recycler<WriteEntryProcessor>() {
+        @Override
+        protected WriteEntryProcessor newObject(Recycler.Handle<WriteEntryProcessor> handle) {
+            return new WriteEntryProcessor(handle);
+        }
+    };
 }

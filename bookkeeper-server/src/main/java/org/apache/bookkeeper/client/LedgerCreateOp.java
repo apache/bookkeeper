@@ -285,7 +285,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
                 return false;
             }
 
-            if (bk.getConf().getUseV2WireProtocol() && builderLedgerType != LedgerType.FORCE_ON_JOURNAL) {
+            if (bk.getConf().getUseV2WireProtocol() && !builderLedgerType.equals(LedgerType.FORCE_ON_JOURNAL)) {
                 LOG.error("invalid builderLedgerType {} while using v2 wire protocol");
                 return false;
             }

@@ -38,9 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.util.concurrent.SettableFuture;
-
 import io.netty.buffer.ByteBuf;
-
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Set;
@@ -74,7 +72,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
         Bookie delayBookie = new Bookie(conf) {
                 @Override
-                public void recoveryAddEntry(ByteBuf entry, WriteCallback cb,
+                public void recoveryAddEntry(ByteBuf entry, LedgerType ledgerType, WriteCallback cb,
                                              Object ctx, byte[] masterKey)
                         throws IOException, BookieException {
                     try {
@@ -84,12 +82,12 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
                         // and an exception would spam the logs
                         Thread.currentThread().interrupt();
                     }
-                    super.recoveryAddEntry(entry, cb, ctx, masterKey);
+                    super.recoveryAddEntry(entry, ledgerType, cb, ctx, masterKey);
                 }
 
                 @Override
-                public void addEntry(ByteBuf entry, WriteCallback cb,
-                                     Object ctx, byte[] masterKey, LedgerType ledgerType)
+                public void addEntry(ByteBuf entry, LedgerType ledgerType, WriteCallback cb,
+                                     Object ctx, byte[] masterKey)
                         throws IOException, BookieException {
                     try {
                         Thread.sleep(5000);
@@ -98,7 +96,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
                         // and an exception would spam the logs
                         Thread.currentThread().interrupt();
                     }
-                    super.addEntry(entry, cb, ctx, masterKey, ledgerType);
+                    super.addEntry(entry, ledgerType, cb, ctx, masterKey);
                 }
 
                 @Override
@@ -519,7 +517,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
             try {
                 bkadmin.replicateLedgerFragment(lh3,
-                        checkercb.getResult(10, TimeUnit.SECONDS).iterator().next(), newBookie);
+                        checkercb.getResult(10, TimeUnit.SECONDS).iterator().next());
                 fail("Shouldn't be able to replicate with a closed client");
             } catch (BKException.BKClientClosedException cce) {
                 // correct behaviour

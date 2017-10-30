@@ -40,6 +40,10 @@ public abstract class BookieException extends Exception {
         super(reason);
     }
 
+    public BookieException(int code, String reason, Throwable t) {
+        super(reason, t);
+    }
+
     public static BookieException create(int code) {
         switch(code) {
         case Code.UnauthorizedAccessException:
@@ -52,6 +56,12 @@ public abstract class BookieException extends Exception {
             return new UpgradeException();
         case Code.DiskPartitionDuplicationException:
             return new DiskPartitionDuplicationException();
+        case Code.CookieNotFoundException:
+            return new CookieNotFoundException();
+        case Code.MetadataStoreException:
+            return new MetadataStoreException();
+        case Code.UnknownBookieIdException:
+            return new UnknownBookieIdException();
         default:
             return new BookieIllegalOpException();
         }
@@ -66,10 +76,12 @@ public abstract class BookieException extends Exception {
 
         int IllegalOpException = -100;
         int LedgerFencedException = -101;
-
         int InvalidCookieException = -102;
         int UpgradeException = -103;
         int DiskPartitionDuplicationException = -104;
+        int CookieNotFoundException = -105;
+        int MetadataStoreException = -106;
+        int UnknownBookieIdException = -107;
     }
 
     public void setCode(int code) {
@@ -100,6 +112,15 @@ public abstract class BookieException extends Exception {
             break;
         case Code.DiskPartitionDuplicationException:
             err = "Disk Partition Duplication is not allowed";
+            break;
+        case Code.CookieNotFoundException:
+            err = "Cookie not found";
+            break;
+        case Code.MetadataStoreException:
+            err = "Error performing metadata operations";
+            break;
+        case Code.UnknownBookieIdException:
+            err = "Unknown bookie id";
             break;
         default:
             err = "Invalid operation";
@@ -132,7 +153,15 @@ public abstract class BookieException extends Exception {
      */
     public static class BookieIllegalOpException extends BookieException {
         public BookieIllegalOpException() {
-            super(Code.UnauthorizedAccessException);
+            super(Code.IllegalOpException);
+        }
+
+        public BookieIllegalOpException(String reason) {
+            super(Code.IllegalOpException, reason);
+        }
+
+        public BookieIllegalOpException(Throwable cause) {
+            super(Code.IllegalOpException, cause);
         }
     }
 
@@ -161,6 +190,23 @@ public abstract class BookieException extends Exception {
 
         public InvalidCookieException(Throwable cause) {
             super(Code.InvalidCookieException, cause);
+        }
+    }
+
+    /**
+     * Signal that no cookie is found when starting a bookie.
+     */
+    public static class CookieNotFoundException extends BookieException {
+        public CookieNotFoundException() {
+            this("");
+        }
+
+        public CookieNotFoundException(String reason) {
+            super(Code.CookieNotFoundException, reason);
+        }
+
+        public CookieNotFoundException(Throwable cause) {
+            super(Code.CookieNotFoundException, cause);
         }
     }
 
@@ -195,6 +241,42 @@ public abstract class BookieException extends Exception {
 
         public DiskPartitionDuplicationException(String reason) {
             super(Code.DiskPartitionDuplicationException, reason);
+        }
+    }
+
+    /**
+     * Signal when bookie has problems on accessing metadata store.
+     */
+    public static class MetadataStoreException extends BookieException {
+
+        public MetadataStoreException() {
+            this("");
+        }
+
+        public MetadataStoreException(String reason) {
+            super(Code.MetadataStoreException, reason);
+        }
+
+        public MetadataStoreException(Throwable cause) {
+            super(Code.MetadataStoreException, cause);
+        }
+
+        public MetadataStoreException(String reason, Throwable cause) {
+            super(Code.MetadataStoreException, reason, cause);
+        }
+    }
+
+    /**
+     * Signal when bookie has problems on accessing metadata store.
+     */
+    public static class UnknownBookieIdException extends BookieException {
+
+        public UnknownBookieIdException() {
+            super(Code.UnknownBookieIdException);
+        }
+
+        public UnknownBookieIdException(Throwable cause) {
+            super(Code.UnknownBookieIdException, cause);
         }
     }
 }

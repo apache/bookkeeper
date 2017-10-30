@@ -196,7 +196,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
             throws Exception {
         Bookie sBookie = new Bookie(conf) {
             @Override
-            public void addEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey, LedgerType ledgerType)
+            public void addEntry(ByteBuf entry, LedgerType ledgerType, WriteCallback cb, Object ctx, byte[] masterKey)
                     throws IOException, BookieException {
                 try {
                     latch.await();
@@ -206,7 +206,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
             }
 
             @Override
-            public void recoveryAddEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey)
+            public void recoveryAddEntry(ByteBuf entry, LedgerType ledgerType, WriteCallback cb, Object ctx, byte[] masterKey)
                     throws IOException, BookieException {
                 throw new IOException("Dead bookie for recovery adds.");
             }
@@ -220,7 +220,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
     private void startDeadBookie(ServerConfiguration conf, final CountDownLatch latch) throws Exception {
         Bookie dBookie = new Bookie(conf) {
             @Override
-            public void addEntry(ByteBuf entry, WriteCallback cb, Object ctx, byte[] masterKey, LedgerType ledgerType)
+            public void addEntry(ByteBuf entry, LedgerType ledgerType, WriteCallback cb, Object ctx, byte[] masterKey)
                     throws IOException, BookieException {
                 try {
                     latch.await();

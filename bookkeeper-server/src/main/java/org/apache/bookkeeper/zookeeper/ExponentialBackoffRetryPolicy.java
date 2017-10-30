@@ -22,6 +22,9 @@ package org.apache.bookkeeper.zookeeper;
 
 import java.util.Random;
 
+/**
+ * A retry policy implementation that backoff retries exponentially.
+ */
 public class ExponentialBackoffRetryPolicy implements RetryPolicy {
 
     private final Random random;

@@ -27,11 +27,14 @@ import org.apache.bookkeeper.bookie.Cookie;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.JsonUtil;
+import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,7 +106,10 @@ public class RecoveryBookieService implements HttpEndpointService {
 
         if (HttpServer.Method.PUT == request.getMethod() &&
             !requestJsonBody.bookie_src.isEmpty()) {
-            ClientConfiguration adminConf = new ClientConfiguration(conf);
+
+            Class<? extends RegistrationManager> rmClass = conf.getRegistrationManagerClass();
+            RegistrationManager rm = ReflectionUtils.newInstance(rmClass);
+            rm.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
 
             String bookieSrcString[] = requestJsonBody.bookie_src.get(0).split(":");
             BookieSocketAddress bookieSrc = new BookieSocketAddress(
@@ -122,8 +128,8 @@ public class RecoveryBookieService implements HttpEndpointService {
                     LOG.info("Start recovering bookie.");
                     bka.recoverBookieData(bookieSrc, bookieDest);
                     if (deleteCookie) {
-                        Versioned<Cookie> cookie = Cookie.readFromZooKeeper(bka.getZooKeeper(), adminConf, bookieSrc);
-                        cookie.getValue().deleteFromZooKeeper(bka.getZooKeeper(), adminConf, bookieSrc, cookie.getVersion());
+                        Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, bookieSrc);
+                        cookie.getValue().deleteFromRegistrationManager(rm, bookieSrc, cookie.getVersion());
                     }
                     LOG.info("Complete recovering bookie");
                 } catch (Exception e) {

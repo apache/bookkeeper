@@ -123,7 +123,7 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
             result = logFenceResult = SettableFuture.create();
         }
         ByteBuf entry = createLedgerFenceEntry(ledgerId);
-        journal.logAddEntry(entry, LedgerType.FORCE_ON_JOURNAL, (rc, ledgerId, entryId, addr, ctx) -> {
+        journal.logAddEntry(entry, true, (rc, ledgerId, entryId, addr, ctx) -> {
             LOG.debug("Record fenced state for ledger {} in journal with rc {}", ledgerId, rc);
             if (rc == 0) {
                 fenceEntryPersisted.compareAndSet(false, true);

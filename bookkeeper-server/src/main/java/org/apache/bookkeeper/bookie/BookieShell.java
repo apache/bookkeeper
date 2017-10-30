@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
@@ -61,6 +62,8 @@ import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.client.UpdateLedgerOp;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.RegistrationManager;
+import org.apache.bookkeeper.discover.ZKRegistrationManager;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRange;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
@@ -69,6 +72,7 @@ import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.replication.AuditorElector;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.IOUtils;
@@ -88,7 +92,6 @@ import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.mutable.MutableBoolean;
-import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -261,18 +264,15 @@ public class BookieShell implements Tool {
             boolean result = Bookie.format(conf, interactive, force);
             // delete cookie
             if (cmdLine.hasOption("d")) {
-                ZooKeeperClient zkc =
-                        ZooKeeperClient.newBuilder()
-                                .connectString(conf.getZkServers())
-                                .sessionTimeoutMs(conf.getZkTimeout())
-                                .build();
+                RegistrationManager rm = new ZKRegistrationManager();
+                rm.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
                 try {
-                    Versioned<Cookie> cookie = Cookie.readFromZooKeeper(zkc, conf);
-                    cookie.getValue().deleteFromZooKeeper(zkc, conf, cookie.getVersion());
-                } catch (KeeperException.NoNodeException nne) {
+                    Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, conf);
+                    cookie.getValue().deleteFromRegistrationManager(rm, conf, cookie.getVersion());
+                } catch (CookieNotFoundException nne) {
                     LOG.warn("No cookie to remove : ", nne);
                 } finally {
-                    zkc.close();
+                    rm.close();
                 }
             }
             return (result) ? 0 : 1;
@@ -324,7 +324,7 @@ public class BookieShell implements Tool {
 
         private int bkRecovery(ClientConfiguration conf, BookKeeperAdmin bkAdmin,
                                String[] args, boolean deleteCookie)
-                throws InterruptedException, BKException, KeeperException, IOException {
+                throws InterruptedException, BKException, BookieException, IOException {
             final String bookieSrcString[] = args[0].split(":");
             if (bookieSrcString.length != 2) {
                 System.err.println("BookieSrc inputted has invalid format"
@@ -347,10 +347,14 @@ public class BookieShell implements Tool {
 
             bkAdmin.recoverBookieData(bookieSrc, bookieDest);
             if (deleteCookie) {
+                ServerConfiguration serverConf = new ServerConfiguration();
+                serverConf.addConfiguration(conf);
+                RegistrationManager rm = new ZKRegistrationManager();
                 try {
-                    Versioned<Cookie> cookie = Cookie.readFromZooKeeper(bkAdmin.getZooKeeper(), conf, bookieSrc);
-                    cookie.getValue().deleteFromZooKeeper(bkAdmin.getZooKeeper(), conf, bookieSrc, cookie.getVersion());
-                } catch (KeeperException.NoNodeException nne) {
+                    rm.initialize(serverConf, () -> {}, NullStatsLogger.INSTANCE);
+                    Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, bookieSrc);
+                    cookie.getValue().deleteFromRegistrationManager(rm, bookieSrc, cookie.getVersion());
+                } catch (CookieNotFoundException nne) {
                     LOG.warn("No cookie to remove for {} : ", bookieSrc, nne);
                 }
             }
@@ -1506,22 +1510,19 @@ public class BookieShell implements Tool {
             return updateBookieIdInCookie(bookieId, useHostName);
         }
 
-        private int updateBookieIdInCookie(final String bookieId, final boolean useHostname) throws IOException,
+        private int updateBookieIdInCookie(final String bookieId, final boolean useHostname) throws BookieException,
                 InterruptedException {
-            ZooKeeper zk = null;
+            RegistrationManager rm = new ZKRegistrationManager();
             try {
-                zk = ZooKeeperClient.newBuilder()
-                        .connectString(bkConf.getZkServers())
-                        .sessionTimeoutMs(bkConf.getZkTimeout())
-                        .build();
+                rm.initialize(bkConf, () -> {}, NullStatsLogger.INSTANCE);
                 ServerConfiguration conf = new ServerConfiguration(bkConf);
                 String newBookieId = Bookie.getBookieAddress(conf).toString();
                 // read oldcookie
                 Versioned<Cookie> oldCookie = null;
                 try {
                     conf.setUseHostNameAsBookieID(!useHostname);
-                    oldCookie = Cookie.readFromZooKeeper(zk, conf);
-                } catch (KeeperException.NoNodeException nne) {
+                    oldCookie = Cookie.readFromRegistrationManager(rm, conf);
+                } catch (CookieNotFoundException nne) {
                     LOG.error("Either cookie already updated with UseHostNameAsBookieID={} or no cookie exists!",
                             useHostname, nne);
                     return -1;
@@ -1540,12 +1541,12 @@ public class BookieShell implements Tool {
                 if (hasCookieUpdatedInDirs) {
                     try {
                         conf.setUseHostNameAsBookieID(useHostname);
-                        Cookie.readFromZooKeeper(zk, conf);
+                        Cookie.readFromRegistrationManager(rm, conf);
                         // since newcookie exists, just do cleanup of oldcookie and return
                         conf.setUseHostNameAsBookieID(!useHostname);
-                        oldCookie.getValue().deleteFromZooKeeper(zk, conf, oldCookie.getVersion());
+                        oldCookie.getValue().deleteFromRegistrationManager(rm, conf, oldCookie.getVersion());
                         return 0;
-                    } catch (KeeperException.NoNodeException nne) {
+                    } catch (CookieNotFoundException nne) {
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("Ignoring, cookie will be written to zookeeper");
                         }
@@ -1569,20 +1570,17 @@ public class BookieShell implements Tool {
                 }
                 // writes newcookie to zookeeper
                 conf.setUseHostNameAsBookieID(useHostname);
-                newCookie.writeToZooKeeper(zk, conf, Version.NEW);
+                newCookie.writeToRegistrationManager(rm, conf, Version.NEW);
 
                 // delete oldcookie
                 conf.setUseHostNameAsBookieID(!useHostname);
-                oldCookie.getValue().deleteFromZooKeeper(zk, conf, oldCookie.getVersion());
-            } catch (KeeperException ke) {
-                LOG.error("KeeperException during cookie updation!", ke);
-                return -1;
+                oldCookie.getValue().deleteFromRegistrationManager(rm, conf, oldCookie.getVersion());
             } catch (IOException ioe) {
                 LOG.error("IOException during cookie updation!", ioe);
                 return -1;
             } finally {
-                if (zk != null) {
-                    zk.close();
+                if (rm != null) {
+                    rm.close();
                 }
             }
             return 0;
@@ -1628,31 +1626,33 @@ public class BookieShell implements Tool {
         @Override
         int runCmd(CommandLine cmdLine) {
             ServerConfiguration conf = new ServerConfiguration(bkConf);
-            ZooKeeper zk;
+            RegistrationManager rm = new ZKRegistrationManager();
             try {
-                zk = ZooKeeperClient.newBuilder()
-                        .connectString(bkConf.getZkServers())
-                        .sessionTimeoutMs(bkConf.getZkTimeout()).build();
-            } catch (KeeperException | InterruptedException | IOException e) {
-                LOG.error("Exception while establishing zookeeper connection.", e);
-                return -1;
-            }
+                try {
+                    rm.initialize(bkConf, () -> {}, NullStatsLogger.INSTANCE);
+                } catch (BookieException e) {
+                    LOG.error("Exception while establishing zookeeper connection.", e);
+                    return -1;
+                }
 
-            List<File> allLedgerDirs = Lists.newArrayList();
-            allLedgerDirs.addAll(Arrays.asList(ledgerDirectories));
-            if (indexDirectories != ledgerDirectories) {
-                allLedgerDirs.addAll(Arrays.asList(indexDirectories));
-            }
+                List<File> allLedgerDirs = Lists.newArrayList();
+                allLedgerDirs.addAll(Arrays.asList(ledgerDirectories));
+                if (indexDirectories != ledgerDirectories) {
+                    allLedgerDirs.addAll(Arrays.asList(indexDirectories));
+                }
 
-            try {
-                Bookie.checkEnvironmentWithStorageExpansion(conf, zk,
+                try {
+                    Bookie.checkEnvironmentWithStorageExpansion(conf, rm,
                         Lists.newArrayList(journalDirectories), allLedgerDirs);
-            } catch (BookieException | IOException e) {
-                LOG.error(
+                } catch (BookieException e) {
+                    LOG.error(
                         "Exception while updating cookie for storage expansion", e);
-                return -1;
+                    return -1;
+                }
+                return 0;
+            } finally {
+                rm.close();
             }
-            return 0;
         }
     }
 

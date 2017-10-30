@@ -25,7 +25,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -45,6 +44,7 @@ import static org.apache.bookkeeper.bookie.Bookie.METAENTRY_ID_FORCE_KEY;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ForceCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.proto.DataFormats.LedgerType;
@@ -285,26 +285,24 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         final WriteCallback cb;
         final Object ctx;
         final long enqueueTime;
-        final LedgerType ledgerType;
-        long lastAddSynced = -1;
+        final boolean requiresForce;
 
-        QueueEntry(ByteBuf entry, long ledgerId, long entryId, WriteCallback cb, Object ctx, long enqueueTime,
-                   LedgerType ledgerType) {
-            this.entry = entry != null ? entry.duplicate() : null;
+        QueueEntry(ByteBuf entry, boolean requiresForce, long ledgerId, long entryId, WriteCallback cb, Object ctx, long enqueueTime) {
+            this.entry = entry.duplicate();
             this.cb = cb;
             this.ctx = ctx;
             this.ledgerId = ledgerId;
             this.entryId = entryId;
             this.enqueueTime = enqueueTime;
-            this.ledgerType = ledgerType;
+            this.requiresForce = requiresForce;
         }
 
         boolean isExecuteCallbackAfterForce() {
-            return ledgerType == LedgerType.FORCE_ON_JOURNAL;
+            return requiresForce;
         }
 
         boolean isExecuteCallbackAfterWrite() {
-            return ledgerType == LedgerType.FORCE_DEFERRED_ON_JOURNAL;
+            return !requiresForce;
         }
 
         boolean isForceLedgerMetaEntry() {
@@ -314,10 +312,10 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         @Override
         public void run() {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Acknowledge Ledger: {}, Entry: {}, lastAddSynced {}", ledgerId, entryId, lastAddSynced);
+                LOG.debug("Acknowledge Ledger: {}, Entry: {}, lastAddSynced {}", ledgerId, entryId, BookieProtocol.INVALID_ENTRY_ID);
             }
             if (entryId == Bookie.METAENTRY_ID_FORCE_KEY) {
-                cb.writeComplete(0, ledgerId, lastAddSynced, null, ctx);
+                cb.writeComplete(0, ledgerId, BookieProtocol.INVALID_ENTRY_ID, null, ctx);
             } else {
                 journalAddEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueTime), TimeUnit.NANOSECONDS);
                 cb.writeComplete(0, ledgerId, entryId, null, ctx);
@@ -370,7 +368,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     }
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("entry "+e.ledgerId+", "+e.entryId+
-                                  " written to journal, e.lastAddSyncedEntry:"+e.lastAddSynced);
+                                  " written to journal");
                     }
                     if (e.isExecuteCallbackAfterForce()) {
                        cbThreadPool.execute(e);
@@ -812,14 +810,14 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     /**
      * record an add entry operation in journal.
      */
-    public void logAddEntry(ByteBuf entry, LedgerType ledgerType, WriteCallback cb, Object ctx) {
+    public void logAddEntry(ByteBuf entry, boolean requiresForce, WriteCallback cb, Object ctx) {
         long ledgerId = entry.getLong(entry.readerIndex() + 0);
         long entryId = entry.getLong(entry.readerIndex() + 8);
         journalQueueSize.inc();
 
         //Retain entry until it gets written to journal
         entry.retain();
-        queue.add(new QueueEntry(entry, ledgerId, entryId, cb, ctx, MathUtils.nowInNano(), ledgerType));
+        queue.add(new QueueEntry(entry, requiresForce, ledgerId, entryId, cb, ctx, MathUtils.nowInNano()));
     }
 
     public void forceLedger(long ledgerId, ForceCallback cb, Object ctx) {
