@@ -32,7 +32,6 @@ import org.apache.bookkeeper.client.api.ReadHandle;
 import org.apache.bookkeeper.client.api.WriteHandle;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;

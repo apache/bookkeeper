@@ -463,7 +463,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
                         cb.writeComplete(rc, ledgerId, entryId, addr, ctx);
                     }
                 }
-            }, ctx, masterKey, ledgerType);
+            }, ctx, masterKey);
         }
 
         @Override

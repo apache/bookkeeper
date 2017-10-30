@@ -288,7 +288,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         final boolean requiresForce;
 
         QueueEntry(ByteBuf entry, boolean requiresForce, long ledgerId, long entryId, WriteCallback cb, Object ctx, long enqueueTime) {
-            this.entry = entry.duplicate();
+            this.entry = entry != null ? entry.duplicate() : null;
             this.cb = cb;
             this.ctx = ctx;
             this.ledgerId = ledgerId;
@@ -361,11 +361,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 lastLogMark.setCurLogMark(this.logId, this.lastFlushedPosition);
                 // Notify the waiters that the force write succeeded
                 for (QueueEntry e : this.forceWriteWaiters) {
-                    if (e.isForceLedgerMetaEntry()) {
-                        e.lastAddSynced = getSyncCursorForLedger(e.ledgerId).getCurrentMinAddSynced();
-                    } else if (e.ledgerId >= 0 && e.entryId >= 0) {
-                        handleLastAddSynced(e);
-                    }
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("entry "+e.ledgerId+", "+e.entryId+
                                   " written to journal");
@@ -395,25 +390,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 }
             }
         }
-    }
-
-    private void handleLastAddSynced(QueueEntry e) {
-        updateLastAddSynced(e.ledgerId, e.entryId);
-        if (LOG.isDebugEnabled()) {
-            // this code has side effects, it creates SyncCursor if it does not exist
-            Long actualLastAddSynced = getSyncCursorForLedger(e.ledgerId).getCurrentMinAddSynced();
-            if (e.isForceLedgerMetaEntry()) {
-                LOG.debug("sync - lastAddSynced for {} is {}", e.ledgerId, actualLastAddSynced);
-            } else {
-                LOG.debug("lastAddSynced for {} now is {}", e.ledgerId, actualLastAddSynced);
-            }
-        }
-    }
-
-    void updateLastAddSynced(long ledgerId, long entryId) {
-        LOG.info("updateLastAddSynced {}@{}", entryId, ledgerId);
-        Preconditions.checkArgument(entryId != Bookie.METAENTRY_ID_FORCE_KEY, "entry Id must not be METAENTRY_ID_FORCE_KEY");
-        getSyncCursorForLedger(ledgerId).update(entryId);
     }
 
     /**
@@ -564,7 +540,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     // journal entry queue to commit
     final LinkedBlockingQueue<QueueEntry> queue = new LinkedBlockingQueue<QueueEntry>();
     final LinkedBlockingQueue<ForceWriteRequest> forceWriteRequests = new LinkedBlockingQueue<ForceWriteRequest>();
-    final ConcurrentHashMap<Long, SyncCursor> lastAddSynched = new ConcurrentHashMap<>();
 
     volatile boolean running = true;
     private final LedgerDirsManager ledgerDirsManager;
@@ -826,8 +801,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             // here the 'entryId' is the lastAddSynced for the ledger
             cb.forceComplete(rc, ledgerId1, lastAddSynced, addr, ctx1);
         };
-        queue.add(new QueueEntry(null, ledgerId, Bookie.METAENTRY_ID_FORCE_KEY, adapter, ctx, MathUtils.nowInNano(),
-            LedgerType.FORCE_ON_JOURNAL));
+        queue.add(new QueueEntry(null, true, ledgerId, Bookie.METAENTRY_ID_FORCE_KEY, adapter, ctx, MathUtils.nowInNano()));
 }
 
     /**
@@ -1042,12 +1016,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             IOUtils.close(LOG, logFile);
         }
         LOG.info("Journal exited loop!");
-    }
-
-    @VisibleForTesting
-    SyncCursor getSyncCursorForLedger(long ledgerId) {
-        return lastAddSynched
-            .computeIfAbsent(ledgerId, s-> new SyncCursor());
     }
 
     /**
