@@ -60,6 +60,8 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.HashedWheelTimer;
+import io.netty.util.Recycler;
+import io.netty.util.Recycler.Handle;
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
 
@@ -253,26 +255,19 @@ public class BookieClient implements PerChannelBookieClientFactory {
                 return;
             }
 
-            // Retain the buffer, since the connection could be obtained after the PendingApp might have already
-            // failed
+            // Retain the buffer, since the connection could be obtained after
+            // the PendingApp might have already failed
             toSend.retain();
 
-            client.obtain(new GenericCallback<PerChannelBookieClient>() {
-                @Override
-                public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
-                    if (rc != BKException.Code.OK) {
-                        completeAdd(rc, ledgerId, entryId, addr, cb, ctx);
-                    } else {
-                        pcbc.addEntry(ledgerId, masterKey, entryId, toSend, cb, ctx, options);
-                    }
-                    toSend.release();
-                }
-            }, ledgerId);
+            client.obtain(ChannelReadyForAddEntryCallback.create(
+                                  this, toSend, ledgerId, entryId, addr,
+                                  ctx, cb, options, masterKey),
+                          ledgerId);
         } finally {
             closeLock.readLock().unlock();
         }
     }
-    
+
     private void completeRead(final int rc,
                               final long ledgerId,
                               final long entryId,
@@ -289,6 +284,69 @@ public class BookieClient implements PerChannelBookieClientFactory {
         } catch (RejectedExecutionException ree) {
             cb.readEntryComplete(getRc(BKException.Code.InterruptedException),
                                  ledgerId, entryId, entry, ctx);
+        }
+    }
+
+    private static class ChannelReadyForAddEntryCallback
+        implements GenericCallback<PerChannelBookieClient> {
+        private final Handle<ChannelReadyForAddEntryCallback> recyclerHandle;
+
+        private BookieClient bookieClient;
+        private ByteBuf toSend;
+        private long ledgerId;
+        private long entryId;
+        private BookieSocketAddress addr;
+        private Object ctx;
+        private WriteCallback cb;
+        private int options;
+        private byte[] masterKey;
+
+        static ChannelReadyForAddEntryCallback create(
+                BookieClient bookieClient, ByteBuf toSend, long ledgerId,
+                long entryId, BookieSocketAddress addr, Object ctx,
+                WriteCallback cb, int options, byte[] masterKey) {
+            ChannelReadyForAddEntryCallback callback = RECYCLER.get();
+            callback.bookieClient = bookieClient;
+            callback.toSend = toSend;
+            callback.ledgerId = ledgerId;
+            callback.entryId = entryId;
+            callback.addr = addr;
+            callback.ctx = ctx;
+            callback.cb = cb;
+            callback.options = options;
+            callback.masterKey = masterKey;
+            return callback;
+        }
+
+        @Override
+        public void operationComplete(final int rc,
+                                      PerChannelBookieClient pcbc) {
+            if (rc != BKException.Code.OK) {
+                bookieClient.completeAdd(rc, ledgerId, entryId, addr, cb, ctx);
+            } else {
+                pcbc.addEntry(ledgerId, masterKey, entryId,
+                              toSend, cb, ctx, options);
+            }
+
+            toSend.release();
+            recycle();
+        }
+
+        private ChannelReadyForAddEntryCallback(
+                Handle<ChannelReadyForAddEntryCallback> recyclerHandle) {
+            this.recyclerHandle = recyclerHandle;
+        }
+
+        private static final Recycler<ChannelReadyForAddEntryCallback> RECYCLER
+            = new Recycler<ChannelReadyForAddEntryCallback>() {
+                    protected ChannelReadyForAddEntryCallback newObject(
+                            Recycler.Handle<ChannelReadyForAddEntryCallback> recyclerHandle) {
+                        return new ChannelReadyForAddEntryCallback(recyclerHandle);
+                    }
+                };
+
+        public void recycle() {
+            recyclerHandle.recycle(this);
         }
     }
 
