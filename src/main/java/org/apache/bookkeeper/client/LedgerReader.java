@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.bookkeeper.client.DistributionSchedule.WriteSet;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -86,7 +87,7 @@ public class LedgerReader {
 
     public void readEntriesFromAllBookies(final LedgerHandle lh, long eid,
                                           final GenericCallback<Set<ReadResult<ByteBuf>>> callback) {
-        List<Integer> writeSet = lh.distributionSchedule.getWriteSet(eid);
+        WriteSet writeSet = lh.distributionSchedule.getWriteSet(eid);
         final AtomicInteger numBookies = new AtomicInteger(writeSet.size());
         final Set<ReadResult<ByteBuf>> readResults = new HashSet<>();
         ReadEntryCallback readEntryCallback = new ReadEntryCallback() {
@@ -118,7 +119,8 @@ public class LedgerReader {
         };
 
         ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsemble(eid);
-        for (Integer idx : writeSet) {
+        for (int i = 0; i < writeSet.size(); i++) {
+            int idx = writeSet.get(i);
             bookieClient.readEntry(ensemble.get(idx), lh.getId(), eid, readEntryCallback, ensemble.get(idx));
         }
     }
@@ -181,7 +183,7 @@ public class LedgerReader {
 
     public void readLacs(final LedgerHandle lh, long eid,
                          final GenericCallback<Set<ReadResult<Long>>> callback) {
-        List<Integer> writeSet = lh.distributionSchedule.getWriteSet(eid);
+        WriteSet writeSet = lh.distributionSchedule.getWriteSet(eid);
         final AtomicInteger numBookies = new AtomicInteger(writeSet.size());
         final Set<ReadResult<Long>> readResults = new HashSet<ReadResult<Long>>();
         ReadEntryCallback readEntryCallback = (rc, lid, eid1, buffer, ctx) -> {
@@ -204,7 +206,8 @@ public class LedgerReader {
         };
 
         ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsemble(eid);
-        for (Integer idx : writeSet) {
+        for (int i = 0; i < writeSet.size(); i++) {
+            int idx = writeSet.get(i);
             bookieClient.readEntry(ensemble.get(idx), lh.getId(), eid, readEntryCallback, ensemble.get(idx));
         }
     }
