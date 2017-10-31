@@ -874,7 +874,6 @@ public class LedgerHandle implements WriteHandle {
             throttler.acquire();
         }
 
-        final long entryId;
         boolean wasClosed = false;
         synchronized(this) {
             // synchronized on this to ensure that
@@ -882,11 +881,11 @@ public class LedgerHandle implements WriteHandle {
             // updating lastAddPushed
             if (metadata.isClosed()) {
                 wasClosed = true;
-                entryId = -1;
             } else {
-                entryId = ++lastAddPushed;
+                long entryId = ++lastAddPushed;
                 long currentLedgerLength = addToLength(op.payload.readableBytes());
-                op.setEntryIdAndLedgerLength(entryId, currentLedgerLength);
+                op.setEntryId(entryId);
+                op.setLedgerLength(currentLedgerLength);
                 pendingAddOps.add(op);
             }
         }

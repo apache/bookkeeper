@@ -111,8 +111,11 @@ class PendingAddOp extends SafeRunnable implements WriteCallback, TimerTask {
         return this;
     }
 
-    void setEntryIdAndLedgerLength(long entryId, long ledgerLength) {
+    void setEntryId(long entryId) {
         this.entryId = entryId;
+    }
+
+    void setLedgerLength(long ledgerLength) {
         this.currentLedgerLength = ledgerLength;
     }
 

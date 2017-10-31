@@ -154,7 +154,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
     private void asyncAddEntry(final long entryId, ByteBuf data,
             final AddCallback cb, final Object ctx) {
         PendingAddOp op = PendingAddOp.create(this, data, cb, ctx);
-        op.setEntryIdAndLedgerLength(entryId, length);
+        op.setEntryId(entryId);
 
         if ((entryId <= this.lastAddConfirmed) || pendingAddOps.contains(op)) {
             LOG.error("Trying to re-add duplicate entryid:{}", entryId);
@@ -188,7 +188,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
                 currentLength = addToLength(op.payload.readableBytes());
                 pendingAddOps.add(op);
             }
-            op.setEntryIdAndLedgerLength(op.entryId, currentLength);
+            op.setLedgerLength(currentLength);
         }
 
         if (wasClosed) {
