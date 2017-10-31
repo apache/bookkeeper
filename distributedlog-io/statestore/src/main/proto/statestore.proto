@@ -56,6 +56,8 @@ message ChangeEventMeta {
 
 }
 
+message NopRequest {}
+
 message PutRequest {
     // key is the key, in bytes, to put into the key-value store.
     bytes key = 1;
@@ -138,10 +140,11 @@ message TxnRequest {
     repeated RequestOp failure = 3;
 }
 
-message Request {
+message Command {
     oneof req {
-        PutRequest put_req = 1;
-        DeleteRequest delete_req = 2;
-        TxnRequest txn_req = 3;
+        NopRequest nop_req = 1;
+        PutRequest put_req = 2;
+        DeleteRequest delete_req = 3;
+        TxnRequest txn_req = 4;
     }
 }

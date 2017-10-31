@@ -19,10 +19,16 @@
 package org.apache.distributedlog.statestore.impl.mvcc;
 
 import com.google.common.collect.Lists;
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.UnsafeByteOperations;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufOutputStream;
+import io.netty.buffer.PooledByteBufAllocator;
+import java.io.IOException;
 import java.util.List;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.distributedlog.statestore.api.mvcc.op.CompareOp;
 import org.apache.distributedlog.statestore.api.mvcc.op.CompareResult;
 import org.apache.distributedlog.statestore.api.mvcc.op.CompareTarget;
@@ -30,8 +36,11 @@ import org.apache.distributedlog.statestore.api.mvcc.op.DeleteOp;
 import org.apache.distributedlog.statestore.api.mvcc.op.Op;
 import org.apache.distributedlog.statestore.api.mvcc.op.PutOp;
 import org.apache.distributedlog.statestore.api.mvcc.op.TxnOp;
+import org.apache.distributedlog.statestore.exceptions.StateStoreRuntimeException;
+import org.apache.distributedlog.statestore.proto.Command;
 import org.apache.distributedlog.statestore.proto.Compare;
 import org.apache.distributedlog.statestore.proto.DeleteRequest;
+import org.apache.distributedlog.statestore.proto.NopRequest;
 import org.apache.distributedlog.statestore.proto.PutRequest;
 import org.apache.distributedlog.statestore.proto.RequestOp;
 import org.apache.distributedlog.statestore.proto.TxnRequest;
@@ -39,8 +48,13 @@ import org.apache.distributedlog.statestore.proto.TxnRequest;
 /**
  * Utils for mvcc stores.
  */
+@Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 final class MVCCUtils {
+
+    static Command NOP_CMD = Command.newBuilder()
+        .setNopReq(NopRequest.newBuilder().build())
+        .build();
 
     static PutRequest toPutRequest(PutOp<byte[], byte[]> op) {
         return PutRequest.newBuilder()
@@ -152,6 +166,43 @@ final class MVCCUtils {
             .addAllFailure(toRequestOpList(op.failureOps()))
             .addAllCompare(toCompareList(op.compareOps()))
             .build();
+    }
+
+    static Command toCommand(Op<byte[], byte[]> op) {
+        Command.Builder cmdBuilder = Command.newBuilder();
+        switch (op.type()) {
+            case PUT:
+                cmdBuilder.setPutReq(toPutRequest((PutOp<byte[], byte[]>) op));
+                break;
+            case DELETE:
+                cmdBuilder.setDeleteReq(toDeleteRequest((DeleteOp<byte[], byte[]>) op));
+                break;
+            case TXN:
+                cmdBuilder.setTxnReq(toTxnRequest((TxnOp<byte[], byte[]>) op));
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown command type " + op.type());
+        }
+        return cmdBuilder.build();
+    }
+
+    static ByteBuf newLogRecordBuf(Command command) {
+        ByteBuf buf = PooledByteBufAllocator.DEFAULT.buffer(command.getSerializedSize());
+        try {
+            command.writeTo(new ByteBufOutputStream(buf));
+        } catch (IOException e) {
+            throw new StateStoreRuntimeException("Invalid command : " + command, e);
+        }
+        return buf;
+    }
+
+    static Command newCommand(ByteBuf recordBuf) {
+        try {
+            return Command.parseFrom(recordBuf.nioBuffer());
+        } catch (InvalidProtocolBufferException e) {
+            log.error("Found a corrupted record on replaying log stream", e);
+            throw new StateStoreRuntimeException("Found a corrupted record on replaying log stream", e);
+        }
     }
 
 }

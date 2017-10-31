@@ -346,13 +346,17 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
     }
 
     @Override
-    public synchronized PutResult<K, V> put(PutOp<K, V> op) {
+    public PutResult<K, V> put(PutOp<K, V> op) {
+        return put(op.revision(), op);
+    }
+
+    synchronized PutResult<K, V> put(long revision, PutOp<K, V> op) {
         checkStoreOpen();
 
         WriteBatch batch = new WriteBatch();
         PutResult<K, V> result = null;
         try {
-            result = put(batch, op);
+            result = put(revision, batch, op);
             executeBatch(batch);
             return result;
         } catch (StateStoreRuntimeException e) {
@@ -365,11 +369,10 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
         }
     }
 
-    private PutResult<K, V> put(WriteBatch batch, PutOp<K, V> op) {
+    private PutResult<K, V> put(long revision, WriteBatch batch, PutOp<K, V> op) {
         // parameters
         final K key = op.key();
         final V val = op.value();
-        final long revision = op.revision();
 
         // raw key & value
         final byte[] rawKey = keyCoder.encode(key);
@@ -435,12 +438,20 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
 
     @Override
     public DeleteResult<K, V> delete(DeleteOp<K, V> op) {
-        return null;
+        return delete(op.revision(), op);
+    }
+
+    synchronized DeleteResult<K, V> delete(long revision, DeleteOp<K, V> op) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public TxnResult<K, V> txn(TxnOp<K, V> op) {
-        return null;
+        return txn(op.revision(), op);
+    }
+
+    synchronized TxnResult<K, V> txn(long revision, TxnOp<K, V> op) {
+        throw new UnsupportedOperationException();
     }
 
     //

@@ -16,31 +16,16 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.statestore.api.mvcc;
-
-import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
-import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
-import org.apache.distributedlog.statestore.api.AsyncStateStore;
-import org.apache.distributedlog.statestore.api.mvcc.op.OpFactory;
+package org.apache.distributedlog.statestore.exceptions;
 
 /**
- * A mvcc store that supports asynchronous operations.
- *
- * @param <K> key type
- * @param <V> value type
+ * Exceptions are thrown when a state store is closed.
  */
-@Public
-@Evolving
-public interface MVCCAsyncStore<K, V>
-    extends AsyncStateStore,
-            MVCCAsyncStoreWriteView<K, V>,
-            MVCCAsyncStoreReadView<K, V> {
+public class StateStoreClosedException extends StateStoreException {
 
-    /**
-     * Return the operator factory to build operators.
-     *
-     * @return operator factory.
-     */
-    OpFactory<K, V> getOpFactory();
+    private static final long serialVersionUID = 1L;
 
+    public StateStoreClosedException(String storeName) {
+        super("State store " + storeName + " is already closed");
+    }
 }

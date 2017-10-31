@@ -67,11 +67,18 @@ public interface StateStoreSpec {
     Optional<String> stream();
 
     /**
-     * Returns the i/o scheduler used by the state store.
+     * Returns the i/o scheduler used for write operations at the state store.
      *
      * @return the i/o scheduler
      */
-    Optional<ScheduledExecutorService> ioScheduler();
+    Optional<ScheduledExecutorService> writeIOScheduler();
+
+    /**
+     * Returns the i/o scheduler used for read operations at the state store.
+     *
+     * @return the i/o scheduler
+     */
+    Optional<ScheduledExecutorService> readIOScheduler();
 
     /**
      * Returns all the store specific config properties as key/value pairs.
