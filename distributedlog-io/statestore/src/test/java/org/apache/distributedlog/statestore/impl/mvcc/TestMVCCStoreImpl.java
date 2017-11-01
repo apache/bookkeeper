@@ -388,6 +388,7 @@ public class TestMVCCStoreImpl {
             .build();
         TxnResult<String, String> result = store.txn(txnOp);
         assertEquals(Code.OK, result.code());
+        assertEquals(100L, result.revision());
         assertEquals(1, result.results().size());
         assertTrue(result.isSuccess());
         Result<String, String> subResult = result.results().get(0);
@@ -431,6 +432,7 @@ public class TestMVCCStoreImpl {
             .build();
         TxnResult<String, String> result = store.txn(txnOp);
         assertEquals(Code.OK, result.code());
+        assertEquals(100L, result.revision());
         assertEquals(1, result.results().size());
         assertFalse(result.isSuccess());
         Result<String, String> subResult = result.results().get(0);

@@ -443,7 +443,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
         }
 
         // result
-        final PutResultImpl<K, V> result = resultFactory.newPutResult();
+        final PutResultImpl<K, V> result = resultFactory.newPutResult(revision);
         MVCCRecord oldRecord = null;
         try {
             if (null != record) {
@@ -530,7 +530,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
         final byte[] rawEndKey = (null != endKey) ? keyCoder.encode(endKey) : (op.isRangeOp() ? NULL_END_KEY : null);
 
         // result
-        final DeleteResultImpl<K, V> result = resultFactory.newDeleteResult();
+        final DeleteResultImpl<K, V> result = resultFactory.newDeleteResult(revision);
         final List<byte[]> keys = Lists.newArrayList();
         final List<MVCCRecord> records = Lists.newArrayList();
         try {
@@ -647,7 +647,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
             executeBatch(batch);
 
             // 4. repare the result
-            TxnResultImpl<K, V> txnResult = resultFactory.newTxnResult();
+            TxnResultImpl<K, V> txnResult = resultFactory.newTxnResult(revision);
             txnResult.setSuccess(success);
             txnResult.setResults(results);
             txnResult.setCode(Code.OK);
@@ -825,7 +825,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
         final RangeOpImpl<K, V> rangeOpImpl = (RangeOpImpl<K, V>) rangeOp;
 
         // result
-        final RangeResultImpl<K, V> result = resultFactory.newRangeResult();
+        final RangeResultImpl<K, V> result = resultFactory.newRangeResult(rangeOp.revision());
 
         // raw key
         byte[] rawKey = (null != key) ? keyCoder.encode(key) : NULL_START_KEY;

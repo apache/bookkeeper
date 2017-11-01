@@ -57,20 +57,28 @@ public class ResultFactory<K, V> {
         };
     }
 
-    public PutResultImpl<K, V> newPutResult() {
-        return this.putResultRecycler.get();
+    public PutResultImpl<K, V> newPutResult(long revision) {
+        PutResultImpl<K, V> result = this.putResultRecycler.get();
+        result.setRevision(revision);
+        return result;
     }
 
-    public DeleteResultImpl<K, V> newDeleteResult() {
-        return this.deleteResultRecycler.get();
+    public DeleteResultImpl<K, V> newDeleteResult(long revision) {
+        DeleteResultImpl<K, V> result = this.deleteResultRecycler.get();
+        result.setRevision(revision);
+        return result;
     }
 
-    public RangeResultImpl<K, V> newRangeResult() {
-        return this.rangeResultRecycler.get();
+    public RangeResultImpl<K, V> newRangeResult(long revision) {
+        RangeResultImpl<K, V> result = this.rangeResultRecycler.get();
+        result.setRevision(revision);
+        return result;
     }
 
-    public TxnResultImpl<K, V> newTxnResult() {
-        return this.txnResultRecycler.get();
+    public TxnResultImpl<K, V> newTxnResult(long revision) {
+        TxnResultImpl<K, V> result = this.txnResultRecycler.get();
+        result.setRevision(revision);
+        return result;
     }
 
 }
