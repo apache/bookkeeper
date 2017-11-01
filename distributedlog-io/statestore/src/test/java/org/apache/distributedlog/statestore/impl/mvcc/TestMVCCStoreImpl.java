@@ -19,11 +19,14 @@
 package org.apache.distributedlog.statestore.impl.mvcc;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.google.common.io.Files;
 import java.io.File;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.distributedlog.common.coder.StringUtf8Coder;
@@ -31,9 +34,16 @@ import org.apache.distributedlog.statestore.api.KV;
 import org.apache.distributedlog.statestore.api.KVIterator;
 import org.apache.distributedlog.statestore.api.StateStoreSpec;
 import org.apache.distributedlog.statestore.api.mvcc.KVRecord;
+import org.apache.distributedlog.statestore.api.mvcc.op.CompareResult;
+import org.apache.distributedlog.statestore.api.mvcc.op.OpType;
 import org.apache.distributedlog.statestore.api.mvcc.op.RangeOp;
+import org.apache.distributedlog.statestore.api.mvcc.op.TxnOp;
 import org.apache.distributedlog.statestore.api.mvcc.result.Code;
+import org.apache.distributedlog.statestore.api.mvcc.result.DeleteResult;
+import org.apache.distributedlog.statestore.api.mvcc.result.PutResult;
 import org.apache.distributedlog.statestore.api.mvcc.result.RangeResult;
+import org.apache.distributedlog.statestore.api.mvcc.result.Result;
+import org.apache.distributedlog.statestore.api.mvcc.result.TxnResult;
 import org.apache.distributedlog.statestore.exceptions.MVCCStoreException;
 import org.junit.After;
 import org.junit.Before;
@@ -287,6 +297,94 @@ public class TestMVCCStoreImpl {
         }
         assertEquals(100, idx);
         iter.close();
+    }
+
+    @Test
+    public void testTxnCompareSuccess() throws Exception {
+        store.init(spec);
+        // write 10 kvs at revision 99L
+        writeKVs(20, 99L);
+        TxnOp<String, String> txnOp = store.getOpFactory().buildTxnOp()
+            .revision(100L)
+            .key("") // ignored
+            .addCompareOps(
+                store.getOpFactory().compareCreateRevision(
+                    CompareResult.EQUAL,
+                    getKey(10),
+                    99L))
+            .addSuccessOps(
+                store.getOpFactory().buildPutOp()
+                    .key(getKey(11))
+                    .value("test-value")
+                    .prevKV(true)
+                    .build())
+            .addFailureOps(
+                store.getOpFactory().buildDeleteOp()
+                    .key(getKey(11))
+                    .build())
+            .build();
+        TxnResult<String, String> result = store.txn(txnOp );
+        assertEquals(Code.OK, result.code());
+        assertEquals(1, result.results().size());
+        assertTrue(result.isSuccess());
+        Result<String, String> subResult = result.results().get(0);
+        assertEquals(OpType.PUT, subResult.type());
+        PutResult<String, String> putResult = (PutResult<String, String>) subResult;
+        KVRecord<String, String> prevResult = putResult.prevKV();
+        assertEquals(getKey(11), prevResult.key());
+        assertEquals(getValue(11), prevResult.value());
+        assertEquals(99L, prevResult.createRevision());
+        assertEquals(99L, prevResult.modifiedRevision());
+        assertEquals(0L, prevResult.version());
+        result.recycle();
+
+        assertEquals("test-value", store.get(getKey(11)));
+    }
+
+
+    @Test
+    public void testTxnCompareFailure() throws Exception {
+        store.init(spec);
+        // write 10 kvs at revision 99L
+        writeKVs(20, 99L);
+        TxnOp<String, String> txnOp = store.getOpFactory().buildTxnOp()
+            .revision(100L)
+            .key("") // ignored
+            .addCompareOps(
+                store.getOpFactory().compareCreateRevision(
+                    CompareResult.NOT_EQUAL,
+                    getKey(10),
+                    99L))
+            .addSuccessOps(
+                store.getOpFactory().buildPutOp()
+                    .key(getKey(11))
+                    .value("test-value")
+                    .prevKV(true)
+                    .build())
+            .addFailureOps(
+                store.getOpFactory().buildDeleteOp()
+                    .key(getKey(11))
+                    .prevKV(true)
+                    .build())
+            .build();
+        TxnResult<String, String> result = store.txn(txnOp );
+        assertEquals(Code.OK, result.code());
+        assertEquals(1, result.results().size());
+        assertFalse(result.isSuccess());
+        Result<String, String> subResult = result.results().get(0);
+        assertEquals(OpType.DELETE, subResult.type());
+        DeleteResult<String, String> deleteResult = (DeleteResult<String, String>) subResult;
+        List<KVRecord<String, String>> prevResults = deleteResult.prevKvs();
+        assertEquals(1, prevResults.size());
+        KVRecord<String, String> prevResult = prevResults.get(0);
+        assertEquals(getKey(11), prevResult.key());
+        assertEquals(getValue(11), prevResult.value());
+        assertEquals(99L, prevResult.createRevision());
+        assertEquals(99L, prevResult.modifiedRevision());
+        assertEquals(0L, prevResult.version());
+        result.recycle();
+
+        assertEquals(null, store.get(getKey(11)));
     }
 
 }

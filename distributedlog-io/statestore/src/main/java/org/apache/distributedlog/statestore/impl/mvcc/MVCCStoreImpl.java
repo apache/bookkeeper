@@ -34,6 +34,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.PeekingIterator;
 import com.google.common.primitives.SignedBytes;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -51,7 +52,9 @@ import org.apache.distributedlog.statestore.api.KVIterator;
 import org.apache.distributedlog.statestore.api.KVMulti;
 import org.apache.distributedlog.statestore.api.mvcc.KVRecord;
 import org.apache.distributedlog.statestore.api.mvcc.MVCCStore;
+import org.apache.distributedlog.statestore.api.mvcc.op.CompareOp;
 import org.apache.distributedlog.statestore.api.mvcc.op.DeleteOp;
+import org.apache.distributedlog.statestore.api.mvcc.op.Op;
 import org.apache.distributedlog.statestore.api.mvcc.op.OpFactory;
 import org.apache.distributedlog.statestore.api.mvcc.op.PutOp;
 import org.apache.distributedlog.statestore.api.mvcc.op.RangeOp;
@@ -60,6 +63,7 @@ import org.apache.distributedlog.statestore.api.mvcc.result.Code;
 import org.apache.distributedlog.statestore.api.mvcc.result.DeleteResult;
 import org.apache.distributedlog.statestore.api.mvcc.result.PutResult;
 import org.apache.distributedlog.statestore.api.mvcc.result.RangeResult;
+import org.apache.distributedlog.statestore.api.mvcc.result.Result;
 import org.apache.distributedlog.statestore.api.mvcc.result.TxnResult;
 import org.apache.distributedlog.statestore.exceptions.InvalidStateStoreException;
 import org.apache.distributedlog.statestore.exceptions.MVCCStoreException;
@@ -72,6 +76,7 @@ import org.apache.distributedlog.statestore.impl.mvcc.result.DeleteResultImpl;
 import org.apache.distributedlog.statestore.impl.mvcc.result.PutResultImpl;
 import org.apache.distributedlog.statestore.impl.mvcc.result.RangeResultImpl;
 import org.apache.distributedlog.statestore.impl.mvcc.result.ResultFactory;
+import org.apache.distributedlog.statestore.impl.mvcc.result.TxnResultImpl;
 import org.apache.distributedlog.statestore.impl.rocksdb.RocksUtils;
 import org.apache.distributedlog.statestore.impl.rocksdb.RocksdbKVStore;
 import org.rocksdb.BlockBasedTableConfig;
@@ -480,6 +485,10 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
         }
     }
 
+    //
+    // Delete Op
+    //
+
     @Override
     public DeleteResult<K, V> delete(DeleteOp<K, V> op) {
         return delete(op.revision(), op);
@@ -491,7 +500,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
         WriteBatch batch = new WriteBatch();
         DeleteResult<K, V> result = null;
         try {
-            result = delete(batch, revision, op, true);
+            result = delete(revision, batch, op, true);
             executeBatch(batch);
             return result;
         } catch (StateStoreRuntimeException e) {
@@ -504,7 +513,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
         }
     }
 
-    DeleteResult<K, V> delete(WriteBatch batch, long revision, DeleteOp<K, V> op, boolean allowBlind) {
+    DeleteResult<K, V> delete(long revision, WriteBatch batch, DeleteOp<K, V> op, boolean allowBlind) {
         // parameters
         final K key = op.key();
         final K endKey = op.endKey().isPresent() ? op.endKey().get() : null;
@@ -525,6 +534,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
             } else {
                 numDeleted = deleteUsingIter(
                     batch,
+                    key,
                     rawKey,
                     rawEndKey,
                     keys,
@@ -557,25 +567,43 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
     }
 
     long deleteUsingIter(WriteBatch batch,
+                         K key,
                          byte[] rawKey,
                          @Nullable byte[] rawEndKey,
                          List<byte[]> resultKeys,
                          List<MVCCRecord> resultValues,
                          boolean countOnly) {
         MutableLong numKvs = new MutableLong(0L);
-        getKeyRecords(
-            rawKey,
-            rawEndKey,
-            resultKeys,
-            resultValues,
-            numKvs,
-            record -> true,
-            -1,
-            countOnly);
-
-        deleteBlind(batch, rawKey, rawEndKey);
+        if (null == rawEndKey) {
+            MVCCRecord record = getKeyRecord(key, rawKey);
+            if (null != record) {
+                if (!countOnly) {
+                    resultKeys.add(rawKey);
+                    resultValues.add(record);
+                } else {
+                    record.recycle();
+                }
+                numKvs.add(1L);
+                batch.remove(rawKey);
+            }
+        } else {
+            getKeyRecords(
+                rawKey,
+                rawEndKey,
+                resultKeys,
+                resultValues,
+                numKvs,
+                record -> true,
+                -1,
+                countOnly);
+            deleteBlind(batch, rawKey, rawEndKey);
+        }
         return numKvs.longValue();
     }
+
+    //
+    // Txn Op
+    //
 
     @Override
     public TxnResult<K, V> txn(TxnOp<K, V> op) {
@@ -583,7 +611,121 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
     }
 
     synchronized TxnResult<K, V> txn(long revision, TxnOp<K, V> op) {
-        throw new UnsupportedOperationException();
+        checkStoreOpen();
+
+        // 1. process the compares
+        boolean success = processCompares(op);
+
+        // 2. prepare the response list
+        List<Op<K, V>> operations;
+        List<Result<K, V>> results;
+        if (success) {
+            operations = op.successOps();
+        } else {
+            operations = op.failureOps();
+        }
+        results = Lists.newArrayListWithExpectedSize(operations.size());
+
+        // 3. process the operations
+        try (WriteBatch batch = new WriteBatch()) {
+            for (Op o : operations) {
+                results.add(executeOp(revision, batch, o));
+            }
+            executeBatch(batch);
+
+            // 4. repare the result
+            TxnResultImpl<K, V> txnResult = resultFactory.newTxnResult();
+            txnResult.setSuccess(success);
+            txnResult.setResults(results);
+            txnResult.setCode(Code.OK);
+
+            return txnResult;
+        } catch (StateStoreRuntimeException e) {
+            results.forEach(Result::recycle);
+            throw e;
+        }
+
+    }
+
+    boolean processCompareOp(CompareOp<K, V> op) {
+        MVCCRecord record = null;
+        K key = op.getKey();
+        byte[] rawKey = keyCoder.encode(key);
+        try {
+            record = getKeyRecord(key, rawKey);
+            if (null == record) {
+                throw new MVCCStoreException(Code.KEY_NOT_FOUND, "Key " + key + " is not found");
+            }
+            return processCompareOp(record, op);
+        } finally {
+            if (null != record) {
+                record.recycle();
+            }
+        }
+
+    }
+
+    boolean processCompareOp(MVCCRecord record,
+                             CompareOp<K, V> op) {
+        int cmp;
+        switch (op.getTarget()) {
+            case MOD:
+                cmp = record.compareModRev(op.getRevision());
+                break;
+            case CREATE:
+                cmp = record.compareCreateRev(op.getRevision());
+                break;
+            case VERSION:
+                cmp = record.compareVersion(op.getRevision());
+                break;
+            case VALUE:
+                byte[] rawValue = valCoder.encode(op.getValue());
+                cmp = record.getValue().compareTo(Unpooled.wrappedBuffer(rawValue));
+                break;
+            default:
+                return false;
+        }
+        boolean success;
+        switch (op.getResult()) {
+            case LESS:
+                success = cmp < 0;
+                break;
+            case EQUAL:
+                success = cmp == 0;
+                break;
+            case GREATER:
+                success = cmp > 0;
+                break;
+            case NOT_EQUAL:
+                success = cmp != 0;
+                break;
+            default:
+                success = false;
+                break;
+        }
+        return success;
+    }
+
+    boolean processCompares(TxnOp<K, V> op) {
+        for (CompareOp<K, V> compare : op.compareOps()) {
+            if (processCompareOp(compare)) {
+                continue;
+            }
+            return false;
+        }
+        return true;
+    }
+
+    private Result<K, V> executeOp(long revision, WriteBatch batch, Op<K, V> op) {
+        if (op instanceof PutOp) {
+            return put(revision, batch, (PutOp<K, V>) op);
+        } else if (op instanceof DeleteOp) {
+            return delete(revision, batch, (DeleteOp<K, V>) op, true);
+        } else if (op instanceof RangeOp){
+            return range((RangeOp<K, V>) op);
+        } else {
+            throw new MVCCStoreException(Code.ILLEGAL_OP, "Unknown operation in a transaction : " + op);
+        }
     }
 
     //

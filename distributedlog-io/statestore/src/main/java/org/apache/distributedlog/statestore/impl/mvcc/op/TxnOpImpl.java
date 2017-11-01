@@ -35,6 +35,7 @@ interface TxnOpImpl<K, V> extends TxnOp<K, V> {
 
         private Builder() {
             type(OpType.TXN);
+            revision(-1L);
         }
 
         @Override

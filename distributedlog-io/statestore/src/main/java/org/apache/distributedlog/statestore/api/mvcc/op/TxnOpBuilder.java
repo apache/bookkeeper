@@ -27,4 +27,11 @@ import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 @Public
 @Evolving
 public interface TxnOpBuilder<K, V> extends OpBuilder<K, V, TxnOp<K, V>, TxnOpBuilder<K, V>> {
+
+    TxnOpBuilder<K, V> addSuccessOps(Op<K, V> op);
+
+    TxnOpBuilder<K, V> addFailureOps(Op<K, V> op);
+
+    TxnOpBuilder<K, V> addCompareOps(CompareOp<K, V> op);
+
 }
