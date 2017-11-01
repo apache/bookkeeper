@@ -20,19 +20,16 @@
  */
 package org.apache.bookkeeper.client.impl;
 
-import com.google.common.base.Preconditions;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.HashedWheelTimer;
 import java.io.IOException;
-import org.apache.bookkeeper.client.BKException.ZKException;
+import org.apache.bookkeeper.client.api.BKException;
 import org.apache.bookkeeper.client.api.BookKeeper;
 import org.apache.bookkeeper.client.api.BookKeeperBuilder;
-import org.apache.bookkeeper.client.api.BKException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 
 /**
@@ -86,13 +83,7 @@ public class BookKeeperBuilderImpl implements BookKeeperBuilder {
 
     @Override
     public BookKeeper build() throws InterruptedException, BKException, IOException  {
-        try {
-            return builder.build();
-        } catch (KeeperException err) {
-            ZKException zkErr = new ZKException();
-            zkErr.initCause(err);
-            throw zkErr;
-        }
+        return builder.build();
     }
 
 }

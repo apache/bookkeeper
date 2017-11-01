@@ -35,7 +35,6 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.zookeeper.KeeperException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -230,9 +229,6 @@ public class BookieFailureTest extends BookKeeperClusterTestCase
 
             LOG.info("Verified that entries are ok, and now closing ledger");
             lh.close();
-        } catch (KeeperException e) {
-            LOG.error("Caught KeeperException", e);
-            fail(e.toString());
         } catch (BKException e) {
             LOG.error("Caught BKException", e);
             fail(e.toString());

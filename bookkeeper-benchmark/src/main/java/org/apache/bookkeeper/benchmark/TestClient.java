@@ -52,7 +52,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -192,8 +191,6 @@ public class TestClient {
             executor.shutdown();
         } catch (ExecutionException ee) {
             LOG.error("Exception in worker", ee);
-        }  catch (KeeperException ke) {
-            LOG.error("Error accessing zookeeper", ke);
         } catch (BKException e) {
             LOG.error("Error accessing bookkeeper", e);
         } catch (IOException ioe) {
