@@ -19,6 +19,8 @@
 package org.apache.distributedlog.statestore.impl.mvcc;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static org.apache.distributedlog.statestore.impl.Constants.NULL_END_KEY;
+import static org.apache.distributedlog.statestore.impl.Constants.NULL_START_KEY;
 import static org.apache.distributedlog.statestore.impl.rocksdb.RocksConstants.BLOCK_CACHE_SIZE;
 import static org.apache.distributedlog.statestore.impl.rocksdb.RocksConstants.BLOCK_SIZE;
 import static org.apache.distributedlog.statestore.impl.rocksdb.RocksConstants.DEFAULT_CHECKSUM_TYPE;
@@ -46,6 +48,7 @@ import java.util.function.Predicate;
 import javax.annotation.Nullable;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.mutable.MutableLong;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.distributedlog.common.coder.Coder;
 import org.apache.distributedlog.statestore.api.KV;
 import org.apache.distributedlog.statestore.api.KVIterator;
@@ -69,6 +72,7 @@ import org.apache.distributedlog.statestore.exceptions.InvalidStateStoreExceptio
 import org.apache.distributedlog.statestore.exceptions.MVCCStoreException;
 import org.apache.distributedlog.statestore.exceptions.StateStoreException;
 import org.apache.distributedlog.statestore.exceptions.StateStoreRuntimeException;
+import org.apache.distributedlog.statestore.impl.Constants;
 import org.apache.distributedlog.statestore.impl.KVImpl;
 import org.apache.distributedlog.statestore.impl.mvcc.op.OpFactoryImpl;
 import org.apache.distributedlog.statestore.impl.mvcc.op.RangeOpImpl;
@@ -92,6 +96,9 @@ import org.rocksdb.WriteBatch;
 
 /**
  * MVCC Store Implementation.
+ *
+ * <p>The current implementation executes write operations in one single io thread.
+ * It can be improved later to leverage the revision numbers to achieve mvcc.
  */
 @Slf4j
 class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V> {
@@ -213,7 +220,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
 
     void delete(K key, long revision) {
         DeleteOp<K, V> op = opFactory.buildDeleteOp()
-            .key(key)
+            .nullableKey(key)
             .prevKV(false)
             .revision(revision)
             .build();
@@ -234,10 +241,11 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
 
     void deleteRange(K key, K endKey, long revision) {
         DeleteOp<K, V> op = opFactory.buildDeleteOp()
-            .key(key)
-            .endKey(endKey)
+            .nullableKey(key)
+            .nullableEndKey(endKey)
             .prevKV(false)
             .revision(revision)
+            .isRangeOp(true)
             .build();
         DeleteResult<K, V> result = null;
         try {
@@ -257,7 +265,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
     @Override
     public synchronized V get(K key) {
         RangeOp<K, V> op = opFactory.buildRangeOp()
-            .key(key)
+            .nullableKey(key)
             .limit(1)
             .build();
         RangeResult<K, V> result = null;
@@ -290,7 +298,6 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
 
     class RangeResultIterator implements KVIterator<K, V> {
 
-        private final K from;
         private final K to;
         private K next;
         private RangeResult<K, V> result;
@@ -300,7 +307,6 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
         private volatile boolean closed = false;
 
         RangeResultIterator(K from, K to) {
-            this.from = from;
             this.to = to;
             this.next = from;
         }
@@ -322,8 +328,9 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
 
         private void getNextBatch() {
             RangeOp<K, V> op = opFactory.buildRangeOp()
-                .key(next)
-                .endKey(to)
+                .nullableKey(next)
+                .nullableEndKey(to)
+                .isRangeOp(true)
                 .limit(32)
                 .build();
             this.result = range(op);
@@ -515,12 +522,12 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
 
     DeleteResult<K, V> delete(long revision, WriteBatch batch, DeleteOp<K, V> op, boolean allowBlind) {
         // parameters
-        final K key = op.key();
-        final K endKey = op.endKey().isPresent() ? op.endKey().get() : null;
+        final K key = op.key().orElse(null);
+        final K endKey = op.endKey().orElse(null);
         final boolean blind = allowBlind && !op.prevKV();
 
-        final byte[] rawKey = keyCoder.encode(key);
-        final byte[] rawEndKey = null != endKey ? keyCoder.encode(endKey) : null;
+        final byte[] rawKey = (null != key) ? keyCoder.encode(key) : NULL_START_KEY;
+        final byte[] rawEndKey = (null != endKey) ? keyCoder.encode(endKey) : (op.isRangeOp() ? NULL_END_KEY : null);
 
         // result
         final DeleteResultImpl<K, V> result = resultFactory.newDeleteResult();
@@ -562,7 +569,8 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
         if (null == endKey) {
             batch.remove(key);
         } else {
-            batch.deleteRange(key, endKey);
+            Pair<byte[], byte[]> realRange = getRealRange(key, endKey);
+            batch.deleteRange(realRange.getLeft(), realRange.getRight());
         }
     }
 
@@ -587,6 +595,10 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
                 batch.remove(rawKey);
             }
         } else {
+            Pair<byte[], byte[]> realRange = getRealRange(rawKey, rawEndKey);
+            rawKey = realRange.getLeft();
+            rawEndKey = realRange.getRight();
+
             getKeyRecords(
                 rawKey,
                 rawEndKey,
@@ -596,6 +608,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
                 record -> true,
                 -1,
                 countOnly);
+
             deleteBlind(batch, rawKey, rawEndKey);
         }
         return numKvs.longValue();
@@ -733,7 +746,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
     //
 
     private boolean getKeyRecords(byte[] rawKey,
-                                  @Nullable byte[] rawEndKey,
+                                  byte[] rawEndKey,
                                   List<byte[]> resultKeys,
                                   List<MVCCRecord> resultValues,
                                   MutableLong numKvs,
@@ -745,7 +758,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
             boolean eor = false;
             while (iter.isValid() && (limit < 0 || resultKeys.size() < limit)) {
                 byte[] key = iter.key();
-                if (null != rawEndKey && COMPARATOR.compare(rawEndKey, key) < 0) {
+                if (COMPARATOR.compare(rawEndKey, key) < 0) {
                     eor = true;
                     break;
                 }
@@ -807,7 +820,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
         checkStoreOpen();
 
         // parameters
-        final K key = rangeOp.key();
+        final K key = rangeOp.key().orElse(null);
         final K endKey = rangeOp.endKey().orElse(null);
         final RangeOpImpl<K, V> rangeOpImpl = (RangeOpImpl<K, V>) rangeOp;
 
@@ -815,9 +828,9 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
         final RangeResultImpl<K, V> result = resultFactory.newRangeResult();
 
         // raw key
-        final byte[] rawKey = keyCoder.encode(key);
+        byte[] rawKey = (null != key) ? keyCoder.encode(key) : NULL_START_KEY;
 
-        if (null == endKey) {
+        if (null == endKey && !rangeOp.isRangeOp()) {
             // point lookup
             MVCCRecord record = getKeyRecord(key, rawKey);
             try {
@@ -840,9 +853,12 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
                 }
             }
         }
+        byte[] rawEndKey = (null != endKey) ? keyCoder.encode(endKey) : NULL_END_KEY;
+        Pair<byte[], byte[]> realRange = getRealRange(rawKey, rawEndKey);
+        rawKey = realRange.getLeft();
+        rawEndKey = realRange.getRight();
 
         // range lookup
-        byte[] rawEndKey = keyCoder.encode(endKey);
         List<byte[]> keys = Lists.newArrayList();
         List<MVCCRecord> records = Lists.newArrayList();
         MutableLong numKvs = new MutableLong(0L);
@@ -884,5 +900,32 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
             ));
         }
         return kvs;
+    }
+
+    private Pair<byte[], byte[]> getRealRange(byte[] rawKey, byte[] rawEndKey) {
+        boolean isNullStartKey = Constants.isNullStartKey(rawKey);
+        boolean isNullEndKey = Constants.isNullEndKey(rawEndKey);
+        if (isNullStartKey || isNullEndKey) {
+            try (RocksIterator iter = db.newIterator(dataCfHandle)) {
+                if (isNullStartKey) {
+                    iter.seekToFirst();
+                    if (!iter.isValid()) {
+                        // no key to delete
+                        return null;
+                    }
+                    rawKey = iter.key();
+                }
+                if (isNullEndKey) {
+                    iter.seekToLast();
+                    if (!iter.isValid()) {
+                        // no key to delete
+                        return null;
+                    }
+                    rawEndKey = iter.key();
+                }
+            }
+        }
+        ++rawEndKey[rawEndKey.length - 1];
+        return Pair.of(rawKey, rawEndKey);
     }
 }

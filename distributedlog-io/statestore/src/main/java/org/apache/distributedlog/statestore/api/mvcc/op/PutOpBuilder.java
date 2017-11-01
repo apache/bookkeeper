@@ -28,6 +28,8 @@ import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 @Evolving
 public interface PutOpBuilder<K, V> extends OpBuilder<K, V, PutOp<K, V>, PutOpBuilder<K, V>> {
 
+    PutOpBuilder<K, V> key(K key);
+
     PutOpBuilder<K, V> value(V value);
 
     PutOpBuilder<K, V> prevKV(boolean prevKV);

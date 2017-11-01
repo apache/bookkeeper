@@ -16,38 +16,28 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.statestore.api.mvcc.op;
+package org.apache.distributedlog.statestore.impl;
 
-import java.util.Optional;
-import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
-import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 /**
- * A range operation.
+ * Default a few constants used across implementation.
  */
-@Public
-@Evolving
-public interface RangeOp<K, V> extends Op<K, V> {
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+public final class Constants {
 
-    Optional<K> key();
+    public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+    public static final byte[] NULL_START_KEY = EMPTY_BYTE_ARRAY;
+    public static final byte[] NULL_END_KEY = new byte[] { 0 };
+    public static final long INVALID_REVISION = -1L;
 
-    Optional<K> endKey();
+    public static boolean isNullStartKey(byte[] key) {
+        return null != key && key.length == 0;
+    }
 
-    /**
-     * If this op is a range operation or a get operation.
-     *
-     * @return true if it is a range operation, otherwise it is a get operation.
-     */
-    boolean isRangeOp();
-
-    int limit();
-
-    long minModRev();
-
-    long maxModRev();
-
-    long minCreateRev();
-
-    long maxCreateRev();
+    public static boolean isNullEndKey(byte[] key) {
+        return null != key && key.length == 1 && key[0] == 0;
+    }
 
 }

@@ -30,8 +30,11 @@ public interface Op<K, V> {
 
     OpType type();
 
-    K key();
-
+    /**
+     * Indicate the revision that executes this operation.
+     *
+     * @return the revision that apply this operation.
+     */
     long revision();
 
 }

@@ -31,10 +31,10 @@ import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 @Evolving
 public interface PutOp<K, V> extends Op<K, V> {
 
+    K key();
+
     V value();
 
     boolean prevKV();
-
-
 
 }

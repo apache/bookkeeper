@@ -28,7 +28,15 @@ import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 @Evolving
 public interface RangeOpBuilder<K, V> extends OpBuilder<K, V, RangeOp<K, V>, RangeOpBuilder<K, V>> {
 
+    RangeOpBuilder<K, V> key(K key);
+
+    RangeOpBuilder<K, V> nullableKey(K key);
+
     RangeOpBuilder<K, V> endKey(K endKey);
+
+    RangeOpBuilder<K, V> nullableEndKey(K endKey);
+
+    RangeOpBuilder<K, V> isRangeOp(boolean isRangeOp);
 
     RangeOpBuilder<K, V> limit(int limit);
 

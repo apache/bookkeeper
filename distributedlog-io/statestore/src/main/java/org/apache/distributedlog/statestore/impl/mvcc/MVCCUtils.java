@@ -37,6 +37,7 @@ import org.apache.distributedlog.statestore.api.mvcc.op.Op;
 import org.apache.distributedlog.statestore.api.mvcc.op.PutOp;
 import org.apache.distributedlog.statestore.api.mvcc.op.TxnOp;
 import org.apache.distributedlog.statestore.exceptions.StateStoreRuntimeException;
+import org.apache.distributedlog.statestore.impl.Constants;
 import org.apache.distributedlog.statestore.proto.Command;
 import org.apache.distributedlog.statestore.proto.Compare;
 import org.apache.distributedlog.statestore.proto.DeleteRequest;
@@ -57,22 +58,19 @@ final class MVCCUtils {
         .build();
 
     static PutRequest toPutRequest(PutOp<byte[], byte[]> op) {
-        return PutRequest.newBuilder()
+        PutRequest.Builder reqBuilder = PutRequest.newBuilder()
             .setKey(UnsafeByteOperations.unsafeWrap(op.key()))
             .setValue(UnsafeByteOperations.unsafeWrap(op.value()))
             .setLease(0)
-            .setPrevKv(op.prevKV())
-            .build();
-
+            .setPrevKv(op.prevKV());
+        return reqBuilder.build();
     }
 
     static DeleteRequest toDeleteRequest(DeleteOp<byte[], byte[]> op) {
         DeleteRequest.Builder reqBuilder = DeleteRequest.newBuilder()
-            .setKey(UnsafeByteOperations.unsafeWrap(op.key()));
-        if (op.endKey().isPresent()) {
-            reqBuilder = reqBuilder.setRangeEnd(
-                UnsafeByteOperations.unsafeWrap(op.endKey().get()));
-        }
+            .setKey(UnsafeByteOperations.unsafeWrap(op.key().orElse(Constants.NULL_START_KEY)))
+            .setRangeEnd(UnsafeByteOperations.unsafeWrap(op.endKey().orElse(Constants.NULL_END_KEY)));
+
         return reqBuilder.setPrevKv(op.prevKV()).build();
     }
 

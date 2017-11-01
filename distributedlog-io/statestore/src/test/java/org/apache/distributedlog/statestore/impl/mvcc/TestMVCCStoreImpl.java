@@ -263,6 +263,70 @@ public class TestMVCCStoreImpl {
     }
 
     @Test
+    public void testDeleteHeadRange() throws Exception {
+        store.init(spec);
+        // write 100 kvs
+        writeKVs(100, 99L);
+        // iterate all kvs
+        KVIterator<String, String> iter = store.range(
+            null, null);
+        int idx = 0;
+        while (iter.hasNext()) {
+            KV<String, String> kv = iter.next();
+            assertEquals(getKey(idx), kv.key());
+            assertEquals(getValue(idx), kv.value());
+            ++idx;
+        }
+        assertEquals(100, idx);
+        iter.close();
+        // delete range
+        store.deleteRange(null, getKey(20), 100L);
+        iter = store.range(
+            null, null);
+        idx = 21;
+        while (iter.hasNext()) {
+            KV<String, String> kv = iter.next();
+            assertEquals(getKey(idx), kv.key());
+            assertEquals(getValue(idx), kv.value());
+            ++idx;
+        }
+        assertEquals(100, idx);
+        iter.close();
+    }
+
+    @Test
+    public void testDeleteTailRange() throws Exception {
+        store.init(spec);
+        // write 100 kvs
+        writeKVs(100, 99L);
+        // iterate all kvs
+        KVIterator<String, String> iter = store.range(
+            null, null);
+        int idx = 0;
+        while (iter.hasNext()) {
+            KV<String, String> kv = iter.next();
+            assertEquals(getKey(idx), kv.key());
+            assertEquals(getValue(idx), kv.value());
+            ++idx;
+        }
+        assertEquals(100, idx);
+        iter.close();
+        // delete range
+        store.deleteRange(getKey(10), null, 100L);
+        iter = store.range(
+            null, null);
+        idx = 0;
+        while (iter.hasNext()) {
+            KV<String, String> kv = iter.next();
+            assertEquals(getKey(idx), kv.key());
+            assertEquals(getValue(idx), kv.value());
+            ++idx;
+        }
+        assertEquals(10, idx);
+        iter.close();
+    }
+
+    @Test
     public void testDeleteRange() throws Exception {
         store.init(spec);
         // write 100 kvs
@@ -292,7 +356,7 @@ public class TestMVCCStoreImpl {
             assertEquals(getValue(idx), kv.value());
             ++idx;
             if (10 == idx) {
-                idx = 20;
+                idx = 21;
             }
         }
         assertEquals(100, idx);
@@ -306,7 +370,6 @@ public class TestMVCCStoreImpl {
         writeKVs(20, 99L);
         TxnOp<String, String> txnOp = store.getOpFactory().buildTxnOp()
             .revision(100L)
-            .key("") // ignored
             .addCompareOps(
                 store.getOpFactory().compareCreateRevision(
                     CompareResult.EQUAL,
@@ -323,7 +386,7 @@ public class TestMVCCStoreImpl {
                     .key(getKey(11))
                     .build())
             .build();
-        TxnResult<String, String> result = store.txn(txnOp );
+        TxnResult<String, String> result = store.txn(txnOp);
         assertEquals(Code.OK, result.code());
         assertEquals(1, result.results().size());
         assertTrue(result.isSuccess());
@@ -349,7 +412,6 @@ public class TestMVCCStoreImpl {
         writeKVs(20, 99L);
         TxnOp<String, String> txnOp = store.getOpFactory().buildTxnOp()
             .revision(100L)
-            .key("") // ignored
             .addCompareOps(
                 store.getOpFactory().compareCreateRevision(
                     CompareResult.NOT_EQUAL,
@@ -367,7 +429,7 @@ public class TestMVCCStoreImpl {
                     .prevKV(true)
                     .build())
             .build();
-        TxnResult<String, String> result = store.txn(txnOp );
+        TxnResult<String, String> result = store.txn(txnOp);
         assertEquals(Code.OK, result.code());
         assertEquals(1, result.results().size());
         assertFalse(result.isSuccess());

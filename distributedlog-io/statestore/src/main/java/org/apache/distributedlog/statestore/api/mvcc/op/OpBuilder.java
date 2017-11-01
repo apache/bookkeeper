@@ -23,10 +23,6 @@ package org.apache.distributedlog.statestore.api.mvcc.op;
  */
 public interface OpBuilder<K, V, OpT extends Op<K, V>, BuilderT extends OpBuilder<K, V, OpT, BuilderT>> {
 
-    BuilderT type(OpType type);
-
-    BuilderT key(K key);
-
     BuilderT revision(long revision);
 
     OpT build();

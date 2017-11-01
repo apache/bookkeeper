@@ -37,11 +37,14 @@ interface DeleteOpImpl<K, V> extends DeleteOp<K, V> {
             type(OpType.DELETE);
             revision(-1L);
             prevKV(false);
+            isRangeOp(false);
         }
 
         @Override
         public DeleteOpImpl<K, V> build() {
             checkArgument(type() == OpType.DELETE, "Invalid type " + type() + " is configured.");
+            checkArgument(isRangeOp() || (!isRangeOp() && key().isPresent()),
+                "No key is provided from a single delete operation");
             return super.build();
         }
     }

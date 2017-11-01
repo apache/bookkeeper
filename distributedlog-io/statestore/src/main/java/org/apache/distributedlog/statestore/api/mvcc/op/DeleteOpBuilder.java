@@ -28,7 +28,15 @@ import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 @Evolving
 public interface DeleteOpBuilder<K, V> extends OpBuilder<K, V, DeleteOp<K, V>, DeleteOpBuilder<K, V>> {
 
+    DeleteOpBuilder<K, V> key(K key);
+
+    DeleteOpBuilder<K, V> nullableKey(K key);
+
     DeleteOpBuilder<K, V> endKey(K endKey);
+
+    DeleteOpBuilder<K, V> nullableEndKey(K endKey);
+
+    DeleteOpBuilder<K, V> isRangeOp(boolean isRangeOp);
 
     DeleteOpBuilder<K, V> prevKV(boolean prevKV);
 

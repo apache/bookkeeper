@@ -33,4 +33,6 @@ public interface Result<K, V> extends Recycled {
 
     Code code();
 
+    long revision();
+
 }

@@ -52,6 +52,7 @@ public interface RangeOpImpl<K, V> extends RangeOp<K, V>, Predicate<MVCCRecord> 
             type(OpType.RANGE);
             revision(-1L);
             limit(-1);
+            isRangeOp(false);
             minModRev(Long.MIN_VALUE);
             maxModRev(Long.MAX_VALUE);
             minCreateRev(Long.MIN_VALUE);
@@ -61,6 +62,8 @@ public interface RangeOpImpl<K, V> extends RangeOp<K, V>, Predicate<MVCCRecord> 
         @Override
         public RangeOpImpl<K, V> build() {
             checkArgument(type() == OpType.RANGE, "Invalid type "  + type() + " is configured");
+            checkArgument(isRangeOp() || (!isRangeOp() && key().isPresent()),
+                "No key is provided from a single get operation");
             return super.build();
         }
     }

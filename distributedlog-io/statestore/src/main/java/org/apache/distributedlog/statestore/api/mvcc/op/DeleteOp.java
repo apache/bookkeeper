@@ -28,10 +28,12 @@ import java.util.Optional;
  */
 public interface DeleteOp<K, V> extends Op<K, V> {
 
+    Optional<K> key();
+
     Optional<K> endKey();
 
+    boolean isRangeOp();
+
     boolean prevKV();
-
-
 
 }

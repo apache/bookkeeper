@@ -18,6 +18,8 @@
 
 package org.apache.distributedlog.statestore.impl.mvcc.result;
 
+import static org.apache.distributedlog.statestore.impl.Constants.INVALID_REVISION;
+
 import io.netty.util.Recycler.Handle;
 import lombok.Setter;
 import org.apache.distributedlog.statestore.api.mvcc.op.OpType;
@@ -33,6 +35,7 @@ abstract class ResultImpl<K, V, T extends ResultImpl<K, V, T>> implements Result
     protected final Handle<T> handle;
     protected final OpType type;
 
+    protected long revision;
     protected Code code;
 
     protected ResultImpl(OpType type, Handle<T> handle) {
@@ -52,8 +55,14 @@ abstract class ResultImpl<K, V, T extends ResultImpl<K, V, T>> implements Result
         return code;
     }
 
+    @Override
+    public long revision() {
+        return revision;
+    }
+
     protected void reset() {
         this.code = null;
+        this.revision = INVALID_REVISION;
     }
 
     @Override
