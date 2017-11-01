@@ -243,4 +243,50 @@ public class TestMVCCStoreImpl {
         result.recycle();
     }
 
+    @Test
+    public void testDeleteKey() throws Exception {
+        store.init(spec);
+        store.put("key", "value", 99L);
+        assertEquals("value", store.get("key"));
+        store.delete("key", 100L);
+        assertNull(store.get("key"));
+    }
+
+    @Test
+    public void testDeleteRange() throws Exception {
+        store.init(spec);
+        // write 100 kvs
+        writeKVs(100, 99L);
+        // iterate all kvs
+        KVIterator<String, String> iter = store.range(
+            getKey(0),
+            getKey(100));
+        int idx = 0;
+        while (iter.hasNext()) {
+            KV<String, String> kv = iter.next();
+            assertEquals(getKey(idx), kv.key());
+            assertEquals(getValue(idx), kv.value());
+            ++idx;
+        }
+        assertEquals(100, idx);
+        iter.close();
+        // delete range
+        store.deleteRange(getKey(10), getKey(20), 100L);
+        iter = store.range(
+            getKey(0),
+            getKey(100));
+        idx = 0;
+        while (iter.hasNext()) {
+            KV<String, String> kv = iter.next();
+            assertEquals(getKey(idx), kv.key());
+            assertEquals(getValue(idx), kv.value());
+            ++idx;
+            if (10 == idx) {
+                idx = 20;
+            }
+        }
+        assertEquals(100, idx);
+        iter.close();
+    }
+
 }

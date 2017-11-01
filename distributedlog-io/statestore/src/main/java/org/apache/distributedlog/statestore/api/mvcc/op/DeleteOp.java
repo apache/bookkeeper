@@ -18,6 +18,8 @@
 
 package org.apache.distributedlog.statestore.api.mvcc.op;
 
+import java.util.Optional;
+
 /**
  * A delete operator to delete a single key or a key range.
  *
@@ -26,7 +28,7 @@ package org.apache.distributedlog.statestore.api.mvcc.op;
  */
 public interface DeleteOp<K, V> extends Op<K, V> {
 
-    K endKey();
+    Optional<K> endKey();
 
     boolean prevKV();
 

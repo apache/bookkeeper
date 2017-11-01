@@ -68,6 +68,7 @@ import org.apache.distributedlog.statestore.exceptions.StateStoreRuntimeExceptio
 import org.apache.distributedlog.statestore.impl.KVImpl;
 import org.apache.distributedlog.statestore.impl.mvcc.op.OpFactoryImpl;
 import org.apache.distributedlog.statestore.impl.mvcc.op.RangeOpImpl;
+import org.apache.distributedlog.statestore.impl.mvcc.result.DeleteResultImpl;
 import org.apache.distributedlog.statestore.impl.mvcc.result.PutResultImpl;
 import org.apache.distributedlog.statestore.impl.mvcc.result.RangeResultImpl;
 import org.apache.distributedlog.statestore.impl.mvcc.result.ResultFactory;
@@ -203,6 +204,49 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
                 result.recycle();
             }
         }
+    }
+
+    void delete(K key, long revision) {
+        DeleteOp<K, V> op = opFactory.buildDeleteOp()
+            .key(key)
+            .prevKV(false)
+            .revision(revision)
+            .build();
+        DeleteResult<K, V> result = null;
+        try {
+            result = delete(op);
+            if (Code.OK != result.code()) {
+                throw new MVCCStoreException(result.code(),
+                    "Failed to delete key=" + key + "from state store " + name);
+            }
+        } finally {
+            if (null != result) {
+                result.recycle();
+            }
+        }
+
+    }
+
+    void deleteRange(K key, K endKey, long revision) {
+        DeleteOp<K, V> op = opFactory.buildDeleteOp()
+            .key(key)
+            .endKey(endKey)
+            .prevKV(false)
+            .revision(revision)
+            .build();
+        DeleteResult<K, V> result = null;
+        try {
+            result = delete(op);
+            if (Code.OK != result.code()) {
+                throw new MVCCStoreException(result.code(),
+                    "Failed to delete key=" + key + "from state store " + name);
+            }
+        } finally {
+            if (null != result) {
+                result.recycle();
+            }
+        }
+
     }
 
     @Override
@@ -442,7 +486,95 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
     }
 
     synchronized DeleteResult<K, V> delete(long revision, DeleteOp<K, V> op) {
-        throw new UnsupportedOperationException();
+        checkStoreOpen();
+
+        WriteBatch batch = new WriteBatch();
+        DeleteResult<K, V> result = null;
+        try {
+            result = delete(batch, revision, op, true);
+            executeBatch(batch);
+            return result;
+        } catch (StateStoreRuntimeException e) {
+            if (null != result) {
+                result.recycle();
+            }
+            throw e;
+        } finally {
+            RocksUtils.close(batch);
+        }
+    }
+
+    DeleteResult<K, V> delete(WriteBatch batch, long revision, DeleteOp<K, V> op, boolean allowBlind) {
+        // parameters
+        final K key = op.key();
+        final K endKey = op.endKey().isPresent() ? op.endKey().get() : null;
+        final boolean blind = allowBlind && !op.prevKV();
+
+        final byte[] rawKey = keyCoder.encode(key);
+        final byte[] rawEndKey = null != endKey ? keyCoder.encode(endKey) : null;
+
+        // result
+        final DeleteResultImpl<K, V> result = resultFactory.newDeleteResult();
+        final List<byte[]> keys = Lists.newArrayList();
+        final List<MVCCRecord> records = Lists.newArrayList();
+        try {
+            long numDeleted;
+            if (blind) {
+                deleteBlind(batch, rawKey, rawEndKey);
+                numDeleted = 0;
+            } else {
+                numDeleted = deleteUsingIter(
+                    batch,
+                    rawKey,
+                    rawEndKey,
+                    keys,
+                    records,
+                    false);
+            }
+
+            List<KVRecord<K, V>> kvs = toKvs(keys, records);
+
+            result.setCode(Code.OK);
+            result.setPrevKvs(kvs);
+            result.setNumDeleted(numDeleted);
+        } catch (StateStoreRuntimeException e) {
+            result.recycle();
+            throw e;
+        } finally {
+            records.forEach(MVCCRecord::recycle);
+        }
+        return result;
+    }
+
+    void deleteBlind(WriteBatch batch,
+                     byte[] key,
+                     @Nullable byte[] endKey) {
+        if (null == endKey) {
+            batch.remove(key);
+        } else {
+            batch.deleteRange(key, endKey);
+        }
+    }
+
+    long deleteUsingIter(WriteBatch batch,
+                         byte[] rawKey,
+                         @Nullable byte[] rawEndKey,
+                         List<byte[]> resultKeys,
+                         List<MVCCRecord> resultValues,
+                         boolean countOnly) {
+        MutableLong numKvs = new MutableLong(0L);
+        getKeyRecords(
+            rawKey,
+            rawEndKey,
+            resultKeys,
+            resultValues,
+            numKvs,
+            record -> true,
+            -1,
+            countOnly);
+
+        deleteBlind(batch, rawKey, rawEndKey);
+        return numKvs.longValue();
     }
 
     @Override
@@ -585,17 +717,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
                 rangeOp.limit(),
                 false);
 
-            List<KVRecord<K, V>> kvs = Lists.newArrayListWithExpectedSize(keys.size());
-
-            for (int i = 0; i < keys.size(); i++) {
-                byte[] keyBytes = keys.get(i);
-                MVCCRecord record = records.get(i);
-                kvs.add(record.asKVRecord(
-                    recordFactory,
-                    keyCoder.decode(keyBytes),
-                    valCoder
-                ));
-            }
+            List<KVRecord<K, V>> kvs = toKvs(keys, records);
 
             result.setCode(Code.OK);
             result.setKvs(kvs);
@@ -605,5 +727,20 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
             records.forEach(MVCCRecord::recycle);
         }
         return result;
+    }
+
+    private List<KVRecord<K, V>> toKvs(List<byte[]> keys, List<MVCCRecord> records) {
+        List<KVRecord<K, V>> kvs = Lists.newArrayListWithExpectedSize(keys.size());
+
+        for (int i = 0; i < keys.size(); i++) {
+            byte[] keyBytes = keys.get(i);
+            MVCCRecord record = records.get(i);
+            kvs.add(record.asKVRecord(
+                recordFactory,
+                keyCoder.decode(keyBytes),
+                valCoder
+            ));
+        }
+        return kvs;
     }
 }

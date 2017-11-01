@@ -69,9 +69,9 @@ final class MVCCUtils {
     static DeleteRequest toDeleteRequest(DeleteOp<byte[], byte[]> op) {
         DeleteRequest.Builder reqBuilder = DeleteRequest.newBuilder()
             .setKey(UnsafeByteOperations.unsafeWrap(op.key()));
-        if (null != op.endKey()) {
+        if (op.endKey().isPresent()) {
             reqBuilder = reqBuilder.setRangeEnd(
-                UnsafeByteOperations.unsafeWrap(op.endKey()));
+                UnsafeByteOperations.unsafeWrap(op.endKey().get()));
         }
         return reqBuilder.setPrevKv(op.prevKV()).build();
     }
