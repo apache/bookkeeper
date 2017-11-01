@@ -51,6 +51,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -135,6 +136,7 @@ public class BookieShell implements Tool {
     static final String CMD_SIMPLETEST = "simpletest";
     static final String CMD_BOOKIESANITYTEST = "bookiesanity";
     static final String CMD_READLOG = "readlog";
+    static final String CMD_READLOGMETADATA = "readlogmetadata";
     static final String CMD_READJOURNAL = "readjournal";
     static final String CMD_LASTMARK = "lastmark";
     static final String CMD_AUTORECOVERY = "autorecovery";
@@ -1096,6 +1098,63 @@ public class BookieShell implements Tool {
         String getUsage() {
             return "readlog      [-msg] <entry_log_id | entry_log_file_name> [-ledgerid <ledgerid> "
                     + "[-entryid <entryid>]] [-startpos <startEntryLogBytePos> [-endpos <endEntryLogBytePos>]]";
+        }
+
+        @Override
+        Options getOptions() {
+            return rlOpts;
+        }
+    }
+
+    /**
+     * Command to print metadata of entrylog.
+     */
+    class ReadLogMetadataCmd extends MyCommand {
+        Options rlOpts = new Options();
+
+        ReadLogMetadataCmd() {
+            super(CMD_READLOGMETADATA);
+        }
+
+        @Override
+        public int runCmd(CommandLine cmdLine) throws Exception {
+            String[] leftArgs = cmdLine.getArgs();
+            if (leftArgs.length <= 0) {
+                LOG.error("ERROR: missing entry log id or entry log file name");
+                printUsage();
+                return -1;
+            }
+
+            long logId;
+            try {
+                logId = Long.parseLong(leftArgs[0]);
+            } catch (NumberFormatException nfe) {
+                // not a entry log id
+                File f = new File(leftArgs[0]);
+                String name = f.getName();
+                if (!name.endsWith(".log")) {
+                    // not a log file
+                    LOG.error("ERROR: invalid entry log file name " + leftArgs[0]);
+                    printUsage();
+                    return -1;
+                }
+                String idString = name.split("\\.")[0];
+                logId = Long.parseLong(idString, 16);
+            }
+
+            printEntryLogMetadata(logId);
+
+            return 0;
+        }
+
+        @Override
+        String getDescription() {
+            return "Prints entrylog's metadata";
+        }
+
+        @Override
+        String getUsage() {
+            return "readlogmetadata <entry_log_id | entry_log_file_name>";
         }
 
         @Override
@@ -2364,6 +2423,7 @@ public class BookieShell implements Tool {
         commands.put(CMD_SIMPLETEST, new SimpleTestCmd());
         commands.put(CMD_BOOKIESANITYTEST, new BookieSanityTestCmd());
         commands.put(CMD_READLOG, new ReadLogCmd());
+        commands.put(CMD_READLOGMETADATA, new ReadLogMetadataCmd());
         commands.put(CMD_READJOURNAL, new ReadJournalCmd());
         commands.put(CMD_LASTMARK, new LastMarkCmd());
         commands.put(CMD_AUTORECOVERY, new AutoRecoveryCmd());
@@ -2680,6 +2740,16 @@ public class BookieShell implements Tool {
                         + "or last index page is not fully flushed yet : " + ie.getMessage());
             }
         }
+    }
+
+    protected void printEntryLogMetadata(long logId) throws IOException {
+        LOG.info("Print entryLogMetadata of entrylog " + logId + " (" + Long.toHexString(logId) + ".log)");
+        initEntryLogger();
+        EntryLogMetadata entryLogMetadata = entryLogger.getEntryLogMetadata(logId);
+        entryLogMetadata.getLedgersMap().forEach((ledgerId, size) -> {
+            LOG.info("--------- Lid=" + ledgerIdFormatter.formatLedgerId(ledgerId) + ", TotalSizeOfEntriesOfLedger="
+                    + size + " ---------");
+        });
     }
 
     /**
