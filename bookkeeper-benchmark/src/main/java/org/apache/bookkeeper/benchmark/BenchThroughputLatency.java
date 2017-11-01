@@ -82,7 +82,7 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
 
     public BenchThroughputLatency(int ensemble, int writeQuorumSize, int ackQuorumSize, byte[] passwd,
             int numberOfLedgers, int sendLimit, ClientConfiguration conf)
-            throws KeeperException, IOException, InterruptedException {
+            throws BKException, IOException, InterruptedException {
         this.sem = new Semaphore(conf.getThrottleValue());
         bk = new BookKeeper(conf);
         this.counter = new AtomicLong(0);

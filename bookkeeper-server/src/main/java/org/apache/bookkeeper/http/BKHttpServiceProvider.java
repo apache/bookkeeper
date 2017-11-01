@@ -59,7 +59,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
     private BKHttpServiceProvider(BookieServer bookieServer,
                                   AutoRecoveryMain autoRecovery,
                                   ServerConfiguration serverConf)
-        throws IOException, KeeperException, InterruptedException {
+        throws IOException, KeeperException, InterruptedException, BKException {
         this.bookieServer = bookieServer;
         this.autoRecovery = autoRecovery;
         this.serverConf = serverConf;
@@ -129,7 +129,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
         }
 
         public BKHttpServiceProvider build()
-            throws IOException, KeeperException, InterruptedException {
+            throws IOException, KeeperException, InterruptedException, BKException {
             return new BKHttpServiceProvider(
                 bookieServer,
                 autoRecovery,
