@@ -41,10 +41,8 @@ import org.apache.distributedlog.ZooKeeperClient.DigestCredentials;
 import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.exceptions.AlreadyClosedException;
 import org.apache.distributedlog.exceptions.DLInterruptedException;
-import org.apache.distributedlog.exceptions.ZKException;
 import org.apache.distributedlog.net.NetUtils;
 import org.apache.distributedlog.util.ConfUtils;
-import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,7 +83,7 @@ public class BookKeeperClient {
             String ledgersPath,
             EventLoopGroup eventLoopGroup,
             StatsLogger statsLogger, HashedWheelTimer requestTimer)
-        throws IOException, InterruptedException, KeeperException {
+        throws IOException, InterruptedException {
         ClientConfiguration bkConfig = new ClientConfiguration();
         bkConfig.setAddEntryTimeout(conf.getBKClientWriteTimeout());
         bkConfig.setReadTimeout(conf.getBKClientReadTimeout());
@@ -109,14 +107,18 @@ public class BookKeeperClient {
         final DNSToSwitchMapping dnsResolver =
                 NetUtils.getDNSResolver(dnsResolverCls, conf.getBkDNSResolverOverrides());
 
-        this.bkc = BookKeeper.forConfig(bkConfig)
-            .setZookeeper(zkc.get())
-            .setEventLoopGroup(eventLoopGroup)
-            .setStatsLogger(statsLogger)
-            .dnsResolver(dnsResolver)
-            .requestTimer(requestTimer)
-            .featureProvider(featureProvider.orNull())
-            .build();
+        try {
+            this.bkc = BookKeeper.forConfig(bkConfig)
+                .setZookeeper(zkc.get())
+                .setEventLoopGroup(eventLoopGroup)
+                .setStatsLogger(statsLogger)
+                .dnsResolver(dnsResolver)
+                .requestTimer(requestTimer)
+                .featureProvider(featureProvider.orNull())
+                .build();
+        } catch (BKException bke) {
+            throw new IOException(bke);
+        }
     }
 
     BookKeeperClient(DistributedLogConfiguration conf,
@@ -167,8 +169,6 @@ public class BookKeeperClient {
             commonInitialization(conf, ledgersPath, eventLoopGroup, statsLogger, requestTimer);
         } catch (InterruptedException e) {
             throw new DLInterruptedException("Interrupted on creating bookkeeper client " + name + " : ", e);
-        } catch (KeeperException e) {
-            throw new ZKException("Error on creating bookkeeper client " + name + " : ", e);
         }
 
         if (ownZK) {
