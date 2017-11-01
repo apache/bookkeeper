@@ -17,6 +17,7 @@
  */
 package org.apache.bookkeeper.proto;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
@@ -70,11 +71,12 @@ class WriteEntryProcessor extends PacketProcessorBase implements WriteCallback {
 
         startTimeNanos = MathUtils.nowInNano();
         int rc = BookieProtocol.EOK;
+        ByteBuf addData = add.getData();
         try {
             if (add.isRecoveryAdd()) {
-                requestProcessor.bookie.recoveryAddEntry(add.getData(), this, channel, add.getMasterKey());
+                requestProcessor.bookie.recoveryAddEntry(addData, this, channel, add.getMasterKey());
             } else {
-                requestProcessor.bookie.addEntry(add.getData(), this, channel, add.getMasterKey());
+                requestProcessor.bookie.addEntry(addData, this, channel, add.getMasterKey());
             }
         } catch (IOException e) {
             LOG.error("Error writing " + add, e);
@@ -86,7 +88,7 @@ class WriteEntryProcessor extends PacketProcessorBase implements WriteCallback {
             LOG.error("Unauthorized access to ledger " + add.getLedgerId(), e);
             rc = BookieProtocol.EUA;
         } finally {
-            add.release();
+            addData.release();
         }
 
         if (rc != BookieProtocol.EOK) {
@@ -95,6 +97,7 @@ class WriteEntryProcessor extends PacketProcessorBase implements WriteCallback {
             sendResponse(rc,
                          ResponseBuilder.buildErrorResponse(rc, add),
                          requestProcessor.addRequestStats);
+            add.recycle();
         }
     }
 
@@ -111,6 +114,7 @@ class WriteEntryProcessor extends PacketProcessorBase implements WriteCallback {
         sendResponse(rc,
                      ResponseBuilder.buildAddResponse(request),
                      requestProcessor.addRequestStats);
+        request.recycle();
         recycle();
     }
 

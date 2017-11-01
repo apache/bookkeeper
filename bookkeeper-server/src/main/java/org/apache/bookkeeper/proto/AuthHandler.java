@@ -103,7 +103,7 @@ class AuthHandler {
                 BookieProtocol.Request req = (BookieProtocol.Request) msg;
                 if (req.getOpCode() == BookieProtocol.ADDENTRY) {
                     ctx.channel().writeAndFlush(
-                            new BookieProtocol.AddResponse(
+                            BookieProtocol.AddResponse.create(
                                     req.getProtocolVersion(), BookieProtocol.EUA,
                                     req.getLedgerId(), req.getEntryId()));
                 } else if (req.getOpCode() == BookieProtocol.READENTRY) {
