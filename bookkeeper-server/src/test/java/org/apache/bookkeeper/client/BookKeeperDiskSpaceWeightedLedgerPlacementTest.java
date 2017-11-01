@@ -35,7 +35,6 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.annotations.FlakyTest;
-import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +52,7 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
     }
 
     class BookKeeperCheckInfoReader extends BookKeeper {
-        BookKeeperCheckInfoReader(ClientConfiguration conf) throws KeeperException, IOException, InterruptedException {
+        BookKeeperCheckInfoReader(ClientConfiguration conf) throws BKException, IOException, InterruptedException {
             super(conf);
         }
 

@@ -70,7 +70,7 @@ public class ListBookiesService implements HttpEndpointService {
               params.get("print_hostnames").equals("true");
 
             if (readOnly) {
-                bookies.addAll(bka.getReadOnlyBookiesAsync());
+                bookies.addAll(bka.getReadOnlyBookies());
             } else {
                 bookies.addAll(bka.getAvailableBookies());
             }
