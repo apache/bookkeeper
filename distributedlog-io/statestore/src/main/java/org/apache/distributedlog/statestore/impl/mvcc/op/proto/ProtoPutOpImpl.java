@@ -18,6 +18,8 @@
 
 package org.apache.distributedlog.statestore.impl.mvcc.op.proto;
 
+import static org.apache.distributedlog.statestore.impl.Constants.INVALID_REVISION;
+
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import lombok.RequiredArgsConstructor;
@@ -94,7 +96,7 @@ public class ProtoPutOpImpl implements PutOp<byte[], byte[]>, Recycled {
         req = null;
         key = null;
         value = null;
-        revision = -1L;
+        revision = INVALID_REVISION;
     }
 
     @Override

@@ -56,6 +56,8 @@ import org.apache.distributedlog.statestore.api.KVMulti;
 import org.apache.distributedlog.statestore.api.mvcc.KVRecord;
 import org.apache.distributedlog.statestore.api.mvcc.MVCCStore;
 import org.apache.distributedlog.statestore.api.mvcc.op.CompareOp;
+import org.apache.distributedlog.statestore.api.mvcc.op.CompareResult;
+import org.apache.distributedlog.statestore.api.mvcc.op.CompareTarget;
 import org.apache.distributedlog.statestore.api.mvcc.op.DeleteOp;
 import org.apache.distributedlog.statestore.api.mvcc.op.Op;
 import org.apache.distributedlog.statestore.api.mvcc.op.OpFactory;
@@ -406,7 +408,21 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
         return put(op.revision(), op);
     }
 
-    synchronized PutResult<K, V> put(long revision, PutOp<K, V> op) {
+    PutResult<K, V> put(long revision, PutOp<K, V> op) {
+        try {
+            return processPut(revision, op);
+        } catch (MVCCStoreException e) {
+            PutResultImpl<K, V> result = resultFactory.newPutResult(revision);
+            result.setCode(e.getCode());
+            return result;
+        } catch (StateStoreRuntimeException e) {
+            PutResultImpl<K, V> result = resultFactory.newPutResult(revision);
+            result.setCode(Code.INTERNAL_ERROR);
+            return result;
+        }
+    }
+
+    synchronized PutResult<K, V> processPut(long revision, PutOp<K, V> op) {
         checkStoreOpen();
 
         WriteBatch batch = new WriteBatch();
@@ -501,7 +517,21 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
         return delete(op.revision(), op);
     }
 
-    synchronized DeleteResult<K, V> delete(long revision, DeleteOp<K, V> op) {
+    DeleteResult<K, V> delete(long revision, DeleteOp<K, V> op) {
+        try {
+            return processDelete(revision, op);
+        } catch (MVCCStoreException e) {
+            DeleteResultImpl<K, V> result = resultFactory.newDeleteResult(revision);
+            result.setCode(e.getCode());
+            return result;
+        } catch (StateStoreRuntimeException e) {
+            DeleteResultImpl<K, V> result = resultFactory.newDeleteResult(revision);
+            result.setCode(Code.INTERNAL_ERROR);
+            return result;
+        }
+    }
+
+    synchronized DeleteResult<K, V> processDelete(long revision, DeleteOp<K, V> op) {
         checkStoreOpen();
 
         WriteBatch batch = new WriteBatch();
@@ -563,6 +593,11 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
         return result;
     }
 
+    /**
+     * Delete blind should be call as the last op in the delete operations.
+     * Since we need to modify endKey to make {@link WriteBatch#deleteRange(byte[], byte[])}
+     * delete the end key.
+     */
     void deleteBlind(WriteBatch batch,
                      byte[] key,
                      @Nullable byte[] endKey) {
@@ -570,7 +605,9 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
             batch.remove(key);
         } else {
             Pair<byte[], byte[]> realRange = getRealRange(key, endKey);
-            batch.deleteRange(realRange.getLeft(), realRange.getRight());
+            endKey = realRange.getRight();
+            ++endKey[endKey.length - 1];
+            batch.deleteRange(realRange.getLeft(), endKey);
         }
     }
 
@@ -624,6 +661,20 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
     }
 
     synchronized TxnResult<K, V> txn(long revision, TxnOp<K, V> op) {
+        try {
+            return processTxn(revision, op);
+        } catch (MVCCStoreException e) {
+            TxnResultImpl<K, V> result = resultFactory.newTxnResult(revision);
+            result.setCode(e.getCode());
+            return result;
+        } catch (StateStoreRuntimeException e) {
+            TxnResultImpl<K, V> result = resultFactory.newTxnResult(revision);
+            result.setCode(Code.INTERNAL_ERROR);
+            return result;
+        }
+    }
+
+    synchronized TxnResult<K, V> processTxn(long revision, TxnOp<K, V> op) {
         checkStoreOpen();
 
         // 1. process the compares
@@ -667,7 +718,9 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
         try {
             record = getKeyRecord(key, rawKey);
             if (null == record) {
-                throw new MVCCStoreException(Code.KEY_NOT_FOUND, "Key " + key + " is not found");
+                if (CompareTarget.VALUE != op.getTarget()) {
+                    throw new MVCCStoreException(Code.KEY_NOT_FOUND, "Key " + key + " is not found");
+                }
             }
             return processCompareOp(record, op);
         } finally {
@@ -675,10 +728,9 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
                 record.recycle();
             }
         }
-
     }
 
-    boolean processCompareOp(MVCCRecord record,
+    boolean processCompareOp(@Nullable MVCCRecord record,
                              CompareOp<K, V> op) {
         int cmp;
         switch (op.getTarget()) {
@@ -692,8 +744,29 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
                 cmp = record.compareVersion(op.getRevision());
                 break;
             case VALUE:
-                byte[] rawValue = valCoder.encode(op.getValue());
-                cmp = record.getValue().compareTo(Unpooled.wrappedBuffer(rawValue));
+                if (null == record) { // key not found
+                    if (CompareResult.EQUAL == op.getResult()) {
+                        return !op.getValue().isPresent();
+                    } else if (CompareResult.NOT_EQUAL == op.getResult()) {
+                        return op.getValue().isPresent();
+                    } else {
+                        return false;
+                    }
+                }
+                // key is found and value-to-compare is present
+                if (op.getValue().isPresent()) {
+                    byte[] rawValue = valCoder.encode(op.getValue().get());
+                    cmp = record.getValue().compareTo(Unpooled.wrappedBuffer(rawValue));
+                } else {
+                    // key is found but value-to-compare is missing
+                    switch (op.getResult()) {
+                        case EQUAL:
+                        case LESS:
+                            return false;
+                        default:
+                            return true;
+                    }
+                }
                 break;
             default:
                 return false;
@@ -751,7 +824,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
                                   List<MVCCRecord> resultValues,
                                   MutableLong numKvs,
                                   @Nullable Predicate<MVCCRecord> predicate,
-                                  int limit,
+                                  long limit,
                                   boolean countOnly) {
         try (RocksIterator iter = db.newIterator(dataCfHandle)) {
             iter.seek(rawKey);
@@ -816,7 +889,21 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
     }
 
     @Override
-    public synchronized RangeResult<K, V> range(RangeOp<K, V> rangeOp) {
+    public RangeResult<K, V> range(RangeOp<K, V> rangeOp) {
+        try {
+            return processRange(rangeOp);
+        } catch (MVCCStoreException e) {
+            RangeResultImpl<K, V> result = resultFactory.newRangeResult(rangeOp.revision());
+            result.setCode(e.getCode());
+            return result;
+        } catch (StateStoreRuntimeException e) {
+            RangeResultImpl<K, V> result = resultFactory.newRangeResult(rangeOp.revision());
+            result.setCode(Code.INTERNAL_ERROR);
+            return result;
+        }
+    }
+
+    synchronized RangeResult<K, V> processRange(RangeOp<K, V> rangeOp) {
         checkStoreOpen();
 
         // parameters
@@ -925,7 +1012,6 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
                 }
             }
         }
-        ++rawEndKey[rawEndKey.length - 1];
         return Pair.of(rawKey, rawEndKey);
     }
 }

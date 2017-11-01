@@ -32,6 +32,8 @@ public interface RangeResult<K, V> extends Result<K, V> {
 
     List<KVRecord<K, V>> kvs();
 
+    List<KVRecord<K, V>> getKvsAndClear();
+
     long count();
 
     boolean hasMore();

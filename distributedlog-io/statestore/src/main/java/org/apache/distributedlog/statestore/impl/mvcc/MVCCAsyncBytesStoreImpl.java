@@ -455,7 +455,9 @@ class MVCCAsyncBytesStoreImpl implements MVCCAsyncStore<byte[], byte[]> {
             }
         }
 
-        return null;
+        Command command = toCommand(op);
+        return writeCommandReturnTxId(command)
+            .thenApplyAsync(revision -> localStore.delete(revision, op), writeIOScheduler);
     }
 
     @Override
@@ -466,6 +468,8 @@ class MVCCAsyncBytesStoreImpl implements MVCCAsyncStore<byte[], byte[]> {
             }
         }
 
-        return null;
+        Command command = toCommand(op);
+        return writeCommandReturnTxId(command)
+            .thenApplyAsync(revision -> localStore.txn(revision, op), writeIOScheduler);
     }
 }

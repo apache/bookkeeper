@@ -40,7 +40,7 @@ public interface RangeOp<K, V> extends Op<K, V> {
      */
     boolean isRangeOp();
 
-    int limit();
+    long limit();
 
     long minModRev();
 

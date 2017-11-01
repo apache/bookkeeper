@@ -49,6 +49,12 @@ public class TxnResultImpl<K, V> extends ResultImpl<K, V, TxnResultImpl<K, V>> i
         return results;
     }
 
+    public List<Result<K, V>> getResultsAndClear() {
+        List<Result<K, V>> resultsToReturn = results;
+        results = Collections.emptyList();
+        return resultsToReturn;
+    }
+
     @Override
     TxnResultImpl<K, V> asResult() {
         return this;

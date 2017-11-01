@@ -50,6 +50,13 @@ public class DeleteResultImpl<K, V> extends ResultImpl<K, V, DeleteResultImpl<K,
     }
 
     @Override
+    public List<KVRecord<K, V>> getPrevKvsAndClear() {
+        List<KVRecord<K, V>> kvsToReturn = prevKvs;
+        prevKvs = Collections.emptyList();
+        return kvsToReturn;
+    }
+
+    @Override
     protected void reset() {
         this.numDeleted = 0;
         this.prevKvs.forEach(KVRecord::recycle);

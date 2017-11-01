@@ -18,6 +18,7 @@
 
 package org.apache.distributedlog.statestore.impl.mvcc.op;
 
+import java.util.Optional;
 import lombok.Data;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +34,7 @@ class CompareOpImpl<K, V> implements CompareOp<K, V> {
     private final CompareTarget target;
     private final CompareResult result;
     private final K key;
-    private final V value;
+    private final Optional<V> value;
     private final long revision;
 
 }

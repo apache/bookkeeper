@@ -48,6 +48,13 @@ public class RangeResultImpl<K, V>
     }
 
     @Override
+    public List<KVRecord<K, V>> getKvsAndClear() {
+        List<KVRecord<K, V>> kvsToReturn = kvs;
+        kvs = Collections.emptyList();
+        return kvsToReturn;
+    }
+
+    @Override
     public long count() {
         return count;
     }
@@ -55,6 +62,17 @@ public class RangeResultImpl<K, V>
     @Override
     public boolean hasMore() {
         return hasMore;
+    }
+
+    @Override
+    protected void reset() {
+        count = 0L;
+        hasMore = false;
+        kvs.forEach(KVRecord::recycle);
+        kvs.clear();
+        kvs = Collections.emptyList();
+
+        super.reset();
     }
 
     @Override

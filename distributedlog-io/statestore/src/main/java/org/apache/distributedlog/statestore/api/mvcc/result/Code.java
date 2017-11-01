@@ -29,11 +29,14 @@ import lombok.RequiredArgsConstructor;
 public enum Code {
 
     OK(0),
-    INVALID_ARGUMENT(-1),
-    BAD_REVISION(-2),
-    SMALLER_REVISION(-3),
-    KEY_NOT_FOUND(-4),
-    ILLEGAL_OP(-5);
+    INTERNAL_ERROR(-1),
+    INVALID_ARGUMENT(-2),
+    ILLEGAL_OP(-3),
+    UNEXPECTED(-4),
+    BAD_REVISION(-5),
+    SMALLER_REVISION(-6),
+    KEY_NOT_FOUND(-7),
+    KEY_EXISTS(-8);
 
     private final int code;
 

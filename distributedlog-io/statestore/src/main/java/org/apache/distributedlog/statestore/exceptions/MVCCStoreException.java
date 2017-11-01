@@ -30,7 +30,7 @@ public class MVCCStoreException extends StateStoreRuntimeException {
     private final Code code;
 
     public MVCCStoreException(Code code, String msg) {
-        super(msg);
+        super(msg + " : code = " + code);
         this.code = code;
     }
 
@@ -40,7 +40,7 @@ public class MVCCStoreException extends StateStoreRuntimeException {
     }
 
     public MVCCStoreException(Code code, String msg, Throwable t) {
-        super(msg, t);
+        super(msg + " : code = " + code, t);
         this.code = code;
     }
 

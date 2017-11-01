@@ -18,6 +18,7 @@
 
 package org.apache.distributedlog.statestore.api.mvcc.op;
 
+import java.util.Optional;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 
@@ -37,7 +38,7 @@ public interface CompareOp<K, V> {
 
     K getKey();
 
-    V getValue();
+    Optional<V> getValue();
 
     long getRevision();
 

@@ -37,4 +37,6 @@ public interface DeleteResult<K, V> extends Result<K, V> {
 
     List<KVRecord<K, V>> prevKvs();
 
+    List<KVRecord<K, V>> getPrevKvsAndClear();
+
 }

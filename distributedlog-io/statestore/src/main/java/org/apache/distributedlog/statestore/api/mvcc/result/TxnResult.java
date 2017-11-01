@@ -35,4 +35,6 @@ public interface TxnResult<K, V> extends Result<K, V> {
     boolean isSuccess();
 
     List<Result<K, V>> results();
+
+    List<Result<K, V>> getResultsAndClear();
 }

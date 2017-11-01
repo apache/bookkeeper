@@ -26,16 +26,21 @@ import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.PooledByteBufAllocator;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.statestore.api.mvcc.op.CompareOp;
 import org.apache.distributedlog.statestore.api.mvcc.op.CompareResult;
 import org.apache.distributedlog.statestore.api.mvcc.op.CompareTarget;
 import org.apache.distributedlog.statestore.api.mvcc.op.DeleteOp;
 import org.apache.distributedlog.statestore.api.mvcc.op.Op;
 import org.apache.distributedlog.statestore.api.mvcc.op.PutOp;
+import org.apache.distributedlog.statestore.api.mvcc.op.RangeOp;
 import org.apache.distributedlog.statestore.api.mvcc.op.TxnOp;
+import org.apache.distributedlog.statestore.api.mvcc.result.Code;
+import org.apache.distributedlog.statestore.exceptions.MVCCStoreException;
 import org.apache.distributedlog.statestore.exceptions.StateStoreRuntimeException;
 import org.apache.distributedlog.statestore.impl.Constants;
 import org.apache.distributedlog.statestore.proto.Command;
@@ -43,6 +48,7 @@ import org.apache.distributedlog.statestore.proto.Compare;
 import org.apache.distributedlog.statestore.proto.DeleteRequest;
 import org.apache.distributedlog.statestore.proto.NopRequest;
 import org.apache.distributedlog.statestore.proto.PutRequest;
+import org.apache.distributedlog.statestore.proto.RangeRequest;
 import org.apache.distributedlog.statestore.proto.RequestOp;
 import org.apache.distributedlog.statestore.proto.TxnRequest;
 
@@ -51,7 +57,7 @@ import org.apache.distributedlog.statestore.proto.TxnRequest;
  */
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-final class MVCCUtils {
+public final class MVCCUtils {
 
     static Command NOP_CMD = Command.newBuilder()
         .setNopReq(NopRequest.newBuilder().build())
@@ -74,6 +80,19 @@ final class MVCCUtils {
         return reqBuilder.setPrevKv(op.prevKV()).build();
     }
 
+    static RangeRequest toRangeRequest(RangeOp<byte[], byte[]> op) {
+        RangeRequest.Builder reqBuilder = RangeRequest.newBuilder()
+            .setKey(UnsafeByteOperations.unsafeWrap(op.key().orElse(Constants.NULL_START_KEY)))
+            .setRangeEnd(UnsafeByteOperations.unsafeWrap(op.endKey().orElse(Constants.NULL_END_KEY)))
+            .setMaxCreateRevision(op.maxCreateRev())
+            .setMinCreateRevision(op.minCreateRev())
+            .setMaxModRevision(op.maxModRev())
+            .setMinModRevision(op.minModRev())
+            .setCountOnly(false);
+
+        return reqBuilder.build();
+    }
+
     private static List<RequestOp> toRequestOpList(List<Op<byte[], byte[]>> ops) {
         List<RequestOp> requestOps = Lists.newArrayListWithExpectedSize(ops.size());
         for (Op<byte[], byte[]> op : ops) {
@@ -86,6 +105,11 @@ final class MVCCUtils {
                 case DELETE:
                     requestOps.add(RequestOp.newBuilder()
                         .setDeleteOp(toDeleteRequest((DeleteOp<byte[], byte[]>) op))
+                        .build());
+                    break;
+                case RANGE:
+                    requestOps.add(RequestOp.newBuilder()
+                        .setRangeOp(toRangeRequest((RangeOp<byte[], byte[]>) op))
                         .build());
                     break;
                 default:
@@ -120,7 +144,9 @@ final class MVCCUtils {
                 compareBuilder.setVersion(op.getRevision());
                 break;
             case VALUE:
-                compareBuilder.setValue(UnsafeByteOperations.unsafeWrap(op.getValue()));
+                if (op.getValue().isPresent()) {
+                    compareBuilder.setValue(UnsafeByteOperations.unsafeWrap(op.getValue().get()));
+                }
                 break;
             default:
                 throw new IllegalArgumentException("Invalid compare target " + op.getTarget());
@@ -201,6 +227,10 @@ final class MVCCUtils {
             log.error("Found a corrupted record on replaying log stream", e);
             throw new StateStoreRuntimeException("Found a corrupted record on replaying log stream", e);
         }
+    }
+
+    public static <T> CompletableFuture<T> failWithCode(Code code, String msg) {
+        return FutureUtils.exception(new MVCCStoreException(code, msg));
     }
 
 }

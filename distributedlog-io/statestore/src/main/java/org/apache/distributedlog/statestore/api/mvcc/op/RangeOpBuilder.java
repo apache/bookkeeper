@@ -38,7 +38,7 @@ public interface RangeOpBuilder<K, V> extends OpBuilder<K, V, RangeOp<K, V>, Ran
 
     RangeOpBuilder<K, V> isRangeOp(boolean isRangeOp);
 
-    RangeOpBuilder<K, V> limit(int limit);
+    RangeOpBuilder<K, V> limit(long limit);
 
     RangeOpBuilder<K, V> minModRev(long rev);
 

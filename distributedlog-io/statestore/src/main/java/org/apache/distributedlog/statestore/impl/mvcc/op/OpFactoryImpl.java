@@ -18,6 +18,7 @@
 
 package org.apache.distributedlog.statestore.impl.mvcc.op;
 
+import java.util.Optional;
 import org.apache.distributedlog.statestore.api.mvcc.op.CompareOp;
 import org.apache.distributedlog.statestore.api.mvcc.op.CompareResult;
 import org.apache.distributedlog.statestore.api.mvcc.op.CompareTarget;
@@ -88,7 +89,7 @@ public class OpFactoryImpl<K, V> implements OpFactory<K, V> {
             CompareTarget.VALUE,
             result,
             key,
-            value,
+            Optional.ofNullable(value),
             -1L);
     }
 

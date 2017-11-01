@@ -18,6 +18,7 @@
 
 package org.apache.distributedlog.statestore.api.mvcc;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
@@ -37,6 +38,24 @@ import org.apache.distributedlog.statestore.api.mvcc.result.TxnResult;
 @Public
 @Evolving
 public interface MVCCAsyncStoreWriteView<K, V> {
+
+    CompletableFuture<Void> put(K k, V v);
+
+    CompletableFuture<V> putIfAbsent(K k, V v);
+
+    CompletableFuture<Long> vPut(K k, V v, long expectedVersion);
+
+    CompletableFuture<Long> rPut(K k, V v, long expectedRevision);
+
+    CompletableFuture<V> delete(K k);
+
+    CompletableFuture<Boolean> delete(K k, V v);
+
+    CompletableFuture<List<KVRecord<K, V>>> deleteRange(K key, K endKey);
+
+    CompletableFuture<KVRecord<K, V>> vDelete(K k, long expectedVersion);
+
+    CompletableFuture<KVRecord<K, V>> rDelete(K k, long expectedRevision);
 
     CompletableFuture<PutResult<K, V>> put(PutOp<K, V> op);
 
