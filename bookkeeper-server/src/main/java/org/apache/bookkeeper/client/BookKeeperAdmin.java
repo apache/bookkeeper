@@ -26,6 +26,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.AbstractFuture;
+
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -48,6 +50,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
+
+import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
 import org.apache.bookkeeper.client.LedgerFragmentReplicator.SingleFragmentCallback;
@@ -1151,6 +1156,73 @@ public class BookKeeperAdmin implements AutoCloseable {
             bkc.ledgerManagerFactory.format(conf, bkc.regClient.getLayoutManager());
 
             return rm.format(conf);
+        }
+    }
+
+    /**
+     * Initializes bookie, by making sure that the journalDir, ledgerDirs and
+     * indexDirs are empty and there is no registered Bookie with this BookieId.
+     *
+     * @param conf
+     * @return
+     * @throws Exception
+     */
+    public static boolean initBookie(ServerConfiguration conf) throws Exception {
+        try (RegistrationManager rm = RegistrationManager.instantiateRegistrationManager(conf)) {
+            /*
+             * make sure that journalDir, ledgerDirs and indexDirs are empty
+             */
+            File[] journalDirs = conf.getJournalDirs();
+            for (File journalDir : journalDirs) {
+                File[] journalDirFiles = journalDir.listFiles();
+                if ((journalDirFiles != null) && journalDirFiles.length != 0) {
+                    LOG.error("JournalDir: {} is existing and its not empty, try formatting the bookie", journalDir);
+                    return false;
+                }
+            }
+
+            File[] ledgerDirs = conf.getLedgerDirs();
+            for (File ledgerDir : ledgerDirs) {
+                File[] ledgerDirFiles = ledgerDir.listFiles();
+                if ((ledgerDirFiles != null) && ledgerDirFiles.length != 0) {
+                    LOG.error("Atleast one LedgerDir: {} is existing and its not empty, try formatting the bookie",
+                            ledgerDir);
+                    return false;
+                }
+            }
+
+            File[] indexDirs = conf.getIndexDirs();
+            if (indexDirs != null) {
+                for (File indexDir : indexDirs) {
+                    File[] indexDirFiles = indexDir.listFiles();
+                    if ((indexDirFiles != null) && indexDirFiles.length != 0) {
+                        LOG.error("Atleast one IndexDir: {} is existing and its not empty, try formatting the bookie",
+                                indexDir);
+                        return false;
+                    }
+                }
+            }
+
+            /*
+             * make sure that there is no bookie registered with the same
+             * bookieid and the cookie for the same bookieid is not existing.
+             */
+            String bookieId = Bookie.getBookieAddress(conf).toString();
+            if (rm.isBookieRegistered(bookieId)) {
+                LOG.error("Bookie with bookieId: {} is still registered, "
+                        + "If this node is running bookie process, try stopping it first.", bookieId);
+                return false;
+            }
+
+            try {
+                rm.readCookie(bookieId);
+                LOG.error("Cookie still exists in the ZK for this bookie: {}, try formatting the bookie", bookieId);
+                return false;
+            } catch (BookieException.CookieNotFoundException nfe) {
+                // it is expected for readCookie to fail with
+                // BookieException.CookieNotFoundException
+            }
+            return true;
         }
     }
 
