@@ -91,7 +91,7 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
     protected volatile boolean isInitialized = false;
     protected volatile boolean closed = false;
 
-    protected RocksdbKVStore() {
+    public RocksdbKVStore() {
         // initialize the iterators set
         this.kvIters = Collections.synchronizedSet(Sets.newHashSet());
     }
