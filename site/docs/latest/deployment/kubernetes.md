@@ -99,6 +99,20 @@ $ zk-shell localhost 2181
 
 Once ZooKeeper cluster is Running, you can then deploy the bookies. You can deploy the bookies either using a [DaemonSet](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/) or a [StatefulSet](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/).
 
+> NOTE: _DaemonSet_ vs _StatefulSet_
+>
+> A _DaemonSet_ ensures that all (or some) nodes run a pod of bookie instance. As nodes are added to the cluster, bookie pods are added automatically to them. As nodes are removed from the
+> cluster, those bookie pods are garbage collected. The bookies deployed in a DaemonSet stores data on the local disks on those nodes. So it doesn't require any external storage for Persistent
+> Volumes.
+>
+> A _StatefulSet_ maintains a sticky identity for the pods that it runs and manages. It provides stable and unique network identifiers, and stable and persistent storage for each pod. The pods
+> are not interchangeable, the idenifiers for each pod are maintained across any rescheduling.
+>
+> Which one to use? A _DaemonSet_ is the easiest way to deploy a bookkeeper cluster, because it doesn't require additional persistent volume provisioner and use local disks. BookKeeper manages
+> the data replication. It maintains the best latency property. However, it uses `hostIP` and `hostPort` for communications between pods. In some k8s platform (such as DC/OS), `hostIP` and
+> `hostPort` are not well supported. A _StatefulSet_ is only practical when deploying in a cloud environment or any K8S installation that has persistent volumes available. Also be aware, latency
+> can be potentially higher when using persistent volumes, because there is usually built-in replication in the persistent volumes.
+
 ```bash
 # deploy bookies in a daemon set
 $ kubectl apply -f bookkeeper.yaml
