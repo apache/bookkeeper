@@ -25,7 +25,7 @@ import io.netty.buffer.ByteBuf;
 class ResponseBuilder {
     static BookieProtocol.Response buildErrorResponse(int errorCode, BookieProtocol.Request r) {
         if (r.getOpCode() == BookieProtocol.ADDENTRY) {
-            return new BookieProtocol.AddResponse(r.getProtocolVersion(), errorCode,
+            return BookieProtocol.AddResponse.create(r.getProtocolVersion(), errorCode,
                                                   r.getLedgerId(), r.getEntryId());
         } else {
             assert(r.getOpCode() == BookieProtocol.READENTRY);
@@ -35,7 +35,7 @@ class ResponseBuilder {
     }
 
     static BookieProtocol.Response buildAddResponse(BookieProtocol.Request r) {
-        return new BookieProtocol.AddResponse(r.getProtocolVersion(), BookieProtocol.EOK, r.getLedgerId(),
+        return BookieProtocol.AddResponse.create(r.getProtocolVersion(), BookieProtocol.EOK, r.getLedgerId(),
                                               r.getEntryId());
     }
 
