@@ -179,7 +179,7 @@ public class LedgerHandleAdv extends LedgerHandle {
                 wasClosed = true;
                 currentLength = 0;
             } else {
-                currentLength = addToLength(length);
+                currentLength = addToLength(data.readableBytes());
                 pendingAddOps.add(op);
             }
         }
