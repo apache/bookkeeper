@@ -187,7 +187,6 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
                 op.setLedgerLength(currentLength);
                 pendingAddOps.add(op);
             }
-            op.setLedgerLength(currentLength);
         }
 
         if (wasClosed) {
