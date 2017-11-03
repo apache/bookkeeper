@@ -52,7 +52,7 @@ PR_REMOTE_NAME = os.environ.get("PR_REMOTE_NAME", "apache-github")
 # Remote name which points to Apache git
 PUSH_REMOTE_NAME = os.environ.get("PUSH_REMOTE_NAME", "apache")
 # Reference branch name
-DEV_BRANCH_NAME  = os.environ.get("DEV_BRANCH_NAME", "master")
+DEV_BRANCH_NAME = os.environ.get("DEV_BRANCH_NAME", "master")
 # ASF JIRA username
 JIRA_USERNAME = os.environ.get("JIRA_USERNAME", "")
 # ASF JIRA password
