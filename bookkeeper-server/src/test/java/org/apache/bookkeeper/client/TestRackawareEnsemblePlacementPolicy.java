@@ -18,6 +18,8 @@
 package org.apache.bookkeeper.client;
 
 import static org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicy.REPP_DNS_RESOLVER_CLASS;
+import static org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicy.shuffleWithMask;
+import static org.apache.bookkeeper.client.RoundRobinDistributionSchedule.writeSetFromValues;
 import static org.apache.bookkeeper.feature.SettableFeatureProvider.DISABLE_ALL;
 
 import java.net.InetAddress;
@@ -53,7 +55,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
     RackawareEnsemblePlacementPolicy repp;
     final ArrayList<BookieSocketAddress> ensemble = new ArrayList<BookieSocketAddress>();
-    final List<Integer> writeSet = new ArrayList<Integer>();
+    DistributionSchedule.WriteSet writeSet
+        = DistributionSchedule.NULL_WRITE_SET;
     ClientConfiguration conf = new ClientConfiguration();
     BookieSocketAddress addr1, addr2, addr3, addr4;
     io.netty.util.HashedWheelTimer timer;
@@ -80,9 +83,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         ensemble.add(addr2);
         ensemble.add(addr3);
         ensemble.add(addr4);
-        for (int i = 0; i < 4; i++) {
-            writeSet.add(i);
-        }
+        writeSet = writeSetFromValues(0,1,2,3);
 
         timer = new HashedWheelTimer(
                 new ThreadFactoryBuilder().setNameFormat("TestTimer-%d").build(),
@@ -125,15 +126,15 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         addrs.remove(addr1);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
 
-        List<Integer> reoderSet = repp.reorderReadSequence(ensemble, writeSet, new HashMap<BookieSocketAddress, Long>());
-        List<Integer> expectedSet = new ArrayList<Integer>();
-        expectedSet.add(1);
-        expectedSet.add(2);
-        expectedSet.add(3);
-        expectedSet.add(0);
-        LOG.info("reorder set : {}", reoderSet);
-        assertFalse(reoderSet == writeSet);
-        assertEquals(expectedSet, reoderSet);
+        DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
+        DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
+                ensemble, new HashMap<BookieSocketAddress, Long>(),
+                writeSet);
+        DistributionSchedule.WriteSet expectedSet
+            = writeSetFromValues(1, 2, 3, 0);
+        LOG.info("reorder set : {}", reorderSet);
+        assertFalse(reorderSet.equals(origWriteSet));
+        assertEquals(expectedSet, reorderSet);
     }
 
     @Test
@@ -157,15 +158,14 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         ro.add(addr1);
         repp.onClusterChanged(addrs, ro);
 
-        List<Integer> reoderSet = repp.reorderReadSequence(ensemble, writeSet, new HashMap<BookieSocketAddress, Long>());
-        List<Integer> expectedSet = new ArrayList<Integer>();
-        expectedSet.add(1);
-        expectedSet.add(2);
-        expectedSet.add(3);
-        expectedSet.add(0);
-        LOG.info("reorder set : {}", reoderSet);
-        assertFalse(reoderSet == writeSet);
-        assertEquals(expectedSet, reoderSet);
+        DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
+        DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
+                ensemble, new HashMap<BookieSocketAddress, Long>(), writeSet);
+        DistributionSchedule.WriteSet expectedSet
+            = writeSetFromValues(1, 2, 3, 0);
+        LOG.info("reorder set : {}", reorderSet);
+        assertFalse(reorderSet.equals(origWriteSet));
+        assertEquals(expectedSet, reorderSet);
     }
 
     @Test
@@ -188,15 +188,14 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         addrs.remove(addr2);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
 
-        List<Integer> reoderSet = repp.reorderReadSequence(ensemble, writeSet, new HashMap<BookieSocketAddress, Long>());
-        List<Integer> expectedSet = new ArrayList<Integer>();
-        expectedSet.add(2);
-        expectedSet.add(3);
-        expectedSet.add(0);
-        expectedSet.add(1);
-        LOG.info("reorder set : {}", reoderSet);
-        assertFalse(reoderSet == writeSet);
-        assertEquals(expectedSet, reoderSet);
+        DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
+        DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
+                ensemble, new HashMap<BookieSocketAddress, Long>(), writeSet);
+        DistributionSchedule.WriteSet expectedSet
+            = writeSetFromValues(2, 3, 0, 1);
+        LOG.info("reorder set : {}", reorderSet);
+        assertFalse(reorderSet.equals(origWriteSet));
+        assertEquals(expectedSet, reorderSet);
     }
 
     @Test
@@ -220,14 +219,13 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         Set<BookieSocketAddress> roAddrs = new HashSet<BookieSocketAddress>();
         roAddrs.add(addr2);
         repp.onClusterChanged(addrs, roAddrs);
-        List<Integer> reoderSet = repp.reorderReadSequence(ensemble, writeSet, new HashMap<BookieSocketAddress, Long>());
-        List<Integer> expectedSet = new ArrayList<Integer>();
-        expectedSet.add(2);
-        expectedSet.add(3);
-        expectedSet.add(1);
-        expectedSet.add(0);
-        assertFalse(reoderSet == writeSet);
-        assertEquals(expectedSet, reoderSet);
+        DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
+        DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
+                ensemble, new HashMap<BookieSocketAddress, Long>(), writeSet);
+        DistributionSchedule.WriteSet expectedSet
+            = writeSetFromValues(2, 3, 1, 0);
+        assertFalse(reorderSet.equals(origWriteSet));
+        assertEquals(expectedSet, reorderSet);
     }
 
     @Test
@@ -716,7 +714,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         bookieFailures.put(addr1, 20L);
         bookieFailures.put(addr2, 22L);
 
-        List<Integer> reoderSet = repp.reorderReadSequence(ensemble, writeSet, bookieFailures);
+        DistributionSchedule.WriteSet reoderSet = repp.reorderReadSequence(
+                ensemble, bookieFailures, writeSet);
         LOG.info("reorder set : {}", reoderSet);
         assertEquals(ensemble.get(reoderSet.get(2)), addr1);
         assertEquals(ensemble.get(reoderSet.get(3)), addr2);
@@ -758,4 +757,109 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         ArrayList<BookieSocketAddress> ensemble = repp.newEnsemble(4, 4, 4, null, new HashSet<BookieSocketAddress>());
         assertTrue(ensemble.contains(addr4));
     }
+
+    @Test
+    public void testShuffleWithMask() {
+        int mask = 0xE1 << 16;
+        int maskBits = 0xFF << 16;
+        boolean shuffleOccurred = false;
+
+        for (int i = 0; i < 100; i++) {
+            DistributionSchedule.WriteSet w = writeSetFromValues(
+                    1, 2, 3 & mask, 4 & mask, 5 & mask, 6);
+            shuffleWithMask(w, mask, maskBits);
+            assertEquals(w.get(0), 1);
+            assertEquals(w.get(1), 2);
+            assertEquals(w.get(5), 6);
+
+            if (w.get(3) == (3 & mask)
+                || w.get(4) == (3 & mask)) {
+                shuffleOccurred = true;
+            } else if (w.get(2) != (3 & mask)) {
+                fail("3 not found");
+            }
+
+            if (w.get(2) == (4 & mask)
+                || w.get(4) == (4 & mask)) {
+                shuffleOccurred = true;
+            } else if (w.get(3) != (4 & mask)) {
+                fail("4 not found");
+            }
+
+            if (w.get(2) == (5 & mask)
+                || w.get(3) == (5 & mask)) {
+                shuffleOccurred = true;
+            } else if (w.get(4) != (5 & mask)) {
+                fail("5 not found");
+            }
+        }
+        assertTrue(shuffleOccurred);
+
+        // at start of array
+        shuffleOccurred = false;
+        for (int i = 0; i < 100; i++) {
+            DistributionSchedule.WriteSet w = writeSetFromValues(
+                    1 & mask, 2 & mask, 3 & mask, 4, 5, 6);
+            shuffleWithMask(w, mask, maskBits);
+            assertEquals(w.get(3), 4);
+            assertEquals(w.get(4), 5);
+            assertEquals(w.get(5), 6);
+
+            if (w.get(1) == (1 & mask)
+                || w.get(2) == (1 & mask)) {
+                shuffleOccurred = true;
+            } else if (w.get(0) != (1 & mask)) {
+                fail("1 not found");
+            }
+
+            if (w.get(0) == (2 & mask)
+                || w.get(2) == (2 & mask)) {
+                shuffleOccurred = true;
+            } else if (w.get(1) != (2 & mask)) {
+                fail("2 not found");
+            }
+
+            if (w.get(0) == (3 & mask)
+                || w.get(1) == (3 & mask)) {
+                shuffleOccurred = true;
+            } else if (w.get(2) != (3 & mask)) {
+                fail("3 not found");
+            }
+        }
+        assertTrue(shuffleOccurred);
+
+        // at end of array
+        shuffleOccurred = false;
+        for (int i = 0; i < 100; i++) {
+            DistributionSchedule.WriteSet w = writeSetFromValues(
+                    1, 2, 3, 4 & mask, 5 & mask, 6 & mask);
+            shuffleWithMask(w, mask, maskBits);
+            assertEquals(w.get(0), 1);
+            assertEquals(w.get(1), 2);
+            assertEquals(w.get(2), 3);
+
+            if (w.get(4) == (4 & mask)
+                || w.get(5) == (4 & mask)) {
+                shuffleOccurred = true;
+            } else if (w.get(3) != (4 & mask)) {
+                fail("4 not found");
+            }
+
+            if (w.get(3) == (5 & mask)
+                || w.get(5) == (5 & mask)) {
+                shuffleOccurred = true;
+            } else if (w.get(4) != (5 & mask)) {
+                fail("5 not found");
+            }
+
+            if (w.get(3) == (6 & mask)
+                || w.get(4) == (6 & mask)) {
+                shuffleOccurred = true;
+            } else if (w.get(5) != (6 & mask)) {
+                fail("6 not found");
+            }
+        }
+        assertTrue(shuffleOccurred);
+    }
+
 }

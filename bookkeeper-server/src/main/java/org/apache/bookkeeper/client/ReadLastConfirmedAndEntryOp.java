@@ -34,6 +34,7 @@ import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.ReadLastConfirmedAndEntryContext;
 import org.apache.bookkeeper.util.MathUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,8 +74,8 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         int numMissedEntryReads = 0;
 
         final ArrayList<BookieSocketAddress> ensemble;
-        final List<Integer> writeSet;
-        final List<Integer> orderedEnsemble;
+        final DistributionSchedule.WriteSet writeSet;
+        final DistributionSchedule.WriteSet orderedEnsemble;
 
         ReadLACAndEntryRequest(ArrayList<BookieSocketAddress> ensemble, long lId, long eId) {
             super(lId, eId);
@@ -83,9 +84,9 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
             this.writeSet = lh.distributionSchedule.getWriteSet(entryId);
             if (lh.bk.reorderReadSequence) {
                 this.orderedEnsemble = lh.bk.placementPolicy.reorderReadLACSequence(ensemble,
-                    writeSet, lh.bookieFailureHistory.asMap());
+                        lh.bookieFailureHistory.asMap(), writeSet.copy());
             } else {
-                this.orderedEnsemble = writeSet;
+                this.orderedEnsemble = writeSet.copy();
             }
         }
 
@@ -121,6 +122,8 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
             }
 
             if (!complete.getAndSet(true)) {
+                writeSet.recycle();
+                orderedEnsemble.recycle();
                 rc = BKException.Code.OK;
                 this.entryId = entryId;
                 /*
@@ -144,6 +147,8 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
          */
         boolean fail(int rc) {
             if (complete.compareAndSet(false, true)) {
+                writeSet.recycle();
+                orderedEnsemble.recycle();
                 this.rc = rc;
                 translateAndSetFirstError(rc);
                 completeRequest();
@@ -244,10 +249,10 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
 
         @Override
         void read() {
-            for (int bookieIndex : orderedEnsemble) {
-                BookieSocketAddress to = ensemble.get(bookieIndex);
+            for (int i = 0; i < orderedEnsemble.size(); i++) {
+                BookieSocketAddress to = ensemble.get(orderedEnsemble.get(i));
                 try {
-                    sendReadTo(bookieIndex, to, this);
+                    sendReadTo(orderedEnsemble.get(i), to, this);
                 } catch (InterruptedException ie) {
                     LOG.error("Interrupted reading entry {} : ", this, ie);
                     Thread.currentThread().interrupt();

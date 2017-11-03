@@ -40,7 +40,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
-import org.apache.bookkeeper.client.BookiesListener;
 import org.apache.bookkeeper.client.LedgerChecker;
 import org.apache.bookkeeper.client.LedgerFragment;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -73,7 +72,7 @@ import org.slf4j.LoggerFactory;
  * re-replication activities by keeping all the corresponding ledgers of the
  * failed bookie as underreplicated znode in zk.
  */
-public class Auditor implements BookiesListener {
+public class Auditor {
     private static final Logger LOG = LoggerFactory.getLogger(Auditor.class);
     private final ServerConfiguration conf;
     private BookKeeper bkc;
@@ -157,12 +156,9 @@ public class Auditor implements BookiesListener {
         } catch (CompatibilityException ce) {
             throw new UnavailableException(
                     "CompatibilityException while initializing Auditor", ce);
-        } catch (IOException ioe) {
+        } catch (IOException | BKException | KeeperException ioe) {
             throw new UnavailableException(
-                    "IOException while initializing Auditor", ioe);
-        } catch (KeeperException ke) {
-            throw new UnavailableException(
-                    "KeeperException while initializing Auditor", ke);
+                    "Exception while initializing Auditor", ioe);
         } catch (InterruptedException ie) {
             throw new UnavailableException(
                     "Interrupted while initializing Auditor", ie);
@@ -375,7 +371,7 @@ public class Auditor implements BookiesListener {
                 LOG.info("Periodic checking disabled");
             }
             try {
-                notifyBookieChanges();
+                watchBookieChanges();
                 knownBookies = getAvailableBookies();
             } catch (BKException bke) {
                 LOG.error("Couldn't get bookie list, exiting", bke);
@@ -427,7 +423,7 @@ public class Auditor implements BookiesListener {
     private List<String> getAvailableBookies() throws BKException {
         // Get the available bookies
         Collection<BookieSocketAddress> availableBkAddresses = admin.getAvailableBookies();
-        Collection<BookieSocketAddress> readOnlyBkAddresses = admin.getReadOnlyBookiesSync();
+        Collection<BookieSocketAddress> readOnlyBkAddresses = admin.getReadOnlyBookies();
         availableBkAddresses.addAll(readOnlyBkAddresses);
 
         List<String> availableBookies = new ArrayList<String>();
@@ -437,9 +433,9 @@ public class Auditor implements BookiesListener {
         return availableBookies;
     }
 
-    private void notifyBookieChanges() throws BKException {
-        admin.notifyBookiesChanged(this);
-        admin.notifyReadOnlyBookiesChanged(this);
+    private void watchBookieChanges() throws BKException {
+        admin.watchWritableBookiesChanged(bookies -> submitAuditTask());
+        admin.watchReadOnlyBookiesChanged(bookies -> submitAuditTask());
     }
 
     /**
@@ -700,17 +696,6 @@ public class Auditor implements BookiesListener {
             client.close();
             newzk.close();
         }
-    }
-
-    @Override
-    public void availableBookiesChanged() {
-        // since a watch is triggered, we need to watch again on the bookies
-        try {
-            notifyBookieChanges();
-        } catch (BKException bke) {
-            LOG.error("Exception while registering for a bookie change notification", bke);
-        }
-        submitAuditTask();
     }
 
     /**

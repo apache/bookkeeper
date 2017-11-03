@@ -17,14 +17,16 @@
  */
 package org.apache.bookkeeper.client;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import io.netty.buffer.ByteBuf;
+import io.netty.util.Recycler;
+import io.netty.util.Recycler.Handle;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
 
-import java.util.HashSet;
+import java.util.Arrays;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.collect.ImmutableMap;
@@ -35,6 +37,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.SafeRunnable;
+import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.concurrent.RejectedExecutionException;
@@ -48,15 +51,15 @@ import java.util.concurrent.RejectedExecutionException;
  *
  *
  */
-class PendingAddOp implements WriteCallback, TimerTask {
+class PendingAddOp extends SafeRunnable implements WriteCallback, TimerTask {
     private final static Logger LOG = LoggerFactory.getLogger(PendingAddOp.class);
 
+    ByteBuf payload;
     ByteBuf toSend;
     AddCallback cb;
     Object ctx;
     long entryId;
     int entryLength;
-    Set<Integer> writeSet;
 
     DistributionSchedule.AckSet ackSet;
     boolean completed = false;
@@ -65,20 +68,38 @@ class PendingAddOp implements WriteCallback, TimerTask {
     boolean isRecoveryAdd = false;
     long requestTimeNanos;
 
-    final int timeoutSec;
+    int timeoutSec;
     Timeout timeout = null;
 
     OpStatsLogger addOpLogger;
-    boolean callbackTriggered = false;
+    long currentLedgerLength;
+    int pendingWriteRequests;
+    boolean callbackTriggered;
+    boolean hasRun;
 
-    PendingAddOp(LedgerHandle lh, AddCallback cb, Object ctx) {
-        this.lh = lh;
-        this.cb = cb;
-        this.ctx = ctx;
-        this.entryId = LedgerHandle.INVALID_ENTRY_ID;
-        this.ackSet = lh.distributionSchedule.getAckSet();
-        this.addOpLogger = lh.bk.getAddOpLogger();
-        this.timeoutSec = lh.bk.getConf().getAddEntryQuorumTimeout();
+    static PendingAddOp create(LedgerHandle lh, ByteBuf payload, AddCallback cb, Object ctx) {
+        PendingAddOp op = RECYCLER.get();
+        op.lh = lh;
+        op.isRecoveryAdd = false;
+        op.cb = cb;
+        op.ctx = ctx;
+        op.entryId = LedgerHandle.INVALID_ENTRY_ID;
+        op.currentLedgerLength = -1;
+        op.payload = payload;
+        op.entryLength = payload.readableBytes();
+
+        op.completed = false;
+        op.ackSet = lh.distributionSchedule.getAckSet();
+        op.addOpLogger = lh.bk.getAddOpLogger();
+        if (op.timeout != null) {
+            op.timeout.cancel();
+        }
+        op.timeout = null;
+        op.timeoutSec = lh.bk.getConf().getAddEntryQuorumTimeout();
+        op.pendingWriteRequests = 0;
+        op.callbackTriggered = false;
+        op.hasRun = false;
+        return op;
     }
 
     /**
@@ -92,7 +113,10 @@ class PendingAddOp implements WriteCallback, TimerTask {
 
     void setEntryId(long entryId) {
         this.entryId = entryId;
-        writeSet = new HashSet<Integer>(lh.distributionSchedule.getWriteSet(entryId));
+    }
+
+    void setLedgerLength(long ledgerLength) {
+        this.currentLedgerLength = ledgerLength;
     }
 
     long getEntryId() {
@@ -104,6 +128,7 @@ class PendingAddOp implements WriteCallback, TimerTask {
 
         lh.bk.getBookieClient().addEntry(lh.metadata.currentEnsemble.get(bookieIndex), lh.ledgerId, lh.ledgerKey, entryId, toSend,
                 this, bookieIndex, flags, lh.metadata.getLedgerType());
+        ++pendingWriteRequests;
     }
 
     @Override
@@ -152,9 +177,15 @@ class PendingAddOp implements WriteCallback, TimerTask {
         // completes.
         //
         // We call sendAddSuccessCallback when unsetting t cover this case.
-        if (!writeSet.contains(bookieIndex)) {
-            lh.sendAddSuccessCallbacks();
-            return;
+        DistributionSchedule.WriteSet writeSet
+            = lh.distributionSchedule.getWriteSet(entryId);
+        try {
+            if (!writeSet.contains(bookieIndex)) {
+                lh.sendAddSuccessCallbacks();
+                return;
+            }
+        } finally {
+            writeSet.recycle();
         }
 
         if (callbackTriggered) {
@@ -177,29 +208,48 @@ class PendingAddOp implements WriteCallback, TimerTask {
         sendWriteRequest(bookieIndex);
     }
 
-    void initiate(ByteBuf toSend, int entryLength) {
+    /**
+     * Initiate the add operation
+     */
+    public void safeRun() {
+        hasRun = true;
         if (callbackTriggered) {
-            // this should only be true if the request was failed due to another request ahead in the pending queue,
+            // this should only be true if the request was failed due
+            // to another request ahead in the pending queue,
             // so we can just ignore this request
+            maybeRecycle();
             return;
         }
 
         if (timeoutSec > -1) {
-            this.timeout = lh.bk.getBookieClient().scheduleTimeout(this, timeoutSec, TimeUnit.SECONDS);
+            this.timeout = lh.bk.getBookieClient().scheduleTimeout(
+                    this, timeoutSec, TimeUnit.SECONDS);
         }
+
         this.requestTimeNanos = MathUtils.nowInNano();
-        this.toSend = toSend;
-        // Retain the buffer until all writes are complete
-        this.toSend.retain();
-        this.entryLength = entryLength;
-        for (int bookieIndex : writeSet) {
-            sendWriteRequest(bookieIndex);
+        checkNotNull(lh);
+        checkNotNull(lh.macManager);
+
+        this.toSend = lh.macManager.computeDigestAndPackageForSending(
+                entryId, lh.lastAddConfirmed, currentLedgerLength,
+                payload);
+
+        // Iterate over set and trigger the sendWriteRequests
+        DistributionSchedule.WriteSet writeSet
+            = lh.distributionSchedule.getWriteSet(entryId);
+        try {
+            for (int i = 0; i < writeSet.size(); i++) {
+                sendWriteRequest(writeSet.get(i));
+            }
+        } finally {
+            writeSet.recycle();
         }
     }
 
     @Override
     public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
         int bookieIndex = (Integer) ctx;
+        --pendingWriteRequests;
 
         if (!lh.metadata.currentEnsemble.get(bookieIndex).equals(addr)) {
             // ensemble has already changed, failure of this addr is immaterial
@@ -233,6 +283,7 @@ class PendingAddOp implements WriteCallback, TimerTask {
             sendAddSuccessCallbacks();
             // I am already finished, ignore incoming responses.
             // otherwise, we might hit the following error handling logic, which might cause bad things.
+            maybeRecycle();
             return;
         }
 
@@ -310,6 +361,8 @@ class PendingAddOp implements WriteCallback, TimerTask {
         }
         cb.addComplete(rc, lh, entryId, ctx);
         callbackTriggered = true;
+
+        maybeRecycle();
     }
 
     @Override
@@ -334,4 +387,55 @@ class PendingAddOp implements WriteCallback, TimerTask {
        return (this == o);
     }
 
+    private final Handle<PendingAddOp> recyclerHandle;
+    private static final Recycler<PendingAddOp> RECYCLER = new Recycler<PendingAddOp>() {
+        protected PendingAddOp newObject(Recycler.Handle<PendingAddOp> handle) {
+            return new PendingAddOp(handle);
+        }
+    };
+
+    private PendingAddOp(Handle<PendingAddOp> recyclerHandle) {
+        this.recyclerHandle = recyclerHandle;
+    }
+
+    private void maybeRecycle() {
+        // The reference to PendingAddOp can be held in 3 places
+        // - LedgerHandle#pendingAddOp
+        //   This reference is released when the callback is run
+        // - The executor
+        //   Released after safeRun finishes
+        // - BookieClient
+        //   Holds a reference from the point the addEntry requests are
+        //   sent.
+        // The object can only be recycled after all references are
+        // released, otherwise we could end up recycling twice and all
+        // joy that goes along with that.
+        if (hasRun && callbackTriggered && pendingWriteRequests == 0) {
+            recycle();
+        }
+    }
+
+    private void recycle() {
+        entryId = LedgerHandle.INVALID_ENTRY_ID;
+        currentLedgerLength = -1;
+        payload = null;
+        toSend = null;
+        cb = null;
+        ctx = null;
+        ackSet.recycle();
+        ackSet = null;
+        lh = null;
+        isRecoveryAdd = false;
+        addOpLogger = null;
+        completed = false;
+        pendingWriteRequests = 0;
+        callbackTriggered = false;
+        hasRun = false;
+        if (timeout != null) {
+            timeout.cancel();
+        }
+        timeout = null;
+
+        recyclerHandle.recycle(this);
+    }
 }

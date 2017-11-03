@@ -452,20 +452,21 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements ITopologyAwareEns
     }
 
     @Override
-    public List<Integer> reorderReadSequence(ArrayList<BookieSocketAddress> ensemble, List<Integer> writeSet, Map<BookieSocketAddress, Long> bookieFailureHistory) {
+    public DistributionSchedule.WriteSet reorderReadSequence(
+            ArrayList<BookieSocketAddress> ensemble,
+            Map<BookieSocketAddress, Long> bookieFailureHistory,
+            DistributionSchedule.WriteSet writeSet) {
         return writeSet;
     }
 
     @Override
-    public List<Integer> reorderReadLACSequence(ArrayList<BookieSocketAddress> ensemble, List<Integer> writeSet, Map<BookieSocketAddress, Long> bookieFailureHistory) {
-        List<Integer> retList = new ArrayList<Integer>(reorderReadSequence(ensemble, writeSet, bookieFailureHistory));
-        if (retList.size() < ensemble.size()) {
-            for (int i = 0; i < ensemble.size(); i++) {
-                if (!retList.contains(i)) {
-                    retList.add(i);
-                }
-            }
-        }
+    public DistributionSchedule.WriteSet reorderReadLACSequence(
+            ArrayList<BookieSocketAddress> ensemble,
+            Map<BookieSocketAddress, Long> bookieFailureHistory,
+            DistributionSchedule.WriteSet writeSet) {
+        DistributionSchedule.WriteSet retList = reorderReadSequence(
+                ensemble, bookieFailureHistory, writeSet);
+        retList.addMissingIndices(ensemble.size());
         return retList;
     }
 }

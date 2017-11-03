@@ -266,7 +266,7 @@ public class LedgerChecker {
      * Check that all the fragments in the passed in ledger, and report those
      * which are missing.
      */
-    public void checkLedger(LedgerHandle lh,
+    public void checkLedger(final LedgerHandle lh,
                             final GenericCallback<Set<LedgerFragment>> cb) {
         // build a set of all fragment replicas
         final Set<LedgerFragment> fragments = new HashSet<LedgerFragment>();
@@ -322,7 +322,7 @@ public class LedgerChecker {
             if (curEntryId == lastEntry) {
                 final long entryToRead = curEntryId;
 
-                EntryExistsCallback eecb
+                final EntryExistsCallback eecb
                     = new EntryExistsCallback(lh.getLedgerMetadata().getWriteQuorumSize(),
                                               new GenericCallback<Boolean>() {
                                                   public void operationComplete(int rc, Boolean result) {
@@ -333,11 +333,13 @@ public class LedgerChecker {
                                                   }
                                               });
 
-                for (int bi : lh.getDistributionSchedule().getWriteSet(entryToRead)) {
-                    BookieSocketAddress addr = curEnsemble.get(bi);
-                    bookieClient.readEntry(addr, lh.getId(),
-                                           entryToRead, eecb, null);
+                DistributionSchedule.WriteSet writeSet
+                    = lh.getDistributionSchedule().getWriteSet(entryToRead);
+                for (int i = 0; i < writeSet.size(); i++) {
+                    BookieSocketAddress addr = curEnsemble.get(writeSet.get(i));
+                    bookieClient.readEntry(addr, lh.getId(), entryToRead, eecb, null);
                 }
+                writeSet.recycle();
                 return;
             } else {
                 fragments.add(lastLedgerFragment);

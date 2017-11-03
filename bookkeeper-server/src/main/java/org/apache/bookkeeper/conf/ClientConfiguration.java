@@ -29,6 +29,8 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicy;
+import org.apache.bookkeeper.discover.RegistrationClient;
+import org.apache.bookkeeper.discover.ZKRegistrationClient;
 import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.commons.configuration.ConfigurationException;
@@ -146,6 +148,9 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String TLS_TRUSTSTORE_TYPE = "clientTrustStoreType";
     protected final static String TLS_TRUSTSTORE = "clientTrustStore";
     protected final static String TLS_TRUSTSTORE_PASSWORD_PATH = "clientTrustStorePasswordPath";
+
+    // Registration Client
+    protected final static String REGISTRATION_CLIENT_CLASS = "registrationClientClass";
 
     /**
      * Construct a default client-side configuration
@@ -1619,5 +1624,28 @@ public class ClientConfiguration extends AbstractConfiguration {
     public ClientConfiguration setNettyUsePooledBuffers(boolean enabled) {
         setProperty(NETTY_USE_POOLED_BUFFERS, enabled);
         return this;
+    }
+
+    /**
+     * Set registration manager class
+     *
+     * @param regClientClass
+     *            ClientClass
+     */
+    public void setRegistrationClientClass(
+            Class<? extends RegistrationClient> regClientClass) {
+        setProperty(REGISTRATION_CLIENT_CLASS, regClientClass);
+    }
+
+    /**
+     * Get Registration Client Class.
+     *
+     * @return registration manager class.
+     */
+    public Class<? extends RegistrationClient> getRegistrationClientClass()
+            throws ConfigurationException {
+        return ReflectionUtils.getClass(this, REGISTRATION_CLIENT_CLASS,
+                ZKRegistrationClient.class, RegistrationClient.class,
+                defaultLoader);
     }
 }

@@ -2,6 +2,7 @@
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
+
  * regarding copyright ownership.  The ASF licenses this file
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
@@ -524,11 +525,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         CompletionKey completionKey = null;
         if (useV2WireProtocol) {
             completionKey = acquireV2Key(ledgerId, entryId, OperationType.ADD_ENTRY);
-            request = new BookieProtocol.AddRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId, entryId,
+            request = BookieProtocol.AddRequest.create(
+                    BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId, entryId,
                     (short) options, masterKey, toSend);
         } else {
             final long txnId = getTxnId();
             completionKey = new V3CompletionKey(txnId, OperationType.ADD_ENTRY);
+
             // Build the request and calculate the total size to be included in the packet.
             BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
                     .setVersion(ProtocolVersion.VERSION_THREE)
@@ -850,6 +853,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             return request.toString();
         }
     }
+
     void errorOut(final CompletionKey key) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Removing completion key: {}", key);
@@ -1006,6 +1010,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     public void safeRun() {
                         completionValue.handleV2Response(ledgerId, entryId,
                                                          status, response);
+                        response.recycle();
                     }
                 });
         }
@@ -1730,7 +1735,6 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         public void release() {}
     }
 
-
     /**
      * Note : Helper functions follow
      */
@@ -1810,7 +1814,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             }
             V2CompletionKey that = (V2CompletionKey) object;
             return this.entryId == that.entryId
-                && this.ledgerId == that.ledgerId;
+                && this.ledgerId == that.ledgerId
+                && this.operationType == that.operationType;
         }
 
         @Override

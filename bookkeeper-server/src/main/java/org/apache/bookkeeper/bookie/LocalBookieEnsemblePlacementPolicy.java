@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
+import org.apache.bookkeeper.client.DistributionSchedule;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -88,14 +89,18 @@ public class LocalBookieEnsemblePlacementPolicy implements EnsemblePlacementPoli
     }
 
     @Override
-    public List<Integer> reorderReadSequence(ArrayList<BookieSocketAddress> ensemble, List<Integer> writeSet,
-                                             Map<BookieSocketAddress, Long> bookieFailureHistory) {
+    public DistributionSchedule.WriteSet reorderReadSequence(
+            ArrayList<BookieSocketAddress> ensemble,
+            Map<BookieSocketAddress, Long> bookieFailureHistory,
+            DistributionSchedule.WriteSet writeSet) {
         return null;
     }
 
     @Override
-    public List<Integer> reorderReadLACSequence(ArrayList<BookieSocketAddress> ensemble, List<Integer> writeSet,
-                                                Map<BookieSocketAddress, Long> bookieFailureHistory) {
+    public DistributionSchedule.WriteSet reorderReadLACSequence(
+            ArrayList<BookieSocketAddress> ensemble,
+            Map<BookieSocketAddress, Long> bookieFailureHistory,
+            DistributionSchedule.WriteSet writeSet) {
         return null;
     }
 
