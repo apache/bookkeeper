@@ -51,6 +51,8 @@ REPO_HOME = os.environ.get("%s_HOME" % CAPITALIZED_PROJECT_NAME, os.getcwd())
 PR_REMOTE_NAME = os.environ.get("PR_REMOTE_NAME", "apache-github")
 # Remote name which points to Apache git
 PUSH_REMOTE_NAME = os.environ.get("PUSH_REMOTE_NAME", "apache")
+# Reference branch name
+DEV_BRANCH_NAME =  = os.environ.get("DEV_BRANCH_NAME", "master")
 # ASF JIRA username
 JIRA_USERNAME = os.environ.get("JIRA_USERNAME", "")
 # ASF JIRA password
@@ -70,8 +72,6 @@ JIRA_API_BASE = "https://issues.apache.org/jira"
 # Prefix added to temporary branches
 TEMP_BRANCH_PREFIX = "PR_TOOL"
 RELEASE_BRANCH_PREFIX = "branch-"
-
-DEV_BRANCH_NAME = "master"
 
 DEFAULT_FIX_VERSION = os.environ.get("DEFAULT_FIX_VERSION", "0.9.1.0")
 
