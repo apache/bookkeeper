@@ -110,19 +110,6 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             .execute());
     }
 
-    @Test(expected = BKIncorrectParameterException.class)
-    public void testCreateLedgerLedgerTypeFORCE_DEFERRED_ON_JOURNALNoStriping() throws Exception {
-        setNewGeneratedLedgerId(ledgerId);
-        result(newCreateLedgerOp()
-            .withAckQuorumSize(ackQuorumSize)
-            .withEnsembleSize(writeQuorumSize +1 )
-            .withWriteQuorumSize(writeQuorumSize)
-            .withCustomMetadata(customMetadata)
-            .withLedgerType(LedgerType.FORCE_DEFERRED_ON_JOURNAL)
-            .withPassword(password)
-            .execute());
-    }
-
     @Test
     public void testCreateLedgerLedgerTypeExplicitFORCE_ON_JOURNAL() throws Exception {
         setNewGeneratedLedgerId(ledgerId);
