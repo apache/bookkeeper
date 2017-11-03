@@ -278,7 +278,8 @@ public class GarbageCollectorThread extends SafeRunnable {
     public void enableForceGC() {
         if (forceGarbageCollection.compareAndSet(false, true)) {
             LOG.info("Forced garbage collection triggered by thread: {}", Thread.currentThread().getName());
-            triggerGC();
+            triggerGC(true, suspendMajorCompaction.get(),
+                      suspendMinorCompaction.get());
         }
     }
 
@@ -289,11 +290,22 @@ public class GarbageCollectorThread extends SafeRunnable {
         }
     }
 
-    /**
-     * Manually trigger GC (for testing).
-     */
+    Future<?> triggerGC(final boolean force,
+                        final boolean suspendMajor,
+                        final boolean suspendMinor) {
+        return gcExecutor.submit(() -> {
+                runWithFlags(force, suspendMajor, suspendMinor);
+            });
+    }
+
     Future<?> triggerGC() {
-        return gcExecutor.submit(this);
+        final boolean force = forceGarbageCollection.get();
+        final boolean suspendMajor = suspendMajorCompaction.get();
+        final boolean suspendMinor = suspendMinorCompaction.get();
+
+        return gcExecutor.submit(() -> {
+                runWithFlags(force, suspendMajor, suspendMinor);
+            });
     }
 
     public void suspendMajorGC() {
@@ -332,6 +344,19 @@ public class GarbageCollectorThread extends SafeRunnable {
     @Override
     public void safeRun() {
         boolean force = forceGarbageCollection.get();
+        boolean suspendMajor = suspendMajorCompaction.get();
+        boolean suspendMinor = suspendMinorCompaction.get();
+
+        runWithFlags(force, suspendMajor, suspendMinor);
+
+        if (force) {
+            // only set force to false if it had been true when the garbage
+            // collection cycle started
+            forceGarbageCollection.set(false);
+        }
+    }
+
+    public void runWithFlags(boolean force, boolean suspendMajor, boolean suspendMinor) {
         if (force) {
             LOG.info("Garbage collector thread forced to perform GC before expiry of wait time.");
         }
@@ -346,8 +371,6 @@ public class GarbageCollectorThread extends SafeRunnable {
         // gc entry logs
         doGcEntryLogs();
 
-        boolean suspendMajor = suspendMajorCompaction.get();
-        boolean suspendMinor = suspendMinorCompaction.get();
         if (suspendMajor) {
             LOG.info("Disk almost full, suspend major compaction to slow down filling disk.");
         }
@@ -364,7 +387,6 @@ public class GarbageCollectorThread extends SafeRunnable {
             lastMajorCompactionTime = MathUtils.now();
             // and also move minor compaction time
             lastMinorCompactionTime = lastMajorCompactionTime;
-            forceGarbageCollection.set(false);
             return;
         }
 
@@ -375,7 +397,6 @@ public class GarbageCollectorThread extends SafeRunnable {
             doCompactEntryLogs(minorCompactionThreshold);
             lastMinorCompactionTime = MathUtils.now();
         }
-        forceGarbageCollection.set(false);
     }
 
     /**
