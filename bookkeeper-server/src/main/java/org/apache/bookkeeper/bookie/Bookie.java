@@ -1287,7 +1287,7 @@ public class Bookie extends BookieCriticalThread {
             LedgerDescriptor handle = getLedgerForEntry(entry, masterKey);
             synchronized (handle) {
                 entrySize = entry.readableBytes();
-                addEntryInternal(handle, entry, true, cb, ctx);
+                addEntryInternal(handle, entry, true /*forceBeforeAck*/, cb, ctx);
             }
             success = true;
         } catch (NoWritableLedgerDirException e) {
