@@ -1259,7 +1259,7 @@ public class Bookie extends BookieCriticalThread {
     /**
      * Add an entry to a ledger as specified by handle.
      */
-    private void addEntryInternal(LedgerDescriptor handle, ByteBuf entry, LedgerType ledgerType, WriteCallback cb, Object ctx)
+    private void addEntryInternal(LedgerDescriptor handle, ByteBuf entry, boolean ackAfterForce, WriteCallback cb, Object ctx)
             throws IOException, BookieException {
         long ledgerId = handle.getLedgerId();
         long entryId = handle.addEntry(entry);
@@ -1269,7 +1269,6 @@ public class Bookie extends BookieCriticalThread {
         if (LOG.isTraceEnabled()) {
             LOG.trace("Adding {}@{}", entryId, ledgerId);
         }
-        final boolean ackAfterForce = ledgerType.equals(LedgerType.FORCE_ON_JOURNAL);
         getJournal(ledgerId).logAddEntry(entry, ackAfterForce, cb, ctx);
     }
 
@@ -1288,7 +1287,7 @@ public class Bookie extends BookieCriticalThread {
             LedgerDescriptor handle = getLedgerForEntry(entry, masterKey);
             synchronized (handle) {
                 entrySize = entry.readableBytes();
-                addEntryInternal(handle, entry, ledgerType, cb, ctx);
+                addEntryInternal(handle, entry, true, cb, ctx);
             }
             success = true;
         } catch (NoWritableLedgerDirException e) {
@@ -1340,6 +1339,7 @@ public class Bookie extends BookieCriticalThread {
         long requestNanos = MathUtils.nowInNano();
         boolean success = false;
         int entrySize = 0;
+        final boolean ackAfterForce = ledgerType.equals(LedgerType.FORCE_ON_JOURNAL);
         try {
             LedgerDescriptor handle = getLedgerForEntry(entry, masterKey);
             synchronized (handle) {
@@ -1348,7 +1348,7 @@ public class Bookie extends BookieCriticalThread {
                             .create(BookieException.Code.LedgerFencedException);
                 }
                 entrySize = entry.readableBytes();
-                addEntryInternal(handle, entry, ledgerType, cb, ctx);
+                addEntryInternal(handle, entry, ackAfterForce, cb, ctx);
             }
             success = true;
         } catch (NoWritableLedgerDirException e) {
