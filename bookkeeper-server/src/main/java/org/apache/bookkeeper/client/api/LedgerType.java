@@ -38,9 +38,8 @@ public enum LedgerType {
      * Volatile Durability, using Journal.<br>
      * Each entry is persisted to the journal and writes receive acknowledgement without guarantees of persistence (data
      * is eventually fsync'd to disk).<br>
-     * For this kind of ledgers the client MUST explicitly call {@link ForceSupported#force()}
-     * }
-     * in order to have guarantees of the durability of writes and in order to advance the LastAddConfirmed entry id
+     * For this kind of ledgers the client MUST explicitly call {@link ForceSupported#force()} in order
+     * to have guarantees of the durability of writes and in order to advance the LastAddConfirmed entry id
      */
     FORCE_DEFERRED_ON_JOURNAL
 }
