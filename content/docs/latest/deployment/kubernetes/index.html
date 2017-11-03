@@ -534,9 +534,29 @@ remote zookeeper server:</p>
 
 <h3 id="deploy-bookies">Deploy Bookies</h3>
 
-<p>Once ZooKeeper cluster is Running, you can then deploy the bookies.</p>
+<p>Once ZooKeeper cluster is Running, you can then deploy the bookies. You can deploy the bookies either using a <a href="https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/">DaemonSet</a> or a <a href="https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/">StatefulSet</a>.</p>
 
-<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>kubectl apply -f bookkeeper.yaml
+<blockquote>
+  <p>NOTE: <em>DaemonSet</em> vs <em>StatefulSet</em></p>
+
+  <p>A <em>DaemonSet</em> ensures that all (or some) nodes run a pod of bookie instance. As nodes are added to the cluster, bookie pods are added automatically to them. As nodes are removed from the
+cluster, those bookie pods are garbage collected. The bookies deployed in a DaemonSet stores data on the local disks on those nodes. So it doesn’t require any external storage for Persistent
+Volumes.</p>
+
+  <p>A <em>StatefulSet</em> maintains a sticky identity for the pods that it runs and manages. It provides stable and unique network identifiers, and stable and persistent storage for each pod. The pods
+are not interchangeable, the idenifiers for each pod are maintained across any rescheduling.</p>
+
+  <p>Which one to use? A <em>DaemonSet</em> is the easiest way to deploy a bookkeeper cluster, because it doesn’t require additional persistent volume provisioner and use local disks. BookKeeper manages
+the data replication. It maintains the best latency property. However, it uses <code class="highlighter-rouge">hostIP</code> and <code class="highlighter-rouge">hostPort</code> for communications between pods. In some k8s platform (such as DC/OS), <code class="highlighter-rouge">hostIP</code> and
+<code class="highlighter-rouge">hostPort</code> are not well supported. A <em>StatefulSet</em> is only practical when deploying in a cloud environment or any K8S installation that has persistent volumes available. Also be aware, latency
+can be potentially higher when using persistent volumes, because there is usually built-in replication in the persistent volumes.</p>
+</blockquote>
+
+<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="c"># deploy bookies in a daemon set</span>
+<span class="gp">$ </span>kubectl apply -f bookkeeper.yaml
+
+<span class="c"># deploy bookies in a stateful set</span>
+<span class="gp">$ </span>kubectl apply -f bookkeeper.stateful.yaml
 </code></pre>
 </div>
 
