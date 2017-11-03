@@ -1269,8 +1269,8 @@ public class Bookie extends BookieCriticalThread {
         if (LOG.isTraceEnabled()) {
             LOG.trace("Adding {}@{}", entryId, ledgerId);
         }
-        final boolean requiresForce = ledgerType.equals(LedgerType.FORCE_ON_JOURNAL);
-        getJournal(ledgerId).logAddEntry(entry, requiresForce, cb, ctx);
+        final boolean ackAfterForce = ledgerType.equals(LedgerType.FORCE_ON_JOURNAL);
+        getJournal(ledgerId).logAddEntry(entry, ackAfterForce, cb, ctx);
     }
 
     /**
