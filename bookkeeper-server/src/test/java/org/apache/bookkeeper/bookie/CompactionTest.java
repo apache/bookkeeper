@@ -397,8 +397,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         bkc.deleteLedger(lhs[2].getId());
 
         LOG.info("Finished deleting the ledgers contains most entries.");
-        getGCThread().enableForceGC();
-        getGCThread().triggerGC().get();
+        getGCThread().triggerGC(true, false, false).get();
 
         // after garbage collection, major compaction should not be executed
         assertEquals(lastMajorCompactionTime, getGCThread().lastMajorCompactionTime);
