@@ -43,7 +43,7 @@ public interface GarbageCollector {
          *
          * @param ledgerId Ledger ID to be cleaned
          */
-        void clean(final long ledgerId);
+        void clean(long ledgerId);
     }
 
 }

@@ -22,10 +22,15 @@ import static org.apache.bookkeeper.conf.ClientConfiguration.CLIENT_AUTH_PROVIDE
 import java.net.URL;
 import java.util.Iterator;
 import java.util.List;
+
 import javax.net.ssl.SSLEngine;
+
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.util.EntryFormatter;
+import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.apache.bookkeeper.util.ReflectionUtils;
+import org.apache.bookkeeper.util.StringEntryFormatter;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
@@ -76,6 +81,9 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
 
     // TLS provider factory class name
     protected static final String TLS_PROVIDER_FACTORY_CLASS = "tlsProviderFactoryClass";
+
+    protected static final String LEDGERID_FORMATTER_CLASS = "ledgerIdFormatterClass";
+    protected static final String ENTRY_FORMATTER_CLASS = "entryFormatterClass";
 
     // Enable authentication of the other connection end point (mutual authentication)
     protected static final String TLS_CLIENT_AUTHENTICATION = "tlsClientAuthentication";
@@ -371,6 +379,50 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
         } else {
             return (Feature) getProperty(configProperty);
         }
+    }
+
+    /**
+     * Set Ledger id formatter Class.
+     *
+     * @param formatterClass
+     *          LedgerIdFormatter Class
+     */
+    public void setLedgerIdFormatterClass(Class<? extends LedgerIdFormatter> formatterClass) {
+        setProperty(LEDGERID_FORMATTER_CLASS, formatterClass.getName());
+    }
+
+    /**
+     * Get ledger id formatter class.
+     *
+     * @return LedgerIdFormatter class
+     */
+    public Class<? extends LedgerIdFormatter> getLedgerIdFormatterClass()
+        throws ConfigurationException {
+        return ReflectionUtils.getClass(this, LEDGERID_FORMATTER_CLASS,
+                                        null, LedgerIdFormatter.UUIDLedgerIdFormatter.class,
+                                        LedgerIdFormatter.class.getClassLoader());
+    }
+
+    /**
+     * Set entry formatter Class.
+     *
+     * @param formatterClass
+     *          EntryFormatter Class
+     */
+    public void setEntryFormatterClass(Class<? extends EntryFormatter> formatterClass) {
+        setProperty(ENTRY_FORMATTER_CLASS, formatterClass.getName());
+    }
+
+    /**
+     * Get entry formatter class.
+     *
+     * @return EntryFormatter class
+     */
+    public Class<? extends EntryFormatter> getEntryFormatterClass()
+        throws ConfigurationException {
+        return ReflectionUtils.getClass(this, ENTRY_FORMATTER_CLASS,
+                                        null, StringEntryFormatter.class,
+                                        EntryFormatter.class.getClassLoader());
     }
 
     /**
