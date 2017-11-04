@@ -165,7 +165,8 @@ public class ZKRegistrationManager implements RegistrationManager {
         }
     }
 
-    private String getCookiePath(String bookieId) {
+    @Override
+    public String getCookiePath(String bookieId) {
         return this.cookiePath + "/" + bookieId;
     }
 

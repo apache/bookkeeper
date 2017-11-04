@@ -105,4 +105,11 @@ public interface RegistrationManager extends AutoCloseable {
      */
     void removeCookie(String bookieId, Version version) throws BookieException;
 
+    /**
+     * Returns the CookiePath of the bookie in the Registration Manager.
+     *
+     * @param bookieId bookie id
+     * @return
+     */
+    String getCookiePath(String bookieId);
 }
