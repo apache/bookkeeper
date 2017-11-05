@@ -1,0 +1,28 @@
+version: '2'
+
+services:
+  zookeeper:
+    image: zookeeper:3.4.9
+    hostname: zookeeper
+    ports:
+      - "2181:2181"
+  bookkeeper:
+    image: apache/bookkeeper
+    depends_on:
+      - zookeeper
+    links:
+      - zookeeper
+    environment:
+      - JAVA_HOME=/usr/lib/jvm/jre-1.8.0
+      - BK_zkServers=zookeeper:2181
+      - BK_zkLedgersRootPath = /ledgers
+  dice:
+    image: caiok/bookkeeper-tutorial
+    depends_on:
+      - bookkeeper
+    command: ["sleep", "5"]
+    links:
+      - zookeeper
+    environment:
+      - ZOOKEEPER_SERVERS=zookeeper:2181
+
