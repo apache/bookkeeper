@@ -107,7 +107,6 @@ public interface BookKeeperServerStats {
     // Compaction/Garbage Collection Related Counters
     String NUM_MINOR_COMP = "NUM_MINOR_COMP";
     String NUM_MAJOR_COMP = "NUM_MAJOR_COMP";
-    String GC_NUM_ENTRYLOGS_DELETED = "GC_NUM_ENTRYLOGS_DELETED";
     // Index Related Counters
     String INDEX_INMEM_ILLEGAL_STATE_RESET = "INDEX_INMEM_ILLEGAL_STATE_RESET";
     String INDEX_INMEM_ILLEGAL_STATE_DELETE = "INDEX_INMEM_ILLEGAL_STATE_DELETE";

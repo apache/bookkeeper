@@ -30,9 +30,9 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
  */
 public abstract class AbstractLogCompactor {
 
-    protected ServerConfiguration conf;
-    protected Throttler throttler;
-    protected GarbageCollectorThread gcThread;
+    protected final ServerConfiguration conf;
+    protected final Throttler throttler;
+    protected final GarbageCollectorThread gcThread;
 
     public AbstractLogCompactor(GarbageCollectorThread gcThread) {
         this.gcThread = gcThread;

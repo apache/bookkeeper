@@ -154,7 +154,7 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
      * If anything failed in this phase, we should delete the compaction log and clean the offsets.
      */
     class ScanEntryLogPhase extends CompactionPhase {
-        private EntryLogMetadata metadata;
+        private final EntryLogMetadata metadata;
 
         ScanEntryLogPhase(EntryLogMetadata metadata) {
             super("ScanEntryLogPhase");
@@ -174,7 +174,7 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
                 @Override
                 public void process(long ledgerId, long offset, ByteBuffer entry) throws IOException {
                     throttler.acquire(entry.remaining());
-                    synchronized (this) {
+                    synchronized (TransactionalEntryLogCompactor.this) {
                         long lid = entry.getLong();
                         long entryId = entry.getLong();
                         if (lid != ledgerId || entryId < -1) {
@@ -225,8 +225,8 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
      * a hardlink file "3.log.1.compacted" should be created, and "3.log.compacting" should be deleted.
      */
     class FlushCompactionLogPhase extends CompactionPhase {
-        long compactingLogId;
-        File compactedLogFile;
+        private final long compactingLogId;
+        private File compactedLogFile;
 
         FlushCompactionLogPhase(long compactingLogId) {
             super("FlushCompactionLogPhase");
@@ -284,9 +284,9 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
      * This phase can also used to recover partially flushed index when we pass isInRecovery=true
      */
     class UpdateIndexPhase extends CompactionPhase {
-        File compactedLogFile;
-        File newEntryLogFile;
-        boolean isInRecovery;
+        private File compactedLogFile;
+        private File newEntryLogFile;
+        private final boolean isInRecovery;
 
         public UpdateIndexPhase(File compactedLogFile) {
             this(compactedLogFile, false);

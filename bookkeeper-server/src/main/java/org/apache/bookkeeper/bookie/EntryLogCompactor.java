@@ -37,10 +37,10 @@ import org.slf4j.LoggerFactory;
 public class EntryLogCompactor extends AbstractLogCompactor {
     private static final Logger LOG = LoggerFactory.getLogger(EntryLogCompactor.class);
 
-    final int maxOutstandingRequests;
     final CompactionScannerFactory scannerFactory = new CompactionScannerFactory();
     final EntryLogger entryLogger;
     final CompactableLedgerStorage ledgerStorage;
+    private final int maxOutstandingRequests;
 
     public EntryLogCompactor(GarbageCollectorThread gcThread) {
         super(gcThread);
