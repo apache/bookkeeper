@@ -284,8 +284,8 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
      * This phase can also used to recover partially flushed index when we pass isInRecovery=true
      */
     class UpdateIndexPhase extends CompactionPhase {
-        private File compactedLogFile;
-        private File newEntryLogFile;
+        File compactedLogFile;
+        File newEntryLogFile;
         private final boolean isInRecovery;
 
         public UpdateIndexPhase(File compactedLogFile) {
