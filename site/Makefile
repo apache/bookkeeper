@@ -38,6 +38,7 @@ staging: clean
 serve: build
 	${JEKYLL} serve \
 		--incremental \
+		--livereload \
 		--config _config.yml,_config.local.yml
 
 publish: javadoc-gen build
