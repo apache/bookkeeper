@@ -47,7 +47,6 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
 
     final EntryLogger entryLogger;
     final CompactableLedgerStorage ledgerStorage;
-    final Throttler throttler;
     final List<EntryLocation> offsets = new ArrayList<>();
 
     // compaction log file suffix
@@ -55,40 +54,10 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
     // flushed compaction log file suffix
     static final String COMPACTED_SUFFIX = ".compacted";
 
-    private class Throttler {
-        final RateLimiter rateLimiter;
-        final boolean isThrottleByBytes;
-        final int compactionRateByBytes;
-        final int compactionRateByEntries;
-
-        Throttler(boolean isThrottleByBytes,
-                  int compactionRateByBytes,
-                  int compactionRateByEntries) {
-            this.isThrottleByBytes = isThrottleByBytes;
-            this.compactionRateByBytes = compactionRateByBytes;
-            this.compactionRateByEntries = compactionRateByEntries;
-            this.rateLimiter = RateLimiter.create(this.isThrottleByBytes ?
-                this.compactionRateByBytes :
-                this.compactionRateByEntries);
-        }
-
-        // acquire. if bybytes: bytes of this entry; if byentries: 1.
-        void acquire(int permits) {
-            rateLimiter.acquire(this.isThrottleByBytes ? permits : 1);
-        }
-    }
-
     public TransactionalEntryLogCompactor(GarbageCollectorThread gcThread) {
         super(gcThread);
         this.entryLogger = gcThread.getEntryLogger();
         this.ledgerStorage = gcThread.getLedgerStorage();
-        boolean isThrottleByBytes = conf.getIsThrottleByBytes();
-        int compactionRateByEntries = conf.getCompactionRateByEntries();
-        int compactionRateByBytes = conf.getCompactionRateByBytes();
-        // Compaction Throttler
-        this.throttler = new Throttler(isThrottleByBytes,
-            compactionRateByBytes,
-            compactionRateByEntries);
     }
 
     /**
@@ -101,8 +70,9 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
             File[] compactingPhaseFiles = dir.listFiles(file -> file.getName().endsWith(COMPACTING_SUFFIX));
             if (compactingPhaseFiles != null) {
                 for (File file : compactingPhaseFiles) {
-                    LOG.info("Deleting failed compaction file {}", file);
-                    file.delete();
+                    if (file.delete()) {
+                        LOG.info("Deleted failed compaction file {}", file);
+                    }
                 }
             }
             File[] compactedPhaseFiles = dir.listFiles(file -> file.getName().endsWith(COMPACTED_SUFFIX));
@@ -296,7 +266,9 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
             // remove compaction log file and its hardlink
             entryLogger.removeCurCompactionLog();
             if (compactedLogFile != null && compactedLogFile.exists()) {
-                compactedLogFile.delete();
+                if (!compactedLogFile.delete()) {
+                    LOG.warn("Could not delete compacted log file {}", compactedLogFile);
+                }
             }
         }
     }
@@ -353,15 +325,17 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
         boolean complete() {
             // When index is flushed, and entry log is removed,
             // delete the ".compacted" file to indicate this phase is completed.
-            if (compactedLogFile != null) {
-                compactedLogFile.delete();
-            }
             offsets.clear();
-            // Now delete the old entry log file since it's compacted
-            String compactedFilename = compactedLogFile.getName();
-            String oldEntryLogFilename = compactedFilename.substring(compactedFilename.indexOf(".log") + 5);
-            long entryLogId = EntryLogger.fileName2LogId(oldEntryLogFilename);
-            gcThread.removeEntryLog(entryLogId);
+            if (compactedLogFile != null) {
+                if (!compactedLogFile.delete()) {
+                    LOG.warn("Could not delete compacted log file {}", compactedLogFile);
+                }
+                // Now delete the old entry log file since it's compacted
+                String compactedFilename = compactedLogFile.getName();
+                String oldEntryLogFilename = compactedFilename.substring(compactedFilename.indexOf(".log") + 5);
+                long entryLogId = EntryLogger.fileName2LogId(oldEntryLogFilename);
+                gcThread.removeEntryLog(entryLogId);
+            }
             return true;
         }
 

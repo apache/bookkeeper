@@ -47,7 +47,7 @@ public abstract class AbstractLogCompactor {
      */
     public abstract boolean compact(EntryLogMetadata entryLogMeta);
 
-    class Throttler {
+    static class Throttler {
         private final RateLimiter rateLimiter;
         private final boolean isThrottleByBytes;
 

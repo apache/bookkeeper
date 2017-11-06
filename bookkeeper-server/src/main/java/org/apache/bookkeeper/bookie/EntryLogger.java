@@ -891,7 +891,9 @@ public class EntryLogger {
     void removeCurCompactionLog() {
         synchronized (compactionLogLock) {
             if (compactionLogChannel != null) {
-                compactionLogChannel.getLogFile().delete();
+                if (!compactionLogChannel.getLogFile().delete()) {
+                    LOG.warn("Could not delete compaction log file {}", compactionLogChannel.getLogFile());
+                }
                 try {
                     closeFileChannel(compactionLogChannel);
                 } catch (IOException e) {

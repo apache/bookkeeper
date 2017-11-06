@@ -844,16 +844,13 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         Bookie bookie = bs.get(0).getBookie();
         InterleavedLedgerStorage storage = (InterleavedLedgerStorage) bookie.ledgerStorage;
         // disable periodic compaction and recovery, we use manual compaction and recovery
-        storage.gcThread.enableForceGC();
+        storage.gcThread.triggerGC().get();
 
         // remove ledger2 and ledger3
         bkc.deleteLedger(lhs[1].getId());
         bkc.deleteLedger(lhs[2].getId());
 
         LOG.info("Finished deleting the ledgers contains most entries.");
-        // wait for one more gc
-        Thread.sleep(baseConf.getMajorCompactionInterval() * 1000
-            + baseConf.getGcWaitTime());
 
 
         MockTransactionalEntryLogCompactor partialCompactionWorker = new MockTransactionalEntryLogCompactor(
