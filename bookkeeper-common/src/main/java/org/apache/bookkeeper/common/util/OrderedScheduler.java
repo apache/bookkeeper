@@ -21,7 +21,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
@@ -31,6 +30,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -63,6 +63,7 @@ public class OrderedScheduler {
     final OpStatsLogger taskPendingStats;
     final boolean traceTaskExecution;
     final long warnTimeMicroSec;
+    final int maxTasksInQueue;
 
     /**
      * Create a builder to build ordered scheduler.
@@ -88,6 +89,7 @@ public class OrderedScheduler {
         protected StatsLogger statsLogger = NullStatsLogger.INSTANCE;
         protected boolean traceTaskExecution = false;
         protected long warnTimeMicroSec = WARN_TIME_MICRO_SEC_DEFAULT;
+        protected int maxTasksInQueue = -1;
 
         public AbstractBuilder<T> name(String name) {
             this.name = name;
@@ -96,6 +98,11 @@ public class OrderedScheduler {
 
         public AbstractBuilder<T> numThreads(int num) {
             this.numThreads = num;
+            return this;
+        }
+
+        public AbstractBuilder<T> maxTasksInQueue(int num) {
+            this.maxTasksInQueue = num;
             return this;
         }
 
@@ -130,7 +137,8 @@ public class OrderedScheduler {
                 threadFactory,
                 statsLogger,
                 traceTaskExecution,
-                warnTimeMicroSec);
+                warnTimeMicroSec,
+                maxTasksInQueue);
         }
 
     }
@@ -179,21 +187,24 @@ public class OrderedScheduler {
                                ThreadFactory threadFactory,
                                StatsLogger statsLogger,
                                boolean traceTaskExecution,
-                               long warnTimeMicroSec) {
+                               long warnTimeMicroSec,
+                               int maxTasksInQueue) {
         checkArgument(numThreads > 0);
         checkArgument(!StringUtils.isBlank(baseName));
 
+        this.maxTasksInQueue = maxTasksInQueue;
         this.warnTimeMicroSec = warnTimeMicroSec;
         name = baseName;
         threads = new ListeningScheduledExecutorService[numThreads];
         threadIds = new long[numThreads];
         for (int i = 0; i < numThreads; i++) {
-            final ScheduledThreadPoolExecutor thread =  new ScheduledThreadPoolExecutor(1,
+            final ScheduledThreadPoolExecutor thread = new ScheduledThreadPoolExecutor(1,
                     new ThreadFactoryBuilder()
                         .setNameFormat(name + "-" + getClass().getSimpleName() + "-" + i + "-%d")
                         .setThreadFactory(threadFactory)
                         .build());
-            threads[i] = MoreExecutors.listeningDecorator(thread);
+            threads[i] = new QueueAssessibleExecutorService(thread, this.maxTasksInQueue);
+
             final int idx = i;
             try {
                 threads[idx].submit(new SafeRunnable() {
