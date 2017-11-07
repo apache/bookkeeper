@@ -47,6 +47,11 @@ public abstract class AbstractLogCompactor {
      */
     public abstract boolean compact(EntryLogMetadata entryLogMeta);
 
+    /**
+     * Do nothing by default. Intended for subclass to override this method.
+     */
+    public void cleanUpAndRecover() {}
+
     static class Throttler {
         private final RateLimiter rateLimiter;
         private final boolean isThrottleByBytes;

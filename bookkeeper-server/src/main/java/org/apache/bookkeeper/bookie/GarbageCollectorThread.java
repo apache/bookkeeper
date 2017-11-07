@@ -247,9 +247,8 @@ public class GarbageCollectorThread extends SafeRunnable {
             LOG.info("Garbage collector thread forced to perform GC before expiry of wait time.");
         }
         // Recover and clean up previous state if using transactional compaction
-        if (compactor instanceof TransactionalEntryLogCompactor) {
-            ((TransactionalEntryLogCompactor) compactor).cleanUpAndRecover();
-        }
+        compactor.cleanUpAndRecover();
+
         // Extract all of the ledger ID's that comprise all of the entry logs
         // (except for the current new one which is still being written to).
         entryLogMetaMap = extractMetaFromEntryLogs(entryLogMetaMap);
@@ -338,16 +337,11 @@ public class GarbageCollectorThread extends SafeRunnable {
     @VisibleForTesting
     void doCompactEntryLogs(double threshold) {
         LOG.info("Do compaction to compact those files lower than {}", threshold);
-        // sort the ledger meta by occupied unused space
-        // sort the ledger meta by occupied unused space
-        Comparator<EntryLogMetadata> usageComparator = (m1, m2) -> {
-            double usage1 = m1.getUsage();
-            double usage2 = m2.getUsage();
-            return Double.compare(usage1, usage2);
-        };
+
+        // sort the ledger meta by usage in ascending order.
         List<EntryLogMetadata> logsToCompact = new ArrayList<EntryLogMetadata>();
         logsToCompact.addAll(entryLogMetaMap.values());
-        Collections.sort(logsToCompact, usageComparator);
+        logsToCompact.sort(Comparator.comparing(EntryLogMetadata::getUsage));
 
         for (EntryLogMetadata meta : logsToCompact) {
             if (meta.getUsage() >= threshold) {

@@ -852,7 +852,6 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         Bookie bookie = bs.get(0).getBookie();
         InterleavedLedgerStorage storage = (InterleavedLedgerStorage) bookie.ledgerStorage;
 
-
         // remove ledger2 and ledger3
         bkc.deleteLedger(lhs[1].getId());
         bkc.deleteLedger(lhs[2].getId());

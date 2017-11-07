@@ -63,6 +63,7 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
     /**
      * Delete all previously incomplete compacting logs and recover the index for compacted logs.
      */
+    @Override
     public void cleanUpAndRecover() {
         // clean up compacting logs and recover index for already compacted logs
         List<File> ledgerDirs = entryLogger.getLedgerDirsManager().getAllLedgerDirs();
