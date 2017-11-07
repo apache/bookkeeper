@@ -1,5 +1,5 @@
 ---
-title: Apache BookKeeper&trades; 4.5.0 Documentation 
+title: Apache BookKeeper&trade; 4.6.0
 ---
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
@@ -20,21 +20,23 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-This documentation is for Apache BookKeeper&trade; version `4.5.0`.
+This documentation is for Apache BookKeeper&trade; version 4.6.0.
 
-Apache BookKeeper&trade; is a scalable, fault tolerant and low latency storage service optimized for realtime workloads.
-It offers `durability`, `replication` and `strong consistency` as essentials for building reliable real-time applications.
+Apache BookKeeper&trade; is a scalable, fault-tolerant, and low latency storage service optimized for realtime workloads.
+It offers durability, replication, and strong consistency as essentials for building reliable real-time applications.
 
-It is suitable for being used in following scenerios:
+BookKeeper is well suited for scenarios like this:
 
-- [WAL](https://en.wikipedia.org/wiki/Write-ahead_logging) (Write-Ahead-Logging), e.g. HDFS [namenode](https://hadoop.apache.org/docs/r2.5.2/hadoop-project-dist/hadoop-hdfs/HDFSHighAvailabilityWithNFS.html#BookKeeper_as_a_Shared_storage_EXPERIMENTAL).
-- Message Store, e.g. [Apache Pulsar](https://pulsar.incubator.apache.org/).
-- Offset/Cursor Store, e.g. Apache Pulsar.
-- Object/Blob Store, e.g. storing snapshots to replicated state machines.
+Scenario | Example
+:--------|:-------
+[WAL](https://en.wikipedia.org/wiki/Write-ahead_logging) (Write-Ahead-Logging) | The HDFS [namenode](https://hadoop.apache.org/docs/r2.5.2/hadoop-project-dist/hadoop-hdfs/HDFSHighAvailabilityWithNFS.html#BookKeeper_as_a_Shared_storage_EXPERIMENTAL)
+Message storage | [Apache Pulsar](https://pulsar.incubator.apache.org/)
+Offset/cursor storage | Apache Pulsar
+Object/BLOG storage | Storing snapshots to replicated state machines.
 
 Learn more about Apache BookKeeper and what it can do for your organization:
 
-- [Apache BookKeeper 4.5.0 Release Notes](../releaseNotes)
+- [Apache BookKeeper 4.6.0 Release Notes](../releaseNotes)
 - [Java API docs](../../api/javadoc)
 
 Or start using Apache BookKeeper today.
