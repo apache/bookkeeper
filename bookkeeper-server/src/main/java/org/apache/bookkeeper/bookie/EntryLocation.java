@@ -34,4 +34,16 @@ public class EntryLocation {
         this.entry = entry;
         this.location = location;
     }
+
+    public long getLedger() {
+        return ledger;
+    }
+
+    public long getEntry() {
+        return entry;
+    }
+
+    public long getLocation() {
+        return location;
+    }
 }
