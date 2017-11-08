@@ -56,6 +56,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String GC_WAIT_TIME = "gcWaitTime";
     protected final static String IS_FORCE_GC_ALLOW_WHEN_NO_SPACE = "isForceGCAllowWhenNoSpace";
     protected final static String GC_OVERREPLICATED_LEDGER_WAIT_TIME = "gcOverreplicatedLedgerWaitTime";
+    protected final static String USE_TRANSACTIONAL_COMPACTION = "useTransactionalCompaction";
     // Sync Parameters
     protected final static String FLUSH_INTERVAL = "flushInterval";
     protected final static String FLUSH_ENTRYLOG_INTERVAL_BYTES = "flushEntrylogBytes";
@@ -288,6 +289,25 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public ServerConfiguration setGcOverreplicatedLedgerWaitTime(long gcWaitTime, TimeUnit unit) {
         this.setProperty(GC_OVERREPLICATED_LEDGER_WAIT_TIME, Long.toString(unit.toMillis(gcWaitTime)));
+        return this;
+    }
+
+    /**
+     * Get whether to use transactional compaction and using a separate log for compaction or not.
+     *
+     * @return use transactional compaction
+     */
+    public boolean getUseTransactionalCompaction() {
+        return this.getBoolean(USE_TRANSACTIONAL_COMPACTION, false);
+    }
+
+    /**
+     * Set whether to use transactional compaction and using a separate log for compaction or not.
+     * @param useTransactionalCompaction
+     * @return server configuration
+     */
+    public ServerConfiguration setUseTransactionalCompaction(boolean useTransactionalCompaction) {
+        this.setProperty(USE_TRANSACTIONAL_COMPACTION, useTransactionalCompaction);
         return this;
     }
 
