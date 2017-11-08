@@ -17,10 +17,7 @@
  */
 package org.apache.bookkeeper.common.util;
 
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListenableScheduledFuture;
-import com.google.common.util.concurrent.ListeningScheduledExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.*;
 
 import java.util.Collection;
 import java.util.List;
@@ -38,15 +35,20 @@ import java.util.concurrent.TimeUnit;
  * of tasks to be scheduled in the thread's queue.
  *
  */
-public class QueueAssessibleExecutorService implements ListeningScheduledExecutorService {
+public class BoundedScheduledExecutorService extends ForwardingListeningExecutorService implements ListeningScheduledExecutorService {
     BlockingQueue<Runnable> queue;
     ListeningScheduledExecutorService thread;
     int maxTasksInQueue;
 
-    public QueueAssessibleExecutorService(ScheduledThreadPoolExecutor thread, int maxTasksInQueue) {
+    public BoundedScheduledExecutorService(ScheduledThreadPoolExecutor thread, int maxTasksInQueue) {
         this.queue = thread.getQueue();
         this.thread = MoreExecutors.listeningDecorator(thread);
         this.maxTasksInQueue = maxTasksInQueue;
+    }
+
+    @Override
+    protected ListeningExecutorService delegate() {
+        return this.thread;
     }
 
     @Override
@@ -71,31 +73,6 @@ public class QueueAssessibleExecutorService implements ListeningScheduledExecuto
     public ListenableScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
         this.checkQueue();
         return this.thread.scheduleAtFixedRate(command, initialDelay, delay, unit);
-    }
-
-    @Override
-    public void shutdown() {
-        this.thread.shutdown();
-    }
-
-    @Override
-    public List<Runnable> shutdownNow() {
-        return this.thread.shutdownNow();
-    }
-
-    @Override
-    public boolean isShutdown() {
-        return this.thread.isShutdown();
-    }
-
-    @Override
-    public boolean isTerminated() {
-        return this.thread.isTerminated();
-    }
-
-    @Override
-    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-        return this.thread.awaitTermination(timeout, unit);
     }
 
     @Override

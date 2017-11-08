@@ -68,7 +68,7 @@ public class TestMaxSizeWorkersQueue extends BookKeeperClusterTestCase {
 
         counter.await();
 
-        // assertEquals(BKException.Code.OK, rcFirstReadOperation.get());
+        assertEquals(BKException.Code.OK, rcFirstReadOperation.get());
         assertEquals(BKException.Code.TooManyRequestsException, rcSecondReadOperation.get());
     }
 

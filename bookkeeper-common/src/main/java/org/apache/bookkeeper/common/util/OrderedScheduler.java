@@ -52,7 +52,7 @@ import org.apache.commons.lang.StringUtils;
  * method.
  */
 public class OrderedScheduler {
-
+    public static final int NO_TASK_LIMIT = -1;
     protected static final long WARN_TIME_MICRO_SEC_DEFAULT = TimeUnit.SECONDS.toMicros(1);
 
     final String name;
@@ -89,7 +89,7 @@ public class OrderedScheduler {
         protected StatsLogger statsLogger = NullStatsLogger.INSTANCE;
         protected boolean traceTaskExecution = false;
         protected long warnTimeMicroSec = WARN_TIME_MICRO_SEC_DEFAULT;
-        protected int maxTasksInQueue = -1;
+        protected int maxTasksInQueue = NO_TASK_LIMIT;
 
         public AbstractBuilder<T> name(String name) {
             this.name = name;
@@ -203,7 +203,7 @@ public class OrderedScheduler {
                         .setNameFormat(name + "-" + getClass().getSimpleName() + "-" + i + "-%d")
                         .setThreadFactory(threadFactory)
                         .build());
-            threads[i] = new QueueAssessibleExecutorService(thread, this.maxTasksInQueue);
+            threads[i] = new BoundedScheduledExecutorService(thread, this.maxTasksInQueue);
 
             final int idx = i;
             try {
