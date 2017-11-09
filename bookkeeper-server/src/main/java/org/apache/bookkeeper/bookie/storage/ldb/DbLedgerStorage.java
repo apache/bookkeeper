@@ -166,7 +166,7 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
         entryLocationIndex = new EntryLocationIndex(conf, KeyValueStorageRocksDB.factory, baseDir, stats);
 
         entryLogger = new EntryLogger(conf, ledgerDirsManager);
-        gcThread = new GarbageCollectorThread(conf, ledgerManager, this);
+        gcThread = new GarbageCollectorThread(conf, ledgerManager, this, statsLogger);
 
         registerStats();
     }

@@ -21,11 +21,14 @@
 
 package org.apache.bookkeeper.meta;
 
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ACTIVE_LEDGER_COUNT;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.DELETED_LEDGER_COUNT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
@@ -64,7 +67,9 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRange;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.versioning.Version;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -180,8 +185,9 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         final CountDownLatch createLatch = new CountDownLatch(1);
         final CountDownLatch endLatch = new CountDownLatch(2);
         final CompactableLedgerStorage mockLedgerStorage = new MockLedgerStorage();
+        TestStatsProvider stats = new TestStatsProvider();
         final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(getLedgerManager(),
-                mockLedgerStorage, baseConf);
+                mockLedgerStorage, baseConf, stats.getStatsLogger("gc"));
         Thread gcThread = new Thread() {
             @Override
             public void run() {
@@ -241,6 +247,12 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         for (Long ledger : createdLedgers) {
             assertTrue(activeLedgers.containsKey(ledger));
         }
+        assertTrue(
+                "Wrong DELETED_LEDGER_COUNT",
+                stats.getCounter("gc." + DELETED_LEDGER_COUNT).get() == removedLedgers.size());
+        assertTrue(
+                "Wrong ACTIVE_LEDGER_COUNT",
+                stats.getGauge("gc." + ACTIVE_LEDGER_COUNT).getSample().intValue() == createdLedgers.size());
     }
 
     @Test
@@ -251,30 +263,58 @@ public class GcLedgersTest extends LedgerManagerTestCase {
 
         createLedgers(numLedgers, createdLedgers);
 
+        MockLedgerStorage mockLedgerStorage = new MockLedgerStorage();
+        TestStatsProvider stats = new TestStatsProvider();
         final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(getLedgerManager(),
-                new MockLedgerStorage(), baseConf);
+                mockLedgerStorage, baseConf, stats.getStatsLogger("gc"));
         GarbageCollector.GarbageCleaner cleaner = new GarbageCollector.GarbageCleaner() {
                 @Override
                 public void clean(long ledgerId) {
                     LOG.info("Cleaned {}", ledgerId);
                     cleaned.add(ledgerId);
+                    try {
+                        mockLedgerStorage.deleteLedger(ledgerId);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        fail("Exception from deleteLedger");
+                    }
                 }
             };
 
         garbageCollector.gc(cleaner);
         assertNull("Should have cleaned nothing", cleaned.poll());
+        assertTrue(
+                "Wrong DELETED_LEDGER_COUNT",
+                stats.getCounter("gc." + DELETED_LEDGER_COUNT).get() == 0);
+        assertTrue(
+                "Wrong ACTIVE_LEDGER_COUNT",
+                stats.getGauge(
+                        "gc." + ACTIVE_LEDGER_COUNT).getSample().intValue() == numLedgers);
 
         long last = createdLedgers.last();
         removeLedger(last);
         garbageCollector.gc(cleaner);
         assertNotNull("Should have cleaned something", cleaned.peek());
         assertEquals("Should have cleaned last ledger" + last, (long) last, (long) cleaned.poll());
+        assertTrue(
+                "Wrong DELETED_LEDGER_COUNT",
+                stats.getCounter("gc." + DELETED_LEDGER_COUNT).get() == 1);
 
         long first = createdLedgers.first();
         removeLedger(first);
         garbageCollector.gc(cleaner);
         assertNotNull("Should have cleaned something", cleaned.peek());
         assertEquals("Should have cleaned first ledger" + first, (long) first, (long) cleaned.poll());
+        assertTrue(
+                "Wrong DELETED_LEDGER_COUNT",
+                stats.getCounter("gc." + DELETED_LEDGER_COUNT).get() == 2);
+
+        garbageCollector.gc(cleaner);
+        assertTrue(
+                "Wrong ACTIVE_LEDGER_COUNT",
+                stats.getGauge(
+                        "gc." + ACTIVE_LEDGER_COUNT).getSample().intValue() == (numLedgers - 2));
+
     }
 
     @Test
@@ -288,7 +328,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         createLedgers(numLedgers, createdLedgers);
 
         final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(getLedgerManager(),
-                new MockLedgerStorage(), baseConf);
+                new MockLedgerStorage(), baseConf, NullStatsLogger.INSTANCE);
         GarbageCollector.GarbageCleaner cleaner = new GarbageCollector.GarbageCleaner() {
                 @Override
                 public void clean(long ledgerId) {
@@ -328,7 +368,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         // no ledger created
 
         final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(getLedgerManager(),
-                new MockLedgerStorage(), baseConf);
+                new MockLedgerStorage(), baseConf, NullStatsLogger.INSTANCE);
         AtomicBoolean cleanerCalled = new AtomicBoolean(false);
 
         GarbageCollector.GarbageCleaner cleaner = new GarbageCollector.GarbageCleaner() {
@@ -358,7 +398,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         createLedgers(numLedgers, createdLedgers);
 
         final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(getLedgerManager(),
-                new MockLedgerStorage(), baseConf);
+                new MockLedgerStorage(), baseConf, NullStatsLogger.INSTANCE);
         GarbageCollector.GarbageCleaner cleaner = new GarbageCollector.GarbageCleaner() {
             @Override
             public void clean(long ledgerId) {
@@ -420,7 +460,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         };
 
         final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(mockLedgerManager,
-                new MockLedgerStorage(), baseConf);
+                new MockLedgerStorage(), baseConf, NullStatsLogger.INSTANCE);
         GarbageCollector.GarbageCleaner cleaner = new GarbageCollector.GarbageCleaner() {
             @Override
             public void clean(long ledgerId) {
@@ -467,7 +507,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         };
 
         final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(mockLedgerManager,
-                new MockLedgerStorage(), baseConf);
+                new MockLedgerStorage(), baseConf, NullStatsLogger.INSTANCE);
         GarbageCollector.GarbageCleaner cleaner = new GarbageCollector.GarbageCleaner() {
             @Override
             public void clean(long ledgerId) {
@@ -509,7 +549,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         };
 
         final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(mockLedgerManager,
-                new MockLedgerStorage(), baseConf);
+                new MockLedgerStorage(), baseConf, NullStatsLogger.INSTANCE);
         GarbageCollector.GarbageCleaner cleaner = new GarbageCollector.GarbageCleaner() {
             @Override
             public void clean(long ledgerId) {
