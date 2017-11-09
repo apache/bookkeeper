@@ -52,6 +52,7 @@
   </ciManagement>
   <modules>
     <module>buildtools</module>
+    <module>bookkeeper-proto</module>
     <module>bookkeeper-common</module>
     <module>bookkeeper-stats</module>
     <module>bookkeeper-server</module>
