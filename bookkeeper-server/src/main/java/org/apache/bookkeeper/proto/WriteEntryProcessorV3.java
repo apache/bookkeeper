@@ -34,6 +34,7 @@ import org.apache.bookkeeper.proto.BookkeeperProtocol.AddResponse;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
+import org.apache.bookkeeper.proto.DataFormats.LedgerType;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -105,10 +106,11 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
         byte[] masterKey = addRequest.getMasterKey().toByteArray();
         ByteBuf entryToAdd = Unpooled.wrappedBuffer(addRequest.getBody().asReadOnlyByteBuffer());
         try {
+            LedgerType ledgerType = addRequest.hasLedgerType() ? addRequest.getLedgerType() : LedgerType.FORCE_ON_JOURNAL;
             if (addRequest.hasFlag() && addRequest.getFlag().equals(AddRequest.Flag.RECOVERY_ADD)) {
-                requestProcessor.bookie.recoveryAddEntry(entryToAdd, wcb, channel, masterKey);
+                requestProcessor.bookie.recoveryAddEntry(entryToAdd, ledgerType, wcb, channel, masterKey);
             } else {
-                requestProcessor.bookie.addEntry(entryToAdd, wcb, channel, masterKey);
+                requestProcessor.bookie.addEntry(entryToAdd, ledgerType, wcb, channel, masterKey);
             }
             status = StatusCode.EOK;
         } catch (IOException e) {

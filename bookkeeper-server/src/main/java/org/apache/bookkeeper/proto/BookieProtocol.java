@@ -48,9 +48,14 @@ public interface BookieProtocol {
     public static final byte CURRENT_PROTOCOL_VERSION = 2;
 
     /**
-     * Entry Entry ID. To be used when no valid entry id can be assigned.
+     * Invalid Entry ID. To be used when no valid entry id can be assigned.
      */
     public static final long INVALID_ENTRY_ID = -1;
+
+    /**
+     * Invalid Ledger ID. To be used when no valid ledger id can be assigned.
+     */
+    public static final long INVALID_LEDGER_ID = -1;
 
     /**
      * Entry identifier representing a request to obtain the last add entry confirmed

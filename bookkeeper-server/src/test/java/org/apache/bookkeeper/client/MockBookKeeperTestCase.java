@@ -24,7 +24,6 @@ import com.google.common.base.Optional;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -44,6 +43,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
+import org.apache.bookkeeper.proto.DataFormats.LedgerType;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.junit.After;
@@ -51,7 +51,6 @@ import org.junit.Before;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.Mockito;
 import static org.mockito.Mockito.doAnswer;
 import org.mockito.invocation.InvocationOnMock;
@@ -426,7 +425,7 @@ public abstract class MockBookKeeperTestCase {
             anyLong(), any(byte[].class),
             anyLong(), any(ByteBuf.class),
             any(BookkeeperInternalCallbacks.WriteCallback.class),
-            any(), anyInt());
+            any(), anyInt(), any(LedgerType.class));
     }
 
 }

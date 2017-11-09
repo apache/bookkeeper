@@ -29,6 +29,7 @@ import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol.Request;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.proto.DataFormats.LedgerType;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,10 +74,11 @@ class WriteEntryProcessor extends PacketProcessorBase implements WriteCallback {
         int rc = BookieProtocol.EOK;
         ByteBuf addData = add.getData();
         try {
+            final LedgerType ledgerType = LedgerType.FORCE_ON_JOURNAL;
             if (add.isRecoveryAdd()) {
-                requestProcessor.bookie.recoveryAddEntry(addData, this, channel, add.getMasterKey());
+                requestProcessor.bookie.recoveryAddEntry(addData, ledgerType, this, channel, add.getMasterKey());
             } else {
-                requestProcessor.bookie.addEntry(addData, this, channel, add.getMasterKey());
+                requestProcessor.bookie.addEntry(addData, ledgerType, this, channel, add.getMasterKey());
             }
         } catch (IOException e) {
             LOG.error("Error writing " + add, e);

@@ -20,16 +20,12 @@ package org.apache.bookkeeper.proto;
 
 import static org.apache.bookkeeper.client.LedgerHandle.INVALID_ENTRY_ID;
 
-import com.google.common.collect.Sets;
 import com.google.common.base.Joiner;
 import com.google.protobuf.ByteString;
-import com.google.protobuf.ExtensionRegistry;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
-import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -60,19 +56,15 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
 
 import java.io.IOException;
-import java.net.SocketAddress;
-import java.nio.channels.ClosedChannelException;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Collection;
-import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import org.apache.bookkeeper.auth.BookKeeperPrincipal;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperClientStats;
@@ -119,7 +111,6 @@ import com.google.common.collect.Sets;
 import com.google.protobuf.ExtensionRegistry;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
-import java.net.SocketAddress;
 
 import java.net.SocketAddress;
 import java.security.cert.Certificate;
@@ -128,6 +119,7 @@ import java.util.Arrays;
 import java.util.List;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import org.apache.bookkeeper.auth.BookKeeperPrincipal;
+import org.apache.bookkeeper.proto.DataFormats.LedgerType;
 
 /**
  * This class manages all details of connection to a particular bookie. It also
@@ -528,7 +520,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
      *          Add options
      */
     void addEntry(final long ledgerId, byte[] masterKey, final long entryId, ByteBuf toSend, WriteCallback cb,
-                  Object ctx, final int options) {
+                  Object ctx, final int options, final LedgerType ledgerType) {
         Object request = null;
         CompletionKey completionKey = null;
         if (useV2WireProtocol) {
@@ -556,6 +548,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
             if (((short) options & BookieProtocol.FLAG_RECOVERY_ADD) == BookieProtocol.FLAG_RECOVERY_ADD) {
                 addBuilder.setFlag(AddRequest.Flag.RECOVERY_ADD);
+            }
+
+            if (ledgerType != DataFormats.LedgerType.FORCE_ON_JOURNAL) {
+                addBuilder.setLedgerType(ledgerType);
             }
 
             request = Request.newBuilder()

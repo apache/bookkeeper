@@ -64,6 +64,7 @@ import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
+import org.apache.bookkeeper.proto.DataFormats.LedgerType;
 
 /**
  * Implements the client-side part of the BookKeeper protocol.
@@ -245,7 +246,8 @@ public class BookieClient implements PerChannelBookieClientFactory {
                          final ByteBuf toSend,
                          final WriteCallback cb,
                          final Object ctx,
-                         final int options) {
+                         final int options,
+                         final LedgerType ledgerType) {
         closeLock.readLock().lock();
         try {
             final PerChannelBookieClientPool client = lookupClient(addr);
@@ -261,7 +263,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
 
             client.obtain(ChannelReadyForAddEntryCallback.create(
                                   this, toSend, ledgerId, entryId, addr,
-                                  ctx, cb, options, masterKey),
+                                  ctx, cb, options, masterKey, ledgerType),
                           ledgerId);
         } finally {
             closeLock.readLock().unlock();
@@ -300,11 +302,12 @@ public class BookieClient implements PerChannelBookieClientFactory {
         private WriteCallback cb;
         private int options;
         private byte[] masterKey;
+        private LedgerType ledgerType;
 
         static ChannelReadyForAddEntryCallback create(
                 BookieClient bookieClient, ByteBuf toSend, long ledgerId,
                 long entryId, BookieSocketAddress addr, Object ctx,
-                WriteCallback cb, int options, byte[] masterKey) {
+                WriteCallback cb, int options, byte[] masterKey, LedgerType ledgerType) {
             ChannelReadyForAddEntryCallback callback = RECYCLER.get();
             callback.bookieClient = bookieClient;
             callback.toSend = toSend;
@@ -315,6 +318,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
             callback.cb = cb;
             callback.options = options;
             callback.masterKey = masterKey;
+            callback.ledgerType = ledgerType;
             return callback;
         }
 
@@ -325,7 +329,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                 bookieClient.completeAdd(rc, ledgerId, entryId, addr, cb, ctx);
             } else {
                 pcbc.addEntry(ledgerId, masterKey, entryId,
-                              toSend, cb, ctx, options);
+                              toSend, cb, ctx, options, ledgerType);
             }
 
             toSend.release();
@@ -589,7 +593,8 @@ public class BookieClient implements PerChannelBookieClientFactory {
 
         for (int i = 0; i < 100000; i++) {
             counter.inc();
-            bc.addEntry(addr, ledger, new byte[0], i, Unpooled.wrappedBuffer(hello), cb, counter, 0);
+            bc.addEntry(addr, ledger, new byte[0], i, Unpooled.wrappedBuffer(hello), cb, counter, 0,
+                        LedgerType.FORCE_ON_JOURNAL);
         }
         counter.wait(0);
         System.out.println("Total = " + counter.total());

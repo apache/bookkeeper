@@ -51,6 +51,7 @@ import org.apache.bookkeeper.client.SyncCallbackUtils.SyncOpenCallback;
 import org.apache.bookkeeper.client.api.BookKeeperBuilder;
 import org.apache.bookkeeper.client.api.CreateBuilder;
 import org.apache.bookkeeper.client.api.DeleteBuilder;
+import org.apache.bookkeeper.client.api.LedgerType;
 import org.apache.bookkeeper.client.api.OpenBuilder;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -66,6 +67,7 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.proto.BookieClient;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -759,7 +761,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata)
+                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata, LedgerType.FORCE_ON_JOURNAL)
                 .initiate();
         } finally {
             closeLock.readLock().unlock();
@@ -962,7 +964,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata).initiateAdv((long)(-1));
+                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata, LedgerType.FORCE_ON_JOURNAL)
+                .initiateAdv(BookieProtocol.INVALID_LEDGER_ID);
         } finally {
             closeLock.readLock().unlock();
         }
@@ -1070,7 +1073,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata).initiateAdv(ledgerId);
+                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata, LedgerType.FORCE_ON_JOURNAL)
+                .initiateAdv(ledgerId);
         } finally {
             closeLock.readLock().unlock();
         }
