@@ -71,6 +71,9 @@
       <unpack>false</unpack>
       <scope>runtime</scope>
       <useProjectArtifact>false</useProjectArtifact>
+      <excludes>
+         <exclude>com.google.guava:guava</exclude>
+      </excludes>
     </dependencySet>
   </dependencySets>
 </assembly>
