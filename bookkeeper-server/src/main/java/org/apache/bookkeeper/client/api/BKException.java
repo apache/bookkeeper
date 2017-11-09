@@ -214,8 +214,10 @@ public abstract class BKException extends Exception {
          * Write operations failed due to bookies are readonly.
          */
         int WriteOnReadOnlyBookieException = -104;
+        /**
+         * Operations failed due to too many requests in the queue.
+         */
         int TooManyRequestsException = -105;
-        //-105 reserved for TooManyRequestsException
         /**
          * Ledger id overflow happens on ledger manager.
          *

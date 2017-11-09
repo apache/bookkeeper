@@ -299,9 +299,9 @@ public class BookieRequestProcessor implements RequestProcessor {
                     LOG.debug("Failed to process request to add entry at {}:{}. Too many pending requests",
                             r.getAddRequest().getLedgerId(), r.getAddRequest().getEntryId());
                 }
-                BookkeeperProtocol.AddResponse.Builder addResponse = BookkeeperProtocol.AddResponse.newBuilder() //
-                        .setLedgerId(r.getAddRequest().getLedgerId()) //
-                        .setEntryId(r.getAddRequest().getEntryId()) //
+                BookkeeperProtocol.AddResponse.Builder addResponse = BookkeeperProtocol.AddResponse.newBuilder()
+                        .setLedgerId(r.getAddRequest().getLedgerId())
+                        .setEntryId(r.getAddRequest().getEntryId())
                         .setStatus(BookkeeperProtocol.StatusCode.ETOOMANYREQUESTS);
                 BookkeeperProtocol.Response.Builder response = BookkeeperProtocol.Response.newBuilder()
                         .setHeader(write.getHeader())
@@ -345,9 +345,9 @@ public class BookieRequestProcessor implements RequestProcessor {
                                 r.getReadRequest().getLedgerId(), r.getReadRequest().getEntryId());
                     }
                     BookkeeperProtocol.ReadResponse.Builder readResponse =
-                            BookkeeperProtocol.ReadResponse.newBuilder() //
-                                    .setLedgerId(r.getAddRequest().getLedgerId()) //
-                                    .setEntryId(r.getAddRequest().getEntryId()) //
+                            BookkeeperProtocol.ReadResponse.newBuilder()
+                                    .setLedgerId(r.getAddRequest().getLedgerId())
+                                    .setEntryId(r.getAddRequest().getEntryId())
                                     .setStatus(BookkeeperProtocol.StatusCode.ETOOMANYREQUESTS);
                     BookkeeperProtocol.Response.Builder response = BookkeeperProtocol.Response.newBuilder()
                             .setHeader(read.getHeader())
