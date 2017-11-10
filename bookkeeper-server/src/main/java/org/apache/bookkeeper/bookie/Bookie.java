@@ -422,73 +422,97 @@ public class Bookie extends BookieCriticalThread {
                 conf,
                 rm
             );
-            final boolean newEnv = null == rmCookie;
 
             // 4. check if the cookie appear in all the directories.
             List<File> missedCookieDirs = new ArrayList<>();
-            List<Cookie> existedCookies = Lists.newArrayList();
-            if (!newEnv) {
-                existedCookies.add(rmCookie.getValue());
+            List<Cookie> existingCookies = Lists.newArrayList();
+            if (null != rmCookie) {
+                existingCookies .add(rmCookie.getValue());
             }
 
             // 4.1 verify the cookies in journal directories
             Pair<List<File>, List<Cookie>> journalResult =
                 verifyAndGetMissingDirs(masterCookie, conf, journalDirectories);
             missedCookieDirs.addAll(journalResult.getLeft());
-            existedCookies.addAll(journalResult.getRight());
+            existingCookies.addAll(journalResult.getRight());
             // 4.2. verify the cookies in ledger directories
             Pair<List<File>, List<Cookie>> ledgerResult =
                 verifyAndGetMissingDirs(masterCookie, conf, allLedgerDirs);
             missedCookieDirs.addAll(ledgerResult.getLeft());
-            existedCookies.addAll(ledgerResult.getRight());
+            existingCookies.addAll(ledgerResult.getRight());
 
-            // 5. if it is not a new environment, find out the real directories that miss cookie data
-            if (!newEnv && missedCookieDirs.size() > 0) {
-                // If we find that any of the dirs in missedCookieDirs, existed
-                // previously, we stop because we could be missing data
-                // Also, if a new ledger dir is being added, we make sure that
-                // that dir is empty. Else, we reject the request
-                Set<String> existingLedgerDirs = Sets.newHashSet();
-                for (Cookie cookie : existedCookies) {
-                    Collections.addAll(existingLedgerDirs, cookie.getLedgerDirPathsFromCookie());
-                }
-                List<File> dirsMissingData = new ArrayList<File>();
-                List<File> nonEmptyDirs = new ArrayList<File>();
-                for (File dir : missedCookieDirs) {
-                    if (existingLedgerDirs.contains(dir.getParent())) {
-                        // if one of the existing ledger dirs doesn't have cookie,
-                        // let us not proceed further
-                        dirsMissingData.add(dir);
-                        continue;
-                    }
-                    String[] content = dir.list();
-                    if (content != null && content.length != 0) {
-                        nonEmptyDirs.add(dir);
-                    }
-                }
-                if (dirsMissingData.size() > 0 || nonEmptyDirs.size() > 0) {
-                    LOG.error("Either not all local directories have cookies or directories being added "
-                            + " newly are not empty. "
-                            + "Directories missing cookie file are: " + dirsMissingData
-                            + " New directories that are not empty are: " + nonEmptyDirs);
-                    throw new BookieException.InvalidCookieException();
-                }
+            // 5. if there is no directory missing cookie, nothing need to be changed.
+            if (missedCookieDirs.isEmpty()) {
+                return;
             }
 
-            // 6. backfill all the directories that miss cookies
-            if (missedCookieDirs.size() > 0) {
-                LOG.info("Stamping new cookies on all dirs {}", missedCookieDirs);
-                for (File journalDirectory : journalDirectories) {
-                    masterCookie.writeToDirectory(journalDirectory);
-                }
-                for (File dir : allLedgerDirs) {
-                    masterCookie.writeToDirectory(dir);
-                }
-                masterCookie.writeToRegistrationManager(rm, conf, rmCookie != null ? rmCookie.getVersion() : Version.NEW);
+            // 6. go through all the directories that miss cookie.
+            //    - new environment: all directories should be empty
+            //    - old environment: existing ledger directories should not miss cookie, new directories should be empty
+            final boolean newEnv = null == rmCookie;
+            if (newEnv) {
+                verifyDirsForNewEnvironment(missedCookieDirs);
+            } else {
+                verifyDirsForOldEnvironment(missedCookieDirs, existingCookies);
             }
+
+            // 7. backfill all the directories that miss cookies (for storage expansion)
+            LOG.info("Stamping new cookies on all dirs {}", missedCookieDirs);
+            for (File journalDirectory : journalDirectories) {
+                masterCookie.writeToDirectory(journalDirectory);
+            }
+            for (File dir : allLedgerDirs) {
+                masterCookie.writeToDirectory(dir);
+            }
+            masterCookie.writeToRegistrationManager(rm, conf, rmCookie != null ? rmCookie.getVersion() : Version.NEW);
         } catch (IOException ioe) {
             LOG.error("Error accessing cookie on disks", ioe);
             throw new BookieException.InvalidCookieException(ioe);
+        }
+    }
+
+    private static void verifyDirsForNewEnvironment(List<File> missedCookieDirs)
+            throws InvalidCookieException {
+        List<File> nonEmptyDirs = new ArrayList<>();
+        for (File dir : missedCookieDirs) {
+            String[] content = dir.list();
+            if (content != null && content.length != 0) {
+                nonEmptyDirs.add(dir);
+            }
+        }
+        if (!nonEmptyDirs.isEmpty()) {
+            LOG.error("Not all the new directories are empty. New directories that are not empty are: " + nonEmptyDirs);
+            throw new InvalidCookieException();
+        }
+    }
+
+    private static void verifyDirsForOldEnvironment(List<File> missedCookieDirs,
+                                                    List<Cookie> existingCookies) throws InvalidCookieException {
+
+        Set<String> existingLedgerDirs = Sets.newHashSet();
+        for (Cookie cookie : existingCookies) {
+            Collections.addAll(existingLedgerDirs, cookie.getLedgerDirPathsFromCookie());
+        }
+        List<File> dirsMissingData = new ArrayList<File>();
+        List<File> nonEmptyDirs = new ArrayList<File>();
+        for (File dir : missedCookieDirs) {
+            if (existingLedgerDirs.contains(dir.getParent())) {
+                // if one of the existing ledger dirs doesn't have cookie,
+                // let us not proceed further
+                dirsMissingData.add(dir);
+                continue;
+            }
+            String[] content = dir.list();
+            if (content != null && content.length != 0) {
+                nonEmptyDirs.add(dir);
+            }
+        }
+        if (dirsMissingData.size() > 0 || nonEmptyDirs.size() > 0) {
+            LOG.error("Either not all local directories have cookies or directories being added "
+                    + " newly are not empty. "
+                    + "Directories missing cookie file are: " + dirsMissingData
+                    + " New directories that are not empty are: " + nonEmptyDirs);
+            throw new InvalidCookieException();
         }
     }
 

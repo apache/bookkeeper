@@ -26,17 +26,15 @@ import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.List;
-
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.discover.ZKRegistrationManager;
-import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.junit.Assert;
-
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.zookeeper.KeeperException;
+import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
