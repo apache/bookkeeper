@@ -35,10 +35,9 @@
       <version>${project.parent.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.google.protobuf</groupId>
-      <artifactId>protobuf-java</artifactId>
-      <version>${protobuf.version}</version>
-      <scope>compile</scope>
+      <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>bookkeeper-proto</artifactId>
+      <version>${project.parent.version}</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -294,8 +293,6 @@
         <configuration>
           <excludes>
             <!-- exclude generated file //-->
-            <exclude>**/DataFormats.java</exclude>
-            <exclude>**/BookkeeperProtocol.java</exclude>
             <exclude>**/target/**/*</exclude>
             <exclude>**/.classpath</exclude>
             <exclude>**/.gitignore</exclude>
@@ -368,22 +365,6 @@
             <id>attach-javadocs</id>
             <goals>
               <goal>jar</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.xolstice.maven.plugins</groupId>
-        <artifactId>protobuf-maven-plugin</artifactId>
-        <version>0.5.0</version>
-        <configuration>
-          <protocArtifact>com.google.protobuf:protoc:3.4.0:exe:${os.detected.classifier}</protocArtifact>
-          <checkStaleness>true</checkStaleness>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>compile</goal>
             </goals>
           </execution>
         </executions>
