@@ -68,7 +68,9 @@ import java.util.stream.Collectors;
 import org.apache.bookkeeper.bookie.BookieException.BookieIllegalOpException;
 import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.bookie.BookieException.DiskPartitionDuplicationException;
+import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
 import org.apache.bookkeeper.bookie.BookieException.MetadataStoreException;
+import org.apache.bookkeeper.bookie.BookieException.UnknownBookieIdException;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
@@ -96,6 +98,7 @@ import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
@@ -277,122 +280,7 @@ public class Bookie extends BookieCriticalThread {
             return;
         }
 
-        if (conf.getAllowStorageExpansion()) {
-            checkEnvironmentWithStorageExpansion(conf, rm, journalDirectories, allLedgerDirs);
-            return;
-        }
-
-        try {
-            boolean newEnv = false;
-            List<File> missedCookieDirs = new ArrayList<File>();
-            List<Cookie> journalCookies = Lists.newArrayList();
-            // try to read cookie from journal directory.
-            for (File journalDirectory : journalDirectories) {
-                try {
-                    Cookie journalCookie = Cookie.readFromDirectory(journalDirectory);
-                    journalCookies.add(journalCookie);
-                    if (journalCookie.isBookieHostCreatedFromIp()) {
-                        conf.setUseHostNameAsBookieID(false);
-                    } else {
-                        conf.setUseHostNameAsBookieID(true);
-                    }
-                } catch (FileNotFoundException fnf) {
-                    newEnv = true;
-                    missedCookieDirs.add(journalDirectory);
-                }
-            }
-
-            String instanceId = rm.getClusterInstanceId();
-            Cookie.Builder builder = Cookie.generateCookie(conf);
-            if (null != instanceId) {
-                builder.setInstanceId(instanceId);
-            }
-            Cookie masterCookie = builder.build();
-            Versioned<Cookie> rmCookie = null;
-            try {
-                rmCookie = Cookie.readFromRegistrationManager(rm, conf);
-                // If allowStorageExpansion option is set, we should
-                // make sure that the new set of ledger/index dirs
-                // is a super set of the old; else, we fail the cookie check
-                masterCookie.verifyIsSuperSet(rmCookie.getValue());
-            } catch (CookieNotFoundException e) {
-                // can occur in cases:
-                // 1) new environment or
-                // 2) done only metadata format and started bookie server.
-            }
-            for (File journalDirectory : journalDirectories) {
-                checkDirectoryStructure(journalDirectory);
-            }
-            if (!newEnv) {
-                for (Cookie journalCookie: journalCookies) {
-                    masterCookie.verify(journalCookie);
-                }
-            }
-
-
-            for (File dir : allLedgerDirs) {
-                checkDirectoryStructure(dir);
-                try {
-                    Cookie c = Cookie.readFromDirectory(dir);
-                    masterCookie.verify(c);
-                } catch (FileNotFoundException fnf) {
-                    missedCookieDirs.add(dir);
-                }
-            }
-
-            if (!newEnv && missedCookieDirs.size() > 0) {
-                // If we find that any of the dirs in missedCookieDirs, existed
-                // previously, we stop because we could be missing data
-                // Also, if a new ledger dir is being added, we make sure that
-                // that dir is empty. Else, we reject the request
-                Set<String> existingLedgerDirs = Sets.newHashSet();
-                for (Cookie journalCookie : journalCookies) {
-                    Collections.addAll(existingLedgerDirs, journalCookie.getLedgerDirPathsFromCookie());
-                }
-                List<File> dirsMissingData = new ArrayList<File>();
-                List<File> nonEmptyDirs = new ArrayList<File>();
-                for (File dir : missedCookieDirs) {
-                    if (existingLedgerDirs.contains(dir.getParent())) {
-                        // if one of the existing ledger dirs doesn't have cookie,
-                        // let us not proceed further
-                        dirsMissingData.add(dir);
-                        continue;
-                    }
-                    String[] content = dir.list();
-                    if (content != null && content.length != 0) {
-                        nonEmptyDirs.add(dir);
-                    }
-                }
-                if (dirsMissingData.size() > 0 || nonEmptyDirs.size() > 0) {
-                    LOG.error("Either not all local directories have cookies or directories being added "
-                            + " newly are not empty. "
-                            + "Directories missing cookie file are: " + dirsMissingData
-                            + " New directories that are not empty are: " + nonEmptyDirs);
-                    throw new BookieException.InvalidCookieException();
-                }
-            }
-
-            if (missedCookieDirs.size() > 0) {
-                LOG.info("Stamping new cookies on all dirs {}", missedCookieDirs);
-                for (File journalDirectory : journalDirectories) {
-                    masterCookie.writeToDirectory(journalDirectory);
-                }
-                for (File dir : allLedgerDirs) {
-                    masterCookie.writeToDirectory(dir);
-                }
-                masterCookie.writeToRegistrationManager(rm, conf, rmCookie != null ? rmCookie.getVersion() : Version.NEW);
-            }
-
-            List<File> ledgerDirs = ledgerDirsManager.getAllLedgerDirs();
-            checkIfDirsOnSameDiskPartition(ledgerDirs);
-            List<File> indexDirs = indexDirsManager.getAllLedgerDirs();
-            checkIfDirsOnSameDiskPartition(indexDirs);
-            checkIfDirsOnSameDiskPartition(journalDirectories);
-
-        } catch (IOException ioe) {
-            LOG.error("Error accessing cookie on disks", ioe);
-            throw new BookieException.InvalidCookieException(ioe);
-        }
+        checkEnvironmentWithStorageExpansion(conf, rm, journalDirectories, allLedgerDirs);
     }
 
     /**
@@ -441,77 +329,122 @@ public class Bookie extends BookieCriticalThread {
         }
     }
 
+    static Versioned<Cookie> readAndVerifyCookieFromRegistrationManager(Cookie masterCookie,
+                                                                        ServerConfiguration conf,
+                                                                        RegistrationManager rm)
+            throws BookieException {
+        // we need to loop through all possible bookie identifiers to ensure it is treated as a new environment
+        // just because of bad configuration
+        List<BookieSocketAddress> addresses = Lists.newArrayListWithExpectedSize(3);
+        try {
+            // ip address
+            addresses.add(getBookieAddress(
+                new ServerConfiguration(conf).setUseHostNameAsBookieID(false).setAdvertisedAddress(null)));
+            // host name
+            addresses.add(getBookieAddress(
+                new ServerConfiguration(conf).setUseHostNameAsBookieID(true).setAdvertisedAddress(null)));
+            // advertised address
+            if (null != conf.getAdvertisedAddress()) {
+                addresses.add(getBookieAddress(conf));
+            }
+        } catch (UnknownHostException e) {
+            throw new UnknownBookieIdException(e);
+        }
+        Versioned<Cookie> rmCookie = null;
+        for (BookieSocketAddress address : addresses) {
+            try {
+                rmCookie = Cookie.readFromRegistrationManager(rm, address);
+                // If allowStorageExpansion option is set, we should
+                // make sure that the new set of ledger/index dirs
+                // is a super set of the old; else, we fail the cookie check
+                if (conf.getAllowStorageExpansion()) {
+                    masterCookie.verifyIsSuperSet(rmCookie.getValue());
+                } else {
+                    masterCookie.verify(rmCookie.getValue());
+                }
+            } catch (CookieNotFoundException e) {
+                continue;
+            }
+        }
+        return rmCookie;
+    }
+
+    private static Pair<List<File>, List<Cookie>> verifyAndGetMissingDirs(Cookie masterCookie,
+                                                                          ServerConfiguration conf,
+                                                                          List<File> dirs)
+            throws InvalidCookieException, IOException {
+        List<File> missingDirs = Lists.newArrayList();
+        List<Cookie> existedCookies = Lists.newArrayList();
+        for (File dir : dirs) {
+            checkDirectoryStructure(dir);
+            try {
+                Cookie c = Cookie.readFromDirectory(dir);
+                if (conf.getAllowStorageExpansion()) {
+                    masterCookie.verifyIsSuperSet(c);
+                } else {
+                    masterCookie.verify(c);
+                }
+                existedCookies.add(c);
+            } catch (FileNotFoundException fnf) {
+                missingDirs.add(dir);
+            }
+        }
+        return Pair.of(missingDirs, existedCookies);
+    }
+
     public static void checkEnvironmentWithStorageExpansion(
             ServerConfiguration conf,
             RegistrationManager rm,
             List<File> journalDirectories,
             List<File> allLedgerDirs) throws BookieException {
         try {
-            boolean newEnv = false;
-            List<File> missedCookieDirs = new ArrayList<File>();
-            List<Cookie> journalCookies = Lists.newArrayList();
-            // try to read cookie from journal directory.
-            for (File journalDirectory : journalDirectories) {
-                try {
-                    Cookie journalCookie = Cookie.readFromDirectory(journalDirectory);
-                    journalCookies.add(journalCookie);
-                    if (journalCookie.isBookieHostCreatedFromIp()) {
-                        conf.setUseHostNameAsBookieID(false);
-                    } else {
-                        conf.setUseHostNameAsBookieID(true);
-                    }
-                } catch (FileNotFoundException fnf) {
-                    newEnv = true;
-                    missedCookieDirs.add(journalDirectory);
-                }
-            }
-
+            // 1. retrieve the instance id
             String instanceId = rm.getClusterInstanceId();
+
+            // 2. build the master cookie from the configuration
             Cookie.Builder builder = Cookie.generateCookie(conf);
             if (null != instanceId) {
                 builder.setInstanceId(instanceId);
             }
             Cookie masterCookie = builder.build();
-            Versioned<Cookie> rmCookie = null;
-            try {
-                rmCookie = Cookie.readFromRegistrationManager(rm, conf);
-                // If allowStorageExpansion option is set, we should
-                // make sure that the new set of ledger/index dirs
-                // is a super set of the old; else, we fail the cookie check
-                masterCookie.verifyIsSuperSet(rmCookie.getValue());
-            } catch (CookieNotFoundException e) {
-                // can occur in cases:
-                // 1) new environment or
-                // 2) done only metadata format and started bookie server.
-            }
-            for (File journalDirectory : journalDirectories) {
-                checkDirectoryStructure(journalDirectory);
-            }
+
+            // 3. read the cookie from registration manager. it is the `source-of-truth` of a given bookie.
+            //    if it doesn't exist in registration manager, this bookie is a new bookie, otherwise it is
+            //    an old bookie.
+            final Versioned<Cookie> rmCookie = readAndVerifyCookieFromRegistrationManager(
+                masterCookie,
+                conf,
+                rm
+            );
+            final boolean newEnv = null == rmCookie;
+
+            // 4. check if the cookie appear in all the directories.
+            List<File> missedCookieDirs = new ArrayList<>();
+            List<Cookie> existedCookies = Lists.newArrayList();
             if (!newEnv) {
-                for (Cookie journalCookie: journalCookies) {
-                    masterCookie.verifyIsSuperSet(journalCookie);
-                }
+                existedCookies.add(rmCookie.getValue());
             }
 
+            // 4.1 verify the cookies in journal directories
+            Pair<List<File>, List<Cookie>> journalResult =
+                verifyAndGetMissingDirs(masterCookie, conf, journalDirectories);
+            missedCookieDirs.addAll(journalResult.getLeft());
+            existedCookies.addAll(journalResult.getRight());
+            // 4.2. verify the cookies in ledger directories
+            Pair<List<File>, List<Cookie>> ledgerResult =
+                verifyAndGetMissingDirs(masterCookie, conf, allLedgerDirs);
+            missedCookieDirs.addAll(ledgerResult.getLeft());
+            existedCookies.addAll(ledgerResult.getRight());
 
-            for (File dir : allLedgerDirs) {
-                checkDirectoryStructure(dir);
-                try {
-                    Cookie c = Cookie.readFromDirectory(dir);
-                    masterCookie.verifyIsSuperSet(c);
-                } catch (FileNotFoundException fnf) {
-                    missedCookieDirs.add(dir);
-                }
-            }
-
+            // 5. if it is not a new environment, find out the real directories that miss cookie data
             if (!newEnv && missedCookieDirs.size() > 0) {
                 // If we find that any of the dirs in missedCookieDirs, existed
                 // previously, we stop because we could be missing data
                 // Also, if a new ledger dir is being added, we make sure that
                 // that dir is empty. Else, we reject the request
                 Set<String> existingLedgerDirs = Sets.newHashSet();
-                for (Cookie journalCookie : journalCookies) {
-                    Collections.addAll(existingLedgerDirs, journalCookie.getLedgerDirPathsFromCookie());
+                for (Cookie cookie : existedCookies) {
+                    Collections.addAll(existingLedgerDirs, cookie.getLedgerDirPathsFromCookie());
                 }
                 List<File> dirsMissingData = new ArrayList<File>();
                 List<File> nonEmptyDirs = new ArrayList<File>();
@@ -536,6 +469,7 @@ public class Bookie extends BookieCriticalThread {
                 }
             }
 
+            // 6. backfill all the directories that miss cookies
             if (missedCookieDirs.size() > 0) {
                 LOG.info("Stamping new cookies on all dirs {}", missedCookieDirs);
                 for (File journalDirectory : journalDirectories) {
