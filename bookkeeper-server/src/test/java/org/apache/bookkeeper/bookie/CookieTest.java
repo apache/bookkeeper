@@ -627,7 +627,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
         b.start();
         b.shutdown();
 
-        conf.setAdvertisedAddress("test.bookkeeper.com");
+        conf.setAdvertisedAddress("unknown");
         try {
             new Bookie(conf);
             fail("Should not start a bookie with ip if the bookie has been started with an ip");
