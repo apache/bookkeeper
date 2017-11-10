@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import org.apache.bookkeeper.bookie.Cookie;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
-import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
@@ -69,13 +68,11 @@ public class RecoveryBookieService implements HttpEndpointService {
      * Example body as this:
      * {
      *   "bookie_src": [ "bookie_src1", "bookie_src2"... ],
-     *   "bookie_dest": [ "bookie_dest1", "bookie_dest2"... ],
      *   "delete_cookie": <bool_value>
      * }
      */
     static class RecoveryRequestJsonBody {
         public List<String> bookie_src;
-        public List<String> bookie_dest;
         public boolean delete_cookie;
     }
 
@@ -94,8 +91,6 @@ public class RecoveryBookieService implements HttpEndpointService {
         try {
             requestJsonBody = JsonUtil.fromJson(requestBody, RecoveryRequestJsonBody.class);
             LOG.debug("bookie_src: [" + requestJsonBody.bookie_src.get(0)
-                + "],  bookie_dest: ["
-                + ((requestJsonBody.bookie_dest == null) ? "null" : requestJsonBody.bookie_dest.get(0))
                 + "],  delete_cookie: [" + requestJsonBody.delete_cookie + "]");
         } catch (JsonUtil.ParseJsonException e) {
             LOG.error("Meet Exception: ", e);
@@ -114,19 +109,11 @@ public class RecoveryBookieService implements HttpEndpointService {
             String bookieSrcString[] = requestJsonBody.bookie_src.get(0).split(":");
             BookieSocketAddress bookieSrc = new BookieSocketAddress(
               bookieSrcString[0], Integer.parseInt(bookieSrcString[1]));
-            final BookieSocketAddress bookieDest;
-            if ((requestJsonBody.bookie_dest != null) && !requestJsonBody.bookie_dest.isEmpty()) {
-                String bookieDestString[] = requestJsonBody.bookie_dest.get(0).split(":");
-                bookieDest = new BookieSocketAddress(bookieDestString[0],
-                  Integer.parseInt(bookieDestString[1]));
-            } else {
-                bookieDest = null;
-            }
             boolean deleteCookie = requestJsonBody.delete_cookie;
             executor.execute(() -> {
                 try {
                     LOG.info("Start recovering bookie.");
-                    bka.recoverBookieData(bookieSrc, bookieDest);
+                    bka.recoverBookieData(bookieSrc);
                     if (deleteCookie) {
                         Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, bookieSrc);
                         cookie.getValue().deleteFromRegistrationManager(rm, bookieSrc, cookie.getVersion());
