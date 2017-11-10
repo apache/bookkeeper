@@ -23,10 +23,9 @@
     <version>4.6.0-SNAPSHOT</version>
   </parent>
   <artifactId>bookkeeper-proto</artifactId>
-  <name>Apache BookKeeper :: Wire Protocols</name>
+  <name>Apache BookKeeper :: Protocols</name>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.libdir>${basedir}/lib</project.libdir>
   </properties>
   <dependencies>
     <dependency>
