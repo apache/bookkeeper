@@ -192,7 +192,7 @@ public class UpdateCookieCmdTest extends BookKeeperClusterTestCase {
     }
 
     private void updateCookie(String option, String optionVal, boolean useHostNameAsBookieID) throws Exception {
-        ServerConfiguration conf = bsConfs.get(0);
+        ServerConfiguration conf = new ServerConfiguration(bsConfs.get(0));
         BookieServer bks = bs.get(0);
         bks.shutdown();
 

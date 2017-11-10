@@ -281,6 +281,12 @@ public class Bookie extends BookieCriticalThread {
         }
 
         checkEnvironmentWithStorageExpansion(conf, rm, journalDirectories, allLedgerDirs);
+
+        List<File> ledgerDirs = ledgerDirsManager.getAllLedgerDirs();
+        checkIfDirsOnSameDiskPartition(ledgerDirs);
+        List<File> indexDirs = indexDirsManager.getAllLedgerDirs();
+        checkIfDirsOnSameDiskPartition(indexDirs);
+        checkIfDirsOnSameDiskPartition(journalDirectories);
     }
 
     /**
