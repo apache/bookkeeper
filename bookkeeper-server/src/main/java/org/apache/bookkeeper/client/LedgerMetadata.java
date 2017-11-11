@@ -75,6 +75,7 @@ public class LedgerMetadata {
     private long length;
     private long lastEntryId;
     private long ctime;
+    private boolean storeSystemtimeAsLedgerCreationTime;
 
     private LedgerMetadataFormat.State state;
     private SortedMap<Long, ArrayList<BookieSocketAddress>> ensembles =
@@ -88,12 +89,18 @@ public class LedgerMetadata {
 
     private Map<String, byte[]> customMetadata = Maps.newHashMap();
 
-    public LedgerMetadata(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
-                          BookKeeper.DigestType digestType, byte[] password, Map<String, byte[]> customMetadata) {
+    public LedgerMetadata(int ensembleSize,
+                          int writeQuorumSize,
+                          int ackQuorumSize,
+                          BookKeeper.DigestType digestType,
+                          byte[] password,
+                          Map<String, byte[]> customMetadata,
+                          boolean storeSystemtimeAsLedgerCreationTime) {
         this.ensembleSize = ensembleSize;
         this.writeQuorumSize = writeQuorumSize;
         this.ackQuorumSize = ackQuorumSize;
         this.ctime = System.currentTimeMillis();
+        this.storeSystemtimeAsLedgerCreationTime = storeSystemtimeAsLedgerCreationTime;
 
         /*
          * It is set in PendingReadOp.readEntryComplete, and
@@ -115,7 +122,7 @@ public class LedgerMetadata {
 
     public LedgerMetadata(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
             BookKeeper.DigestType digestType, byte[] password) {
-        this(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, password, null);
+        this(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, password, null, false);
     }
 
     /**
@@ -282,19 +289,15 @@ public class LedgerMetadata {
         this.customMetadata = customMetadata;
     }
 
-    /**
-     * Generates a byte array of this object
-     *
-     * @return the metadata serialized into a byte array
-     */
-    public byte[] serialize() {
-        if (metadataFormatVersion == 1) {
-            return serializeVersion1();
-        }
+    LedgerMetadataFormat buildProtoFormat() {
         LedgerMetadataFormat.Builder builder = LedgerMetadataFormat.newBuilder();
         builder.setQuorumSize(writeQuorumSize).setAckQuorumSize(ackQuorumSize)
             .setEnsembleSize(ensembleSize).setLength(length)
-            .setState(state).setLastEntryId(lastEntryId).setCtime(ctime);
+            .setState(state).setLastEntryId(lastEntryId);
+
+        if (storeSystemtimeAsLedgerCreationTime) {
+            builder.setCtime(ctime);
+        }
 
         if (hasPassword) {
             builder.setDigestType(digestType).setPassword(ByteString.copyFrom(password));
@@ -316,10 +319,22 @@ public class LedgerMetadata {
             }
             builder.addSegment(segmentBuilder.build());
         }
+        return builder.build();
+    }
+
+    /**
+     * Generates a byte array of this object
+     *
+     * @return the metadata serialized into a byte array
+     */
+    public byte[] serialize() {
+        if (metadataFormatVersion == 1) {
+            return serializeVersion1();
+        }
 
         StringBuilder s = new StringBuilder();
         s.append(VERSION_KEY).append(tSplitter).append(CURRENT_METADATA_FORMAT_VERSION).append(lSplitter);
-        s.append(TextFormat.printToString(builder.build()));
+        s.append(TextFormat.printToString(buildProtoFormat()));
         if (LOG.isDebugEnabled()) {
             LOG.debug("Serialized config: {}", s);
         }
