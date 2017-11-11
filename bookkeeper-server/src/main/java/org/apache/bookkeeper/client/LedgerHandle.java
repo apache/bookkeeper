@@ -192,17 +192,9 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
-     * Get the last confirmed entry id on this ledger. It reads
-     * the local state of the ledger handle, which is different
-     * from the readLastConfirmed call. In the case the ledger
-     * is not closed and the client is a reader, it is necessary
-     * to call readLastConfirmed to obtain an estimate of the
-     * last add operation that has been confirmed.
-     *
-     * @see #readLastConfirmed()
-     *
-     * @return the last confirmed entry id or {@link #INVALID_ENTRY_ID INVALID_ENTRY_ID} if no entry has been confirmed
+     * {@inheritDoc}
      */
+    @Override
     public synchronized long getLastAddConfirmed() {
         return lastAddConfirmed;
     }
@@ -212,12 +204,10 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
-     * Get the entry id of the last entry that has been enqueued for addition (but
-     * may not have possibly been persited to the ledger)
-     *
-     * @return the id of the last entry pushed or {@link #INVALID_ENTRY_ID INVALID_ENTRY_ID} if no entry has been pushed
+     * {@inheritDoc}
      */
-    synchronized public long getLastAddPushed() {
+    @Override
+    public synchronized long getLastAddPushed() {
         return lastAddPushed;
     }
 

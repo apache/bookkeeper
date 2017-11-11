@@ -17,6 +17,11 @@
  */
 package org.apache.bookkeeper.client;
 
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -24,7 +29,6 @@ import com.google.common.base.Optional;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -48,12 +52,7 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.junit.After;
 import org.junit.Before;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.Mockito;
-import static org.mockito.Mockito.doAnswer;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
@@ -134,9 +133,9 @@ public abstract class MockBookKeeperTestCase {
         when(bk.getStatsLogger()).thenReturn(nullStatsLogger);
         when(bk.getLedgerManager()).thenReturn(ledgerManager);
         when(bk.getLedgerIdGenerator()).thenReturn(ledgerIdGenerator);
+        when(bk.getReturnRc(anyInt())).thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0));
 
         setupLedgerIdGenerator();
-
         setupCreateLedgerMetadata();
         setupReadLedgerMetadata();
         setupWriteLedgerMetadata();
@@ -148,7 +147,7 @@ public abstract class MockBookKeeperTestCase {
     }
 
     protected NullStatsLogger setupLoggers() {
-        NullStatsLogger nullStatsLogger = new NullStatsLogger();
+        NullStatsLogger nullStatsLogger = NullStatsLogger.INSTANCE;
         when(bk.getOpenOpLogger()).thenReturn(nullStatsLogger.getOpStatsLogger("mock"));
         when(bk.getRecoverOpLogger()).thenReturn(nullStatsLogger.getOpStatsLogger("mock"));
         when(bk.getAddOpLogger()).thenReturn(nullStatsLogger.getOpStatsLogger("mock"));
@@ -404,12 +403,15 @@ public abstract class MockBookKeeperTestCase {
             long entryId = (Long) args[3];
             ByteBuf toSend = (ByteBuf) args[4];
             Object ctx = args[6];
+            int options = (int) args[7];
+            boolean isRecoveryAdd =
+                ((short) options & BookieProtocol.FLAG_RECOVERY_ADD) == BookieProtocol.FLAG_RECOVERY_ADD;
 
             byte[] entry = extractEntryPayload(ledgerId, entryId, toSend);
 
             submit(() -> {
                 boolean fenced = fencedLedgers.contains(ledgerId);
-                if (fenced) {
+                if (fenced && !isRecoveryAdd) {
                     callback.writeComplete(BKException.Code.LedgerFencedException,
                         ledgerId, entryId, bookieSocketAddress, ctx);
                 } else {
