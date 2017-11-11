@@ -237,6 +237,7 @@ public abstract class MockBookKeeperTestCase {
         return mockLedgerMetadataRegistry.get(ledgerId);
     }
 
+    @SuppressWarnings("unchecked")
     private void setupReadLedgerMetadata() {
         doAnswer(invocation -> {
             Object[] args = invocation.getArguments();
@@ -254,6 +255,7 @@ public abstract class MockBookKeeperTestCase {
         }).when(ledgerManager).readLedgerMetadata(anyLong(), any());
     }
 
+    @SuppressWarnings("unchecked")
     private void setupRemoveLedgerMetadata() {
         doAnswer(invocation -> {
             Object[] args = invocation.getArguments();
@@ -280,19 +282,17 @@ public abstract class MockBookKeeperTestCase {
         }).when(ledgerManager).registerLedgerMetadataListener(anyLong(), any());
     }
 
+    @SuppressWarnings("unchecked")
     private void setupLedgerIdGenerator() {
-        Mockito.doAnswer((Answer<Void>) new Answer<Void>() {
-            @Override
-            @SuppressWarnings("unchecked")
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                Object[] args = invocation.getArguments();
-                BookkeeperInternalCallbacks.GenericCallback cb = (BookkeeperInternalCallbacks.GenericCallback) args[0];
-                cb.operationComplete(BKException.Code.OK, mockNextLedgerId.getAndIncrement());
-                return null;
-            }
+        doAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
+            BookkeeperInternalCallbacks.GenericCallback cb = (BookkeeperInternalCallbacks.GenericCallback) args[0];
+            cb.operationComplete(Code.OK, mockNextLedgerId.getAndIncrement());
+            return null;
         }).when(ledgerIdGenerator).generateLedgerId(any());
     }
 
+    @SuppressWarnings("unchecked")
     private void setupCreateLedgerMetadata() {
         doAnswer(invocation -> {
             Object[] args = invocation.getArguments();
@@ -307,6 +307,7 @@ public abstract class MockBookKeeperTestCase {
         }).when(ledgerManager).createLedgerMetadata(anyLong(), any(), any());
     }
 
+    @SuppressWarnings("unchecked")
     private void setupWriteLedgerMetadata() {
         doAnswer(invocation -> {
             Object[] args = invocation.getArguments();
@@ -321,6 +322,7 @@ public abstract class MockBookKeeperTestCase {
         }).when(ledgerManager).writeLedgerMetadata(anyLong(), any(), any());
     }
 
+    @SuppressWarnings("unchecked")
     protected void setupBookieClientReadEntry() {
         doAnswer(invokation -> {
             Object[] args = invokation.getArguments();
@@ -386,6 +388,7 @@ public abstract class MockBookKeeperTestCase {
         return entry;
     }
 
+    @SuppressWarnings("unchecked")
     protected void setupBookieClientAddEntry() {
         doAnswer(invokation -> {
             Object[] args = invokation.getArguments();
