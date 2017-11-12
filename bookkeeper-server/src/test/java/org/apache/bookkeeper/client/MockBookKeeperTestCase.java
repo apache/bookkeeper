@@ -17,7 +17,6 @@
  */
 package org.apache.bookkeeper.client;
 
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -38,6 +37,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
+import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.api.CreateBuilder;
 import org.apache.bookkeeper.client.api.DeleteBuilder;
 import org.apache.bookkeeper.client.api.OpenBuilder;
@@ -236,13 +237,12 @@ public abstract class MockBookKeeperTestCase {
         return mockLedgerMetadataRegistry.get(ledgerId);
     }
 
+    @SuppressWarnings("unchecked")
     private void setupReadLedgerMetadata() {
-        doAnswer((Answer<Void>) new Answer<Void>() {
-            @Override
-            @SuppressWarnings("unchecked")
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                Object[] args = invocation.getArguments();
-                Long ledgerId = (Long) args[0];
+        doAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
+            Long ledgerId = (Long) args[0];
+            executor.submitOrdered(ledgerId, () -> {
                 BookkeeperInternalCallbacks.GenericCallback cb = (BookkeeperInternalCallbacks.GenericCallback) args[1];
                 LedgerMetadata ledgerMetadata = mockLedgerMetadataRegistry.get(ledgerId);
                 if (ledgerMetadata == null) {
@@ -250,26 +250,25 @@ public abstract class MockBookKeeperTestCase {
                 } else {
                     cb.operationComplete(BKException.Code.OK, new LedgerMetadata(ledgerMetadata));
                 }
-                return null;
-            }
+            });
+            return null;
         }).when(ledgerManager).readLedgerMetadata(anyLong(), any());
     }
 
+    @SuppressWarnings("unchecked")
     private void setupRemoveLedgerMetadata() {
-        doAnswer((Answer<Void>) new Answer<Void>() {
-            @Override
-            @SuppressWarnings("unchecked")
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                Object[] args = invocation.getArguments();
-                Long ledgerId = (Long) args[0];
+        doAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
+            Long ledgerId = (Long) args[0];
+            executor.submitOrdered(ledgerId, () -> {
                 BookkeeperInternalCallbacks.GenericCallback cb = (BookkeeperInternalCallbacks.GenericCallback) args[2];
                 if (mockLedgerMetadataRegistry.remove(ledgerId) != null) {
                     cb.operationComplete(BKException.Code.OK, null);
                 } else {
                     cb.operationComplete(BKException.Code.NoSuchLedgerExistsException, null);
                 }
-                return null;
-            }
+            });
+            return null;
         }).when(ledgerManager).removeLedgerMetadata(anyLong(), any(), any());
     }
 
@@ -283,62 +282,58 @@ public abstract class MockBookKeeperTestCase {
         }).when(ledgerManager).registerLedgerMetadataListener(anyLong(), any());
     }
 
+    @SuppressWarnings("unchecked")
     private void setupLedgerIdGenerator() {
-        Mockito.doAnswer((Answer<Void>) new Answer<Void>() {
-            @Override
-            @SuppressWarnings("unchecked")
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                Object[] args = invocation.getArguments();
-                BookkeeperInternalCallbacks.GenericCallback cb = (BookkeeperInternalCallbacks.GenericCallback) args[0];
-                cb.operationComplete(BKException.Code.OK, mockNextLedgerId.getAndIncrement());
-                return null;
-            }
+        doAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
+            BookkeeperInternalCallbacks.GenericCallback cb = (BookkeeperInternalCallbacks.GenericCallback) args[0];
+            cb.operationComplete(Code.OK, mockNextLedgerId.getAndIncrement());
+            return null;
         }).when(ledgerIdGenerator).generateLedgerId(any());
     }
 
+    @SuppressWarnings("unchecked")
     private void setupCreateLedgerMetadata() {
-        doAnswer((Answer<Void>) new Answer<Void>() {
-            @Override
-            @SuppressWarnings("unchecked")
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                Object[] args = invocation.getArguments();
-                BookkeeperInternalCallbacks.GenericCallback cb = (BookkeeperInternalCallbacks.GenericCallback) args[2];
-                Long ledgerId = (Long) args[0];
+        doAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
+            BookkeeperInternalCallbacks.GenericCallback cb = (BookkeeperInternalCallbacks.GenericCallback) args[2];
+            Long ledgerId = (Long) args[0];
+            executor.submitOrdered(ledgerId, () -> {
                 LedgerMetadata ledgerMetadata = (LedgerMetadata) args[1];
                 mockLedgerMetadataRegistry.put(ledgerId, new LedgerMetadata(ledgerMetadata));
                 cb.operationComplete(BKException.Code.OK, null);
-                return null;
-            }
+            });
+            return null;
         }).when(ledgerManager).createLedgerMetadata(anyLong(), any(), any());
     }
 
+    @SuppressWarnings("unchecked")
     private void setupWriteLedgerMetadata() {
-        doAnswer((Answer<Void>) new Answer<Void>() {
-            @Override
-            @SuppressWarnings("unchecked")
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                Object[] args = invocation.getArguments();
-                Long ledgerId = (Long) args[0];
-                LedgerMetadata metadata = (LedgerMetadata) args[1];
-                BookkeeperInternalCallbacks.GenericCallback cb = (BookkeeperInternalCallbacks.GenericCallback) args[2];
+        doAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
+            Long ledgerId = (Long) args[0];
+            LedgerMetadata metadata = (LedgerMetadata) args[1];
+            BookkeeperInternalCallbacks.GenericCallback cb = (BookkeeperInternalCallbacks.GenericCallback) args[2];
+            executor.submitOrdered(ledgerId, () -> {
                 mockLedgerMetadataRegistry.put(ledgerId, new LedgerMetadata(metadata));
                 cb.operationComplete(BKException.Code.OK, null);
-                return null;
-            }
+            });
+            return null;
         }).when(ledgerManager).writeLedgerMetadata(anyLong(), any(), any());
     }
 
+    @SuppressWarnings("unchecked")
     protected void setupBookieClientReadEntry() {
-        doAnswer((Answer) (InvocationOnMock invokation) -> {
+        doAnswer(invokation -> {
             Object[] args = invokation.getArguments();
             BookkeeperInternalCallbacks.ReadEntryCallback callback = (BookkeeperInternalCallbacks.ReadEntryCallback) args[4];
             BookieSocketAddress bookieSocketAddress = (BookieSocketAddress) args[0];
             long ledgerId = (Long) args[1];
             long entryId = (Long) args[3];
 
-            DigestManager macManager = new CRC32DigestManager(ledgerId);
-            fencedLedgers.add(ledgerId);
-            submit(() -> {
+            executor.submitOrdered(ledgerId, () -> {
+                DigestManager macManager = new CRC32DigestManager(ledgerId);
+                fencedLedgers.add(ledgerId);
                 MockEntry mockEntry = getMockLedgerEntry(ledgerId, bookieSocketAddress, entryId);
                 if (mockEntry != null) {
                     LOG.info("readEntryAndFenceLedger - found mock entry {}@{} at {}", ledgerId, entryId, bookieSocketAddress);
@@ -355,16 +350,15 @@ public abstract class MockBookKeeperTestCase {
         }).when(bookieClient).readEntryAndFenceLedger(any(), anyLong(), any(), anyLong(),
             any(BookkeeperInternalCallbacks.ReadEntryCallback.class), any());
 
-        doAnswer((Answer) (InvocationOnMock invokation) -> {
+        doAnswer(invokation -> {
             Object[] args = invokation.getArguments();
             BookieSocketAddress bookieSocketAddress = (BookieSocketAddress) args[0];
             long ledgerId = (Long) args[1];
             long entryId = (Long) args[2];
             BookkeeperInternalCallbacks.ReadEntryCallback callback = (BookkeeperInternalCallbacks.ReadEntryCallback) args[3];
 
-            DigestManager macManager = new CRC32DigestManager(ledgerId);
-
-            submit(() -> {
+            executor.submitOrdered(ledgerId, () -> {
+                DigestManager macManager = new CRC32DigestManager(ledgerId);
                 MockEntry mockEntry = getMockLedgerEntry(ledgerId, bookieSocketAddress, entryId);
                 if (mockEntry != null) {
                     LOG.info("readEntry - found mock entry {}@{} at {}", ledgerId, entryId, bookieSocketAddress);
@@ -394,8 +388,9 @@ public abstract class MockBookKeeperTestCase {
         return entry;
     }
 
+    @SuppressWarnings("unchecked")
     protected void setupBookieClientAddEntry() {
-        doAnswer((Answer) (InvocationOnMock invokation) -> {
+        doAnswer(invokation -> {
             Object[] args = invokation.getArguments();
             BookkeeperInternalCallbacks.WriteCallback callback = (BookkeeperInternalCallbacks.WriteCallback) args[5];
             BookieSocketAddress bookieSocketAddress = (BookieSocketAddress) args[0];
@@ -407,9 +402,14 @@ public abstract class MockBookKeeperTestCase {
             boolean isRecoveryAdd =
                 ((short) options & BookieProtocol.FLAG_RECOVERY_ADD) == BookieProtocol.FLAG_RECOVERY_ADD;
 
-            byte[] entry = extractEntryPayload(ledgerId, entryId, toSend);
-
-            submit(() -> {
+            executor.submitOrdered(ledgerId, () -> {
+                byte[] entry;
+                try {
+                    entry = extractEntryPayload(ledgerId, entryId, toSend);
+                } catch (BKDigestMatchException e) {
+                    callback.writeComplete(Code.DigestMatchException, ledgerId, entryId, bookieSocketAddress, ctx);
+                    return;
+                }
                 boolean fenced = fencedLedgers.contains(ledgerId);
                 if (fenced && !isRecoveryAdd) {
                     callback.writeComplete(BKException.Code.LedgerFencedException,
