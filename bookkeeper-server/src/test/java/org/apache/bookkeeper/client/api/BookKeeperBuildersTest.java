@@ -309,8 +309,14 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
     protected LedgerMetadata generateLedgerMetadata(int ensembleSize,
         int writeQuorumSize, int ackQuorumSize, byte[] password,
         Map<String, byte[]> customMetadata) {
-        LedgerMetadata ledgerMetadata = new LedgerMetadata(ensembleSize, writeQuorumSize,
-            ackQuorumSize, BookKeeper.DigestType.CRC32, password, customMetadata);
+        LedgerMetadata ledgerMetadata = new LedgerMetadata(
+            ensembleSize,
+            writeQuorumSize,
+            ackQuorumSize,
+            BookKeeper.DigestType.CRC32,
+            password,
+            customMetadata,
+            true);
         ledgerMetadata.addEnsemble(0, generateNewEnsemble(ensembleSize));
         return ledgerMetadata;
     }
