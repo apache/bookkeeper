@@ -318,7 +318,7 @@ public class TestBookieRecovery extends BookKeeperClusterTestCase {
 
             bka = new BookKeeperAdmin(adminConf);
             try {
-                bka.recoverBookieData(bookieSrc, null);
+                bka.recoverBookieData(bookieSrc);
                 fail("Shouldn't be able to recover with wrong password");
             } catch (BKException bke) {
                 // correct behaviour
@@ -336,7 +336,7 @@ public class TestBookieRecovery extends BookKeeperClusterTestCase {
 
         bka = new BookKeeperAdmin(adminConf);
         try {
-            bka.recoverBookieData(bookieSrc, null);
+            bka.recoverBookieData(bookieSrc);
             fail("Shouldn't be able to recover with wrong digest");
         } catch (BKException bke) {
             // correct behaviour
@@ -353,7 +353,7 @@ public class TestBookieRecovery extends BookKeeperClusterTestCase {
         adminConf.setBookieRecoveryPasswd(passwdCorrect);
 
         bka = new BookKeeperAdmin(adminConf);
-        bka.recoverBookieData(bookieSrc, null);
+        bka.recoverBookieData(bookieSrc);
         bka.close();
 
         lh = bkc.openLedgerNoRecovery(ledgerId, digestCorrect, passwdCorrect);

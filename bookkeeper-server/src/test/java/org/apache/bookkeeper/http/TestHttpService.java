@@ -575,20 +575,11 @@ public class TestHttpService extends BookKeeperClusterTestCase {
 
         //3, body with bookie_src, bookie_dest and delete_cookie of PUT, should success.
         String bookieSrc = getBookie(0).toString();
-        String bookieDest = getBookie(1).toString();
-        String putBody = "{\"bookie_src\": [ \"" + bookieSrc + "\" ],"
-          + "\"bookie_dest\": [ \"" + bookieDest + "\" ],"
-          + "\"delete_cookie\": true }";
-        HttpServiceRequest request3 = new HttpServiceRequest(putBody, HttpServer.Method.PUT, null);
+        String putBody3 = "{\"bookie_src\": [ \"" + bookieSrc + "\" ],"
+          + "\"delete_cookie\": false }";
+        HttpServiceRequest request3 = new HttpServiceRequest(putBody3, HttpServer.Method.PUT, null);
         HttpServiceResponse response3 = recoveryBookieService.handle(request3);
         assertEquals(HttpServer.StatusCode.OK.getValue(), response3.getStatusCode());
-
-        //4, body with bookie_src, and delete_cookie of PUT, should success.
-        String putBody4 = "{\"bookie_src\": [ \"" + bookieSrc + "\" ],"
-          + "\"delete_cookie\": false }";
-        HttpServiceRequest request4 = new HttpServiceRequest(putBody4, HttpServer.Method.PUT, null);
-        HttpServiceResponse response4 = recoveryBookieService.handle(request4);
-        assertEquals(HttpServer.StatusCode.OK.getValue(), response4.getStatusCode());
 
         //5, body with bookie_src of PUT, should success.
         String putBody5 = "{\"bookie_src\": [ \"" + bookieSrc + "\" ] }";
