@@ -534,7 +534,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#getLastAddPushed--">getLastAddPushed</a></span>()</code>
 <div class="block">Get the entry id of the last entry that has been enqueued for addition (but
- may not have possibly been persited to the ledger)</div>
+ may not have possibly been persisted to the ledger).</div>
 </td>
 </tr>
 <tr id="i34" class="altColor">
@@ -996,19 +996,18 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <li class="blockList">
 <h4>getLastAddConfirmed</h4>
 <pre>public&nbsp;long&nbsp;getLastAddConfirmed()</pre>
-<div class="block">Get the last confirmed entry id on this ledger. It reads
- the local state of the ledger handle, which is different
- from the readLastConfirmed call. In the case the ledger
- is not closed and the client is a reader, it is necessary
- to call readLastConfirmed to obtain an estimate of the
- last add operation that has been confirmed.</div>
+<div class="block">Get the last confirmed entry id on this ledger. It reads the local state of the ledger handle,
+ which is different from the <a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html#readLastAddConfirmed--"><code>ReadHandle.readLastAddConfirmed()</code></a> call.
+
+ <p>In the case the ledger is not closed and the client is a reader, it is necessary to
+ call <a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html#readLastAddConfirmed--"><code>ReadHandle.readLastAddConfirmed()</code></a> to obtain a fresh value of last add confirmed entry id.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html#getLastAddConfirmed--">getLastAddConfirmed</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api">ReadHandle</a></code></dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the last confirmed entry id or <a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#INVALID_ENTRY_ID"><code>INVALID_ENTRY_ID</code></a> if no entry has been confirmed</dd>
+<dd>the local value for LastAddConfirmed or -1L if no entry has been confirmed.</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
-<dd><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#readLastConfirmed--"><code>readLastConfirmed()</code></a></dd>
+<dd><a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html#readLastAddConfirmed--"><code>ReadHandle.readLastAddConfirmed()</code></a></dd>
 </dl>
 </li>
 </ul>
@@ -1029,10 +1028,12 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <h4>getLastAddPushed</h4>
 <pre>public&nbsp;long&nbsp;getLastAddPushed()</pre>
 <div class="block">Get the entry id of the last entry that has been enqueued for addition (but
- may not have possibly been persited to the ledger)</div>
+ may not have possibly been persisted to the ledger).</div>
 <dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html#getLastAddPushed--">getLastAddPushed</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html" title="interface in org.apache.bookkeeper.client.api">WriteHandle</a></code></dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the id of the last entry pushed or <a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#INVALID_ENTRY_ID"><code>INVALID_ENTRY_ID</code></a> if no entry has been pushed</dd>
+<dd>the entry id of the last entry pushed or -1 if no entry has been pushed.</dd>
 </dl>
 </li>
 </ul>
@@ -1146,6 +1147,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <pre>public&nbsp;long&nbsp;getLength()</pre>
 <div class="block">Returns the length of the ledger in bytes.</div>
 <dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html#getLength--">getLength</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api">ReadHandle</a></code></dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the length of the ledger in bytes</dd>
 </dl>

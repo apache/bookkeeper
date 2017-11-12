@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6};
+var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -141,30 +141,36 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/Handle.html" ti
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html#getLastAddConfirmed--">getLastAddConfirmed</a></span>()</code>
-<div class="block">Get the local value for LastAddConfirmed.</div>
+<div class="block">Get the last confirmed entry id on this ledger.</div>
 </td>
 </tr>
 <tr id="i1" class="rowColor">
+<td class="colFirst"><code>long</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html#getLength--">getLength</a></span>()</code>
+<div class="block">Returns the length of the data written in this ledger so much, in bytes.</div>
+</td>
+</tr>
+<tr id="i2" class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html?is-external=true" title="class or interface in java.lang">Iterable</a>&lt;<a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a>&gt;&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html#read-long-long-">read</a></span>(long&nbsp;firstEntry,
     long&nbsp;lastEntry)</code>
 <div class="block">Read a sequence of entries asynchronously.</div>
 </td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html#readLastAddConfirmed--">readLastAddConfirmed</a></span>()</code>
 <div class="block">Obtains asynchronously the last confirmed write from a quorum of bookies.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html?is-external=true" title="class or interface in java.lang">Iterable</a>&lt;<a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a>&gt;&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html#readUnconfirmed-long-long-">readUnconfirmed</a></span>(long&nbsp;firstEntry,
                long&nbsp;lastEntry)</code>
 <div class="block">Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html#tryReadLastAddConfirmed--">tryReadLastAddConfirmed</a></span>()</code>
 <div class="block">Obtains asynchronously the last confirmed write from a quorum of bookies
@@ -286,14 +292,34 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/Handle.html" ti
 <a name="getLastAddConfirmed--">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>getLastAddConfirmed</h4>
 <pre>long&nbsp;getLastAddConfirmed()</pre>
-<div class="block">Get the local value for LastAddConfirmed.</div>
+<div class="block">Get the last confirmed entry id on this ledger. It reads the local state of the ledger handle,
+ which is different from the <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html#readLastAddConfirmed--"><code>readLastAddConfirmed()</code></a> call.
+
+ <p>In the case the ledger is not closed and the client is a reader, it is necessary to
+ call <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html#readLastAddConfirmed--"><code>readLastAddConfirmed()</code></a> to obtain a fresh value of last add confirmed entry id.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the local value for LastAddConfirmed</dd>
+<dd>the local value for LastAddConfirmed or -1L if no entry has been confirmed.</dd>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html#readLastAddConfirmed--"><code>readLastAddConfirmed()</code></a></dd>
+</dl>
+</li>
+</ul>
+<a name="getLength--">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>getLength</h4>
+<pre>long&nbsp;getLength()</pre>
+<div class="block">Returns the length of the data written in this ledger so much, in bytes.</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the length of the data written in this ledger, in bytes.</dd>
 </dl>
 </li>
 </ul>
