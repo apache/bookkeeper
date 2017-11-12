@@ -17,33 +17,32 @@
  */
 package org.apache.bookkeeper.client;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Optional;
+import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.TextFormat;
-
-import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
-import org.apache.bookkeeper.versioning.Version;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-
-import static com.google.common.base.Charsets.UTF_8;
-
-import com.google.common.base.Optional;
-import com.google.common.collect.Maps;
+import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
+import org.apache.bookkeeper.versioning.Version;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class encapsulates all the ledger metadata that is persistently stored
@@ -234,7 +233,7 @@ public class LedgerMetadata {
         return state == LedgerMetadataFormat.State.IN_RECOVERY;
     }
 
-    LedgerMetadataFormat.State getState() {
+    public LedgerMetadataFormat.State getState() {
         return state;
     }
 
@@ -646,6 +645,14 @@ public class LedgerMetadata {
                 ensembles.put(key, ensemble);
             }
         }
+    }
+
+    Set<BookieSocketAddress> getBookiesInThisLedger() {
+        Set<BookieSocketAddress> bookies = new HashSet<BookieSocketAddress>();
+        for (ArrayList<BookieSocketAddress> ensemble : ensembles.values()) {
+            bookies.addAll(ensemble);
+        }
+        return bookies;
     }
 
 }
