@@ -114,6 +114,9 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String ENSEMBLE_PLACEMENT_POLICY = "ensemblePlacementPolicy";
     protected final static String NETWORK_TOPOLOGY_STABILIZE_PERIOD_SECONDS = "networkTopologyStabilizePeriodSeconds";
 
+    // Ledger Metadata Parameters
+    protected static final String STORE_SYSTEMTIME_AS_LEDGER_CREATION_TIME = "storeSystemTimeAsLedgerCreationTime";
+
     // Stats
     protected final static String ENABLE_TASK_EXECUTION_STATS = "enableTaskExecutionStats";
     protected final static String TASK_EXECUTION_WARN_TIME_MICROS = "taskExecutionWarnTimeMicros";
@@ -1632,9 +1635,10 @@ public class ClientConfiguration extends AbstractConfiguration {
      * @param regClientClass
      *            ClientClass
      */
-    public void setRegistrationClientClass(
+    public ClientConfiguration setRegistrationClientClass(
             Class<? extends RegistrationClient> regClientClass) {
         setProperty(REGISTRATION_CLIENT_CLASS, regClientClass);
+        return this;
     }
 
     /**
@@ -1647,5 +1651,30 @@ public class ClientConfiguration extends AbstractConfiguration {
         return ReflectionUtils.getClass(this, REGISTRATION_CLIENT_CLASS,
                 ZKRegistrationClient.class, RegistrationClient.class,
                 defaultLoader);
+    }
+
+    /**
+     * Enable the client to use system time as the ledger creation time.
+     *
+     * <p>If this is enabled, the client will write a ctime field into the ledger metadata.
+     * Otherwise, nothing will be written. The creation time of this ledger will be the ctime
+     * of the metadata record in metadata store.
+     *
+     * @param enabled flag to enable/disable client using system time as the ledger creation time.
+     */
+    public ClientConfiguration setStoreSystemtimeAsLedgerCreationTime(boolean enabled) {
+        setProperty(STORE_SYSTEMTIME_AS_LEDGER_CREATION_TIME, enabled);
+        return this;
+    }
+
+    /**
+     * Return the flag that indicates whether client is using system time as the ledger creation time when
+     * creating ledgers.
+     *
+     * @return the flag that indicates whether client is using system time as the ledger creation time when
+     *         creating ledgers.
+     */
+    public boolean getStoreSystemtimeAsLedgerCreationTime() {
+        return getBoolean(STORE_SYSTEMTIME_AS_LEDGER_CREATION_TIME, false);
     }
 }

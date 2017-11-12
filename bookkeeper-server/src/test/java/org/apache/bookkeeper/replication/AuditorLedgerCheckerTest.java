@@ -524,7 +524,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         int numofledgers = 5;
         Random rand = new Random();
         for (int i = 0; i < numofledgers; i++) {
-            LedgerMetadata metadata = new LedgerMetadata(3, 2, 2, DigestType.CRC32, "passwd".getBytes(), null);
+            LedgerMetadata metadata = new LedgerMetadata(3, 2, 2, DigestType.CRC32, "passwd".getBytes());
             ArrayList<BookieSocketAddress> ensemble = new ArrayList<BookieSocketAddress>();
             ensemble.add(new BookieSocketAddress("99.99.99.99:9999"));
             ensemble.add(new BookieSocketAddress("11.11.11.11:1111"));
