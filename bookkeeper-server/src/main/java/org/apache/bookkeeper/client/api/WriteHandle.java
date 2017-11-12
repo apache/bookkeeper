@@ -52,4 +52,12 @@ public interface WriteHandle extends ReadHandle {
         return append(Unpooled.wrappedBuffer(data));
     }
 
+    /**
+     * Get the entry id of the last entry that has been enqueued for addition (but
+     * may not have possibly been persisted to the ledger).
+     *
+     * @return the entry id of the last entry pushed or -1 if no entry has been pushed.
+     */
+    long getLastAddPushed();
+
 }
