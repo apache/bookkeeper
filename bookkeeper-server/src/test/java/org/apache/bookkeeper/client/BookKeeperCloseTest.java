@@ -476,7 +476,6 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
             BookieSocketAddress bookieToKill = getBookie(0);
             killBookie(bookieToKill);
             startNewBookie();
-            BookieSocketAddress newBookie = getBookie(2);
 
             CheckerCb checkercb = new CheckerCb();
             LedgerChecker lc = new LedgerChecker(bk);
@@ -507,7 +506,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
             }
 
             try {
-                bkadmin.recoverBookieData(bookieToKill, newBookie);
+                bkadmin.recoverBookieData(bookieToKill);
                 fail("Shouldn't be able to recover with a closed client");
             } catch (BKException.BKClientClosedException cce) {
                 // correct behaviour
