@@ -42,10 +42,13 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
@@ -180,6 +183,10 @@ public class BookKeeperAdmin implements AutoCloseable {
 
     public BookKeeperAdmin(final BookKeeper bkc) {
         this(bkc, NullStatsLogger.INSTANCE);
+    }
+
+    public ClientConfiguration getConf() {
+        return bkc.getConf();
     }
 
     /**
@@ -442,6 +449,69 @@ public class BookKeeperAdmin implements AutoCloseable {
         }
     }
 
+    public SortedMap<Long, LedgerMetadata> getLedgersContainBookies(Set<BookieSocketAddress> bookies)
+            throws InterruptedException, BKException {
+        final SyncObject sync = new SyncObject();
+        final AtomicReference<SortedMap<Long, LedgerMetadata>> resultHolder =
+                new AtomicReference<SortedMap<Long, LedgerMetadata>>(null);
+        asyncGetLedgersContainBookies(bookies, new GenericCallback<SortedMap<Long, LedgerMetadata>>() {
+            @Override
+            public void operationComplete(int rc, SortedMap<Long, LedgerMetadata> result) {
+                LOG.info("GetLedgersContainBookies completed with rc : {}", rc);
+                synchronized (sync) {
+                    sync.rc = rc;
+                    sync.value = true;
+                    resultHolder.set(result);
+                    sync.notify();
+                }
+            }
+        });
+        synchronized (sync) {
+            while (sync.value == false) {
+                sync.wait();
+            }
+        }
+        if (sync.rc != BKException.Code.OK) {
+            throw BKException.create(sync.rc);
+        }
+        return resultHolder.get();
+    }
+
+    public void asyncGetLedgersContainBookies(final Set<BookieSocketAddress> bookies,
+                                              final GenericCallback<SortedMap<Long, LedgerMetadata>> callback) {
+        final SortedMap<Long, LedgerMetadata> ledgers = new ConcurrentSkipListMap<Long, LedgerMetadata>();
+        bkc.getLedgerManager().asyncProcessLedgers(new Processor<Long>() {
+            @Override
+            public void process(final Long lid, final AsyncCallback.VoidCallback cb) {
+                bkc.getLedgerManager().readLedgerMetadata(lid, new GenericCallback<LedgerMetadata>() {
+                    @Override
+                    public void operationComplete(int rc, LedgerMetadata metadata) {
+                        if (BKException.Code.NoSuchLedgerExistsException == rc) {
+                            // the ledger was deleted during this iteration.
+                            cb.processResult(BKException.Code.OK, null, null);
+                            return;
+                        } else if (BKException.Code.OK != rc) {
+                            cb.processResult(rc, null, null);
+                            return;
+                        }
+                        Set<BookieSocketAddress> bookiesInLedger = metadata.getBookiesInThisLedger();
+                        Sets.SetView<BookieSocketAddress> intersection =
+                                Sets.intersection(bookiesInLedger, bookies);
+                        if (!intersection.isEmpty()) {
+                            ledgers.put(lid, metadata);
+                        }
+                        cb.processResult(BKException.Code.OK, null, null);
+                    }
+                });
+            }
+        }, new AsyncCallback.VoidCallback() {
+            @Override
+            public void processResult(int rc, String path, Object ctx) {
+                callback.operationComplete(rc, ledgers);
+            }
+        }, null, BKException.Code.OK, BKException.Code.MetaStoreException);
+    }
+
     /**
      * Synchronous method to rebuild and recover the ledger fragments data that
      * was stored on the source bookie. That bookie could have failed completely
@@ -456,11 +526,8 @@ public class BookKeeperAdmin implements AutoCloseable {
      * @param bookieSrc
      *            Source bookie that had a failure. We want to replicate the
      *            ledger fragments that were stored there.
-     * @param bookieDest
-     *            Optional destination bookie that if passed, we will copy all
-     *            of the ledger fragments from the source bookie over to it.
      */
-    public void recoverBookieData(final BookieSocketAddress bookieSrc, final BookieSocketAddress bookieDest)
+    public void recoverBookieData(final BookieSocketAddress bookieSrc)
             throws InterruptedException, BKException {
         Set<BookieSocketAddress> bookiesSrc = Sets.newHashSet(bookieSrc);
         recoverBookieData(bookiesSrc);
@@ -490,6 +557,34 @@ public class BookKeeperAdmin implements AutoCloseable {
 
         // Wait for the async method to complete.
         synchronized (sync) {
+            while (sync.value == false) {
+                sync.wait();
+            }
+        }
+        if (sync.rc != BKException.Code.OK) {
+            throw BKException.create(sync.rc);
+        }
+    }
+
+    public void recoverBookieData(final long lid,
+                                  final Set<BookieSocketAddress> bookiesSrc,
+                                  boolean dryrun,
+                                  boolean skipOpenLedgers)
+            throws InterruptedException, BKException {
+        SyncObject sync = new SyncObject();
+        // Call the async method to recover bookie data.
+        asyncRecoverBookieData(lid, bookiesSrc, dryrun, skipOpenLedgers, (rc, ctx) -> {
+            LOG.info("Recover bookie for {} completed with rc : {}", lid, rc);
+            SyncObject syncObject = (SyncObject) ctx;
+            synchronized (syncObject) {
+                syncObject.rc = rc;
+                syncObject.value = true;
+                syncObject.notify();
+            }
+        }, sync);
+
+        // Wait for the async method to complete.
+        synchronized (sync) {
             while (!sync.value) {
                 sync.wait();
             }
@@ -498,7 +593,7 @@ public class BookKeeperAdmin implements AutoCloseable {
             throw BKException.create(sync.rc);
         }
     }
-	
+
     /**
      * Async method to rebuild and recover the ledger fragments data that was
      * stored on the source bookie. That bookie could have failed completely and
@@ -533,6 +628,30 @@ public class BookKeeperAdmin implements AutoCloseable {
     public void asyncRecoverBookieData(final Set<BookieSocketAddress> bookieSrc, boolean dryrun,
                                        final boolean skipOpenLedgers, final RecoverCallback cb, final Object context) {
         getActiveLedgers(bookieSrc, dryrun, skipOpenLedgers, cb, context);
+    }
+
+    /**
+     * Recover a specific ledger.
+     *
+     * @param lid
+     *          ledger to recover
+     * @param bookieSrc
+     *          Source bookies that had a failure. We want to replicate the ledger fragments that were stored there.
+     * @param dryrun
+     *          dryrun the recover procedure.
+     * @param skipOpenLedgers
+     *            Skip recovering open ledgers.
+     * @param callback
+     *          RecoverCallback to invoke once all of the data on the dead
+     *          bookie has been recovered and replicated.
+     * @param context
+     *          Context for the RecoverCallback to call.
+     */
+    public void asyncRecoverBookieData(long lid, final Set<BookieSocketAddress> bookieSrc, boolean dryrun,
+                                       boolean skipOpenLedgers, final RecoverCallback callback, final Object context) {
+        AsyncCallback.VoidCallback callbackWrapper = (rc, path, ctx)
+            -> callback.recoverComplete(bkc.getReturnRc(rc), context);
+        recoverLedger(bookieSrc, lid, dryrun, skipOpenLedgers, callbackWrapper);
     }
 
     /**
