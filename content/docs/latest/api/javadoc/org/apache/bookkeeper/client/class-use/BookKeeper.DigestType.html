@@ -365,12 +365,13 @@ the order they are declared.</div>
               byte[]&nbsp;password)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html#LedgerMetadata-int-int-int-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-java.util.Map-">LedgerMetadata</a></span>(int&nbsp;ensembleSize,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html#LedgerMetadata-int-int-int-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-java.util.Map-boolean-">LedgerMetadata</a></span>(int&nbsp;ensembleSize,
               int&nbsp;writeQuorumSize,
               int&nbsp;ackQuorumSize,
               <a href="../../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
               byte[]&nbsp;password,
-              <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata)</code>&nbsp;</td>
+              <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
+              boolean&nbsp;storeSystemtimeAsLedgerCreationTime)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerOpenOp.html#LedgerOpenOp-org.apache.bookkeeper.client.BookKeeper-long-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-org.apache.bookkeeper.client.AsyncCallback.OpenCallback-java.lang.Object-">LedgerOpenOp</a></span>(<a href="../../../../../org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a>&nbsp;bk,
