@@ -372,6 +372,8 @@
 <dd>
 <div class="block">Make a LastAddUpdate request.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.html#asyncGetLedgersContainBookies-java.util.Set-org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback-">asyncGetLedgersContainBookies(Set&lt;BookieSocketAddress&gt;, BookkeeperInternalCallbacks.GenericCallback&lt;SortedMap&lt;Long, LedgerMetadata&gt;&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#asyncIsClosed-long-org.apache.bookkeeper.client.AsyncCallback.IsClosedCallback-java.lang.Object-">asyncIsClosed(long, AsyncCallback.IsClosedCallback, Object)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>
 <div class="block">Check asynchronously whether the ledger with identifier <i>lId</i>
@@ -426,6 +428,10 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.html#asyncRecoverBookieData-java.util.Set-boolean-boolean-org.apache.bookkeeper.client.AsyncCallback.RecoverCallback-java.lang.Object-">asyncRecoverBookieData(Set&lt;BookieSocketAddress&gt;, boolean, boolean, AsyncCallback.RecoverCallback, Object)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.html#asyncRecoverBookieData-long-java.util.Set-boolean-boolean-org.apache.bookkeeper.client.AsyncCallback.RecoverCallback-java.lang.Object-">asyncRecoverBookieData(long, Set&lt;BookieSocketAddress&gt;, boolean, boolean, AsyncCallback.RecoverCallback, Object)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></dt>
+<dd>
+<div class="block">Recover a specific ledger.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#asyncRecoveryAddEntry-byte:A-int-int-org.apache.bookkeeper.client.AsyncCallback.AddCallback-java.lang.Object-">asyncRecoveryAddEntry(byte[], int, int, AsyncCallback.AddCallback, Object)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>
 <div class="block">Make a recovery add entry request.</div>
@@ -1796,6 +1802,8 @@
 <dd>
 <div class="block">Gets the failedBookie index</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#getBookiesInThisLedger--">getBookiesInThisLedger()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#getBookieWatcher--">getBookieWatcher()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#getClientAuthProviderFactoryClass--">getClientAuthProviderFactoryClass()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
@@ -1859,6 +1867,8 @@
 <div class="block">Get the rate of compaction adds.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#getConf--">getConf()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.html#getConf--">getConf()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/Configurable.html#getConf--">getConf()</a></span> - Method in interface org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/Configurable.html" title="interface in org.apache.bookkeeper.conf">Configurable</a></dt>
 <dd>
@@ -2256,6 +2266,8 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingReadOp.html#getLedgerMetadata--">getLedgerMetadata()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingReadOp.html" title="class in org.apache.bookkeeper.client">PendingReadOp</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html#getLedgerMetadata--">getLedgerMetadata()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html" title="class in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.html#getLedgersContainBookies-java.util.Set-">getLedgersContainBookies(Set&lt;BookieSocketAddress&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getLedgerStorageClass--">getLedgerStorageClass()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
@@ -4508,7 +4520,7 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#RECOVER_OP">RECOVER_OP</a></span> - Static variable in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.html#recoverBookieData-org.apache.bookkeeper.net.BookieSocketAddress-org.apache.bookkeeper.net.BookieSocketAddress-">recoverBookieData(BookieSocketAddress, BookieSocketAddress)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.html#recoverBookieData-org.apache.bookkeeper.net.BookieSocketAddress-">recoverBookieData(BookieSocketAddress)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></dt>
 <dd>
 <div class="block">Synchronous method to rebuild and recover the ledger fragments data that
  was stored on the source bookie.</div>
@@ -4516,6 +4528,8 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.html#recoverBookieData-java.util.Set-">recoverBookieData(Set&lt;BookieSocketAddress&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.html#recoverBookieData-java.util.Set-boolean-boolean-">recoverBookieData(Set&lt;BookieSocketAddress&gt;, boolean, boolean)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.html#recoverBookieData-long-java.util.Set-boolean-boolean-">recoverBookieData(long, Set&lt;BookieSocketAddress&gt;, boolean, boolean)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/AsyncCallback.RecoverCallback.html#recoverComplete-int-java.lang.Object-">recoverComplete(int, Object)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/AsyncCallback.RecoverCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.RecoverCallback</a></dt>
 <dd>
