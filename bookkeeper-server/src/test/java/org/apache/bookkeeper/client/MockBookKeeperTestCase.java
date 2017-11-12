@@ -134,9 +134,9 @@ public abstract class MockBookKeeperTestCase {
         when(bk.getStatsLogger()).thenReturn(nullStatsLogger);
         when(bk.getLedgerManager()).thenReturn(ledgerManager);
         when(bk.getLedgerIdGenerator()).thenReturn(ledgerIdGenerator);
+        when(bk.getReturnRc(anyInt())).thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0));
 
         setupLedgerIdGenerator();
-
         setupCreateLedgerMetadata();
         setupReadLedgerMetadata();
         setupWriteLedgerMetadata();
@@ -148,7 +148,7 @@ public abstract class MockBookKeeperTestCase {
     }
 
     protected NullStatsLogger setupLoggers() {
-        NullStatsLogger nullStatsLogger = new NullStatsLogger();
+        NullStatsLogger nullStatsLogger = NullStatsLogger.INSTANCE;
         when(bk.getOpenOpLogger()).thenReturn(nullStatsLogger.getOpStatsLogger("mock"));
         when(bk.getRecoverOpLogger()).thenReturn(nullStatsLogger.getOpStatsLogger("mock"));
         when(bk.getAddOpLogger()).thenReturn(nullStatsLogger.getOpStatsLogger("mock"));
@@ -398,6 +398,9 @@ public abstract class MockBookKeeperTestCase {
             long entryId = (Long) args[3];
             ByteBuf toSend = (ByteBuf) args[4];
             Object ctx = args[6];
+            int options = (int) args[7];
+            boolean isRecoveryAdd =
+                ((short) options & BookieProtocol.FLAG_RECOVERY_ADD) == BookieProtocol.FLAG_RECOVERY_ADD;
 
             executor.submitOrdered(ledgerId, () -> {
                 byte[] entry;
@@ -408,7 +411,7 @@ public abstract class MockBookKeeperTestCase {
                     return;
                 }
                 boolean fenced = fencedLedgers.contains(ledgerId);
-                if (fenced) {
+                if (fenced && !isRecoveryAdd) {
                     callback.writeComplete(BKException.Code.LedgerFencedException,
                         ledgerId, entryId, bookieSocketAddress, ctx);
                 } else {
