@@ -58,7 +58,7 @@ public class OrderedSafeExecutor extends org.apache.bookkeeper.common.util.Order
                 threadFactory = Executors.defaultThreadFactory();
             }
             return new OrderedSafeExecutor(name, numThreads, threadFactory, statsLogger,
-                                           traceTaskExecution, warnTimeMicroSec);
+                                           traceTaskExecution, warnTimeMicroSec, maxTasksInQueue);
         }
 
     }
@@ -78,11 +78,13 @@ public class OrderedSafeExecutor extends org.apache.bookkeeper.common.util.Order
      *            - should we stat task execution
      * @param warnTimeMicroSec
      *            - log long task exec warning after this interval
+     * @param maxTasksInQueue
+     *            - maximum items allowed in a thread queue. -1 for no limit
      */
     private OrderedSafeExecutor(String baseName, int numThreads, ThreadFactory threadFactory,
                                 StatsLogger statsLogger, boolean traceTaskExecution,
-                                long warnTimeMicroSec) {
-        super(baseName, numThreads, threadFactory, statsLogger, traceTaskExecution, warnTimeMicroSec);
+                                long warnTimeMicroSec, int maxTasksInQueue) {
+        super(baseName, numThreads, threadFactory, statsLogger, traceTaskExecution, warnTimeMicroSec, maxTasksInQueue);
     }
 
     /**
