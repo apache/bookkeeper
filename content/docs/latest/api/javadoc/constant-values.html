@@ -850,48 +850,55 @@
 <td class="colLast"><code>-23</code></td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><a name="org.apache.bookkeeper.client.api.BKException.Code.TooManyRequestsException">
+<!--   -->
+</a><code>public&nbsp;static&nbsp;final&nbsp;int</code></td>
+<td><code><a href="org/apache/bookkeeper/client/api/BKException.Code.html#TooManyRequestsException">TooManyRequestsException</a></code></td>
+<td class="colLast"><code>-105</code></td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><a name="org.apache.bookkeeper.client.api.BKException.Code.UnauthorizedAccessException">
 <!--   -->
 </a><code>public&nbsp;static&nbsp;final&nbsp;int</code></td>
 <td><code><a href="org/apache/bookkeeper/client/api/BKException.Code.html#UnauthorizedAccessException">UnauthorizedAccessException</a></code></td>
 <td class="colLast"><code>-102</code></td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a name="org.apache.bookkeeper.client.api.BKException.Code.UnclosedFragmentException">
 <!--   -->
 </a><code>public&nbsp;static&nbsp;final&nbsp;int</code></td>
 <td><code><a href="org/apache/bookkeeper/client/api/BKException.Code.html#UnclosedFragmentException">UnclosedFragmentException</a></code></td>
 <td class="colLast"><code>-103</code></td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><a name="org.apache.bookkeeper.client.api.BKException.Code.UnexpectedConditionException">
 <!--   -->
 </a><code>public&nbsp;static&nbsp;final&nbsp;int</code></td>
 <td><code><a href="org/apache/bookkeeper/client/api/BKException.Code.html#UnexpectedConditionException">UnexpectedConditionException</a></code></td>
 <td class="colLast"><code>-999</code></td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a name="org.apache.bookkeeper.client.api.BKException.Code.UNINITIALIZED">
 <!--   -->
 </a><code>public&nbsp;static&nbsp;final&nbsp;int</code></td>
 <td><code><a href="org/apache/bookkeeper/client/api/BKException.Code.html#UNINITIALIZED">UNINITIALIZED</a></code></td>
 <td class="colLast"><code>1</code></td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><a name="org.apache.bookkeeper.client.api.BKException.Code.WriteException">
 <!--   -->
 </a><code>public&nbsp;static&nbsp;final&nbsp;int</code></td>
 <td><code><a href="org/apache/bookkeeper/client/api/BKException.Code.html#WriteException">WriteException</a></code></td>
 <td class="colLast"><code>-12</code></td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a name="org.apache.bookkeeper.client.api.BKException.Code.WriteOnReadOnlyBookieException">
 <!--   -->
 </a><code>public&nbsp;static&nbsp;final&nbsp;int</code></td>
 <td><code><a href="org/apache/bookkeeper/client/api/BKException.Code.html#WriteOnReadOnlyBookieException">WriteOnReadOnlyBookieException</a></code></td>
 <td class="colLast"><code>-104</code></td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><a name="org.apache.bookkeeper.client.api.BKException.Code.ZKException">
 <!--   -->
 </a><code>public&nbsp;static&nbsp;final&nbsp;int</code></td>
@@ -1950,6 +1957,20 @@
 </a><code>protected&nbsp;static&nbsp;final&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td><code><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#MAX_JOURNAL_SIZE">MAX_JOURNAL_SIZE</a></code></td>
 <td class="colLast"><code>"journalMaxSizeMB"</code></td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><a name="org.apache.bookkeeper.conf.ServerConfiguration.MAX_PENDING_ADD_REQUESTS_PER_THREAD">
+<!--   -->
+</a><code>protected&nbsp;static&nbsp;final&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td><code><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#MAX_PENDING_ADD_REQUESTS_PER_THREAD">MAX_PENDING_ADD_REQUESTS_PER_THREAD</a></code></td>
+<td class="colLast"><code>"maxPendingAddRequestsPerThread"</code></td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><a name="org.apache.bookkeeper.conf.ServerConfiguration.MAX_PENDING_READ_REQUESTS_PER_THREAD">
+<!--   -->
+</a><code>protected&nbsp;static&nbsp;final&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td><code><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#MAX_PENDING_READ_REQUESTS_PER_THREAD">MAX_PENDING_READ_REQUESTS_PER_THREAD</a></code></td>
+<td class="colLast"><code>"maxPendingReadRequestsPerThread"</code></td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><a name="org.apache.bookkeeper.conf.ServerConfiguration.MIN_USABLESIZE_FOR_INDEXFILE_CREATION">

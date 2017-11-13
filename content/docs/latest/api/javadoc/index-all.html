@@ -560,6 +560,8 @@
 <dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/BKException.BKTimeoutException.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">BKException.BKTimeoutException</span></a> - Exception in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
 <dd>&nbsp;</dd>
+<dt><a href="org/apache/bookkeeper/client/BKException.BKTooManyRequestsException.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">BKException.BKTooManyRequestsException</span></a> - Exception in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
+<dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/BKException.BKUnauthorizedAccessException.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">BKException.BKUnauthorizedAccessException</span></a> - Exception in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/BKException.BKUnclosedFragmentException.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">BKException.BKUnclosedFragmentException</span></a> - Exception in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
@@ -617,6 +619,8 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BKException.BKSecurityException.html#BKSecurityException--">BKSecurityException()</a></span> - Constructor for exception org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BKException.BKSecurityException.html" title="class in org.apache.bookkeeper.client">BKException.BKSecurityException</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BKException.BKTimeoutException.html#BKTimeoutException--">BKTimeoutException()</a></span> - Constructor for exception org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BKException.BKTimeoutException.html" title="class in org.apache.bookkeeper.client">BKException.BKTimeoutException</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BKException.BKTooManyRequestsException.html#BKTooManyRequestsException--">BKTooManyRequestsException()</a></span> - Constructor for exception org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BKException.BKTooManyRequestsException.html" title="class in org.apache.bookkeeper.client">BKException.BKTooManyRequestsException</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BKException.BKUnauthorizedAccessException.html#BKUnauthorizedAccessException--">BKUnauthorizedAccessException()</a></span> - Constructor for exception org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BKException.BKUnauthorizedAccessException.html" title="class in org.apache.bookkeeper.client">BKException.BKUnauthorizedAccessException</a></dt>
 <dd>&nbsp;</dd>
@@ -2333,6 +2337,16 @@
 <dd>
 <div class="block">Max journal file size</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getMaxPendingAddRequestPerThread--">getMaxPendingAddRequestPerThread()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">If add workers threads are enabled, limit the number of pending requests, to avoid the executor queue to grow
+ indefinitely (default: 10000 entries)</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getMaxPendingReadRequestPerThread--">getMaxPendingReadRequestPerThread()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">If read workers threads are enabled, limit the number of pending requests, to avoid the executor queue to grow
+ indefinitely (default: 10000 entries)</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#getMaxSpeculativeReadLACTimeout--">getMaxSpeculativeReadLACTimeout()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
 <div class="block">Get the maximum interval between successive speculative read last add confirmed and entry
@@ -3670,6 +3684,10 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#MAX_BACKUP_JOURNALS">MAX_BACKUP_JOURNALS</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#MAX_JOURNAL_SIZE">MAX_JOURNAL_SIZE</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#MAX_PENDING_ADD_REQUESTS_PER_THREAD">MAX_PENDING_ADD_REQUESTS_PER_THREAD</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#MAX_PENDING_READ_REQUESTS_PER_THREAD">MAX_PENDING_READ_REQUESTS_PER_THREAD</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#MAX_SPECULATIVE_READ_LAC_TIMEOUT">MAX_SPECULATIVE_READ_LAC_TIMEOUT</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>&nbsp;</dd>
@@ -5381,6 +5399,14 @@
 <dd>
 <div class="block">Set new max journal file size</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setMaxPendingAddRequestPerThread-int-">setMaxPendingAddRequestPerThread(int)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">Set the max number of pending add requests for each add worker thread.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setMaxPendingReadRequestPerThread-int-">setMaxPendingReadRequestPerThread(int)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
+<dd>
+<div class="block">Set the max number of pending read requests for each read worker thread.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/WeightedRandomSelection.html#setMaxProbabilityMultiplier-int-">setMaxProbabilityMultiplier(int)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/WeightedRandomSelection.html" title="class in org.apache.bookkeeper.client">WeightedRandomSelection</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#setMaxSpeculativeReadLACTimeout-int-">setMaxSpeculativeReadLACTimeout(int)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
@@ -6086,6 +6112,10 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html#toList--">toList()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/BKException.Code.html#TooManyRequestsException">TooManyRequestsException</a></span> - Static variable in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/BKException.Code.html" title="interface in org.apache.bookkeeper.client.api">BKException.Code</a></dt>
+<dd>
+<div class="block">Operations failed due to too many requests in the queue.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html#toOpStatsData--">toOpStatsData()</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleOpStatsLogger</a></dt>
 <dd>
 <div class="block">This function should go away soon (hopefully).</div>
