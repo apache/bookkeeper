@@ -344,9 +344,6 @@ class PendingAddOp extends SafeRunnable implements WriteCallback, TimerTask {
             timeout.cancel();
         }
 
-
-        ReferenceCountUtil.release(toSend);
-
         if (LOG.isDebugEnabled()) {
             LOG.debug("Submit callback (lid:{}, eid: {}). rc:{}", lh.getId(), entryId, rc);
         }
@@ -418,6 +415,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback, TimerTask {
     private void recycle() {
         entryId = LedgerHandle.INVALID_ENTRY_ID;
         currentLedgerLength = -1;
+        ReferenceCountUtil.release(toSend);
         payload = null;
         toSend = null;
         cb = null;
