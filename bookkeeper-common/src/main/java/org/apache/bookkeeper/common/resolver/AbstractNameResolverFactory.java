@@ -16,7 +16,23 @@
  * limitations under the License.
  */
 
+package org.apache.bookkeeper.common.resolver;
+
+import io.grpc.NameResolver;
+
 /**
- * GRpc Resolver to resolve stream servers from names.
+ * The abstract bookkeeper name resolver factory.
+ *
+ * <p>The name resolver is responsible for creating specific name resolver
+ * which provides addresses for {@link io.grpc.LoadBalancer}.
  */
-package org.apache.distributedlog.stream.client.resolver;
+public abstract class AbstractNameResolverFactory extends NameResolver.Factory {
+
+    /**
+     * Gets name of the name resolver factory.
+     *
+     * @return name of the name resolver factory.
+     */
+    public abstract String name();
+
+}

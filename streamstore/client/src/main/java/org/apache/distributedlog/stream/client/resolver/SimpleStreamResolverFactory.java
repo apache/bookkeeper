@@ -26,16 +26,18 @@ import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 import io.grpc.Attributes;
 import io.grpc.NameResolver;
-import io.grpc.internal.GrpcUtil;
 import java.net.URI;
 import java.util.List;
 import javax.annotation.Nullable;
+import org.apache.bookkeeper.common.resolver.AbstractNameResolverFactory;
+import org.apache.bookkeeper.common.resolver.SimpleNameResolver;
+import org.apache.distributedlog.stream.client.ClientResources;
 import org.apache.distributedlog.stream.proto.common.Endpoint;
 
 /**
  * A simple resolver factory that creates simple name resolver.
  */
-public class SimpleStreamResolverFactory extends AbstractStreamResolverFactory {
+public class SimpleStreamResolverFactory extends AbstractNameResolverFactory {
 
   private static final String SCHEME = "stream";
   private static final String NAME = "simple";
@@ -56,7 +58,7 @@ public class SimpleStreamResolverFactory extends AbstractStreamResolverFactory {
       new Function<Endpoint, URI>() {
         @Override
         public URI apply(Endpoint endpoint) {
-          return URI.create("stream://" + endpoint.getHostname() + ":" + endpoint.getPort());
+          return URI.create(SCHEME + "://" + endpoint.getHostname() + ":" + endpoint.getPort());
         }
       }
     );
@@ -78,7 +80,7 @@ public class SimpleStreamResolverFactory extends AbstractStreamResolverFactory {
       "the path component (%s) of the target (%s) must start with '/'",
       targetPath, targetUri);
     String name = targetPath.substring(1);
-    return new SimpleStreamResolver(name, GrpcUtil.SHARED_CHANNEL_EXECUTOR, this.endpointURIs);
+    return new SimpleNameResolver(name, ClientResources.shared().executor(), this.endpointURIs);
   }
 
   @Override

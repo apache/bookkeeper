@@ -19,6 +19,8 @@ package org.apache.distributedlog.stream.client;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.util.HashedWheelTimer;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.common.util.SharedResourceManager.Resource;
@@ -28,75 +30,106 @@ import org.apache.bookkeeper.common.util.SharedResourceManager.Resource;
  */
 public class ClientResources {
 
-  public static ClientResources create() {
-    return new ClientResources();
-  }
+    private static final ClientResources SHARED = create();
 
-  private final Resource<OrderedScheduler> scheduler;
-  private final Resource<HashedWheelTimer> timer;
+    public static ClientResources shared() {
+        return SHARED;
+    }
 
-  private ClientResources() {
-    this.scheduler =
-      new Resource<OrderedScheduler>() {
+    public static ClientResources create() {
+        return new ClientResources();
+    }
 
-        private static final String name = "client-scheduler";
+    private final Resource<OrderedScheduler> scheduler;
+    private final Resource<HashedWheelTimer> timer;
+    private final Resource<ExecutorService> executor;
 
-        @Override
-        public OrderedScheduler create() {
-          return OrderedScheduler.newSchedulerBuilder()
-            .numThreads(Runtime.getRuntime().availableProcessors() * 2)
-            .name(name)
-            .build();
-        }
+    private ClientResources() {
+        this.scheduler =
+            new Resource<OrderedScheduler>() {
 
-        @Override
-        public void close(OrderedScheduler instance) {
-          instance.shutdown();
-        }
+                private static final String name = "client-scheduler";
 
-        @Override
-        public String toString() {
-          return name;
-        }
-      };
+                @Override
+                public OrderedScheduler create() {
+                    return OrderedScheduler.newSchedulerBuilder()
+                        .numThreads(Runtime.getRuntime().availableProcessors() * 2)
+                        .name(name)
+                        .build();
+                }
 
-    this.timer =
-      new Resource<HashedWheelTimer>() {
+                @Override
+                public void close(OrderedScheduler instance) {
+                    instance.shutdown();
+                }
 
-        private static final String name = "client-timer";
+                @Override
+                public String toString() {
+                    return name;
+                }
+            };
 
-        @Override
-        public HashedWheelTimer create() {
-          HashedWheelTimer timer = new HashedWheelTimer(
-            new ThreadFactoryBuilder()
-              .setNameFormat(name + "-%d")
-              .build(),
-            200,
-            TimeUnit.MILLISECONDS,
-            512,
-            true);
-          timer.start();
-          return timer;
-        }
+        this.timer =
+            new Resource<HashedWheelTimer>() {
 
-        @Override
-        public void close(HashedWheelTimer instance) {
-          instance.stop();
-        }
+                private static final String name = "client-timer";
 
-        @Override
-        public String toString() {
-          return name;
-        }
-      };
-  }
+                @Override
+                public HashedWheelTimer create() {
+                    HashedWheelTimer timer = new HashedWheelTimer(
+                        new ThreadFactoryBuilder()
+                            .setNameFormat(name + "-%d")
+                            .build(),
+                        200,
+                        TimeUnit.MILLISECONDS,
+                        512,
+                        true);
+                    timer.start();
+                    return timer;
+                }
 
-  public Resource<OrderedScheduler> scheduler() {
-    return scheduler;
-  }
+                @Override
+                public void close(HashedWheelTimer instance) {
+                    instance.stop();
+                }
 
-  public Resource<HashedWheelTimer> timer() {
-    return timer;
-  }
+                @Override
+                public String toString() {
+                    return name;
+                }
+            };
+
+        this.executor = new Resource<ExecutorService>() {
+
+            private static final String name = "stream-client-executor";
+
+            @Override
+            public ExecutorService create() {
+                return Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
+            }
+
+            @Override
+            public void close(ExecutorService instance) {
+                instance.shutdown();
+            }
+
+            @Override
+            public String toString() {
+                return name;
+            }
+        };
+    }
+
+    public Resource<OrderedScheduler> scheduler() {
+        return scheduler;
+    }
+
+    public Resource<HashedWheelTimer> timer() {
+        return timer;
+    }
+
+    public Resource<ExecutorService> executor() {
+        return executor;
+    }
 
 }

@@ -17,6 +17,6 @@
  */
 
 /**
- * GRpc Resolver to resolve stream servers from names.
+ * GRpc Resolver to resolve addresses from names.
  */
-package org.apache.distributedlog.stream.client.resolver;
+package org.apache.bookkeeper.common.resolver;

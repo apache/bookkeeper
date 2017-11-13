@@ -16,23 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.stream.client.resolver;
-
-import io.grpc.NameResolver;
-
 /**
- * The abstract zstream name resolver factory.
- *
- * <p>The name resolver is responsible for creating specific name resolver
- * which provides addresses for {@link io.grpc.LoadBalancer}.
+ * GRpc Resolver to resolve bookies from names.
  */
-public abstract class AbstractStreamResolverFactory extends NameResolver.Factory {
-
-  /**
-   * Gets name of the name resolver factory.
-   *
-   * @return name of the name resolver factory.
-   */
-  public abstract String name();
-
-}
+package org.apache.bookkeeper.client.resolver;

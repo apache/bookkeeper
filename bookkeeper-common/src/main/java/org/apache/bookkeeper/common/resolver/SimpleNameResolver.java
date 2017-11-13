@@ -16,39 +16,40 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.stream.client.resolver;
+package org.apache.bookkeeper.common.resolver;
 
+import com.google.common.collect.Lists;
 import io.grpc.Attributes;
-import io.grpc.ResolvedServerInfo;
-import io.grpc.internal.SharedResourceHolder.Resource;
+import io.grpc.EquivalentAddressGroup;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
+import org.apache.bookkeeper.common.util.SharedResourceManager.Resource;
 
 /**
  * A simple name resolver that returns pre-configured host addresses.
  */
-class SimpleStreamResolver extends AbstractStreamResolver {
+public class SimpleNameResolver extends AbstractNameResolver {
 
-  private final List<ResolvedServerInfo> servers;
+    private final List<EquivalentAddressGroup> servers;
 
-  SimpleStreamResolver(String name,
+    public SimpleNameResolver(String name,
                        Resource<ExecutorService> executorResource,
                        List<URI> endpoints) {
-    super(name, executorResource);
-    this.servers = Collections.unmodifiableList(
-      endpoints.stream()
-        .map(endpoint -> new ResolvedServerInfo(
-          new InetSocketAddress(endpoint.getHost(), endpoint.getPort()),
-          Attributes.EMPTY))
-        .collect(Collectors.toList()));
-  }
+        super(name, executorResource);
+        this.servers = Collections.unmodifiableList(
+            endpoints.stream()
+                .map(endpoint -> new EquivalentAddressGroup(
+                    Lists.newArrayList(new InetSocketAddress(endpoint.getHost(), endpoint.getPort())),
+                    Attributes.EMPTY))
+                .collect(Collectors.toList()));
+    }
 
-  @Override
-  protected List<ResolvedServerInfo> getServers() {
-    return servers;
-  }
+    @Override
+    public List<EquivalentAddressGroup> getServers() {
+        return servers;
+    }
 }
