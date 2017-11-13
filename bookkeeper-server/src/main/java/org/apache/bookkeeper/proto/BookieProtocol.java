@@ -175,6 +175,11 @@ public interface BookieProtocol {
      */
     public static final int EREADONLY = 105;
 
+    /**
+     * Too many concurrent requests
+     */
+    public static final int ETOOMANYREQUESTS = 106;
+
     public static final short FLAG_NONE = 0x0;
     public static final short FLAG_DO_FENCING = 0x0001;
     public static final short FLAG_RECOVERY_ADD = 0x0002;
