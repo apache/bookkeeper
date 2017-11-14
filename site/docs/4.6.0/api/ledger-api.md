@@ -264,6 +264,88 @@ Result: 2
 # etc
 ```
 
+## New API
+
+Since 4.6 BookKeeper provides a new client API which leverages Java CompletableFuture facility.
+
+We do not have a generic LedgerHandle class but more specific interfaces WriteHandle and ReadHandle.
+
+> All the new API is in the org.apache.bookkeeper.client.api, you should only use classes in this package.
+
+*Beware* that this API in 4.6 is still experimental and could be subject to changes in next major releases
+
+In order to create the BookKeeper client use the BookKeeper.Builder API
+
+  ```java
+import org.apache.bookkeeper.client.api.*;
+
+  BookKeeper bkClient = BookKeeper.forConfig(conf).build();
+  ```
+
+In order to create a new Ledger and write to it use the Create API
+
+   ```java
+import org.apache.bookkeeper.client.api.*;
+
+ WriteHandle writer = bkClient.newCreateLedgerOp()
+            .withAckQuorumSize(ackQuorumSize)
+            .withEnsembleSize(ensembleSize)
+            .withWriteQuorumSize(writeQuorumSize)
+            .withCustomMetadata(customMetadata)
+            .withPassword(password)
+            .execute()
+            .get();
+ 
+ int numberOfEntries = 100;
+
+ // Add entries to the ledger, then close it
+ for (int i = 0; i < numberOfEntries; i++){
+        ByteBuffer entry = ByteBuffer.allocate(4);
+	entry.putInt(i);
+	entry.position(0);
+	long entryId = lh.append().get();
+ }
+ writer.close();
+  ```
+
+In order to read from a ledger you have to create a ReadHandle
+
+
+  ReadHandle reader = bkClient.newOpenLedgerOp()
+            .withPassword(ledgerMetadata.getPassword())
+            .withDigestType(DigestType.CRC32)
+            .withLedgerId(ledgerId)
+            .withRecovery(true)
+            .execute()
+            .get();
+  long lastAddConfirmed = reader.getLastAddConfirmed();
+  Iterable<LedgerEntry> entries = reader.read(0, lastAddConfirmed).get();
+  reader.close();
+
+ Most of the methods of the new API return CompletableFutures and you have to call get()
+ to block and wait for a result or an error.
+ You can use org.apache.bookkeeper.common.concurrent.FutureUtils.result utility
+ which will handle ExecutionException for you.
+
+   ```java
+import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
+
+try (ReadHandle reader = result(bkClient.newOpenLedgerOp()
+            .withPassword(ledgerMetadata.getPassword())
+            .withDigestType(DigestType.CRC32)
+            .withLedgerId(ledgerId)
+            .withRecovery(true)
+            .execute()));{
+  long lastAddConfirmed = reader.getLastAddConfirmed();
+  Iterable<LedgerEntry> entries = result(reader.read(0, lastAddConfirmed));
+
+} catch (BKException error) {
+  .....
+}
+   ```
+
+    ```
+
 ## Example application
 
 This tutorial walks you through building an example application that uses BookKeeper as the replicated log. The application uses the [BookKeeper Java client](../java-client) to interact with BookKeeper.
