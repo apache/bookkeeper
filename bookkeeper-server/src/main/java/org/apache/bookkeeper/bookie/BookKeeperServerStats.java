@@ -61,6 +61,11 @@ public interface BookKeeperServerStats {
     String GET_BOOKIE_INFO_REQUEST = "GET_BOOKIE_INFO_REQUEST";
     String GET_BOOKIE_INFO = "GET_BOOKIE_INFO";
 
+    // Ensemble Stats
+    String WATCHER_SCOPE = "bookie_watcher";
+    String REPLACE_BOOKIE_TIME = "REPLACE_BOOKIE_TIME";
+    String NEW_ENSEMBLE_TIME = "NEW_ENSEMBLE_TIME";
+
     // Bookie Operations
     String BOOKIE_ADD_ENTRY = "BOOKIE_ADD_ENTRY";
     String BOOKIE_RECOVERY_ADD_ENTRY = "BOOKIE_RECOVERY_ADD_ENTRY";

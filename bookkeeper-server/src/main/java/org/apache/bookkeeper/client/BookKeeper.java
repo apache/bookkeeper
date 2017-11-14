@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WATCHER_SCOPE;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
@@ -396,7 +397,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     /**
      * Constructor for use with the builder. Other constructors also use it.
      */
-    private BookKeeper(ClientConfiguration conf,
+    @VisibleForTesting
+    BookKeeper(ClientConfiguration conf,
                        ZooKeeper zkc,
                        EventLoopGroup eventLoopGroup,
                        StatsLogger statsLogger,
@@ -489,11 +491,12 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         } else {
             this.readLACSpeculativeRequestPolicy = Optional.<SpeculativeRequestExecutionPolicy>absent();
         }
-
         // initialize bookie client
         this.bookieClient = new BookieClient(conf, this.eventLoopGroup, this.mainWorkerPool,
                                              scheduler, statsLogger);
-        this.bookieWatcher = new BookieWatcher(conf, this.placementPolicy, regClient);
+        this.bookieWatcher = new BookieWatcher(
+                conf, this.placementPolicy, regClient,
+                this.statsLogger.scope(WATCHER_SCOPE));
         if (conf.getDiskWeightBasedPlacementEnabled()) {
             LOG.info("Weighted ledger placement enabled");
             ThreadFactoryBuilder tFBuilder = new ThreadFactoryBuilder()
