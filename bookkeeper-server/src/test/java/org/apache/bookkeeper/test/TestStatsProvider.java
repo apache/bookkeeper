@@ -43,6 +43,7 @@ public class TestStatsProvider implements StatsProvider {
      */
     public class TestCounter implements Counter {
         private AtomicLong val = new AtomicLong(0);
+        private AtomicLong max = new AtomicLong(0);
 
         @Override
         public void clear() {
@@ -51,7 +52,7 @@ public class TestStatsProvider implements StatsProvider {
 
         @Override
         public void inc() {
-            val.incrementAndGet();
+            updateMax(val.incrementAndGet());
         }
 
         @Override
@@ -61,12 +62,28 @@ public class TestStatsProvider implements StatsProvider {
 
         @Override
         public void add(long delta) {
-            val.addAndGet(delta);
+            updateMax(val.addAndGet(delta));
         }
 
         @Override
         public Long get() {
             return val.get();
+        }
+
+        private void updateMax(long newVal) {
+            while (true) {
+                long curMax = max.get();
+                if (curMax > newVal) {
+                    break;
+                }
+                if (max.compareAndSet(curMax, newVal)) {
+                    break;
+                }
+            }
+        }
+
+        public Long getMax() {
+            return max.get();
         }
     }
 
