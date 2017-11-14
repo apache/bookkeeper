@@ -49,6 +49,7 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.file.FileStore;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -335,9 +336,7 @@ public class Bookie extends BookieCriticalThread {
         }
     }
 
-    static Versioned<Cookie> readAndVerifyCookieFromRegistrationManager(Cookie masterCookie,
-                                                                        ServerConfiguration conf,
-                                                                        RegistrationManager rm)
+    static List<BookieSocketAddress> possibleBookieIds(ServerConfiguration conf)
             throws BookieException {
         // we need to loop through all possible bookie identifiers to ensure it is treated as a new environment
         // just because of bad configuration
@@ -356,6 +355,13 @@ public class Bookie extends BookieCriticalThread {
         } catch (UnknownHostException e) {
             throw new UnknownBookieIdException(e);
         }
+        return addresses;
+    }
+
+    static Versioned<Cookie> readAndVerifyCookieFromRegistrationManager(
+            Cookie masterCookie, RegistrationManager rm,
+            List<BookieSocketAddress> addresses, boolean allowExpansion)
+            throws BookieException {
         Versioned<Cookie> rmCookie = null;
         for (BookieSocketAddress address : addresses) {
             try {
@@ -363,7 +369,7 @@ public class Bookie extends BookieCriticalThread {
                 // If allowStorageExpansion option is set, we should
                 // make sure that the new set of ledger/index dirs
                 // is a super set of the old; else, we fail the cookie check
-                if (conf.getAllowStorageExpansion()) {
+                if (allowExpansion) {
                     masterCookie.verifyIsSuperSet(rmCookie.getValue());
                 } else {
                     masterCookie.verify(rmCookie.getValue());
@@ -375,9 +381,8 @@ public class Bookie extends BookieCriticalThread {
         return rmCookie;
     }
 
-    private static Pair<List<File>, List<Cookie>> verifyAndGetMissingDirs(Cookie masterCookie,
-                                                                          ServerConfiguration conf,
-                                                                          List<File> dirs)
+    private static Pair<List<File>, List<Cookie>> verifyAndGetMissingDirs(
+            Cookie masterCookie, boolean allowExpansion, List<File> dirs)
             throws InvalidCookieException, IOException {
         List<File> missingDirs = Lists.newArrayList();
         List<Cookie> existedCookies = Lists.newArrayList();
@@ -385,7 +390,7 @@ public class Bookie extends BookieCriticalThread {
             checkDirectoryStructure(dir);
             try {
                 Cookie c = Cookie.readFromDirectory(dir);
-                if (conf.getAllowStorageExpansion()) {
+                if (allowExpansion) {
                     masterCookie.verifyIsSuperSet(c);
                 } else {
                     masterCookie.verify(c);
@@ -396,6 +401,25 @@ public class Bookie extends BookieCriticalThread {
             }
         }
         return Pair.of(missingDirs, existedCookies);
+    }
+
+    private static void stampNewCookie(ServerConfiguration conf,
+                                       Cookie masterCookie,
+                                       RegistrationManager rm,
+                                       Version version,
+                                       List<File> journalDirectories,
+                                       List<File> allLedgerDirs)
+            throws BookieException, IOException {
+        // backfill all the directories that miss cookies (for storage expansion)
+        LOG.info("Stamping new cookies on all dirs {} {}",
+                 journalDirectories, allLedgerDirs);
+        for (File journalDirectory : journalDirectories) {
+            masterCookie.writeToDirectory(journalDirectory);
+        }
+        for (File dir : allLedgerDirs) {
+            masterCookie.writeToDirectory(dir);
+        }
+        masterCookie.writeToRegistrationManager(rm, conf, version);
     }
 
     public static void checkEnvironmentWithStorageExpansion(
@@ -413,15 +437,15 @@ public class Bookie extends BookieCriticalThread {
                 builder.setInstanceId(instanceId);
             }
             Cookie masterCookie = builder.build();
+            boolean allowExpansion = conf.getAllowStorageExpansion();
 
             // 3. read the cookie from registration manager. it is the `source-of-truth` of a given bookie.
             //    if it doesn't exist in registration manager, this bookie is a new bookie, otherwise it is
             //    an old bookie.
-            final Versioned<Cookie> rmCookie = readAndVerifyCookieFromRegistrationManager(
-                masterCookie,
-                conf,
-                rm
-            );
+            List<BookieSocketAddress> possibleBookieIds = possibleBookieIds(conf);
+            final Versioned<Cookie> rmCookie
+                = readAndVerifyCookieFromRegistrationManager(
+                        masterCookie, rm, possibleBookieIds, allowExpansion);
 
             // 4. check if the cookie appear in all the directories.
             List<File> missedCookieDirs = new ArrayList<>();
@@ -432,39 +456,45 @@ public class Bookie extends BookieCriticalThread {
 
             // 4.1 verify the cookies in journal directories
             Pair<List<File>, List<Cookie>> journalResult =
-                verifyAndGetMissingDirs(masterCookie, conf, journalDirectories);
+                verifyAndGetMissingDirs(masterCookie,
+                                        allowExpansion, journalDirectories);
             missedCookieDirs.addAll(journalResult.getLeft());
             existingCookies.addAll(journalResult.getRight());
             // 4.2. verify the cookies in ledger directories
             Pair<List<File>, List<Cookie>> ledgerResult =
-                verifyAndGetMissingDirs(masterCookie, conf, allLedgerDirs);
+                verifyAndGetMissingDirs(masterCookie,
+                                        allowExpansion, allLedgerDirs);
             missedCookieDirs.addAll(ledgerResult.getLeft());
             existingCookies.addAll(ledgerResult.getRight());
 
-            // 5. if there is no directory missing cookie, nothing need to be changed.
-            if (missedCookieDirs.isEmpty()) {
-                return;
+            // 5. if there are directories missing cookies,
+            //    this is either a:
+            //    - new environment
+            //    - a directory is being added
+            //    - a directory has been corrupted/wiped, which is an error
+            if (!missedCookieDirs.isEmpty()) {
+                if (rmCookie == null) {
+                    // 5.1 new environment: all directories should be empty
+                    verifyDirsForNewEnvironment(missedCookieDirs);
+                    stampNewCookie(conf, masterCookie, rm, Version.NEW,
+                                   journalDirectories, allLedgerDirs);
+                } else if (allowExpansion) {
+                    // 5.2 storage is expanding
+                    Set<File> knownDirs = knownDirs(existingCookies);
+                    verifyDirsForStorageExpansion(missedCookieDirs, knownDirs);
+                    stampNewCookie(conf, masterCookie,
+                                   rm, rmCookie.getVersion(),
+                                   journalDirectories, allLedgerDirs);
+                } else {
+                    // 5.3 Cookie-less directories and
+                    //     we can't do anything with them
+                    LOG.error("There are directories without a cookie,"
+                              + " and this is neither a new environment,"
+                              + " nor is storage expansion enabled. "
+                              + "Empty directories are {}", missedCookieDirs);
+                    throw new InvalidCookieException();
+                }
             }
-
-            // 6. go through all the directories that miss cookie.
-            //    - new environment: all directories should be empty
-            //    - old environment: existing ledger directories should not miss cookie, new directories should be empty
-            final boolean newEnv = null == rmCookie;
-            if (newEnv) {
-                verifyDirsForNewEnvironment(missedCookieDirs);
-            } else {
-                verifyDirsForOldEnvironment(missedCookieDirs, existingCookies);
-            }
-
-            // 7. backfill all the directories that miss cookies (for storage expansion)
-            LOG.info("Stamping new cookies on all dirs {}", missedCookieDirs);
-            for (File journalDirectory : journalDirectories) {
-                masterCookie.writeToDirectory(journalDirectory);
-            }
-            for (File dir : allLedgerDirs) {
-                masterCookie.writeToDirectory(dir);
-            }
-            masterCookie.writeToRegistrationManager(rm, conf, rmCookie != null ? rmCookie.getVersion() : Version.NEW);
         } catch (IOException ioe) {
             LOG.error("Error accessing cookie on disks", ioe);
             throw new BookieException.InvalidCookieException(ioe);
@@ -486,13 +516,17 @@ public class Bookie extends BookieCriticalThread {
         }
     }
 
-    private static void verifyDirsForOldEnvironment(List<File> missedCookieDirs,
-                                                    List<Cookie> existingCookies) throws InvalidCookieException {
+    private static Set<File> knownDirs(List<Cookie> cookies) {
+        return cookies.stream()
+            .flatMap((c) -> Arrays.stream(c.getLedgerDirPathsFromCookie()))
+            .map((s) -> new File(s))
+            .collect(Collectors.toSet());
+    }
 
-        Set<String> existingLedgerDirs = Sets.newHashSet();
-        for (Cookie cookie : existingCookies) {
-            Collections.addAll(existingLedgerDirs, cookie.getLedgerDirPathsFromCookie());
-        }
+    private static void verifyDirsForStorageExpansion(
+            List<File> missedCookieDirs,
+            Set<File> existingLedgerDirs) throws InvalidCookieException {
+
         List<File> dirsMissingData = new ArrayList<File>();
         List<File> nonEmptyDirs = new ArrayList<File>();
         for (File dir : missedCookieDirs) {
