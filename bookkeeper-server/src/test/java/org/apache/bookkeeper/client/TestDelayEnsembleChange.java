@@ -24,6 +24,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.NEW_ENSEMBLE_TI
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.REPLACE_BOOKIE_TIME;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WATCHER_SCOPE;
 import static org.apache.bookkeeper.client.BookKeeperClientStats.CLIENT_SCOPE;
+import static org.apache.bookkeeper.client.BookKeeperClientStats.LEDGER_ENSEMBLE_BOOKIE_DISTRIBUTION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -189,6 +190,13 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
             lh.addEntry(data);
         }
 
+        for (BookieSocketAddress addr : lh.getLedgerMetadata().getEnsembles().get(0L)) {
+            assertTrue(
+                    LEDGER_ENSEMBLE_BOOKIE_DISTRIBUTION + " should be > 0 for " + addr,
+                    bkc.getTestStatsProvider().getCounter(
+                            CLIENT_SCOPE + "." + LEDGER_ENSEMBLE_BOOKIE_DISTRIBUTION + "-" + addr)
+                            .get() > 0);
+        }
         assertTrue(
                 "Stats should have captured a new ensemble",
                 bkc.getTestStatsProvider().getOpStatsLogger(
