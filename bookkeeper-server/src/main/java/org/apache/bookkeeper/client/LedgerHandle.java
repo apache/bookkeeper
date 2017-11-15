@@ -325,6 +325,15 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
+     * Returns the ledger creation time.
+     *
+     * @return the ledger creation time
+     */
+    public long getCtime() {
+        return this.metadata.getCtime();
+    }
+
+    /**
      * Get the Distribution Schedule.
      *
      * @return DistributionSchedule for the LedgerHandle
