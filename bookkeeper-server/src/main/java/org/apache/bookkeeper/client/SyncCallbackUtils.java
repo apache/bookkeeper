@@ -23,7 +23,6 @@ import com.google.common.collect.Iterators;
 import java.util.Enumeration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import lombok.Data;
 import org.apache.bookkeeper.client.api.ReadHandle;
 
 /**
