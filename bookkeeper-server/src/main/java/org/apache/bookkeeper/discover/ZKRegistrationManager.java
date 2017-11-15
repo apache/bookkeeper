@@ -426,6 +426,8 @@ public class ZKRegistrationManager implements RegistrationManager {
             .connectString(conf.getZkServers())
             .sessionTimeoutMs(conf.getZkTimeout())
             .build()) {
+
+            log.info("Formatting ZooKeeper metadata, ledger root path: {}", conf.getZkLedgersRootPath());
             boolean ledgerRootExists = null != zk.exists(
                 conf.getZkLedgersRootPath(), false);
             boolean availableNodeExists = null != zk.exists(
