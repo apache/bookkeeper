@@ -98,7 +98,13 @@ public class LedgerMetadata {
         this.ensembleSize = ensembleSize;
         this.writeQuorumSize = writeQuorumSize;
         this.ackQuorumSize = ackQuorumSize;
-        this.ctime = System.currentTimeMillis();
+        if (storeSystemtimeAsLedgerCreationTime) {
+            this.ctime = System.currentTimeMillis();
+        } else {
+            // if client disables storing its system time as ledger creation time, there should be no ctime at this
+            // moment.
+            this.ctime = -1L;
+        }
         this.storeSystemtimeAsLedgerCreationTime = storeSystemtimeAsLedgerCreationTime;
 
         /*
@@ -119,6 +125,10 @@ public class LedgerMetadata {
         }
     }
 
+    /**
+     * Used for testing purpose only.
+     */
+    @VisibleForTesting
     public LedgerMetadata(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
             BookKeeper.DigestType digestType, byte[] password) {
         this(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, password, null, false);
@@ -130,7 +140,6 @@ public class LedgerMetadata {
     LedgerMetadata(LedgerMetadata other) {
         this.ensembleSize = other.ensembleSize;
         this.writeQuorumSize = other.writeQuorumSize;
-        this.ctime = other.ctime;
         this.ackQuorumSize = other.ackQuorumSize;
         this.length = other.length;
         this.lastEntryId = other.lastEntryId;
@@ -139,6 +148,8 @@ public class LedgerMetadata {
         this.version = other.version;
         this.hasPassword = other.hasPassword;
         this.digestType = other.digestType;
+        this.ctime = other.ctime;
+        this.storeSystemtimeAsLedgerCreationTime = other.storeSystemtimeAsLedgerCreationTime;
         this.password = new byte[other.password.length];
         System.arraycopy(other.password, 0, this.password, 0, other.password.length);
         // copy the ensembles
@@ -178,6 +189,10 @@ public class LedgerMetadata {
         return writeQuorumSize;
     }
 
+    public int getAckQuorumSize() {
+        return ackQuorumSize;
+    }
+
     /**
      * Get the creation timestamp of the ledger
      * @return
@@ -186,8 +201,9 @@ public class LedgerMetadata {
         return ctime;
     }
 
-    public int getAckQuorumSize() {
-        return ackQuorumSize;
+    @VisibleForTesting
+    void setCtime(long ctime) {
+        this.ctime = ctime;
     }
 
     /**
@@ -430,8 +446,10 @@ public class LedgerMetadata {
         lc.writeQuorumSize = data.getQuorumSize();
         if (data.hasCtime()) {
             lc.ctime = data.getCtime();
+            lc.storeSystemtimeAsLedgerCreationTime = true;
         } else if (msCtime.isPresent()) {
             lc.ctime = msCtime.get();
+            lc.storeSystemtimeAsLedgerCreationTime = false;
         }
         if (data.hasAckQuorumSize()) {
             lc.ackQuorumSize = data.getAckQuorumSize();
@@ -583,7 +601,6 @@ public class LedgerMetadata {
         if (metadataFormatVersion != newMeta.metadataFormatVersion ||
             ensembleSize != newMeta.ensembleSize ||
             writeQuorumSize != newMeta.writeQuorumSize ||
-            ctime != newMeta.ctime ||
             ackQuorumSize != newMeta.ackQuorumSize ||
             length != newMeta.length ||
             state != newMeta.state ||
@@ -592,6 +609,14 @@ public class LedgerMetadata {
             !LedgerMetadata.areByteArrayValMapsEqual(customMetadata, newMeta.customMetadata)) {
             return true;
         }
+
+        // verify the ctime
+        if (storeSystemtimeAsLedgerCreationTime != newMeta.storeSystemtimeAsLedgerCreationTime) {
+            return true;
+        } else if (storeSystemtimeAsLedgerCreationTime) {
+            return ctime != newMeta.ctime;
+        }
+
         if (state == LedgerMetadataFormat.State.CLOSED
             && lastEntryId != newMeta.lastEntryId) {
             return true;
