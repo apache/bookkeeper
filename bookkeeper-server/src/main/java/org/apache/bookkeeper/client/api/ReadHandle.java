@@ -119,7 +119,7 @@ public interface ReadHandle extends Handle {
     @Data
     class LastConfirmedAndEntry {
         private final Long lac;
-        private final org.apache.bookkeeper.client.LedgerEntry entry;
+        private final LedgerEntry entry;
     }
 
     /**
