@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.client.api;
 
 import java.util.concurrent.CompletableFuture;
+import lombok.Data;
 
 /**
  * Provide read access to a ledger.
@@ -110,5 +111,33 @@ public interface ReadHandle extends Handle {
      * @return the length of the data written in this ledger, in bytes.
      */
     long getLength();
+
+    /**
+     * The type contains LAC and a LedgerEntry want to read.
+     * It is used for readLastAddConfirmedAndEntry.
+     */
+    @Data
+    class LastConfirmedAndEntry {
+        private final Long lac;
+        private final org.apache.bookkeeper.client.LedgerEntry entry;
+    }
+
+    /**
+     * Asynchronous read specific entry and the latest last add confirmed.
+     * If the next entryId is less than known last add confirmed, the call will read next entry directly.
+     * If the next entryId is ahead of known last add confirmed, the call will issue a long poll read
+     * to wait for the next entry <i>entryId</i>.
+     *
+     * @param entryId
+     *          next entry id to read
+     * @param timeOutInMillis
+     *          timeout period to wait for the entry id to be available (for long poll only)
+     * @param parallel
+     *          whether to issue the long poll reads in parallel
+     * @return an handle to the result of the operation
+     */
+    CompletableFuture<LastConfirmedAndEntry> readLastAddConfirmedAndEntry(long entryId,
+                                                                          long timeOutInMillis,
+                                                                          boolean parallel);
 
 }

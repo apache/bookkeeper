@@ -17,12 +17,13 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.apache.bookkeeper.client.LedgerHandle.LOG;
+
 import com.google.common.collect.Iterators;
 import java.util.Enumeration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import static org.apache.bookkeeper.client.LedgerHandle.LOG;
-import org.apache.bookkeeper.client.api.Handle;
+import lombok.Data;
 import org.apache.bookkeeper.client.api.ReadHandle;
 
 /**
@@ -266,7 +267,8 @@ class SyncCallbackUtils {
         }
     }
 
-    static class FutureReadLastConfirmed extends CompletableFuture<Long> implements AsyncCallback.ReadLastConfirmedCallback {
+    static class FutureReadLastConfirmed extends CompletableFuture<Long>
+        implements AsyncCallback.ReadLastConfirmedCallback {
 
         @Override
         public void readLastConfirmedComplete(int rc, long lastConfirmed, Object ctx) {
@@ -309,6 +311,16 @@ class SyncCallbackUtils {
         @Override
         public void closeComplete(int rc, LedgerHandle lh, Object ctx) {
             finish(rc, null, future);
+        }
+    }
+
+    static class FutureReadLastConfirmedAndEntry
+        extends CompletableFuture<ReadHandle.LastConfirmedAndEntry> implements AsyncCallback.ReadLastConfirmedAndEntryCallback {
+
+        @Override
+        public void readLastConfirmedAndEntryComplete(int rc, long lastConfirmed, LedgerEntry entry, Object ctx) {
+            ReadHandle.LastConfirmedAndEntry result = new ReadHandle.LastConfirmedAndEntry(lastConfirmed, entry);
+            finish(rc, result, this);
         }
     }
 
