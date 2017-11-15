@@ -71,6 +71,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -116,6 +117,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     private OpStatsLogger readLacOpLogger;
     private OpStatsLogger recoverAddEntriesStats;
     private OpStatsLogger recoverReadEntriesStats;
+
+    private Counter speculativeReadCounter;
 
     // whether the event loop group is one we created, or is owned by whoever
     // instantiated us
@@ -581,6 +584,13 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         for (BookieSocketAddress faultyBookie : faultyBookies) {
             bookieWatcher.quarantineBookie(faultyBookie);
         }
+    }
+
+    /**
+     * Returns ref to speculative read counter, needed in PendingReadOp.
+     */
+    Counter getSpeculativeReadCounter() {
+        return speculativeReadCounter;
     }
 
     @VisibleForTesting
@@ -1417,6 +1427,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         readLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAC_OP);
         recoverAddEntriesStats = stats.getOpStatsLogger(BookKeeperClientStats.LEDGER_RECOVER_ADD_ENTRIES);
         recoverReadEntriesStats = stats.getOpStatsLogger(BookKeeperClientStats.LEDGER_RECOVER_READ_ENTRIES);
+
+        speculativeReadCounter = stats.getCounter(BookKeeperClientStats.SPECULATIVE_READ_COUNT);
     }
 
     OpStatsLogger getCreateOpLogger() {
