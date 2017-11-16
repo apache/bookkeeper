@@ -27,7 +27,7 @@ import org.apache.bookkeeper.client.api.LedgerEntry;
  * This contains LastAddConfirmed entryId and a LedgerEntry wanted to read.
  * It is used for readLastAddConfirmedAndEntry.
  */
-public class LastConfirmedAndEntryImpl implements LastConfirmedAndEntry{
+public class LastConfirmedAndEntryImpl implements LastConfirmedAndEntry {
 
     private final Long lac;
     private final LedgerEntry entry;
@@ -38,7 +38,7 @@ public class LastConfirmedAndEntryImpl implements LastConfirmedAndEntry{
     }
 
     /**
-     * {@inheritDoc }
+     * {@inheritDoc}
      */
     @Override
     public Long getLastAddConfirmed() {
@@ -46,7 +46,7 @@ public class LastConfirmedAndEntryImpl implements LastConfirmedAndEntry{
     }
 
     /**
-     * {@inheritDoc }
+     * {@inheritDoc}
      */
     @Override
     public boolean hasEntry() {
@@ -54,7 +54,7 @@ public class LastConfirmedAndEntryImpl implements LastConfirmedAndEntry{
     }
 
     /**
-     * {@inheritDoc }
+     * {@inheritDoc}
      */
     @Override
     public LedgerEntry getEntry() {

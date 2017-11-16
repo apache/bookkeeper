@@ -1008,7 +1008,7 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
-     * @{@inheritDoc }
+     * {@inheritDoc}
      */
     @Override
     public CompletableFuture<Long> tryReadLastAddConfirmed() {
@@ -1018,7 +1018,7 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
-     * @{@inheritDoc }
+     * {@inheritDoc}
      */
     @Override
     public CompletableFuture<Long> readLastAddConfirmed() {
@@ -1028,7 +1028,7 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
-     * @{@inheritDoc }
+     * {@inheritDoc}
      */
     @Override
     public CompletableFuture<LastConfirmedAndEntry> readLastAddConfirmedAndEntry(long entryId,

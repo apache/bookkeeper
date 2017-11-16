@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.client.api;
 
 import java.util.concurrent.CompletableFuture;
-import lombok.Data;
 
 /**
  * Provide read access to a ledger.
