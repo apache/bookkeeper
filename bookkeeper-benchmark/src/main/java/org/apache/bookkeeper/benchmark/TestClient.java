@@ -48,10 +48,6 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -140,19 +136,6 @@ public class TestClient {
                 for (int i = 0; i < numFiles; i++) {
                     clients.add(new BKClient(handles, data, runfor, cmd.hasOption("sync")));
                 }
-            } else if (target.equals("hdfs")) {
-                FileSystem fs = FileSystem.get(new Configuration());
-                LOG.info("Default replication for HDFS: {}", fs.getDefaultReplication());
-
-                List<FSDataOutputStream> streams = new ArrayList<FSDataOutputStream>();
-                for (int i = 0; i < numFiles; i++) {
-                    String path = cmd.getOptionValue("path", "/foobar");
-                    streams.add(fs.create(new Path(path + runid + "_" + i)));
-                }
-
-                for (int i = 0; i < numThreads; i++) {
-                    clients.add(new HDFSClient(streams, data, runfor));
-                }
             } else if (target.equals("fs")) {
                 List<FileOutputStream> streams = new ArrayList<FileOutputStream>();
                 for (int i = 0; i < numFiles; i++) {
@@ -209,45 +192,6 @@ public class TestClient {
             }
         }
         timeouter.cancel();
-    }
-
-    static class HDFSClient implements Callable<Long> {
-        final List<FSDataOutputStream> streams;
-        final byte[] data;
-        final long time;
-        final Random r;
-
-        HDFSClient(List<FSDataOutputStream> streams, byte[] data, long time) {
-            this.streams = streams;
-            this.data = data;
-            this.time = time;
-            this.r = new Random(System.identityHashCode(this));
-        }
-
-        public Long call() {
-            try {
-                long count = 0;
-                long start = System.currentTimeMillis();
-                long stopat = start + time;
-                while (System.currentTimeMillis() < stopat) {
-                    FSDataOutputStream stream = streams.get(r.nextInt(streams.size()));
-                    synchronized (stream) {
-                        stream.write(data);
-                        stream.flush();
-                        stream.hflush();
-                    }
-                    count++;
-                }
-
-                long time = (System.currentTimeMillis() - start);
-                LOG.info("Worker finished processing writes (ms): {} TPT: {} op/s", time,
-                         count / ((double) time / 1000));
-                return count;
-            } catch (IOException ioe) {
-                LOG.error("Exception in worker thread", ioe);
-                return 0L;
-            }
-        }
     }
 
     static class FileClient implements Callable<Long> {
