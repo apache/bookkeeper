@@ -24,6 +24,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
 
 /**
  * Provide write access to a ledger. Using WriteAdvHandler the writer MUST explictly set an entryId. Beware that the
@@ -34,6 +36,8 @@ import java.util.concurrent.CompletableFuture;
  *
  * @since 4.6
  */
+@Public
+@Unstable
 public interface WriteAdvHandle extends ReadHandle {
 
     /**
