@@ -21,6 +21,8 @@
 package org.apache.bookkeeper.client.api;
 
 import java.util.concurrent.CompletableFuture;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 
 /**
@@ -28,6 +30,8 @@ import org.apache.bookkeeper.common.concurrent.FutureUtils;
  *
  * @since 4.6
  */
+@Public
+@Unstable
 public interface OpBuilder<T> {
 
     /**
