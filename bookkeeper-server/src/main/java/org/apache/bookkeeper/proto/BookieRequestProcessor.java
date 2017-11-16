@@ -416,7 +416,7 @@ public class BookieRequestProcessor implements RequestProcessor {
         if (null == readThreadPool) {
             getBookieInfo.run();
         } else {
-            readThreadPool.submit(getBookieInfo);
+            readThreadPool.submitOrdered(r.getAddRequest().getLedgerId(), getBookieInfo);
         }
     }
 
