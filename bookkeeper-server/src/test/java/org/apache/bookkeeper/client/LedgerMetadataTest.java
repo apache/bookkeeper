@@ -33,11 +33,11 @@ import org.junit.Test;
  */
 public class LedgerMetadataTest {
 
+    private static final byte[] passwd = "testPasswd".getBytes(UTF_8);
+
     @Test
     public void testStoreSystemtimeAsLedgerCtimeEnabled()
             throws Exception {
-        byte[] passwd = "testPasswd".getBytes(UTF_8);
-
         LedgerMetadata lm = new LedgerMetadata(
             3,
             3,
@@ -53,8 +53,6 @@ public class LedgerMetadataTest {
     @Test
     public void testStoreSystemtimeAsLedgerCtimeDisabled()
             throws Exception {
-        byte[] passwd = "testPasswd".getBytes(UTF_8);
-
         LedgerMetadata lm = new LedgerMetadata(
             3,
             3,
@@ -65,6 +63,62 @@ public class LedgerMetadataTest {
             false);
         LedgerMetadataFormat format = lm.buildProtoFormat();
         assertFalse(format.hasCtime());
+    }
+
+    @Test
+    public void testIsConflictWithStoreSystemtimeAsLedgerCtimeDisabled() {
+        LedgerMetadata lm1 = new LedgerMetadata(
+            3,
+            3,
+            2,
+            DigestType.CRC32,
+            passwd,
+            Collections.emptyMap(),
+            false);
+        LedgerMetadata lm2 = new LedgerMetadata(lm1);
+
+        lm1.setCtime(1L);
+        lm2.setCtime(2L);
+        assertFalse(lm1.isConflictWith(lm2));
+    }
+
+    @Test
+    public void testIsConflictWithStoreSystemtimeAsLedgerCtimeEnabled() {
+        LedgerMetadata lm1 = new LedgerMetadata(
+            3,
+            3,
+            2,
+            DigestType.CRC32,
+            passwd,
+            Collections.emptyMap(),
+            true);
+        LedgerMetadata lm2 = new LedgerMetadata(lm1);
+
+        lm1.setCtime(1L);
+        lm2.setCtime(2L);
+        assertTrue(lm1.isConflictWith(lm2));
+    }
+
+    @Test
+    public void testIsConflictWithDifferentStoreSystemtimeAsLedgerCtimeFlags() {
+        LedgerMetadata lm1 = new LedgerMetadata(
+            3,
+            3,
+            2,
+            DigestType.CRC32,
+            passwd,
+            Collections.emptyMap(),
+            true);
+        LedgerMetadata lm2 = new LedgerMetadata(
+            3,
+            3,
+            2,
+            DigestType.CRC32,
+            passwd,
+            Collections.emptyMap(),
+            false);
+
+        assertTrue(lm1.isConflictWith(lm2));
     }
 
 }
