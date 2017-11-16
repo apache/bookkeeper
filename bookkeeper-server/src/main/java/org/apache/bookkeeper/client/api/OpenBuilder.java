@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.client.api;
 
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 
 /**
@@ -27,6 +29,8 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
  *
  * @since 4.6
  */
+@Public
+@Unstable
 public interface OpenBuilder extends OpBuilder<ReadHandle> {
 
     /**

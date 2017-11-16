@@ -21,6 +21,8 @@
 package org.apache.bookkeeper.client.api;
 
 import java.util.Map;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
 
 /**
  * Builder-style interface to create new ledgers.
@@ -28,6 +30,8 @@ import java.util.Map;
  * @since 4.6
  * @see BookKeeper#newCreateLedgerOp()
  */
+@Public
+@Unstable
 public interface CreateBuilder extends OpBuilder<WriteHandle> {
 
     /**
