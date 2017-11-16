@@ -20,17 +20,16 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-This documentation is for Apache BookKeeper&trade; version `{{ site.latest_version }}`.
+This documentation is for Apache BookKeeper version **{{ site.latest_version }}**.
 
-Apache BookKeeper&trade; is a scalable, fault tolerant and low latency storage service optimized for realtime workloads.
-It offers `durability`, `replication` and `strong consistency` as essentials for building reliable real-time applications.
+Apache BookKeeper is a scalable, fault-tolerant, and low-latency log storage service optimized for real-time workloads. It offers durability, replication, and strong consistency as essentials for building reliable real-time applications.
 
-It is suitable for being used in following scenerios:
+BookKeeper is ideally suited for scenarios like:
 
-- [WAL](https://en.wikipedia.org/wiki/Write-ahead_logging) (Write-Ahead-Logging), e.g. HDFS [namenode](https://hadoop.apache.org/docs/r2.5.2/hadoop-project-dist/hadoop-hdfs/HDFSHighAvailabilityWithNFS.html#BookKeeper_as_a_Shared_storage_EXPERIMENTAL).
-- Message Store, e.g. [Apache Pulsar](https://pulsar.incubator.apache.org/).
-- Offset/Cursor Store, e.g. Apache Pulsar.
-- Object/Blob Store, e.g. storing snapshots to replicated state machines.
+- [Write-ahead logging](https://en.wikipedia.org/wiki/Write-ahead_logging) (WAL), for example the HDFS [NameNode](https://hadoop.apache.org/docs/r2.5.2/hadoop-project-dist/hadoop-hdfs/HDFSHighAvailabilityWithNFS.html#BookKeeper_as_a_Shared_storage_EXPERIMENTAL)
+- Durable storage for messaging systems, for example [Apache Pulsar](https://pulsar.incubator.apache.org/) (incubating)
+- Offset/cursor store, for example Apache Pulsar
+- Object/blob Store, for example storing snapshots to replicated state machines
 
 Learn more about Apache BookKeeper&trade; and what it can do for your organization:
 
@@ -39,19 +38,22 @@ Learn more about Apache BookKeeper&trade; and what it can do for your organizati
 
 Or start using Apache BookKeeper today.
 
-### Users 
+## Guide to the documentation
 
-- **Concepts**: Start with [concepts](../../getting-started/concepts). This will help you to fully understand
-    the other parts of the documentation, including the setup, integration and operation guides.
-- **Getting Started**: Install [Apache BookKeeper](../../getting-started/installation) and run bookies [locally](../../getting-started/run-locally)
-- **API**: Read the [API](../../api/overview) documentation to learn how to use Apache BookKeeper to build your applications.
-- **Deployment**: The [Deployment Guide](../../deployment/manual) shows how to deploy Apache BookKeeper to production clusters.
+You can find a full index of the BookKeeper documentation in the sidebar on the left. But if you're not sure where to start:
 
-### Administrators
+### BookKeeper users
 
-- **Operations**: The [Admin Guide](../../admin/bookies) shows how to run Apache BookKeeper on production, what are the production
-    considerations and best practices.
+- **Concepts** --- Start with the [concepts and architecture](../../getting-started/concepts) documentation. This will help you to fully understand
+    other parts of the documentation, including the setup, integration, and operations guides.
+- **Getting started** --- Install [Apache BookKeeper](../../getting-started/installation) and run bookies [locally](../../getting-started/run-locally).
+- **API** --- Read the [API](../../api/overview) documentation to learn how to use Apache BookKeeper to build your applications.
+- **Deployment** --- The [Deployment Guide](../../deployment/manual) shows you how to deploy Apache BookKeeper to production clusters.
 
-### Contributors
+### BookKeeper administrators
 
-- **Details**: Learn [design details](../../development/protocol) to know more internals.
+- **Operations** --- The [Admin Guide](../../admin/bookies) shows you how to run Apache BookKeeper in production and discusses best practices.
+
+### BookKeeper contributors
+
+- **Details** --- Learn [design details](../../development/protocol) to better understand the internals of BookKeeper.
