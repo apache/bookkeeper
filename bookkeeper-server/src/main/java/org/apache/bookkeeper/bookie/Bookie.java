@@ -530,7 +530,7 @@ public class Bookie extends BookieCriticalThread {
         List<File> dirsMissingData = new ArrayList<File>();
         List<File> nonEmptyDirs = new ArrayList<File>();
         for (File dir : missedCookieDirs) {
-            if (existingLedgerDirs.contains(dir.getParent())) {
+            if (existingLedgerDirs.contains(dir.getParentFile())) {
                 // if one of the existing ledger dirs doesn't have cookie,
                 // let us not proceed further
                 dirsMissingData.add(dir);
