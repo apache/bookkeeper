@@ -17,18 +17,20 @@
  */
 package org.apache.bookkeeper.client;
 
-import static org.apache.bookkeeper.client.LedgerHandle.LOG;
-
 import com.google.common.collect.Iterators;
 import java.util.Enumeration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.client.api.LastConfirmedAndEntry;
 import org.apache.bookkeeper.client.api.ReadHandle;
+import org.apache.bookkeeper.client.impl.LastConfirmedAndEntryImpl;
 
 /**
  * Utility for callbacks
  *
  */
+@Slf4j
 class SyncCallbackUtils {
 
     /**
@@ -182,10 +184,10 @@ class SyncCallbackUtils {
         @Override
         public void addLacComplete(int rc, LedgerHandle lh, Object ctx) {
             if (rc != BKException.Code.OK) {
-                LOG.warn("LastAddConfirmedUpdate failed: {} ", BKException.getMessage(rc));
+                log.warn("LastAddConfirmedUpdate failed: {} ", BKException.getMessage(rc));
             } else {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Callback LAC Updated for: {} ", lh.getId());
+                if (log.isDebugEnabled()) {
+                    log.debug("Callback LAC Updated for: {} ", lh.getId());
                 }
             }
         }
@@ -314,11 +316,11 @@ class SyncCallbackUtils {
     }
 
     static class FutureReadLastConfirmedAndEntry
-        extends CompletableFuture<ReadHandle.LastConfirmedAndEntry> implements AsyncCallback.ReadLastConfirmedAndEntryCallback {
+        extends CompletableFuture<LastConfirmedAndEntry> implements AsyncCallback.ReadLastConfirmedAndEntryCallback {
 
         @Override
         public void readLastConfirmedAndEntryComplete(int rc, long lastConfirmed, LedgerEntry entry, Object ctx) {
-            ReadHandle.LastConfirmedAndEntry result = new ReadHandle.LastConfirmedAndEntry(lastConfirmed, entry);
+            LastConfirmedAndEntry result = new LastConfirmedAndEntryImpl(lastConfirmed, entry);
             finish(rc, result, this);
         }
     }

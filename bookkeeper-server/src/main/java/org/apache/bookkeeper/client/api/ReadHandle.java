@@ -113,16 +113,6 @@ public interface ReadHandle extends Handle {
     long getLength();
 
     /**
-     * The type contains LAC and a LedgerEntry want to read.
-     * It is used for readLastAddConfirmedAndEntry.
-     */
-    @Data
-    class LastConfirmedAndEntry {
-        private final Long lac;
-        private final LedgerEntry entry;
-    }
-
-    /**
      * Asynchronous read specific entry and the latest last add confirmed.
      * If the next entryId is less than known last add confirmed, the call will read next entry directly.
      * If the next entryId is ahead of known last add confirmed, the call will issue a long poll read
