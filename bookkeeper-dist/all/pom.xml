@@ -102,7 +102,7 @@
           <finalName>bookkeeper-all-${project.version}</finalName>
           <attach>false</attach>
           <descriptors>
-            <descriptor>../src/assemble/bin.xml</descriptor>
+            <descriptor>../src/assemble/bin-all.xml</descriptor>
           </descriptors>
         </configuration>
         <executions>

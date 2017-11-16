@@ -80,7 +80,7 @@
           <finalName>bookkeeper-server-${project.version}</finalName>
           <attach>false</attach>
           <descriptors>
-            <descriptor>../src/assemble/bin.xml</descriptor>
+            <descriptor>../src/assemble/bin-server.xml</descriptor>
           </descriptors>
         </configuration>
         <executions>
