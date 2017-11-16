@@ -23,6 +23,8 @@ package org.apache.bookkeeper.client.api;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.HashedWheelTimer;
 import java.io.IOException;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -33,6 +35,8 @@ import org.apache.zookeeper.ZooKeeper;
  *
  * @since 4.6
  */
+@Public
+@Unstable
 public interface BookKeeperBuilder {
 
     /**
