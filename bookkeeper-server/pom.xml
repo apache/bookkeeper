@@ -180,13 +180,6 @@
     </dependency>
   </dependencies>
   <build>
-    <extensions>
-      <extension>
-        <groupId>kr.motd.maven</groupId>
-        <artifactId>os-maven-plugin</artifactId>
-        <version>1.4.1.Final</version>
-      </extension>
-    </extensions>
     <plugins>
       <plugin>
         <!-- for mini-kdc -->
@@ -215,8 +208,10 @@
               <shadedArtifactAttached>true</shadedArtifactAttached>
               <shadedClassifierName>shaded</shadedClassifierName>
               <minimizeJar>true</minimizeJar>
+              <shadeTestJar>true</shadeTestJar>
               <artifactSet>
                 <includes>
+                  <include>org.apache.bookkeeper:bookkeeper-proto</include>
                   <include>com.google.protobuf:protobuf-java</include>
                   <include>com.google.guava:guava</include>
                 </includes>
