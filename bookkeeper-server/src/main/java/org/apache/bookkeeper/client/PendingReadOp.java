@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.Set;
@@ -87,7 +86,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         int numMissedEntryReads = 0;
 
         final ArrayList<BookieSocketAddress> ensemble;
-        final List<Integer> writeSet;
+        final DistributionSchedule.WriteSet writeSet;
 
         LedgerEntryRequest(ArrayList<BookieSocketAddress> ensemble, long lId, long eId) {
             super(lId, eId);
@@ -95,10 +94,13 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             this.ensemble = ensemble;
 
             if (lh.bk.isReorderReadSequence()) {
-                this.writeSet = lh.bk.getPlacementPolicy().reorderReadSequence(ensemble,
-                    lh.distributionSchedule.getWriteSet(entryId), lh.bookieFailureHistory.asMap());
+                writeSet = lh.bk.getPlacementPolicy()
+                    .reorderReadSequence(
+                            ensemble,
+                            lh.bookieFailureHistory.asMap(),
+                            lh.distributionSchedule.getWriteSet(entryId));
             } else {
-                this.writeSet = lh.distributionSchedule.getWriteSet(entryId);
+                writeSet = lh.distributionSchedule.getWriteSet(entryId);
             }
         }
 
@@ -137,6 +139,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
                  */
                 length = buffer.getLong(DigestManager.METADATA_LENGTH - 8);
                 data = content;
+                writeSet.recycle();
                 return true;
             } else {
                 buffer.release();
@@ -155,6 +158,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             if (complete.compareAndSet(false, true)) {
                 this.rc = rc;
                 submitCallback(rc);
+                writeSet.recycle();
                 return true;
             } else {
                 return false;
@@ -269,10 +273,10 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
 
         @Override
         void read() {
-            for (int bookieIndex : writeSet) {
-                BookieSocketAddress to = ensemble.get(bookieIndex);
+            for (int i = 0; i < writeSet.size(); i++) {
+                BookieSocketAddress to = ensemble.get(writeSet.get(i));
                 try {
-                    sendReadTo(bookieIndex, to, this);
+                    sendReadTo(writeSet.get(i), to, this);
                 } catch (InterruptedException ie) {
                     LOG.error("Interrupted reading entry {} : ", this, ie);
                     Thread.currentThread().interrupt();
@@ -320,10 +324,6 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
 
         private synchronized int getNextReplicaIndexToReadFrom() {
             return nextReplicaIndexToReadFrom;
-        }
-
-        private int getReplicaIndex(int bookieIndex) {
-            return writeSet.indexOf(bookieIndex);
         }
 
         private BitSet getSentToBitSet() {
@@ -386,7 +386,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             }
 
             int replica = nextReplicaIndexToReadFrom;
-            int bookieIndex = lh.distributionSchedule.getWriteSet(entryId).get(nextReplicaIndexToReadFrom);
+            int bookieIndex = writeSet.get(nextReplicaIndexToReadFrom);
             nextReplicaIndexToReadFrom++;
 
             try {
@@ -406,7 +406,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         synchronized void logErrorAndReattemptRead(int bookieIndex, BookieSocketAddress host, String errMsg, int rc) {
             super.logErrorAndReattemptRead(bookieIndex, host, errMsg, rc);
 
-            int replica = getReplicaIndex(bookieIndex);
+            int replica = writeSet.indexOf(bookieIndex);
             if (replica == NOT_FOUND) {
                 LOG.error("Received error from a host which is not in the ensemble {} {}.", host, ensemble);
                 return;

@@ -43,13 +43,13 @@ public class ReadOnlyBookie extends Bookie {
             throws IOException, KeeperException, InterruptedException, BookieException {
         super(conf, statsLogger);
         if (conf.isReadOnlyModeEnabled()) {
-            readOnly.set(true);
+            forceReadOnly.set(true);
         } else {
             String err = "Try to init ReadOnly Bookie, while ReadOnly mode is not enabled";
             LOG.error(err);
             throw new IOException(err);
         }
-        LOG.info("Running bookie in readonly mode.");
+        LOG.info("Running bookie in force readonly mode.");
     }
 
     @Override

@@ -22,13 +22,11 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.annotations.Beta;
-
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.SortedLedgerStorage;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.discover.ZKRegistrationManager;
-import org.apache.bookkeeper.server.component.ServerLifecycleComponent;
 import org.apache.bookkeeper.stats.NullStatsProvider;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.bookkeeper.util.BookKeeperConstants;
@@ -37,7 +35,7 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang.StringUtils;
 
 /**
- * Configuration manages server-side settings
+ * Configuration manages server-side settings.
  */
 public class ServerConfiguration extends AbstractConfiguration {
     // Entry Log Parameters
@@ -58,6 +56,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String GC_WAIT_TIME = "gcWaitTime";
     protected final static String IS_FORCE_GC_ALLOW_WHEN_NO_SPACE = "isForceGCAllowWhenNoSpace";
     protected final static String GC_OVERREPLICATED_LEDGER_WAIT_TIME = "gcOverreplicatedLedgerWaitTime";
+    protected final static String USE_TRANSACTIONAL_COMPACTION = "useTransactionalCompaction";
     // Sync Parameters
     protected final static String FLUSH_INTERVAL = "flushInterval";
     protected final static String FLUSH_ENTRYLOG_INTERVAL_BYTES = "flushEntrylogBytes";
@@ -110,19 +109,26 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected final static String READ_ONLY_MODE_ENABLED = "readOnlyModeEnabled";
     //Whether the bookie is force started in ReadOnly mode
     protected final static String FORCE_READ_ONLY_BOOKIE = "forceReadOnlyBookie";
+    //Whether to persist the bookie status
+    protected final static String PERSIST_BOOKIE_STATUS_ENABLED = "persistBookieStatusEnabled";
     //Disk utilization
     protected final static String DISK_USAGE_THRESHOLD = "diskUsageThreshold";
     protected final static String DISK_USAGE_WARN_THRESHOLD = "diskUsageWarnThreshold";
     protected final static String DISK_USAGE_LWM_THRESHOLD = "diskUsageLwmThreshold";
     protected final static String DISK_CHECK_INTERVAL = "diskCheckInterval";
+
+    // Replication parameters
     protected final static String AUDITOR_PERIODIC_CHECK_INTERVAL = "auditorPeriodicCheckInterval";
     protected final static String AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL = "auditorPeriodicBookieCheckInterval";
     protected final static String AUTO_RECOVERY_DAEMON_ENABLED = "autoRecoveryDaemonEnabled";
     protected final static String LOST_BOOKIE_RECOVERY_DELAY = "lostBookieRecoveryDelay";
+    protected final static String RW_REREPLICATE_BACKOFF_MS = "rwRereplicateBackoffMs";
 
     // Worker Thread parameters.
     protected final static String NUM_ADD_WORKER_THREADS = "numAddWorkerThreads";
     protected final static String NUM_READ_WORKER_THREADS = "numReadWorkerThreads";
+    protected final static String MAX_PENDING_READ_REQUESTS_PER_THREAD = "maxPendingReadRequestsPerThread";
+    protected final static String MAX_PENDING_ADD_REQUESTS_PER_THREAD = "maxPendingAddRequestsPerThread";
     protected final static String NUM_LONG_POLL_WORKER_THREADS = "numLongPollWorkerThreads";
 
     // Long poll parameters
@@ -285,6 +291,25 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public ServerConfiguration setGcOverreplicatedLedgerWaitTime(long gcWaitTime, TimeUnit unit) {
         this.setProperty(GC_OVERREPLICATED_LEDGER_WAIT_TIME, Long.toString(unit.toMillis(gcWaitTime)));
+        return this;
+    }
+
+    /**
+     * Get whether to use transactional compaction and using a separate log for compaction or not.
+     *
+     * @return use transactional compaction
+     */
+    public boolean getUseTransactionalCompaction() {
+        return this.getBoolean(USE_TRANSACTIONAL_COMPACTION, false);
+    }
+
+    /**
+     * Set whether to use transactional compaction and using a separate log for compaction or not.
+     * @param useTransactionalCompaction
+     * @return server configuration
+     */
+    public ServerConfiguration setUseTransactionalCompaction(boolean useTransactionalCompaction) {
+        this.setProperty(USE_TRANSACTIONAL_COMPACTION, useTransactionalCompaction);
         return this;
     }
 
@@ -1327,6 +1352,48 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Set the max number of pending read requests for each read worker thread. After the quota is reached, new requests
+     * will be failed immediately
+     *
+     * @param maxPendingReadRequestsPerThread
+     * @return server configuration
+     */
+    public ServerConfiguration setMaxPendingReadRequestPerThread(int maxPendingReadRequestsPerThread) {
+        setProperty(MAX_PENDING_READ_REQUESTS_PER_THREAD, maxPendingReadRequestsPerThread);
+        return this;
+    }
+
+    /**
+     * If read workers threads are enabled, limit the number of pending requests, to avoid the executor queue to grow
+     * indefinitely (default: 10000 entries)
+     */
+    public int getMaxPendingReadRequestPerThread() {
+        return getInt(MAX_PENDING_READ_REQUESTS_PER_THREAD, 10000);
+    }
+
+    /**
+     * Set the max number of pending add requests for each add worker thread. After the quota is reached, new requests
+     * will be failed immediately
+     *
+     * @param maxPendingAddRequestsPerThread
+     * @return server configuration
+     */
+    public ServerConfiguration setMaxPendingAddRequestPerThread(int maxPendingAddRequestsPerThread) {
+        setProperty(MAX_PENDING_ADD_REQUESTS_PER_THREAD, maxPendingAddRequestsPerThread);
+        return this;
+    }
+
+    /**
+     * If add workers threads are enabled, limit the number of pending requests, to avoid the executor queue to grow
+     * indefinitely (default: 10000 entries)
+     */
+    public int getMaxPendingAddRequestPerThread() {
+        return getInt(MAX_PENDING_ADD_REQUESTS_PER_THREAD, 10000);
+    }
+
+
+
+    /**
      * Get the tick duration in milliseconds.
      * @return
      */
@@ -1605,6 +1672,29 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Whether to persist the bookie status so that when bookie server restarts,
+     * it will continue using the previous status
+     *
+     * @param enabled
+     *            - true if persist the bookie status. Otherwise false.
+     * @return ServerConfiguration
+     */
+    public ServerConfiguration setPersistBookieStatusEnabled(boolean enabled) {
+        setProperty(PERSIST_BOOKIE_STATUS_ENABLED, enabled);
+        return this;
+    }
+
+    /**
+     * Get whether to persist the bookie status so that when bookie server restarts,
+     * it will continue using the previous status.
+     *
+     * @return true - if need to start a bookie in read only mode. Otherwise false.
+     */
+    public boolean isPersistBookieStatusEnabled() {
+        return getBoolean(PERSIST_BOOKIE_STATUS_ENABLED, false);
+    }
+
+    /**
      * Set the Disk free space threshold as a fraction of the total
      * after which disk will be considered as full during disk check.
      *
@@ -1757,6 +1847,24 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public void setLostBookieRecoveryDelay(int interval) {
         setProperty(LOST_BOOKIE_RECOVERY_DELAY, interval);
+    }
+
+    /**
+     * Get how long to backoff when encountering exception on rereplicating a ledger.
+     *
+     * @return backoff time in milliseconds
+     */
+    public int getRwRereplicateBackoffMs() {
+        return getInt(RW_REREPLICATE_BACKOFF_MS, 5000);
+    }
+
+    /**
+     * Set how long to backoff when encountering exception on rereplicating a ledger.
+     *
+     * @param backoffMs backoff time in milliseconds
+     */
+    public void setRwRereplicateBackoffMs(int backoffMs) {
+        setProperty(RW_REREPLICATE_BACKOFF_MS, backoffMs);
     }
 
     /**

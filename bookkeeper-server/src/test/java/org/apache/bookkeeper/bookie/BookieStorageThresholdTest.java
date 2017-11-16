@@ -32,6 +32,8 @@ import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.TestUtils;
@@ -132,9 +134,21 @@ public class BookieStorageThresholdTest extends BookKeeperClusterTestCase {
 
     @Test
     public void testStorageThresholdCompaction() throws Exception {
-
-        // We are having BKCluster with just one bookie (NUM_BOOKIES = 1).
-        Bookie bookie = bs.get(0).getBookie();
+        stopAllBookies();
+        ServerConfiguration conf = newServerConfiguration();
+        File ledgerDir1 = createTempDir("ledger", "test1");
+        File ledgerDir2 = createTempDir("ledger","test2");
+        File journalDir = createTempDir("journal","test");
+        String[] ledgerDirNames = new String[]{
+            ledgerDir1.getPath(),
+            ledgerDir2.getPath()
+        };
+        conf.setLedgerDirNames(ledgerDirNames);
+        conf.setJournalDirName(journalDir.getPath());
+        BookieServer server = startBookie(conf);
+        bs.add(server);
+        bsConfs.add(conf);
+        Bookie bookie = server.getBookie();
         // since we are going to set dependency injected ledgermonitor, so we need to shutdown
         // the ledgermonitor which was created as part of the initialization of Bookie
         bookie.ledgerMonitor.shutdown();
@@ -197,14 +211,9 @@ public class BookieStorageThresholdTest extends BookKeeperClusterTestCase {
         bkc.deleteLedger(lhs[1].getId());
         bkc.deleteLedger(lhs[2].getId());
 
-        // since compaction intervals are too long, there is no possibility for compaction to get kicked in
-        // so all the entrylogs (0,1,2) should be available in the ledgerdirectory
-        assertTrue("All the entry log files ([0,1,2].log are not available, which is not expected"
-                + tmpDirs.get(0).getAbsolutePath(), TestUtils.hasLogFiles(tmpDirs.get(0), false, 0, 1, 2));
         // validating that LedgerDirsListener are not triggered yet
         assertTrue("Disk Full shouldn't have been triggered yet", diskFull.getCount() == 1);
         assertTrue("Disk writable shouldn't have been triggered yet", diskWritable.getCount() == 1);
-
         // set exception injection to true, so that next time when checkDir of DiskChecker (ThresholdTestDiskChecker) is
         // called it will throw DiskOutOfSpaceException
         thresholdTestDiskChecker.setInjectDiskOutOfSpaceException(true);
@@ -226,9 +235,10 @@ public class BookieStorageThresholdTest extends BookKeeperClusterTestCase {
         // force GC.
         // Because of getWritableLedgerDirsForNewLog, compaction would be able to create newlog and compact even though
         // there are no writableLedgerDirs
-        assertFalse(
-                "Found entry log file ([0,1,2].log. They should have been compacted" + tmpDirs.get(0).getAbsolutePath(),
-                TestUtils.hasLogFiles(tmpDirs.get(0), true, 0, 1, 2));
+        for(File ledgerDir : bookie.getLedgerDirsManager().getAllLedgerDirs()) {
+            assertFalse("Found entry log file ([0,1,2].log. They should have been compacted" + ledgerDir,
+                TestUtils.hasLogFiles(ledgerDir.getParentFile(), true, 0, 1, 2));
+        }
 
         try {
             ledgerDirsManager.getWritableLedgerDirs();

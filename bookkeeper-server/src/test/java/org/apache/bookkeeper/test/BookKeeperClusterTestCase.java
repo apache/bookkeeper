@@ -241,7 +241,12 @@ public abstract class BookKeeperClusterTestCase {
         for (BookieServer server : bs) {
             server.shutdown();
         }
+        bsConfs.clear();
         bs.clear();
+        if (bkc != null) {
+            bkc.close();
+            bkc = null;
+        }
     }
 
     protected void startAllBookies() throws Exception {
@@ -597,6 +602,10 @@ public abstract class BookKeeperClusterTestCase {
             }
         };
         server.start();
+
+        if (bkc == null) {
+            bkc = new BookKeeperTestClient(baseClientConf);
+        }
 
         int port = conf.getBookiePort();
         String host = InetAddress.getLocalHost().getHostAddress();

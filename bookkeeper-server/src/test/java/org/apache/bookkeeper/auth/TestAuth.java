@@ -20,30 +20,32 @@
  */
 package org.apache.bookkeeper.auth;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.proto.BookieConnectionPeer;
 import org.apache.bookkeeper.proto.BookieServer;
+import org.apache.bookkeeper.proto.ClientConnectionPeer;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.junit.Assert.*;
-
-import org.junit.Test;
-import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
-import org.apache.bookkeeper.proto.ClientConnectionPeer;
-import org.apache.bookkeeper.proto.BookieConnectionPeer;
 
 
 public class TestAuth extends BookKeeperClusterTestCase {
@@ -113,12 +115,12 @@ public class TestAuth extends BookKeeperClusterTestCase {
     public void testSingleMessageAuth() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration();
         bookieConf.setBookieAuthProviderFactoryClass(
-                AlwaysSucceedBookieAuthProviderFactory.class.getName());
-        
+            AlwaysSucceedBookieAuthProviderFactory.class.getName());
+
         ClientConfiguration clientConf = newClientConfiguration();
         clientConf.setClientAuthProviderFactoryClass(
-                SendUntilCompleteClientAuthProviderFactory.class.getName());
-        
+            SendUntilCompleteClientAuthProviderFactory.class.getName());
+
         startAndStoreBookie(bookieConf);
 
         AtomicLong ledgerId = new AtomicLong(-1);

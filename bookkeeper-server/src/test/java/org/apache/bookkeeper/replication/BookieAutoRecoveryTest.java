@@ -79,6 +79,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         baseConf.setLedgerManagerFactoryClassName(
                 "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory");
         baseConf.setOpenLedgerRereplicationGracePeriod(openLedgerRereplicationGracePeriod);
+        baseConf.setRwRereplicateBackoffMs(500);
         baseClientConf.setLedgerManagerFactoryClassName(
                 "org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory");
         this.digestType = DigestType.MAC;
@@ -550,8 +551,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
 
     }
 
-    private int getReplicaIndexInLedger(LedgerHandle lh,
- BookieSocketAddress replicaToKill) {
+    private int getReplicaIndexInLedger(LedgerHandle lh, BookieSocketAddress replicaToKill) {
         SortedMap<Long, ArrayList<BookieSocketAddress>> ensembles = LedgerHandleAdapter
                 .getLedgerMetadata(lh).getEnsembles();
         int ledgerReplicaIndex = -1;

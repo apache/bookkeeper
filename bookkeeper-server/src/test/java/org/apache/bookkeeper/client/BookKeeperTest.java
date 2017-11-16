@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.client;
 
 import io.netty.util.IllegalReferenceCountException;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
@@ -33,8 +34,8 @@ import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BKException.BKBookieHandleNotAvailableException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.zookeeper.KeeperException.ConnectionLossException;
 import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.KeeperException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -88,8 +89,9 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         try {
             BookKeeper bkc = new BookKeeper(conf, zk);
             fail("Shouldn't be able to construct with unconnected zk");
-        } catch (KeeperException.ConnectionLossException cle) {
+        } catch (IOException cle) {
             // correct behaviour
+            assertTrue(cle.getCause() instanceof ConnectionLossException);
         }
     }
 

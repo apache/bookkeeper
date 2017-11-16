@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.feature;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,7 +18,11 @@ package org.apache.bookkeeper.feature;
  * under the License.
  *
  */
+package org.apache.bookkeeper.feature;
 
+/**
+ * A feature implementation that has a fixed value of availability.
+ */
 public class FixedValueFeature implements Feature {
     protected final String name;
     protected int availability;

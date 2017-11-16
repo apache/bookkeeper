@@ -192,17 +192,9 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
-     * Get the last confirmed entry id on this ledger. It reads
-     * the local state of the ledger handle, which is different
-     * from the readLastConfirmed call. In the case the ledger
-     * is not closed and the client is a reader, it is necessary
-     * to call readLastConfirmed to obtain an estimate of the
-     * last add operation that has been confirmed.
-     *
-     * @see #readLastConfirmed()
-     *
-     * @return the last confirmed entry id or {@link #INVALID_ENTRY_ID INVALID_ENTRY_ID} if no entry has been confirmed
+     * {@inheritDoc}
      */
+    @Override
     public synchronized long getLastAddConfirmed() {
         return lastAddConfirmed;
     }
@@ -212,12 +204,10 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
-     * Get the entry id of the last entry that has been enqueued for addition (but
-     * may not have possibly been persited to the ledger)
-     *
-     * @return the id of the last entry pushed or {@link #INVALID_ENTRY_ID INVALID_ENTRY_ID} if no entry has been pushed
+     * {@inheritDoc}
      */
-    synchronized public long getLastAddPushed() {
+    @Override
+    public synchronized long getLastAddPushed() {
         return lastAddPushed;
     }
 
@@ -817,14 +807,13 @@ public class LedgerHandle implements WriteHandle {
                     +") or length("+length+")");
         }
 
-        PendingAddOp op = new PendingAddOp(LedgerHandle.this, cb, ctx);
-        doAsyncAddEntry(op, Unpooled.wrappedBuffer(data, offset, length), cb, ctx);
+        asyncAddEntry(Unpooled.wrappedBuffer(data, offset, length), cb, ctx);
     }
 
     public void asyncAddEntry(ByteBuf data, final AddCallback cb, final Object ctx) {
         data.retain();
-        PendingAddOp op = new PendingAddOp(LedgerHandle.this, cb, ctx);
-        doAsyncAddEntry(op, data, cb, ctx);
+        PendingAddOp op = PendingAddOp.create(this, data, cb, ctx);
+        doAsyncAddEntry(op);
     }
 
     /**
@@ -865,17 +854,16 @@ public class LedgerHandle implements WriteHandle {
      */
     void asyncRecoveryAddEntry(final byte[] data, final int offset, final int length,
                                final AddCallback cb, final Object ctx) {
-        PendingAddOp op = new PendingAddOp(LedgerHandle.this, cb, ctx).enableRecoveryAdd();
-        doAsyncAddEntry(op, Unpooled.wrappedBuffer(data, offset, length), cb, ctx);
+        PendingAddOp op = PendingAddOp.create(this, Unpooled.wrappedBuffer(data, offset, length), cb, ctx)
+                .enableRecoveryAdd();
+        doAsyncAddEntry(op);
     }
 
-    protected void doAsyncAddEntry(final PendingAddOp op, final ByteBuf data, final AddCallback cb, final Object ctx) {
+    protected void doAsyncAddEntry(final PendingAddOp op) {
         if (throttler != null) {
             throttler.acquire();
         }
 
-        final long entryId;
-        final long currentLength;
         boolean wasClosed = false;
         synchronized(this) {
             // synchronized on this to ensure that
@@ -883,12 +871,11 @@ public class LedgerHandle implements WriteHandle {
             // updating lastAddPushed
             if (metadata.isClosed()) {
                 wasClosed = true;
-                entryId = -1;
-                currentLength = 0;
             } else {
-                entryId = ++lastAddPushed;
-                currentLength = addToLength(data.readableBytes());
+                long entryId = ++lastAddPushed;
+                long currentLedgerLength = addToLength(op.payload.readableBytes());
                 op.setEntryId(entryId);
+                op.setLedgerLength(currentLedgerLength);
                 pendingAddOps.add(op);
             }
         }
@@ -900,8 +887,8 @@ public class LedgerHandle implements WriteHandle {
                     @Override
                     public void safeRun() {
                         LOG.warn("Attempt to add to closed ledger: {}", ledgerId);
-                        cb.addComplete(BKException.Code.LedgerClosedException,
-                                LedgerHandle.this, INVALID_ENTRY_ID, ctx);
+                        op.cb.addComplete(BKException.Code.LedgerClosedException,
+                                LedgerHandle.this, INVALID_ENTRY_ID, op.ctx);
                     }
 
                     @Override
@@ -910,32 +897,17 @@ public class LedgerHandle implements WriteHandle {
                     }
                 });
             } catch (RejectedExecutionException e) {
-                cb.addComplete(bk.getReturnRc(BKException.Code.InterruptedException),
-                        LedgerHandle.this, INVALID_ENTRY_ID, ctx);
+                op.cb.addComplete(bk.getReturnRc(BKException.Code.InterruptedException),
+                        LedgerHandle.this, INVALID_ENTRY_ID, op.ctx);
             }
             return;
         }
 
         try {
-            bk.getMainWorkerPool().submitOrdered(ledgerId, new SafeRunnable() {
-                @Override
-                public void safeRun() {
-                    ByteBuf toSend = macManager.computeDigestAndPackageForSending(entryId, lastAddConfirmed,
-                            currentLength, data);
-                    try {
-                        op.initiate(toSend, data.readableBytes());
-                    } finally {
-                        toSend.release();
-                    }
-                }
-                @Override
-                public String toString() {
-                    return String.format("AsyncAddEntry(lid=%d, eid=%d)", ledgerId, entryId);
-                }
-            });
+            bk.getMainWorkerPool().submitOrdered(ledgerId, op);
         } catch (RejectedExecutionException e) {
-            cb.addComplete(bk.getReturnRc(BKException.Code.InterruptedException),
-                    LedgerHandle.this, INVALID_ENTRY_ID, ctx);
+            op.cb.addComplete(bk.getReturnRc(BKException.Code.InterruptedException),
+                    LedgerHandle.this, INVALID_ENTRY_ID, op.ctx);
         }
     }
 

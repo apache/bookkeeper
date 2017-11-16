@@ -20,12 +20,11 @@
  */
 package org.apache.bookkeeper.shims.zk;
 
-import org.apache.zookeeper.server.NIOServerCnxnFactory;
-import org.apache.zookeeper.server.ZooKeeperServer;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import org.apache.zookeeper.server.NIOServerCnxnFactory;
+import org.apache.zookeeper.server.ZooKeeperServer;
 
 class ZooKeeperServerShimImpl implements ZooKeeperServerShim {
 

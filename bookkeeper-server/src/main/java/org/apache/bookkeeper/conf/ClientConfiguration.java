@@ -18,18 +18,19 @@
 package org.apache.bookkeeper.conf;
 
 import static com.google.common.base.Charsets.UTF_8;
-import io.netty.buffer.ByteBuf;
 import static org.apache.bookkeeper.util.BookKeeperConstants.FEATURE_DISABLE_ENSEMBLE_CHANGE;
 
+import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicy;
+import org.apache.bookkeeper.discover.RegistrationClient;
+import org.apache.bookkeeper.discover.ZKRegistrationClient;
 import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.commons.configuration.ConfigurationException;
@@ -37,7 +38,7 @@ import org.apache.commons.lang.StringUtils;
 
 
 /**
- * Configuration settings for client side
+ * Configuration settings for client side.
  */
 public class ClientConfiguration extends AbstractConfiguration {
 
@@ -113,6 +114,9 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String ENSEMBLE_PLACEMENT_POLICY = "ensemblePlacementPolicy";
     protected final static String NETWORK_TOPOLOGY_STABILIZE_PERIOD_SECONDS = "networkTopologyStabilizePeriodSeconds";
 
+    // Ledger Metadata Parameters
+    protected static final String STORE_SYSTEMTIME_AS_LEDGER_CREATION_TIME = "storeSystemTimeAsLedgerCreationTime";
+
     // Stats
     protected final static String ENABLE_TASK_EXECUTION_STATS = "enableTaskExecutionStats";
     protected final static String TASK_EXECUTION_WARN_TIME_MICROS = "taskExecutionWarnTimeMicros";
@@ -147,6 +151,9 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected final static String TLS_TRUSTSTORE_TYPE = "clientTrustStoreType";
     protected final static String TLS_TRUSTSTORE = "clientTrustStore";
     protected final static String TLS_TRUSTSTORE_PASSWORD_PATH = "clientTrustStorePasswordPath";
+
+    // Registration Client
+    protected final static String REGISTRATION_CLIENT_CLASS = "registrationClientClass";
 
     /**
      * Construct a default client-side configuration
@@ -1620,5 +1627,54 @@ public class ClientConfiguration extends AbstractConfiguration {
     public ClientConfiguration setNettyUsePooledBuffers(boolean enabled) {
         setProperty(NETTY_USE_POOLED_BUFFERS, enabled);
         return this;
+    }
+
+    /**
+     * Set registration manager class
+     *
+     * @param regClientClass
+     *            ClientClass
+     */
+    public ClientConfiguration setRegistrationClientClass(
+            Class<? extends RegistrationClient> regClientClass) {
+        setProperty(REGISTRATION_CLIENT_CLASS, regClientClass);
+        return this;
+    }
+
+    /**
+     * Get Registration Client Class.
+     *
+     * @return registration manager class.
+     */
+    public Class<? extends RegistrationClient> getRegistrationClientClass()
+            throws ConfigurationException {
+        return ReflectionUtils.getClass(this, REGISTRATION_CLIENT_CLASS,
+                ZKRegistrationClient.class, RegistrationClient.class,
+                defaultLoader);
+    }
+
+    /**
+     * Enable the client to use system time as the ledger creation time.
+     *
+     * <p>If this is enabled, the client will write a ctime field into the ledger metadata.
+     * Otherwise, nothing will be written. The creation time of this ledger will be the ctime
+     * of the metadata record in metadata store.
+     *
+     * @param enabled flag to enable/disable client using system time as the ledger creation time.
+     */
+    public ClientConfiguration setStoreSystemtimeAsLedgerCreationTime(boolean enabled) {
+        setProperty(STORE_SYSTEMTIME_AS_LEDGER_CREATION_TIME, enabled);
+        return this;
+    }
+
+    /**
+     * Return the flag that indicates whether client is using system time as the ledger creation time when
+     * creating ledgers.
+     *
+     * @return the flag that indicates whether client is using system time as the ledger creation time when
+     *         creating ledgers.
+     */
+    public boolean getStoreSystemtimeAsLedgerCreationTime() {
+        return getBoolean(STORE_SYSTEMTIME_AS_LEDGER_CREATION_TIME, false);
     }
 }

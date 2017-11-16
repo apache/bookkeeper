@@ -20,10 +20,9 @@
  */
 package org.apache.bookkeeper.zookeeper;
 
+import com.google.common.util.concurrent.RateLimiter;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-
-import com.google.common.util.concurrent.RateLimiter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.zookeeper.KeeperException;
@@ -36,7 +35,7 @@ import org.slf4j.LoggerFactory;
  */
 class ZooWorker {
 
-    static final Logger logger = LoggerFactory.getLogger(ZooWorker.class);
+    private static final Logger logger = LoggerFactory.getLogger(ZooWorker.class);
 
     int attempts = 0;
     long startTimeNanos;
@@ -75,10 +74,10 @@ class ZooWorker {
      * @return true if given result code is recoverable.
      */
     public static boolean isRecoverableException(int rc) {
-        return KeeperException.Code.CONNECTIONLOSS.intValue() == rc ||
-                KeeperException.Code.OPERATIONTIMEOUT.intValue() == rc ||
-                KeeperException.Code.SESSIONMOVED.intValue() == rc ||
-                KeeperException.Code.SESSIONEXPIRED.intValue() == rc;
+        return KeeperException.Code.CONNECTIONLOSS.intValue() == rc
+            || KeeperException.Code.OPERATIONTIMEOUT.intValue() == rc
+            || KeeperException.Code.SESSIONMOVED.intValue() == rc
+            || KeeperException.Code.SESSIONEXPIRED.intValue() == rc;
     }
 
     /**
@@ -91,7 +90,7 @@ class ZooWorker {
         return isRecoverableException(exception.code().intValue());
     }
 
-    static interface ZooCallable<T> {
+    interface ZooCallable<T> {
         /**
          * Be compatible with ZooKeeper interface.
          *
@@ -99,7 +98,7 @@ class ZooWorker {
          * @throws InterruptedException
          * @throws KeeperException
          */
-        public T call() throws InterruptedException, KeeperException;
+        T call() throws InterruptedException, KeeperException;
     }
 
     /**
@@ -145,8 +144,8 @@ class ZooWorker {
                 ++attempts;
                 boolean rethrow = true;
                 long elapsedTime = MathUtils.elapsedMSec(startTimeNanos);
-                if (((null != client && isRecoverableException(e)) || null == client) &&
-                        retryPolicy.allowRetry(attempts, elapsedTime)) {
+                if (((null != client && isRecoverableException(e)) || null == client)
+                    && retryPolicy.allowRetry(attempts, elapsedTime)) {
                     rethrow = false;
                 }
                 if (rethrow) {

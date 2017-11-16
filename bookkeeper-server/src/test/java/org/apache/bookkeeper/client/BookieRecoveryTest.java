@@ -271,7 +271,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         for (int i = 0; i < numEntries; i++) {
             lh.addEntry(data);
         }
-        bkAdmin.recoverBookieData(bookieToKill, null);
+        bkAdmin.recoverBookieData(bookieToKill);
         // fail another bookie to cause ensemble change again
         bookieToKill = lh.getLedgerMetadata().getEnsemble(2 * numEntries - 1).get(1);
         ServerConfiguration confOfKilledBookie = killBookie(bookieToKill);
@@ -322,13 +322,9 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         // Call the async recover bookie method.
         BookieSocketAddress bookieSrc = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(),
           initialPort);
-        BookieSocketAddress bookieDest = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(),
-          newBookiePort);
-        LOG.info("Now recover the data on the killed bookie (" + bookieSrc + ") and replicate it to the new one ("
-          + bookieDest + ")");
         // Initiate the sync object
         sync.value = false;
-        bkAdmin.asyncRecoverBookieData(bookieSrc, bookieDest, bookieRecoverCb, sync);
+        bkAdmin.asyncRecoverBookieData(bookieSrc, bookieRecoverCb, sync);
 
         // Wait for the async method to complete.
         synchronized (sync) {
@@ -380,12 +376,11 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         // Call the async recover bookie method.
         BookieSocketAddress bookieSrc = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(),
           initialPort);
-        BookieSocketAddress bookieDest = null;
         LOG.info("Now recover the data on the killed bookie (" + bookieSrc
           + ") and replicate it to a random available one");
         // Initiate the sync object
         sync.value = false;
-        bkAdmin.asyncRecoverBookieData(bookieSrc, bookieDest, bookieRecoverCb, sync);
+        bkAdmin.asyncRecoverBookieData(bookieSrc, bookieRecoverCb, sync);
 
         // Wait for the async method to complete.
         synchronized (sync) {
@@ -438,7 +433,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
           newBookiePort);
         LOG.info("Now recover the data on the killed bookie (" + bookieSrc + ") and replicate it to the new one ("
           + bookieDest + ")");
-        bkAdmin.recoverBookieData(bookieSrc, bookieDest);
+        bkAdmin.recoverBookieData(bookieSrc);
 
         // Verify the recovered ledger entries are okay.
         verifyRecoveredLedgers(lhs, 0, 2 * numMsgs - 1);
@@ -482,10 +477,9 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         // Call the sync recover bookie method.
         BookieSocketAddress bookieSrc = new BookieSocketAddress(InetAddress.getLocalHost().getHostAddress(),
           initialPort);
-        BookieSocketAddress bookieDest = null;
         LOG.info("Now recover the data on the killed bookie (" + bookieSrc
           + ") and replicate it to a random available one");
-        bkAdmin.recoverBookieData(bookieSrc, bookieDest);
+        bkAdmin.recoverBookieData(bookieSrc);
 
         // Verify the recovered ledger entries are okay.
         verifyRecoveredLedgers(lhs, 0, 2 * numMsgs - 1);
@@ -644,11 +638,10 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         // start a new bookie
         startNewBookie();
 
-        BookieSocketAddress bookieDest = null;
         LOG.info("Now recover the data on the killed bookie (" + bookieToKill
           + ") and replicate it to a random available one");
 
-        bkAdmin.recoverBookieData(bookieToKill, bookieDest);
+        bkAdmin.recoverBookieData(bookieToKill);
         for (LedgerHandle lh : lhs) {
             assertTrue("Not fully replicated", verifyFullyReplicated(lh, numMsgs));
             lh.close();
@@ -674,11 +667,10 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         // start a new bookie
         startNewBookie();
 
-        BookieSocketAddress bookieDest = null;
         LOG.info("Now recover the data on the killed bookie (" + bookieToKill
           + ") and replicate it to a random available one");
 
-        bkAdmin.recoverBookieData(bookieToKill, bookieDest);
+        bkAdmin.recoverBookieData(bookieToKill);
 
         for (LedgerHandle lh : lhs) {
             assertTrue("Not fully replicated", verifyFullyReplicated(lh, numMsgs));
@@ -725,7 +717,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         }
 
         try {
-            bkAdmin.recoverBookieData(bookieToKill, null);
+            bkAdmin.recoverBookieData(bookieToKill);
             fail("Should have thrown exception");
         } catch (BKException.BKLedgerRecoveryException bke) {
             // correct behaviour
@@ -736,7 +728,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         bsConfs.add(conf2);
 
         // recover them
-        bkAdmin.recoverBookieData(bookieToKill, null);
+        bkAdmin.recoverBookieData(bookieToKill);
 
         for (LedgerHandle lh : lhs) {
             assertTrue("Not fully replicated", verifyFullyReplicated(lh, numMsgs));
@@ -778,7 +770,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         // Initiate the sync object
         sync.value = false;
         try {
-            bkAdmin.recoverBookieData(bookieSrc, null);
+            bkAdmin.recoverBookieData(bookieSrc);
             fail("Should have thrown exception");
         } catch (BKException.BKLedgerRecoveryException bke) {
             // correct behaviour
@@ -816,7 +808,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
           + ") and replicate it to a random available one");
         // Initiate the sync object
         sync.value = false;
-        bkAdmin.recoverBookieData(bookieSrc, null);
+        bkAdmin.recoverBookieData(bookieSrc);
 
         assertFalse("Dupes exist in ensembles", findDupesInEnsembles(lhs));
 
@@ -862,7 +854,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         setMetastoreImplClass(adminConf);
 
         BookKeeperAdmin bka = new BookKeeperAdmin(adminConf);
-        bka.recoverBookieData(bookieSrc, null);
+        bka.recoverBookieData(bookieSrc);
         bka.close();
 
         lh = bkc.openLedgerNoRecovery(ledgerId, digestCorrect, passwdCorrect);
@@ -885,7 +877,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         setMetastoreImplClass(adminConf);
 
         bka = new BookKeeperAdmin(adminConf);
-        bka.recoverBookieData(bookieSrc, null);
+        bka.recoverBookieData(bookieSrc);
         bka.close();
 
         lh = bkc.openLedgerNoRecovery(ledgerId, digestCorrect, passwdCorrect);

@@ -24,6 +24,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
 
 /**
  * Provide write access to a ledger.
@@ -32,6 +34,8 @@ import java.util.concurrent.CompletableFuture;
  *
  * @since 4.6
  */
+@Public
+@Unstable
 public interface WriteHandle extends ReadHandle {
 
     /**
@@ -51,5 +55,13 @@ public interface WriteHandle extends ReadHandle {
     default CompletableFuture<Long> append(ByteBuffer data) {
         return append(Unpooled.wrappedBuffer(data));
     }
+
+    /**
+     * Get the entry id of the last entry that has been enqueued for addition (but
+     * may not have possibly been persisted to the ledger).
+     *
+     * @return the entry id of the last entry pushed or -1 if no entry has been pushed.
+     */
+    long getLastAddPushed();
 
 }

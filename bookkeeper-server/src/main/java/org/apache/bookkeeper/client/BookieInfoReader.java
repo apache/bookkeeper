@@ -29,14 +29,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.bookkeeper.client.WeightedRandomSelection.WeightedObject;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
 import org.apache.bookkeeper.proto.BookkeeperProtocol;
+import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -234,6 +233,7 @@ public class BookieInfoReader {
     }
 
     public void start() {
+        this.bk.regClient.watchWritableBookies(bookies -> availableBookiesChanged(bookies.getValue()));
         scheduler.scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
@@ -402,7 +402,7 @@ public class BookieInfoReader {
 
         Collection<BookieSocketAddress> bookies;
         bookies = bk.bookieWatcher.getBookies();
-        bookies.addAll(bk.bookieWatcher.getReadOnlyBookiesAsync());
+        bookies.addAll(bk.bookieWatcher.getReadOnlyBookies());
 
         totalSent.set(bookies.size());
         for (BookieSocketAddress b : bookies) {
