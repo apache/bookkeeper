@@ -20,11 +20,16 @@
  */
 package org.apache.bookkeeper.client.api;
 
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
+
 /**
  * Digest type.
  *
  * @since 4.6
  */
+@Public
+@Unstable
 public enum DigestType {
 
     /**

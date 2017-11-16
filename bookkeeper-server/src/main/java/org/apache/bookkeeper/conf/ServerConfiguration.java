@@ -127,6 +127,8 @@ public class ServerConfiguration extends AbstractConfiguration {
     // Worker Thread parameters.
     protected final static String NUM_ADD_WORKER_THREADS = "numAddWorkerThreads";
     protected final static String NUM_READ_WORKER_THREADS = "numReadWorkerThreads";
+    protected final static String MAX_PENDING_READ_REQUESTS_PER_THREAD = "maxPendingReadRequestsPerThread";
+    protected final static String MAX_PENDING_ADD_REQUESTS_PER_THREAD = "maxPendingAddRequestsPerThread";
     protected final static String NUM_LONG_POLL_WORKER_THREADS = "numLongPollWorkerThreads";
 
     // Long poll parameters
@@ -1348,6 +1350,48 @@ public class ServerConfiguration extends AbstractConfiguration {
         setProperty(REQUEST_TIMER_TICK_DURATION_MILLISEC, tickDuration);
         return this;
     }
+
+    /**
+     * Set the max number of pending read requests for each read worker thread. After the quota is reached, new requests
+     * will be failed immediately
+     *
+     * @param maxPendingReadRequestsPerThread
+     * @return server configuration
+     */
+    public ServerConfiguration setMaxPendingReadRequestPerThread(int maxPendingReadRequestsPerThread) {
+        setProperty(MAX_PENDING_READ_REQUESTS_PER_THREAD, maxPendingReadRequestsPerThread);
+        return this;
+    }
+
+    /**
+     * If read workers threads are enabled, limit the number of pending requests, to avoid the executor queue to grow
+     * indefinitely (default: 10000 entries)
+     */
+    public int getMaxPendingReadRequestPerThread() {
+        return getInt(MAX_PENDING_READ_REQUESTS_PER_THREAD, 10000);
+    }
+
+    /**
+     * Set the max number of pending add requests for each add worker thread. After the quota is reached, new requests
+     * will be failed immediately
+     *
+     * @param maxPendingAddRequestsPerThread
+     * @return server configuration
+     */
+    public ServerConfiguration setMaxPendingAddRequestPerThread(int maxPendingAddRequestsPerThread) {
+        setProperty(MAX_PENDING_ADD_REQUESTS_PER_THREAD, maxPendingAddRequestsPerThread);
+        return this;
+    }
+
+    /**
+     * If add workers threads are enabled, limit the number of pending requests, to avoid the executor queue to grow
+     * indefinitely (default: 10000 entries)
+     */
+    public int getMaxPendingAddRequestPerThread() {
+        return getInt(MAX_PENDING_ADD_REQUESTS_PER_THREAD, 10000);
+    }
+
+
 
     /**
      * Get the tick duration in milliseconds.

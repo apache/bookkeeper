@@ -17,33 +17,32 @@
  */
 package org.apache.bookkeeper.client;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Optional;
+import com.google.common.collect.Maps;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.TextFormat;
-
-import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
-import org.apache.bookkeeper.versioning.Version;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-
-import static com.google.common.base.Charsets.UTF_8;
-
-import com.google.common.base.Optional;
-import com.google.common.collect.Maps;
+import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
+import org.apache.bookkeeper.versioning.Version;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class encapsulates all the ledger metadata that is persistently stored
@@ -75,6 +74,7 @@ public class LedgerMetadata {
     private long length;
     private long lastEntryId;
     private long ctime;
+    private boolean storeSystemtimeAsLedgerCreationTime;
 
     private LedgerMetadataFormat.State state;
     private SortedMap<Long, ArrayList<BookieSocketAddress>> ensembles =
@@ -88,12 +88,24 @@ public class LedgerMetadata {
 
     private Map<String, byte[]> customMetadata = Maps.newHashMap();
 
-    public LedgerMetadata(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
-                          BookKeeper.DigestType digestType, byte[] password, Map<String, byte[]> customMetadata) {
+    public LedgerMetadata(int ensembleSize,
+                          int writeQuorumSize,
+                          int ackQuorumSize,
+                          BookKeeper.DigestType digestType,
+                          byte[] password,
+                          Map<String, byte[]> customMetadata,
+                          boolean storeSystemtimeAsLedgerCreationTime) {
         this.ensembleSize = ensembleSize;
         this.writeQuorumSize = writeQuorumSize;
         this.ackQuorumSize = ackQuorumSize;
-        this.ctime = System.currentTimeMillis();
+        if (storeSystemtimeAsLedgerCreationTime) {
+            this.ctime = System.currentTimeMillis();
+        } else {
+            // if client disables storing its system time as ledger creation time, there should be no ctime at this
+            // moment.
+            this.ctime = -1L;
+        }
+        this.storeSystemtimeAsLedgerCreationTime = storeSystemtimeAsLedgerCreationTime;
 
         /*
          * It is set in PendingReadOp.readEntryComplete, and
@@ -113,9 +125,13 @@ public class LedgerMetadata {
         }
     }
 
+    /**
+     * Used for testing purpose only.
+     */
+    @VisibleForTesting
     public LedgerMetadata(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
             BookKeeper.DigestType digestType, byte[] password) {
-        this(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, password, null);
+        this(ensembleSize, writeQuorumSize, ackQuorumSize, digestType, password, null, false);
     }
 
     /**
@@ -124,7 +140,6 @@ public class LedgerMetadata {
     LedgerMetadata(LedgerMetadata other) {
         this.ensembleSize = other.ensembleSize;
         this.writeQuorumSize = other.writeQuorumSize;
-        this.ctime = other.ctime;
         this.ackQuorumSize = other.ackQuorumSize;
         this.length = other.length;
         this.lastEntryId = other.lastEntryId;
@@ -133,6 +148,8 @@ public class LedgerMetadata {
         this.version = other.version;
         this.hasPassword = other.hasPassword;
         this.digestType = other.digestType;
+        this.ctime = other.ctime;
+        this.storeSystemtimeAsLedgerCreationTime = other.storeSystemtimeAsLedgerCreationTime;
         this.password = new byte[other.password.length];
         System.arraycopy(other.password, 0, this.password, 0, other.password.length);
         // copy the ensembles
@@ -172,6 +189,10 @@ public class LedgerMetadata {
         return writeQuorumSize;
     }
 
+    public int getAckQuorumSize() {
+        return ackQuorumSize;
+    }
+
     /**
      * Get the creation timestamp of the ledger
      * @return
@@ -180,8 +201,9 @@ public class LedgerMetadata {
         return ctime;
     }
 
-    public int getAckQuorumSize() {
-        return ackQuorumSize;
+    @VisibleForTesting
+    void setCtime(long ctime) {
+        this.ctime = ctime;
     }
 
     /**
@@ -227,7 +249,7 @@ public class LedgerMetadata {
         return state == LedgerMetadataFormat.State.IN_RECOVERY;
     }
 
-    LedgerMetadataFormat.State getState() {
+    public LedgerMetadataFormat.State getState() {
         return state;
     }
 
@@ -282,19 +304,15 @@ public class LedgerMetadata {
         this.customMetadata = customMetadata;
     }
 
-    /**
-     * Generates a byte array of this object
-     *
-     * @return the metadata serialized into a byte array
-     */
-    public byte[] serialize() {
-        if (metadataFormatVersion == 1) {
-            return serializeVersion1();
-        }
+    LedgerMetadataFormat buildProtoFormat() {
         LedgerMetadataFormat.Builder builder = LedgerMetadataFormat.newBuilder();
         builder.setQuorumSize(writeQuorumSize).setAckQuorumSize(ackQuorumSize)
             .setEnsembleSize(ensembleSize).setLength(length)
-            .setState(state).setLastEntryId(lastEntryId).setCtime(ctime);
+            .setState(state).setLastEntryId(lastEntryId);
+
+        if (storeSystemtimeAsLedgerCreationTime) {
+            builder.setCtime(ctime);
+        }
 
         if (hasPassword) {
             builder.setDigestType(digestType).setPassword(ByteString.copyFrom(password));
@@ -316,10 +334,22 @@ public class LedgerMetadata {
             }
             builder.addSegment(segmentBuilder.build());
         }
+        return builder.build();
+    }
+
+    /**
+     * Generates a byte array of this object
+     *
+     * @return the metadata serialized into a byte array
+     */
+    public byte[] serialize() {
+        if (metadataFormatVersion == 1) {
+            return serializeVersion1();
+        }
 
         StringBuilder s = new StringBuilder();
         s.append(VERSION_KEY).append(tSplitter).append(CURRENT_METADATA_FORMAT_VERSION).append(lSplitter);
-        s.append(TextFormat.printToString(builder.build()));
+        s.append(TextFormat.printToString(buildProtoFormat()));
         if (LOG.isDebugEnabled()) {
             LOG.debug("Serialized config: {}", s);
         }
@@ -416,8 +446,10 @@ public class LedgerMetadata {
         lc.writeQuorumSize = data.getQuorumSize();
         if (data.hasCtime()) {
             lc.ctime = data.getCtime();
+            lc.storeSystemtimeAsLedgerCreationTime = true;
         } else if (msCtime.isPresent()) {
             lc.ctime = msCtime.get();
+            lc.storeSystemtimeAsLedgerCreationTime = false;
         }
         if (data.hasAckQuorumSize()) {
             lc.ackQuorumSize = data.getAckQuorumSize();
@@ -569,7 +601,6 @@ public class LedgerMetadata {
         if (metadataFormatVersion != newMeta.metadataFormatVersion ||
             ensembleSize != newMeta.ensembleSize ||
             writeQuorumSize != newMeta.writeQuorumSize ||
-            ctime != newMeta.ctime ||
             ackQuorumSize != newMeta.ackQuorumSize ||
             length != newMeta.length ||
             state != newMeta.state ||
@@ -578,6 +609,14 @@ public class LedgerMetadata {
             !LedgerMetadata.areByteArrayValMapsEqual(customMetadata, newMeta.customMetadata)) {
             return true;
         }
+
+        // verify the ctime
+        if (storeSystemtimeAsLedgerCreationTime != newMeta.storeSystemtimeAsLedgerCreationTime) {
+            return true;
+        } else if (storeSystemtimeAsLedgerCreationTime) {
+            return ctime != newMeta.ctime;
+        }
+
         if (state == LedgerMetadataFormat.State.CLOSED
             && lastEntryId != newMeta.lastEntryId) {
             return true;
@@ -631,6 +670,14 @@ public class LedgerMetadata {
                 ensembles.put(key, ensemble);
             }
         }
+    }
+
+    Set<BookieSocketAddress> getBookiesInThisLedger() {
+        Set<BookieSocketAddress> bookies = new HashSet<BookieSocketAddress>();
+        for (ArrayList<BookieSocketAddress> ensemble : ensembles.values()) {
+            bookies.addAll(ensemble);
+        }
+        return bookies;
     }
 
 }
