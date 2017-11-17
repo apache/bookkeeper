@@ -113,21 +113,20 @@ public class TestSyncThread {
             };
 
         final SyncThread t = new SyncThread(conf, listener, storage, checkpointSource);
+        t.startCheckpoint(Checkpoint.MAX);
         assertTrue("Checkpoint should have been called",
                    checkpointCalledLatch.await(10, TimeUnit.SECONDS));
-        Future<Boolean> done = executor.submit(new Callable<Boolean>() {
-                public Boolean call() {
-                    try {
-                        t.shutdown();
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        LOG.error("Interrupted shutting down sync thread", ie);
-                        failedSomewhere.set(true);
-                        return false;
-                    }
-                    return true;
-                }
-            });
+        Future<Boolean> done = executor.submit(() -> {
+            try {
+                t.shutdown();
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                LOG.error("Interrupted shutting down sync thread", ie);
+                failedSomewhere.set(true);
+                return false;
+            }
+            return true;
+        });
         checkpointLatch.countDown();
         assertFalse("Shutdown shouldn't have finished", done.isDone());
         assertTrue("Flush should have been called",
@@ -170,6 +169,7 @@ public class TestSyncThread {
         Thread.sleep(flushInterval);
         int count = checkpointCount.get();
         for (int i = 0; i < 10; i++) {
+            t.startCheckpoint(Checkpoint.MAX);
             assertEquals("Checkpoint count shouldn't change", count, checkpointCount.get());
         }
         t.resumeSync();
