@@ -22,6 +22,7 @@ package org.apache.bookkeeper.bookie;
 import java.io.File;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
@@ -49,6 +50,10 @@ public abstract class LedgerStorageTestBase {
         return dir;
     }
 
+    protected LedgerStorageTestBase() {
+        conf = TestBKConfiguration.newServerConfiguration();
+    }
+
     @Before
     public void setUp() throws Exception {
         journalDir = createTempDir("journal");
@@ -59,7 +64,6 @@ public abstract class LedgerStorageTestBase {
         Bookie.getCurrentDirectory(ledgerDir).mkdir();
 
         // build the configuration
-        conf = new ServerConfiguration();
         conf.setZkServers(null);
         conf.setJournalDirName(journalDir.getPath());
         conf.setLedgerDirNames(new String[] { ledgerDir.getPath() });

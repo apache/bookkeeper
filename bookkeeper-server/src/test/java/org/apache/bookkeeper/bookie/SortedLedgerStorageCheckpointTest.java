@@ -20,12 +20,16 @@
 package org.apache.bookkeeper.bookie;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
@@ -88,7 +92,15 @@ public class SortedLedgerStorageCheckpointTest extends LedgerStorageTestBase {
     }
 
     private SortedLedgerStorage storage;
-    private final TestCheckpointSource checkpointer = new TestCheckpointSource();
+    private Checkpointer checkpointer;
+    private final LinkedBlockingQueue<Checkpoint> checkpoints;
+    private final TestCheckpointSource checkpointSrc = new TestCheckpointSource();
+
+    public SortedLedgerStorageCheckpointTest() {
+        super();
+        conf.setEntryLogSizeLimit(1);
+        this.checkpoints = new LinkedBlockingQueue<>();
+    }
 
     @Before
     @Override
@@ -98,11 +110,21 @@ public class SortedLedgerStorageCheckpointTest extends LedgerStorageTestBase {
         // initial checkpoint
 
         this.storage = new SortedLedgerStorage();
+        this.checkpointer = checkpoint -> storage.getScheduler().submit(() -> {
+            log.info("Checkpoint the storage at {}", checkpoint);
+            try {
+                storage.checkpoint(checkpoint);
+                checkpoints.add(checkpoint);
+            } catch (IOException e) {
+                log.error("Failed to checkpoint at {}", checkpoint, e);
+            }
+        });
         this.storage.initialize(
             conf,
             mock(LedgerManager.class),
             ledgerDirsManager,
             ledgerDirsManager,
+            checkpointSrc,
             checkpointer,
             NullStatsLogger.INSTANCE);
     }
@@ -140,20 +162,18 @@ public class SortedLedgerStorageCheckpointTest extends LedgerStorageTestBase {
             storage.addEntry(prepareEntry(lid, i));
         }
         // simulate journal persists the entries in journal;
-        checkpointer.advanceOffset(100);
+        checkpointSrc.advanceOffset(100);
 
         // memory table holds the first checkpoint, but it is not completed yet.
         memtableCp = storage.memTable.kvmap.cp;
         assertEquals(new TestCheckpoint(0), memtableCp);
 
-        // request a checkpoint
-        Checkpoint cp2 = checkpointer.newCheckpoint();
-        assertEquals(new TestCheckpoint(100), cp2);
-
-        // no flush should happen
-        assertEquals(Checkpoint.MAX, storage.checkpoint(cp2));
-        assertEquals(new TestCheckpoint(0), storage.memTable.kvmap.cp);
-        assertEquals(20, storage.memTable.kvmap.size());
+        // trigger a memtable flush
+        storage.onSizeLimitReached(checkpointSrc.newCheckpoint());
+        // wait for checkpoint to complete
+        checkpoints.poll(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+        assertEquals(new TestCheckpoint(100), storage.memTable.kvmap.cp);
+        assertEquals(0, storage.memTable.kvmap.size());
     }
 
     @Test
@@ -169,34 +189,39 @@ public class SortedLedgerStorageCheckpointTest extends LedgerStorageTestBase {
             storage.addEntry(prepareEntry(lid, i));
         }
         // simulate journal persists the entries in journal;
-        checkpointer.advanceOffset(100);
+        checkpointSrc.advanceOffset(100);
 
         // memory table holds the first checkpoint, but it is not completed yet.
         memtableCp = storage.memTable.kvmap.cp;
         assertEquals(new TestCheckpoint(0), memtableCp);
-
-        // request a checkpoint
-        Checkpoint cp2 = checkpointer.newCheckpoint();
-        assertEquals(new TestCheckpoint(100), cp2);
-
-        // no flush should happen
-        assertEquals(Checkpoint.MAX, storage.checkpoint(cp2));
-        assertEquals(new TestCheckpoint(0), storage.memTable.kvmap.cp);
         assertEquals(20, storage.memTable.kvmap.size());
 
-        // if entry log is rotated (due to compaction)
+        final CountDownLatch readyLatch = new CountDownLatch(1);
+        storage.getScheduler().submit(() -> {
+            try {
+                readyLatch.await();
+            } catch (InterruptedException e) {
+            }
+        });
+
+        // simulate entry log is rotated (due to compaction)
         storage.entryLogger.rollLog();
         long leastUnflushedLogId = storage.entryLogger.getLeastUnflushedLogId();
         long currentLogId = storage.entryLogger.getCurrentLogId();
-        log.info("Least unflushed entry log : current = {}", leastUnflushedLogId);
-        assertEquals(new TestCheckpoint(100), storage.checkpointHolder.getLastCheckpoint());
+        log.info("Least unflushed entry log : current = {}, leastUnflushed = {}", currentLogId, leastUnflushedLogId);
 
-        Checkpoint cp3 = checkpointer.newCheckpoint();
-        Checkpoint cpCanComplete = storage.checkpoint(cp3);
+        readyLatch.countDown();
+        assertNull(checkpoints.poll());
+        assertEquals(new TestCheckpoint(0), storage.memTable.kvmap.cp);
+        assertEquals(20, storage.memTable.kvmap.size());
+
+        // trigger a memtable flush
+        storage.onSizeLimitReached(checkpointSrc.newCheckpoint());
+        assertEquals(new TestCheckpoint(100), checkpoints.poll(Long.MAX_VALUE, TimeUnit.MILLISECONDS));
+
         // all the entries are flushed out
         assertEquals(new TestCheckpoint(100), storage.memTable.kvmap.cp);
         assertEquals(0, storage.memTable.kvmap.size());
-        assertEquals(new TestCheckpoint(100), cpCanComplete);
         assertTrue(
             "current log " + currentLogId + " contains entries added from memtable should be forced to disk"
             + " but least unflushed log is " + storage.entryLogger.getLeastUnflushedLogId(),

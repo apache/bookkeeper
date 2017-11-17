@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.bookie;
 
 import io.netty.buffer.ByteBuf;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.Observable;
@@ -34,7 +33,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -101,7 +99,7 @@ public class TestSyncThread {
                 }
 
                 @Override
-                public Checkpoint checkpoint(Checkpoint checkpoint)
+                public void checkpoint(Checkpoint checkpoint)
                         throws IOException {
                     checkpointCalledLatch.countDown();
                     try {
@@ -111,12 +109,10 @@ public class TestSyncThread {
                         LOG.error("Interrupted in checkpoint thread", ie);
                         failedSomewhere.set(true);
                     }
-                    return checkpoint;
                 }
             };
 
         final SyncThread t = new SyncThread(conf, listener, storage, checkpointSource);
-        t.start();
         assertTrue("Checkpoint should have been called",
                    checkpointCalledLatch.await(10, TimeUnit.SECONDS));
         Future<Boolean> done = executor.submit(new Callable<Boolean>() {
@@ -160,14 +156,13 @@ public class TestSyncThread {
         final AtomicInteger checkpointCount = new AtomicInteger(0);
         LedgerStorage storage = new DummyLedgerStorage() {
                 @Override
-                public Checkpoint checkpoint(Checkpoint checkpoint)
+                public void checkpoint(Checkpoint checkpoint)
                         throws IOException {
                     checkpointCount.incrementAndGet();
-                    return checkpoint;
                 }
             };
         final SyncThread t = new SyncThread(conf, listener, storage, checkpointSource);
-        t.start();
+        t.startCheckpoint(Checkpoint.MAX);
         while (checkpointCount.get() == 0) {
             Thread.sleep(flushInterval);
         }
@@ -210,13 +205,13 @@ public class TestSyncThread {
 
         LedgerStorage storage = new DummyLedgerStorage() {
                 @Override
-                public Checkpoint checkpoint(Checkpoint checkpoint)
+                public void checkpoint(Checkpoint checkpoint)
                         throws IOException {
                     throw new RuntimeException("Fatal error in sync thread");
                 }
             };
         final SyncThread t = new SyncThread(conf, listener, storage, checkpointSource);
-        t.start();
+        t.startCheckpoint(Checkpoint.MAX);
         assertTrue("Should have called fatal error", fatalLatch.await(10, TimeUnit.SECONDS));
         t.shutdown();
     }
@@ -242,13 +237,13 @@ public class TestSyncThread {
 
         LedgerStorage storage = new DummyLedgerStorage() {
                 @Override
-                public Checkpoint checkpoint(Checkpoint checkpoint)
+                public void checkpoint(Checkpoint checkpoint)
                         throws IOException {
                     throw new NoWritableLedgerDirException("Disk full error in sync thread");
                 }
             };
         final SyncThread t = new SyncThread(conf, listener, storage, checkpointSource);
-        t.start();
+        t.startCheckpoint(Checkpoint.MAX);
         assertTrue("Should have disk full error", diskFullLatch.await(10, TimeUnit.SECONDS));
         t.shutdown();
     }
@@ -267,9 +262,14 @@ public class TestSyncThread {
 
     private static class DummyLedgerStorage implements LedgerStorage {
         @Override
-        public void initialize(ServerConfiguration conf, LedgerManager ledgerManager,
-                LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
-                CheckpointSource checkpointSource, StatsLogger statsLogger)
+        public void initialize(
+            ServerConfiguration conf,
+            LedgerManager ledgerManager,
+            LedgerDirsManager ledgerDirsManager,
+            LedgerDirsManager indexDirsManager,
+            CheckpointSource checkpointSource,
+            Checkpointer checkpointer,
+            StatsLogger statsLogger)
                 throws IOException {
         }
 
@@ -346,9 +346,8 @@ public class TestSyncThread {
         }
 
         @Override
-        public Checkpoint checkpoint(Checkpoint checkpoint)
+        public void checkpoint(Checkpoint checkpoint)
                 throws IOException {
-            return checkpoint;
         }
 
         @Override

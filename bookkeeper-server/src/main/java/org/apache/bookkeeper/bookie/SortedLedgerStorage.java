@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
@@ -47,22 +48,40 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
 
     EntryMemTable memTable;
     private ScheduledExecutorService scheduler;
+    private Checkpointer checkpointer;
 
     public SortedLedgerStorage() {
         super();
     }
 
     @Override
-    public void initialize(ServerConfiguration conf, LedgerManager ledgerManager,
-                           LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
-                           final CheckpointSource checkpointSource, StatsLogger statsLogger)
+    public void initialize(ServerConfiguration conf,
+                           LedgerManager ledgerManager,
+                           LedgerDirsManager ledgerDirsManager,
+                           LedgerDirsManager indexDirsManager,
+                           CheckpointSource checkpointSource,
+                           Checkpointer checkpointer,
+                           StatsLogger statsLogger)
             throws IOException {
-        super.initialize(conf, ledgerManager, ledgerDirsManager, indexDirsManager, checkpointSource, statsLogger);
+        super.initialize(
+            conf,
+            ledgerManager,
+            ledgerDirsManager,
+            indexDirsManager,
+            null,
+            null,
+            statsLogger);
         this.memTable = new EntryMemTable(conf, checkpointSource, statsLogger);
         this.scheduler = Executors.newSingleThreadScheduledExecutor(
                 new ThreadFactoryBuilder()
                 .setNameFormat("SortedLedgerStorage-%d")
                 .setPriority((Thread.NORM_PRIORITY + Thread.MAX_PRIORITY) / 2).build());
+        this.checkpointer = checkpointer;
+    }
+
+    @VisibleForTesting
+    ScheduledExecutorService getScheduler() {
+        return scheduler;
     }
 
     @Override
@@ -146,14 +165,9 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
     }
 
     @Override
-    public Checkpoint checkpoint(final Checkpoint checkpoint) throws IOException {
-        Checkpoint lastCheckpoint = checkpointHolder.getLastCheckpoint();
-        // if checkpoint is less than last checkpoint, we don't need to do checkpoint again.
-        if (lastCheckpoint.compareTo(checkpoint) > 0) {
-            return lastCheckpoint;
-        }
+    public void checkpoint(final Checkpoint checkpoint) throws IOException {
         memTable.flush(this, checkpoint);
-        return super.checkpoint(checkpoint);
+        super.checkpoint(checkpoint);
     }
 
     @Override
@@ -170,7 +184,8 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
 
     // CacheCallback functions.
     @Override
-    public void onSizeLimitReached() throws IOException {
+    public void onSizeLimitReached(final Checkpoint cp) throws IOException {
+        LOG.info("Reached size {}", cp);
         // when size limit reached, we get the previous checkpoint from snapshot mem-table.
         // at this point, we are safer to schedule a checkpoint, since the entries added before
         // this checkpoint already written to entry logger.
@@ -194,8 +209,9 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
                     // for performance consideration: since we don't wanna checkpoint a new log file that ledger
                     // storage is writing to.
                     if (entryLogger.reachEntryLogLimit(0) || logIdAfterFlush != logIdBeforeFlush) {
-                        entryLogger.rollLog();
                         LOG.info("Rolling entry logger since it reached size limitation");
+                        entryLogger.rollLog();
+                        checkpointer.startCheckpoint(cp);
                     }
                 } catch (IOException e) {
                     // TODO: if we failed to flush data, we should switch the bookie back to readonly mode

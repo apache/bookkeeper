@@ -27,7 +27,6 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_OFF
 
 import com.google.common.collect.Lists;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -60,33 +59,10 @@ import org.slf4j.LoggerFactory;
 public class InterleavedLedgerStorage implements CompactableLedgerStorage, EntryLogListener {
     private static final Logger LOG = LoggerFactory.getLogger(InterleavedLedgerStorage.class);
 
-    /**
-     * Hold the last checkpoint.
-     */
-    protected static class CheckpointHolder {
-        Checkpoint lastCheckpoint = Checkpoint.MAX;
-
-        protected synchronized void setNextCheckpoint(Checkpoint cp) {
-            if (Checkpoint.MAX.equals(lastCheckpoint) || lastCheckpoint.compareTo(cp) < 0) {
-                lastCheckpoint = cp;
-            }
-        }
-
-        protected synchronized void clearLastCheckpoint(Checkpoint done) {
-            if (0 == lastCheckpoint.compareTo(done)) {
-                lastCheckpoint = Checkpoint.MAX;
-            }
-        }
-
-        protected synchronized Checkpoint getLastCheckpoint() {
-            return lastCheckpoint;
-        }
-    }
-
     EntryLogger entryLogger;
     LedgerCache ledgerCache;
     private CheckpointSource checkpointSource;
-    protected final CheckpointHolder checkpointHolder = new CheckpointHolder();
+    private Checkpointer checkpointer;
     private final CopyOnWriteArrayList<LedgerDeletionListener> ledgerDeletionListeners =
             Lists.newCopyOnWriteArrayList();
 
@@ -110,12 +86,17 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     }
 
     @Override
-    public void initialize(ServerConfiguration conf, LedgerManager ledgerManager,
-                           LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
-                           CheckpointSource checkpointSource, StatsLogger statsLogger)
+    public void initialize(ServerConfiguration conf,
+                           LedgerManager ledgerManager,
+                           LedgerDirsManager ledgerDirsManager,
+                           LedgerDirsManager indexDirsManager,
+                           CheckpointSource checkpointSource,
+                           Checkpointer checkpointer,
+                           StatsLogger statsLogger)
             throws IOException {
 
         this.checkpointSource = checkpointSource;
+        this.checkpointer = checkpointer;
         entryLogger = new EntryLogger(conf, ledgerDirsManager, this);
         ledgerCache = new LedgerCacheImpl(conf, activeLedgers,
                 null == indexDirsManager ? ledgerDirsManager : indexDirsManager, statsLogger);
@@ -361,21 +342,12 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     }
 
     @Override
-    public Checkpoint checkpoint(Checkpoint checkpoint) throws IOException {
-        Checkpoint lastCheckpoint = checkpointHolder.getLastCheckpoint();
-        // if checkpoint is less than last checkpoint, we don't need to do checkpoint again.
-        if (lastCheckpoint.compareTo(checkpoint) > 0) {
-            return lastCheckpoint;
-        }
+    public void checkpoint(Checkpoint checkpoint) throws IOException {
         // we don't need to check somethingwritten since checkpoint
         // is scheduled when rotate an entry logger file. and we could
         // not set somethingWritten to false after checkpoint, since
         // current entry logger file isn't flushed yet.
         flushOrCheckpoint(true);
-        // after the ledger storage finished checkpointing, try to clear the done checkpoint
-
-        checkpointHolder.clearLastCheckpoint(lastCheckpoint);
-        return lastCheckpoint;
     }
 
     @Override
@@ -465,6 +437,9 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         // TODO: we could consider remove checkpointSource and checkpointSouce#newCheckpoint
         // later if we provide kind of LSN (Log/Journal Squeuence Number)
         // mechanism when adding entry. {@link https://github.com/apache/bookkeeper/issues/279}
-        checkpointHolder.setNextCheckpoint(checkpointSource.newCheckpoint());
+        if (null != checkpointer) {
+            Checkpoint checkpoint = checkpointSource.newCheckpoint();
+            checkpointer.startCheckpoint(checkpoint);
+        }
     }
 }

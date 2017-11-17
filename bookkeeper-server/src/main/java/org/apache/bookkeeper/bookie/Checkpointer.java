@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,20 +15,26 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
 
 package org.apache.bookkeeper.bookie;
 
-import java.io.IOException;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 
 /**
- * Interface plugged into caching to receive callback notifications.
+ * The instance that is responsible for checkpointing ledger storage.
  */
-public interface CacheCallback {
+public interface Checkpointer {
+
+    Checkpointer NULL = checkpoint -> {
+        // do nothing;
+    };
+
     /**
-     * Process notification that cache size limit reached.
+     * Start checkpointing for a given <i>checkpoint</i> location.
+     *
+     * @param checkpoint the checkpoint location to checkpoint.
      */
-    void onSizeLimitReached(Checkpoint cp) throws IOException;
+    void startCheckpoint(Checkpoint checkpoint);
+
 }

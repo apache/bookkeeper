@@ -29,7 +29,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import io.netty.buffer.ByteBuf;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -48,10 +47,10 @@ import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
+import org.apache.bookkeeper.bookie.Checkpointer;
 import org.apache.bookkeeper.bookie.CompactableLedgerStorage;
 import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.EntryLogger;
@@ -320,9 +319,14 @@ public class GcLedgersTest extends LedgerManagerTestCase {
     class MockLedgerStorage implements CompactableLedgerStorage {
 
         @Override
-        public void initialize(ServerConfiguration conf, LedgerManager ledgerManager,
-                LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
-                CheckpointSource checkpointSource, StatsLogger statsLogger) throws IOException {
+        public void initialize(
+            ServerConfiguration conf,
+            LedgerManager ledgerManager,
+            LedgerDirsManager ledgerDirsManager,
+            LedgerDirsManager indexDirsManager,
+            CheckpointSource checkpointSource,
+            Checkpointer checkpointer,
+            StatsLogger statsLogger) throws IOException {
         }
 
         @Override
@@ -386,8 +390,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         }
 
         @Override
-        public Checkpoint checkpoint(Checkpoint checkpoint) throws IOException {
-            return null;
+        public void checkpoint(Checkpoint checkpoint) throws IOException {
         }
 
         @Override
