@@ -1,18 +1,18 @@
 ---
-title: BookKeeper http endpoints
+title: BookKeeper Admin REST API
 ---
 
 This document introduces BookKeeper HTTP endpoints, which can be used for BookKeeper administration.
-To use this feature, set "httpServerEnabled" to "true" in file conf/bk_server.conf.
+To use this feature, set `httpServerEnabled` to `true` in file `conf/bk_server.conf`.
 
 ## All the endpoints
 
-Currently all the http endpoints could be divided into these 4 components:
+Currently all the HTTP endpoints could be divided into these 4 components:
 1. Heartbeat: heartbeat for a specific bookie.
 1. Config: doing the server configuration for a specific bookie.
-1. Ledger: http endpoints related to ledgers.
-1. Bookie: http endpoints related to bookies.
-1. AutoRecovery: http endpoints related to auto recovery.
+1. Ledger: HTTP endpoints related to ledgers.
+1. Bookie: HTTP endpoints related to bookies.
+1. AutoRecovery: HTTP endpoints related to auto recovery.
 
 ## Heartbeat
 

@@ -28,7 +28,7 @@ groups:
     endpoint: metrics
   - name: Upgrade
     endpoint: upgrade
-  - name: BookKeeper http endpoint
+  - name: BookKeeper Admin REST API
     endpoint: http
   #- name: Geo-replication
   #  endpoint: geo-replication
