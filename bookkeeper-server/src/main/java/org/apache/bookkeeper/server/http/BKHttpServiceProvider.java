@@ -1,5 +1,4 @@
-/**
- *
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,9 +15,8 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-package org.apache.bookkeeper.http;
+package org.apache.bookkeeper.server.http;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.IOException;
@@ -30,12 +28,30 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.http.HttpServer.ApiType;
+import org.apache.bookkeeper.http.HttpServiceProvider;
 import org.apache.bookkeeper.http.service.ErrorHttpService;
 import org.apache.bookkeeper.http.service.HeartbeatService;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
+import org.apache.bookkeeper.server.http.service.ConfigurationService;
+import org.apache.bookkeeper.server.http.service.DecommissionService;
+import org.apache.bookkeeper.server.http.service.DeleteLedgerService;
+import org.apache.bookkeeper.server.http.service.ExpandStorageService;
+import org.apache.bookkeeper.server.http.service.GetLastLogMarkService;
+import org.apache.bookkeeper.server.http.service.GetLedgerMetaService;
+import org.apache.bookkeeper.server.http.service.ListBookieInfoService;
+import org.apache.bookkeeper.server.http.service.ListBookiesService;
+import org.apache.bookkeeper.server.http.service.ListDiskFilesService;
+import org.apache.bookkeeper.server.http.service.ListLedgerService;
+import org.apache.bookkeeper.server.http.service.ListUnderReplicatedLedgerService;
+import org.apache.bookkeeper.server.http.service.LostBookieRecoveryDelayService;
+import org.apache.bookkeeper.server.http.service.ReadLedgerEntryService;
+import org.apache.bookkeeper.server.http.service.RecoveryBookieService;
+import org.apache.bookkeeper.server.http.service.TriggerAuditService;
+import org.apache.bookkeeper.server.http.service.WhoIsAuditorService;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
@@ -139,7 +155,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
     }
 
     @Override
-    public HttpEndpointService provideHttpEndpointService(HttpServer.ApiType type) {
+    public HttpEndpointService provideHttpEndpointService(ApiType type) {
         ServerConfiguration configuration = getServerConf();
         if (configuration == null) {
             return new ErrorHttpService();
