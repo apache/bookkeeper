@@ -121,6 +121,7 @@ public interface ReadHandle extends Handle {
      *          next entry id to read
      * @param timeOutInMillis
      *          timeout period to wait for the entry id to be available (for long poll only)
+     *          if timeout for get the entry, it will return null entry.
      * @param parallel
      *          whether to issue the long poll reads in parallel
      * @return an handle to the result of the operation
