@@ -1,5 +1,4 @@
-/**
- *
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,73 +15,60 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-package org.apache.bookkeeper.http;
+package org.apache.bookkeeper.server.http.service;
 
 import com.google.common.base.Preconditions;
+import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
-import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.replication.AuditorElector;
-import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * HttpEndpointService that handle Bookkeeper who is auditor related http request.
- *
- * The GET method will get the auditor bookie address
+ * HttpEndpointService that handle Bookkeeper trigger audit related http request.
+ * The PUT method will force trigger the audit by resetting the lostBookieRecoveryDelay.
  */
-public class WhoIsAuditorService implements HttpEndpointService {
+public class TriggerAuditService implements HttpEndpointService {
 
-    static final Logger LOG = LoggerFactory.getLogger(WhoIsAuditorService.class);
+    static final Logger LOG = LoggerFactory.getLogger(TriggerAuditService.class);
 
     protected ServerConfiguration conf;
-    protected ZooKeeper zk;
+    protected BookKeeperAdmin bka;
 
-    public WhoIsAuditorService(ServerConfiguration conf, ZooKeeper zk) {
+    public TriggerAuditService(ServerConfiguration conf, BookKeeperAdmin bka) {
         Preconditions.checkNotNull(conf);
         this.conf = conf;
-        this.zk = zk;
+        this.bka = bka;
     }
 
     /*
-     * Print the node which holds the auditor lock.
+     * Force trigger the Audit by resetting the lostBookieRecoveryDelay.
      */
     @Override
     public HttpServiceResponse handle(HttpServiceRequest request) throws Exception {
         HttpServiceResponse response = new HttpServiceResponse();
 
-        if (HttpServer.Method.GET == request.getMethod()) {
-            BookieSocketAddress bookieId = null;
+        if (HttpServer.Method.PUT == request.getMethod()) {
             try {
-                bookieId = AuditorElector.getCurrentAuditor(conf, zk);
-
-                if (bookieId == null) {
-                    response.setCode(HttpServer.StatusCode.NOT_FOUND);
-                    response.setBody("No auditor elected");
-                    return response;
-                }
+                bka.triggerAudit();
             } catch (Exception e) {
                 LOG.error("Meet Exception: ", e);
                 response.setCode(HttpServer.StatusCode.NOT_FOUND);
-                response.setBody("Exception when get." + e.getMessage());
+                response.setBody("Exception when do operation." + e.getMessage());
                 return response;
             }
 
             response.setCode(HttpServer.StatusCode.OK);
-            response.setBody("Auditor: "
-                + bookieId.getSocketAddress().getAddress().getCanonicalHostName() + "/"
-                + bookieId.getSocketAddress().getAddress().getHostAddress() + ":"
-                + bookieId.getSocketAddress().getPort());
+            response.setBody("Success trigger audit.");
             LOG.debug("response body:" + response.getBody());
             return response;
         } else {
             response.setCode(HttpServer.StatusCode.NOT_FOUND);
-            response.setBody("Not found method. Should be GET method");
+            response.setBody("Not found method. Should be PUT method");
             return response;
         }
     }
