@@ -29,6 +29,7 @@ import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.HashedWheelTimer;
 import java.io.IOException;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -52,6 +53,7 @@ import org.apache.bookkeeper.client.api.BookKeeperBuilder;
 import org.apache.bookkeeper.client.api.CreateBuilder;
 import org.apache.bookkeeper.client.api.DeleteBuilder;
 import org.apache.bookkeeper.client.api.OpenBuilder;
+import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient;
@@ -759,7 +761,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata)
+                               ackQuorumSize, digestType, passwd, cb, ctx,
+                               customMetadata, EnumSet.noneOf(WriteFlag.class))
                 .initiate();
         } finally {
             closeLock.readLock().unlock();
@@ -962,7 +965,9 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata).initiateAdv((long)(-1));
+                               ackQuorumSize, digestType, passwd, cb, ctx,
+                               customMetadata, EnumSet.noneOf(WriteFlag.class))
+                                       .initiateAdv((long)(-1));
         } finally {
             closeLock.readLock().unlock();
         }
@@ -1070,7 +1075,9 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata).initiateAdv(ledgerId);
+                               ackQuorumSize, digestType, passwd, cb, ctx,
+                               customMetadata, EnumSet.noneOf(WriteFlag.class))
+                    .initiateAdv(ledgerId);
         } finally {
             closeLock.readLock().unlock();
         }

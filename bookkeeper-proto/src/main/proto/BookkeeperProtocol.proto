@@ -112,6 +112,7 @@ message AddRequest {
     required int64 entryId = 2;
     required bytes masterKey = 3;
     required bytes body = 4;
+    optional int64 writeFlags = 5;
 }
 
 message StartTLSRequest {

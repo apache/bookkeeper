@@ -36,6 +36,7 @@ import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
@@ -64,6 +65,7 @@ import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadLastConfirmedCallb
 import org.apache.bookkeeper.client.api.BKException.Code;
 import org.apache.bookkeeper.client.api.LastConfirmedAndEntry;
 import org.apache.bookkeeper.client.api.LedgerEntries;
+import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
@@ -103,6 +105,7 @@ public class LedgerHandle implements WriteHandle {
     final LoadingCache<BookieSocketAddress, Long> bookieFailureHistory;
     final boolean enableParallelRecoveryRead;
     final int recoveryReadBatchSize;
+    final EnumSet<WriteFlag> writeFlags;
 
     /**
      * Invalid entry id. This value is returned from methods which
@@ -130,13 +133,14 @@ public class LedgerHandle implements WriteHandle {
     }
 
     LedgerHandle(BookKeeper bk, long ledgerId, LedgerMetadata metadata,
-                 DigestType digestType, byte[] password)
+                 DigestType digestType, byte[] password, EnumSet<WriteFlag> writeFlags)
             throws GeneralSecurityException, NumberFormatException {
         this.bk = bk;
         this.metadata = metadata;
         this.pendingAddOps = new ConcurrentLinkedQueue<PendingAddOp>();
         this.enableParallelRecoveryRead = bk.getConf().getEnableParallelRecoveryRead();
         this.recoveryReadBatchSize = bk.getConf().getRecoveryReadBatchSize();
+        this.writeFlags = writeFlags;
 
         if (metadata.isClosed()) {
             lastAddConfirmed = lastAddPushed = metadata.getLastEntryId();
@@ -199,6 +203,11 @@ public class LedgerHandle implements WriteHandle {
      */
     public long getId() {
         return ledgerId;
+    }
+
+    @VisibleForTesting
+    public EnumSet<WriteFlag> getWriteFlags() {
+        return writeFlags;
     }
 
     /**

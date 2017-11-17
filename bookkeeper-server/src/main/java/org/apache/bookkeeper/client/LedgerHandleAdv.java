@@ -21,8 +21,6 @@
 
 package org.apache.bookkeeper.client;
 
-import static org.apache.bookkeeper.common.concurrent.FutureUtils.createFuture;
-import static org.apache.bookkeeper.common.concurrent.FutureUtils.completeExceptionally;
 
 import java.io.Serializable;
 import java.security.GeneralSecurityException;
@@ -39,7 +37,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import java.util.EnumSet;
 import org.apache.bookkeeper.client.api.WriteAdvHandle;
+import org.apache.bookkeeper.client.api.WriteFlag;
 
 /**
  * Ledger Advanced handle extends {@link LedgerHandle} to provide API to add entries with
@@ -55,9 +55,10 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
         }
     }
 
-    LedgerHandleAdv(BookKeeper bk, long ledgerId, LedgerMetadata metadata, DigestType digestType, byte[] password)
+    LedgerHandleAdv(BookKeeper bk, long ledgerId, LedgerMetadata metadata,
+            DigestType digestType, byte[] password, EnumSet<WriteFlag> writeFlags)
             throws GeneralSecurityException, NumberFormatException {
-        super(bk, ledgerId, metadata, digestType, password);
+        super(bk, ledgerId, metadata, digestType, password, writeFlags);
         pendingAddOps = new PriorityBlockingQueue<PendingAddOp>(10, new PendingOpsComparator());
     }
 

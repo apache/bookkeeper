@@ -22,12 +22,14 @@ package org.apache.bookkeeper.client;
 import com.google.common.collect.Sets;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.CountDownLatch;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -245,7 +247,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
             }
         };
         LedgerHandle lh = new LedgerHandle(bkc, 0, metadata, TEST_DIGEST_TYPE,
-                TEST_PSSWD);
+                TEST_PSSWD, EnumSet.noneOf(WriteFlag.class));
         testSplitIntoSubFragments(10, 21, -1, 1, lh);
         testSplitIntoSubFragments(10, 21, 20, 1, lh);
         testSplitIntoSubFragments(0, 0, 10, 1, lh);
