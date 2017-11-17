@@ -967,7 +967,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
                                ackQuorumSize, digestType, passwd, cb, ctx,
                                customMetadata, EnumSet.noneOf(WriteFlag.class))
-                                       .initiateAdv((long)(-1));
+                                       .initiateAdv(-1L);
         } finally {
             closeLock.readLock().unlock();
         }

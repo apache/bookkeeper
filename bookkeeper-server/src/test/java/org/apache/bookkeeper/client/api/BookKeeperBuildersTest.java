@@ -20,12 +20,13 @@
  */
 package org.apache.bookkeeper.client.api;
 
-import java.util.EnumSet;
+import static org.apache.bookkeeper.client.api.WriteFlag.DEFERRED_FORCE;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.bookkeeper.client.BKException.BKClientClosedException;
@@ -35,8 +36,6 @@ import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.client.MockBookKeeperTestCase;
-import static org.apache.bookkeeper.client.api.WriteFlag.DEFERRED_FORCE;
-
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.proto.BookieProtocol;
 
@@ -56,6 +55,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
     private final static byte[] entryData = new byte[32];
     private final static EnumSet<WriteFlag> writeFlagsDeferredForce
                             = EnumSet.of(DEFERRED_FORCE);
+
     @Test
     public void testCreateLedger() throws Exception {
         setNewGeneratedLedgerId(ledgerId);
@@ -95,7 +95,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
     @Test(expected = BKIncorrectParameterException.class)
     public void testFailNullWriteFlags() throws Exception {
         result(newCreateLedgerOp()
-            .withWriteFlags(null)
+            .withWriteFlags((EnumSet<WriteFlag>) null)
             .withPassword(password)
             .execute());
     }
@@ -257,6 +257,28 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             .withWriteQuorumSize(writeQuorumSize)
             .withCustomMetadata(customMetadata)
             .withWriteFlags(writeFlagsDeferredForce)
+            .execute()
+            .get();
+        assertEquals(ledgerId, writer.getId());
+        LedgerMetadata metadata = getLedgerMetadata(ledgerId);
+        assertEquals(ensembleSize, metadata.getEnsembleSize());
+        assertEquals(ackQuorumSize, metadata.getAckQuorumSize());
+        assertEquals(writeQuorumSize, metadata.getWriteQuorumSize());
+        assertArrayEquals(password, metadata.getPassword());
+        LedgerHandle lh = (LedgerHandle) writer;
+        assertEquals(writeFlagsDeferredForce, lh.getWriteFlags());
+    }
+
+    @Test
+    public void testCreateLedgerWriteFlagsVarargs() throws Exception {
+        setNewGeneratedLedgerId(ledgerId);
+        WriteHandle writer = newCreateLedgerOp()
+            .withAckQuorumSize(ackQuorumSize)
+            .withEnsembleSize(ensembleSize)
+            .withPassword(password)
+            .withWriteQuorumSize(writeQuorumSize)
+            .withCustomMetadata(customMetadata)
+            .withWriteFlags(DEFERRED_FORCE)
             .execute()
             .get();
         assertEquals(ledgerId, writer.getId());

@@ -20,14 +20,22 @@
  */
 package org.apache.bookkeeper.client.api;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.EnumSet;
+import lombok.Getter;
 
 /**
  * Flags to specify the behaviour of writes
  */
+@Getter
 public enum WriteFlag {
-    DEFERRED_FORCE(1);
+
+    /**
+     * Writes will be ackknowledged by the server even if the entry
+     * has not been persisted durably.
+     */
+    DEFERRED_FORCE(0x1 << 0);
 
     private final int value;
 
@@ -42,8 +50,7 @@ public enum WriteFlag {
      * @return a set of flags
      */
     public static EnumSet<WriteFlag> getWriteFlags(int flagValue) {
-        Preconditions.checkArgument(flagValue >= 0 && flagValue <= 1);
-        if ((flagValue & 1) == 1) {
+        if ((flagValue & DEFERRED_FORCE.value) == DEFERRED_FORCE.value) {
             return EnumSet.of(DEFERRED_FORCE);
         }
         return EnumSet.noneOf(WriteFlag.class);

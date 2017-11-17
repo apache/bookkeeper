@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.client.api;
 
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Map;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
@@ -100,6 +101,16 @@ public interface CreateBuilder extends OpBuilder<WriteHandle> {
      * @return the builder itself
      */
     CreateBuilder withWriteFlags(EnumSet<WriteFlag> writeFlags);
+/**
+     * Set write flags. Write wlags specify the behaviour of writes
+     *
+     * @param writeFlags the flags
+     *
+     * @return the builder itself
+     */
+    default CreateBuilder withWriteFlags(WriteFlag ... writeFlags) {
+        return withWriteFlags(EnumSet.copyOf(Arrays.asList(writeFlags)));
+    }
 
     /**
      * Switch the ledger into 'Advanced' mode. A ledger used in Advanced mode will explicitly generate the sequence of

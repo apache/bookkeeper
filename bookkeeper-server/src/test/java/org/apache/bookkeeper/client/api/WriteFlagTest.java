@@ -20,34 +20,29 @@
  */
 package org.apache.bookkeeper.client.api;
 
-import java.util.EnumSet;
 import static org.apache.bookkeeper.client.api.WriteFlag.DEFERRED_FORCE;
+import static org.junit.Assert.assertEquals;
+
+import java.util.EnumSet;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
  * Utit tests for WriteFlag
  */
 public class WriteFlagTest {
 
+    private final static int NONE = 0;
+
     @Test
     public void testGetWriteFlagsDeferredForce() {
-        assertEquals(EnumSet.of(DEFERRED_FORCE), WriteFlag.getWriteFlags(1));
+        assertEquals(EnumSet.of(DEFERRED_FORCE),
+                WriteFlag.getWriteFlags(DEFERRED_FORCE.getValue()));
     }
 
     @Test
     public void testGetWriteFlagsNone() {
-        assertEquals(EnumSet.noneOf(WriteFlag.class), WriteFlag.getWriteFlags(0));
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testGetWriteFlagsNegative() {
-        WriteFlag.getWriteFlags(-1);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testGetWriteFlagsUnknown() {
-        WriteFlag.getWriteFlags(8);
+        assertEquals(EnumSet.noneOf(WriteFlag.class),
+                WriteFlag.getWriteFlags(NONE));
     }
 
     @Test(expected = NullPointerException.class)
