@@ -71,6 +71,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     // Journal Parameters
     protected final static String MAX_JOURNAL_SIZE = "journalMaxSizeMB";
     protected final static String MAX_BACKUP_JOURNALS = "journalMaxBackups";
+    protected final static String JOURNAL_SYNC_DATA = "journalSyncData";
     protected final static String JOURNAL_ADAPTIVE_GROUP_WRITES = "journalAdaptiveGroupWrites";
     protected final static String JOURNAL_MAX_GROUP_WAIT_MSEC = "journalMaxGroupWaitMSec";
     protected final static String JOURNAL_BUFFERED_WRITES_THRESHOLD = "journalBufferedWritesThreshold";
@@ -1534,6 +1535,28 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public int getSkipListArenaMaxAllocSize() {
         return getInt(SKIP_LIST_MAX_ALLOC_ENTRY, 128 * 1024);
+    }
+
+    /**
+     * Should the data be fsynced on journal before acknowledgment
+     *
+     * Default is true
+     *
+     * @return
+     */
+    public boolean getJournalSyncData() {
+        return getBoolean(JOURNAL_SYNC_DATA, true);
+    }
+
+    /**
+     * Enable or disable journal syncs
+     *
+     * @param syncData whether to sync data on disk before acknowledgement
+     * @return server configuration object
+     */
+    public ServerConfiguration setJournalSyncData(boolean syncData) {
+        setProperty(JOURNAL_SYNC_DATA, syncData);
+        return this;
     }
 
     /**
