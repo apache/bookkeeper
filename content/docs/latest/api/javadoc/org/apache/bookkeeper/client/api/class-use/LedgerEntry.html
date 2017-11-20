@@ -94,6 +94,12 @@
 <div class="block">BookKeeper Client Public API.</div>
 </td>
 </tr>
+<tr class="altColor">
+<td class="colFirst"><a href="#org.apache.bookkeeper.client.impl">org.apache.bookkeeper.client.impl</a></td>
+<td class="colLast">
+<div class="block">BookKeeper Client implementation package</div>
+</td>
+</tr>
 </tbody>
 </table>
 </li>
@@ -171,6 +177,21 @@
 </a>
 <h3>Uses of <a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a> in <a href="../../../../../../org/apache/bookkeeper/client/api/package-summary.html">org.apache.bookkeeper.client.api</a></h3>
 <table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../org/apache/bookkeeper/client/api/package-summary.html">org.apache.bookkeeper.client.api</a> that return <a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a></code></td>
+<td class="colLast"><span class="typeNameLabel">LastConfirmedAndEntry.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/LastConfirmedAndEntry.html#getEntry--">getEntry</a></span>()</code>
+<div class="block">Gets wanted LedgerEntry.</div>
+</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
 <caption><span>Methods in <a href="../../../../../../org/apache/bookkeeper/client/api/package-summary.html">org.apache.bookkeeper.client.api</a> that return types with arguments of type <a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a></span><span class="tabEnd">&nbsp;</span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
@@ -190,6 +211,38 @@
                long&nbsp;lastEntry)</code>
 <div class="block">Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.</div>
 </td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a name="org.apache.bookkeeper.client.impl">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a> in <a href="../../../../../../org/apache/bookkeeper/client/impl/package-summary.html">org.apache.bookkeeper.client.impl</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../org/apache/bookkeeper/client/impl/package-summary.html">org.apache.bookkeeper.client.impl</a> that return <a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a></code></td>
+<td class="colLast"><span class="typeNameLabel">LastConfirmedAndEntryImpl.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/impl/LastConfirmedAndEntryImpl.html#getEntry--">getEntry</a></span>()</code>
+<div class="block">Gets wanted LedgerEntry.</div>
+</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing constructors, and an explanation">
+<caption><span>Constructors in <a href="../../../../../../org/apache/bookkeeper/client/impl/package-summary.html">org.apache.bookkeeper.client.impl</a> with parameters of type <a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colOne" scope="col">Constructor and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/impl/LastConfirmedAndEntryImpl.html#LastConfirmedAndEntryImpl-java.lang.Long-org.apache.bookkeeper.client.api.LedgerEntry-">LastConfirmedAndEntryImpl</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&nbsp;lac,
+                         <a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a>&nbsp;entry)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>

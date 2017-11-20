@@ -1643,6 +1643,8 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/SyncCallbackUtils.FutureReadLastConfirmed.html#FutureReadLastConfirmed--">FutureReadLastConfirmed()</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/SyncCallbackUtils.FutureReadLastConfirmed.html" title="class in org.apache.bookkeeper.client">SyncCallbackUtils.FutureReadLastConfirmed</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/SyncCallbackUtils.FutureReadLastConfirmedAndEntry.html#FutureReadLastConfirmedAndEntry--">FutureReadLastConfirmedAndEntry()</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/SyncCallbackUtils.FutureReadLastConfirmedAndEntry.html" title="class in org.apache.bookkeeper.client">SyncCallbackUtils.FutureReadLastConfirmedAndEntry</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/SyncCallbackUtils.FutureReadResult.html#FutureReadResult--">FutureReadResult()</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/SyncCallbackUtils.FutureReadResult.html" title="class in org.apache.bookkeeper.client">SyncCallbackUtils.FutureReadResult</a></dt>
 <dd>&nbsp;</dd>
 </dl>
@@ -1993,9 +1995,17 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#getEnsembleSize--">getEnsembleSize()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/LastConfirmedAndEntry.html#getEntry--">getEntry()</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/LastConfirmedAndEntry.html" title="interface in org.apache.bookkeeper.client.api">LastConfirmedAndEntry</a></dt>
+<dd>
+<div class="block">Gets wanted LedgerEntry.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/LedgerEntry.html#getEntry--">getEntry()</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a></dt>
 <dd>
 <div class="block">Returns the content of the entry.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/LastConfirmedAndEntryImpl.html#getEntry--">getEntry()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/LastConfirmedAndEntryImpl.html" title="class in org.apache.bookkeeper.client.impl">LastConfirmedAndEntryImpl</a></dt>
+<dd>
+<div class="block">Gets wanted LedgerEntry.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerEntry.html#getEntry--">getEntry()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a></dt>
 <dd>
@@ -2192,9 +2202,17 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingReadLacOp.LacCallback.html#getLacComplete-int-long-">getLacComplete(int, long)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingReadLacOp.LacCallback.html" title="interface in org.apache.bookkeeper.client">PendingReadLacOp.LacCallback</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/LastConfirmedAndEntry.html#getLastAddConfirmed--">getLastAddConfirmed()</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/LastConfirmedAndEntry.html" title="interface in org.apache.bookkeeper.client.api">LastConfirmedAndEntry</a></dt>
+<dd>
+<div class="block">Gets LastAddConfirmed entryId.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/ReadHandle.html#getLastAddConfirmed--">getLastAddConfirmed()</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api">ReadHandle</a></dt>
 <dd>
 <div class="block">Get the last confirmed entry id on this ledger.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/LastConfirmedAndEntryImpl.html#getLastAddConfirmed--">getLastAddConfirmed()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/LastConfirmedAndEntryImpl.html" title="class in org.apache.bookkeeper.client.impl">LastConfirmedAndEntryImpl</a></dt>
+<dd>
+<div class="block">Gets LastAddConfirmed entryId.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#getLastAddConfirmed--">getLastAddConfirmed()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>
@@ -2889,9 +2907,17 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#handleUnrecoverableErrorDuringAdd-int-">handleUnrecoverableErrorDuringAdd(int)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/LastConfirmedAndEntry.html#hasEntry--">hasEntry()</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/LastConfirmedAndEntry.html" title="interface in org.apache.bookkeeper.client.api">LastConfirmedAndEntry</a></dt>
+<dd>
+<div class="block">Whether this entity contains an entry.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/DistributionSchedule.html#hasEntry-long-int-">hasEntry(long, int)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/DistributionSchedule.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule</a></dt>
 <dd>
 <div class="block">Whether entry presents on given bookie index</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/LastConfirmedAndEntryImpl.html#hasEntry--">hasEntry()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/LastConfirmedAndEntryImpl.html" title="class in org.apache.bookkeeper.client.impl">LastConfirmedAndEntryImpl</a></dt>
+<dd>
+<div class="block">Whether this entity contains an entry.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RoundRobinDistributionSchedule.html#hasEntry-long-int-">hasEntry(long, int)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RoundRobinDistributionSchedule.html" title="class in org.apache.bookkeeper.client">RoundRobinDistributionSchedule</a></dt>
 <dd>&nbsp;</dd>
@@ -3306,6 +3332,16 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/SyncCallbackUtils.LastAddConfirmedCallback.html#LastAddConfirmedCallback--">LastAddConfirmedCallback()</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/SyncCallbackUtils.LastAddConfirmedCallback.html" title="class in org.apache.bookkeeper.client">SyncCallbackUtils.LastAddConfirmedCallback</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#lastAddPushed">lastAddPushed</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
+<dd>&nbsp;</dd>
+<dt><a href="org/apache/bookkeeper/client/api/LastConfirmedAndEntry.html" title="interface in org.apache.bookkeeper.client.api"><span class="typeNameLink">LastConfirmedAndEntry</span></a> - Interface in <a href="org/apache/bookkeeper/client/api/package-summary.html">org.apache.bookkeeper.client.api</a></dt>
+<dd>
+<div class="block">This contains LastAddConfirmed entryId and a LedgerEntry wanted to read.</div>
+</dd>
+<dt><a href="org/apache/bookkeeper/client/impl/LastConfirmedAndEntryImpl.html" title="class in org.apache.bookkeeper.client.impl"><span class="typeNameLink">LastConfirmedAndEntryImpl</span></a> - Class in <a href="org/apache/bookkeeper/client/impl/package-summary.html">org.apache.bookkeeper.client.impl</a></dt>
+<dd>
+<div class="block">This contains LastAddConfirmed entryId and a LedgerEntry wanted to read.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/LastConfirmedAndEntryImpl.html#LastConfirmedAndEntryImpl-java.lang.Long-org.apache.bookkeeper.client.api.LedgerEntry-">LastConfirmedAndEntryImpl(Long, LedgerEntry)</a></span> - Constructor for class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/LastConfirmedAndEntryImpl.html" title="class in org.apache.bookkeeper.client.impl">LastConfirmedAndEntryImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.LastConfirmedCtx.html#LastConfirmedCtx--">LastConfirmedCtx()</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.LastConfirmedCtx.html" title="class in org.apache.bookkeeper.client">LedgerHandle.LastConfirmedCtx</a></dt>
 <dd>&nbsp;</dd>
@@ -4457,7 +4493,17 @@
 <div class="block">Obtains asynchronously the last confirmed write from a quorum of bookies.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#readLastAddConfirmed--">readLastAddConfirmed()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Obtains asynchronously the last confirmed write from a quorum of bookies.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/ReadHandle.html#readLastAddConfirmedAndEntry-long-long-boolean-">readLastAddConfirmedAndEntry(long, long, boolean)</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api">ReadHandle</a></dt>
+<dd>
+<div class="block">Asynchronous read specific entry and the latest last add confirmed.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#readLastAddConfirmedAndEntry-long-long-boolean-">readLastAddConfirmedAndEntry(long, long, boolean)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
+<dd>
+<div class="block">Asynchronous read specific entry and the latest last add confirmed.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#readLastConfirmed--">readLastConfirmed()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>
 <div class="block">Obtains synchronously the last confirmed write from a quorum of bookies.</div>
@@ -4468,6 +4514,8 @@
  along with an entry within the last add confirmed range</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback.html#readLastConfirmedAndEntryComplete-int-long-org.apache.bookkeeper.client.LedgerEntry-">readLastConfirmedAndEntryComplete(int, long, LedgerEntry)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback.html" title="interface in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/SyncCallbackUtils.FutureReadLastConfirmedAndEntry.html#readLastConfirmedAndEntryComplete-int-long-org.apache.bookkeeper.client.LedgerEntry-java.lang.Object-">readLastConfirmedAndEntryComplete(int, long, LedgerEntry, Object)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/SyncCallbackUtils.FutureReadLastConfirmedAndEntry.html" title="class in org.apache.bookkeeper.client">SyncCallbackUtils.FutureReadLastConfirmedAndEntry</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">ReadLastConfirmedAndEntryOp</span></a> - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
 <dd>
@@ -5998,6 +6046,8 @@
 <dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/SyncCallbackUtils.FutureReadLastConfirmed.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">SyncCallbackUtils.FutureReadLastConfirmed</span></a> - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
 <dd>&nbsp;</dd>
+<dt><a href="org/apache/bookkeeper/client/SyncCallbackUtils.FutureReadLastConfirmedAndEntry.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">SyncCallbackUtils.FutureReadLastConfirmedAndEntry</span></a> - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
+<dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/SyncCallbackUtils.FutureReadResult.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">SyncCallbackUtils.FutureReadResult</span></a> - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/SyncCallbackUtils.LastAddConfirmedCallback.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">SyncCallbackUtils.LastAddConfirmedCallback</span></a> - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
@@ -6213,7 +6263,10 @@
  but it doesn't wait all the responses from the quorum.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#tryReadLastAddConfirmed--">tryReadLastAddConfirmed()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
-<dd>&nbsp;</dd>
+<dd>
+<div class="block">Obtains asynchronously the last confirmed write from a quorum of bookies
+ but it doesn't wait all the responses from the quorum.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#tryReadLastConfirmed--">tryReadLastConfirmed()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>
 <div class="block">Obtains synchronously the last confirmed write from a quorum of bookies.</div>

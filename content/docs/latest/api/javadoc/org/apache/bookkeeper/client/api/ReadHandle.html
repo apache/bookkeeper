@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6};
+var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -166,13 +166,21 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/Handle.html" ti
 </td>
 </tr>
 <tr id="i4" class="altColor">
+<td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../../org/apache/bookkeeper/client/api/LastConfirmedAndEntry.html" title="interface in org.apache.bookkeeper.client.api">LastConfirmedAndEntry</a>&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html#readLastAddConfirmedAndEntry-long-long-boolean-">readLastAddConfirmedAndEntry</a></span>(long&nbsp;entryId,
+                            long&nbsp;timeOutInMillis,
+                            boolean&nbsp;parallel)</code>
+<div class="block">Asynchronous read specific entry and the latest last add confirmed.</div>
+</td>
+</tr>
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html?is-external=true" title="class or interface in java.lang">Iterable</a>&lt;<a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a>&gt;&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html#readUnconfirmed-long-long-">readUnconfirmed</a></span>(long&nbsp;firstEntry,
                long&nbsp;lastEntry)</code>
 <div class="block">Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html#tryReadLastAddConfirmed--">tryReadLastAddConfirmed</a></span>()</code>
 <div class="block">Obtains asynchronously the last confirmed write from a quorum of bookies
@@ -314,7 +322,7 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/Handle.html" ti
 <a name="getLength--">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>getLength</h4>
 <pre>long&nbsp;getLength()</pre>
@@ -322,6 +330,30 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/Handle.html" ti
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the length of the data written in this ledger, in bytes.</dd>
+</dl>
+</li>
+</ul>
+<a name="readLastAddConfirmedAndEntry-long-long-boolean-">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>readLastAddConfirmedAndEntry</h4>
+<pre><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="../../../../../org/apache/bookkeeper/client/api/LastConfirmedAndEntry.html" title="interface in org.apache.bookkeeper.client.api">LastConfirmedAndEntry</a>&gt;&nbsp;readLastAddConfirmedAndEntry(long&nbsp;entryId,
+                                                                      long&nbsp;timeOutInMillis,
+                                                                      boolean&nbsp;parallel)</pre>
+<div class="block">Asynchronous read specific entry and the latest last add confirmed.
+ If the next entryId is less than known last add confirmed, the call will read next entry directly.
+ If the next entryId is ahead of known last add confirmed, the call will issue a long poll read
+ to wait for the next entry <i>entryId</i>.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>entryId</code> - next entry id to read</dd>
+<dd><code>timeOutInMillis</code> - timeout period to wait for the entry id to be available (for long poll only)
+          if timeout for get the entry, it will return null entry.</dd>
+<dd><code>parallel</code> - whether to issue the long poll reads in parallel</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>an handle to the result of the operation</dd>
 </dl>
 </li>
 </ul>
