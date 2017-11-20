@@ -649,16 +649,19 @@ public class Bookie extends BookieCriticalThread {
             ZooKeeper zooKeeper = null;  // ZooKeeper is null existing only for testing
             if (registrationManager != null) {
                 zooKeeper = ((ZKRegistrationManager) this.registrationManager).getZk();
+                // current the registration manager is zookeeper only
+                ledgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(
+                    conf,
+                    zooKeeper);
+                LOG.info("instantiate ledger manager {}", ledgerManagerFactory.getClass().getName());
+                ledgerManager = ledgerManagerFactory.newLedgerManager();
+            } else {
+                ledgerManagerFactory = null;
+                ledgerManager = null;
             }
-            // current the registration manager is zookeeper only
-            ledgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(
-                conf,
-                zooKeeper);
         } catch (KeeperException e) {
             throw new MetadataStoreException("Failed to initialize ledger manager", e);
         }
-        LOG.info("instantiate ledger manager {}", ledgerManagerFactory.getClass().getName());
-        ledgerManager = ledgerManagerFactory.newLedgerManager();
 
         // Initialise ledgerDirMonitor. This would look through all the
         // configured directories. When disk errors or all the ledger
@@ -1189,8 +1192,12 @@ public class Bookie extends BookieCriticalThread {
 
                 // close Ledger Manager
                 try {
-                    ledgerManager.close();
-                    ledgerManagerFactory.uninitialize();
+                    if (null != ledgerManager) {
+                        ledgerManager.close();
+                    }
+                    if (null != ledgerManagerFactory) {
+                        ledgerManagerFactory.uninitialize();
+                    }
                 } catch (IOException ie) {
                     LOG.error("Failed to close active ledger manager : ", ie);
                 }
