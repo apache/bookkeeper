@@ -83,6 +83,7 @@ run-bk:
 	    --name "$(CONTAINER_NAME)" \
 	    --hostname "$(CONTAINER_NAME)" \
 	    --env BK_zkServers=$(ZK_CONTAINER_NAME):2181 \
+	    --env BK_statsProviderClass=org.apache.bookkeeper.stats.NullStatsProvider \
 	    --env BK_zkLedgersRootPath=$(BK_zkLedgersRootPath) \
 	    $(IMAGE)
 
