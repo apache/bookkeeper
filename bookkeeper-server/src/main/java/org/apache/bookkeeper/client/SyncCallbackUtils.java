@@ -21,14 +21,16 @@ import com.google.common.collect.Iterators;
 import java.util.Enumeration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import static org.apache.bookkeeper.client.LedgerHandle.LOG;
-import org.apache.bookkeeper.client.api.Handle;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.client.api.LastConfirmedAndEntry;
 import org.apache.bookkeeper.client.api.ReadHandle;
+import org.apache.bookkeeper.client.impl.LastConfirmedAndEntryImpl;
 
 /**
  * Utility for callbacks
  *
  */
+@Slf4j
 class SyncCallbackUtils {
 
     /**
@@ -182,10 +184,10 @@ class SyncCallbackUtils {
         @Override
         public void addLacComplete(int rc, LedgerHandle lh, Object ctx) {
             if (rc != BKException.Code.OK) {
-                LOG.warn("LastAddConfirmedUpdate failed: {} ", BKException.getMessage(rc));
+                log.warn("LastAddConfirmedUpdate failed: {} ", BKException.getMessage(rc));
             } else {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Callback LAC Updated for: {} ", lh.getId());
+                if (log.isDebugEnabled()) {
+                    log.debug("Callback LAC Updated for: {} ", lh.getId());
                 }
             }
         }
@@ -266,7 +268,8 @@ class SyncCallbackUtils {
         }
     }
 
-    static class FutureReadLastConfirmed extends CompletableFuture<Long> implements AsyncCallback.ReadLastConfirmedCallback {
+    static class FutureReadLastConfirmed extends CompletableFuture<Long>
+        implements AsyncCallback.ReadLastConfirmedCallback {
 
         @Override
         public void readLastConfirmedComplete(int rc, long lastConfirmed, Object ctx) {
@@ -309,6 +312,16 @@ class SyncCallbackUtils {
         @Override
         public void closeComplete(int rc, LedgerHandle lh, Object ctx) {
             finish(rc, null, future);
+        }
+    }
+
+    static class FutureReadLastConfirmedAndEntry
+        extends CompletableFuture<LastConfirmedAndEntry> implements AsyncCallback.ReadLastConfirmedAndEntryCallback {
+
+        @Override
+        public void readLastConfirmedAndEntryComplete(int rc, long lastConfirmed, LedgerEntry entry, Object ctx) {
+            LastConfirmedAndEntry result = new LastConfirmedAndEntryImpl(lastConfirmed, entry);
+            finish(rc, result, this);
         }
     }
 

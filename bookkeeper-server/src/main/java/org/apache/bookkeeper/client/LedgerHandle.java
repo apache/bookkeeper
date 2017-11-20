@@ -51,14 +51,14 @@ import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.SyncCallbackUtils.FutureReadLastConfirmed;
+import org.apache.bookkeeper.client.SyncCallbackUtils.FutureReadLastConfirmedAndEntry;
 import org.apache.bookkeeper.client.SyncCallbackUtils.FutureReadResult;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncAddCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCloseCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadLastConfirmedCallback;
-import org.apache.bookkeeper.client.api.WriteAdvHandle;
+import org.apache.bookkeeper.client.api.LastConfirmedAndEntry;
 import org.apache.bookkeeper.client.api.WriteHandle;
-import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
@@ -965,7 +965,7 @@ public class LedgerHandle implements WriteHandle {
     /**
      * Obtains asynchronously the last confirmed write from a quorum of bookies.
      * It is similar as
-     * {@link #asyncTryReadLastConfirmed(org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback, Object)},
+     * {@link #asyncReadLastConfirmed(org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback, Object)},
      * but it doesn't wait all the responses from the quorum. It would callback
      * immediately if it received a LAC which is larger than current LAC.
      *
@@ -1008,7 +1008,7 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
-     * @{@inheritDoc }
+     * {@inheritDoc}
      */
     @Override
     public CompletableFuture<Long> tryReadLastAddConfirmed() {
@@ -1018,12 +1018,24 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
-     * @{@inheritDoc }
+     * {@inheritDoc}
      */
     @Override
     public CompletableFuture<Long> readLastAddConfirmed() {
         FutureReadLastConfirmed result = new FutureReadLastConfirmed();
         asyncReadLastConfirmed(result, null);
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public CompletableFuture<LastConfirmedAndEntry> readLastAddConfirmedAndEntry(long entryId,
+                                                                                 long timeOutInMillis,
+                                                                                 boolean parallel) {
+        FutureReadLastConfirmedAndEntry result = new FutureReadLastConfirmedAndEntry();
+        asyncReadLastConfirmedAndEntry(entryId, timeOutInMillis, parallel, result, null);
         return result;
     }
 
@@ -1083,7 +1095,8 @@ public class LedgerHandle implements WriteHandle {
             return;
         }
         // wait for entry <i>entryId</i>
-        ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback innercb = new ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback() {
+        ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback innercb =
+            new ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback() {
             AtomicBoolean completed = new AtomicBoolean(false);
             @Override
             public void readLastConfirmedAndEntryComplete(int rc, long lastAddConfirmed, LedgerEntry entry) {
@@ -1098,7 +1111,13 @@ public class LedgerHandle implements WriteHandle {
                 }
             }
         };
-        new ReadLastConfirmedAndEntryOp(this, innercb, entryId - 1, timeOutInMillis, bk.getScheduler()).parallelRead(parallel).initiate();
+        new ReadLastConfirmedAndEntryOp(this,
+            innercb,
+            entryId - 1,
+            timeOutInMillis,
+            bk.getScheduler())
+            .parallelRead(parallel)
+            .initiate();
     }
 
     /**
