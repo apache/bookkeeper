@@ -203,6 +203,12 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
             assertEquals(2, result(reader.tryReadLastAddConfirmed()).intValue());
             checkEntries(result(reader.read(0, reader.getLastAddConfirmed())), data);
             checkEntries(result(reader.readUnconfirmed(0, reader.getLastAddConfirmed())), data);
+
+            // test readLastAddConfirmedAndEntry
+            LastConfirmedAndEntry lastConfirmedAndEntry =
+                result(reader.readLastAddConfirmedAndEntry(0, 999, false));
+            assertEquals(2, lastConfirmedAndEntry.getLastAddConfirmed().intValue());
+            assertArrayEquals(data, lastConfirmedAndEntry.getEntry().getEntry());
         }
     }
 
