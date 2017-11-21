@@ -20,8 +20,6 @@
  */
 package org.apache.bookkeeper.client.api;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import java.util.EnumSet;
 import lombok.Getter;
 
@@ -32,8 +30,8 @@ import lombok.Getter;
 public enum WriteFlag {
 
     /**
-     * Writes will be ackknowledged by the server even if the entry
-     * has not been persisted durably.
+     * Writes will be acknowledged after writing to the filesystem
+     * but not yet been persisted to disks.
      */
     DEFERRED_FORCE(0x1 << 0);
 

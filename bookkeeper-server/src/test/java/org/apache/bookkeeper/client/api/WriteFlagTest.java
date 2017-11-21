@@ -31,7 +31,7 @@ import org.junit.Test;
  */
 public class WriteFlagTest {
 
-    private final static int NONE = 0;
+    private static final int NONE = 0;
 
     @Test
     public void testGetWriteFlagsDeferredForce() {

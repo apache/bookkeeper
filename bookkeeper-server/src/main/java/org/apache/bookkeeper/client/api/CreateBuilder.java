@@ -101,7 +101,8 @@ public interface CreateBuilder extends OpBuilder<WriteHandle> {
      * @return the builder itself
      */
     CreateBuilder withWriteFlags(EnumSet<WriteFlag> writeFlags);
-/**
+
+    /**
      * Set write flags. Write wlags specify the behaviour of writes
      *
      * @param writeFlags the flags
