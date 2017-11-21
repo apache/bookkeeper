@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.client.impl;
 
+import io.netty.util.Recycler;
+import io.netty.util.Recycler.Handle;
 import org.apache.bookkeeper.client.api.LastConfirmedAndEntry;
 import org.apache.bookkeeper.client.api.LedgerEntry;
 
@@ -29,19 +31,37 @@ import org.apache.bookkeeper.client.api.LedgerEntry;
  */
 public class LastConfirmedAndEntryImpl implements LastConfirmedAndEntry {
 
-    private final Long lac;
-    private final LedgerEntry entry;
+    private static final Recycler<LastConfirmedAndEntryImpl> RECYCLER = new Recycler<LastConfirmedAndEntryImpl>() {
+        @Override
+        protected LastConfirmedAndEntryImpl newObject(Handle<LastConfirmedAndEntryImpl> handle) {
+            return new LastConfirmedAndEntryImpl(handle);
+        }
+    };
 
-    public LastConfirmedAndEntryImpl(Long lac, LedgerEntry entry) {
-        this.lac = lac;
-        this.entry = entry;
+    public static LastConfirmedAndEntryImpl create(long lac, org.apache.bookkeeper.client.LedgerEntry entry) {
+        LastConfirmedAndEntryImpl entryImpl = RECYCLER.get();
+        entryImpl.lac = lac;
+        entryImpl.entry = LedgerEntryImpl.create(
+            entry.getLedgerId(),
+            entry.getEntryId(),
+            entry.getLength(),
+            entry.getEntryBuffer());
+        return entryImpl;
+    }
+
+    private final Handle<LastConfirmedAndEntryImpl> recycleHandle;
+    private Long lac;
+    private LedgerEntry entry;
+
+    public LastConfirmedAndEntryImpl(Handle<LastConfirmedAndEntryImpl> handle) {
+        this.recycleHandle = handle;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public Long getLastAddConfirmed() {
+    public long getLastAddConfirmed() {
         return lac;
     }
 
@@ -59,5 +79,18 @@ public class LastConfirmedAndEntryImpl implements LastConfirmedAndEntry {
     @Override
     public LedgerEntry getEntry() {
         return entry;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void close() {
+        this.lac = -1L;
+        if (null != entry) {
+            entry.close();
+            entry = null;
+        }
+        recycleHandle.recycle(this);
     }
 }

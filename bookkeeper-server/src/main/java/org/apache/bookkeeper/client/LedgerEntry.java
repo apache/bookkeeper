@@ -23,8 +23,8 @@ package org.apache.bookkeeper.client;
 import com.google.common.base.Preconditions;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
-
 import java.io.InputStream;
+import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 
 /**
@@ -32,30 +32,28 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
  * the entry content.
  *
  */
-public class LedgerEntry
-    implements org.apache.bookkeeper.client.api.LedgerEntry {
+public class LedgerEntry {
 
     final long ledgerId;
-    long entryId;
-    long length;
+    final long entryId;
+    final long length;
     ByteBuf data;
 
-    LedgerEntry(long lId, long eId) {
-        this.ledgerId = lId;
-        this.entryId = eId;
+    LedgerEntry(LedgerEntryImpl entry) {
+        this.ledgerId = entry.getLedgerId();
+        this.entryId = entry.getEntryId();
+        this.length = entry.getLength();
+        this.data = entry.getEntryBuffer().retain();
     }
 
-    @Override
     public long getLedgerId() {
         return ledgerId;
     }
 
-    @Override
     public long getEntryId() {
         return entryId;
     }
 
-    @Override
     public long getLength() {
         return length;
     }
@@ -68,7 +66,6 @@ public class LedgerEntry
      * @return the content of the entry
      * @throws IllegalStateException if this method is called twice
      */
-    @Override
     public byte[] getEntry() {
         Preconditions.checkState(null != data, "entry content can be accessed only once");
         byte[] entry = new byte[data.readableBytes()];
@@ -105,7 +102,6 @@ public class LedgerEntry
      * @throws IllegalStateException if the entry has been retrieved by {@link #getEntry()}
      * or {@link #getEntryInputStream()}.
      */
-    @Override
     public ByteBuf getEntryBuffer() {
         Preconditions.checkState(null != data, "entry content has been retrieved" +
             " by #getEntry or #getEntryInputStream");

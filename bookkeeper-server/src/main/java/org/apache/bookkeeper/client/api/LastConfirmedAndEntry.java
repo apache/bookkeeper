@@ -24,14 +24,14 @@ package org.apache.bookkeeper.client.api;
  * This contains LastAddConfirmed entryId and a LedgerEntry wanted to read.
  * It is used for readLastAddConfirmedAndEntry.
  */
-public interface LastConfirmedAndEntry {
+public interface LastConfirmedAndEntry extends AutoCloseable {
 
     /**
      * Gets LastAddConfirmed entryId.
      *
      * @return the LastAddConfirmed
      */
-    Long getLastAddConfirmed();
+    long getLastAddConfirmed();
 
     /**
      * Whether this entity contains an entry.
@@ -46,5 +46,10 @@ public interface LastConfirmedAndEntry {
      * @return the LedgerEntry
      */
     LedgerEntry getEntry();
+
+    /**
+     * {@inheritDoc}
+     */
+    void close();
 
 }

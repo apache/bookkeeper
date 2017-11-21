@@ -20,15 +20,17 @@
  */
 package org.apache.bookkeeper.client;
 
-import java.util.NoSuchElementException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener;
 import org.apache.bookkeeper.util.MathUtils;
 
+@Slf4j
 class ListenerBasedPendingReadOp extends PendingReadOp {
 
     final ReadEntryListener listener;
+    final Object ctx;
 
     ListenerBasedPendingReadOp(LedgerHandle lh,
                                ScheduledExecutorService scheduler,
@@ -53,38 +55,34 @@ class ListenerBasedPendingReadOp extends PendingReadOp {
                                ReadEntryListener listener,
                                Object ctx,
                                boolean isRecoveryRead) {
-        super(lh, scheduler, startEntryId, endEntryId, null, ctx, isRecoveryRead);
+        super(lh, scheduler, startEntryId, endEntryId, isRecoveryRead);
         this.listener = listener;
+        this.ctx = ctx;
     }
 
     @Override
     protected void submitCallback(int code) {
         LedgerEntryRequest request;
-        while ((request = seq.peek()) != null) {
+        while (!seq.isEmpty() && (request = seq.get(0)) != null) {
             if (!request.isComplete()) {
                 return;
             }
-            seq.remove();
+            seq.remove(0);
             long latencyNanos = MathUtils.elapsedNanos(requestTimeNanos);
+            LedgerEntry entry;
             if (BKException.Code.OK == request.getRc()) {
                 readOpLogger.registerSuccessfulEvent(latencyNanos, TimeUnit.NANOSECONDS);
+                // callback with completed entry
+                entry = new LedgerEntry(request.entryImpl);
             } else {
                 readOpLogger.registerFailedEvent(latencyNanos, TimeUnit.NANOSECONDS);
+                entry = null;
             }
-            // callback with completed entry
-            listener.onEntryComplete(request.getRc(), lh, request, ctx);
+            request.close();
+            listener.onEntryComplete(request.getRc(), lh, entry, ctx);
         }
         // if all entries are already completed.
         cancelSpeculativeTask(true);
     }
 
-    @Override
-    public boolean hasMoreElements() {
-        return false;
-    }
-
-    @Override
-    public LedgerEntry nextElement() throws NoSuchElementException {
-        throw new NoSuchElementException();
-    }
 }
