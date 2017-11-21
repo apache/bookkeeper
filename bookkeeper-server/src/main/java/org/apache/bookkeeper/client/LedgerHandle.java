@@ -20,11 +20,14 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.apache.bookkeeper.client.api.BKException.Code.ClientClosedException;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.RateLimiter;
 import io.netty.buffer.ByteBuf;
@@ -49,16 +52,21 @@ import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
+import org.apache.bookkeeper.client.BKException.BKIncorrectParameterException;
+import org.apache.bookkeeper.client.BKException.BKReadException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.SyncCallbackUtils.FutureReadLastConfirmed;
 import org.apache.bookkeeper.client.SyncCallbackUtils.FutureReadLastConfirmedAndEntry;
-import org.apache.bookkeeper.client.SyncCallbackUtils.FutureReadResult;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncAddCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCloseCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadLastConfirmedCallback;
+import org.apache.bookkeeper.client.api.BKException.Code;
 import org.apache.bookkeeper.client.api.LastConfirmedAndEntry;
 import org.apache.bookkeeper.client.api.WriteHandle;
+import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
+import org.apache.bookkeeper.common.concurrent.FutureEventListener;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
@@ -69,6 +77,7 @@ import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallback;
 import org.apache.bookkeeper.util.SafeRunnable;
+import org.apache.commons.collections4.IteratorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -626,9 +635,20 @@ public class LedgerHandle implements WriteHandle {
      */
     @Override
     public CompletableFuture<Iterable<org.apache.bookkeeper.client.api.LedgerEntry>> read(long firstEntry, long lastEntry) {
-        FutureReadResult result = new FutureReadResult();
-        asyncReadEntries(firstEntry, lastEntry, result, null);
-        return result;
+        // Little sanity check
+        if (firstEntry < 0 || firstEntry > lastEntry) {
+            LOG.error("IncorrectParameterException on ledgerId:{} firstEntry:{} lastEntry:{}",
+                    new Object[] { ledgerId, firstEntry, lastEntry });
+            return FutureUtils.exception(new BKIncorrectParameterException());
+        }
+
+        if (lastEntry > lastAddConfirmed) {
+            LOG.error("ReadException on ledgerId:{} firstEntry:{} lastEntry:{}",
+                    new Object[] { ledgerId, firstEntry, lastEntry });
+            return FutureUtils.exception(new BKReadException());
+        }
+
+        return readEntriesInternalAsync(firstEntry, lastEntry);
     }
 
     /**
@@ -656,14 +676,58 @@ public class LedgerHandle implements WriteHandle {
      */
     @Override
     public CompletableFuture<Iterable<org.apache.bookkeeper.client.api.LedgerEntry>> readUnconfirmed(long firstEntry, long lastEntry) {
-        FutureReadResult result = new FutureReadResult();
-        asyncReadUnconfirmedEntries(firstEntry, lastEntry, result, null);
-        return result;
+        // Little sanity check
+        if (firstEntry < 0 || firstEntry > lastEntry) {
+            LOG.error("IncorrectParameterException on ledgerId:{} firstEntry:{} lastEntry:{}",
+                    new Object[] { ledgerId, firstEntry, lastEntry });
+            return FutureUtils.exception(new BKIncorrectParameterException());
+        }
+
+        return readEntriesInternalAsync(firstEntry, lastEntry);
     }
 
     void asyncReadEntriesInternal(long firstEntry, long lastEntry, ReadCallback cb, Object ctx) {
-        new PendingReadOp(this, bk.getScheduler(),
-                          firstEntry, lastEntry, cb, ctx).initiate();
+        if(!bk.isClosed()) {
+            readEntriesInternalAsync(firstEntry, lastEntry)
+                .whenCompleteAsync(new FutureEventListener<Iterable<org.apache.bookkeeper.client.api.LedgerEntry>>() {
+                    @Override
+                    public void onSuccess(Iterable<org.apache.bookkeeper.client.api.LedgerEntry> iterable) {
+                        cb.readComplete(
+                            Code.OK,
+                            LedgerHandle.this,
+                            IteratorUtils.asEnumeration(
+                                Iterators.transform(iterable.iterator(), le -> {
+                                    LedgerEntry entry = new LedgerEntry((LedgerEntryImpl) le);
+                                    le.close();
+                                    return entry;
+                                })),
+                            ctx);
+                    }
+
+                    @Override
+                    public void onFailure(Throwable cause) {
+                        if (cause instanceof BKException) {
+                            BKException bke = (BKException) cause;
+                            cb.readComplete(bke.getCode(), LedgerHandle.this, null, ctx);
+                        } else {
+                            cb.readComplete(Code.UnexpectedConditionException, LedgerHandle.this, null, ctx);
+                        }
+                    }
+                }, bk.getMainWorkerPool().chooseThread(ledgerId));
+        } else {
+            cb.readComplete(Code.ClientClosedException, LedgerHandle.this, null, ctx);
+        }
+    }
+
+    CompletableFuture<Iterable<org.apache.bookkeeper.client.api.LedgerEntry>> readEntriesInternalAsync(long firstEntry,
+                                                                                                       long lastEntry) {
+        PendingReadOp op = new PendingReadOp(this, bk.getScheduler(), firstEntry, lastEntry);
+        if(!bk.isClosed()) {
+            bk.getMainWorkerPool().submitOrdered(ledgerId, op);
+        } else {
+            op.future().completeExceptionally(BKException.create(ClientClosedException));
+        }
+        return op.future();
     }
 
     /**

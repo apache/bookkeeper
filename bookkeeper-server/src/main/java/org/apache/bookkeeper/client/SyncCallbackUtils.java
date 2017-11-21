@@ -17,13 +17,11 @@
  */
 package org.apache.bookkeeper.client;
 
-import com.google.common.collect.Iterators;
 import java.util.Enumeration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.api.LastConfirmedAndEntry;
-import org.apache.bookkeeper.client.api.ReadHandle;
 import org.apache.bookkeeper.client.impl.LastConfirmedAndEntryImpl;
 
 /**
@@ -220,34 +218,6 @@ class SyncCallbackUtils {
         }
     }
 
-    static class FutureReadResult
-        extends CompletableFuture<Iterable<org.apache.bookkeeper.client.api.LedgerEntry>>
-        implements AsyncCallback.ReadCallback {
-
-        /**
-         * Implementation of callback interface for read method of {@link ReadHandle}.
-         *
-         * @param rc
-         *          return code
-         * @param lh
-         *          ledger handle
-         * @param seq
-         *          sequence of entries
-         * @param ctx
-         *          control object
-         */
-        @Override
-        @SuppressWarnings("unchecked")
-        public void readComplete(int rc, LedgerHandle lh,
-                                 Enumeration<LedgerEntry> seq, Object ctx) {
-            if (rc != BKException.Code.OK) {
-                this.completeExceptionally(BKException.create(rc).fillInStackTrace());
-            } else {
-                this.complete((Iterable) () -> Iterators.forEnumeration(seq));
-            }
-        }
-    }
-
     static class SyncAddCallback extends CompletableFuture<Long> implements AsyncCallback.AddCallback {
 
         /**
@@ -320,7 +290,7 @@ class SyncCallbackUtils {
 
         @Override
         public void readLastConfirmedAndEntryComplete(int rc, long lastConfirmed, LedgerEntry entry, Object ctx) {
-            LastConfirmedAndEntry result = new LastConfirmedAndEntryImpl(lastConfirmed, entry);
+            LastConfirmedAndEntry result = LastConfirmedAndEntryImpl.create(lastConfirmed, entry);
             finish(rc, result, this);
         }
     }
