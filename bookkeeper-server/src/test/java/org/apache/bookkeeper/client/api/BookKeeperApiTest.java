@@ -278,7 +278,7 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
 
     private static void checkEntries(LedgerEntries entries, byte[] data)
         throws InterruptedException, BKException {
-        Iterator<LedgerEntry> iterator = entries.retainIterator();
+        Iterator<LedgerEntry> iterator = entries.iterator();
         while(iterator.hasNext()) {
             LedgerEntry entry = iterator.next();
             assertArrayEquals(data, entry.getEntryBytes());

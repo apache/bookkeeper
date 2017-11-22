@@ -36,7 +36,7 @@ public interface LedgerEntries extends AutoCloseable {
 
     /**
      * In this, It does not retain the ByteBuf references for the entries in this LedgerEntries.
-     * The caller who calls #iterator() should be careful for not releasing the references.
+     * The caller who calls {@link #iterator()} should be careful for not releasing the references.
      *
      * @return the iterator of type LedgerEntry
      */
@@ -44,7 +44,7 @@ public interface LedgerEntries extends AutoCloseable {
 
     /**
      * In this, It retains the ByteBuf references for the entries in this LedgerEntries.
-     * The caller who calls #iterator() is responsible for releasing the retained references.
+     * The caller who calls {@link #retainIterator()} is responsible for releasing the retained references.
      *
      * @return the iterator of type LedgerEntry that has been retained
      */

@@ -23,9 +23,15 @@ package org.apache.bookkeeper.client.impl;
 import io.netty.util.Recycler;
 import java.util.Iterator;
 import java.util.List;
+import org.apache.bookkeeper.client.api.LedgerEntries;
 import org.apache.bookkeeper.client.api.LedgerEntry;
+import static com.google.common.base.Preconditions.checkArgument;
 
-public class LedgerEntriesImpl implements org.apache.bookkeeper.client.api.LedgerEntries {
+
+/**
+ * Ledger entries implementation. It is a simple wrap of a list of ledger entries.
+ */
+public class LedgerEntriesImpl implements LedgerEntries {
     private List<LedgerEntry> entries;
     private final Recycler.Handle<LedgerEntriesImpl> recyclerHandle;
 
@@ -47,9 +53,9 @@ public class LedgerEntriesImpl implements org.apache.bookkeeper.client.api.Ledge
 
     private void releaseByteBuf() {
         if (entries != null) {
-            for (LedgerEntry entry : entries) {
-                entry.getEntryBuffer().release(1);
-            }
+            entries.forEach(LedgerEntry::close);
+            entries.clear();
+            entries = null;
         }
     }
 
@@ -60,6 +66,7 @@ public class LedgerEntriesImpl implements org.apache.bookkeeper.client.api.Ledge
      * @return the LedgerEntriesImpl
      */
     public static LedgerEntriesImpl create(List<LedgerEntry> entries) {
+        checkArgument(!entries.isEmpty(), "entries for create should not be empty.");
         LedgerEntriesImpl ledgerEntries = RECYCLER.get();
         ledgerEntries.entries = entries;
         return ledgerEntries;
@@ -73,9 +80,10 @@ public class LedgerEntriesImpl implements org.apache.bookkeeper.client.api.Ledge
         long firstId = entries.get(0).getEntryId();
         long lastId = entries.get(entries.size() - 1).getEntryId();
         if (entryId < firstId || entryId > lastId) {
-            return null;
+            throw new IndexOutOfBoundsException("required index: " + entryId +
+                " is out of bounds: [ " + firstId + ", " + lastId + " ].");
         }
-        return entries.get((int)(entryId - firstId));
+        return entries.get((int) (entryId - firstId));
     }
 
     /**
