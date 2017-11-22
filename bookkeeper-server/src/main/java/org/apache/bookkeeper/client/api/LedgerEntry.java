@@ -23,7 +23,6 @@ package org.apache.bookkeeper.client.api;
 import io.netty.buffer.ByteBuf;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
-import org.apache.bookkeeper.conf.ClientConfiguration;
 
 /**
  * An entry.
@@ -32,7 +31,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
  */
 @Public
 @Unstable
-public interface LedgerEntry {
+public interface LedgerEntry extends AutoCloseable {
 
     /**
      * The id of the ledger which contains the entry.
@@ -56,25 +55,31 @@ public interface LedgerEntry {
     long getLength();
 
     /**
-     * Returns the content of the entry. This method can be called only once. While using v2 wire protocol this method
-     * will automatically release the internal ByteBuf.
+     * Returns the content of the entry.
      *
      * @return the content of the entry
-     * @throws IllegalStateException if this method is called twice
      */
     byte[] getEntry();
 
     /**
      * Return the internal buffer that contains the entry payload.
      *
-     * <p>Note: Using v2 wire protocol it is responsibility of the caller
-     * to ensure to release the buffer after usage.
-     *
      * @return a ByteBuf which contains the data
-     *
-     * @see ClientConfiguration#setNettyUsePooledBuffers(boolean)
-     * @throws IllegalStateException if the entry has been retrieved by {@link #getEntry()}
      */
     ByteBuf getEntryBuffer();
+
+    /**
+     * Returns a duplicate of this entry.
+     *
+     * <p>This call will retain a slice of the underneath byte buffer.
+     *
+     * @return a duplicated ledger entry.
+     */
+    LedgerEntry duplicate();
+
+    /**
+     * {@inheritDoc}
+     */
+    void close();
 
 }

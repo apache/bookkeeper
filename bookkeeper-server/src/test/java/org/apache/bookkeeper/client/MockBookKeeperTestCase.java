@@ -53,7 +53,6 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.junit.After;
 import org.junit.Before;
-import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
@@ -336,13 +335,13 @@ public abstract class MockBookKeeperTestCase {
                 fencedLedgers.add(ledgerId);
                 MockEntry mockEntry = getMockLedgerEntry(ledgerId, bookieSocketAddress, entryId);
                 if (mockEntry != null) {
-                    LOG.info("readEntryAndFenceLedger - found mock entry {}@{} at {}", ledgerId, entryId, bookieSocketAddress);
+                    LOG.info("readEntryAndFenceLedger - found mock entry {}@{} at {}", entryId, ledgerId, bookieSocketAddress);
                     ByteBuf entry = macManager.computeDigestAndPackageForSending(entryId, mockEntry.lastAddConfirmed,
                         mockEntry.payload.length, Unpooled.wrappedBuffer(mockEntry.payload));
                     callback.readEntryComplete(BKException.Code.OK, ledgerId, entryId, Unpooled.copiedBuffer(entry), args[5]);
                     entry.release();
                 } else {
-                    LOG.info("readEntryAndFenceLedger - no such mock entry {}@{} at {}", ledgerId, entryId, bookieSocketAddress);
+                    LOG.info("readEntryAndFenceLedger - no such mock entry {}@{} at {}", entryId, ledgerId, bookieSocketAddress);
                     callback.readEntryComplete(BKException.Code.NoSuchEntryException, ledgerId, entryId, null, args[5]);
                 }
             });
@@ -361,13 +360,13 @@ public abstract class MockBookKeeperTestCase {
                 DigestManager macManager = new CRC32DigestManager(ledgerId);
                 MockEntry mockEntry = getMockLedgerEntry(ledgerId, bookieSocketAddress, entryId);
                 if (mockEntry != null) {
-                    LOG.info("readEntry - found mock entry {}@{} at {}", ledgerId, entryId, bookieSocketAddress);
+                    LOG.info("readEntry - found mock entry {}@{} at {}", entryId, ledgerId, bookieSocketAddress);
                     ByteBuf entry = macManager.computeDigestAndPackageForSending(entryId,
                         mockEntry.lastAddConfirmed, mockEntry.payload.length, Unpooled.wrappedBuffer(mockEntry.payload));
                     callback.readEntryComplete(BKException.Code.OK, ledgerId, entryId, Unpooled.copiedBuffer(entry), args[4]);
                     entry.release();
                 } else {
-                    LOG.info("readEntry - no such mock entry {}@{} at {}", ledgerId, entryId, bookieSocketAddress);
+                    LOG.info("readEntry - no such mock entry {}@{} at {}", entryId, ledgerId, bookieSocketAddress);
                     callback.readEntryComplete(BKException.Code.NoSuchEntryException, ledgerId, entryId, null, args[4]);
                 }
             });

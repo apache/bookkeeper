@@ -20,6 +20,10 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Enumeration;
@@ -33,8 +37,6 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.junit.Assert.*;
 
 /**
  * This unit test tests ledger fencing;
@@ -292,9 +294,7 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
         secondHostOnly.set(1, true);
         PendingReadOp.LedgerEntryRequest req0 = null, req2 = null, req4 = null;
         try {
-            LatchCallback latch0 = new LatchCallback();
-            PendingReadOp op = new PendingReadOp(l, bkspec.scheduler,
-                                                 0, 5, latch0, null);
+            PendingReadOp op = new PendingReadOp(l, bkspec.scheduler, 0, 5);
 
             // if we've already heard from all hosts,
             // we only send the initial read
