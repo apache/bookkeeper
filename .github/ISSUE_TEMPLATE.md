@@ -31,8 +31,8 @@ Have you checked our documentation at http://bookkeeper.apache.org/ , If you cou
 
 **BP**
 
-This is the master ticket for tracking BP-<bp-number> :
+This is the master ticket for tracking BP-&lt;bp-number&gt; :
 
 [a short description for this BP]
 
-Proposal PR - #<pr-number>
+Proposal PR - #&lt;pr-number&gt;
