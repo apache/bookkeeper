@@ -62,7 +62,7 @@ Currently all the HTTP endpoints could be divided into these 4 components:
 
 ## Ledger
 
-### Endpoint: /api/v1/ledger/delete/?ledger_id=<ledger_id>
+### Endpoint: /api/v1/ledger/delete/?ledger_id=&lt;ledger_id&gt;
 1. Method: DELETE
     * Description: Delete a ledger.
     * Parameters: 
@@ -78,7 +78,7 @@ Currently all the HTTP endpoints could be divided into these 4 components:
         |403 | Permission denied |
         |404 | Not found |
 
-### Endpoint: /api/v1/ledger/list/?print_metadata=<metadata>
+### Endpoint: /api/v1/ledger/list/?print_metadata=&lt;metadata&gt;
 1. Method: GET
     * Description: List all the ledgers.
     * Parameters: 
@@ -103,7 +103,7 @@ Currently all the HTTP endpoints could be divided into these 4 components:
         }
         ```
 
-### Endpoint: /api/v1/ledger/metadata/?ledger_id=<ledger_id>
+### Endpoint: /api/v1/ledger/metadata/?ledger_id=&lt;ledger_id&gt;
 1. Method: GET
     * Description: Get the metadata of a ledger.
     * Parameters: 
@@ -126,7 +126,7 @@ Currently all the HTTP endpoints could be divided into these 4 components:
         }
         ```    
 
-### Endpoint: /api/v1/ledger/read/?ledger_id=<ledger_id>&start_entry_id=<start_entry_id>&end_entry_id=<end_entry_id>
+### Endpoint: /api/v1/ledger/read/?ledger_id=&lt;ledger_id&gt;&start_entry_id=&lt;start_entry_id&gt;&end_entry_id=&lt;end_entry_id&gt;
 1. Method: GET
     * Description: Read a range of entries from ledger.
     * Parameters: 
@@ -155,7 +155,7 @@ Currently all the HTTP endpoints could be divided into these 4 components:
 
 ## Bookie
 
-### Endpoint: /api/v1/bookie/list_bookies/?type=<type>&print_hostnames=<hostnames>
+### Endpoint: /api/v1/bookie/list_bookies/?type=&lt;type&gt;&print_hostnames=&lt;hostnames&gt;
 1. Method: GET
     * Description:  Get all the available bookies.
     * Parameters: 
@@ -222,7 +222,7 @@ Currently all the HTTP endpoints could be divided into these 4 components:
         }
         ```   
 
-### Endpoint: /api/v1/bookie/list_disk_file/?file_type=<type>
+### Endpoint: /api/v1/bookie/list_disk_file/?file_type=&lt;type&gt;
 1. Method: GET
     * Description:  Get all the files on disk of current bookie.
     * Parameters: 
@@ -286,7 +286,7 @@ Currently all the HTTP endpoints could be divided into these 4 components:
         |403 | Permission denied |
         |404 | Not found |
 
-### Endpoint: /api/v1/autorecovery/list_under_replicated_ledger/?missingreplica=<bookie_address>&excludingmissingreplica=<bookie_address>
+### Endpoint: /api/v1/autorecovery/list_under_replicated_ledger/?missingreplica=&lt;bookie_address&gt;&excludingmissingreplica=&lt;bookie_address&gt;
 1. Method: GET
     * Description:  Get all under replicated ledgers.
     * Parameters: 
