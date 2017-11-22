@@ -39,6 +39,10 @@ defaults:
     layout: docs
     toc: true
 - scope:
+    path: bps
+  values:
+    layout: community
+- scope:
     path: community
   values:
     layout: community
