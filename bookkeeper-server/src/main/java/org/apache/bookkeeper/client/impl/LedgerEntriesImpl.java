@@ -26,6 +26,7 @@ import java.util.List;
 import org.apache.bookkeeper.client.api.LedgerEntries;
 import org.apache.bookkeeper.client.api.LedgerEntry;
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 
 /**
@@ -77,6 +78,7 @@ public class LedgerEntriesImpl implements LedgerEntries {
      */
     @Override
     public LedgerEntry getEntry(long entryId) {
+        checkNotNull(entries, "entries has been recycled");
         long firstId = entries.get(0).getEntryId();
         long lastId = entries.get(entries.size() - 1).getEntryId();
         if (entryId < firstId || entryId > lastId) {
@@ -91,6 +93,7 @@ public class LedgerEntriesImpl implements LedgerEntries {
      */
     @Override
     public Iterator<LedgerEntry> iterator() {
+        checkNotNull(entries, "entries has been recycled");
         return entries.iterator();
     }
     
@@ -99,6 +102,7 @@ public class LedgerEntriesImpl implements LedgerEntries {
      */
     @Override
     public Iterator<LedgerEntry> retainIterator() {
+        checkNotNull(entries, "entries has been recycled");
         // Retains the references for all the entries, caller is responsible for releasing.
         entries.forEach(ledgerEntry -> ledgerEntry.getEntryBuffer().retain());
 
