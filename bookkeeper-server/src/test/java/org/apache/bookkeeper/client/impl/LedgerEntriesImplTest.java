@@ -124,7 +124,11 @@ public class LedgerEntriesImplTest {
     @Test
     public void testRetainIterator() {
         Iterator<LedgerEntry> entryIterator = ledgerEntriesImpl.retainIterator();
-        entryIterator.forEachRemaining(ledgerEntry -> assertEquals(2, ledgerEntry.getEntryBuffer().refCnt()));
-        entryIterator.forEachRemaining(ledgerEntry -> ledgerEntry.getEntryBuffer().release());
+
+        entryIterator.forEachRemaining(ledgerEntry -> {
+            assertEquals(2, ledgerEntry.getEntryBuffer().refCnt());
+            ledgerEntry.getEntryBuffer().release();
+            assertEquals(1, ledgerEntry.getEntryBuffer().refCnt());
+        });
     }
 }

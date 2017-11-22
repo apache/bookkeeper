@@ -35,10 +35,15 @@ public interface LedgerEntries extends AutoCloseable {
     LedgerEntry getEntry(long entryId);
 
     /**
-     * In this, It does not retain the ByteBuf references for the entries in this LedgerEntries.
+     * In this method, It does not increment the reference counts of ByteBuf for the entries in this LedgerEntries.
      * The caller who calls {@link #iterator()} should be careful for not releasing the references.
      *
-     * @return the iterator of type LedgerEntry
+     * when iterator is called, you are handing out the entries, you may not know when the caller will
+     * complete iterating the entries. In this case, please use {@link #retainIterator()}, it will increment
+     * the refCnt, and the application who is holding iterator should be responsible for releasing one refCnt
+     * that {@link #retainIterator()} retains for entries.
+     *
+     *  @return the iterator of type LedgerEntry
      */
     Iterator<LedgerEntry> iterator();
 
@@ -48,5 +53,6 @@ public interface LedgerEntries extends AutoCloseable {
      *
      * @return the iterator of type LedgerEntry that has been retained
      */
+
     Iterator<LedgerEntry> retainIterator();
 }
