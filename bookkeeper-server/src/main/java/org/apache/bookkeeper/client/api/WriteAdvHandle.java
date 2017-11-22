@@ -54,7 +54,7 @@ public interface WriteAdvHandle extends ReadHandle {
     /**
      * Add entry asynchronously to an open ledger.
      *
-     * @param entryId entryId to  be added.
+     * @param entryId entryId to be added.
      * @param data array of bytes to be written
      * @return an handle to the result, in case of success it will return the same value of param {@code entryId}.
      */

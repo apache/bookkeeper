@@ -80,7 +80,7 @@ public interface LedgerEntry extends AutoCloseable {
      * Return the internal buffer that contains the entry payload.
      *
      * <p>This call doesn't retain any reference on the underneath bytebuf. If you want to use the bytebuf
-     * after the entry is released (via {@link #close()}, please retain the references of the bytebuf.
+     * after the entry is released (via {@link #close()}, the caller must retain the references of the bytebuf.
      *
      * @return a ByteBuf which contains the data
      */
