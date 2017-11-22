@@ -655,10 +655,12 @@ force push backed out local git branch to github again.</p>
   <li>
     <p>Copy the BookKeeper source and binary distribution, and their GPG signatures:</p>
 
-    <div class="highlighter-rouge"><pre class="highlight"><code> cp target/bookkeeper-${VERSION}-src.tar.gz bookkeeper/${RC_DIR}/bookkeeper-${VERSION}-src.tar.gz
- cp target/bookkeeper-${VERSION}-src.tar.gz.asc bookkeeper/${RC_DIR}/bookkeeper-${VERSION}-src.tar.gz.asc
- cp bookkeeper-server/target/bookkeeper-server-${VERSION}-bin.tar.gz bookkeeper/${RC_DIR}/bookkeeper-server-${VERSION}-bin.tar.gz
- cp bookkeeper-server/target/bookkeeper-server-${VERSION}-bin.tar.gz.asc bookkeeper/${RC_DIR}/bookkeeper-server-${VERSION}-bin.tar.gz.asc
+    <div class="highlighter-rouge"><pre class="highlight"><code> cp bookkeeper-dist/target/bookkeeper-${VERSION}-src.tar.gz bookkeeper/${RC_DIR}/bookkeeper-${VERSION}-src.tar.gz
+ cp bookkeeper-dist/target/bookkeeper-${VERSION}-src.tar.gz.asc bookkeeper/${RC_DIR}/bookkeeper-${VERSION}-src.tar.gz.asc
+ cp bookkeeper-dist/server/target/bookkeeper-server-${VERSION}-bin.tar.gz bookkeeper/${RC_DIR}/bookkeeper-server-${VERSION}-bin.tar.gz
+ cp bookkeeper-dist/server/target/bookkeeper-server-${VERSION}-bin.tar.gz.asc bookkeeper/${RC_DIR}/bookkeeper-server-${VERSION}-bin.tar.gz.asc
+ cp bookkeeper-dist/all/target/bookkeeper-all-${VERSION}-bin.tar.gz bookkeeper/${RC_DIR}/bookkeeper-all-${VERSION}-bin.tar.gz
+ cp bookkeeper-dist/all/target/bookkeeper-all-${VERSION}-bin.tar.gz.asc bookkeeper/${RC_DIR}/bookkeeper-all-${VERSION}-bin.tar.gz.asc
 </code></pre>
     </div>
   </li>
@@ -670,6 +672,8 @@ force push backed out local git branch to github again.</p>
  shasum bookkeeper-${VERSION}-src.tar.gz &gt; bookkeeper-${VERSION}-src.tar.gz.sha1
  md5sum bookkeeper-server-${VERSION}-bin.tar.gz &gt; bookkeeper-server-${VERSION}-bin.tar.gz.md5
  shasum bookkeeper-server-${VERSION}-bin.tar.gz &gt; bookkeeper-server-${VERSION}-bin.tar.gz.sha1
+ md5sum bookkeeper-all-${VERSION}-bin.tar.gz &gt; bookkeeper-all-${VERSION}-bin.tar.gz.md5
+ shasum bookkeeper-all-${VERSION}-bin.tar.gz &gt; bookkeeper-all-${VERSION}-bin.tar.gz.sha1
 </code></pre>
     </div>
   </li>
