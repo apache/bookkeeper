@@ -20,26 +20,24 @@
  */
 package org.apache.bookkeeper.client;
 
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.ListenableFuture;
 import io.netty.buffer.ByteBuf;
-
 import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.NoSuchElementException;
-import java.util.Queue;
+import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import com.google.common.util.concurrent.ListenableFuture;
-
-import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
+import org.apache.bookkeeper.client.api.LedgerEntry;
+import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
+import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallbackCtx;
@@ -55,16 +53,15 @@ import org.slf4j.LoggerFactory;
  * application as soon as it arrives rather than waiting for the whole thing.
  *
  */
-class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
+class PendingReadOp implements ReadEntryCallback, SafeRunnable {
     private static final Logger LOG = LoggerFactory.getLogger(PendingReadOp.class);
 
-    final private ScheduledExecutorService scheduler;
+    private final ScheduledExecutorService scheduler;
     private ScheduledFuture<?> speculativeTask = null;
-    Queue<LedgerEntryRequest> seq;
+    protected final List<LedgerEntryRequest> seq;
+    private final CompletableFuture<Iterable<LedgerEntry>> future;
     Set<BookieSocketAddress> heardFromHosts;
     BitSet heardFromHostsBitSet;
-    ReadCallback cb;
-    Object ctx;
     LedgerHandle lh;
     long numPendingEntries;
     long startEntryId;
@@ -77,7 +74,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
     boolean parallelRead = false;
     final AtomicBoolean complete = new AtomicBoolean(false);
 
-    abstract class LedgerEntryRequest extends LedgerEntry implements SpeculativeRequestExecutor {
+    abstract class LedgerEntryRequest implements SpeculativeRequestExecutor, AutoCloseable {
 
         final AtomicBoolean complete = new AtomicBoolean(false);
 
@@ -87,10 +84,10 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
 
         final ArrayList<BookieSocketAddress> ensemble;
         final DistributionSchedule.WriteSet writeSet;
+        final LedgerEntryImpl entryImpl;
 
         LedgerEntryRequest(ArrayList<BookieSocketAddress> ensemble, long lId, long eId) {
-            super(lId, eId);
-
+            this.entryImpl = LedgerEntryImpl.create(lId, eId);
             this.ensemble = ensemble;
 
             if (lh.bk.isReorderReadSequence()) {
@@ -98,10 +95,14 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
                     .reorderReadSequence(
                             ensemble,
                             lh.bookieFailureHistory.asMap(),
-                            lh.distributionSchedule.getWriteSet(entryId));
+                            lh.distributionSchedule.getWriteSet(eId));
             } else {
-                writeSet = lh.distributionSchedule.getWriteSet(entryId);
+                writeSet = lh.distributionSchedule.getWriteSet(eId);
             }
+        }
+
+        public void close() {
+            entryImpl.close();
         }
 
         /**
@@ -124,7 +125,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         boolean complete(int bookieIndex, BookieSocketAddress host, final ByteBuf buffer) {
             ByteBuf content;
             try {
-                content = lh.macManager.verifyDigestAndReturnData(entryId, buffer);
+                content = lh.macManager.verifyDigestAndReturnData(entryImpl.getEntryId(), buffer);
             } catch (BKDigestMatchException e) {
                 logErrorAndReattemptRead(bookieIndex, host, "Mac mismatch", BKException.Code.DigestMatchException);
                 buffer.release();
@@ -137,8 +138,8 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
                  * The length is a long and it is the last field of the metadata of an entry.
                  * Consequently, we have to subtract 8 from METADATA_LENGTH to get the length.
                  */
-                length = buffer.getLong(DigestManager.METADATA_LENGTH - 8);
-                data = content;
+                entryImpl.setLength(buffer.getLong(DigestManager.METADATA_LENGTH - 8));
+                entryImpl.setEntryBuf(content);
                 writeSet.recycle();
                 return true;
             } else {
@@ -195,12 +196,12 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
                 ++numMissedEntryReads;
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("No such entry found on bookie.  L{} E{} bookie: {}",
-                        new Object[] { lh.ledgerId, entryId, host });
+                        new Object[] { lh.ledgerId, entryImpl.getEntryId(), host });
                 }
             } else {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(errMsg + " while reading L{} E{} from bookie: {}",
-                        new Object[]{lh.ledgerId, entryId, host});
+                        new Object[]{lh.ledgerId, entryImpl.getEntryId(), host});
                 }
             }
         }
@@ -235,7 +236,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
 
         @Override
         public String toString() {
-            return String.format("L%d-E%d", ledgerId, entryId);
+            return String.format("L%d-E%d", entryImpl.getLedgerId(), entryImpl.getEntryId());
         }
 
         /**
@@ -423,16 +424,12 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
     PendingReadOp(LedgerHandle lh,
                   ScheduledExecutorService scheduler,
                   long startEntryId,
-                  long endEntryId,
-                  ReadCallback cb,
-                  Object ctx) {
+                  long endEntryId) {
         this(
             lh,
             scheduler,
             startEntryId,
             endEntryId,
-            cb,
-            ctx,
             false);
     }
 
@@ -440,12 +437,9 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
                   ScheduledExecutorService scheduler,
                   long startEntryId,
                   long endEntryId,
-                  ReadCallback cb,
-                  Object ctx,
                   boolean isRecoveryRead) {
-        seq = new ArrayBlockingQueue<LedgerEntryRequest>((int) ((endEntryId + 1) - startEntryId));
-        this.cb = cb;
-        this.ctx = ctx;
+        this.seq = new ArrayList<>((int) ((endEntryId + 1) - startEntryId));
+        this.future = new CompletableFuture<>();
         this.lh = lh;
         this.startEntryId = startEntryId;
         this.endEntryId = endEntryId;
@@ -458,6 +452,10 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         heardFromHostsBitSet = new BitSet(getLedgerMetadata().getEnsembleSize());
 
         readOpLogger = lh.bk.getReadOpLogger();
+    }
+
+    CompletableFuture<Iterable<LedgerEntry>> future() {
+        return future;
     }
 
     protected LedgerMetadata getLedgerMetadata() {
@@ -476,7 +474,11 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
         return this;
     }
 
-    public void initiate() {
+    public void submit() {
+        lh.bk.getMainWorkerPool().submitOrdered(lh.ledgerId, this);
+    }
+
+    void initiate() {
         long nextEnsembleChange = startEntryId, i = startEntryId;
         this.requestTimeNanos = MathUtils.nowInNano();
         ArrayList<BookieSocketAddress> ensemble = null;
@@ -501,6 +503,11 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
                 lh.bk.getReadSpeculativeRequestPolicy().get().initiateSpeculativeRequest(scheduler, entry);
             }
         }
+    }
+
+    @Override
+    public void safeRun() {
+        initiate();
     }
 
     private static class ReadContext implements ReadEntryCallbackCtx {
@@ -531,7 +538,7 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             lh.throttler.acquire();
         }
 
-        lh.bk.getBookieClient().readEntry(to, lh.ledgerId, entry.entryId,
+        lh.bk.getBookieClient().readEntry(to, lh.ledgerId, entry.entryImpl.getEntryId(),
                                      this, new ReadContext(bookieIndex, to, entry));
     }
 
@@ -574,37 +581,27 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             return;
         }
 
+        cancelSpeculativeTask(true);
+
         long latencyNanos = MathUtils.elapsedNanos(requestTimeNanos);
         if (code != BKException.Code.OK) {
             long firstUnread = LedgerHandle.INVALID_ENTRY_ID;
             for (LedgerEntryRequest req : seq) {
                 if (!req.isComplete()) {
-                    firstUnread = req.getEntryId();
+                    firstUnread = req.entryImpl.getEntryId();
                     break;
                 }
             }
             LOG.error("Read of ledger entry failed: L{} E{}-E{}, Heard from {} : bitset = {}. First unread entry is {}",
                     new Object[] { lh.getId(), startEntryId, endEntryId, heardFromHosts, heardFromHostsBitSet, firstUnread });
             readOpLogger.registerFailedEvent(latencyNanos, TimeUnit.NANOSECONDS);
+            // release the entries
+            seq.forEach(LedgerEntryRequest::close);
+            future.completeExceptionally(BKException.create(code));
         } else {
             readOpLogger.registerSuccessfulEvent(latencyNanos, TimeUnit.NANOSECONDS);
+            future.complete(Lists.transform(seq, input -> input.entryImpl));
         }
-        cancelSpeculativeTask(true);
-        cb.readComplete(code, lh, PendingReadOp.this, PendingReadOp.this.ctx);
-        cb = null;
     }
 
-    @Override
-    public boolean hasMoreElements() {
-        return !seq.isEmpty();
-    }
-
-    @Override
-    public LedgerEntry nextElement() throws NoSuchElementException {
-        return seq.remove();
-    }
-
-    public int size() {
-        return seq.size();
-    }
 }
