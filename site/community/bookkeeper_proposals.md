@@ -41,18 +41,18 @@ Anyone can initiate a BP but you shouldn't do it unless you have an intention of
 Here is the process for making a BP:
 
 1. Create an issue `BP-<number>: [capation of bookkeeper proposal]`. E.g. `BP-1: 64 bits ledger id support`.
-  - Take the next available BP number from this page.
-  - Write a brief description about what BP is for in this issue. This issue will be the master issue for tracking the status of this BP and its implementations.
-    All the implementations of this BP should be listed and linked to this master issues.
+    - Take the next available BP number from this page.
+    - Write a brief description about what BP is for in this issue. This issue will be the master issue for tracking the status of this BP and its implementations.
+      All the implementations of this BP should be listed and linked to this master issues.
 1. Write the proposal for this BP.
-  - Make a copy of the [BP-Template](https://github.com/apache/bookkeeper/tree/master/site/bps/BP-template.md). Name the BP file as `BP-<number>-[caption-of-proposal].md`.
+    - Make a copy of the [BP-Template](https://github.com/apache/bookkeeper/tree/master/site/bps/BP-template.md). Name the BP file as `BP-<number>-[caption-of-proposal].md`.
     ```shell
     $ cp site/bps/BP-template.md site/bps/BP-xyz-capation-of-proposal.md
     ```
-  - Fill the sections listed in the BP template.
-    - issue: replace `<issue-number>` with the issue number.
-    - state: "Under Discussion"
-    - release: leave the release to `N/A`. you can only mark a release after a BP is implemented.
+    - Fill the sections listed in the BP template.
+        - issue: replace `<issue-number>` with the issue number.
+        - state: "Under Discussion"
+        - release: leave the release to `N/A`. you can only mark a release after a BP is implemented.
 1. Send a PR for this BP. Following the instructions in the pull request template.
     - add `BP` label to this BP
     - don't associate this PR with any release or milestone
@@ -62,8 +62,8 @@ Here is the process for making a BP:
 1. Committers merge the PR after a BP is accepted. The development for this BP moves forward with implementations. The BP should be updated if there is anything changed during
    implementing it.
 1. After all the implementations for a given BP are completed, a new PR should be sent for changing the state of a BP:
-   - state: "Adopted"
-   - release: set to the release that includes this BP.
+    - state: "Adopted"
+    - release: set to the release that includes this BP.
 1. The final PR for changing BP state will be used as the criteria for marking a BP as completed.
 
 ## All Proposals
