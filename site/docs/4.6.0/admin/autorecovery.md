@@ -11,14 +11,14 @@ When a {% pop bookie %} crashes, all {% pop ledgers %} on that bookie become und
 
 You can manually recover failed bookies using the [`bookkeeper`](../../reference/cli) command-line tool. You need to specify:
 
-* that the `org.apache.bookkeeper.tools.BookKeeperTools` class needs to be run
+* the `shell recover` option 
 * an IP and port for your BookKeeper cluster's ZooKeeper ensemble
 * the IP and port for the failed bookie
 
 Here's an example:
 
 ```bash
-$ bookkeeper-server/bin/bookkeeper org.apache.bookkeeper.tools.BookKeeperTools \
+$ bookkeeper-server/bin/bookkeeper shell recover \
   zk1.example.com:2181 \ # IP and port for ZooKeeper
   192.168.1.10:3181      # IP and port for the failed bookie
 ```
@@ -26,7 +26,7 @@ $ bookkeeper-server/bin/bookkeeper org.apache.bookkeeper.tools.BookKeeperTools \
 If you wish, you can also specify which bookie you'd like to rereplicate to. Here's an example:
 
 ```bash
-$ bookkeeper-server/bin/bookkeeper org.apache.bookkeeper.tools.BookKeeperTools \
+$ bookkeeper-server/bin/bookkeeper shell recover \
   zk1.example.com:2181 \ # IP and port for ZooKeeper
   192.168.1.10:3181 \    # IP and port for the failed bookie
   192.168.1.11:3181      # IP and port for the bookie to rereplicate to

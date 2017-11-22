@@ -1,5 +1,5 @@
 ---
-title: Apache BookKeeper&trades; 4.5.1 Documentation 
+title: Apache BookKeeper&trade; 4.5.1
 ---
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
