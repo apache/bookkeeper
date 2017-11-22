@@ -44,7 +44,7 @@
         <a class="navbar-link">Documentation</a>
         <div class="navbar-dropdown is-boxed">
           <a class="navbar-item" href="/docs/latest/overview/overview">
-            Version 4.6.0-SNAPSHOT
+            Version 4.7.0-SNAPSHOT
             <span class="tag is-warning">Development</span>
           </a>
           <a class="navbar-item" href="/docs/latest/api/javadoc">
@@ -54,6 +54,11 @@
             Javadoc
           </a>
           <hr class="dropdown-divider">
+          
+          <a class="navbar-item" href="/docs/4.6.0/overview/overview">
+            Release 4.6.0
+            
+          </a>
           
           <a class="navbar-item" href="/docs/4.5.1/overview/overview">
             Release 4.5.1
@@ -654,7 +659,7 @@ org.apache.bookkeeper.bookie.BookieException$InvalidCookieException
   <li>
     <p>Run the following command to re-replicate the data:</p>
 
-    <div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bin/bookkeeper org.apache.bookkeeper.tools.BookKeeperTools <span class="se">\</span>
+    <div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell recover <span class="se">\</span>
   &lt;zkserver&gt; <span class="se">\</span>
   &lt;oldbookie&gt; <span class="se">\</span>
   &lt;newbookie&gt;
@@ -663,7 +668,7 @@ org.apache.bookkeeper.bookie.BookieException$InvalidCookieException
 
     <p>The ZooKeeper server, old bookie, and new bookie, are all identified by their external IP and <code class="highlighter-rouge">bookiePort</code> (3181 by default). Here’s an example:</p>
 
-    <div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bin/bookkeeper org.apache.bookkeeper.tools.BookKeeperTools <span class="se">\</span>
+    <div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="gp">$ </span>bookkeeper-server/bin/bookkeeper shell recover <span class="se">\</span>
   zk1.example.com <span class="se">\</span>
   192.168.1.10:3181 <span class="se">\</span>
   192.168.1.10:3181
