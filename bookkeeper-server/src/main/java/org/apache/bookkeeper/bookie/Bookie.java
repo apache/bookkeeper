@@ -35,7 +35,6 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_BYTES;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.SettableFuture;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.buffer.ByteBuf;
@@ -51,7 +50,6 @@ import java.nio.file.FileStore;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -283,10 +281,7 @@ public class Bookie extends BookieCriticalThread {
 
         checkEnvironmentWithStorageExpansion(conf, rm, journalDirectories, allLedgerDirs);
 
-        List<File> ledgerDirs = ledgerDirsManager.getAllLedgerDirs();
-        checkIfDirsOnSameDiskPartition(ledgerDirs);
-        List<File> indexDirs = indexDirsManager.getAllLedgerDirs();
-        checkIfDirsOnSameDiskPartition(indexDirs);
+        checkIfDirsOnSameDiskPartition(allLedgerDirs);
         checkIfDirsOnSameDiskPartition(journalDirectories);
     }
 
@@ -451,7 +446,7 @@ public class Bookie extends BookieCriticalThread {
             List<File> missedCookieDirs = new ArrayList<>();
             List<Cookie> existingCookies = Lists.newArrayList();
             if (null != rmCookie) {
-                existingCookies .add(rmCookie.getValue());
+                existingCookies.add(rmCookie.getValue());
             }
 
             // 4.1 verify the cookies in journal directories
@@ -480,7 +475,7 @@ public class Bookie extends BookieCriticalThread {
                                    journalDirectories, allLedgerDirs);
                 } else if (allowExpansion) {
                     // 5.2 storage is expanding
-                    Set<File> knownDirs = knownDirs(existingCookies);
+                    Set<File> knownDirs = getKnownDirs(existingCookies);
                     verifyDirsForStorageExpansion(missedCookieDirs, knownDirs);
                     stampNewCookie(conf, masterCookie,
                                    rm, rmCookie.getVersion(),
@@ -516,7 +511,7 @@ public class Bookie extends BookieCriticalThread {
         }
     }
 
-    private static Set<File> knownDirs(List<Cookie> cookies) {
+    private static Set<File> getKnownDirs(List<Cookie> cookies) {
         return cookies.stream()
             .flatMap((c) -> Arrays.stream(c.getLedgerDirPathsFromCookie()))
             .map((s) -> new File(s))
