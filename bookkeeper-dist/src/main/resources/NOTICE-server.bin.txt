@@ -24,12 +24,16 @@ This project includes:
   Commons IO under The Apache Software License, Version 2.0
   Commons Lang under The Apache Software License, Version 2.0
   Commons Logging under The Apache Software License, Version 2.0
-  commons Beanutils under Apache License, Version 2.0
+  Commons Beanutils under Apache License, Version 2.0
   Commons Digester under The Apache Software License, Version 2.0
-  Java Native Access under Apache License, Version 2.0
+  Guava under The Apache Software License, Version 2.0
+  Jackson under The Apache Software License, Version 2.0
+  Java Native Access under The Apache Software License, Version 2.0
+  Jetty under The Apache Software License, Version 2.0
+  Prometheus under The Apache Software License, Version 2.0
+  Protocol Buffer Java API under New BSD license
   SLF4J API Module under MIT License
   SLF4J LOG4J-12 Binding under MIT License
-  The Netty Project under Apache License, Version 2.0
+  The Netty Project under The Apache Software License, Version 2.0
+  Vertx under The Apache Software License, Version 2.0
   ZooKeeper under Apache License, Version 2.0
-  Protocol Buffer Java API under New BSD license
-  Guava under The Apache Software License, Version 2.0
