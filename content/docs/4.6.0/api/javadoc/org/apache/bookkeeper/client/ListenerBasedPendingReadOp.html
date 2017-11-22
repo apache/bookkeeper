@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10};
+var methods = {"i0":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -114,7 +114,7 @@ var activeTableTab = "activeTableTab";
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumeration.html?is-external=true" title="class or interface in java.util">Enumeration</a>&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;, org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback</dd>
+<dd><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Runnable.html?is-external=true" title="class or interface in java.lang">Runnable</a>, org.apache.bookkeeper.common.util.SafeRunnable, org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback</dd>
 </dl>
 <dl>
 <dt>Direct Known Subclasses:</dt>
@@ -158,6 +158,10 @@ extends <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html" ti
 <th class="colLast" scope="col">Field and Description</th>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>(package private) <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ListenerBasedPendingReadOp.html#ctx">ctx</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ListenerBasedPendingReadOp.html#listener">listener</a></span></code>&nbsp;</td>
 </tr>
@@ -167,7 +171,14 @@ extends <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html" ti
 <!--   -->
 </a>
 <h3>Fields inherited from class&nbsp;org.apache.bookkeeper.client.<a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html" title="class in org.apache.bookkeeper.client">PendingReadOp</a></h3>
-<code><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#cb">cb</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#complete">complete</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#ctx">ctx</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#endEntryId">endEntryId</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#heardFromHosts">heardFromHosts</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#heardFromHostsBitSet">heardFromHostsBitSet</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#isRecoveryRead">isRecoveryRead</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#lh">lh</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#maxMissedReadsAllowed">maxMissedReadsAllowed</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#numPendingEntries">numPendingEntries</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#parallelRead">parallelRead</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#readOpLogger">readOpLogger</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#requestTimeNanos">requestTimeNanos</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#seq">seq</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#startEntryId">startEntryId</a></code></li>
+<code><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#complete">complete</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#endEntryId">endEntryId</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#heardFromHosts">heardFromHosts</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#heardFromHostsBitSet">heardFromHostsBitSet</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#isRecoveryRead">isRecoveryRead</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#lh">lh</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#maxMissedReadsAllowed">maxMissedReadsAllowed</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#numPendingEntries">numPendingEntries</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#parallelRead">parallelRead</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#readOpLogger">readOpLogger</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#requestTimeNanos">requestTimeNanos</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#seq">seq</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#startEntryId">startEntryId</a></code></li>
+</ul>
+<ul class="blockList">
+<li class="blockList"><a name="fields.inherited.from.class.org.apache.bookkeeper.common.util.SafeRunnable">
+<!--   -->
+</a>
+<h3>Fields inherited from interface&nbsp;org.apache.bookkeeper.common.util.SafeRunnable</h3>
+<code>LOGGER</code></li>
 </ul>
 </li>
 </ul>
@@ -215,14 +226,6 @@ extends <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html" ti
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code>boolean</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ListenerBasedPendingReadOp.html#hasMoreElements--">hasMoreElements</a></span>()</code>&nbsp;</td>
-</tr>
-<tr id="i1" class="rowColor">
-<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ListenerBasedPendingReadOp.html#nextElement--">nextElement</a></span>()</code>&nbsp;</td>
-</tr>
-<tr id="i2" class="altColor">
 <td class="colFirst"><code>protected void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ListenerBasedPendingReadOp.html#submitCallback-int-">submitCallback</a></span>(int&nbsp;code)</code>&nbsp;</td>
 </tr>
@@ -232,7 +235,7 @@ extends <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html" ti
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.bookkeeper.client.<a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html" title="class in org.apache.bookkeeper.client">PendingReadOp</a></h3>
-<code><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#cancelSpeculativeTask-boolean-">cancelSpeculativeTask</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#getLedgerMetadata--">getLedgerMetadata</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#initiate--">initiate</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#parallelRead-boolean-">parallelRead</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#readEntryComplete-int-long-long-io.netty.buffer.ByteBuf-java.lang.Object-">readEntryComplete</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#sendReadTo-int-org.apache.bookkeeper.net.BookieSocketAddress-org.apache.bookkeeper.client.PendingReadOp.LedgerEntryRequest-">sendReadTo</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#size--">size</a></code></li>
+<code><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#cancelSpeculativeTask-boolean-">cancelSpeculativeTask</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#future--">future</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#getLedgerMetadata--">getLedgerMetadata</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#initiate--">initiate</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#parallelRead-boolean-">parallelRead</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#readEntryComplete-int-long-long-io.netty.buffer.ByteBuf-java.lang.Object-">readEntryComplete</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#safeRun--">safeRun</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#sendReadTo-int-org.apache.bookkeeper.net.BookieSocketAddress-org.apache.bookkeeper.client.PendingReadOp.LedgerEntryRequest-">sendReadTo</a>, <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#submit--">submit</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.java.lang.Object">
@@ -240,6 +243,13 @@ extends <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html" ti
 </a>
 <h3>Methods inherited from class&nbsp;java.lang.<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></h3>
 <code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#clone--" title="class or interface in java.lang">clone</a>, <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals-java.lang.Object-" title="class or interface in java.lang">equals</a>, <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#finalize--" title="class or interface in java.lang">finalize</a>, <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass--" title="class or interface in java.lang">getClass</a>, <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode--" title="class or interface in java.lang">hashCode</a>, <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify--" title="class or interface in java.lang">notify</a>, <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll--" title="class or interface in java.lang">notifyAll</a>, <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString--" title="class or interface in java.lang">toString</a>, <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait--" title="class or interface in java.lang">wait</a>, <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-" title="class or interface in java.lang">wait</a>, <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-int-" title="class or interface in java.lang">wait</a></code></li>
+</ul>
+<ul class="blockList">
+<li class="blockList"><a name="methods.inherited.from.class.org.apache.bookkeeper.common.util.SafeRunnable">
+<!--   -->
+</a>
+<h3>Methods inherited from interface&nbsp;org.apache.bookkeeper.common.util.SafeRunnable</h3>
+<code>run, safeRun, safeRun</code></li>
 </ul>
 </li>
 </ul>
@@ -258,10 +268,19 @@ extends <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html" ti
 <a name="listener">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>listener</h4>
 <pre>final&nbsp;org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener listener</pre>
+</li>
+</ul>
+<a name="ctx">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>ctx</h4>
+<pre>final&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a> ctx</pre>
 </li>
 </ul>
 </li>
@@ -312,46 +331,13 @@ extends <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html" ti
 <a name="submitCallback-int-">
 <!--   -->
 </a>
-<ul class="blockList">
+<ul class="blockListLast">
 <li class="blockList">
 <h4>submitCallback</h4>
 <pre>protected&nbsp;void&nbsp;submitCallback(int&nbsp;code)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#submitCallback-int-">submitCallback</a></code>&nbsp;in class&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html" title="class in org.apache.bookkeeper.client">PendingReadOp</a></code></dd>
-</dl>
-</li>
-</ul>
-<a name="hasMoreElements--">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>hasMoreElements</h4>
-<pre>public&nbsp;boolean&nbsp;hasMoreElements()</pre>
-<dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumeration.html?is-external=true#hasMoreElements--" title="class or interface in java.util">hasMoreElements</a></code>&nbsp;in interface&nbsp;<code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumeration.html?is-external=true" title="class or interface in java.util">Enumeration</a>&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;</code></dd>
-<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#hasMoreElements--">hasMoreElements</a></code>&nbsp;in class&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html" title="class in org.apache.bookkeeper.client">PendingReadOp</a></code></dd>
-</dl>
-</li>
-</ul>
-<a name="nextElement--">
-<!--   -->
-</a>
-<ul class="blockListLast">
-<li class="blockList">
-<h4>nextElement</h4>
-<pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&nbsp;nextElement()
-                        throws <a href="http://docs.oracle.com/javase/8/docs/api/java/util/NoSuchElementException.html?is-external=true" title="class or interface in java.util">NoSuchElementException</a></pre>
-<dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumeration.html?is-external=true#nextElement--" title="class or interface in java.util">nextElement</a></code>&nbsp;in interface&nbsp;<code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumeration.html?is-external=true" title="class or interface in java.util">Enumeration</a>&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;</code></dd>
-<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#nextElement--">nextElement</a></code>&nbsp;in class&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html" title="class in org.apache.bookkeeper.client">PendingReadOp</a></code></dd>
-<dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/NoSuchElementException.html?is-external=true" title="class or interface in java.util">NoSuchElementException</a></code></dd>
 </dl>
 </li>
 </ul>

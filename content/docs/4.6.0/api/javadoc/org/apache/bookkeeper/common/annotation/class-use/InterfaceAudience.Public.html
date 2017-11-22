@@ -89,12 +89,18 @@
 </td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><a href="#org.apache.bookkeeper.client.api">org.apache.bookkeeper.client.api</a></td>
+<td class="colLast">
+<div class="block">BookKeeper Client Public API.</div>
+</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><a href="#org.apache.bookkeeper.common.annotation">org.apache.bookkeeper.common.annotation</a></td>
 <td class="colLast">
 <div class="block">Annotations used across the whole project.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.bookkeeper.conf">org.apache.bookkeeper.conf</a></td>
 <td class="colLast">
 <div class="block">Configurations used by bookkeeper.</div>
@@ -193,6 +199,104 @@
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></span></code>
 <div class="block"><a href="../../../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client"><code>EnsemblePlacementPolicy</code></a> encapsulates the algorithm that bookkeeper client uses to select a number of bookies
  from the cluster as an ensemble for storing entries.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a name="org.apache.bookkeeper.client.api">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../../org/apache/bookkeeper/common/annotation/InterfaceAudience.Public.html" title="annotation in org.apache.bookkeeper.common.annotation">InterfaceAudience.Public</a> in <a href="../../../../../../org/apache/bookkeeper/client/api/package-summary.html">org.apache.bookkeeper.client.api</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing classes, and an explanation">
+<caption><span>Classes in <a href="../../../../../../org/apache/bookkeeper/client/api/package-summary.html">org.apache.bookkeeper.client.api</a> with annotations of type <a href="../../../../../../org/apache/bookkeeper/common/annotation/InterfaceAudience.Public.html" title="annotation in org.apache.bookkeeper.common.annotation">InterfaceAudience.Public</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Class and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/BKException.html" title="class in org.apache.bookkeeper.client.api">BKException</a></span></code>
+<div class="block">Super class for all errors which occur using BookKeeper client.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>interface&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/BookKeeper.html" title="interface in org.apache.bookkeeper.client.api">BookKeeper</a></span></code>
+<div class="block">This is the entry point for BookKeeper client side API.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>interface&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/BookKeeperBuilder.html" title="interface in org.apache.bookkeeper.client.api">BookKeeperBuilder</a></span></code>
+<div class="block">BookKeeper Client Builder to build client instances.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>interface&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/CreateAdvBuilder.html" title="interface in org.apache.bookkeeper.client.api">CreateAdvBuilder</a></span></code>
+<div class="block">Builder-style interface to create new ledgers.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>interface&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/CreateBuilder.html" title="interface in org.apache.bookkeeper.client.api">CreateBuilder</a></span></code>
+<div class="block">Builder-style interface to create new ledgers.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>interface&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/DeleteBuilder.html" title="interface in org.apache.bookkeeper.client.api">DeleteBuilder</a></span></code>
+<div class="block">Builder-style interface to delete exiting ledgers.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/DigestType.html" title="enum in org.apache.bookkeeper.client.api">DigestType</a></span></code>
+<div class="block">Digest type.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>interface&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/Handle.html" title="interface in org.apache.bookkeeper.client.api">Handle</a></span></code>
+<div class="block">Handle to manage an open ledger.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>interface&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a></span></code>
+<div class="block">An entry.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>interface&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/OpBuilder.html" title="interface in org.apache.bookkeeper.client.api">OpBuilder</a>&lt;T&gt;</span></code>
+<div class="block">Base interface for builders.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>interface&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/OpenBuilder.html" title="interface in org.apache.bookkeeper.client.api">OpenBuilder</a></span></code>
+<div class="block">Builder-style interface to open exiting ledgers.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>interface&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api">ReadHandle</a></span></code>
+<div class="block">Provide read access to a ledger.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>interface&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.html" title="interface in org.apache.bookkeeper.client.api">WriteAdvHandle</a></span></code>
+<div class="block">Provide write access to a ledger.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>interface&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/WriteHandle.html" title="interface in org.apache.bookkeeper.client.api">WriteHandle</a></span></code>
+<div class="block">Provide write access to a ledger.</div>
 </td>
 </tr>
 </tbody>

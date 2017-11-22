@@ -109,7 +109,7 @@ var activeTableTab = "activeTableTab";
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumeration.html?is-external=true" title="class or interface in java.util">Enumeration</a>&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;, org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback</dd>
+<dd><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Runnable.html?is-external=true" title="class or interface in java.lang">Runnable</a>, org.apache.bookkeeper.common.util.SafeRunnable, org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback</dd>
 </dl>
 <dl>
 <dt>Direct Known Subclasses:</dt>
@@ -119,7 +119,7 @@ var activeTableTab = "activeTableTab";
 <br>
 <pre>class <span class="typeNameLabel">PendingReadOp</span>
 extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>
-implements <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumeration.html?is-external=true" title="class or interface in java.util">Enumeration</a>&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;, org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback</pre>
+implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback, org.apache.bookkeeper.common.util.SafeRunnable</pre>
 <div class="block">Sequence of entries of a ledger that represents a pending read operation.
  When all the data read has come back, the application callback is called.
  This class could be improved because we could start pushing data to the
@@ -170,16 +170,8 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumerati
 <th class="colLast" scope="col">Field and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.ReadCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadCallback</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#cb">cb</a></span></code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
 <td class="colFirst"><code>(package private) <a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/atomic/AtomicBoolean.html?is-external=true" title="class or interface in java.util.concurrent.atomic">AtomicBoolean</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#complete">complete</a></span></code>&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>(package private) <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#ctx">ctx</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>(package private) long</code></td>
@@ -222,7 +214,7 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumerati
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#requestTimeNanos">requestTimeNanos</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>(package private) <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Queue.html?is-external=true" title="class or interface in java.util">Queue</a>&lt;<a href="../../../../org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.LedgerEntryRequest</a>&gt;</code></td>
+<td class="colFirst"><code>protected <a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.LedgerEntryRequest</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#seq">seq</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -230,6 +222,13 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumerati
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#startEntryId">startEntryId</a></span></code>&nbsp;</td>
 </tr>
 </table>
+<ul class="blockList">
+<li class="blockList"><a name="fields.inherited.from.class.org.apache.bookkeeper.common.util.SafeRunnable">
+<!--   -->
+</a>
+<h3>Fields inherited from interface&nbsp;org.apache.bookkeeper.common.util.SafeRunnable</h3>
+<code>LOGGER</code></li>
+</ul>
 </li>
 </ul>
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
@@ -244,20 +243,16 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumerati
 <th class="colOne" scope="col">Constructor and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#PendingReadOp-org.apache.bookkeeper.client.LedgerHandle-java.util.concurrent.ScheduledExecutorService-long-long-org.apache.bookkeeper.client.AsyncCallback.ReadCallback-java.lang.Object-">PendingReadOp</a></span>(<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#PendingReadOp-org.apache.bookkeeper.client.LedgerHandle-java.util.concurrent.ScheduledExecutorService-long-long-">PendingReadOp</a></span>(<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
              <a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledExecutorService.html?is-external=true" title="class or interface in java.util.concurrent">ScheduledExecutorService</a>&nbsp;scheduler,
              long&nbsp;startEntryId,
-             long&nbsp;endEntryId,
-             <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.ReadCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadCallback</a>&nbsp;cb,
-             <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>&nbsp;</td>
+             long&nbsp;endEntryId)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#PendingReadOp-org.apache.bookkeeper.client.LedgerHandle-java.util.concurrent.ScheduledExecutorService-long-long-org.apache.bookkeeper.client.AsyncCallback.ReadCallback-java.lang.Object-boolean-">PendingReadOp</a></span>(<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#PendingReadOp-org.apache.bookkeeper.client.LedgerHandle-java.util.concurrent.ScheduledExecutorService-long-long-boolean-">PendingReadOp</a></span>(<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
              <a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledExecutorService.html?is-external=true" title="class or interface in java.util.concurrent">ScheduledExecutorService</a>&nbsp;scheduler,
              long&nbsp;startEntryId,
              long&nbsp;endEntryId,
-             <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.ReadCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadCallback</a>&nbsp;cb,
-             <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx,
              boolean&nbsp;isRecoveryRead)</code>&nbsp;</td>
 </tr>
 </table>
@@ -280,32 +275,32 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumerati
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#cancelSpeculativeTask-boolean-">cancelSpeculativeTask</a></span>(boolean&nbsp;mayInterruptIfRunning)</code>&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
+<td class="colFirst"><code>(package private) <a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html?is-external=true" title="class or interface in java.lang">Iterable</a>&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a>&gt;&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#future--">future</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i2" class="altColor">
 <td class="colFirst"><code>protected <a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#getLedgerMetadata--">getLedgerMetadata</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i2" class="altColor">
-<td class="colFirst"><code>boolean</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#hasMoreElements--">hasMoreElements</a></span>()</code>&nbsp;</td>
-</tr>
 <tr id="i3" class="rowColor">
-<td class="colFirst"><code>void</code></td>
+<td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#initiate--">initiate</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i4" class="altColor">
-<td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#nextElement--">nextElement</a></span>()</code>&nbsp;</td>
-</tr>
-<tr id="i5" class="rowColor">
 <td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html" title="class in org.apache.bookkeeper.client">PendingReadOp</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#parallelRead-boolean-">parallelRead</a></span>(boolean&nbsp;enabled)</code>&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#readEntryComplete-int-long-long-io.netty.buffer.ByteBuf-java.lang.Object-">readEntryComplete</a></span>(int&nbsp;rc,
                  long&nbsp;ledgerId,
                  long&nbsp;entryId,
                  io.netty.buffer.ByteBuf&nbsp;buffer,
                  <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>&nbsp;</td>
+</tr>
+<tr id="i6" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#safeRun--">safeRun</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i7" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
@@ -314,8 +309,8 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumerati
           <a href="../../../../org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.LedgerEntryRequest</a>&nbsp;entry)</code>&nbsp;</td>
 </tr>
 <tr id="i8" class="altColor">
-<td class="colFirst"><code>int</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#size--">size</a></span>()</code>&nbsp;</td>
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html#submit--">submit</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i9" class="rowColor">
 <td class="colFirst"><code>protected void</code></td>
@@ -328,6 +323,13 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumerati
 </a>
 <h3>Methods inherited from class&nbsp;java.lang.<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></h3>
 <code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#clone--" title="class or interface in java.lang">clone</a>, <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals-java.lang.Object-" title="class or interface in java.lang">equals</a>, <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#finalize--" title="class or interface in java.lang">finalize</a>, <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass--" title="class or interface in java.lang">getClass</a>, <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode--" title="class or interface in java.lang">hashCode</a>, <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify--" title="class or interface in java.lang">notify</a>, <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll--" title="class or interface in java.lang">notifyAll</a>, <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString--" title="class or interface in java.lang">toString</a>, <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait--" title="class or interface in java.lang">wait</a>, <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-" title="class or interface in java.lang">wait</a>, <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-int-" title="class or interface in java.lang">wait</a></code></li>
+</ul>
+<ul class="blockList">
+<li class="blockList"><a name="methods.inherited.from.class.org.apache.bookkeeper.common.util.SafeRunnable">
+<!--   -->
+</a>
+<h3>Methods inherited from interface&nbsp;org.apache.bookkeeper.common.util.SafeRunnable</h3>
+<code>run, safeRun, safeRun</code></li>
 </ul>
 </li>
 </ul>
@@ -349,7 +351,7 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumerati
 <ul class="blockList">
 <li class="blockList">
 <h4>seq</h4>
-<pre><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Queue.html?is-external=true" title="class or interface in java.util">Queue</a>&lt;<a href="../../../../org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.LedgerEntryRequest</a>&gt; seq</pre>
+<pre>protected final&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.LedgerEntryRequest</a>&gt; seq</pre>
 </li>
 </ul>
 <a name="heardFromHosts">
@@ -368,24 +370,6 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumerati
 <li class="blockList">
 <h4>heardFromHostsBitSet</h4>
 <pre><a href="http://docs.oracle.com/javase/8/docs/api/java/util/BitSet.html?is-external=true" title="class or interface in java.util">BitSet</a> heardFromHostsBitSet</pre>
-</li>
-</ul>
-<a name="cb">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>cb</h4>
-<pre><a href="../../../../org/apache/bookkeeper/client/AsyncCallback.ReadCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadCallback</a> cb</pre>
-</li>
-</ul>
-<a name="ctx">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>ctx</h4>
-<pre><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a> ctx</pre>
 </li>
 </ul>
 <a name="lh">
@@ -486,7 +470,7 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumerati
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a name="PendingReadOp-org.apache.bookkeeper.client.LedgerHandle-java.util.concurrent.ScheduledExecutorService-long-long-org.apache.bookkeeper.client.AsyncCallback.ReadCallback-java.lang.Object-">
+<a name="PendingReadOp-org.apache.bookkeeper.client.LedgerHandle-java.util.concurrent.ScheduledExecutorService-long-long-">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -495,12 +479,10 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumerati
 <pre>PendingReadOp(<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
               <a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledExecutorService.html?is-external=true" title="class or interface in java.util.concurrent">ScheduledExecutorService</a>&nbsp;scheduler,
               long&nbsp;startEntryId,
-              long&nbsp;endEntryId,
-              <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.ReadCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadCallback</a>&nbsp;cb,
-              <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</pre>
+              long&nbsp;endEntryId)</pre>
 </li>
 </ul>
-<a name="PendingReadOp-org.apache.bookkeeper.client.LedgerHandle-java.util.concurrent.ScheduledExecutorService-long-long-org.apache.bookkeeper.client.AsyncCallback.ReadCallback-java.lang.Object-boolean-">
+<a name="PendingReadOp-org.apache.bookkeeper.client.LedgerHandle-java.util.concurrent.ScheduledExecutorService-long-long-boolean-">
 <!--   -->
 </a>
 <ul class="blockListLast">
@@ -510,8 +492,6 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumerati
               <a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/ScheduledExecutorService.html?is-external=true" title="class or interface in java.util.concurrent">ScheduledExecutorService</a>&nbsp;scheduler,
               long&nbsp;startEntryId,
               long&nbsp;endEntryId,
-              <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.ReadCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.ReadCallback</a>&nbsp;cb,
-              <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx,
               boolean&nbsp;isRecoveryRead)</pre>
 </li>
 </ul>
@@ -523,6 +503,15 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumerati
 <!--   -->
 </a>
 <h3>Method Detail</h3>
+<a name="future--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>future</h4>
+<pre><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html?is-external=true" title="class or interface in java.lang">Iterable</a>&lt;<a href="../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a>&gt;&gt;&nbsp;future()</pre>
+</li>
+</ul>
 <a name="getLedgerMetadata--">
 <!--   -->
 </a>
@@ -550,13 +539,35 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumerati
 <pre><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.html" title="class in org.apache.bookkeeper.client">PendingReadOp</a>&nbsp;parallelRead(boolean&nbsp;enabled)</pre>
 </li>
 </ul>
+<a name="submit--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>submit</h4>
+<pre>public&nbsp;void&nbsp;submit()</pre>
+</li>
+</ul>
 <a name="initiate--">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>initiate</h4>
-<pre>public&nbsp;void&nbsp;initiate()</pre>
+<pre>void&nbsp;initiate()</pre>
+</li>
+</ul>
+<a name="safeRun--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>safeRun</h4>
+<pre>public&nbsp;void&nbsp;safeRun()</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code>safeRun</code>&nbsp;in interface&nbsp;<code>org.apache.bookkeeper.common.util.SafeRunnable</code></dd>
+</dl>
 </li>
 </ul>
 <a name="sendReadTo-int-org.apache.bookkeeper.net.BookieSocketAddress-org.apache.bookkeeper.client.PendingReadOp.LedgerEntryRequest-">
@@ -595,48 +606,10 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumerati
 <a name="submitCallback-int-">
 <!--   -->
 </a>
-<ul class="blockList">
+<ul class="blockListLast">
 <li class="blockList">
 <h4>submitCallback</h4>
 <pre>protected&nbsp;void&nbsp;submitCallback(int&nbsp;code)</pre>
-</li>
-</ul>
-<a name="hasMoreElements--">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>hasMoreElements</h4>
-<pre>public&nbsp;boolean&nbsp;hasMoreElements()</pre>
-<dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumeration.html?is-external=true#hasMoreElements--" title="class or interface in java.util">hasMoreElements</a></code>&nbsp;in interface&nbsp;<code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumeration.html?is-external=true" title="class or interface in java.util">Enumeration</a>&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;</code></dd>
-</dl>
-</li>
-</ul>
-<a name="nextElement--">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>nextElement</h4>
-<pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&nbsp;nextElement()
-                        throws <a href="http://docs.oracle.com/javase/8/docs/api/java/util/NoSuchElementException.html?is-external=true" title="class or interface in java.util">NoSuchElementException</a></pre>
-<dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumeration.html?is-external=true#nextElement--" title="class or interface in java.util">nextElement</a></code>&nbsp;in interface&nbsp;<code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumeration.html?is-external=true" title="class or interface in java.util">Enumeration</a>&lt;<a href="../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;</code></dd>
-<dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/NoSuchElementException.html?is-external=true" title="class or interface in java.util">NoSuchElementException</a></code></dd>
-</dl>
-</li>
-</ul>
-<a name="size--">
-<!--   -->
-</a>
-<ul class="blockListLast">
-<li class="blockList">
-<h4>size</h4>
-<pre>public&nbsp;int&nbsp;size()</pre>
 </li>
 </ul>
 </li>

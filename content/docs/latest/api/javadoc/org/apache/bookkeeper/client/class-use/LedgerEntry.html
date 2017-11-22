@@ -88,6 +88,12 @@
 <div class="block">BookKeeper Client.</div>
 </td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><a href="#org.apache.bookkeeper.client.impl">org.apache.bookkeeper.client.impl</a></td>
+<td class="colLast">
+<div class="block">BookKeeper Client implementation package</div>
+</td>
+</tr>
 </tbody>
 </table>
 </li>
@@ -97,39 +103,6 @@
 <!--   -->
 </a>
 <h3>Uses of <a href="../../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a> in <a href="../../../../../org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></h3>
-<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing subclasses, and an explanation">
-<caption><span>Subclasses of <a href="../../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a> in <a href="../../../../../org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colLast" scope="col">Class and Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<td class="colFirst"><code>(package private) class&nbsp;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.LedgerEntryRequest</a></span></code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>(package private) class&nbsp;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/PendingReadOp.ParallelReadRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.ParallelReadRequest</a></span></code>&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>(package private) class&nbsp;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/PendingReadOp.SequenceReadRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.SequenceReadRequest</a></span></code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>(package private) class&nbsp;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ParallelReadRequest.html" title="class in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp.ParallelReadRequest</a></span></code>&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>(package private) class&nbsp;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html" title="class in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest</a></span></code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>(package private) class&nbsp;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.SequenceReadRequest.html" title="class in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp.SequenceReadRequest</a></span></code>&nbsp;</td>
-</tr>
-</tbody>
-</table>
 <table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing fields, and an explanation">
 <caption><span>Fields in <a href="../../../../../org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a> declared as <a href="../../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a></span><span class="tabEnd">&nbsp;</span></caption>
 <tr>
@@ -166,14 +139,6 @@
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a></code></td>
 <td class="colLast"><span class="typeNameLabel">BookKeeperAdmin.LedgerEntriesIterator.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeperAdmin.LedgerEntriesIterator.html#next--">next</a></span>()</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a></code></td>
-<td class="colLast"><span class="typeNameLabel">PendingReadOp.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/PendingReadOp.html#nextElement--">nextElement</a></span>()</code>&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a></code></td>
-<td class="colLast"><span class="typeNameLabel">ListenerBasedPendingReadOp.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/ListenerBasedPendingReadOp.html#nextElement--">nextElement</a></span>()</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -275,15 +240,6 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">SyncCallbackUtils.FutureReadResult.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/SyncCallbackUtils.FutureReadResult.html#readComplete-int-org.apache.bookkeeper.client.LedgerHandle-java.util.Enumeration-java.lang.Object-">readComplete</a></span>(int&nbsp;rc,
-            <a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
-            <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumeration.html?is-external=true" title="class or interface in java.util">Enumeration</a>&lt;<a href="../../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;&nbsp;seq,
-            <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</code>
-<div class="block">Implementation of callback interface for read method of <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api"><code>ReadHandle</code></a>.</div>
-</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">AsyncCallback.ReadCallback.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/AsyncCallback.ReadCallback.html#readComplete-int-org.apache.bookkeeper.client.LedgerHandle-java.util.Enumeration-java.lang.Object-">readComplete</a></span>(int&nbsp;rc,
             <a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a>&nbsp;lh,
             <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumeration.html?is-external=true" title="class or interface in java.util">Enumeration</a>&lt;<a href="../../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;&nbsp;seq,
@@ -291,7 +247,7 @@
 <div class="block">Callback declaration</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><span class="typeNameLabel">SyncCounter.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/SyncCounter.html#setSequence-java.util.Enumeration-">setSequence</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumeration.html?is-external=true" title="class or interface in java.util">Enumeration</a>&lt;<a href="../../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;&nbsp;seq)</code>&nbsp;</td>
 </tr>
@@ -305,6 +261,25 @@
 <tbody>
 <tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/SyncCallbackUtils.SyncReadCallback.html#SyncReadCallback-java.util.concurrent.CompletableFuture-">SyncReadCallback</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Enumeration.html?is-external=true" title="class or interface in java.util">Enumeration</a>&lt;<a href="../../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&gt;&gt;&nbsp;future)</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a name="org.apache.bookkeeper.client.impl">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a> in <a href="../../../../../org/apache/bookkeeper/client/impl/package-summary.html">org.apache.bookkeeper.client.impl</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../org/apache/bookkeeper/client/impl/package-summary.html">org.apache.bookkeeper.client.impl</a> with parameters of type <a href="../../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../../../../../org/apache/bookkeeper/client/impl/LastConfirmedAndEntryImpl.html" title="class in org.apache.bookkeeper.client.impl">LastConfirmedAndEntryImpl</a></code></td>
+<td class="colLast"><span class="typeNameLabel">LastConfirmedAndEntryImpl.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/LastConfirmedAndEntryImpl.html#create-long-org.apache.bookkeeper.client.LedgerEntry-">create</a></span>(long&nbsp;lac,
+      <a href="../../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>&nbsp;entry)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>

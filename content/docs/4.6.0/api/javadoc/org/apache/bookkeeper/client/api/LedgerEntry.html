@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6};
+var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -49,7 +49,7 @@ var activeTableTab = "activeTableTab";
 </div>
 <div class="subNav">
 <ul class="navList">
-<li><a href="../../../../../org/apache/bookkeeper/client/api/Handle.html" title="interface in org.apache.bookkeeper.client.api"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
+<li><a href="../../../../../org/apache/bookkeeper/client/api/LastConfirmedAndEntry.html" title="interface in org.apache.bookkeeper.client.api"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
 <li><a href="../../../../../org/apache/bookkeeper/client/api/OpBuilder.html" title="interface in org.apache.bookkeeper.client.api"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
@@ -100,12 +100,19 @@ var activeTableTab = "activeTableTab";
 <ul class="blockList">
 <li class="blockList">
 <dl>
+<dt>All Superinterfaces:</dt>
+<dd><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true" title="class or interface in java.lang">AutoCloseable</a></dd>
+</dl>
+<dl>
 <dt>All Known Implementing Classes:</dt>
-<dd><a href="../../../../../org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a>, <a href="../../../../../org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.LedgerEntryRequest</a>, <a href="../../../../../org/apache/bookkeeper/client/PendingReadOp.ParallelReadRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.ParallelReadRequest</a>, <a href="../../../../../org/apache/bookkeeper/client/PendingReadOp.SequenceReadRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.SequenceReadRequest</a>, <a href="../../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ParallelReadRequest.html" title="class in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp.ParallelReadRequest</a>, <a href="../../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html" title="class in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest</a>, <a href="../../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.SequenceReadRequest.html" title="class in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp.SequenceReadRequest</a></dd>
+<dd><a href="../../../../../org/apache/bookkeeper/client/impl/LedgerEntryImpl.html" title="class in org.apache.bookkeeper.client.impl">LedgerEntryImpl</a></dd>
 </dl>
 <hr>
 <br>
-<pre>public interface <span class="typeNameLabel">LedgerEntry</span></pre>
+<pre><a href="../../../../../org/apache/bookkeeper/common/annotation/InterfaceAudience.Public.html" title="annotation in org.apache.bookkeeper.common.annotation">@InterfaceAudience.Public</a>
+ <a href="../../../../../org/apache/bookkeeper/common/annotation/InterfaceStability.Unstable.html" title="annotation in org.apache.bookkeeper.common.annotation">@InterfaceStability.Unstable</a>
+public interface <span class="typeNameLabel">LedgerEntry</span>
+extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true" title="class or interface in java.lang">AutoCloseable</a></pre>
 <div class="block">An entry.</div>
 <dl>
 <dt><span class="simpleTagLabel">Since:</span></dt>
@@ -130,30 +137,40 @@ var activeTableTab = "activeTableTab";
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tr id="i0" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html#close--">close</a></span>()</code></td>
+</tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html#duplicate--">duplicate</a></span>()</code>
+<div class="block">Returns a duplicate of this entry.</div>
+</td>
+</tr>
+<tr id="i2" class="altColor">
 <td class="colFirst"><code>byte[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html#getEntry--">getEntry</a></span>()</code>
 <div class="block">Returns the content of the entry.</div>
 </td>
 </tr>
-<tr id="i1" class="rowColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>io.netty.buffer.ByteBuf</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html#getEntryBuffer--">getEntryBuffer</a></span>()</code>
 <div class="block">Return the internal buffer that contains the entry payload.</div>
 </td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html#getEntryId--">getEntryId</a></span>()</code>
 <div class="block">The id of the entry.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html#getLedgerId--">getLedgerId</a></span>()</code>
 <div class="block">The id of the ledger which contains the entry.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html#getLength--">getLength</a></span>()</code>
 <div class="block">The length of the entry, that is the size of the content expressed in bytes.</div>
@@ -223,34 +240,53 @@ var activeTableTab = "activeTableTab";
 <li class="blockList">
 <h4>getEntry</h4>
 <pre>byte[]&nbsp;getEntry()</pre>
-<div class="block">Returns the content of the entry. This method can be called only once. While using v2 wire protocol this method
- will automatically release the internal ByteBuf.</div>
+<div class="block">Returns the content of the entry.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the content of the entry</dd>
-<dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/IllegalStateException.html?is-external=true" title="class or interface in java.lang">IllegalStateException</a></code> - if this method is called twice</dd>
 </dl>
 </li>
 </ul>
 <a name="getEntryBuffer--">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>getEntryBuffer</h4>
 <pre>io.netty.buffer.ByteBuf&nbsp;getEntryBuffer()</pre>
-<div class="block">Return the internal buffer that contains the entry payload.
-
- <p>Note: Using v2 wire protocol it is responsibility of the caller
- to ensure to release the buffer after usage.</div>
+<div class="block">Return the internal buffer that contains the entry payload.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>a ByteBuf which contains the data</dd>
-<dt><span class="throwsLabel">Throws:</span></dt>
-<dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/IllegalStateException.html?is-external=true" title="class or interface in java.lang">IllegalStateException</a></code> - if the entry has been retrieved by <a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html#getEntry--"><code>getEntry()</code></a></dd>
-<dt><span class="seeLabel">See Also:</span></dt>
-<dd><a href="../../../../../org/apache/bookkeeper/conf/ClientConfiguration.html#setNettyUsePooledBuffers-boolean-"><code>ClientConfiguration.setNettyUsePooledBuffers(boolean)</code></a></dd>
+</dl>
+</li>
+</ul>
+<a name="duplicate--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>duplicate</h4>
+<pre><a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a>&nbsp;duplicate()</pre>
+<div class="block">Returns a duplicate of this entry.
+
+ <p>This call will retain a slice of the underneath byte buffer.</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a duplicated ledger entry.</dd>
+</dl>
+</li>
+</ul>
+<a name="close--">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>close</h4>
+<pre>void&nbsp;close()</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true#close--" title="class or interface in java.lang">close</a></code>&nbsp;in interface&nbsp;<code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true" title="class or interface in java.lang">AutoCloseable</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -282,7 +318,7 @@ var activeTableTab = "activeTableTab";
 </div>
 <div class="subNav">
 <ul class="navList">
-<li><a href="../../../../../org/apache/bookkeeper/client/api/Handle.html" title="interface in org.apache.bookkeeper.client.api"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
+<li><a href="../../../../../org/apache/bookkeeper/client/api/LastConfirmedAndEntry.html" title="interface in org.apache.bookkeeper.client.api"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
 <li><a href="../../../../../org/apache/bookkeeper/client/api/OpBuilder.html" title="interface in org.apache.bookkeeper.client.api"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
