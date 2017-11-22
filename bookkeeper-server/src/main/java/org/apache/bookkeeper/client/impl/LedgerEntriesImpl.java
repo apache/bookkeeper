@@ -101,7 +101,7 @@ public class LedgerEntriesImpl implements LedgerEntries {
      * {@inheritDoc}
      */
     @Override
-    public Iterator<LedgerEntry> retainIterator() {
+    public Iterator<LedgerEntry> retainedIterator() {
         checkNotNull(entries, "entries has been recycled");
         // Retains the references for all the entries, caller is responsible for releasing.
         entries.forEach(ledgerEntry -> ledgerEntry.getEntryBuffer().retain());
