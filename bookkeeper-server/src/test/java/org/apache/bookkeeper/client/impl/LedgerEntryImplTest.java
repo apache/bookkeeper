@@ -65,12 +65,12 @@ public class LedgerEntryImplTest {
         assertEquals(ledgerId, entryImpl.getLedgerId());
         assertEquals(entryId, entryImpl.getEntryId());
         assertEquals(length, entryImpl.getLength());
-        assertArrayEquals(dataBytes, entryImpl.getEntry());
+        assertArrayEquals(dataBytes, entryImpl.getEntryBytes());
         // getEntry should not modify readerIndex
         assertEquals(0, entryImpl.getEntryBuffer().readerIndex());
         assertEquals(dataBytes.length, entryImpl.getEntryBuffer().readableBytes());
-        // getNioBuffer should not modify readerIndex
-        ByteBuffer nioBuffer = entryImpl.getNioBuffer();
+        // getEntryNioBuffer should not modify readerIndex
+        ByteBuffer nioBuffer = entryImpl.getEntryNioBuffer();
         assertEquals(dataBytes.length, nioBuffer.remaining());
         byte[] readBytes = new byte[nioBuffer.remaining()];
         nioBuffer.get(readBytes);
@@ -109,7 +109,7 @@ public class LedgerEntryImplTest {
         assertEquals(ledgerId, duplicatedEntry.getLedgerId());
         assertEquals(entryId, duplicatedEntry.getEntryId());
         assertEquals(length, duplicatedEntry.getLength());
-        assertArrayEquals(dataBytes, duplicatedEntry.getEntry());
+        assertArrayEquals(dataBytes, duplicatedEntry.getEntryBytes());
 
         duplicatedEntry.close();
         assertEquals(1, dataBuf.refCnt());

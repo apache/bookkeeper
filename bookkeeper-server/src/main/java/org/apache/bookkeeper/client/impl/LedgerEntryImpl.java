@@ -118,7 +118,7 @@ public class LedgerEntryImpl implements LedgerEntry {
      * {@inheritDoc}
      */
     @Override
-    public byte[] getEntry() {
+    public byte[] getEntryBytes() {
         return ByteBufUtil.getBytes(entryBuf, entryBuf.readerIndex(), entryBuf.readableBytes(), false);
     }
 
@@ -134,7 +134,7 @@ public class LedgerEntryImpl implements LedgerEntry {
      * {@inheritDoc}
      */
     @Override
-    public ByteBuffer getNioBuffer() {
+    public ByteBuffer getEntryNioBuffer() {
         return entryBuf.nioBuffer();
     }
 
