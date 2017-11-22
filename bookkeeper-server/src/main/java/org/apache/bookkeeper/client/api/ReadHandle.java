@@ -42,7 +42,7 @@ public interface ReadHandle extends Handle {
      *          id of last entry of sequence, inclusive
      * @return an handle to the result of the operation
      */
-    CompletableFuture<Iterable<LedgerEntry>> read(long firstEntry, long lastEntry);
+    CompletableFuture<LedgerEntries> read(long firstEntry, long lastEntry);
 
     /**
      * Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.
@@ -67,7 +67,7 @@ public interface ReadHandle extends Handle {
      * @see #read(long, long)
      * @see #readLastAddConfirmed()
      */
-    CompletableFuture<Iterable<LedgerEntry>> readUnconfirmed(long firstEntry, long lastEntry);
+    CompletableFuture<LedgerEntries> readUnconfirmed(long firstEntry, long lastEntry);
 
     /**
      * Obtains asynchronously the last confirmed write from a quorum of bookies. This
