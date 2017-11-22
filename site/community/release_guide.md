@@ -325,10 +325,12 @@ Copy the source release to the dev repository of `dist.apache.org`.
 
 3. Copy the BookKeeper source and binary distribution, and their GPG signatures:
 
-        cp target/bookkeeper-${VERSION}-src.tar.gz bookkeeper/${RC_DIR}/bookkeeper-${VERSION}-src.tar.gz
-        cp target/bookkeeper-${VERSION}-src.tar.gz.asc bookkeeper/${RC_DIR}/bookkeeper-${VERSION}-src.tar.gz.asc
-        cp bookkeeper-server/target/bookkeeper-server-${VERSION}-bin.tar.gz bookkeeper/${RC_DIR}/bookkeeper-server-${VERSION}-bin.tar.gz
-        cp bookkeeper-server/target/bookkeeper-server-${VERSION}-bin.tar.gz.asc bookkeeper/${RC_DIR}/bookkeeper-server-${VERSION}-bin.tar.gz.asc
+        cp bookkeeper-dist/target/bookkeeper-${VERSION}-src.tar.gz bookkeeper/${RC_DIR}/bookkeeper-${VERSION}-src.tar.gz
+        cp bookkeeper-dist/target/bookkeeper-${VERSION}-src.tar.gz.asc bookkeeper/${RC_DIR}/bookkeeper-${VERSION}-src.tar.gz.asc
+        cp bookkeeper-dist/server/target/bookkeeper-server-${VERSION}-bin.tar.gz bookkeeper/${RC_DIR}/bookkeeper-server-${VERSION}-bin.tar.gz
+        cp bookkeeper-dist/server/target/bookkeeper-server-${VERSION}-bin.tar.gz.asc bookkeeper/${RC_DIR}/bookkeeper-server-${VERSION}-bin.tar.gz.asc
+        cp bookkeeper-dist/all/target/bookkeeper-all-${VERSION}-bin.tar.gz bookkeeper/${RC_DIR}/bookkeeper-all-${VERSION}-bin.tar.gz
+        cp bookkeeper-dist/all/target/bookkeeper-all-${VERSION}-bin.tar.gz.asc bookkeeper/${RC_DIR}/bookkeeper-all-${VERSION}-bin.tar.gz.asc
 
 4. Sign the BookKeeper source and binary distribution.
 
@@ -337,6 +339,8 @@ Copy the source release to the dev repository of `dist.apache.org`.
         shasum bookkeeper-${VERSION}-src.tar.gz > bookkeeper-${VERSION}-src.tar.gz.sha1
         md5sum bookkeeper-server-${VERSION}-bin.tar.gz > bookkeeper-server-${VERSION}-bin.tar.gz.md5
         shasum bookkeeper-server-${VERSION}-bin.tar.gz > bookkeeper-server-${VERSION}-bin.tar.gz.sha1
+        md5sum bookkeeper-all-${VERSION}-bin.tar.gz > bookkeeper-all-${VERSION}-bin.tar.gz.md5
+        shasum bookkeeper-all-${VERSION}-bin.tar.gz > bookkeeper-all-${VERSION}-bin.tar.gz.sha1
 
 5. Go back to BookKeeper directory, add and commit all the files.
 
