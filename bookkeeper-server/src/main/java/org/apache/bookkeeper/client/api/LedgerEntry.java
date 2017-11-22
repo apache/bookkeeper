@@ -21,11 +21,16 @@
 package org.apache.bookkeeper.client.api;
 
 import io.netty.buffer.ByteBuf;
+import java.nio.ByteBuffer;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
 
 /**
  * An entry.
+ *
+ * <p>The entry implementation might be holding references to byte buffers under the hood. The users holding the
+ * references to the instances of this class, are responsible for calling {@link LedgerEntry#close()} to release
+ * resources held by the instances.
  *
  * @since 4.6
  */
@@ -55,14 +60,27 @@ public interface LedgerEntry extends AutoCloseable {
     long getLength();
 
     /**
-     * Returns the content of the entry.
+     * Returns the content of the entry into a byte array.
      *
      * @return the content of the entry
      */
     byte[] getEntry();
 
     /**
+     * Exposes this entry's data as an NIO {@link ByteBuffer}. The returned buffer
+     * shares the content with this underneath bytebuf (which you can get it by {@link #getEntryBuffer()}),
+     * while changing the position and limit of the returned NIO buffer does not affect the indexes and
+     * marks of this underneath buffer.  This method is identical
+     * to {@code entry.getEntryBuffer().nioBuffer()}. This method does not
+     * modify {@code readerIndex} or {@code writerIndex} of the underneath bytebuf.
+     */
+    ByteBuffer getNioBuffer();
+
+    /**
      * Return the internal buffer that contains the entry payload.
+     *
+     * <p>This call doesn't retain any reference on the underneath bytebuf. If you want to use the bytebuf
+     * after the entry is released (via {@link #close()}, please retain the references of the bytebuf.
      *
      * @return a ByteBuf which contains the data
      */
