@@ -66,21 +66,21 @@ public class LedgerEntriesImplTest {
             ledgerEntriesImpl.getEntry(entryId);
             fail("should fail getEntry after close");
         } catch (NullPointerException e) {
-
+            // expected behavior
         }
 
         try {
             ledgerEntriesImpl.iterator();
             fail("should fail iterator after close");
         } catch (NullPointerException e) {
-
+            // expected behavior
         }
 
         try {
             ledgerEntriesImpl.retainIterator();
             fail("should fail retainIterator after close");
         } catch (NullPointerException e) {
-
+            // expected behavior
         }
     }
 
@@ -104,14 +104,14 @@ public class LedgerEntriesImplTest {
             LedgerEntry entry = ledgerEntriesImpl.getEntry(entryId - 1);
             fail("Should get IndexOutOfBoundsException");
         } catch (IndexOutOfBoundsException e) {
-
+            // expected behavior
         }
 
         try {
             LedgerEntry entry = ledgerEntriesImpl.getEntry(entryId + entryNumber);
             fail("Should get IndexOutOfBoundsException");
         } catch (IndexOutOfBoundsException e) {
-
+            // expected behavior
         }
     }
 
