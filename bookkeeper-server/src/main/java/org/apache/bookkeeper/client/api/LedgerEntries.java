@@ -35,11 +35,12 @@ public interface LedgerEntries extends AutoCloseable {
     LedgerEntry getEntry(long entryId);
 
     /**
-     * This method does not increment the reference count of ByteBuf for the entries in this LedgerEntries.
-     * The caller who calls {@link #iterator()} should be careful for not releasing the references.
-     * The implementation of this interface will release all the Entries ByteBuf reference when close.
+     * Calling this method does not modify the reference count of the ByteBuf in the returned LedgerEntry objects.
+     * The caller who calls {@link #iterator()} should make sure that they do not call ByteBuf.release() on the
+     * LedgerEntry objects to avoid a double free.
+     * All reference counts will be decremented when the containing LedgerEntries object is closed.
      *
-     *  @return the iterator of type LedgerEntry
+     * @return the iterator of type LedgerEntry.
      */
     Iterator<LedgerEntry> iterator();
 }

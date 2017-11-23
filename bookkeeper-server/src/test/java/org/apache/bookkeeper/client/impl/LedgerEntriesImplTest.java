@@ -27,6 +27,7 @@ import static org.junit.Assert.fail;
 import com.google.common.collect.Lists;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import org.apache.bookkeeper.client.api.LedgerEntry;
@@ -46,13 +47,17 @@ public class LedgerEntriesImplTest {
     private final long entryId = 5678L;
     private final long length = 9876L;
     private final byte[] dataBytes = "test-ledger-entry-impl".getBytes(UTF_8);
+    private final ArrayList<ByteBuf> bufs = Lists.newArrayListWithExpectedSize(entryNumber);
 
     public LedgerEntriesImplTest () {
         for(int i = 0; i < entryNumber; i++) {
+            ByteBuf buf = Unpooled.wrappedBuffer(dataBytes);
+            bufs.add(buf);
+
             entryList.add(LedgerEntryImpl.create(ledgerId + i,
                 entryId + i,
                 length + i,
-                Unpooled.wrappedBuffer(dataBytes)));
+                buf));
         }
 
         ledgerEntriesImpl = LedgerEntriesImpl.create(entryList);
@@ -61,6 +66,9 @@ public class LedgerEntriesImplTest {
     @After
     public void tearDown() {
         ledgerEntriesImpl.close();
+
+        // References should be released after close.
+        bufs.forEach(byteBuf -> assertEquals(0, byteBuf.refCnt()));
 
         try {
             ledgerEntriesImpl.getEntry(entryId);
