@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":6,"i1":18};
+var methods = {"i0":18,"i1":18,"i2":6,"i3":18};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],16:["t5","Default Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -141,13 +141,29 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tr id="i0" class="altColor">
+<td class="colFirst"><code>default <a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.html#write-long-byte:A-">write</a></span>(long&nbsp;entryId,
+     byte[]&nbsp;data)</code>
+<div class="block">Add entry asynchronously to an open ledger.</div>
+</td>
+</tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code>default <a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.html#write-long-byte:A-int-int-">write</a></span>(long&nbsp;entryId,
+     byte[]&nbsp;data,
+     int&nbsp;offset,
+     int&nbsp;length)</code>
+<div class="block">Add entry asynchronously to an open ledger.</div>
+</td>
+</tr>
+<tr id="i2" class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.html#write-long-io.netty.buffer.ByteBuf-">write</a></span>(long&nbsp;entryId,
      io.netty.buffer.ByteBuf&nbsp;data)</code>
 <div class="block">Add entry asynchronously to an open ledger.</div>
 </td>
 </tr>
-<tr id="i1" class="rowColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>default <a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/WriteAdvHandle.html#write-long-java.nio.ByteBuffer-">write</a></span>(long&nbsp;entryId,
      <a href="http://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html?is-external=true" title="class or interface in java.nio">ByteBuffer</a>&nbsp;data)</code>
@@ -197,7 +213,47 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 <dd><code>entryId</code> - entryId to be added</dd>
 <dd><code>data</code> - array of bytes to be written</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>an handle to the result, in case of success it will return the same value of param entryId</dd>
+<dd>an handle to the result, in case of success it will return the same value of param entryId.</dd>
+</dl>
+</li>
+</ul>
+<a name="write-long-byte:A-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>write</h4>
+<pre>default&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;write(long&nbsp;entryId,
+                                      byte[]&nbsp;data)</pre>
+<div class="block">Add entry asynchronously to an open ledger.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>entryId</code> - entryId to be added.</dd>
+<dd><code>data</code> - array of bytes to be written</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>an handle to the result, in case of success it will return the same value of param <code>entryId</code>.</dd>
+</dl>
+</li>
+</ul>
+<a name="write-long-byte:A-int-int-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>write</h4>
+<pre>default&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;write(long&nbsp;entryId,
+                                      byte[]&nbsp;data,
+                                      int&nbsp;offset,
+                                      int&nbsp;length)</pre>
+<div class="block">Add entry asynchronously to an open ledger.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>entryId</code> - entryId to  be added.</dd>
+<dd><code>data</code> - array of bytes to be written</dd>
+<dd><code>offset</code> - the offset of the bytes array</dd>
+<dd><code>length</code> - the length to data to write</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>an handle to the result, in case of success it will return the same value of param <code>entryId</code>.</dd>
 </dl>
 </li>
 </ul>

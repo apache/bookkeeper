@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":6,"i1":18,"i2":6};
+var methods = {"i0":18,"i1":18,"i2":6,"i3":18,"i4":6};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],16:["t5","Default Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -139,18 +139,32 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tr id="i0" class="altColor">
+<td class="colFirst"><code>default <a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/WriteHandle.html#append-byte:A-">append</a></span>(byte[]&nbsp;data)</code>
+<div class="block">Add an entry asynchronously to an open ledger.</div>
+</td>
+</tr>
+<tr id="i1" class="rowColor">
+<td class="colFirst"><code>default <a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/WriteHandle.html#append-byte:A-int-int-">append</a></span>(byte[]&nbsp;data,
+      int&nbsp;offset,
+      int&nbsp;length)</code>
+<div class="block">Add an entry asynchronously to an open ledger.</div>
+</td>
+</tr>
+<tr id="i2" class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/WriteHandle.html#append-io.netty.buffer.ByteBuf-">append</a></span>(io.netty.buffer.ByteBuf&nbsp;data)</code>
 <div class="block">Add entry asynchronously to an open ledger.</div>
 </td>
 </tr>
-<tr id="i1" class="rowColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>default <a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/WriteHandle.html#append-java.nio.ByteBuffer-">append</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html?is-external=true" title="class or interface in java.nio">ByteBuffer</a>&nbsp;data)</code>
 <div class="block">Add entry asynchronously to an open ledger.</div>
 </td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/WriteHandle.html#getLastAddPushed--">getLastAddPushed</a></span>()</code>
 <div class="block">Get the entry id of the last entry that has been enqueued for addition (but
@@ -196,7 +210,8 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 <div class="block">Add entry asynchronously to an open ledger.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>data</code> - array of bytes to be written</dd>
+<dd><code>data</code> - a bytebuf to be written. The bytebuf's reference count will be decremented by 1 after the
+             completable future is returned</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>an handle to the result, in case of success it will return the id of the newly appended entry</dd>
 </dl>
@@ -218,6 +233,44 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
 </dl>
 </li>
 </ul>
+<a name="append-byte:A-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>append</h4>
+<pre>default&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;append(byte[]&nbsp;data)</pre>
+<div class="block">Add an entry asynchronously to an open ledger.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>data</code> - array of bytes to be written</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a completable future represents the add result, in case of success the future returns the entry id
+         of this newly appended entry</dd>
+</dl>
+</li>
+</ul>
+<a name="append-byte:A-int-int-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>append</h4>
+<pre>default&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;append(byte[]&nbsp;data,
+                                       int&nbsp;offset,
+                                       int&nbsp;length)</pre>
+<div class="block">Add an entry asynchronously to an open ledger.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>data</code> - array of bytes to be written</dd>
+<dd><code>offset</code> - the offset in the bytes array</dd>
+<dd><code>length</code> - the length of the bytes to be appended</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a completable future represents the add result, in case of success the future returns the entry id
+         of this newly appended entry</dd>
+</dl>
+</li>
+</ul>
 <a name="getLastAddPushed--">
 <!--   -->
 </a>
@@ -229,7 +282,7 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/ReadHandle.html
  may not have possibly been persisted to the ledger).</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the entry id of the last entry pushed or -1 if no entry has been pushed.</dd>
+<dd>the entry id of the last entry pushed or -1 if no entry has been pushed</dd>
 </dl>
 </li>
 </ul>

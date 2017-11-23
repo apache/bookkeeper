@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6};
+var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6,"i7":6};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -113,7 +113,11 @@ var activeTableTab = "activeTableTab";
  <a href="../../../../../org/apache/bookkeeper/common/annotation/InterfaceStability.Unstable.html" title="annotation in org.apache.bookkeeper.common.annotation">@InterfaceStability.Unstable</a>
 public interface <span class="typeNameLabel">LedgerEntry</span>
 extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html?is-external=true" title="class or interface in java.lang">AutoCloseable</a></pre>
-<div class="block">An entry.</div>
+<div class="block">An entry in a ledger.
+
+ <p>The entry implementation may hold references to byte buffers under the hood. The users holding the
+ references to the instances of this class, are responsible for calling <a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html#close--"><code>close()</code></a> to release
+ resources held by the entry instances.</div>
 <dl>
 <dt><span class="simpleTagLabel">Since:</span></dt>
 <dd>4.6</dd>
@@ -147,15 +151,15 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseabl
 </td>
 </tr>
 <tr id="i2" class="altColor">
-<td class="colFirst"><code>byte[]</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html#getEntry--">getEntry</a></span>()</code>
-<div class="block">Returns the content of the entry.</div>
+<td class="colFirst"><code>io.netty.buffer.ByteBuf</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html#getEntryBuffer--">getEntryBuffer</a></span>()</code>
+<div class="block">Return the internal <code>ByteBuf</code> that contains the entry payload.</div>
 </td>
 </tr>
 <tr id="i3" class="rowColor">
-<td class="colFirst"><code>io.netty.buffer.ByteBuf</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html#getEntryBuffer--">getEntryBuffer</a></span>()</code>
-<div class="block">Return the internal buffer that contains the entry payload.</div>
+<td class="colFirst"><code>byte[]</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html#getEntryBytes--">getEntryBytes</a></span>()</code>
+<div class="block">Returns the content of the entry as a byte array.</div>
 </td>
 </tr>
 <tr id="i4" class="altColor">
@@ -165,12 +169,18 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseabl
 </td>
 </tr>
 <tr id="i5" class="rowColor">
+<td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html?is-external=true" title="class or interface in java.nio">ByteBuffer</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html#getEntryNioBuffer--">getEntryNioBuffer</a></span>()</code>
+<div class="block">Exposes this entry's data as an NIO <a href="http://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html?is-external=true" title="class or interface in java.nio"><code>ByteBuffer</code></a>.</div>
+</td>
+</tr>
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html#getLedgerId--">getLedgerId</a></span>()</code>
 <div class="block">The id of the ledger which contains the entry.</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html#getLength--">getLength</a></span>()</code>
 <div class="block">The length of the entry, that is the size of the content expressed in bytes.</div>
@@ -233,18 +243,33 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseabl
 </dl>
 </li>
 </ul>
-<a name="getEntry--">
+<a name="getEntryBytes--">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getEntry</h4>
-<pre>byte[]&nbsp;getEntry()</pre>
-<div class="block">Returns the content of the entry.</div>
+<h4>getEntryBytes</h4>
+<pre>byte[]&nbsp;getEntryBytes()</pre>
+<div class="block">Returns the content of the entry as a byte array.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the content of the entry</dd>
 </dl>
+</li>
+</ul>
+<a name="getEntryNioBuffer--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getEntryNioBuffer</h4>
+<pre><a href="http://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html?is-external=true" title="class or interface in java.nio">ByteBuffer</a>&nbsp;getEntryNioBuffer()</pre>
+<div class="block">Exposes this entry's data as an NIO <a href="http://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html?is-external=true" title="class or interface in java.nio"><code>ByteBuffer</code></a>. The returned buffer
+ shares the content with this underneath bytebuf (which you can get it by <a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html#getEntryBuffer--"><code>getEntryBuffer()</code></a>).
+ Changing the position and limit of the returned NIO buffer does not affect the indexes and
+ marks of this underneath buffer.  This method is identical
+ to <code>entry.getEntryBuffer().nioBuffer()</code>. This method does not
+ modify <code>readerIndex</code> or <code>writerIndex</code> of the underlying bytebuf.</div>
 </li>
 </ul>
 <a name="getEntryBuffer--">
@@ -254,7 +279,10 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseabl
 <li class="blockList">
 <h4>getEntryBuffer</h4>
 <pre>io.netty.buffer.ByteBuf&nbsp;getEntryBuffer()</pre>
-<div class="block">Return the internal buffer that contains the entry payload.</div>
+<div class="block">Return the internal <code>ByteBuf</code> that contains the entry payload.
+
+ <p>This call doesn't change the reference count on the returned bytebuf. If you want to use the bytebuf
+ after the entry is released (via <a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html#close--"><code>close()</code></a>, the caller must retain the references of the bytebuf.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>a ByteBuf which contains the data</dd>
@@ -273,7 +301,7 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseabl
  <p>This call will retain a slice of the underneath byte buffer.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>a duplicated ledger entry.</dd>
+<dd>a duplicated ledger entry</dd>
 </dl>
 </li>
 </ul>

@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":9,"i2":9,"i3":10,"i4":9,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10};
+var methods = {"i0":10,"i1":9,"i2":9,"i3":10,"i4":9,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -163,15 +163,15 @@ implements <a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/LedgerEntryImpl.html#duplicate-org.apache.bookkeeper.client.api.LedgerEntry-">duplicate</a></span>(<a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a>&nbsp;entry)</code>&nbsp;</td>
 </tr>
 <tr id="i5" class="rowColor">
-<td class="colFirst"><code>byte[]</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/LedgerEntryImpl.html#getEntry--">getEntry</a></span>()</code>
-<div class="block">Returns the content of the entry.</div>
+<td class="colFirst"><code>io.netty.buffer.ByteBuf</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/LedgerEntryImpl.html#getEntryBuffer--">getEntryBuffer</a></span>()</code>
+<div class="block">Return the internal <code>ByteBuf</code> that contains the entry payload.</div>
 </td>
 </tr>
 <tr id="i6" class="altColor">
-<td class="colFirst"><code>io.netty.buffer.ByteBuf</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/LedgerEntryImpl.html#getEntryBuffer--">getEntryBuffer</a></span>()</code>
-<div class="block">Return the internal buffer that contains the entry payload.</div>
+<td class="colFirst"><code>byte[]</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/LedgerEntryImpl.html#getEntryBytes--">getEntryBytes</a></span>()</code>
+<div class="block">Returns the content of the entry as a byte array.</div>
 </td>
 </tr>
 <tr id="i7" class="rowColor">
@@ -181,26 +181,32 @@ implements <a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.
 </td>
 </tr>
 <tr id="i8" class="altColor">
+<td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html?is-external=true" title="class or interface in java.nio">ByteBuffer</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/LedgerEntryImpl.html#getEntryNioBuffer--">getEntryNioBuffer</a></span>()</code>
+<div class="block">Exposes this entry's data as an NIO <a href="http://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html?is-external=true" title="class or interface in java.nio"><code>ByteBuffer</code></a>.</div>
+</td>
+</tr>
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/LedgerEntryImpl.html#getLedgerId--">getLedgerId</a></span>()</code>
 <div class="block">The id of the ledger which contains the entry.</div>
 </td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/LedgerEntryImpl.html#getLength--">getLength</a></span>()</code>
 <div class="block">The length of the entry, that is the size of the content expressed in bytes.</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/LedgerEntryImpl.html#setEntryBuf-io.netty.buffer.ByteBuf-">setEntryBuf</a></span>(io.netty.buffer.ByteBuf&nbsp;buf)</code>&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/LedgerEntryImpl.html#setEntryId-long-">setEntryId</a></span>(long&nbsp;entryId)</code>&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/LedgerEntryImpl.html#setLength-long-">setLength</a></span>(long&nbsp;length)</code>&nbsp;</td>
 </tr>
@@ -332,17 +338,17 @@ implements <a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.
 </dl>
 </li>
 </ul>
-<a name="getEntry--">
+<a name="getEntryBytes--">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getEntry</h4>
-<pre>public&nbsp;byte[]&nbsp;getEntry()</pre>
-<div class="block">Returns the content of the entry.</div>
+<h4>getEntryBytes</h4>
+<pre>public&nbsp;byte[]&nbsp;getEntryBytes()</pre>
+<div class="block">Returns the content of the entry as a byte array.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html#getEntry--">getEntry</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a></code></dd>
+<dd><code><a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html#getEntryBytes--">getEntryBytes</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a></code></dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the content of the entry</dd>
 </dl>
@@ -355,12 +361,34 @@ implements <a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.
 <li class="blockList">
 <h4>getEntryBuffer</h4>
 <pre>public&nbsp;io.netty.buffer.ByteBuf&nbsp;getEntryBuffer()</pre>
-<div class="block">Return the internal buffer that contains the entry payload.</div>
+<div class="block">Return the internal <code>ByteBuf</code> that contains the entry payload.
+
+ <p>This call doesn't change the reference count on the returned bytebuf. If you want to use the bytebuf
+ after the entry is released (via <a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html#close--"><code>LedgerEntry.close()</code></a>, the caller must retain the references of the bytebuf.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html#getEntryBuffer--">getEntryBuffer</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a></code></dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>a ByteBuf which contains the data</dd>
+</dl>
+</li>
+</ul>
+<a name="getEntryNioBuffer--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getEntryNioBuffer</h4>
+<pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html?is-external=true" title="class or interface in java.nio">ByteBuffer</a>&nbsp;getEntryNioBuffer()</pre>
+<div class="block">Exposes this entry's data as an NIO <a href="http://docs.oracle.com/javase/8/docs/api/java/nio/ByteBuffer.html?is-external=true" title="class or interface in java.nio"><code>ByteBuffer</code></a>. The returned buffer
+ shares the content with this underneath bytebuf (which you can get it by <a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html#getEntryBuffer--"><code>LedgerEntry.getEntryBuffer()</code></a>).
+ Changing the position and limit of the returned NIO buffer does not affect the indexes and
+ marks of this underneath buffer.  This method is identical
+ to <code>entry.getEntryBuffer().nioBuffer()</code>. This method does not
+ modify <code>readerIndex</code> or <code>writerIndex</code> of the underlying bytebuf.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html#getEntryNioBuffer--">getEntryNioBuffer</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -378,7 +406,7 @@ implements <a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html#duplicate--">duplicate</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a></code></dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>a duplicated ledger entry.</dd>
+<dd>a duplicated ledger entry</dd>
 </dl>
 </li>
 </ul>

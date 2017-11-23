@@ -721,7 +721,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <!--   -->
 </a>
 <h3>Methods inherited from interface&nbsp;org.apache.bookkeeper.client.api.<a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html" title="interface in org.apache.bookkeeper.client.api">WriteHandle</a></h3>
-<code><a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html#append-java.nio.ByteBuffer-">append</a></code></li>
+<code><a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html#append-byte:A-">append</a>, <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html#append-byte:A-int-int-">append</a>, <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html#append-java.nio.ByteBuffer-">append</a></code></li>
 </ul>
 </li>
 </ul>
@@ -1046,7 +1046,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html#getLastAddPushed--">getLastAddPushed</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html" title="interface in org.apache.bookkeeper.client.api">WriteHandle</a></code></dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the entry id of the last entry pushed or -1 if no entry has been pushed.</dd>
+<dd>the entry id of the last entry pushed or -1 if no entry has been pushed</dd>
 </dl>
 </li>
 </ul>
@@ -1511,7 +1511,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html#append-io.netty.buffer.ByteBuf-">append</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.html" title="interface in org.apache.bookkeeper.client.api">WriteHandle</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>data</code> - array of bytes to be written</dd>
+<dd><code>data</code> - a bytebuf to be written. The bytebuf's reference count will be decremented by 1 after the
+             completable future is returned</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>an handle to the result, in case of success it will return the id of the newly appended entry</dd>
 </dl>
