@@ -20,7 +20,7 @@
  */
 package org.apache.bookkeeper.client.api;
 
-import static org.apache.bookkeeper.client.api.WriteFlag.DEFERRED_FORCE;
+import static org.apache.bookkeeper.client.api.WriteFlag.DEFERRED_SYNC;
 import static org.junit.Assert.assertEquals;
 
 import java.util.EnumSet;
@@ -34,9 +34,9 @@ public class WriteFlagTest {
     private static final int NONE = 0;
 
     @Test
-    public void testGetWriteFlagsDeferredForce() {
-        assertEquals(EnumSet.of(DEFERRED_FORCE),
-                WriteFlag.getWriteFlags(DEFERRED_FORCE.getValue()));
+    public void testGetWriteFlagsDeferredSync() {
+        assertEquals(EnumSet.of(DEFERRED_SYNC),
+                WriteFlag.getWriteFlags(DEFERRED_SYNC.getValue()));
     }
 
     @Test
@@ -56,7 +56,7 @@ public class WriteFlagTest {
     }
 
     @Test
-    public void testGetWriteFlagsValueDeferredForce() {
-        assertEquals(1, WriteFlag.getWriteFlagsValue(EnumSet.of(DEFERRED_FORCE)));
+    public void testGetWriteFlagsValueDeferredSync() {
+        assertEquals(1, WriteFlag.getWriteFlagsValue(EnumSet.of(DEFERRED_SYNC)));
     }
 }

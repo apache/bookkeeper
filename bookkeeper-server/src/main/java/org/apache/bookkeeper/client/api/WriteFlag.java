@@ -33,7 +33,7 @@ public enum WriteFlag {
      * Writes will be acknowledged after writing to the filesystem
      * but not yet been persisted to disks.
      */
-    DEFERRED_FORCE(0x1 << 0);
+    DEFERRED_SYNC(0x1 << 0);
 
     private final int value;
 
@@ -48,8 +48,8 @@ public enum WriteFlag {
      * @return a set of flags
      */
     public static EnumSet<WriteFlag> getWriteFlags(int flagValue) {
-        if ((flagValue & DEFERRED_FORCE.value) == DEFERRED_FORCE.value) {
-            return EnumSet.of(DEFERRED_FORCE);
+        if ((flagValue & DEFERRED_SYNC.value) == DEFERRED_SYNC.value) {
+            return EnumSet.of(DEFERRED_SYNC);
         }
         return EnumSet.noneOf(WriteFlag.class);
     }

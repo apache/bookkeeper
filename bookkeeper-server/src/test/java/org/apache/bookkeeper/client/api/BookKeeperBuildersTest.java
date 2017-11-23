@@ -20,7 +20,7 @@
  */
 package org.apache.bookkeeper.client.api;
 
-import static org.apache.bookkeeper.client.api.WriteFlag.DEFERRED_FORCE;
+import static org.apache.bookkeeper.client.api.WriteFlag.DEFERRED_SYNC;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -53,8 +53,8 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
     private final static Map<String, byte[]> customMetadata = new HashMap<>();
     private final static byte[] password = new byte[3];
     private final static byte[] entryData = new byte[32];
-    private final static EnumSet<WriteFlag> writeFlagsDeferredForce
-                            = EnumSet.of(DEFERRED_FORCE);
+    private final static EnumSet<WriteFlag> writeFlagsDeferredSync
+                            = EnumSet.of(DEFERRED_SYNC);
 
     @Test
     public void testCreateLedger() throws Exception {
@@ -233,7 +233,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             .withPassword(password)
             .withWriteQuorumSize(writeQuorumSize)
             .withCustomMetadata(customMetadata)
-            .withWriteFlags(writeFlagsDeferredForce)
+            .withWriteFlags(writeFlagsDeferredSync)
             .makeAdv()
             .execute()
             .get();
@@ -244,7 +244,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         assertEquals(writeQuorumSize, metadata.getWriteQuorumSize());
         assertArrayEquals(password, metadata.getPassword());
         LedgerHandle lh = (LedgerHandle) writer;
-        assertEquals(writeFlagsDeferredForce, lh.getWriteFlags());
+        assertEquals(writeFlagsDeferredSync, lh.getWriteFlags());
     }
 
     @Test
@@ -256,7 +256,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             .withPassword(password)
             .withWriteQuorumSize(writeQuorumSize)
             .withCustomMetadata(customMetadata)
-            .withWriteFlags(writeFlagsDeferredForce)
+            .withWriteFlags(writeFlagsDeferredSync)
             .execute()
             .get();
         assertEquals(ledgerId, writer.getId());
@@ -266,7 +266,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         assertEquals(writeQuorumSize, metadata.getWriteQuorumSize());
         assertArrayEquals(password, metadata.getPassword());
         LedgerHandle lh = (LedgerHandle) writer;
-        assertEquals(writeFlagsDeferredForce, lh.getWriteFlags());
+        assertEquals(writeFlagsDeferredSync, lh.getWriteFlags());
     }
 
     @Test
@@ -278,7 +278,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             .withPassword(password)
             .withWriteQuorumSize(writeQuorumSize)
             .withCustomMetadata(customMetadata)
-            .withWriteFlags(DEFERRED_FORCE)
+            .withWriteFlags(DEFERRED_SYNC)
             .execute()
             .get();
         assertEquals(ledgerId, writer.getId());
@@ -288,7 +288,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
         assertEquals(writeQuorumSize, metadata.getWriteQuorumSize());
         assertArrayEquals(password, metadata.getPassword());
         LedgerHandle lh = (LedgerHandle) writer;
-        assertEquals(writeFlagsDeferredForce, lh.getWriteFlags());
+        assertEquals(writeFlagsDeferredSync, lh.getWriteFlags());
     }
 
     @Test(expected = BKIncorrectParameterException.class)
