@@ -46,5 +46,6 @@ public interface LedgerEntries
      *
      * @return an iterator of LedgerEntry objects
      */
+    @Override
     Iterator<LedgerEntry> iterator();
 }
