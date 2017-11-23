@@ -41,7 +41,8 @@ public interface WriteHandle extends ReadHandle {
     /**
      * Add entry asynchronously to an open ledger.
      *
-     * @param data array of bytes to be written
+     * @param data a bytebuf to be written. The bytebuf's reference count will be decremented by 1 after the
+     *             completable future is returned
      * @return an handle to the result, in case of success it will return the id of the newly appended entry
      */
     CompletableFuture<Long> append(ByteBuf data);
@@ -57,10 +58,34 @@ public interface WriteHandle extends ReadHandle {
     }
 
     /**
+     * Add an entry asynchronously to an open ledger.
+     *
+     * @param data array of bytes to be written
+     * @return a completable future represents the add result, in case of success the future returns the entry id
+     *         of this newly appended entry
+     */
+    default CompletableFuture<Long> append(byte[] data) {
+        return append(Unpooled.wrappedBuffer(data));
+    }
+
+    /**
+     * Add an entry asynchronously to an open ledger.
+     *
+     * @param data array of bytes to be written
+     * @param offset the offset in the bytes array
+     * @param length the length of the bytes to be appended
+     * @return a completable future represents the add result, in case of success the future returns the entry id
+     *         of this newly appended entry
+     */
+    default CompletableFuture<Long> append(byte[] data, int offset, int length) {
+        return append(Unpooled.wrappedBuffer(data, offset, length));
+    }
+
+    /**
      * Get the entry id of the last entry that has been enqueued for addition (but
      * may not have possibly been persisted to the ledger).
      *
-     * @return the entry id of the last entry pushed or -1 if no entry has been pushed.
+     * @return the entry id of the last entry pushed or -1 if no entry has been pushed
      */
     long getLastAddPushed();
 
