@@ -1549,9 +1549,17 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Enable or disable journal syncs
+     * Enable or disable journal syncs.
+     * <p>
+     * By default, data sync is enabled to guarantee durability of writes.
+     * <p>
+     * Beware: while disabling data sync in the Bookie journal might improve the bookie write performance, it will also
+     * introduce the possibility of data loss. With no sync, the journal entries are written in the OS page cache but
+     * not flushed to disk. In case of power failure, the affected bookie might lose the unflushed data. If the ledger
+     * is replicated to multiple bookies, the chances of data loss are reduced though still present.
      *
-     * @param syncData whether to sync data on disk before acknowledgement
+     * @param syncData
+     *            whether to sync data on disk before acknowledgement
      * @return server configuration object
      */
     public ServerConfiguration setJournalSyncData(boolean syncData) {
