@@ -84,7 +84,7 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
             assertTrue(entries.hasNext());
             LedgerEntry entry = entries.next();
             assertNotNull(entry);
-            assertEquals(i, Integer.parseInt(new String(entry.getEntry())));
+            assertEquals(i, Integer.parseInt(new String(entry.getEntryBytes())));
             entry.close();
             assertFalse(entries.hasNext());
         }
@@ -101,7 +101,7 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
         while (iterator.hasNext()) {
             LedgerEntry entry = iterator.next();
             assertNotNull(entry);
-            assertEquals(numReads, Integer.parseInt(new String(entry.getEntry())));
+            assertEquals(numReads, Integer.parseInt(new String(entry.getEntryBytes())));
             entry.close();
             ++numReads;
         }
@@ -206,7 +206,7 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
         while (entries.hasNext()) {
             LedgerEntry entry = entries.next();
             assertNotNull(entry);
-            assertEquals(numReads, Integer.parseInt(new String(entry.getEntry())));
+            assertEquals(numReads, Integer.parseInt(new String(entry.getEntryBytes())));
             ++numReads;
         }
         assertEquals(numEntries, numReads);

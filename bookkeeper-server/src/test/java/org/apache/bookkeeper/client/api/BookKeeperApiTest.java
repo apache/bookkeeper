@@ -208,7 +208,7 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
             LastConfirmedAndEntry lastConfirmedAndEntry =
                 result(reader.readLastAddConfirmedAndEntry(0, 999, false));
             assertEquals(2L, lastConfirmedAndEntry.getLastAddConfirmed());
-            assertArrayEquals(data, lastConfirmedAndEntry.getEntry().getEntry());
+            assertArrayEquals(data, lastConfirmedAndEntry.getEntry().getEntryBytes());
             lastConfirmedAndEntry.close();
         }
     }
@@ -278,7 +278,7 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
     private static void checkEntries(Iterable<LedgerEntry> entries, byte[] data)
         throws InterruptedException, BKException {
         for (LedgerEntry le : entries) {
-            assertArrayEquals(data, le.getEntry());
+            assertArrayEquals(data, le.getEntryBytes());
         }
     }
 
