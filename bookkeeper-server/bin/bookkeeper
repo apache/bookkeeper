@@ -71,18 +71,18 @@ else
 fi
 
 # exclude tests jar
-RELEASE_JAR=$(ls ${BK_HOME}/*bookkeeper-server-*.jar 2> /dev/null | grep -v tests | tail -1)
+RELEASE_JAR=$(ls ${BK_HOME}/*bookkeeper-server-*.jar 2> /dev/null | grep -v tests | grep -v sources | tail -1)
 if [ -n "${RELEASE_JAR}" ]; then
   BOOKIE_JAR=${RELEASE_JAR}
 else
-  RELEASE_JAR=$(ls ${BK_HOME}/lib/*bookkeeper-server-*.jar 2> /dev/null | grep -v tests | tail -1)
+  RELEASE_JAR=$(ls ${BK_HOME}/lib/*bookkeeper-server-*.jar 2> /dev/null | grep -v tests | grep -v sources | tail -1)
   if [ -n "${RELEASE_JAR}" ]; then
     BOOKIE_JAR=${RELEASE_JAR}
   fi
 fi
 
 # exclude tests jar
-BUILT_JAR=$(ls ${BK_HOME}/target/*bookkeeper-server-*.jar 2> /dev/null | grep -v tests | tail -1)
+BUILT_JAR=$(ls ${BK_HOME}/target/*bookkeeper-server-*.jar 2> /dev/null | grep -v tests | grep -v sources | tail -1)
 
 if [ -z "${BUILT_JAR}" ] && [ -z "${BOOKIE_JAR}" ]; then
   echo "Couldn't find bookkeeper jar."
