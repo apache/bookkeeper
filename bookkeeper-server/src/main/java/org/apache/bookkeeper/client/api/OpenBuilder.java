@@ -44,7 +44,7 @@ public interface OpenBuilder extends OpBuilder<ReadHandle> {
 
     /**
      * Define to open the ledger in recovery mode or in readonly mode. In recovery mode the ledger will be fenced and
-     * the writer of the ledger will be prevented from issuing other writes to the ledger. It defaults to 'false'
+     * the writer of the ledger will be prevented from issuing other writes to the ledger. It defaults to 'true'
      *
      * @param recovery recovery mode
      *

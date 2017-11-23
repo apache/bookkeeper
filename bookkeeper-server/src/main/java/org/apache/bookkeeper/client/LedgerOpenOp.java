@@ -218,7 +218,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
 
     static final class OpenBuilderImpl implements OpenBuilder {
 
-        private boolean builderRecovery = false;
+        private boolean builderRecovery = true;
         private Long builderLedgerId;
         private byte[] builderPassword;
         private org.apache.bookkeeper.client.api.DigestType builderDigestType
