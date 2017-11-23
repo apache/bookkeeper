@@ -35,7 +35,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
-import org.apache.bookkeeper.client.api.LedgerEntry;
+import org.apache.bookkeeper.client.api.*;
+import org.apache.bookkeeper.client.impl.LedgerEntriesImpl;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -59,7 +60,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
     private final ScheduledExecutorService scheduler;
     private ScheduledFuture<?> speculativeTask = null;
     protected final List<LedgerEntryRequest> seq;
-    private final CompletableFuture<Iterable<LedgerEntry>> future;
+    private final CompletableFuture<LedgerEntries> future;
     Set<BookieSocketAddress> heardFromHosts;
     BitSet heardFromHostsBitSet;
     LedgerHandle lh;
@@ -454,7 +455,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         readOpLogger = lh.bk.getReadOpLogger();
     }
 
-    CompletableFuture<Iterable<LedgerEntry>> future() {
+    CompletableFuture<LedgerEntries> future() {
         return future;
     }
 
@@ -600,7 +601,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             future.completeExceptionally(BKException.create(code));
         } else {
             readOpLogger.registerSuccessfulEvent(latencyNanos, TimeUnit.NANOSECONDS);
-            future.complete(Lists.transform(seq, input -> input.entryImpl));
+            future.complete(LedgerEntriesImpl.create(Lists.transform(seq, input -> input.entryImpl)));
         }
     }
 
