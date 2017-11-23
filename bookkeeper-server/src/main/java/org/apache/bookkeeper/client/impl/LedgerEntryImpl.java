@@ -23,6 +23,7 @@ import io.netty.buffer.ByteBufUtil;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import io.netty.util.ReferenceCountUtil;
+import java.nio.ByteBuffer;
 import org.apache.bookkeeper.client.api.LedgerEntry;
 
 /**
@@ -85,6 +86,7 @@ public class LedgerEntryImpl implements LedgerEntry {
     }
 
     public void setEntryBuf(ByteBuf buf) {
+        ReferenceCountUtil.release(entryBuf);
         this.entryBuf = buf;
     }
 
@@ -116,8 +118,8 @@ public class LedgerEntryImpl implements LedgerEntry {
      * {@inheritDoc}
      */
     @Override
-    public byte[] getEntry() {
-        return ByteBufUtil.getBytes(entryBuf);
+    public byte[] getEntryBytes() {
+        return ByteBufUtil.getBytes(entryBuf, entryBuf.readerIndex(), entryBuf.readableBytes(), false);
     }
 
     /**
@@ -126,6 +128,14 @@ public class LedgerEntryImpl implements LedgerEntry {
     @Override
     public ByteBuf getEntryBuffer() {
         return entryBuf;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ByteBuffer getEntryNioBuffer() {
+        return entryBuf.nioBuffer();
     }
 
     /**
