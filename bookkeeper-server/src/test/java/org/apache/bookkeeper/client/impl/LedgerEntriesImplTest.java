@@ -75,13 +75,6 @@ public class LedgerEntriesImplTest {
         } catch (NullPointerException e) {
             // expected behavior
         }
-
-        try {
-            ledgerEntriesImpl.retainedIterator();
-            fail("should fail retainedIterator after close");
-        } catch (NullPointerException e) {
-            // expected behavior
-        }
     }
 
     @Test
@@ -119,16 +112,5 @@ public class LedgerEntriesImplTest {
     public void testIterator() {
         Iterator<LedgerEntry> entryIterator = ledgerEntriesImpl.iterator();
         entryIterator.forEachRemaining(ledgerEntry -> assertEquals(1, ledgerEntry.getEntryBuffer().refCnt()));
-    }
-
-    @Test
-    public void testRetainedIterator() {
-        Iterator<LedgerEntry> entryIterator = ledgerEntriesImpl.retainedIterator();
-
-        entryIterator.forEachRemaining(ledgerEntry -> {
-            assertEquals(2, ledgerEntry.getEntryBuffer().refCnt());
-            ledgerEntry.getEntryBuffer().release();
-            assertEquals(1, ledgerEntry.getEntryBuffer().refCnt());
-        });
     }
 }
