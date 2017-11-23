@@ -988,6 +988,8 @@
 <div class="block">Gracefully release resources that this client uses.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/LastConfirmedAndEntryImpl.html#close--">close()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/LastConfirmedAndEntryImpl.html" title="class in org.apache.bookkeeper.client.impl">LastConfirmedAndEntryImpl</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/LedgerEntriesImpl.html#close--">close()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/LedgerEntriesImpl.html" title="class in org.apache.bookkeeper.client.impl">LedgerEntriesImpl</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/LedgerEntryImpl.html#close--">close()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/LedgerEntryImpl.html" title="class in org.apache.bookkeeper.client.impl">LedgerEntryImpl</a></dt>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#close--">close()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>
@@ -1134,6 +1136,10 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/LastConfirmedAndEntryImpl.html#create-long-org.apache.bookkeeper.client.LedgerEntry-">create(long, LedgerEntry)</a></span> - Static method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/LastConfirmedAndEntryImpl.html" title="class in org.apache.bookkeeper.client.impl">LastConfirmedAndEntryImpl</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/LedgerEntriesImpl.html#create-java.util.List-">create(List&lt;LedgerEntry&gt;)</a></span> - Static method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/LedgerEntriesImpl.html" title="class in org.apache.bookkeeper.client.impl">LedgerEntriesImpl</a></dt>
+<dd>
+<div class="block">Create ledger entries.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/LedgerEntryImpl.html#create-long-long-">create(long, long)</a></span> - Static method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/LedgerEntryImpl.html" title="class in org.apache.bookkeeper.client.impl">LedgerEntryImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/LedgerEntryImpl.html#create-long-long-long-io.netty.buffer.ByteBuf-">create(long, long, long, ByteBuf)</a></span> - Static method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/LedgerEntryImpl.html" title="class in org.apache.bookkeeper.client.impl">LedgerEntryImpl</a></dt>
@@ -2033,9 +2039,17 @@
 <dd>
 <div class="block">Gets wanted LedgerEntry.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/LedgerEntries.html#getEntry-long-">getEntry(long)</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a></dt>
+<dd>
+<div class="block">Gets a specific LedgerEntry by entryId.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/LastConfirmedAndEntryImpl.html#getEntry--">getEntry()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/LastConfirmedAndEntryImpl.html" title="class in org.apache.bookkeeper.client.impl">LastConfirmedAndEntryImpl</a></dt>
 <dd>
 <div class="block">Gets wanted LedgerEntry.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/LedgerEntriesImpl.html#getEntry-long-">getEntry(long)</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/LedgerEntriesImpl.html" title="class in org.apache.bookkeeper.client.impl">LedgerEntriesImpl</a></dt>
+<dd>
+<div class="block">Gets a specific LedgerEntry by entryId.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerEntry.html#getEntry--">getEntry()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerEntry.html" title="class in org.apache.bookkeeper.client">LedgerEntry</a></dt>
 <dd>
@@ -3313,8 +3327,16 @@
 <dd>
 <div class="block">Are z-node created with strict ACLs</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/LedgerEntries.html#iterator--">iterator()</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntries</a></dt>
+<dd>
+<div class="block">Calling this method does not modify the reference count of the ByteBuf in the returned LedgerEntry objects.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.LedgerEntriesIterable.html#iterator--">iterator()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.LedgerEntriesIterable.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin.LedgerEntriesIterable</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/LedgerEntriesImpl.html#iterator--">iterator()</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/LedgerEntriesImpl.html" title="class in org.apache.bookkeeper.client.impl">LedgerEntriesImpl</a></dt>
+<dd>
+<div class="block">Calling this method does not modify the reference count of the ByteBuf in the returned LedgerEntry objects.</div>
+</dd>
 <dt><a href="org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client"><span class="typeNameLink">ITopologyAwareEnsemblePlacementPolicy</span></a>&lt;<a href="org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html" title="type parameter in ITopologyAwareEnsemblePlacementPolicy">T</a> extends org.apache.bookkeeper.net.Node&gt; - Interface in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
 <dd>
 <div class="block">Interface for topology aware ensemble placement policy.</div>
@@ -3467,6 +3489,14 @@
 </dd>
 <dt><a href="org/apache/bookkeeper/client/LedgerDeleteOp.DeleteBuilderImpl.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">LedgerDeleteOp.DeleteBuilderImpl</span></a> - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
 <dd>&nbsp;</dd>
+<dt><a href="org/apache/bookkeeper/client/api/LedgerEntries.html" title="interface in org.apache.bookkeeper.client.api"><span class="typeNameLink">LedgerEntries</span></a> - Interface in <a href="org/apache/bookkeeper/client/api/package-summary.html">org.apache.bookkeeper.client.api</a></dt>
+<dd>
+<div class="block">Interface to wrap the entries.</div>
+</dd>
+<dt><a href="org/apache/bookkeeper/client/impl/LedgerEntriesImpl.html" title="class in org.apache.bookkeeper.client.impl"><span class="typeNameLink">LedgerEntriesImpl</span></a> - Class in <a href="org/apache/bookkeeper/client/impl/package-summary.html">org.apache.bookkeeper.client.impl</a></dt>
+<dd>
+<div class="block">Ledger entries implementation.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.LedgerEntriesIterable.html#LedgerEntriesIterable-long-long-">LedgerEntriesIterable(long, long)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.LedgerEntriesIterable.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin.LedgerEntriesIterable</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.LedgerEntriesIterable.html#LedgerEntriesIterable-long-long-long-">LedgerEntriesIterable(long, long, long)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.LedgerEntriesIterable.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin.LedgerEntriesIterable</a></dt>

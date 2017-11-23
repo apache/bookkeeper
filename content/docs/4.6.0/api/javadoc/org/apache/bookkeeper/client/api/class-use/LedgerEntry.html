@@ -83,18 +83,12 @@
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><a href="#org.apache.bookkeeper.client">org.apache.bookkeeper.client</a></td>
-<td class="colLast">
-<div class="block">BookKeeper Client.</div>
-</td>
-</tr>
-<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.bookkeeper.client.api">org.apache.bookkeeper.client.api</a></td>
 <td class="colLast">
 <div class="block">BookKeeper Client Public API.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.bookkeeper.client.impl">org.apache.bookkeeper.client.impl</a></td>
 <td class="colLast">
 <div class="block">BookKeeper Client implementation package</div>
@@ -105,43 +99,6 @@
 </li>
 <li class="blockList">
 <ul class="blockList">
-<li class="blockList"><a name="org.apache.bookkeeper.client">
-<!--   -->
-</a>
-<h3>Uses of <a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a> in <a href="../../../../../../org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></h3>
-<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
-<caption><span>Methods in <a href="../../../../../../org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a> that return types with arguments of type <a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colLast" scope="col">Method and Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<td class="colFirst"><code>(package private) <a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html?is-external=true" title="class or interface in java.lang">Iterable</a>&lt;<a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a>&gt;&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">PendingReadOp.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/PendingReadOp.html#future--">future</a></span>()</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html?is-external=true" title="class or interface in java.lang">Iterable</a>&lt;<a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a>&gt;&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/LedgerHandle.html#read-long-long-">read</a></span>(long&nbsp;firstEntry,
-    long&nbsp;lastEntry)</code>
-<div class="block">Read a sequence of entries asynchronously.</div>
-</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>(package private) <a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html?is-external=true" title="class or interface in java.lang">Iterable</a>&lt;<a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a>&gt;&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/LedgerHandle.html#readEntriesInternalAsync-long-long-">readEntriesInternalAsync</a></span>(long&nbsp;firstEntry,
-                        long&nbsp;lastEntry)</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html?is-external=true" title="class or interface in java.lang">Iterable</a>&lt;<a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a>&gt;&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">LedgerHandle.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/LedgerHandle.html#readUnconfirmed-long-long-">readUnconfirmed</a></span>(long&nbsp;firstEntry,
-               long&nbsp;lastEntry)</code>
-<div class="block">Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.</div>
-</td>
-</tr>
-</tbody>
-</table>
-</li>
 <li class="blockList"><a name="org.apache.bookkeeper.client.api">
 <!--   -->
 </a>
@@ -165,6 +122,12 @@
 <div class="block">Gets wanted LedgerEntry.</div>
 </td>
 </tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a></code></td>
+<td class="colLast"><span class="typeNameLabel">LedgerEntries.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntries.html#getEntry-long-">getEntry</a></span>(long&nbsp;entryId)</code>
+<div class="block">Gets a specific LedgerEntry by entryId.</div>
+</td>
+</tr>
 </tbody>
 </table>
 <table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
@@ -175,17 +138,9 @@
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html?is-external=true" title="class or interface in java.lang">Iterable</a>&lt;<a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a>&gt;&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">ReadHandle.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/ReadHandle.html#read-long-long-">read</a></span>(long&nbsp;firstEntry,
-    long&nbsp;lastEntry)</code>
-<div class="block">Read a sequence of entries asynchronously.</div>
-</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html?is-external=true" title="class or interface in java.util.concurrent">CompletableFuture</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html?is-external=true" title="class or interface in java.lang">Iterable</a>&lt;<a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a>&gt;&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">ReadHandle.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/ReadHandle.html#readUnconfirmed-long-long-">readUnconfirmed</a></span>(long&nbsp;firstEntry,
-               long&nbsp;lastEntry)</code>
-<div class="block">Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.</div>
+<td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Iterator.html?is-external=true" title="class or interface in java.util">Iterator</a>&lt;<a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">LedgerEntries.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntries.html#iterator--">iterator</a></span>()</code>
+<div class="block">Calling this method does not modify the reference count of the ByteBuf in the returned LedgerEntry objects.</div>
 </td>
 </tr>
 </tbody>
@@ -223,6 +178,27 @@
 <div class="block">Gets wanted LedgerEntry.</div>
 </td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a></code></td>
+<td class="colLast"><span class="typeNameLabel">LedgerEntriesImpl.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/impl/LedgerEntriesImpl.html#getEntry-long-">getEntry</a></span>(long&nbsp;entryId)</code>
+<div class="block">Gets a specific LedgerEntry by entryId.</div>
+</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../org/apache/bookkeeper/client/impl/package-summary.html">org.apache.bookkeeper.client.impl</a> that return types with arguments of type <a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Iterator.html?is-external=true" title="class or interface in java.util">Iterator</a>&lt;<a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">LedgerEntriesImpl.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/impl/LedgerEntriesImpl.html#iterator--">iterator</a></span>()</code>
+<div class="block">Calling this method does not modify the reference count of the ByteBuf in the returned LedgerEntry objects.</div>
+</td>
+</tr>
 </tbody>
 </table>
 <table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
@@ -235,6 +211,21 @@
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../../org/apache/bookkeeper/client/impl/LedgerEntryImpl.html" title="class in org.apache.bookkeeper.client.impl">LedgerEntryImpl</a></code></td>
 <td class="colLast"><span class="typeNameLabel">LedgerEntryImpl.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/impl/LedgerEntryImpl.html#duplicate-org.apache.bookkeeper.client.api.LedgerEntry-">duplicate</a></span>(<a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a>&nbsp;entry)</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Method parameters in <a href="../../../../../../org/apache/bookkeeper/client/impl/package-summary.html">org.apache.bookkeeper.client.impl</a> with type arguments of type <a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../../../../../../org/apache/bookkeeper/client/impl/LedgerEntriesImpl.html" title="class in org.apache.bookkeeper.client.impl">LedgerEntriesImpl</a></code></td>
+<td class="colLast"><span class="typeNameLabel">LedgerEntriesImpl.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/impl/LedgerEntriesImpl.html#create-java.util.List-">create</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a>&gt;&nbsp;entries)</code>
+<div class="block">Create ledger entries.</div>
+</td>
 </tr>
 </tbody>
 </table>
