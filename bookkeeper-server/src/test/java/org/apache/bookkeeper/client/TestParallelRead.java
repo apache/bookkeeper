@@ -78,9 +78,7 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
             PendingReadOp readOp =
                     new PendingReadOp(lh, lh.bk.scheduler, i, i);
             readOp.parallelRead(true).submit();
-            Iterable<LedgerEntry> iterable = readOp.future().get();
-            assertNotNull(iterable);
-            Iterator<LedgerEntry> entries = iterable.iterator();
+            Iterator<LedgerEntry> entries = readOp.future().get().iterator();
             assertTrue(entries.hasNext());
             LedgerEntry entry = entries.next();
             assertNotNull(entry);
@@ -93,9 +91,7 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
         PendingReadOp readOp =
                 new PendingReadOp(lh, lh.bk.scheduler, 0, numEntries - 1);
         readOp.parallelRead(true).submit();
-        Iterable<LedgerEntry> iterable = readOp.future().get();
-        assertNotNull(iterable);
-        Iterator<LedgerEntry> iterator = iterable.iterator();
+        Iterator<LedgerEntry> iterator = readOp.future().get().iterator();
 
         int numReads = 0;
         while (iterator.hasNext()) {
@@ -198,9 +194,7 @@ public class TestParallelRead extends BookKeeperClusterTestCase {
         PendingReadOp readOp =
                 new PendingReadOp(lh, lh.bk.scheduler, 0, numEntries - 1);
         readOp.parallelRead(true).submit();
-        Iterable<LedgerEntry> iterable = readOp.future().get();
-        assertNotNull(iterable);
-        Iterator<LedgerEntry> entries = iterable.iterator();
+        Iterator<LedgerEntry> entries = readOp.future().get().iterator();
 
         int numReads = 0;
         while (entries.hasNext()) {

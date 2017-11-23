@@ -27,6 +27,7 @@ import static org.junit.Assert.assertEquals;
 
 import io.netty.buffer.Unpooled;
 import java.nio.ByteBuffer;
+import java.util.Iterator;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.BKException.BKDuplicateEntryIdException;
@@ -275,11 +276,12 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
         result(newDeleteLedgerOp().withLedgerId(lId).execute());
     }
 
-    private static void checkEntries(Iterable<LedgerEntry> entries, byte[] data)
+    private static void checkEntries(LedgerEntries entries, byte[] data)
         throws InterruptedException, BKException {
-        for (LedgerEntry le : entries) {
-            assertArrayEquals(data, le.getEntryBytes());
+        Iterator<LedgerEntry> iterator = entries.iterator();
+        while(iterator.hasNext()) {
+            LedgerEntry entry = iterator.next();
+            assertArrayEquals(data, entry.getEntryBytes());
         }
     }
-
 }
