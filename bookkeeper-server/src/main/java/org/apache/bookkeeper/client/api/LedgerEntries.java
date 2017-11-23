@@ -20,27 +20,31 @@ package org.apache.bookkeeper.client.api;
 import java.util.Iterator;
 
 /**
- * Interface to wrap the entries.
+ * Interface to wrap a sequence of entries.
  *
  * @since 4.6
  */
-public interface LedgerEntries extends AutoCloseable {
+public interface LedgerEntries
+    extends AutoCloseable, Iterable<LedgerEntry> {
 
     /**
      * Gets a specific LedgerEntry by entryId.
      *
      * @param entryId the LedgerEntry id
-     * @return the LedgerEntry, null if no LedgerEntry with such entryId.
+     * @return the LedgerEntry, null if no LedgerEntry with such entryId
      */
     LedgerEntry getEntry(long entryId);
 
     /**
+     * Get an iterator over all the ledger entries contained in the
+     * LedgerEntries object.
+     *
      * Calling this method does not modify the reference count of the ByteBuf in the returned LedgerEntry objects.
      * The caller who calls {@link #iterator()} should make sure that they do not call ByteBuf.release() on the
      * LedgerEntry objects to avoid a double free.
      * All reference counts will be decremented when the containing LedgerEntries object is closed.
      *
-     * @return the iterator of type LedgerEntry.
+     * @return an iterator of LedgerEntry objects
      */
     Iterator<LedgerEntry> iterator();
 }
