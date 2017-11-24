@@ -16,12 +16,16 @@
 package org.apache.bookkeeper.client.api;
 
 import org.apache.bookkeeper.client.LedgerHandleAdv;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
 
 /**
  * Super class for all errors which occur using BookKeeper client.
  *
  * @since 4.6
  */
+@Public
+@Unstable
 public abstract class BKException extends Exception {
     protected final int code;
 
@@ -214,7 +218,10 @@ public abstract class BKException extends Exception {
          * Write operations failed due to bookies are readonly.
          */
         int WriteOnReadOnlyBookieException = -104;
-        //-105 reserved for TooManyRequestsException
+        /**
+         * Operations failed due to too many requests in the queue.
+         */
+        int TooManyRequestsException = -105;
         /**
          * Ledger id overflow happens on ledger manager.
          *

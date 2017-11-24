@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
     <artifactId>bookkeeper</artifactId>
-    <version>4.6.0-SNAPSHOT</version>
+    <version>4.7.0-SNAPSHOT</version>
   </parent>
   <artifactId>bookkeeper-common</artifactId>
   <name>Apache BookKeeper :: Common</name>
@@ -46,6 +46,11 @@
       <artifactId>commons-lang3</artifactId>
       <version>${commons-lang3.version}</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.errorprone</groupId>
+      <artifactId>error_prone_annotations</artifactId>
+      <version>2.1.2</version>
     </dependency>
   </dependencies>
   <build>

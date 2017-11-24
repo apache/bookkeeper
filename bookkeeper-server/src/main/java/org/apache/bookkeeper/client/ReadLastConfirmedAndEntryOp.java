@@ -24,17 +24,16 @@ import com.google.common.util.concurrent.ListenableFuture;
 import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.ReadLastConfirmedAndEntryContext;
 import org.apache.bookkeeper.util.MathUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,7 +64,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
     private long lastAddConfirmed;
     private long timeOutInMillis;
 
-    abstract class ReadLACAndEntryRequest extends LedgerEntry {
+    abstract class ReadLACAndEntryRequest implements AutoCloseable {
 
         final AtomicBoolean complete = new AtomicBoolean(false);
 
@@ -76,12 +75,12 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         final ArrayList<BookieSocketAddress> ensemble;
         final DistributionSchedule.WriteSet writeSet;
         final DistributionSchedule.WriteSet orderedEnsemble;
+        final LedgerEntryImpl entryImpl;
 
         ReadLACAndEntryRequest(ArrayList<BookieSocketAddress> ensemble, long lId, long eId) {
-            super(lId, eId);
-
+            this.entryImpl = LedgerEntryImpl.create(lId, eId);
             this.ensemble = ensemble;
-            this.writeSet = lh.distributionSchedule.getWriteSet(entryId);
+            this.writeSet = lh.distributionSchedule.getWriteSet(eId);
             if (lh.bk.reorderReadSequence) {
                 BookKeeperServerHealthInfo bookKeeperServerHealthInfo = generateHealthInfoForWriteSet(writeSet, ensemble, lh);
                 this.orderedEnsemble = lh.bk.placementPolicy.reorderReadLACSequence(ensemble,
@@ -89,6 +88,10 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
             } else {
                 this.orderedEnsemble = writeSet.copy();
             }
+        }
+
+        public void close() {
+            entryImpl.close();
         }
 
         synchronized int getFirstError() {
@@ -126,13 +129,12 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
                 writeSet.recycle();
                 orderedEnsemble.recycle();
                 rc = BKException.Code.OK;
-                this.entryId = entryId;
                 /*
                  * The length is a long and it is the last field of the metadata of an entry.
                  * Consequently, we have to subtract 8 from METADATA_LENGTH to get the length.
                  */
-                length = buffer.getLong(DigestManager.METADATA_LENGTH - 8);
-                data = content;
+                entryImpl.setLength(buffer.getLong(DigestManager.METADATA_LENGTH - 8));
+                entryImpl.setEntryBuf(content);
                 return true;
             } else {
                 return false;
@@ -194,13 +196,13 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
                 // treat these errors as failures if the node from which we received this is part of
                 // the writeSet
                 if (this.writeSet.contains(bookieIndex)) {
-                    lh.registerOperationFailureOnBookie(host, entryId);
+                    lh.registerOperationFailureOnBookie(host, entryImpl.getEntryId());
                 }
                 ++numMissedEntryReads;
             }
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug(errMsg + " while reading entry: " + entryId + " ledgerId: " + lh.ledgerId + " from bookie: "
+                LOG.debug(errMsg + " while reading entry: " + entryImpl.getEntryId() + " ledgerId: " + lh.ledgerId + " from bookie: "
                     + host);
             }
         }
@@ -235,7 +237,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
 
         @Override
         public String toString() {
-            return String.format("L%d-E%d", ledgerId, entryId);
+            return String.format("L%d-E%d", entryImpl.getLedgerId(), entryImpl.getEntryId());
         }
     }
 
@@ -510,15 +512,24 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         public void readLastConfirmedAndEntryComplete(int rc, long lastAddConfirmed, LedgerEntry entry);
     }
 
-    private void submitCallback(int rc, long lastAddConfirmed, LedgerEntry entry) {
+    private void submitCallback(int rc) {
         long latencyMicros = MathUtils.elapsedMicroSec(requestTimeNano);
+        LedgerEntry entry;
         if (BKException.Code.OK != rc) {
             lh.bk.getReadLacAndEntryOpLogger()
                 .registerFailedEvent(latencyMicros, TimeUnit.MICROSECONDS);
+            entry = null;
         } else {
+            // could received advanced lac, with no entry
             lh.bk.getReadLacAndEntryOpLogger()
                 .registerSuccessfulEvent(latencyMicros, TimeUnit.MICROSECONDS);
+            if (request.entryImpl.getEntryBuffer() != null) {
+                entry = new LedgerEntry(request.entryImpl);
+            } else {
+                entry = null;
+            }
         }
+        request.close();
         cb.readLastConfirmedAndEntryComplete(rc, lastAddConfirmed, entry);
     }
 
@@ -554,7 +565,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
                             .registerSuccessfulEvent(elapsedMicros, TimeUnit.MICROSECONDS);
                     }
 
-                    submitCallback(BKException.Code.OK, lastAddConfirmed, request);
+                    submitCallback(BKException.Code.OK);
                     requestComplete.set(true);
                     heardFromHostsBitSet.set(rCtx.getBookieIndex(), true);
                 }
@@ -581,7 +592,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
                 return;
             }
         } else if (BKException.Code.UnauthorizedAccessException == rc && !requestComplete.get()) {
-            submitCallback(rc, lastAddConfirmed, null);
+            submitCallback(rc);
             requestComplete.set(true);
         } else {
             request.logErrorAndReattemptRead(rCtx.getBookieIndex(), bookie, "Error: " + BKException.getMessage(rc), rc);
@@ -597,10 +608,10 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         if (requestComplete.compareAndSet(false, true)) {
             if (!hasValidResponse) {
                 // no success called
-                submitCallback(request.getFirstError(), lastAddConfirmed, null);
+                submitCallback(request.getFirstError());
             } else {
                 // callback
-                submitCallback(BKException.Code.OK, lastAddConfirmed, null);
+                submitCallback(BKException.Code.OK);
             }
         }
     }

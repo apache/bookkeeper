@@ -71,6 +71,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     // Journal Parameters
     protected final static String MAX_JOURNAL_SIZE = "journalMaxSizeMB";
     protected final static String MAX_BACKUP_JOURNALS = "journalMaxBackups";
+    protected final static String JOURNAL_SYNC_DATA = "journalSyncData";
     protected final static String JOURNAL_ADAPTIVE_GROUP_WRITES = "journalAdaptiveGroupWrites";
     protected final static String JOURNAL_MAX_GROUP_WAIT_MSEC = "journalMaxGroupWaitMSec";
     protected final static String JOURNAL_BUFFERED_WRITES_THRESHOLD = "journalBufferedWritesThreshold";
@@ -127,6 +128,8 @@ public class ServerConfiguration extends AbstractConfiguration {
     // Worker Thread parameters.
     protected final static String NUM_ADD_WORKER_THREADS = "numAddWorkerThreads";
     protected final static String NUM_READ_WORKER_THREADS = "numReadWorkerThreads";
+    protected final static String MAX_PENDING_READ_REQUESTS_PER_THREAD = "maxPendingReadRequestsPerThread";
+    protected final static String MAX_PENDING_ADD_REQUESTS_PER_THREAD = "maxPendingAddRequestsPerThread";
     protected final static String NUM_LONG_POLL_WORKER_THREADS = "numLongPollWorkerThreads";
 
     // Long poll parameters
@@ -1350,6 +1353,48 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Set the max number of pending read requests for each read worker thread. After the quota is reached, new requests
+     * will be failed immediately
+     *
+     * @param maxPendingReadRequestsPerThread
+     * @return server configuration
+     */
+    public ServerConfiguration setMaxPendingReadRequestPerThread(int maxPendingReadRequestsPerThread) {
+        setProperty(MAX_PENDING_READ_REQUESTS_PER_THREAD, maxPendingReadRequestsPerThread);
+        return this;
+    }
+
+    /**
+     * If read workers threads are enabled, limit the number of pending requests, to avoid the executor queue to grow
+     * indefinitely (default: 10000 entries)
+     */
+    public int getMaxPendingReadRequestPerThread() {
+        return getInt(MAX_PENDING_READ_REQUESTS_PER_THREAD, 10000);
+    }
+
+    /**
+     * Set the max number of pending add requests for each add worker thread. After the quota is reached, new requests
+     * will be failed immediately
+     *
+     * @param maxPendingAddRequestsPerThread
+     * @return server configuration
+     */
+    public ServerConfiguration setMaxPendingAddRequestPerThread(int maxPendingAddRequestsPerThread) {
+        setProperty(MAX_PENDING_ADD_REQUESTS_PER_THREAD, maxPendingAddRequestsPerThread);
+        return this;
+    }
+
+    /**
+     * If add workers threads are enabled, limit the number of pending requests, to avoid the executor queue to grow
+     * indefinitely (default: 10000 entries)
+     */
+    public int getMaxPendingAddRequestPerThread() {
+        return getInt(MAX_PENDING_ADD_REQUESTS_PER_THREAD, 10000);
+    }
+
+
+
+    /**
      * Get the tick duration in milliseconds.
      * @return
      */
@@ -1490,6 +1535,36 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public int getSkipListArenaMaxAllocSize() {
         return getInt(SKIP_LIST_MAX_ALLOC_ENTRY, 128 * 1024);
+    }
+
+    /**
+     * Should the data be fsynced on journal before acknowledgment
+     *
+     * Default is true
+     *
+     * @return
+     */
+    public boolean getJournalSyncData() {
+        return getBoolean(JOURNAL_SYNC_DATA, true);
+    }
+
+    /**
+     * Enable or disable journal syncs.
+     * <p>
+     * By default, data sync is enabled to guarantee durability of writes.
+     * <p>
+     * Beware: while disabling data sync in the Bookie journal might improve the bookie write performance, it will also
+     * introduce the possibility of data loss. With no sync, the journal entries are written in the OS page cache but
+     * not flushed to disk. In case of power failure, the affected bookie might lose the unflushed data. If the ledger
+     * is replicated to multiple bookies, the chances of data loss are reduced though still present.
+     *
+     * @param syncData
+     *            whether to sync data on disk before acknowledgement
+     * @return server configuration object
+     */
+    public ServerConfiguration setJournalSyncData(boolean syncData) {
+        setProperty(JOURNAL_SYNC_DATA, syncData);
+        return this;
     }
 
     /**

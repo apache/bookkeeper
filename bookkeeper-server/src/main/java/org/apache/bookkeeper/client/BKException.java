@@ -83,6 +83,8 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
             return new BKUnclosedFragmentException();
         case Code.WriteOnReadOnlyBookieException:
             return new BKWriteOnReadOnlyBookieException();
+        case Code.TooManyRequestsException:
+            return new BKTooManyRequestsException();
         case Code.ReplicationException:
             return new BKReplicationException();
         case Code.ClientClosedException:
@@ -277,6 +279,12 @@ public abstract class BKException extends org.apache.bookkeeper.client.api.BKExc
     public static class BKWriteOnReadOnlyBookieException extends BKException {
         public BKWriteOnReadOnlyBookieException() {
             super(Code.WriteOnReadOnlyBookieException);
+        }
+    }
+
+    public static class BKTooManyRequestsException extends BKException {
+        public BKTooManyRequestsException() {
+            super(Code.TooManyRequestsException);
         }
     }
 

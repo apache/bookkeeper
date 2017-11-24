@@ -10,8 +10,10 @@ twitter_url: https://twitter.com/asfbookkeeper
 livereload: true
 
 versions:
-- "4.5.0"
+- "4.6.0"
 # [next_version_placehodler]
+- "4.5.1"
+- "4.5.0"
 
 archived_versions:
 - "4.4.0"
@@ -25,10 +27,10 @@ archived_versions:
 - "4.2.0"
 - "4.1.0"
 - "4.0.0"
-latest_version: "4.6.0-SNAPSHOT"
-latest_release: "4.5.0"
-stable_release: "4.4.0"
-distributedlog_version: "2.1.0-0.4.0"
+latest_version: "4.7.0-SNAPSHOT"
+latest_release: "4.6.0"
+stable_release: "4.5.0"
+distributedlog_version: "0.5.0"
 
 defaults:
 - scope:

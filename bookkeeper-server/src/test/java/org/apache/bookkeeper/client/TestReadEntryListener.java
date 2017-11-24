@@ -24,6 +24,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener;
@@ -31,11 +35,6 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * Unit tests for {@link org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener}.
@@ -87,11 +86,17 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
 
         @Override
         public void onEntryComplete(int rc, LedgerHandle lh, LedgerEntry entry, Object ctx) {
-            if (nextEntryId != entry.getEntryId()) {
-                inOrder = false;
+            long entryId;
+            if (BKException.Code.OK == rc) {
+                if (nextEntryId != entry.getEntryId()) {
+                    inOrder = false;
+                }
+                entryId = entry.getEntryId();
+            } else {
+                entryId = nextEntryId;
             }
+            resultCodes.put(entryId, new EntryWithRC(rc, entry));
             ++nextEntryId;
-            resultCodes.put(entry.getEntryId(), new EntryWithRC(rc, entry));
             l.countDown();
         }
 
@@ -115,7 +120,7 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
             LatchListener listener = new LatchListener(i, 1);
             ListenerBasedPendingReadOp readOp =
                     new ListenerBasedPendingReadOp(lh, lh.bk.scheduler, i, i, listener, null);
-            readOp.parallelRead(parallelRead).initiate();
+            readOp.parallelRead(parallelRead).submit();
             listener.expectComplete();
             assertEquals(1, listener.resultCodes.size());
             EntryWithRC entry = listener.resultCodes.get((long) i);
@@ -129,7 +134,7 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
         LatchListener listener = new LatchListener(0L, numEntries);
         ListenerBasedPendingReadOp readOp =
                 new ListenerBasedPendingReadOp(lh, lh.bk.scheduler, 0, numEntries - 1, listener, null);
-        readOp.parallelRead(parallelRead).initiate();
+        readOp.parallelRead(parallelRead).submit();
         listener.expectComplete();
         assertEquals(numEntries, listener.resultCodes.size());
         for (int i = 0; i < numEntries; i++) {
@@ -163,7 +168,7 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
         LatchListener listener = new LatchListener(11L, 1);
         ListenerBasedPendingReadOp readOp =
                 new ListenerBasedPendingReadOp(lh, lh.bk.scheduler, 11, 11, listener, null);
-        readOp.parallelRead(parallelRead).initiate();
+        readOp.parallelRead(parallelRead).submit();
         listener.expectComplete();
         assertEquals(1, listener.resultCodes.size());
         EntryWithRC entry = listener.resultCodes.get(11L);
@@ -174,7 +179,7 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
         // read multiple missing entries
         listener = new LatchListener(11L, 3);
         readOp = new ListenerBasedPendingReadOp(lh, lh.bk.scheduler, 11, 13, listener, null);
-        readOp.parallelRead(parallelRead).initiate();
+        readOp.parallelRead(parallelRead).submit();
         listener.expectComplete();
         assertEquals(3, listener.resultCodes.size());
         assertTrue(listener.isInOrder());
@@ -188,7 +193,7 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
         // read multiple entries with missing entries
         listener = new LatchListener(5L, 10);
         readOp = new ListenerBasedPendingReadOp(lh, lh.bk.scheduler, 5L, 14L, listener, null);
-        readOp.parallelRead(parallelRead).initiate();
+        readOp.parallelRead(parallelRead).submit();
         listener.expectComplete();
         assertEquals(10, listener.resultCodes.size());
         assertTrue(listener.isInOrder());
@@ -234,7 +239,7 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
         LatchListener listener = new LatchListener(0L, numEntries);
         ListenerBasedPendingReadOp readOp =
                 new ListenerBasedPendingReadOp(lh, lh.bk.scheduler, 0, numEntries - 1, listener, null);
-        readOp.parallelRead(parallelRead).initiate();
+        readOp.parallelRead(parallelRead).submit();
         listener.expectComplete();
         assertEquals(numEntries, listener.resultCodes.size());
         for (int i = 0; i < numEntries; i++) {
@@ -265,7 +270,7 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
         LedgerHandle lh = bkc.openLedger(id, digestType, passwd);
 
         ArrayList<BookieSocketAddress> ensemble =
-                lh.getLedgerMetadata().getEnsemble(5);
+            lh.getLedgerMetadata().getEnsemble(5);
         // kill bookies
         killBookie(ensemble.get(0));
         killBookie(ensemble.get(1));
@@ -274,8 +279,8 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
         // read multiple entries
         LatchListener listener = new LatchListener(0L, numEntries);
         ListenerBasedPendingReadOp readOp =
-                new ListenerBasedPendingReadOp(lh, lh.bk.scheduler, 0, numEntries - 1, listener, null);
-        readOp.parallelRead(parallelRead).initiate();
+            new ListenerBasedPendingReadOp(lh, lh.bk.scheduler, 0, numEntries - 1, listener, null);
+        readOp.parallelRead(parallelRead).submit();
         listener.expectComplete();
         assertEquals(numEntries, listener.resultCodes.size());
         for (int i = 0; i < numEntries; i++) {
@@ -294,11 +299,11 @@ public class TestReadEntryListener extends BookKeeperClusterTestCase {
 
     @Test
     public void testReadFailureWithFailedBookiesEnableParallelRead() throws Exception {
-        readWithFailedBookiesTest(true);
+        readFailureWithFailedBookiesTest(true);
     }
 
     @Test
     public void testReadFailureWithFailedBookiesDisableParallelRead() throws Exception {
-        readWithFailedBookiesTest(false);
+        readFailureWithFailedBookiesTest(false);
     }
 }

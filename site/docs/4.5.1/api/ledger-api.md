@@ -20,7 +20,7 @@ If you're using [Maven](https://maven.apache.org/), add this to your [`pom.xml`]
 
 ```xml
 <!-- in your <properties> block -->
-<bookkeeper.version>4.5.0</bookkeeper.version>
+<bookkeeper.version>4.5.1</bookkeeper.version>
 
 <!-- in your <dependencies> block -->
 <dependency>

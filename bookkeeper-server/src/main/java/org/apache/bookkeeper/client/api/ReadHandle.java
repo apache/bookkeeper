@@ -21,12 +21,16 @@
 package org.apache.bookkeeper.client.api;
 
 import java.util.concurrent.CompletableFuture;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
 
 /**
  * Provide read access to a ledger.
  *
  * @since 4.6
  */
+@Public
+@Unstable
 public interface ReadHandle extends Handle {
 
     /**
@@ -38,7 +42,7 @@ public interface ReadHandle extends Handle {
      *          id of last entry of sequence, inclusive
      * @return an handle to the result of the operation
      */
-    CompletableFuture<Iterable<LedgerEntry>> read(long firstEntry, long lastEntry);
+    CompletableFuture<LedgerEntries> read(long firstEntry, long lastEntry);
 
     /**
      * Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.
@@ -63,7 +67,7 @@ public interface ReadHandle extends Handle {
      * @see #read(long, long)
      * @see #readLastAddConfirmed()
      */
-    CompletableFuture<Iterable<LedgerEntry>> readUnconfirmed(long firstEntry, long lastEntry);
+    CompletableFuture<LedgerEntries> readUnconfirmed(long firstEntry, long lastEntry);
 
     /**
      * Obtains asynchronously the last confirmed write from a quorum of bookies. This
@@ -92,10 +96,42 @@ public interface ReadHandle extends Handle {
     CompletableFuture<Long> tryReadLastAddConfirmed();
 
     /**
-     * Get the local value for LastAddConfirmed.
+     * Get the last confirmed entry id on this ledger. It reads the local state of the ledger handle,
+     * which is different from the {@link #readLastAddConfirmed()} call.
+
+     * <p>In the case the ledger is not closed and the client is a reader, it is necessary to
+     * call {@link #readLastAddConfirmed()} to obtain a fresh value of last add confirmed entry id.
      *
-     * @return the local value for LastAddConfirmed
+     * @see #readLastAddConfirmed()
+     *
+     * @return the local value for LastAddConfirmed or -1L if no entry has been confirmed.
      */
     long getLastAddConfirmed();
+
+    /**
+     * Returns the length of the data written in this ledger so much, in bytes.
+     *
+     * @return the length of the data written in this ledger, in bytes.
+     */
+    long getLength();
+
+    /**
+     * Asynchronous read specific entry and the latest last add confirmed.
+     * If the next entryId is less than known last add confirmed, the call will read next entry directly.
+     * If the next entryId is ahead of known last add confirmed, the call will issue a long poll read
+     * to wait for the next entry <i>entryId</i>.
+     *
+     * @param entryId
+     *          next entry id to read
+     * @param timeOutInMillis
+     *          timeout period to wait for the entry id to be available (for long poll only)
+     *          if timeout for get the entry, it will return null entry.
+     * @param parallel
+     *          whether to issue the long poll reads in parallel
+     * @return an handle to the result of the operation
+     */
+    CompletableFuture<LastConfirmedAndEntry> readLastAddConfirmedAndEntry(long entryId,
+                                                                          long timeOutInMillis,
+                                                                          boolean parallel);
 
 }

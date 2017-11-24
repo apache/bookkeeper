@@ -23,7 +23,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.bookkeeper</groupId>
-  <version>4.6.0-SNAPSHOT</version>
+  <version>4.7.0-SNAPSHOT</version>
   <artifactId>bookkeeper</artifactId>
   <packaging>pom</packaging>
   <name>Apache BookKeeper :: Parent</name>
@@ -52,6 +52,7 @@
   </ciManagement>
   <modules>
     <module>buildtools</module>
+    <module>bookkeeper-proto</module>
     <module>bookkeeper-common</module>
     <module>bookkeeper-stats</module>
     <module>bookkeeper-server</module>
@@ -187,6 +188,13 @@
   </dependencies>
 
   <build>
+    <extensions>
+      <extension>
+        <groupId>kr.motd.maven</groupId>
+        <artifactId>os-maven-plugin</artifactId>
+        <version>1.4.1.Final</version>
+      </extension>
+    </extensions>
     <plugins>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -236,14 +244,18 @@
               <packages>org.apache.bookkeeper.client:org.apache.bookkeeper.common.annotation:org.apache.bookkeeper.conf:org.apache.bookkeeper.feature</packages>
             </group>
             <group>
+              <title>Bookkeeper Client (New Fluent API - Experimental)</title>
+              <packages>org.apache.bookkeeper.client.api</packages>
+            </group>
+            <group>
               <title>Bookkeeper Stats API</title>
-              <!-- currently codahale and prometheus are placed under `stats` package unfortunately.
-                   we might consider rename them to their own packages in future. -->
+              <!-- currently codahale is placed under `stats` package unfortunately.
+                   we might consider rename them to their own packages in future. {@link https://github.com/apache/bookkeeper/issues/762} -->
               <packages>org.apache.bookkeeper.stats</packages>
             </group>
             <group>
               <title>Bookkeeper Stats Providers</title>
-              <packages>org.apache.bookkeeper.stats.twitter.finagle:org.apache.bookkeeper.stats.twitter.ostrich:org.apache.bookkeeper.stats.twitter.science</packages>
+              <packages>org.apache.bookkeeper.stats.twitter.finagle:org.apache.bookkeeper.stats.twitter.ostrich:org.apache.bookkeeper.stats.twitter.science:org.apache.bookkeeper.stats.prometheus</packages>
             </group>
           </groups>
           <doctitle>BookKeeper Java API (version ${project.version})</doctitle>

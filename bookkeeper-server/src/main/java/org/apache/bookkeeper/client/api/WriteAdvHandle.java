@@ -24,6 +24,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
 
 /**
  * Provide write access to a ledger. Using WriteAdvHandler the writer MUST explictly set an entryId. Beware that the
@@ -34,6 +36,8 @@ import java.util.concurrent.CompletableFuture;
  *
  * @since 4.6
  */
+@Public
+@Unstable
 public interface WriteAdvHandle extends ReadHandle {
 
     /**
@@ -41,10 +45,34 @@ public interface WriteAdvHandle extends ReadHandle {
      *
      * @param entryId entryId to be added
      * @param data array of bytes to be written
-     * @return an handle to the result, in case of success it will return the same value of param entryId
+     * @return an handle to the result, in case of success it will return the same value of param entryId.
      */
     default CompletableFuture<Long> write(final long entryId, final ByteBuffer data) {
         return write(entryId, Unpooled.wrappedBuffer(data));
+    }
+
+    /**
+     * Add entry asynchronously to an open ledger.
+     *
+     * @param entryId entryId to be added.
+     * @param data array of bytes to be written
+     * @return an handle to the result, in case of success it will return the same value of param {@code entryId}.
+     */
+    default CompletableFuture<Long> write(final long entryId, final byte[] data) {
+        return write(entryId, Unpooled.wrappedBuffer(data));
+    }
+
+    /**
+     * Add entry asynchronously to an open ledger.
+     *
+     * @param entryId entryId to  be added.
+     * @param data array of bytes to be written
+     * @param offset the offset of the bytes array
+     * @param length the length to data to write
+     * @return an handle to the result, in case of success it will return the same value of param {@code entryId}.
+     */
+    default CompletableFuture<Long> write(final long entryId, final byte[] data, int offset, int length) {
+        return write(entryId, Unpooled.wrappedBuffer(data, offset, length));
     }
 
     /**
