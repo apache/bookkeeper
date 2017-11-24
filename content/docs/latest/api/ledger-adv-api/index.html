@@ -511,6 +511,26 @@ If a ledger already exists when users try to create an advanced ledger with same
 a <a href="../javadoc/org/apache/bookkeeper/client/BKException.BKLedgerExistException.html">LedgerExistsException</a> is thrown by the bookkeeper client.</p>
 </blockquote>
 
+<p>Creating advanced ledgers can be done throught a fluent API since 4.6.</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">BookKeeper</span> <span class="n">bk</span> <span class="o">=</span> <span class="o">...;</span>
+
+<span class="kt">byte</span><span class="o">[]</span> <span class="n">passwd</span> <span class="o">=</span> <span class="s">"some-passwd"</span><span class="o">.</span><span class="na">getBytes</span><span class="o">();</span>
+
+<span class="n">WriteHandle</span> <span class="n">wh</span> <span class="o">=</span> <span class="n">bk</span><span class="o">.</span><span class="na">newCreateLedgerOp</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">withDigestType</span><span class="o">(</span><span class="n">DigestType</span><span class="o">.</span><span class="na">CRC32</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">withPassword</span><span class="o">(</span><span class="n">passwd</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">withEnsembleSize</span><span class="o">(</span><span class="mi">3</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">withWriteQuorumSize</span><span class="o">(</span><span class="mi">3</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">withAckQuorumSize</span><span class="o">(</span><span class="mi">2</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">makeAdv</span><span class="o">()</span>                  <span class="c1">// convert the create ledger builder to create ledger adv builder</span>
+    <span class="o">.</span><span class="na">withLedgerId</span><span class="o">(</span><span class="mi">1234L</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">execute</span><span class="o">()</span>                  <span class="c1">// execute the creation op</span>
+    <span class="o">.</span><span class="na">get</span><span class="o">();</span>                     <span class="c1">// wait for the execution to complete</span>
+
+</code></pre>
+</div>
+
 <h3 id="add-entries">Add Entries</h3>
 
 <p>The normal <a href="ledger-api/#adding-entries-to-ledgers">add entries api</a> in advanced ledgers are disabled. Instead, when users want to add entries
@@ -519,6 +539,15 @@ to advanced ledgers, an entry id is required to pass in along with the entry dat
 <div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kt">long</span> <span class="n">entryId</span> <span class="o">=</span> <span class="o">...;</span> <span class="c1">// entry id generated externally</span>
 
 <span class="n">ledger</span><span class="o">.</span><span class="na">addEntry</span><span class="o">(</span><span class="n">entryId</span><span class="o">,</span> <span class="s">"Some entry data"</span><span class="o">.</span><span class="na">getBytes</span><span class="o">());</span>
+</code></pre>
+</div>
+
+<p>If you are using the new API, you can do as following:</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">WriteHandle</span> <span class="n">wh</span> <span class="o">=</span> <span class="o">...;</span>
+<span class="kt">long</span> <span class="n">entryId</span> <span class="o">=</span> <span class="o">...;</span> <span class="c1">// entry id generated externally</span>
+
+<span class="n">wh</span><span class="o">.</span><span class="na">write</span><span class="o">(</span><span class="n">entryId</span><span class="o">,</span> <span class="s">"Some entry data"</span><span class="o">.</span><span class="na">getBytes</span><span class="o">()).</span><span class="na">get</span><span class="o">();</span>
 </code></pre>
 </div>
 
