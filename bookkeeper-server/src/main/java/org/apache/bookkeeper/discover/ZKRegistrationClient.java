@@ -77,9 +77,10 @@ public class ZKRegistrationClient implements RegistrationClient {
         private boolean closed = false;
         private Set<BookieSocketAddress> bookies = null;
         private Version version = Version.NEW;
-        private final CompletableFuture<Void> firstRunFuture;
+        private final CompletableFuture<Set<BookieSocketAddress>> firstRunFuture;
 
-        WatchTask(String regPath, CompletableFuture<Void> firstRunFuture) {
+        WatchTask(String regPath,
+                  CompletableFuture<Set<BookieSocketAddress>> firstRunFuture) {
             this.regPath = regPath;
             this.listeners = new CopyOnWriteArraySet<>();
             this.firstRunFuture = firstRunFuture;
@@ -144,7 +145,7 @@ public class ZKRegistrationClient implements RegistrationClient {
                     listener.onBookiesChanged(bookieSet);
                 }
             }
-            firstRunFuture.complete(null);
+            firstRunFuture.complete(bookieSet.getValue());
         }
 
         @Override
@@ -282,7 +283,7 @@ public class ZKRegistrationClient implements RegistrationClient {
 
     @Override
     public synchronized CompletableFuture<?> watchWritableBookies(RegistrationListener listener) {
-        CompletableFuture<Void> f = new CompletableFuture<>();
+        CompletableFuture<Set<BookieSocketAddress>> f = new CompletableFuture<>();
         if (null == watchWritableBookiesTask) {
             watchWritableBookiesTask = new WatchTask(bookieRegistrationPath, f);
         }
@@ -309,7 +310,7 @@ public class ZKRegistrationClient implements RegistrationClient {
 
     @Override
     public synchronized CompletableFuture<?> watchReadOnlyBookies(RegistrationListener listener) {
-        CompletableFuture<Void> f = new CompletableFuture<>();
+        CompletableFuture<Set<BookieSocketAddress>> f = new CompletableFuture<>();
         if (null == watchReadOnlyBookiesTask) {
             watchReadOnlyBookiesTask = new WatchTask(bookieReadonlyRegistrationPath, f);
         }

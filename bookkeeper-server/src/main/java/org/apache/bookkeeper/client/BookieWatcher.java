@@ -143,29 +143,33 @@ class BookieWatcher {
      * @throws BKException when failed to read bookies
      */
     public void initialBlockingBookieRead() throws BKException {
+        CompletableFuture<?> writable;
+        CompletableFuture<?> readonly;
         synchronized (this) {
             if (initialReadonlyBookiesFuture == null
                 && initialWritableBookiesFuture == null) {
-                CompletableFuture<?> writable
-                    = this.registrationClient.watchWritableBookies(
+
+                writable = this.registrationClient.watchWritableBookies(
                             bookies -> processWritableBookiesChanged(bookies.getValue()));
 
-                CompletableFuture<?> readonly
-                    = this.registrationClient.watchReadOnlyBookies(
+                readonly = this.registrationClient.watchReadOnlyBookies(
                             bookies -> processReadOnlyBookiesChanged(bookies.getValue()));
                 initialWritableBookiesFuture = writable;
                 initialReadonlyBookiesFuture = readonly;
+            } else {
+                writable = initialWritableBookiesFuture;
+                readonly = initialReadonlyBookiesFuture;
             }
         }
 
         try {
-            FutureUtils.result(initialWritableBookiesFuture, EXCEPTION_FUNC);
+            FutureUtils.result(writable, EXCEPTION_FUNC);
         } catch (BKInterruptedException ie) {
             Thread.currentThread().interrupt();
             throw ie;
         }
         try {
-            FutureUtils.result(initialReadonlyBookiesFuture, EXCEPTION_FUNC);
+            FutureUtils.result(readonly, EXCEPTION_FUNC);
         } catch (BKInterruptedException ie) {
             Thread.currentThread().interrupt();
             throw ie;
