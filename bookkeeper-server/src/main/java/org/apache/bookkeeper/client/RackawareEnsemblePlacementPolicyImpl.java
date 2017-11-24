@@ -864,7 +864,7 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
                 // there isn't too much differences between readonly bookies
                 // from unavailable bookies. since there
                 // is no write requests to them, so we shouldn't try reading
-                // from readonly bookie in prior to writable bookies.
+                // from readonly bookie prior to writable bookies.
                 if ((null == readOnlyBookies)
                     || !readOnlyBookies.contains(address)) {
                     writeSet.set(i, idx | UNAVAIL_MASK);
