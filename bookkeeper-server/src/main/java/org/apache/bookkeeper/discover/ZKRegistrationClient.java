@@ -77,10 +77,12 @@ public class ZKRegistrationClient implements RegistrationClient {
         private boolean closed = false;
         private Set<BookieSocketAddress> bookies = null;
         private Version version = Version.NEW;
+        private final CompletableFuture<Void> firstRunFuture;
 
-        WatchTask(String regPath) {
+        WatchTask(String regPath, CompletableFuture<Void> firstRunFuture) {
             this.regPath = regPath;
             this.listeners = new CopyOnWriteArraySet<>();
+            this.firstRunFuture = firstRunFuture;
         }
 
         public int getNumListeners() {
@@ -90,7 +92,10 @@ public class ZKRegistrationClient implements RegistrationClient {
         public boolean addListener(RegistrationListener listener) {
             if (listeners.add(listener)) {
                 if (null != bookies) {
-                    listener.onBookiesChanged(new Versioned<>(bookies, version));
+                    scheduler.execute(() -> {
+                            listener.onBookiesChanged(
+                                    new Versioned<>(bookies, version));
+                        });
                 }
             }
             return true;
@@ -126,6 +131,7 @@ public class ZKRegistrationClient implements RegistrationClient {
         public void accept(Versioned<Set<BookieSocketAddress>> bookieSet, Throwable throwable) {
             if (throwable != null) {
                 scheduleWatchTask(ZK_CONNECT_BACKOFF_MS);
+                firstRunFuture.completeExceptionally(throwable);
                 return;
             }
 
@@ -138,6 +144,7 @@ public class ZKRegistrationClient implements RegistrationClient {
                     listener.onBookiesChanged(bookieSet);
                 }
             }
+            firstRunFuture.complete(null);
         }
 
         @Override
@@ -274,15 +281,17 @@ public class ZKRegistrationClient implements RegistrationClient {
 
 
     @Override
-    public synchronized void watchWritableBookies(RegistrationListener listener) {
+    public synchronized CompletableFuture<?> watchWritableBookies(RegistrationListener listener) {
+        CompletableFuture<Void> f = new CompletableFuture<>();
         if (null == watchWritableBookiesTask) {
-            watchWritableBookiesTask = new WatchTask(bookieRegistrationPath);
+            watchWritableBookiesTask = new WatchTask(bookieRegistrationPath, f);
         }
 
         watchWritableBookiesTask.addListener(listener);
         if (watchWritableBookiesTask.getNumListeners() == 1) {
             watchWritableBookiesTask.watch();
         }
+        return f;
     }
 
     @Override
@@ -299,15 +308,17 @@ public class ZKRegistrationClient implements RegistrationClient {
     }
 
     @Override
-    public synchronized void watchReadOnlyBookies(RegistrationListener listener) {
+    public synchronized CompletableFuture<?> watchReadOnlyBookies(RegistrationListener listener) {
+        CompletableFuture<Void> f = new CompletableFuture<>();
         if (null == watchReadOnlyBookiesTask) {
-            watchReadOnlyBookiesTask = new WatchTask(bookieReadonlyRegistrationPath);
+            watchReadOnlyBookiesTask = new WatchTask(bookieReadonlyRegistrationPath, f);
         }
 
         watchReadOnlyBookiesTask.addListener(listener);
         if (watchReadOnlyBookiesTask.getNumListeners() == 1) {
             watchReadOnlyBookiesTask.watch();
         }
+        return f;
     }
 
     @Override

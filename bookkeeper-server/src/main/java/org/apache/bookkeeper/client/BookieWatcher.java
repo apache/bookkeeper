@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
@@ -69,6 +70,9 @@ class BookieWatcher {
 
     private volatile Set<BookieSocketAddress> writableBookies = Collections.emptySet();
     private volatile Set<BookieSocketAddress> readOnlyBookies = Collections.emptySet();
+
+    private CompletableFuture<?> initialWritableBookiesFuture = null;
+    private CompletableFuture<?> initialReadonlyBookiesFuture = null;
 
     public BookieWatcher(ClientConfiguration conf,
                          EnsemblePlacementPolicy placementPolicy,
@@ -138,17 +142,36 @@ class BookieWatcher {
      *
      * @throws BKException when failed to read bookies
      */
-    public void readBookiesBlocking() throws BKException {
-        this.registrationClient.watchReadOnlyBookies(bookies -> processReadOnlyBookiesChanged(bookies.getValue()));
-        this.registrationClient.watchWritableBookies(bookies -> processWritableBookiesChanged(bookies.getValue()));
+    public void initialBlockingBookieRead() throws BKException {
+        synchronized (this) {
+            if (initialReadonlyBookiesFuture == null
+                && initialWritableBookiesFuture == null) {
+                CompletableFuture<?> writable
+                    = this.registrationClient.watchWritableBookies(
+                            bookies -> processWritableBookiesChanged(bookies.getValue()));
+
+                CompletableFuture<?> readonly
+                    = this.registrationClient.watchReadOnlyBookies(
+                            bookies -> processReadOnlyBookiesChanged(bookies.getValue()));
+                initialWritableBookiesFuture = writable;
+                initialReadonlyBookiesFuture = readonly;
+            }
+        }
 
         try {
-            readOnlyBookies = getReadOnlyBookies();
+            FutureUtils.result(initialWritableBookiesFuture, EXCEPTION_FUNC);
+        } catch (BKInterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw ie;
+        }
+        try {
+            FutureUtils.result(initialReadonlyBookiesFuture, EXCEPTION_FUNC);
+        } catch (BKInterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw ie;
         } catch (Exception e) {
             log.error("Failed getReadOnlyBookies: ", e);
         }
-
-        writableBookies = getBookies();
     }
 
     /**

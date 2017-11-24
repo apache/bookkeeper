@@ -87,8 +87,10 @@ public interface RegistrationClient extends AutoCloseable {
      * <p>The topology changes of bookies will be propagated to the provided <i>listener</i>.
      *
      * @param listener listener to receive the topology changes of bookies.
+     * @return a future which completes when the bookies have been read for
+     *         the first time
      */
-    void watchWritableBookies(RegistrationListener listener);
+    CompletableFuture<?> watchWritableBookies(RegistrationListener listener);
 
     /**
      * Unwatch the changes of bookies.
@@ -103,8 +105,10 @@ public interface RegistrationClient extends AutoCloseable {
      * <p>The topology changes of bookies will be propagated to the provided <i>listener</i>.
      *
      * @param listener listener to receive the topology changes of bookies.
+     * @return a future which completes when the bookies have been read for
+     *         the first time
      */
-    void watchReadOnlyBookies(RegistrationListener listener);
+    CompletableFuture<?> watchReadOnlyBookies(RegistrationListener listener);
 
     /**
      * Unwatch the changes of bookies.

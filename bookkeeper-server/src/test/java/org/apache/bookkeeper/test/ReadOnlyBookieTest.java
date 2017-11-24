@@ -27,6 +27,7 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.util.Enumeration;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
@@ -127,18 +128,13 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
             // Expected
         }
 
-        // wait for zk to get updated (async) as bookie transitions to read-only
-        while (zkc.exists(baseConf.getZkAvailableBookiesPath() + "/" + BookKeeperConstants.READONLY + "/"
-                + Bookie.getBookieAddress(bsConfs.get(1)).toString(), false) == null) {
-            Thread.sleep(100);
-        }
-        
+        bkc.waitForReadOnlyBookie(Bookie.getBookieAddress(bsConfs.get(1)))
+            .get(30, TimeUnit.SECONDS);
+
         LOG.info("bookie is running {}, readonly {}.", bookie.isRunning(), bookie.isReadOnly());
         assertTrue("Bookie should be running and converted to readonly mode",
                 bookie.isRunning() && bookie.isReadOnly());
 
-        // refresh the bookkeeper client
-        bkc.readBookiesBlocking();
         // should fail to create ledger
         try {
             bkc.createLedger(2, 2, DigestType.MAC, "".getBytes());
@@ -150,18 +146,13 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
         // Now add the current ledger dir back to writable dirs list
         ledgerDirsManager.addToWritableDirs(testDir, true);
 
-        // since the bookie transitions to write mode asynchronously, we need to wait for the bookie to be registered on
-        // zk
-        while (zkc.exists(baseConf.getZkAvailableBookiesPath() + "/"
-                + Bookie.getBookieAddress(bsConfs.get(1)).toString(), false) == null) {
-            Thread.sleep(100);
-        }
+        bkc.waitForWritableBookie(Bookie.getBookieAddress(bsConfs.get(1)))
+            .get(30, TimeUnit.SECONDS);
 
         LOG.info("bookie is running {}, readonly {}.", bookie.isRunning(), bookie.isReadOnly());
         assertTrue("Bookie should be running and converted back to writable mode", bookie.isRunning()
                 && !bookie.isReadOnly());
-        // force client to read bookies
-        bkc.readBookiesBlocking();
+
         LedgerHandle newLedger = bkc.createLedger(2, 2, DigestType.MAC, "".getBytes());
         for (int i = 0; i < 10; i++) {
             newLedger.addEntry("data".getBytes());
@@ -272,7 +263,9 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
         startNewBookie();
         bs.get(1).getBookie().doTransitionToReadOnlyMode();
         try {
-            bkc.readBookiesBlocking();
+            bkc.waitForReadOnlyBookie(Bookie.getBookieAddress(bsConfs.get(1)))
+                .get(30, TimeUnit.SECONDS);
+
             bkc.createLedger(2, 2, DigestType.CRC32, "".getBytes());
             fail("Must throw exception, as there is one readonly bookie");
         } catch (BKException e) {
