@@ -27,6 +27,8 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -68,7 +70,9 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
     BookKeeper createClient(int specTimeout) throws Exception {
         ClientConfiguration conf = new ClientConfiguration()
             .setSpeculativeReadTimeout(specTimeout)
-            .setReadTimeout(30000);
+            .setReadTimeout(30000)
+            .setReorderReadSequenceEnabled(true)
+            .setEnsemblePlacementPolicySlowBookies(true);
         conf.setZkServers(zkUtil.getZooKeeperConnectString());
         return new BookKeeper(conf);
     }
@@ -149,6 +153,9 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
             lspec.asyncReadEntries(1, 1, speccb, null);
             speccb.expectSuccess(4000);
             nospeccb.expectTimeout(4000);
+            // Check that the second bookie is registered as a slow bookie at entryId 1
+            assertTrue(((RackawareEnsemblePlacementPolicy) lspec.bk.placementPolicy).slowBookies.asMap().size() == 1);
+            assertTrue(((RackawareEnsemblePlacementPolicy) lspec.bk.placementPolicy).slowBookies.asMap().get(second) == 1L);
         } finally {
             sleepLatch.countDown();
             lspec.close();
@@ -194,16 +201,18 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
                        latch1.getDuration() >= timeout*2
                        && latch1.getDuration() < timeout*3);
 
-            // third should have to hit one timeouts (bookie 2)
+            // bookies 1 & 2 should be registered as slow bookies because of speculative reads
+            Set<BookieSocketAddress> expectedSlowBookies = new HashSet<BookieSocketAddress>();
+            expectedSlowBookies.add(l.getLedgerMetadata().getEnsembles().get(0L).get(1));
+            expectedSlowBookies.add(l.getLedgerMetadata().getEnsembles().get(0L).get(2));
+            assertEquals(((RackawareEnsemblePlacementPolicy) l.bk.placementPolicy).slowBookies.asMap().keySet(),
+                expectedSlowBookies);
+
+            // third should not hit timeouts since bookies 1 & 2 are registered as slow
             // bookie 3 has the entry
             LatchCallback latch2 = new LatchCallback();
             l.asyncReadEntries(2, 2, latch2, null);
-            latch2.expectTimeout(timeout/2);
             latch2.expectSuccess(timeout);
-            LOG.info("Timeout {} latch2 duration {}", timeout, latch2.getDuration());
-            assertTrue("should have taken longer than one timeout, but less than 2",
-                       latch2.getDuration() >= timeout
-                       && latch2.getDuration() < timeout*2);
 
             // fourth should have no timeout
             // bookie 3 has the entry

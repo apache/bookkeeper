@@ -149,7 +149,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
                 authProviderFactory, registry, pcbcPool, shFactory);
     }
 
-    private PerChannelBookieClientPool lookupClient(BookieSocketAddress addr) {
+    public PerChannelBookieClientPool lookupClient(BookieSocketAddress addr) {
         PerChannelBookieClientPool clientPool = channels.get(addr);
         if (null == clientPool) {
             closeLock.readLock().lock();

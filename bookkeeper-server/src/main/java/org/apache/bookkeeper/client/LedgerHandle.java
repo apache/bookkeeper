@@ -37,6 +37,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -69,11 +70,13 @@ import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.TimedGenericCallback;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.State;
+import org.apache.bookkeeper.proto.PerChannelBookieClientPool;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallback;
@@ -316,6 +319,30 @@ public class LedgerHandle implements WriteHandle {
         }
 
         bk.getLedgerManager().writeLedgerMetadata(ledgerId, metadata, writeCb);
+    }
+
+    /**
+     * Generate the health info for bookies in the write set.
+     *
+     * @return BookKeeperServerHealthInfo for every bookie in the write set.
+     */
+    public BookKeeperServerHealthInfo generateHealthInfoForWriteSet(
+        DistributionSchedule.WriteSet writeSet,
+        ArrayList<BookieSocketAddress> ensemble,
+        LedgerHandle lh) {
+        Map<BookieSocketAddress, Integer> bookiePendingMap = new HashMap<>();
+        BookieClient client = lh.bk.bookieClient;
+        for(int i = 0; i < writeSet.size(); i++) {
+            Integer idx = writeSet.get(i);
+            BookieSocketAddress address = ensemble.get(idx);
+            PerChannelBookieClientPool pcbcPool = client.lookupClient(address);
+            if (pcbcPool == null) {
+                continue;
+            }
+            int numPendingReqs = pcbcPool.getNumPendingCompletionRequests();
+            bookiePendingMap.put(address, numPendingReqs);
+        }
+        return new BookKeeperServerHealthInfo(lh.bookieFailureHistory.asMap(), bookiePendingMap);
     }
 
     /**
