@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -121,7 +122,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
 
         DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
         DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
-                ensemble, new HashMap<BookieSocketAddress, Long>(), writeSet);
+                ensemble, new BookKeeperServerHealthInfo(), writeSet);
         assertEquals(origWriteSet, reorderSet);
     }
 
@@ -144,7 +145,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
 
         DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
-                ensemble, new HashMap<BookieSocketAddress, Long>(), writeSet.copy());
+                ensemble, new BookKeeperServerHealthInfo(), writeSet.copy());
         DistributionSchedule.WriteSet expectedSet = writeSetFromValues(0, 3, 1, 2);
         LOG.info("write set : {}", writeSet);
         LOG.info("reorder set : {}", reorderSet);
@@ -164,7 +165,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
 
         DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
         DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
-                ensemble, new HashMap<BookieSocketAddress, Long>(), writeSet);
+                ensemble, new BookKeeperServerHealthInfo(), writeSet);
         LOG.info("reorder set : {}", reorderSet);
         assertEquals(origWriteSet, reorderSet);
     }
@@ -189,7 +190,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
 
         DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
         DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
-                ensemble, new HashMap<BookieSocketAddress, Long>(), writeSet);
+                ensemble, new BookKeeperServerHealthInfo(), writeSet);
         DistributionSchedule.WriteSet expectedSet
             = writeSetFromValues(3, 1, 2, 0);
         LOG.info("reorder set : {}", reorderSet);
@@ -219,9 +220,75 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
 
         DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
         DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
-                ensemble, new HashMap<BookieSocketAddress, Long>(), writeSet);
+                ensemble, new BookKeeperServerHealthInfo(), writeSet);
         DistributionSchedule.WriteSet expectedSet
             = writeSetFromValues(3, 1, 2, 0);
+        LOG.info("reorder set : {}", reorderSet);
+        assertFalse(reorderSet.equals(origWriteSet));
+        assertEquals(expectedSet, reorderSet);
+    }
+
+    @Test
+    public void testnodeSlow() throws Exception {
+        repp.uninitalize();
+        updateMyRack("/r1/rack1");
+
+        repp = new RegionAwareEnsemblePlacementPolicy();
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+
+        // Update cluster
+        Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
+        addrs.add(addr1);
+        addrs.add(addr2);
+        addrs.add(addr3);
+        addrs.add(addr4);
+        repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
+        repp.registerSlowBookie(addr1, 0L);
+        Map<BookieSocketAddress, Integer> bookiePendingMap = new HashMap<BookieSocketAddress, Integer>();
+        bookiePendingMap.put(addr1, 1);
+        repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
+
+        BookKeeperServerHealthInfo bookKeeperServerHealthInfo = new BookKeeperServerHealthInfo(
+            new HashMap<BookieSocketAddress, Long>(), bookiePendingMap);
+        DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
+        DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
+            ensemble, bookKeeperServerHealthInfo, writeSet);
+        DistributionSchedule.WriteSet expectedSet
+            = writeSetFromValues(3, 1, 2, 0);
+        LOG.info("reorder set : {}", reorderSet);
+        assertFalse(reorderSet.equals(origWriteSet));
+        assertEquals(expectedSet, reorderSet);
+    }
+
+    @Test
+    public void testTwoNodesSlow() throws Exception {
+        repp.uninitalize();
+        updateMyRack("/r1/rack1");
+
+        repp = new RegionAwareEnsemblePlacementPolicy();
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+
+        // Update cluster
+        Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
+        addrs.add(addr1);
+        addrs.add(addr2);
+        addrs.add(addr3);
+        addrs.add(addr4);
+        repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
+        repp.registerSlowBookie(addr1, 0L);
+        repp.registerSlowBookie(addr2, 0L);
+        Map<BookieSocketAddress, Integer> bookiePendingMap = new HashMap<BookieSocketAddress, Integer>();
+        bookiePendingMap.put(addr1, 1);
+        bookiePendingMap.put(addr2, 2);
+        repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
+
+        BookKeeperServerHealthInfo bookKeeperServerHealthInfo = new BookKeeperServerHealthInfo(
+            new HashMap<BookieSocketAddress, Long>(), bookiePendingMap);
+        DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
+        DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
+            ensemble, bookKeeperServerHealthInfo, writeSet);
+        DistributionSchedule.WriteSet expectedSet
+            = writeSetFromValues(3, 2, 0, 1);
         LOG.info("reorder set : {}", reorderSet);
         assertFalse(reorderSet.equals(origWriteSet));
         assertEquals(expectedSet, reorderSet);
@@ -248,9 +315,78 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
 
         DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
         DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
-                ensemble, new HashMap<BookieSocketAddress, Long>(), writeSet);
+                ensemble, new BookKeeperServerHealthInfo(), writeSet);
         DistributionSchedule.WriteSet expectedSet
             = writeSetFromValues(3, 2, 0, 1);
+        LOG.info("reorder set : {}", reorderSet);
+        assertFalse(reorderSet.equals(origWriteSet));
+        assertEquals(expectedSet, reorderSet);
+    }
+
+    @Test
+    public void testNodeDownAndNodeSlow() throws Exception {
+        repp.uninitalize();
+        updateMyRack("/r1/rack1");
+
+        repp = new RegionAwareEnsemblePlacementPolicy();
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+
+        // Update cluster
+        Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
+        addrs.add(addr1);
+        addrs.add(addr2);
+        addrs.add(addr3);
+        addrs.add(addr4);
+        repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
+        repp.registerSlowBookie(addr1, 0L);
+        Map<BookieSocketAddress, Integer> bookiePendingMap = new HashMap<BookieSocketAddress, Integer>();
+        bookiePendingMap.put(addr1, 1);
+        addrs.remove(addr2);
+        repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
+
+        BookKeeperServerHealthInfo bookKeeperServerHealthInfo = new BookKeeperServerHealthInfo(
+            new HashMap<BookieSocketAddress, Long>(), bookiePendingMap);
+        DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
+        DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
+            ensemble, bookKeeperServerHealthInfo, writeSet);
+        DistributionSchedule.WriteSet expectedSet
+            = writeSetFromValues(3, 2, 0, 1);
+        LOG.info("reorder set : {}", reorderSet);
+        assertFalse(reorderSet.equals(origWriteSet));
+        assertEquals(expectedSet, reorderSet);
+    }
+
+    @Test
+    public void testNodeDownAndReadOnlyAndNodeSlow() throws Exception {
+        repp.uninitalize();
+        updateMyRack("/r1/rack1");
+
+        repp = new RegionAwareEnsemblePlacementPolicy();
+        repp.initialize(conf, Optional.<DNSToSwitchMapping>empty(), timer, DISABLE_ALL, NullStatsLogger.INSTANCE);
+
+        // Update cluster
+        Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
+        addrs.add(addr1);
+        addrs.add(addr2);
+        addrs.add(addr3);
+        addrs.add(addr4);
+        repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
+        addrs.remove(addr1);
+        addrs.remove(addr2);
+        Set<BookieSocketAddress> ro = new HashSet<BookieSocketAddress>();
+        ro.add(addr2);
+        repp.registerSlowBookie(addr3, 0L);
+        Map<BookieSocketAddress, Integer> bookiePendingMap = new HashMap<BookieSocketAddress, Integer>();
+        bookiePendingMap.put(addr3, 1);
+        repp.onClusterChanged(addrs, ro);
+
+        BookKeeperServerHealthInfo bookKeeperServerHealthInfo = new BookKeeperServerHealthInfo(
+            new HashMap<BookieSocketAddress, Long>(), bookiePendingMap);
+        DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
+        DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
+            ensemble, bookKeeperServerHealthInfo, writeSet);
+        DistributionSchedule.WriteSet expectedSet
+            = writeSetFromValues(3, 1, 2, 0);
         LOG.info("reorder set : {}", reorderSet);
         assertFalse(reorderSet.equals(origWriteSet));
         assertEquals(expectedSet, reorderSet);
@@ -1046,11 +1182,11 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             if (isReadLAC) {
                 readSet = repp.reorderReadLACSequence(
                         ensemble,
-                        new HashMap<BookieSocketAddress, Long>(), writeSet);
+                        new BookKeeperServerHealthInfo(), writeSet);
             } else {
                 readSet = repp.reorderReadSequence(
                         ensemble,
-                        new HashMap<BookieSocketAddress, Long>(), writeSet);
+                        new BookKeeperServerHealthInfo(), writeSet);
             }
 
             LOG.info("Reorder {} => {}.", origWriteSet, readSet);
@@ -1102,12 +1238,12 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             if (isReadLAC) {
                 readSet = repp.reorderReadLACSequence(
                         ensemble,
-                        new HashMap<BookieSocketAddress, Long>(),
+                        new BookKeeperServerHealthInfo(),
                         writeSet.copy());
             } else {
                 readSet = repp.reorderReadSequence(
                         ensemble,
-                        new HashMap<BookieSocketAddress, Long>(),
+                        new BookKeeperServerHealthInfo(),
                         writeSet.copy());
             }
 
@@ -1177,11 +1313,11 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
             DistributionSchedule.WriteSet readSet;
             if (isReadLAC) {
                 readSet = repp.reorderReadLACSequence(
-                        ensemble, new HashMap<BookieSocketAddress, Long>(),
+                        ensemble, new BookKeeperServerHealthInfo(),
                         writeSet.copy());
             } else {
                 readSet = repp.reorderReadSequence(
-                        ensemble, new HashMap<BookieSocketAddress, Long>(),
+                        ensemble, new BookKeeperServerHealthInfo(),
                         writeSet.copy());
             }
 
@@ -1271,8 +1407,10 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         bookieFailures.put(addr4, 25L);
 
         LOG.info("write set : {}", writeSet2);
+        BookKeeperServerHealthInfo bookKeeperServerHealthInfo = new BookKeeperServerHealthInfo(
+            bookieFailures, new HashMap<>());
         DistributionSchedule.WriteSet reoderSet = repp.reorderReadSequence(
-                ensemble, bookieFailures, writeSet2);
+                ensemble, bookKeeperServerHealthInfo, writeSet2);
         LOG.info("reorder set : {}", reoderSet);
         assertEquals(ensemble.get(reoderSet.get(0)), addr6);
         assertEquals(ensemble.get(reoderSet.get(1)), addr7);

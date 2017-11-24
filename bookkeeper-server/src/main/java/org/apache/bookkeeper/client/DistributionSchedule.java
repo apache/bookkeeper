@@ -22,7 +22,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import java.util.Map;
 
 /**
- * This interface determins how entries are distributed among bookies.
+ * This interface determines how entries are distributed among bookies.
  *
  * Every entry gets replicated to some number of replicas. The first replica for
  * an entry is given a replicaIndex of 0, and so on. To distribute write load,

@@ -94,10 +94,16 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             this.ensemble = ensemble;
 
             if (lh.bk.isReorderReadSequence()) {
+                DistributionSchedule.WriteSet unorderedWriteSet = lh.getDistributionSchedule().getWriteSet(entryId);
+                BookKeeperServerHealthInfo bookKeeperServerHealthInfo = generateHealthInfoForWriteSet(
+                    unorderedWriteSet,
+                    ensemble,
+                    lh
+                );
                 writeSet = lh.bk.getPlacementPolicy()
                     .reorderReadSequence(
                             ensemble,
-                            lh.bookieFailureHistory.asMap(),
+                            bookKeeperServerHealthInfo,
                             lh.distributionSchedule.getWriteSet(entryId));
             } else {
                 writeSet = lh.distributionSchedule.getWriteSet(entryId);
@@ -418,6 +424,21 @@ class PendingReadOp implements Enumeration<LedgerEntry>, ReadEntryCallback {
             }
         }
 
+        @Override
+        boolean complete(int bookieIndex, BookieSocketAddress host, ByteBuf buffer) {
+            boolean completed = super.complete(bookieIndex, host, buffer);
+            if (completed && lh.bk.getConf().getEnsemblePlacementPolicySlowBookies()) {
+                int numReplicasTried = getNextReplicaIndexToReadFrom();
+                    // Check if any speculative reads were issued and mark any slow bookies before
+                    // the first successful speculative read as "slow"
+                    for (int i = 0 ; i < numReplicasTried - 1; i++) {
+                        int slowBookieIndex = writeSet.get(i);
+                        BookieSocketAddress slowBookieSocketAddress = ensemble.get(slowBookieIndex);
+                        lh.bk.placementPolicy.registerSlowBookie(slowBookieSocketAddress, entryId);
+                    }
+            }
+            return completed;
+        }
     }
 
     PendingReadOp(LedgerHandle lh,

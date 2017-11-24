@@ -503,127 +503,32 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
     @Override
     public final DistributionSchedule.WriteSet reorderReadSequence(
             ArrayList<BookieSocketAddress> ensemble,
-            Map<BookieSocketAddress, Long> bookieFailureHistory,
+            BookKeeperServerHealthInfo bookKeeperServerHealthInfo,
             DistributionSchedule.WriteSet writeSet) {
-        if (UNKNOWN_REGION.equals(myRegion)) {
-            return super.reorderReadSequence(ensemble, bookieFailureHistory,
-                                             writeSet);
+        if (myRegion.equals(UNKNOWN_REGION)) {
+            return super.reorderReadSequence(ensemble, bookKeeperServerHealthInfo, writeSet);
         } else {
-            int ensembleSize = ensemble.size();
-
+            Map<Integer, String> writeSetWithRegion = new HashMap<>();
             for (int i = 0; i < writeSet.size(); i++) {
-                int idx = writeSet.get(i);
-                BookieSocketAddress address = ensemble.get(idx);
-                String region = getRegion(address);
-                Long lastFailedEntryOnBookie = bookieFailureHistory.get(address);
-                if (null == knownBookies.get(address)) {
-                    // there isn't too much differences between readonly bookies
-                    // from unavailable bookies. since there
-                    // is no write requests to them, so we shouldn't try reading
-                    // from readonly bookie in prior to writable bookies.
-                    if ((null == readOnlyBookies)
-                            || !readOnlyBookies.contains(address)) {
-                        writeSet.set(i, idx | UNAVAIL_MASK);
-                    } else {
-                        writeSet.set(i, idx | READ_ONLY_MASK);
-                    }
-                } else if (region.equals(myRegion)) {
-                    if ((lastFailedEntryOnBookie == null)
-                            || (lastFailedEntryOnBookie < 0)) {
-                        writeSet.set(i, idx | LOCAL_MASK);
-                    } else {
-                        long failIdx
-                            = lastFailedEntryOnBookie * ensembleSize + idx;
-                        writeSet.set(i, (int)(failIdx & ~MASK_BITS)
-                                     | LOCAL_FAIL_MASK);
-                    }
-                } else {
-                    if ((lastFailedEntryOnBookie == null)
-                            || (lastFailedEntryOnBookie < 0)) {
-                        writeSet.set(i, idx | REMOTE_MASK);
-                    } else {
-                        long failIdx
-                            = lastFailedEntryOnBookie * ensembleSize + idx;
-                        writeSet.set(i, (int)(failIdx & ~MASK_BITS)
-                                     | REMOTE_FAIL_MASK);
-                    }
-                }
+                Integer idx = writeSet.get(i);
+                writeSetWithRegion.put(idx, getRegion(ensemble.get(idx)));
             }
-
-            // Add a mask to ensure the sort is stable, sort,
-            // and then remove mask. This maintains stability as
-            // long as there are fewer than 16 bookies in the write set.
-            for (int i = 0; i < writeSet.size(); i++) {
-                writeSet.set(i, writeSet.get(i) | ((i & 0xF) << 20));
-            }
-            writeSet.sort();
-            for (int i = 0; i < writeSet.size(); i++) {
-                writeSet.set(i, writeSet.get(i) & ~((0xF) << 20));
-            }
-
-            if (reorderReadsRandom) {
-                shuffleWithMask(writeSet, LOCAL_MASK, MASK_BITS);
-                shuffleWithMask(writeSet, REMOTE_MASK, MASK_BITS);
-                shuffleWithMask(writeSet, READ_ONLY_MASK, MASK_BITS);
-                shuffleWithMask(writeSet, UNAVAIL_MASK, MASK_BITS);
-            }
-
-            // nodes within a region are ordered as follows
-            // (Random?) list of nodes that have no history of failure
-            // Nodes with Failure history are ordered in the reverse
-            // order of the most recent entry that generated an error
-            // The sort will have put them in correct order,
-            // so remove the bits that sort by age.
-            for (int i = 0; i < writeSet.size(); i++) {
-                int mask = writeSet.get(i) & MASK_BITS;
-                int idx = (writeSet.get(i) & ~MASK_BITS) % ensembleSize;
-                if (mask == LOCAL_FAIL_MASK) {
-                    writeSet.set(i, LOCAL_MASK | idx);
-                } else if (mask == REMOTE_FAIL_MASK) {
-                    writeSet.set(i, REMOTE_MASK | idx);
-                }
-            }
-
-            // Insert a node from the remote region at the specified location so
-            // we try more than one region within the max allowed latency
-            int firstRemote = -1;
-            for (int i = 0; i < writeSet.size(); i++) {
-                if ((writeSet.get(i) & MASK_BITS) == REMOTE_MASK) {
-                    firstRemote = i;
-                    break;
-                }
-            }
-            if (firstRemote != -1) {
-                int i = 0;
-                for (;i < REMOTE_NODE_IN_REORDER_SEQUENCE
-                         && i < writeSet.size(); i++) {
-                    if ((writeSet.get(i) & MASK_BITS) != LOCAL_MASK) {
-                        break;
-                    }
-                }
-                writeSet.moveAndShift(firstRemote, i);
-            }
-
-
-            // remove all masks
-            for (int i = 0; i < writeSet.size(); i++) {
-                writeSet.set(i, writeSet.get(i) & ~MASK_BITS);
-            }
-            return writeSet;
+            return super.reorderReadSequenceWithRegion(ensemble, writeSet, writeSetWithRegion,
+                bookKeeperServerHealthInfo, true, myRegion, REMOTE_NODE_IN_REORDER_SEQUENCE);
         }
     }
 
     @Override
     public final DistributionSchedule.WriteSet reorderReadLACSequence(
             ArrayList<BookieSocketAddress> ensemble,
-            Map<BookieSocketAddress, Long> bookieFailureHistory,
+            BookKeeperServerHealthInfo bookKeeperServerHealthInfo,
             DistributionSchedule.WriteSet writeSet) {
         if (UNKNOWN_REGION.equals(myRegion)) {
-            return super.reorderReadLACSequence(ensemble, bookieFailureHistory,
+            return super.reorderReadLACSequence(ensemble, bookKeeperServerHealthInfo,
                                                 writeSet);
         }
         DistributionSchedule.WriteSet finalList
-            = reorderReadSequence(ensemble, bookieFailureHistory, writeSet);
+            = reorderReadSequence(ensemble, bookKeeperServerHealthInfo, writeSet);
         finalList.addMissingIndices(ensemble.size());
         return finalList;
     }

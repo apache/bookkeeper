@@ -83,8 +83,9 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
             this.ensemble = ensemble;
             this.writeSet = lh.distributionSchedule.getWriteSet(entryId);
             if (lh.bk.reorderReadSequence) {
+                BookKeeperServerHealthInfo bookKeeperServerHealthInfo = generateHealthInfoForWriteSet(writeSet, ensemble, lh);
                 this.orderedEnsemble = lh.bk.placementPolicy.reorderReadLACSequence(ensemble,
-                        lh.bookieFailureHistory.asMap(), writeSet.copy());
+                    bookKeeperServerHealthInfo, writeSet.copy());
             } else {
                 this.orderedEnsemble = writeSet.copy();
             }
@@ -403,6 +404,22 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
             if (!readsOutstanding()) {
                 sendNextRead();
             }
+        }
+
+        @Override
+        boolean complete(int bookieIndex, BookieSocketAddress host, final ByteBuf buffer, long entryId) {
+            boolean completed = super.complete(bookieIndex, host, buffer, entryId);
+            if (completed && lh.bk.getConf().getEnsemblePlacementPolicySlowBookies()) {
+                int numReplicasTried = getNextReplicaIndexToReadFrom();
+                // Check if any speculative reads were issued and mark any bookies before the
+                // first speculative read as slow
+                for (int i = 0; i < numReplicasTried - 1; i++) {
+                    int slowBookieIndex = orderedEnsemble.get(i);
+                    BookieSocketAddress slowBookieAddress = ensemble.get(slowBookieIndex);
+                    lh.bk.placementPolicy.registerSlowBookie(slowBookieAddress, entryId);
+                }
+            }
+            return completed;
         }
 
     }

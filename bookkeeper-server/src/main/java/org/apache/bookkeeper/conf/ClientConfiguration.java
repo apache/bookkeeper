@@ -113,6 +113,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     // Ensemble Placement Policy
     protected final static String ENSEMBLE_PLACEMENT_POLICY = "ensemblePlacementPolicy";
     protected final static String NETWORK_TOPOLOGY_STABILIZE_PERIOD_SECONDS = "networkTopologyStabilizePeriodSeconds";
+    protected final static String ENSEMBLE_PLACEMENT_POLICY_ORDER_SLOW_BOOKIES = "ensemblePlacementPolicyOrderSlowBookies";
 
     // Stats
     protected final static String ENABLE_TASK_EXECUTION_STATS = "enableTaskExecutionStats";
@@ -1091,6 +1092,27 @@ public class ClientConfiguration extends AbstractConfiguration {
      */
     public ClientConfiguration setNetworkTopologyStabilizePeriodSeconds(int seconds) {
         setProperty(NETWORK_TOPOLOGY_STABILIZE_PERIOD_SECONDS, seconds);
+        return this;
+    }
+
+    /**
+     * Whether to order slow bookies in placement policy.
+     *
+     * @return flag to order or ignore slow bookies in placement policy
+     */
+    public boolean getEnsemblePlacementPolicySlowBookies() {
+        return getBoolean(ENSEMBLE_PLACEMENT_POLICY_ORDER_SLOW_BOOKIES, false);
+    }
+
+    /**
+     * Enable/Disable ordering slow bookies in placement policy.
+     *
+     * @param enabled
+     *          flag to enable/disable ordering slow bookies in placement policy.
+     * @return client configuration.
+     */
+    public ClientConfiguration setEnsemblePlacementPolicySlowBookies(boolean enabled) {
+        setProperty(ENSEMBLE_PLACEMENT_POLICY_ORDER_SLOW_BOOKIES, enabled);
         return this;
     }
 

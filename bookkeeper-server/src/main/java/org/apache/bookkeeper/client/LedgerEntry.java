@@ -25,7 +25,15 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieClient;
+import org.apache.bookkeeper.proto.PerChannelBookieClient;
+import org.apache.bookkeeper.proto.PerChannelBookieClientPool;
 
 /**
  * Ledger entry. Its a simple tuple containing the ledger id, the entry-id, and
@@ -92,6 +100,30 @@ public class LedgerEntry
         ByteBufInputStream res = new ByteBufInputStream(data);
         data = null;
         return res;
+    }
+
+    /**
+     * Generate the health info for bookies in the write set.
+     *
+     * @return BookKeeperServerHealthInfo for every bookie in the write set.
+     */
+    public BookKeeperServerHealthInfo generateHealthInfoForWriteSet(
+        DistributionSchedule.WriteSet writeSet,
+        ArrayList<BookieSocketAddress> ensemble,
+        LedgerHandle lh) {
+        Map<BookieSocketAddress, Integer> bookiePendingMap = new HashMap<>();
+        BookieClient client = lh.bk.bookieClient;
+        for(int i = 0; i < writeSet.size(); i++) {
+            Integer idx = writeSet.get(i);
+            BookieSocketAddress address = ensemble.get(idx);
+            PerChannelBookieClientPool pcbcPool = client.lookupClient(address);
+            if (pcbcPool == null) {
+                continue;
+            }
+            int numPendingReqs = pcbcPool.getNumPendingCompletionRequests();
+            bookiePendingMap.put(address, numPendingReqs);
+        }
+        return new BookKeeperServerHealthInfo(lh.bookieFailureHistory.asMap(), bookiePendingMap);
     }
 
     /**
