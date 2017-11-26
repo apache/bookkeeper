@@ -210,6 +210,7 @@
               <shadeTestJar>true</shadeTestJar>
               <artifactSet>
                 <includes>
+                  <include>org.apache.bookkeeper:bookkeeper-common</include>
                   <include>org.apache.bookkeeper:bookkeeper-proto</include>
                   <include>com.google.protobuf:protobuf-java</include>
                   <include>com.google.guava:guava</include>
