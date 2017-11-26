@@ -28,6 +28,7 @@ import static org.junit.Assert.assertEquals;
 import io.netty.buffer.Unpooled;
 import java.nio.ByteBuffer;
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.BKException.BKDuplicateEntryIdException;
@@ -274,6 +275,45 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
         }
         result(newDeleteLedgerOp().withLedgerId(lId).execute());
         result(newDeleteLedgerOp().withLedgerId(lId).execute());
+    }
+
+    @Test
+    public void testLedgerEntriesIterable() throws Exception {
+        long lId;
+        try (WriteHandle writer = newCreateLedgerOp()
+                .withAckQuorumSize(1)
+                .withWriteQuorumSize(2)
+                .withEnsembleSize(3)
+                .withPassword(password)
+                .execute().get()) {
+            lId = writer.getId();
+            // write data and populate LastAddConfirmed
+            result(writer.append(ByteBuffer.wrap(data)));
+            result(writer.append(ByteBuffer.wrap(data)));
+            result(writer.append(ByteBuffer.wrap(data)));
+        }
+
+        try (ReadHandle reader = newOpenLedgerOp()
+                .withPassword(password)
+                .withRecovery(false)
+                .withLedgerId(lId)
+                .execute().get()) {
+            long lac = reader.getLastAddConfirmed();
+            assertEquals(2, lac);
+
+            try (LedgerEntries entries = reader.read(0, lac).get()) {
+                AtomicLong i = new AtomicLong(0);
+                for (LedgerEntry e : entries) {
+                    assertEquals(i.getAndIncrement(), e.getEntryId());
+                    assertArrayEquals(data, e.getEntryBytes());
+                }
+                i.set(0);
+                entries.forEach((e) -> {
+                        assertEquals(i.getAndIncrement(), e.getEntryId());
+                        assertArrayEquals(data, e.getEntryBytes());
+                    });
+            }
+        }
     }
 
     private static void checkEntries(LedgerEntries entries, byte[] data)
