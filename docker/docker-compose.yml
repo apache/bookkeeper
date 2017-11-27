@@ -20,7 +20,6 @@ services:
     image: caiok/bookkeeper-tutorial
     depends_on:
       - bookkeeper
-    command: ["sleep", "5"]
     links:
       - zookeeper
     environment:
