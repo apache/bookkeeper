@@ -20,8 +20,11 @@ package org.apache.bookkeeper.tls;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * A factory to manage security provider factories.
+ */
 public abstract class SecurityProviderFactoryFactory {
-    private final static Logger LOG = LoggerFactory.getLogger(SecurityProviderFactoryFactory.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SecurityProviderFactoryFactory.class);
 
     public static SecurityHandlerFactory getSecurityProviderFactory(String securityHandler)
             throws SecurityException {
