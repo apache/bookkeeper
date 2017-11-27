@@ -32,7 +32,6 @@
     <suppress checks=".*" files=".*[\\/]replication[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]sasl[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]test[\\/].*"/>
-    <suppress checks=".*" files=".*[\\/]tls[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]util[\\/].*"/>
 
     <!-- suppress all checks in the generated directories -->
