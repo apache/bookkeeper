@@ -17,10 +17,8 @@
  */
 package org.apache.bookkeeper.client;
 
-import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -35,7 +33,6 @@ import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
-import org.apache.bookkeeper.net.NetUtils;
 import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.net.Node;
 import org.apache.bookkeeper.net.NodeBase;
@@ -503,32 +500,32 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
     @Override
     public final DistributionSchedule.WriteSet reorderReadSequence(
             ArrayList<BookieSocketAddress> ensemble,
-            BookKeeperServerHealthInfo bookKeeperServerHealthInfo,
+            BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet) {
         if (myRegion.equals(UNKNOWN_REGION)) {
-            return super.reorderReadSequence(ensemble, bookKeeperServerHealthInfo, writeSet);
+            return super.reorderReadSequence(ensemble, bookiesHealthInfo, writeSet);
         } else {
             Map<Integer, String> writeSetWithRegion = new HashMap<>();
             for (int i = 0; i < writeSet.size(); i++) {
-                Integer idx = writeSet.get(i);
+                int idx = writeSet.get(i);
                 writeSetWithRegion.put(idx, getRegion(ensemble.get(idx)));
             }
             return super.reorderReadSequenceWithRegion(ensemble, writeSet, writeSetWithRegion,
-                bookKeeperServerHealthInfo, true, myRegion, REMOTE_NODE_IN_REORDER_SEQUENCE);
+                bookiesHealthInfo, true, myRegion, REMOTE_NODE_IN_REORDER_SEQUENCE);
         }
     }
 
     @Override
     public final DistributionSchedule.WriteSet reorderReadLACSequence(
             ArrayList<BookieSocketAddress> ensemble,
-            BookKeeperServerHealthInfo bookKeeperServerHealthInfo,
+            BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet) {
         if (UNKNOWN_REGION.equals(myRegion)) {
-            return super.reorderReadLACSequence(ensemble, bookKeeperServerHealthInfo,
+            return super.reorderReadLACSequence(ensemble, bookiesHealthInfo,
                                                 writeSet);
         }
         DistributionSchedule.WriteSet finalList
-            = reorderReadSequence(ensemble, bookKeeperServerHealthInfo, writeSet);
+            = reorderReadSequence(ensemble, bookiesHealthInfo, writeSet);
         finalList.addMissingIndices(ensemble.size());
         return finalList;
     }

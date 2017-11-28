@@ -95,15 +95,14 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
 
             if (lh.bk.isReorderReadSequence()) {
                 DistributionSchedule.WriteSet unorderedWriteSet = lh.getDistributionSchedule().getWriteSet(eId);
-                BookKeeperServerHealthInfo bookKeeperServerHealthInfo = lh.generateHealthInfoForWriteSet(
+                BookiesHealthInfo bookiesHealthInfo = lh.generateHealthInfoForWriteSet(
                     unorderedWriteSet,
                     ensemble,
-                    lh
                 );
                 writeSet = lh.bk.getPlacementPolicy()
                     .reorderReadSequence(
                             ensemble,
-                            bookKeeperServerHealthInfo,
+                            bookiesHealthInfo,
                             lh.distributionSchedule.getWriteSet(eId));
             } else {
                 writeSet = lh.distributionSchedule.getWriteSet(eId);
@@ -433,13 +432,13 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             boolean completed = super.complete(bookieIndex, host, buffer);
             if (completed && lh.bk.getConf().getEnsemblePlacementPolicySlowBookies()) {
                 int numReplicasTried = getNextReplicaIndexToReadFrom();
-                    // Check if any speculative reads were issued and mark any slow bookies before
-                    // the first successful speculative read as "slow"
-                    for (int i = 0 ; i < numReplicasTried - 1; i++) {
-                        int slowBookieIndex = writeSet.get(i);
-                        BookieSocketAddress slowBookieSocketAddress = ensemble.get(slowBookieIndex);
-                        lh.bk.placementPolicy.registerSlowBookie(slowBookieSocketAddress, eId);
-                    }
+                // Check if any speculative reads were issued and mark any slow bookies before
+                // the first successful speculative read as "slow"
+                for (int i = 0 ; i < numReplicasTried - 1; i++) {
+                    int slowBookieIndex = writeSet.get(i);
+                    BookieSocketAddress slowBookieSocketAddress = ensemble.get(slowBookieIndex);
+                    lh.bk.placementPolicy.registerSlowBookie(slowBookieSocketAddress, eId);
+                }
             }
             return completed;
         }
