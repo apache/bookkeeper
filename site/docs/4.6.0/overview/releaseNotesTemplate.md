@@ -1,10 +1,10 @@
 ---
-title: Apache BookKeeper 4.5.0 Release Notes
+title: Apache BookKeeper 4.6.0 Release Notes
 ---
 
 [provide a summary of this release]
 
-Apache BookKeeper users are encouraged to upgrade to 4.5.0. The technical details of this release are summarized
+Apache BookKeeper users are encouraged to upgrade to 4.6.0. The technical details of this release are summarized
 below.
 
 ## Highlights

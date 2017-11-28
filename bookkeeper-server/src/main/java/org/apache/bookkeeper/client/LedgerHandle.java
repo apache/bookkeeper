@@ -20,11 +20,14 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.apache.bookkeeper.client.api.BKException.Code.ClientClosedException;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.RateLimiter;
 import io.netty.buffer.ByteBuf;
@@ -49,15 +52,21 @@ import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
+import org.apache.bookkeeper.client.BKException.BKIncorrectParameterException;
+import org.apache.bookkeeper.client.BKException.BKReadException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.SyncCallbackUtils.FutureReadLastConfirmed;
-import org.apache.bookkeeper.client.SyncCallbackUtils.FutureReadResult;
+import org.apache.bookkeeper.client.SyncCallbackUtils.FutureReadLastConfirmedAndEntry;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncAddCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCloseCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadLastConfirmedCallback;
-import org.apache.bookkeeper.client.api.WriteAdvHandle;
+import org.apache.bookkeeper.client.api.BKException.Code;
+import org.apache.bookkeeper.client.api.LastConfirmedAndEntry;
+import org.apache.bookkeeper.client.api.LedgerEntries;
 import org.apache.bookkeeper.client.api.WriteHandle;
+import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
+import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
@@ -69,6 +78,7 @@ import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallback;
 import org.apache.bookkeeper.util.SafeRunnable;
+import org.apache.commons.collections4.IteratorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -192,17 +202,9 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
-     * Get the last confirmed entry id on this ledger. It reads
-     * the local state of the ledger handle, which is different
-     * from the readLastConfirmed call. In the case the ledger
-     * is not closed and the client is a reader, it is necessary
-     * to call readLastConfirmed to obtain an estimate of the
-     * last add operation that has been confirmed.
-     *
-     * @see #readLastConfirmed()
-     *
-     * @return the last confirmed entry id or {@link #INVALID_ENTRY_ID INVALID_ENTRY_ID} if no entry has been confirmed
+     * {@inheritDoc}
      */
+    @Override
     public synchronized long getLastAddConfirmed() {
         return lastAddConfirmed;
     }
@@ -212,12 +214,10 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
-     * Get the entry id of the last entry that has been enqueued for addition (but
-     * may not have possibly been persited to the ledger)
-     *
-     * @return the id of the last entry pushed or {@link #INVALID_ENTRY_ID INVALID_ENTRY_ID} if no entry has been pushed
+     * {@inheritDoc}
      */
-    synchronized public long getLastAddPushed() {
+    @Override
+    public synchronized long getLastAddPushed() {
         return lastAddPushed;
     }
 
@@ -635,10 +635,21 @@ public class LedgerHandle implements WriteHandle {
      *          id of last entry of sequence
      */
     @Override
-    public CompletableFuture<Iterable<org.apache.bookkeeper.client.api.LedgerEntry>> read(long firstEntry, long lastEntry) {
-        FutureReadResult result = new FutureReadResult();
-        asyncReadEntries(firstEntry, lastEntry, result, null);
-        return result;
+    public CompletableFuture<LedgerEntries> read(long firstEntry, long lastEntry) {
+        // Little sanity check
+        if (firstEntry < 0 || firstEntry > lastEntry) {
+            LOG.error("IncorrectParameterException on ledgerId:{} firstEntry:{} lastEntry:{}",
+                    new Object[] { ledgerId, firstEntry, lastEntry });
+            return FutureUtils.exception(new BKIncorrectParameterException());
+        }
+
+        if (lastEntry > lastAddConfirmed) {
+            LOG.error("ReadException on ledgerId:{} firstEntry:{} lastEntry:{}",
+                    new Object[] { ledgerId, firstEntry, lastEntry });
+            return FutureUtils.exception(new BKReadException());
+        }
+
+        return readEntriesInternalAsync(firstEntry, lastEntry);
     }
 
     /**
@@ -665,15 +676,59 @@ public class LedgerHandle implements WriteHandle {
      * @see #readUnconfirmedEntries(long, long)
      */
     @Override
-    public CompletableFuture<Iterable<org.apache.bookkeeper.client.api.LedgerEntry>> readUnconfirmed(long firstEntry, long lastEntry) {
-        FutureReadResult result = new FutureReadResult();
-        asyncReadUnconfirmedEntries(firstEntry, lastEntry, result, null);
-        return result;
+    public CompletableFuture<LedgerEntries> readUnconfirmed(long firstEntry, long lastEntry) {
+        // Little sanity check
+        if (firstEntry < 0 || firstEntry > lastEntry) {
+            LOG.error("IncorrectParameterException on ledgerId:{} firstEntry:{} lastEntry:{}",
+                    new Object[] { ledgerId, firstEntry, lastEntry });
+            return FutureUtils.exception(new BKIncorrectParameterException());
+        }
+
+        return readEntriesInternalAsync(firstEntry, lastEntry);
     }
 
     void asyncReadEntriesInternal(long firstEntry, long lastEntry, ReadCallback cb, Object ctx) {
-        new PendingReadOp(this, bk.getScheduler(),
-                          firstEntry, lastEntry, cb, ctx).initiate();
+        if(!bk.isClosed()) {
+            readEntriesInternalAsync(firstEntry, lastEntry)
+                .whenCompleteAsync(new FutureEventListener<LedgerEntries>() {
+                    @Override
+                    public void onSuccess(LedgerEntries entries) {
+                        cb.readComplete(
+                            Code.OK,
+                            LedgerHandle.this,
+                            IteratorUtils.asEnumeration(
+                                Iterators.transform(entries.iterator(), le -> {
+                                    LedgerEntry entry = new LedgerEntry((LedgerEntryImpl) le);
+                                    le.close();
+                                    return entry;
+                                })),
+                            ctx);
+                    }
+
+                    @Override
+                    public void onFailure(Throwable cause) {
+                        if (cause instanceof BKException) {
+                            BKException bke = (BKException) cause;
+                            cb.readComplete(bke.getCode(), LedgerHandle.this, null, ctx);
+                        } else {
+                            cb.readComplete(Code.UnexpectedConditionException, LedgerHandle.this, null, ctx);
+                        }
+                    }
+                }, bk.getMainWorkerPool().chooseThread(ledgerId));
+        } else {
+            cb.readComplete(Code.ClientClosedException, LedgerHandle.this, null, ctx);
+        }
+    }
+
+    CompletableFuture<LedgerEntries> readEntriesInternalAsync(long firstEntry,
+                                                              long lastEntry) {
+        PendingReadOp op = new PendingReadOp(this, bk.getScheduler(), firstEntry, lastEntry);
+        if(!bk.isClosed()) {
+            bk.getMainWorkerPool().submitOrdered(ledgerId, op);
+        } else {
+            op.future().completeExceptionally(BKException.create(ClientClosedException));
+        }
+        return op.future();
     }
 
     /**
@@ -975,7 +1030,7 @@ public class LedgerHandle implements WriteHandle {
     /**
      * Obtains asynchronously the last confirmed write from a quorum of bookies.
      * It is similar as
-     * {@link #asyncTryReadLastConfirmed(org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback, Object)},
+     * {@link #asyncReadLastConfirmed(org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback, Object)},
      * but it doesn't wait all the responses from the quorum. It would callback
      * immediately if it received a LAC which is larger than current LAC.
      *
@@ -1018,7 +1073,7 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
-     * @{@inheritDoc }
+     * {@inheritDoc}
      */
     @Override
     public CompletableFuture<Long> tryReadLastAddConfirmed() {
@@ -1028,12 +1083,24 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
-     * @{@inheritDoc }
+     * {@inheritDoc}
      */
     @Override
     public CompletableFuture<Long> readLastAddConfirmed() {
         FutureReadLastConfirmed result = new FutureReadLastConfirmed();
         asyncReadLastConfirmed(result, null);
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public CompletableFuture<LastConfirmedAndEntry> readLastAddConfirmedAndEntry(long entryId,
+                                                                                 long timeOutInMillis,
+                                                                                 boolean parallel) {
+        FutureReadLastConfirmedAndEntry result = new FutureReadLastConfirmedAndEntry();
+        asyncReadLastConfirmedAndEntry(entryId, timeOutInMillis, parallel, result, null);
         return result;
     }
 
@@ -1093,7 +1160,8 @@ public class LedgerHandle implements WriteHandle {
             return;
         }
         // wait for entry <i>entryId</i>
-        ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback innercb = new ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback() {
+        ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback innercb =
+            new ReadLastConfirmedAndEntryOp.LastConfirmedAndEntryCallback() {
             AtomicBoolean completed = new AtomicBoolean(false);
             @Override
             public void readLastConfirmedAndEntryComplete(int rc, long lastAddConfirmed, LedgerEntry entry) {
@@ -1108,7 +1176,13 @@ public class LedgerHandle implements WriteHandle {
                 }
             }
         };
-        new ReadLastConfirmedAndEntryOp(this, innercb, entryId - 1, timeOutInMillis, bk.getScheduler()).parallelRead(parallel).initiate();
+        new ReadLastConfirmedAndEntryOp(this,
+            innercb,
+            entryId - 1,
+            timeOutInMillis,
+            bk.getScheduler())
+            .parallelRead(parallel)
+            .initiate();
     }
 
     /**

@@ -1,5 +1,5 @@
 ---
-title: Apache BookKeeper&trade; 4.6.0-SNAPSHOT Documentation 
+title: Apache BookKeeper&trade; 4.7.0-SNAPSHOT
 ---
 <!--
 Licensed to the Apache Software Foundation (ASF) under one

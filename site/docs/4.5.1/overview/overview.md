@@ -20,7 +20,7 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-This documentation is for Apache BookKeeper&trade; version 4.5.1.
+This documentation is for Apache BookKeeper&trade; version `4.5.1`.
 
 Apache BookKeeper&trade; is a scalable, fault-tolerant, and low latency storage service optimized for realtime workloads.
 It offers durability, replication, and strong consistency as essentials for building reliable real-time applications.

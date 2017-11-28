@@ -274,7 +274,7 @@ public class TestFencing extends BookKeeperClusterTestCase {
             writelh.addEntry(tmp.getBytes());
         }
 
-        admin.recoverBookieData(bookieToKill, null);
+        admin.recoverBookieData(bookieToKill);
 
         for (int i = 0; i < numEntries; i++) {
             writelh.addEntry(tmp.getBytes());
@@ -321,7 +321,7 @@ public class TestFencing extends BookKeeperClusterTestCase {
         BookieSocketAddress bookieToKill
             = writelh.getLedgerMetadata().getEnsemble(numEntries).get(0);
         killBookie(bookieToKill);
-        admin.recoverBookieData(bookieToKill, null);
+        admin.recoverBookieData(bookieToKill);
 
         try {
             writelh.addEntry(tmp.getBytes());

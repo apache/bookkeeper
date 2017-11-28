@@ -1,0 +1,94 @@
+<!--
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to You under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.2 http://maven.apache.org/xsd/assembly-1.1.2.xsd">
+  <id>bin</id>
+  <formats>
+    <format>tar.gz</format>
+  </formats>
+  <includeBaseDirectory>true</includeBaseDirectory>
+  <fileSets>
+    <fileSet>
+      <directory>target</directory>
+      <outputDirectory>/</outputDirectory>
+      <includes>
+        <include>${project.artifactId}-${project.version}.jar</include>
+      </includes>
+    </fileSet>
+    <fileSet>
+      <directory>../../bookkeeper-server/conf</directory>
+      <outputDirectory>/conf</outputDirectory>
+    </fileSet>
+    <fileSet>
+      <directory>../../bookkeeper-server/bin</directory>
+      <fileMode>755</fileMode>
+      <outputDirectory>/bin</outputDirectory>
+    </fileSet>
+    <fileSet>
+      <fileMode>644</fileMode>
+      <includes>
+        <include>${basedir}/*.txt</include>
+      </includes>
+    </fileSet>
+  </fileSets>
+  <files>
+    <file>
+      <source>../../README.md</source>
+      <outputDirectory>/</outputDirectory>
+      <fileMode>644</fileMode>
+    </file>
+    <file>
+      <source>../src/main/resources/LICENSE.bin.txt</source>
+      <outputDirectory>/</outputDirectory>
+      <destName>LICENSE</destName>
+      <fileMode>644</fileMode>
+    </file>
+    <file>
+      <source>../src/main/resources//NOTICE-server.bin.txt</source>
+      <outputDirectory>/</outputDirectory>
+      <destName>NOTICE</destName>
+      <fileMode>644</fileMode>
+    </file>
+  </files>
+  <dependencySets>
+    <dependencySet>
+      <outputDirectory>/lib</outputDirectory>
+      <unpack>false</unpack>
+      <scope>runtime</scope>
+      <useProjectArtifact>false</useProjectArtifact>
+      <!-- Include 'groupId' in the dependencies Jar names to better identify the provenance of the jar -->
+      <outputFileNameMapping>${artifact.groupId}-${artifact.artifactId}-${artifact.version}${dashClassifier?}.${artifact.extension}</outputFileNameMapping>
+      <excludes>
+        <!-- All these dependencies are already included in netty-all -->
+        <exclude>io.netty:netty-buffer</exclude>
+        <exclude>io.netty:netty-codec</exclude>
+        <exclude>io.netty:netty-codec-dns</exclude>
+        <exclude>io.netty:netty-codec-http</exclude>
+        <exclude>io.netty:netty-codec-http2</exclude>
+        <exclude>io.netty:netty-codec-socks</exclude>
+        <exclude>io.netty:netty-common</exclude>
+        <exclude>io.netty:netty-handler</exclude>
+        <exclude>io.netty:netty-handler-proxy</exclude>
+        <exclude>io.netty:netty-resolver</exclude>
+        <exclude>io.netty:netty-resolver-dns</exclude>
+        <exclude>io.netty:netty-tcnative-boringssl-static</exclude>
+        <exclude>io.netty:netty-transport</exclude>
+      </excludes>
+    </dependencySet>
+  </dependencySets>
+</assembly>
