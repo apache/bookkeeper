@@ -20,7 +20,6 @@ package org.apache.bookkeeper.client;
 import io.netty.util.HashedWheelTimer;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -151,8 +150,8 @@ import org.apache.bookkeeper.stats.StatsLogger;
  *
  * <h3>How to choose bookies to do speculative reads?</h3>
  *
- * <p>{@link #reorderReadSequence(ArrayList, BookKeeperServerHealthInfo, Map)} and
- * {@link #reorderReadLACSequence(ArrayList, BookKeeperServerHealthInfo, Map)} are
+ * <p>{@link #reorderReadSequence(ArrayList, BookiesHealthInfo, Map)} and
+ * {@link #reorderReadLACSequence(ArrayList, BookiesHealthInfo, Map)} are
  * two methods exposed by the placement policy, to help client determine a better read sequence according to the
  * network topology and the bookie failure history.
  *
@@ -305,7 +304,7 @@ public interface EnsemblePlacementPolicy {
      *
      * @param ensemble
      *          Ensemble to read entries.
-     * @param bookKeeperServerHealthInfo
+     * @param bookiesHealthInfo
      *          Health info for bookies
      * @param writeSet
      *          Write quorum to read entries. This will be modified, rather than
@@ -316,7 +315,7 @@ public interface EnsemblePlacementPolicy {
      */
     public DistributionSchedule.WriteSet reorderReadSequence(
             ArrayList<BookieSocketAddress> ensemble,
-            BookKeeperServerHealthInfo bookKeeperServerHealthInfo,
+            BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet);
 
 
@@ -325,7 +324,7 @@ public interface EnsemblePlacementPolicy {
      *
      * @param ensemble
      *          Ensemble to read entries.
-     * @param bookKeeperServerHealthInfo
+     * @param bookiesHealthInfo
      *          Health info for bookies
      * @param writeSet
      *          Write quorum to read entries. This will be modified, rather than
@@ -336,7 +335,7 @@ public interface EnsemblePlacementPolicy {
      */
     public DistributionSchedule.WriteSet reorderReadLACSequence(
             ArrayList<BookieSocketAddress> ensemble,
-            BookKeeperServerHealthInfo bookKeeperServerHealthInfo,
+            BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet);
 
     /**

@@ -24,7 +24,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -34,7 +33,6 @@ import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.ReadLastConfirmedAndEntryContext;
 import org.apache.bookkeeper.util.MathUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,9 +81,9 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
             this.ensemble = ensemble;
             this.writeSet = lh.distributionSchedule.getWriteSet(entryId);
             if (lh.bk.reorderReadSequence) {
-                BookKeeperServerHealthInfo bookKeeperServerHealthInfo = generateHealthInfoForWriteSet(writeSet, ensemble, lh);
+                BookiesHealthInfo bookiesHealthInfo = generateHealthInfoForWriteSet(writeSet, ensemble, lh);
                 this.orderedEnsemble = lh.bk.placementPolicy.reorderReadLACSequence(ensemble,
-                    bookKeeperServerHealthInfo, writeSet.copy());
+                    bookiesHealthInfo, writeSet.copy());
             } else {
                 this.orderedEnsemble = writeSet.copy();
             }

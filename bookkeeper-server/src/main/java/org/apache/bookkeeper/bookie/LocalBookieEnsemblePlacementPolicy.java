@@ -23,12 +23,11 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
-import org.apache.bookkeeper.client.BookKeeperServerHealthInfo;
+import org.apache.bookkeeper.client.BookiesHealthInfo;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.DistributionSchedule;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy;
@@ -97,7 +96,7 @@ public class LocalBookieEnsemblePlacementPolicy implements EnsemblePlacementPoli
     @Override
     public DistributionSchedule.WriteSet reorderReadSequence(
             ArrayList<BookieSocketAddress> ensemble,
-            BookKeeperServerHealthInfo bookKeeperServerHealthInfo,
+            BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet) {
         return null;
     }
@@ -105,7 +104,7 @@ public class LocalBookieEnsemblePlacementPolicy implements EnsemblePlacementPoli
     @Override
     public DistributionSchedule.WriteSet reorderReadLACSequence(
             ArrayList<BookieSocketAddress> ensemble,
-            BookKeeperServerHealthInfo bookKeeperServerHealthInfo,
+            BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet) {
         return null;
     }

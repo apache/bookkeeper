@@ -19,7 +19,6 @@ package org.apache.bookkeeper.client;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -799,19 +798,18 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
     @Override
     public void registerSlowBookie(BookieSocketAddress bookieSocketAddress, long entryId) {
         slowBookies.put(bookieSocketAddress, entryId);
-
     }
 
     @Override
     public DistributionSchedule.WriteSet reorderReadSequence(
             ArrayList<BookieSocketAddress> ensemble,
-            BookKeeperServerHealthInfo bookKeeperServerHealthInfo,
+            BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet) {
         Map<Integer, String> writeSetWithRegion = new HashMap<>();
         for (int i = 0; i < writeSet.size(); i++) {
             writeSetWithRegion.put(writeSet.get(i), "");
         }
-        return reorderReadSequenceWithRegion(ensemble, writeSet, writeSetWithRegion, bookKeeperServerHealthInfo, false, "", writeSet.size());
+        return reorderReadSequenceWithRegion(ensemble, writeSet, writeSetWithRegion, bookiesHealthInfo, false, "", writeSet.size());
 
     }
 
@@ -834,7 +832,7 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
      *          write set
      * @param writeSetWithRegion
      *          write set with region information
-     * @param bookKeeperServerHealthInfo
+     * @param bookiesHealthInfo
      *          heuristics about health of boookies
      * @param regionAware
      *          whether or not a region-aware policy is used
@@ -848,7 +846,7 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
         ArrayList<BookieSocketAddress> ensemble,
         DistributionSchedule.WriteSet writeSet,
         Map<Integer, String> writeSetWithRegion,
-        BookKeeperServerHealthInfo bookKeeperServerHealthInfo,
+        BookiesHealthInfo bookiesHealthInfo,
         boolean regionAware,
         String myRegion,
         int remoteNodeInReorderSequence) {
@@ -856,10 +854,10 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
         int ensembleSize = ensemble.size();
 
         for (int i = 0; i < writeSet.size(); i++) {
-            Integer idx = writeSet.get(i);
+            int idx = writeSet.get(i);
             BookieSocketAddress address = ensemble.get(idx);
             String region = writeSetWithRegion.get(idx);
-            Long lastFailedEntryOnBookie = bookKeeperServerHealthInfo.getBookieFailureHistory(address);
+            Long lastFailedEntryOnBookie = bookiesHealthInfo.getBookieFailureHistory(address);
             if (null == knownBookies.get(address)) {
                 // there isn't too much differences between readonly bookies
                 // from unavailable bookies. since there
@@ -870,7 +868,7 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
                     writeSet.set(i, idx | UNAVAIL_MASK);
                 } else {
                     if (slowBookies.asMap().containsKey(address)) {
-                        int numPendingReqs = bookKeeperServerHealthInfo.getBookiePendingRequests(address);
+                        int numPendingReqs = bookiesHealthInfo.getBookiePendingRequests(address);
                         // use slow bookies with less pending requests first
                         long slowIdx = numPendingReqs * ensembleSize + idx;
                         writeSet.set(i, (int) (slowIdx & ~MASK_BITS) | SLOW_MASK);
@@ -880,7 +878,7 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
                 }
             } else if (lastFailedEntryOnBookie < 0) {
                 if (slowBookies.asMap().containsKey(address)) {
-                    int numPendingReqs = bookKeeperServerHealthInfo.getBookiePendingRequests(address);
+                    int numPendingReqs = bookiesHealthInfo.getBookiePendingRequests(address);
                     long slowIdx = numPendingReqs * ensembleSize + idx;
                     writeSet.set(i, (int) (slowIdx & ~MASK_BITS) | SLOW_MASK);
                 } else {
