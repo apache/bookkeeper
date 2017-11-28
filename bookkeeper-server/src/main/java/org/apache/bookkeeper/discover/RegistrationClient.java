@@ -90,7 +90,7 @@ public interface RegistrationClient extends AutoCloseable {
      * @return a future which completes when the bookies have been read for
      *         the first time
      */
-    CompletableFuture<?> watchWritableBookies(RegistrationListener listener);
+    CompletableFuture<Void> watchWritableBookies(RegistrationListener listener);
 
     /**
      * Unwatch the changes of bookies.
@@ -108,7 +108,7 @@ public interface RegistrationClient extends AutoCloseable {
      * @return a future which completes when the bookies have been read for
      *         the first time
      */
-    CompletableFuture<?> watchReadOnlyBookies(RegistrationListener listener);
+    CompletableFuture<Void> watchReadOnlyBookies(RegistrationListener listener);
 
     /**
      * Unwatch the changes of bookies.

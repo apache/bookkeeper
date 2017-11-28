@@ -281,7 +281,7 @@ public class ZKRegistrationClient implements RegistrationClient {
 
 
     @Override
-    public synchronized CompletableFuture<?> watchWritableBookies(RegistrationListener listener) {
+    public synchronized CompletableFuture<Void> watchWritableBookies(RegistrationListener listener) {
         CompletableFuture<Void> f = new CompletableFuture<>();
         if (null == watchWritableBookiesTask) {
             watchWritableBookiesTask = new WatchTask(bookieRegistrationPath, f);
@@ -308,7 +308,7 @@ public class ZKRegistrationClient implements RegistrationClient {
     }
 
     @Override
-    public synchronized CompletableFuture<?> watchReadOnlyBookies(RegistrationListener listener) {
+    public synchronized CompletableFuture<Void> watchReadOnlyBookies(RegistrationListener listener) {
         CompletableFuture<Void> f = new CompletableFuture<>();
         if (null == watchReadOnlyBookiesTask) {
             watchReadOnlyBookiesTask = new WatchTask(bookieReadonlyRegistrationPath, f);
