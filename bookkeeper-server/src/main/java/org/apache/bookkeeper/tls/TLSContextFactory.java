@@ -17,13 +17,6 @@
  */
 package org.apache.bookkeeper.tls;
 
-import org.apache.bookkeeper.conf.AbstractConfiguration;
-import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.base.Strings;
 
 import io.netty.buffer.PooledByteBufAllocator;
@@ -46,9 +39,19 @@ import java.security.cert.CertificateException;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
 
+import org.apache.bookkeeper.conf.AbstractConfiguration;
+import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * A factory to manage TLS contexts.
+ */
 public class TLSContextFactory implements SecurityHandlerFactory {
-    private final static Logger LOG = LoggerFactory.getLogger(TLSContextFactory.class);
-    private final static String TLSCONTEXT_HANDLER_NAME = "tls";
+    private static final Logger LOG = LoggerFactory.getLogger(TLSContextFactory.class);
+    private static final String TLSCONTEXT_HANDLER_NAME = "tls";
     private String[] protocols;
     private String[] ciphers;
     private SslContext sslContext;
@@ -148,12 +151,12 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         return SslProvider.JDK;
     }
 
-    private void createClientContext(AbstractConfiguration conf) throws SecurityException, KeyStoreException, NoSuchAlgorithmException,
-            CertificateException, IOException, UnrecoverableKeyException {
+    private void createClientContext(AbstractConfiguration conf) throws SecurityException, KeyStoreException,
+            NoSuchAlgorithmException, CertificateException, IOException, UnrecoverableKeyException {
         final SslContextBuilder sslContextBuilder;
         final ClientConfiguration clientConf;
         final SslProvider provider;
-        final boolean Authentication;
+        final boolean authentication;
 
         KeyManagerFactory kmf = null;
         TrustManagerFactory tmf = null;
@@ -165,12 +168,12 @@ public class TLSContextFactory implements SecurityHandlerFactory {
 
         clientConf = (ClientConfiguration) conf;
         provider = getTLSProvider(clientConf.getTLSProvider());
-        Authentication = clientConf.getTLSClientAuthentication();
+        authentication = clientConf.getTLSClientAuthentication();
 
         tmf = initTrustManagerFactory(clientConf.getTLSTrustStoreType(), clientConf.getTLSTrustStore(),
                 clientConf.getTLSTrustStorePasswordPath());
 
-        if (Authentication) {
+        if (authentication) {
             kmf = initKeyManagerFactory(clientConf.getTLSKeyStoreType(), clientConf.getTLSKeyStore(),
                     clientConf.getTLSKeyStorePasswordPath());
         }
@@ -185,19 +188,19 @@ public class TLSContextFactory implements SecurityHandlerFactory {
                                             .clientAuth(ClientAuth.REQUIRE);
 
         /* if mutual authentication is enabled */
-        if (Authentication) {
+        if (authentication) {
             sslContextBuilder.keyManager(kmf);
         }
 
         sslContext = sslContextBuilder.build();
     }
 
-    private void createServerContext(AbstractConfiguration conf) throws SecurityException, KeyStoreException, NoSuchAlgorithmException,
-            CertificateException, IOException, UnrecoverableKeyException {
+    private void createServerContext(AbstractConfiguration conf) throws SecurityException, KeyStoreException,
+            NoSuchAlgorithmException, CertificateException, IOException, UnrecoverableKeyException {
         final SslContextBuilder sslContextBuilder;
         final ServerConfiguration serverConf;
         final SslProvider provider;
-        final boolean Authentication;
+        final boolean authentication;
 
         KeyManagerFactory kmf = null;
         TrustManagerFactory tmf = null;
@@ -209,12 +212,12 @@ public class TLSContextFactory implements SecurityHandlerFactory {
 
         serverConf = (ServerConfiguration) conf;
         provider = getTLSProvider(serverConf.getTLSProvider());
-        Authentication = serverConf.getTLSClientAuthentication();
+        authentication = serverConf.getTLSClientAuthentication();
 
         kmf = initKeyManagerFactory(serverConf.getTLSKeyStoreType(), serverConf.getTLSKeyStore(),
                 serverConf.getTLSKeyStorePasswordPath());
 
-        if (Authentication) {
+        if (authentication) {
             tmf = initTrustManagerFactory(serverConf.getTLSTrustStoreType(), serverConf.getTLSTrustStore(),
                     serverConf.getTLSTrustStorePasswordPath());
         }
@@ -228,7 +231,7 @@ public class TLSContextFactory implements SecurityHandlerFactory {
                                             .startTls(true);
 
         /* if mutual authentication is enabled */
-        if (Authentication) {
+        if (authentication) {
             sslContextBuilder.trustManager(tmf)
                             .clientAuth(ClientAuth.REQUIRE);
         }
