@@ -1,4 +1,4 @@
-Is this a question, feature request, or bug report?
+Is this a question, feature request, bug report, or bookkeeper proposal?
 
 **QUESTION**
 
@@ -29,3 +29,10 @@ Have you checked our documentation at http://bookkeeper.apache.org/ , If you cou
 
 - What did you see instead?
 
+**BP**
+
+This is the master ticket for tracking BP-&lt;bp-number&gt; :
+
+[a short description for this BP]
+
+Proposal PR - #&lt;pr-number&gt;

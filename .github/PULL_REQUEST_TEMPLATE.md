@@ -5,6 +5,15 @@ Descriptions of the changes in this PR:
 > ---
 > Be sure to do all of the following to help us incorporate your contribution
 > quickly and easily:
+>
+> If this PR is a BookKeeper Proposal (BP):
+>
+> - [ ] Make sure the PR title is formatted like:
+>     `<BP-#>: Description of bookkeeper proposal`
+>     `e.g. BP-1: 64 bits ledger is support`
+> - [ ] Attach the master issue link in the description of this PR.
+>
+> Otherwise:
 > 
 > - [ ] Make sure the PR title is formatted like:
 >     `<Issue # or BOOKKEEPER-#>: Description of pull request`
