@@ -24,6 +24,8 @@ import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import io.netty.buffer.Unpooled;
 import java.nio.ByteBuffer;
@@ -178,6 +180,31 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
     }
 
     @Test
+    public void testOpenLedgerNoSealed() throws Exception {
+        try (WriteHandle writer
+            = result(newCreateLedgerOp()
+                .withEnsembleSize(3)
+                .withWriteQuorumSize(3)
+                .withAckQuorumSize(2)
+                .withPassword(password)
+                .execute())) {
+            long lId = writer.getId();
+            // write data and populate LastAddConfirmed
+            result(writer.append(ByteBuffer.wrap(data)));
+            result(writer.append(ByteBuffer.wrap(data)));
+
+            try (ReadHandle reader
+                = result(newOpenLedgerOp()
+                    .withPassword(password)
+                    .withRecovery(false)
+                    .withLedgerId(lId)
+                    .execute())) {
+                assertFalse(reader.isSealed());
+            }
+        }
+    }
+
+    @Test
     public void testOpenLedgerRead() throws Exception {
         long lId;
         try (WriteHandle writer
@@ -199,6 +226,7 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
             .withRecovery(false)
             .withLedgerId(lId)
             .execute())) {
+            assertTrue(reader.isSealed());
             assertEquals(2, reader.getLastAddConfirmed());
             assertEquals(3 * data.length, reader.getLength());
             assertEquals(2, result(reader.readLastAddConfirmed()).intValue());
@@ -236,6 +264,7 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
                 .withRecovery(true)
                 .withLedgerId(lId)
                 .execute())) {
+                assertTrue(reader.isSealed());
                 assertEquals(1L, reader.getLastAddConfirmed());
             }
 

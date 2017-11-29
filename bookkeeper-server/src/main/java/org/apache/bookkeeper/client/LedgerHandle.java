@@ -362,6 +362,11 @@ public class LedgerHandle implements WriteHandle {
         return metadata.isClosed();
     }
 
+    @Override
+    public boolean isSealed() {
+        return isClosed();
+    }
+
     void asyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc) {
         try {
             doAsyncCloseInternal(cb, ctx, rc);
