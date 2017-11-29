@@ -563,12 +563,15 @@ public abstract class BookKeeperClusterTestCase {
         if (bkc == null) {
             bkc = new BookKeeperTestClient(baseClientConf);
         }
-        Future<?> waitForBookie = bkc.waitForBookie(address);
+
+        Future<?> waitForBookie = conf.isForceReadOnlyBookie()
+            ? bkc.waitForReadOnlyBookie(address)
+            : bkc.waitForWritableBookie(address);
 
         server.start();
 
         waitForBookie.get(30, TimeUnit.SECONDS);
-        LOG.info("New bookie, {}, has been created.", address);
+        LOG.info("New bookie '{}' has been created.", address);
 
         try {
             startAutoRecovery(server, conf);
@@ -597,12 +600,14 @@ public abstract class BookKeeperClusterTestCase {
         if (bkc == null) {
             bkc = new BookKeeperTestClient(baseClientConf);
         }
-        Future<?> waitForBookie = bkc.waitForBookie(address);
+        Future<?> waitForBookie = conf.isForceReadOnlyBookie()
+            ? bkc.waitForReadOnlyBookie(address)
+            : bkc.waitForWritableBookie(address);
 
         server.start();
 
         waitForBookie.get(30, TimeUnit.SECONDS);
-        LOG.info("New bookie, {}, has been created.", address);
+        LOG.info("New bookie '{}' has been created.", address);
 
         try {
             startAutoRecovery(server, conf);

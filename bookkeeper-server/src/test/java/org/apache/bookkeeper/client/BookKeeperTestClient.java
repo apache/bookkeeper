@@ -23,13 +23,13 @@ package org.apache.bookkeeper.client;
 
 import java.io.IOException;
 import java.util.Set;
+import java.util.concurrent.Future;
 import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
-import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 
@@ -56,22 +56,12 @@ public class BookKeeperTestClient extends BookKeeper {
         return bookieClient;
     }
 
-    /**
-     * Wait for the bookie to appear in any set
-     */
-    public CompletableFuture<?> waitForBookie(BookieSocketAddress b)
-            throws Exception {
-        return CompletableFuture.anyOf(
-                waitForReadOnlyBookie(b),
-                waitForWritableBookie(b));
-    }
-
-    public CompletableFuture<?> waitForReadOnlyBookie(BookieSocketAddress b)
+    public Future<?> waitForReadOnlyBookie(BookieSocketAddress b)
             throws Exception {
         return waitForBookieInSet(b, false);
     }
 
-    public CompletableFuture<?> waitForWritableBookie(BookieSocketAddress b)
+    public Future<?> waitForWritableBookie(BookieSocketAddress b)
             throws Exception {
         return waitForBookieInSet(b, true);
     }
@@ -81,7 +71,7 @@ public class BookKeeperTestClient extends BookKeeper {
      * or the read only set of bookies. Also ensure that it doesn't exist
      * in the other set before completing.
      */
-    private CompletableFuture<?> waitForBookieInSet(BookieSocketAddress b,
+    private Future<?> waitForBookieInSet(BookieSocketAddress b,
                                                        boolean writable) {
         log.info("Wait for {} to become {}",
                  b, writable ? "writable" : "readonly");

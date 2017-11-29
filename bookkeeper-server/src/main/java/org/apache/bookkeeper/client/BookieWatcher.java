@@ -146,8 +146,8 @@ class BookieWatcher {
         CompletableFuture<?> writable;
         CompletableFuture<?> readonly;
         synchronized (this) {
-            if (initialReadonlyBookiesFuture == null
-                && initialWritableBookiesFuture == null) {
+            if (initialReadonlyBookiesFuture == null) {
+                assert initialWritableBookiesFuture == null;
 
                 writable = this.registrationClient.watchWritableBookies(
                             bookies -> processWritableBookiesChanged(bookies.getValue()));
