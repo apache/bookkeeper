@@ -21,6 +21,8 @@
 
 package org.apache.bookkeeper.client;
 
+import static org.apache.bookkeeper.client.BookKeeper.DigestType.fromApiDigestType;
+
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -128,7 +130,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
 
         final byte[] passwd;
         DigestType digestType = enableDigestAutodetection 
-                                    ? metadata.getDigestType() 
+                                    ? fromApiDigestType(metadata.getDigestType())
                                     : suggestedDigestType;
 										
         /* For an administrative open, the default passwords
@@ -136,7 +138,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
          * already contains passwords, use these instead. */
         if (administrativeOpen && metadata.hasPassword()) {
             passwd = metadata.getPassword();
-            digestType = metadata.getDigestType();
+            digestType = fromApiDigestType(metadata.getDigestType());
         } else {
             passwd = this.passwd;
 
@@ -146,7 +148,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
                     openComplete(BKException.Code.UnauthorizedAccessException, null);
                     return;
                 }
-                if (digestType != metadata.getDigestType()) {
+                if (digestType != fromApiDigestType(metadata.getDigestType())) {
                     LOG.error("Provided digest does not match that in metadata");
                     openComplete(BKException.Code.DigestMatchException, null);
                     return;
@@ -276,7 +278,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
                 return;
             }
 
-            LedgerOpenOp op = new LedgerOpenOp(bk, builderLedgerId, DigestType.fromApiDigestType(builderDigestType),
+            LedgerOpenOp op = new LedgerOpenOp(bk, builderLedgerId, fromApiDigestType(builderDigestType),
                 builderPassword, cb, null);
             ReentrantReadWriteLock closeLock = bk.getCloseLock();
             closeLock.readLock().lock();

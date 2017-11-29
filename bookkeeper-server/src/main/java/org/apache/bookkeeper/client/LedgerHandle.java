@@ -231,10 +231,9 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
-     * Get the LedgerMetadata
-     *
-     * @return LedgerMetadata for the LedgerHandle
+     * {@inheritDoc}
      */
+    @Override
     public LedgerMetadata getLedgerMetadata() {
         return metadata;
     }
