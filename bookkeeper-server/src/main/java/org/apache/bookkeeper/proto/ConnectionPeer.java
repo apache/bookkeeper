@@ -25,45 +25,45 @@ import java.util.Collection;
 import org.apache.bookkeeper.auth.BookKeeperPrincipal;
 
 /**
- * Represents the connection to a BookKeeper client, from the Bookie side 
+ * Represents the connection to a BookKeeper client, from the Bookie side.
  */
 public interface ConnectionPeer {
 
     /**
-     * Address from which originated the connection
+     * Address from which originated the connection.
      * @return
      */
-    public SocketAddress getRemoteAddr();
+    SocketAddress getRemoteAddr();
 
     /**
-     * Additional principals bound to the connection, like TLS certificates
+     * Additional principals bound to the connection, like TLS certificates.
      * @return
      */
-    public Collection<Object> getProtocolPrincipals();
+    Collection<Object> getProtocolPrincipals();
 
     /**
-     * Utility function to be used from AuthProviders to drop the connection
+     * Utility function to be used from AuthProviders to drop the connection.
      */
-    public void disconnect();
+    void disconnect();
 
     /**
-     * Returns the user which is bound to the connection
+     * Returns the user which is bound to the connection.
      * @return the principal or null if no auth takes place
      * or the auth plugin did not call {@link #setAuthorizedId(org.apache.bookkeeper.auth.BookKeeperPrincipal)}
      * @see  #setAuthorizedId(org.apache.bookkeeper.auth.BookKeeperPrincipal)
      */
-    public BookKeeperPrincipal getAuthorizedId();
+    BookKeeperPrincipal getAuthorizedId();
 
     /**
-     * Assign a principal to the current connection
+     * Assign a principal to the current connection.
      * @param principal the id of the user
      * @see #getAuthorizedId()
      */
-    public void setAuthorizedId(BookKeeperPrincipal principal);
+    void setAuthorizedId(BookKeeperPrincipal principal);
 
     /**
-     * This flag returns true if a 'secure' channel in use, like TLS
+     * This flag returns true if a 'secure' channel in use, like TLS.
      * @return true if the channel is 'secure'
      */
-    public boolean isSecure();
+    boolean isSecure();
 }

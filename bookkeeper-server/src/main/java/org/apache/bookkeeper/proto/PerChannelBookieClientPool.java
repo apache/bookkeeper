@@ -41,7 +41,7 @@ interface PerChannelBookieClientPool {
     void obtain(GenericCallback<PerChannelBookieClient> callback, long key);
 
     /**
-     * record any read/write error on {@link PerChannelBookieClientPool}
+     * record any read/write error on {@link PerChannelBookieClientPool}.
      */
     void recordError();
 

@@ -20,6 +20,12 @@
  */
 package org.apache.bookkeeper.proto;
 
+import com.google.protobuf.ByteString;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
+import io.netty.util.ReferenceCountUtil;
+
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
@@ -33,14 +39,11 @@ import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.protobuf.ByteString;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
-import io.netty.util.ReferenceCountUtil;
-
+/**
+ * A read processor for v3 last add confirmed messages.
+ */
 class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
-    private final static Logger logger = LoggerFactory.getLogger(ReadLacProcessorV3.class);
+    private static final Logger logger = LoggerFactory.getLogger(ReadLacProcessorV3.class);
 
     public ReadLacProcessorV3(Request request, Channel channel,
                              BookieRequestProcessor requestProcessor) {
