@@ -251,13 +251,9 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         this.length = length;
     }
 
+    @Override
     public boolean isClosed() {
         return state == LedgerMetadataFormat.State.CLOSED;
-    }
-
-    @Override
-    public boolean isSealed() {
-        return isClosed();
     }
 
     public boolean isInRecovery() {

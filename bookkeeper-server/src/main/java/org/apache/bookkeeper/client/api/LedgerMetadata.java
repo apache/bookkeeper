@@ -19,7 +19,6 @@
 
 package org.apache.bookkeeper.client.api;
 
-import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -34,7 +33,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
  */
 @LimitedPrivate
 @Unstable
-public interface LedgerMetadata extends Serializable {
+public interface LedgerMetadata {
 
     /**
      * Returns the ensemble size of this ledger.
@@ -60,7 +59,7 @@ public interface LedgerMetadata extends Serializable {
     /**
      * Returns the last entry id of this ledger.
      *
-     * <p>If this ledger is not sealed {@link #isSealed()}, it returns {@code -1L}.
+     * <p>If this ledger is not sealed {@link #isClosed()}, it returns {@code -1L}.
      *
      * @return the last entry id of this ledger if it is sealed, otherwise -1.
      */
@@ -69,7 +68,7 @@ public interface LedgerMetadata extends Serializable {
     /**
      * Returns the length of this ledger.
      *
-     * <p>If this ledger is not sealed {@link #isSealed()}, it returns {@code 0}.
+     * <p>If this ledger is not sealed {@link #isClosed()}, it returns {@code 0}.
      *
      * @return the length of this ledger if it is sealed, otherwise 0.
      */
@@ -94,7 +93,7 @@ public interface LedgerMetadata extends Serializable {
      *
      * @return true if the ledger is sealed, otherwise false.
      */
-    boolean isSealed();
+    boolean isClosed();
 
     /**
      * Returns the custom metadata stored with the ledgers.

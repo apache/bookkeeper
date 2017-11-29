@@ -57,7 +57,7 @@ public class LedgerMetadataTest {
         assertEquals(-1L, metadata.getCtime());
         assertEquals(-1L, metadata.getLastEntryId());
         assertEquals(0, metadata.getLength());
-        assertFalse(metadata.isSealed());
+        assertFalse(metadata.isClosed());
         assertTrue(metadata.getAllEnsembles().isEmpty());
 
         try {
