@@ -116,17 +116,6 @@ public interface ReadHandle extends Handle {
     long getLength();
 
     /**
-     * Returns the metadata of this ledger.
-     *
-     * <p>This call only retrieves the metadata cached locally. If there is any metadata updated, the read
-     * handle will receive the metadata updates and update the metadata locally. The metadata notification
-     * can be deplayed, so it is possible you can receive a stale copy of ledger metadata from this call.
-     *
-     * @return the metadata of this ledger.
-     */
-    LedgerMetadata getLedgerMetadata();
-
-    /**
      * Asynchronous read specific entry and the latest last add confirmed.
      * If the next entryId is less than known last add confirmed, the call will read next entry directly.
      * If the next entryId is ahead of known last add confirmed, the call will issue a long poll read
