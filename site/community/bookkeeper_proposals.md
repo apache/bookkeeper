@@ -1,0 +1,107 @@
+---
+title: BookKeeper Proposals
+---
+
+This page describes a proposed *BookKeeper Proposal (BP)* process for proposing a major change to BookKeeper.
+
+## Process
+
+### What is considered a "major change" that needs a BP?
+
+Any of the following should be considered a major change:
+
+- Any major new feature, subsystem, or piece of functionality
+- Any change that impacts the public interfaces of the project
+- Any change that impacts developer workflow of the project
+
+All the following are public interfaces that people build around:
+
+- Binary log format
+- The network protocol and api behavior
+- Configuration, especially client configuration
+- Monitoring/Stats provider
+- Command line tools and arguments
+
+### What should be included in a BP?
+
+A BP should contain the following sections:
+
+- *Motivation*: describe the problem to be solved
+- *Proposed Change*: describe the new thing you want to do. This may be fairly extensive and have large subsections of its own. Or it may be a few sentences, depending on the scope of the change.
+- *New or Changed Public Interfaces*: impact to any of the "compatibility commitments" described above. We want to call these out in particular so everyone thinks about them.
+- *Migration Plan and Compatibility*: if this feature requires additional support for a no-downtime upgrade describe how that will work
+- *Rejected Alternatives*: What are the other alternatives you considered and why are they worse? The goal of this section is to help people understand why this is the best solution now, and also to prevent churn in the future when old alternatives are reconsidered.
+
+### Who should initiate the BP?
+
+Anyone can initiate a BP but you shouldn't do it unless you have an intention of getting the work done to implement it (otherwise it is silly).
+
+### How to make a BP?
+
+Here is the process for making a BP:
+
+1. Create an issue `BP-<number>: [capation of bookkeeper proposal]`. E.g. `BP-1: 64 bits ledger id support`.
+    - Take the next available BP number from this page.
+    - Write a brief description about what BP is for in this issue. This issue will be the master issue for tracking the status of this BP and its implementations.
+      All the implementations of this BP should be listed and linked to this master issues.
+1. Write the proposal for this BP.
+    - Make a copy of the [BP-Template](https://github.com/apache/bookkeeper/tree/master/site/bps/BP-template.md). Name the BP file as `BP-<number>-[caption-of-proposal].md`.
+    ```shell
+    $ cp site/bps/BP-template.md site/bps/BP-xyz-capation-of-proposal.md
+    ```
+    - Fill the sections listed in the BP template.
+        - issue: replace `<issue-number>` with the issue number.
+        - state: "Under Discussion"
+        - release: leave the release to `N/A`. you can only mark a release after a BP is implemented.
+1. Send a PR for this BP. Following the instructions in the pull request template.
+    - add `BP` label to this BP
+    - don't associate this PR with any release or milestone
+1. You can tag committers on this RP for reviewers, or start a `[DISCUSS]` thread on Apache mailing list. If you are sending an email, please make sure that the subject
+   of the thread is of the format `[DISCUSS] BP-<number>: capation of bookkeeper proposal`.
+1. Once the BP is finalized, reviewed and approved by committers, the BP is accepted. The criteria for acceptance is [lazy majority](http://bookkeeper.apache.org/bylaws.html).
+1. Committers merge the PR after a BP is accepted. The development for this BP moves forward with implementations. The BP should be updated if there is anything changed during
+   implementing it.
+1. After all the implementations for a given BP are completed, a new PR should be sent for changing the state of a BP:
+    - state: "Adopted"
+    - release: set to the release that includes this BP.
+1. The final PR for changing BP state will be used as the criteria for marking a BP as completed.
+
+## All Proposals
+
+This section lists all the _bookkeeper proposals_ made to BookKeeper.
+
+*Next Proposal Number: 21*
+
+### Inprogress
+
+Proposal | State
+:--------|:-----
+[BP-4 - BookKeeper Lifecycle Management](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-4+-+BookKeeper+Lifecycle+Management) | Draft
+[BP-8 - Queue based auto rereplicator](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-8+-+Queue+based+auto+rereplicator) | Draft
+[BP-12 - Improve documentation](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-12+-+Improve+documentation) | Accepted
+[BP-14 Relax durability](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-14+Relax+durability) | Accepted
+[BP-16: Thin Client - Remove direct metadata storage access from clients](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-16%3A+Thin+Client+-+Remove+direct+metadata+storage+access+from+clients) | Draft
+[BP-18: LedgerType, Flags and StorageHints](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-18%3A+LedgerType%2C+Flags+and+StorageHints) | Accepted
+[BP-20: Github workflow for bookkeeper proposals](../../bps/BP-20-github-workflow-for-bookkeeper-proposals) | Under Discussion
+
+### Adopted
+
+Proposal | Release
+:--------|:-------
+[BP-1 - 64 bits ledger id support](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-1+-+64+bits+ledger+id+support) | 4.5.0
+[BP-2 - Resource aware data placement](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-2+-+Resource+aware+data+placement) | 4.5.0
+[BP-3 - Security support](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-3+-+Security+support) | 4.5.0
+[BP-5 - Allow reads outside the LAC Protocol](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-5+Allow+reads+outside+the+LAC+Protocol) | 4.5.0
+[BP-6 - Use separate log for compaction](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-6+-+Use+separate+log+for+compaction) | 4.6.0
+[BP-9 - Github issues for Issue Tracking](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-9+-+Github+issues+for+Issue+Tracking) | 4.5.0
+[BP-10 - Official Bookkeeper Docker Image](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-10+-+Official+Bookkeeper+Docker+Image) | 4.5.0
+[BP-11 - Move website/documentation to Jekyll based site](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=71012301) | 4.5.0
+[BP-13 - Time Based Release Plan](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-13+-+Time+Based+Release+Plan) | 4.6.0
+[BP-15 - New CreateLedger API](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-15+New+CreateLedger+API) | 4.6.0
+[BP-17 - Define BookKeeper public http endpoints](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-17%3A+Define+BookKeeper+public+http+endpoints) | 4.6.0
+
+### Discarded
+
+Proposal | Reason
+:--------|:------
+[BP-7 - Explicit LAC on addEntry](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-7+-+Explicit+LAC+on+addEntry) | Not A Problem
