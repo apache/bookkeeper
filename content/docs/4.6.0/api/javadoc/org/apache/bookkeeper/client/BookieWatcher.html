@@ -180,6 +180,12 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html#getReadOnlyBookies--">getReadOnlyBookies</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html#initialBlockingBookieRead--">initialBlockingBookieRead</a></span>()</code>
+<div class="block">Blocks until bookies are read from zookeeper, used in the <a href="../../../../org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client"><code>BookKeeper</code></a> constructor.</div>
+</td>
+</tr>
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html#newEnsemble-int-int-int-java.util.Map-">newEnsemble</a></span>(int&nbsp;ensembleSize,
            int&nbsp;writeQuorumSize,
@@ -188,16 +194,10 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 <div class="block">Create an ensemble with given <i>ensembleSize</i> and <i>writeQuorumSize</i>.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html#quarantineBookie-org.apache.bookkeeper.net.BookieSocketAddress-">quarantineBookie</a></span>(org.apache.bookkeeper.net.BookieSocketAddress&nbsp;bookie)</code>
 <div class="block">Quarantine <i>bookie</i> so it will not be preferred to be chosen for new ensembles.</div>
-</td>
-</tr>
-<tr id="i4" class="altColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookieWatcher.html#readBookiesBlocking--">readBookiesBlocking</a></span>()</code>
-<div class="block">Blocks until bookies are read from zookeeper, used in the <a href="../../../../org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client"><code>BookKeeper</code></a> constructor.</div>
 </td>
 </tr>
 <tr id="i5" class="rowColor">
@@ -298,14 +298,14 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 </dl>
 </li>
 </ul>
-<a name="readBookiesBlocking--">
+<a name="initialBlockingBookieRead--">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>readBookiesBlocking</h4>
-<pre>public&nbsp;void&nbsp;readBookiesBlocking()
-                         throws <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
+<h4>initialBlockingBookieRead</h4>
+<pre>public&nbsp;void&nbsp;initialBlockingBookieRead()
+                               throws <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <div class="block">Blocks until bookies are read from zookeeper, used in the <a href="../../../../org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client"><code>BookKeeper</code></a> constructor.</div>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>

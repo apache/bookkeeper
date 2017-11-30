@@ -472,19 +472,25 @@
 <td class="colLast"><span class="typeNameLabel">BookieWatcher.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookieWatcher.html#getReadOnlyBookies--">getReadOnlyBookies</a></span>()</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><span class="typeNameLabel">BookieWatcher.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookieWatcher.html#initialBlockingBookieRead--">initialBlockingBookieRead</a></span>()</code>
+<div class="block">Blocks until bookies are read from zookeeper, used in the <a href="../../../../../org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client"><code>BookKeeper</code></a> constructor.</div>
+</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><span class="typeNameLabel">BookKeeper.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeper.html#isClosed-long-">isClosed</a></span>(long&nbsp;lId)</code>
 <div class="block">Check whether the ledger with identifier <i>lId</i>
  has been closed.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></code></td>
 <td class="colLast"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#openLedger-long-">openLedger</a></span>(long&nbsp;lId)</code>
 <div class="block">Open a ledger as an administrator.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></code></td>
 <td class="colLast"><span class="typeNameLabel">BookKeeper.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeper.html#openLedger-long-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-">openLedger</a></span>(long&nbsp;lId,
           <a href="../../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
@@ -492,24 +498,18 @@
 <div class="block">Synchronous open ledger call</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></code></td>
 <td class="colLast"><span class="typeNameLabel">BookKeeperAdmin.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#openLedgerNoRecovery-long-">openLedgerNoRecovery</a></span>(long&nbsp;lId)</code>
 <div class="block">Open a ledger as an administrator without recovering the ledger.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></code></td>
 <td class="colLast"><span class="typeNameLabel">BookKeeper.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeper.html#openLedgerNoRecovery-long-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-">openLedgerNoRecovery</a></span>(long&nbsp;lId,
                     <a href="../../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
                     byte[]&nbsp;passwd)</code>
 <div class="block">Synchronous, unsafe open ledger call</div>
-</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">BookieWatcher.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookieWatcher.html#readBookiesBlocking--">readBookiesBlocking</a></span>()</code>
-<div class="block">Blocks until bookies are read from zookeeper, used in the <a href="../../../../../org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client"><code>BookKeeper</code></a> constructor.</div>
 </td>
 </tr>
 <tr class="altColor">
