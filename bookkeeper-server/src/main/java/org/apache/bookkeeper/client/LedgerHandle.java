@@ -356,15 +356,11 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
-     * Has the ledger been closed?
+     * {@inheritDoc}
      */
+    @Override
     public synchronized boolean isClosed() {
         return metadata.isClosed();
-    }
-
-    @Override
-    public boolean isSealed() {
-        return isClosed();
     }
 
     void asyncCloseInternal(final CloseCallback cb, final Object ctx, final int rc) {

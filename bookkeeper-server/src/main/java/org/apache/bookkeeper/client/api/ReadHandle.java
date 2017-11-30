@@ -127,7 +127,7 @@ public interface ReadHandle extends Handle {
      *
      * @return true if the ledger is sealed, otherwise false.
      */
-    boolean isSealed();
+    boolean isClosed();
 
     /**
      * Asynchronous read specific entry and the latest last add confirmed.

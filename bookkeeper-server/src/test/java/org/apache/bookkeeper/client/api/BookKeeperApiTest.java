@@ -199,7 +199,7 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
                     .withRecovery(false)
                     .withLedgerId(lId)
                     .execute())) {
-                assertFalse(reader.isSealed());
+                assertFalse(reader.isClosed());
             }
         }
     }
@@ -226,7 +226,7 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
             .withRecovery(false)
             .withLedgerId(lId)
             .execute())) {
-            assertTrue(reader.isSealed());
+            assertTrue(reader.isClosed());
             assertEquals(2, reader.getLastAddConfirmed());
             assertEquals(3 * data.length, reader.getLength());
             assertEquals(2, result(reader.readLastAddConfirmed()).intValue());
@@ -264,7 +264,7 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
                 .withRecovery(true)
                 .withLedgerId(lId)
                 .execute())) {
-                assertTrue(reader.isSealed());
+                assertTrue(reader.isClosed());
                 assertEquals(1L, reader.getLastAddConfirmed());
             }
 
