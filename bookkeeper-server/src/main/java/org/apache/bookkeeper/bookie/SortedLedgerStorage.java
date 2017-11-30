@@ -48,7 +48,6 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
 
     EntryMemTable memTable;
     private ScheduledExecutorService scheduler;
-    private Checkpointer checkpointer;
 
     public SortedLedgerStorage() {
         super();
@@ -68,15 +67,14 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
             ledgerManager,
             ledgerDirsManager,
             indexDirsManager,
-            null,
-            null,
+            checkpointSource,
+            checkpointer,
             statsLogger);
         this.memTable = new EntryMemTable(conf, checkpointSource, statsLogger);
         this.scheduler = Executors.newSingleThreadScheduledExecutor(
                 new ThreadFactoryBuilder()
                 .setNameFormat("SortedLedgerStorage-%d")
                 .setPriority((Thread.NORM_PRIORITY + Thread.MAX_PRIORITY) / 2).build());
-        this.checkpointer = checkpointer;
     }
 
     @VisibleForTesting
@@ -166,7 +164,14 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
 
     @Override
     public void checkpoint(final Checkpoint checkpoint) throws IOException {
-        memTable.flush(this, checkpoint);
+        long numBytesFlushed = memTable.flush(this, checkpoint);
+        if (numBytesFlushed > 0) {
+            // if bytes are added between previous flush and this checkpoint,
+            // it means bytes might live at current active entry log, we need
+            // roll current entry log and then issue checkpoint to underlying
+            // interleaved ledger storage.
+            entryLogger.rollLog();
+        }
         super.checkpoint(checkpoint);
     }
 
@@ -220,5 +225,13 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
                 }
             }
         });
+    }
+
+    @Override
+    public void onRotateEntryLog() {
+        // override the behavior at interleaved ledger storage.
+        // we don't trigger any checkpoint logic when an entry log file is rotated, because entry log file rotation
+        // can happen because compaction. in a sorted ledger storage, checkpoint should happen after the data is
+        // flushed to the entry log file.
     }
 }

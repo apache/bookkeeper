@@ -21,7 +21,7 @@
 
 package org.apache.bookkeeper.bookie;
 
-
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_ENTRY;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_OFFSET;
 
@@ -61,8 +61,8 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
 
     EntryLogger entryLogger;
     LedgerCache ledgerCache;
-    private CheckpointSource checkpointSource;
-    private Checkpointer checkpointer;
+    protected CheckpointSource checkpointSource;
+    protected Checkpointer checkpointer;
     private final CopyOnWriteArrayList<LedgerDeletionListener> ledgerDeletionListeners =
             Lists.newCopyOnWriteArrayList();
 
@@ -94,6 +94,8 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                            Checkpointer checkpointer,
                            StatsLogger statsLogger)
             throws IOException {
+        checkNotNull(checkpointSource, "invalid null checkpoint source");
+        checkNotNull(checkpointer, "invalid null checkpointer");
 
         this.checkpointSource = checkpointSource;
         this.checkpointer = checkpointer;
@@ -437,9 +439,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         // TODO: we could consider remove checkpointSource and checkpointSouce#newCheckpoint
         // later if we provide kind of LSN (Log/Journal Squeuence Number)
         // mechanism when adding entry. {@link https://github.com/apache/bookkeeper/issues/279}
-        if (null != checkpointer) {
-            Checkpoint checkpoint = checkpointSource.newCheckpoint();
-            checkpointer.startCheckpoint(checkpoint);
-        }
+        Checkpoint checkpoint = checkpointSource.newCheckpoint();
+        checkpointer.startCheckpoint(checkpoint);
     }
 }

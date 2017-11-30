@@ -144,6 +144,11 @@ class SyncThread implements Checkpointer {
 
     @VisibleForTesting
     public void checkpoint(Checkpoint checkpoint) {
+        if (null == checkpoint) {
+            // do nothing if checkpoint is null
+            return;
+        }
+
         try {
             ledgerStorage.checkpoint(checkpoint);
         } catch (NoWritableLedgerDirException e) {
