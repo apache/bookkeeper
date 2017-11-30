@@ -22,7 +22,13 @@ package org.apache.bookkeeper.client;
  */
 
 import java.io.IOException;
+import java.util.Set;
+import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
+import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
@@ -31,6 +37,7 @@ import org.apache.zookeeper.ZooKeeper;
  * Test BookKeeperClient which allows access to members we don't
  * wish to expose in the public API.
  */
+@Slf4j
 public class BookKeeperTestClient extends BookKeeper {
     public BookKeeperTestClient(ClientConfiguration conf)
             throws IOException, InterruptedException, BKException {
@@ -49,14 +56,44 @@ public class BookKeeperTestClient extends BookKeeper {
         return bookieClient;
     }
 
+    public Future<?> waitForReadOnlyBookie(BookieSocketAddress b)
+            throws Exception {
+        return waitForBookieInSet(b, false);
+    }
+
+    public Future<?> waitForWritableBookie(BookieSocketAddress b)
+            throws Exception {
+        return waitForBookieInSet(b, true);
+    }
+
     /**
-     * Force a read to zookeeper to get list of bookies.
-     *
-     * @throws InterruptedException
-     * @throws KeeperException
+     * Wait for bookie to appear in either the writable set of bookies,
+     * or the read only set of bookies. Also ensure that it doesn't exist
+     * in the other set before completing.
      */
-    public void readBookiesBlocking()
-            throws InterruptedException, BKException {
-        bookieWatcher.readBookiesBlocking();
+    private Future<?> waitForBookieInSet(BookieSocketAddress b,
+                                                       boolean writable) {
+        log.info("Wait for {} to become {}",
+                 b, writable ? "writable" : "readonly");
+
+        CompletableFuture<Void> readOnlyFuture = new CompletableFuture<>();
+        CompletableFuture<Void> writableFuture = new CompletableFuture<>();
+
+        RegistrationListener readOnlyListener = (bookies) -> {
+            boolean contains = bookies.getValue().contains(b);
+            if ((!writable && contains) || (writable && !contains)) {
+                readOnlyFuture.complete(null);
+            }
+        };
+        RegistrationListener writableListener = (bookies) -> {
+            boolean contains = bookies.getValue().contains(b);
+            if ((writable && contains) || (!writable && !contains)) {
+                writableFuture.complete(null);
+            }
+        };
+
+        regClient.watchWritableBookies(writableListener);
+        regClient.watchReadOnlyBookies(readOnlyListener);
+        return CompletableFuture.allOf(writableFuture, readOnlyFuture);
     }
 }

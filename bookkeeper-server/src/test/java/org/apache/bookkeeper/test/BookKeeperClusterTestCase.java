@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.bookie.Bookie;
@@ -558,26 +559,19 @@ public abstract class BookKeeperClusterTestCase {
     protected BookieServer startBookie(ServerConfiguration conf)
             throws Exception {
         BookieServer server = new BookieServer(conf);
-        server.start();
-
+        BookieSocketAddress address = Bookie.getBookieAddress(conf);
         if (bkc == null) {
             bkc = new BookKeeperTestClient(baseClientConf);
         }
 
-        int port = conf.getBookiePort();
-        String host = InetAddress.getLocalHost().getHostAddress();
-        if (conf.getUseHostNameAsBookieID()) {
-            host = InetAddress.getLocalHost().getCanonicalHostName();
-        }
-        
-        while (conf.isForceReadOnlyBookie()
-            && bkc.getZkHandle().exists(conf.getZkLedgersRootPath() +"/available/readonly/" + host + ":" + port,
-            false) == null) {
-            Thread.sleep(100);
-        }
+        Future<?> waitForBookie = conf.isForceReadOnlyBookie()
+            ? bkc.waitForReadOnlyBookie(address)
+            : bkc.waitForWritableBookie(address);
 
-        bkc.readBookiesBlocking();
-        LOG.info("New bookie on port " + port + " has been created.");
+        server.start();
+
+        waitForBookie.get(30, TimeUnit.SECONDS);
+        LOG.info("New bookie '{}' has been created.", address);
 
         try {
             startAutoRecovery(server, conf);
@@ -601,24 +595,20 @@ public abstract class BookKeeperClusterTestCase {
                 return b;
             }
         };
-        server.start();
 
+        BookieSocketAddress address = Bookie.getBookieAddress(conf);
         if (bkc == null) {
             bkc = new BookKeeperTestClient(baseClientConf);
         }
+        Future<?> waitForBookie = conf.isForceReadOnlyBookie()
+            ? bkc.waitForReadOnlyBookie(address)
+            : bkc.waitForWritableBookie(address);
 
-        int port = conf.getBookiePort();
-        String host = InetAddress.getLocalHost().getHostAddress();
-        if (conf.getUseHostNameAsBookieID()) {
-            host = InetAddress.getLocalHost().getCanonicalHostName();
-        }
-        while (bkc.getZkHandle().exists(
-                conf.getZkLedgersRootPath() + "/available/" + host + ":" + port, false) == null) {
-            Thread.sleep(500);
-        }
+        server.start();
 
-        bkc.readBookiesBlocking();
-        LOG.info("New bookie on port " + port + " has been created.");
+        waitForBookie.get(30, TimeUnit.SECONDS);
+        LOG.info("New bookie '{}' has been created.", address);
+
         try {
             startAutoRecovery(server, conf);
         } catch (CompatibilityException ce) {
