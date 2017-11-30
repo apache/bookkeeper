@@ -449,19 +449,97 @@
 
       <div class="content">
         <section class="bk-main-content">
-          <p>[provide a summary of this release]</p>
+          <p>This is the seventh release of BookKeeper as an Apache Top Level Project!</p>
+
+<p>The 4.6.0 release incorporates new fixes, improvements, and features since previous major release 4.5.0.</p>
 
 <p>Apache BookKeeper users are encouraged to upgrade to 4.6.0. The technical details of this release are summarized
 below.</p>
 
 <h2 id="highlights">Highlights</h2>
 
-<p>[List the highlights]</p>
+<p>The main features in 4.6.0 cover are around following areas:</p>
+<ul>
+  <li>Dependencies Upgrade</li>
+  <li>Bookie enhancement</li>
+  <li>BookKeeper Admin REST API</li>
+  <li>New BookKeeper API</li>
+  <li>Performance improvement</li>
+  <li>Deployment or Ease of use</li>
+</ul>
 
-<h2 id="details">Details</h2>
+<h3 id="dependencies-upgrade">Dependencies Upgrade</h3>
 
-<p>[list to issues list]</p>
+<ul>
+  <li>Upgrade Protobuf to <code class="highlighter-rouge">3.4</code>.</li>
+</ul>
 
+<h3 id="bookie-enhancement">Bookie enhancement</h3>
+
+<ul>
+  <li>Persistable bookie status.
+    <ul>
+      <li>Prior to this release, bookie status was transient. It is a bit hard for management tooling. This feature adds persistable bookies status. See <a href="https://github.com/apache/bookkeeper/issues/265">Issue-265</a> for more details.</li>
+    </ul>
+  </li>
+  <li>Introduce Bookie Discovery Interface.  Prior to this release, bookkeeper client only provides interfaces for ledger metadata management. It doesn’t provide any interface for service discovery part. This feature introduces bookie discovery interface, so it allows plugging in different service discovery backends for bookkeeper.
+    <ul>
+      <li>Introduce Bookie Registration Manager for bookie server, see <a href="https://github.com/apache/bookkeeper/issues/662">Issue-662</a> for more details.</li>
+      <li>Introduce registration client for bookkeeper client, see <a href="https://github.com/apache/bookkeeper/issues/666">Issue-666</a> for more details.</li>
+    </ul>
+  </li>
+  <li>Lifecycle components for managing components in bookie server.
+    <ul>
+      <li>Introduce lifecycle component for each service component, which includes “stats provider”, “auto recovery”, “http endpoint”, and “bookie server(both storage and netty server)”, to run these components in a clear way. See <a href="https://github.com/apache/bookkeeper/issues/508">Issue-508</a> and <a href="https://github.com/apache/bookkeeper/issues/547">Issue-547</a> for more details.</li>
+    </ul>
+  </li>
+  <li>Make bookie recovery work with recovering multiple bookies.
+    <ul>
+      <li>Make recovery tool work with multiple bookies, so that one call could recover multiple bookies. See <a href="https://github.com/apache/bookkeeper/issues/612">Issue-612</a> for more details.</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="bookkeeper-admin-rest-api">BookKeeper Admin REST API</h3>
+
+<ul>
+  <li>Introduce a bookkeeper admin endpoint for operations to interact and administer the bookkeeper cluster using REST API. see <a href="https://github.com/apache/bookkeeper/pull/278">PR-278</a>, <a href="https://github.com/apache/bookkeeper/issues/520">Issue-520</a>, and <a href="https://github.com/apache/bookkeeper/issues/674">Issue-674</a> for more details.</li>
+</ul>
+
+<h3 id="new-bookkeeper-api">New BookKeeper API</h3>
+
+<ul>
+  <li>New Fluent Style API.
+    <ul>
+      <li>A brand new API to manage ledgers using the Builder pattern, and new interfaces to make it clear operations on ledgers, like WriteHandle and ReadHandle, are provided in this release. See <a href="https://github.com/apache/bookkeeper/issues/506">Issue-506</a>, <a href="https://github.com/apache/bookkeeper/issues/673">Issue-673</a> and <a href="https://github.com/apache/bookkeeper/issues/550">Issue-550</a> for more details</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="performance-improvement">Performance improvement</h3>
+<ul>
+  <li>
+    <p>Use ByteBuf in multiple places to avoid unnecessary memory allocation and reduce the garbage produced in JVM. See <a href="https://github.com/apache/bookkeeper/pull/640">PR-640</a> for more details.</p>
+  </li>
+  <li>
+    <p>Separate the FileInfo cache into write and read cache. It avoids catchup reads impact tailing reads and writes. See <a href="https://github.com/apache/bookkeeper/pull/513">PR-513</a> for more details.</p>
+  </li>
+</ul>
+
+<h3 id="deployment-or-ease-of-use">Deployment or Ease of use</h3>
+<ul>
+  <li>Deployment BookKeeper on K8s.
+    <ul>
+      <li>Provide yaml files to run BookKeeper on Kubernetes using both StatefulSets and DaemonSet. See <a href="https://github.com/apache/bookkeeper/issues/337">Issue-337</a> and <a href="https://github.com/apache/bookkeeper/issues/681">Issue-681</a>for more details.</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="full-list-of-changes">Full list of changes</h2>
+
+<ul>
+  <li><a href="https://github.com/apache/bookkeeper/milestone/2">https://github.com/apache/bookkeeper/milestone/2</a></li>
+</ul>
 
         </section>
 
@@ -476,7 +554,13 @@ below.</p>
   <h2 class="title">Apache BookKeeper 4.6.0 Release Notes</h2>
   <ul class="section-nav">
 <li class="toc-entry toc-h2"><a href="#highlights">Highlights</a></li>
-<li class="toc-entry toc-h2"><a href="#details">Details</a></li>
+<li class="toc-entry toc-h3"><a href="#dependencies-upgrade">Dependencies Upgrade</a></li>
+<li class="toc-entry toc-h3"><a href="#bookie-enhancement">Bookie enhancement</a></li>
+<li class="toc-entry toc-h3"><a href="#bookkeeper-admin-rest-api">BookKeeper Admin REST API</a></li>
+<li class="toc-entry toc-h3"><a href="#new-bookkeeper-api">New BookKeeper API</a></li>
+<li class="toc-entry toc-h3"><a href="#performance-improvement">Performance improvement</a></li>
+<li class="toc-entry toc-h3"><a href="#deployment-or-ease-of-use">Deployment or Ease of use</a></li>
+<li class="toc-entry toc-h2"><a href="#full-list-of-changes">Full list of changes</a></li>
 </ul>
 </div>
 
