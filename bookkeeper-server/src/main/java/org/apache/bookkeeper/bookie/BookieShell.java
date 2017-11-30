@@ -1759,6 +1759,7 @@ public class BookieShell implements Tool {
                 }
 
                 try {
+                    conf.setAllowStorageExpansion(true);
                     Bookie.checkEnvironmentWithStorageExpansion(conf, rm,
                         Lists.newArrayList(journalDirectories), allLedgerDirs);
                 } catch (BookieException e) {
