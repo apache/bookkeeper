@@ -497,13 +497,13 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                     .setNameFormat("BKClientMetaDataPollScheduler-%d");
             this.bookieInfoScheduler = Executors.newSingleThreadScheduledExecutor(tFBuilder.build());
             this.bookieInfoReader = new BookieInfoReader(this, conf, this.bookieInfoScheduler);
-            this.bookieWatcher.readBookiesBlocking();
+            this.bookieWatcher.initialBlockingBookieRead();
             this.bookieInfoReader.start();
         } else {
             LOG.info("Weighted ledger placement is not enabled");
             this.bookieInfoScheduler = null;
             this.bookieInfoReader = new BookieInfoReader(this, conf, null);
-            this.bookieWatcher.readBookiesBlocking();
+            this.bookieWatcher.initialBlockingBookieRead();
         }
 
         // initialize ledger manager
