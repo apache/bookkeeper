@@ -84,7 +84,7 @@ The second one is more code, you need to remember to close the previous handle, 
 
 ### Compatibility, Deprecation, and Migration Plan
 
-This change is only on the new API, so there's no promise of compatability.
+This change is only on the new API, so there's no promise of compatibility.
 
 ### Test Plan
 
