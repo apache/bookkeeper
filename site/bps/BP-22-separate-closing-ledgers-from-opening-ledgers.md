@@ -13,7 +13,7 @@ openLedgerNoRecovery was added in 2011. This allowed users to read from a ledger
 
 Then the new API arrived. In the new API, tailing is the primary read use case, and recovery has been demoted to a boolean flag on a builder for the open operation. The user is for the most part unaware of recovery.
 
-However, recovery is still one of the most important aspects of BookKeeper. It is the mechanism on which our TOAB guarantees are built. It deserves to be a bit more prominent than a boolean flag in a builder. It also doesn't help that the terminology is inconsistent. The flag is called withRecovery, while the to check if recovery is needed, we call isClosed. Closed itself is ambiguous because it may refer to the local handle, or it may refer to the state of the ledger.
+However, recovery is still one of the most important aspects of BookKeeper. It is the mechanism on which our Total Order Atomic Broadcast guarantees are built. It deserves to be a bit more prominent than a boolean flag in a builder. It also doesn't help that the terminology is inconsistent. The flag is called withRecovery, while the to check if recovery is needed, we call isClosed. Closed itself is ambiguous because it may refer to the local handle, or it may refer to the state of the ledger.
 
 As tailing is now the primary usecase, we expect that if a writer fails, then whichever node takes over as writer already has a non-recovered ReadHandle open. It would be nice to be able to continue using this Handle to read to the end of the ledger.
 
