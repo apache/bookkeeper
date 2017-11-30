@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.meta;
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -17,20 +15,21 @@ package org.apache.bookkeeper.meta;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.bookkeeper.meta;
 
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZKUtil;
+import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.util.ZkUtils;
-import org.apache.bookkeeper.conf.AbstractConfiguration;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.ZKUtil;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 
 /**
- * Hierarchical Ledger Manager Factory
+ * Hierarchical Ledger Manager Factory.
  */
 public class LegacyHierarchicalLedgerManagerFactory extends LedgerManagerFactory {
 
@@ -68,7 +67,8 @@ public class LegacyHierarchicalLedgerManagerFactory extends LedgerManagerFactory
     @Override
     public LedgerIdGenerator newLedgerIdGenerator() {
         List<ACL> zkAcls = ZkUtils.getACLs(conf);
-        return new ZkLedgerIdGenerator(zk, conf.getZkLedgersRootPath(), LegacyHierarchicalLedgerManager.IDGEN_ZNODE, zkAcls);
+        return new ZkLedgerIdGenerator(zk, conf.getZkLedgersRootPath(), LegacyHierarchicalLedgerManager.IDGEN_ZNODE,
+                zkAcls);
     }
 
     @Override

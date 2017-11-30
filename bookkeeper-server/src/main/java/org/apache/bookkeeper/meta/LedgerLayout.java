@@ -45,7 +45,7 @@ class LedgerLayout {
     public static final int LAYOUT_FORMAT_VERSION = 2;
 
     /**
-     * Read ledger layout from zookeeper
+     * Read ledger layout from zookeeper.
      *
      * @param zk            ZooKeeper Client
      * @param ledgersRoot   Root of the ledger namespace to check
@@ -71,8 +71,8 @@ class LedgerLayout {
         }
     }
 
-    static final String splitter = ":";
-    static final String lSplitter = "\n";
+    private static final String splitter = ":";
+    private static final String lSplitter = "\n";
 
     // ledger manager factory class
     private String managerFactoryCls;
@@ -83,7 +83,7 @@ class LedgerLayout {
     private int layoutFormatVersion = LAYOUT_FORMAT_VERSION;
 
     /**
-     * Ledger Layout Constructor
+     * Ledger Layout Constructor.
      *
      * @param managerFactoryCls
      *          Ledger Manager Factory Class
@@ -104,7 +104,7 @@ class LedgerLayout {
     }
 
     /**
-     * Get Ledger Manager Type
+     * Get Ledger Manager Type.
      *
      * @return ledger manager type
      * @deprecated replaced by {@link #getManagerFactoryClass()}
@@ -116,7 +116,7 @@ class LedgerLayout {
     }
 
     /**
-     * Get ledger manager factory class
+     * Get ledger manager factory class.
      *
      * @return ledger manager factory class
      */
@@ -129,7 +129,7 @@ class LedgerLayout {
     }
 
     /**
-     * Return layout format version
+     * Return layout format version.
      *
      * @return layout format version
      */
@@ -138,7 +138,7 @@ class LedgerLayout {
     }
 
     /**
-     * Store the ledger layout into zookeeper
+     * Store the ledger layout into zookeeper.
      */
     public void store(final ZooKeeper zk, String ledgersRoot, List<ACL> zkAcls)
             throws IOException, KeeperException, InterruptedException {
@@ -149,7 +149,7 @@ class LedgerLayout {
     }
 
     /**
-     * Delete the LAYOUT from zookeeper
+     * Delete the LAYOUT from zookeeper.
      */
     public void delete(final ZooKeeper zk, String ledgersRoot)
             throws KeeperException, InterruptedException {
@@ -175,7 +175,7 @@ class LedgerLayout {
     }
 
     /**
-     * Parses a given byte array and transforms into a LedgerLayout object
+     * Parses a given byte array and transforms into a LedgerLayout object.
      *
      * @param bytes
      *          byte array to parse
@@ -195,8 +195,7 @@ class LedgerLayout {
 
         try {
             int layoutFormatVersion = Integer.parseInt(lines[0]);
-            if (LAYOUT_FORMAT_VERSION < layoutFormatVersion ||
-                LAYOUT_MIN_COMPAT_VERSION > layoutFormatVersion) {
+            if (LAYOUT_FORMAT_VERSION < layoutFormatVersion || LAYOUT_MIN_COMPAT_VERSION > layoutFormatVersion) {
                 throw new IOException("Metadata version not compatible. Expected "
                         + LAYOUT_FORMAT_VERSION + ", but got " + layoutFormatVersion);
             }
@@ -227,9 +226,8 @@ class LedgerLayout {
         if (!(obj instanceof LedgerLayout)) {
             return false;
         }
-        LedgerLayout other = (LedgerLayout)obj;
-        return managerFactoryCls.equals(other.managerFactoryCls)
-            && managerVersion == other.managerVersion;
+        LedgerLayout other = (LedgerLayout) obj;
+        return managerFactoryCls.equals(other.managerFactoryCls) && managerVersion == other.managerVersion;
     }
 
     @Override
