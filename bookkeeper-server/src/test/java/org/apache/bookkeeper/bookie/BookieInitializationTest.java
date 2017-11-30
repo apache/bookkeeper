@@ -354,31 +354,33 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testBookieServerStartupOnEphemeralPorts() throws Exception {
-        File tmpDir = createTempDir("bookie", "test");
+        File tmpDir1 = createTempDir("bookie", "test1");
+        File tmpDir2 = createTempDir("bookie", "test2");
 
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
-        conf.setZkServers(null)
+        ServerConfiguration conf1 = TestBKConfiguration.newServerConfiguration();
+        conf1.setZkServers(null)
             .setBookiePort(0)
-            .setJournalDirName(tmpDir.getPath())
+            .setJournalDirName(tmpDir1.getPath())
             .setLedgerDirNames(
-                new String[] { tmpDir.getPath() });
-        assertEquals(0, conf.getBookiePort());
-
-        ServerConfiguration conf1 = new ServerConfiguration();
-        conf1.addConfiguration(conf);
+                new String[] { tmpDir1.getPath() });
+        assertEquals(0, conf1.getBookiePort());
         BookieServer bs1 = new BookieServer(conf1);
-        conf.setZkServers(zkUtil.getZooKeeperConnectString());
-        rm.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
+        conf1.setZkServers(zkUtil.getZooKeeperConnectString());
+        rm.initialize(conf1, () -> {}, NullStatsLogger.INSTANCE);
         bs1.getBookie().registrationManager = rm;
         bs1.start();
         assertFalse(0 == conf1.getBookiePort());
 
         // starting bk server with same conf
-        ServerConfiguration conf2 = new ServerConfiguration();
-        conf2.addConfiguration(conf);
+        ServerConfiguration conf2 = TestBKConfiguration.newServerConfiguration();
+        conf2.setZkServers(null)
+            .setBookiePort(0)
+            .setJournalDirName(tmpDir2.getPath())
+            .setLedgerDirNames(
+                new String[] { tmpDir2.getPath() });
         BookieServer bs2 = new BookieServer(conf2);
         RegistrationManager newRm = new ZKRegistrationManager();
-        newRm.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
+        newRm.initialize(conf2, () -> {}, NullStatsLogger.INSTANCE);
         bs2.getBookie().registrationManager = newRm;
         bs2.start();
         assertFalse(0 == conf2.getBookiePort());

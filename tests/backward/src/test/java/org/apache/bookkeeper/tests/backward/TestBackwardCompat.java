@@ -588,7 +588,7 @@ public class TestBackwardCompat {
 
         // Start the current server, will not require a filesystem upgrade
         ServerCurrent scur = new ServerCurrent(journalDir, ledgerDir, port,
-                true);
+                false);
         scur.start();
 
         // check that old client can read its old ledgers on new server
@@ -626,7 +626,7 @@ public class TestBackwardCompat {
 
         // Start the current server, will not require a filesystem upgrade
         ServerCurrent scur = new ServerCurrent(journalDir, ledgerDir, port,
-                true);
+                false);
         scur.start();
 
         // Check that current client can to write to server
@@ -686,7 +686,7 @@ public class TestBackwardCompat {
         s420.stop();
 
         // Start the current server
-        ServerCurrent scur = new ServerCurrent(journalDir, ledgerDir, port, true);
+        ServerCurrent scur = new ServerCurrent(journalDir, ledgerDir, port, false);
         scur.getConf().setLedgerManagerFactoryClassName("org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory");
         scur.getConf().setProperty(AbstractConfiguration.LEDGER_MANAGER_FACTORY_DISABLE_CLASS_CHECK, true);
         scur.start();
