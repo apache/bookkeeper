@@ -21,26 +21,26 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.bookkeeper.client.BKException.BKNoSuchEntryException;
+import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.DistributionSchedule.WriteSet;
+import org.apache.bookkeeper.client.api.LedgerEntries;
+import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
+import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Reader used for DL tools to read entries.
  */
 public class LedgerReader {
-
-    private static final Logger logger = LoggerFactory.getLogger(LedgerReader.class);
 
     /**
      * Read Result Holder.
@@ -137,21 +137,42 @@ public class LedgerReader {
                                                     final GenericCallback<List<LedgerEntry>> callback) {
         final List<LedgerEntry> resultList = new ArrayList<LedgerEntry>();
 
-        final AsyncCallback.ReadCallback readCallback = new AsyncCallback.ReadCallback() {
+        final FutureEventListener<LedgerEntries> readListener = new FutureEventListener<LedgerEntries>() {
+
+            private void readNext(long entryId) {
+                PendingReadOp op = new PendingReadOp(lh, lh.bk.scheduler, entryId, entryId, false);
+                op.future().whenComplete(this);
+                op.submit();
+            }
+
             @Override
-            public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> entries, Object ctx) {
-                if (BKException.Code.NoSuchEntryException == rc) {
-                    callback.operationComplete(BKException.Code.OK, resultList);
-                } else if (BKException.Code.OK == rc) {
-                    while (entries.hasMoreElements()) {
-                        resultList.add(entries.nextElement());
-                    }
-                    long entryId = (Long) ctx;
-                    ++entryId;
-                    PendingReadOp readOp = new PendingReadOp(lh, lh.bk.scheduler, entryId, entryId, this, entryId);
-                    readOp.initiate();
+            public void onSuccess(LedgerEntries ledgerEntries) {
+                long entryId = -1L;
+                for (org.apache.bookkeeper.client.api.LedgerEntry entry : ledgerEntries) {
+                    resultList.add(new LedgerEntry((LedgerEntryImpl) entry));
+                    entryId = entry.getEntryId();
+                }
+                try {
+                    ledgerEntries.close();
+                } catch (Exception e) {
+                    // bk should not throw any exceptions here
+                }
+                ++entryId;
+                readNext(entryId);
+            }
+
+            @Override
+            public void onFailure(Throwable throwable) {
+                if (throwable instanceof BKNoSuchEntryException) {
+                    callback.operationComplete(Code.OK, resultList);
                 } else {
-                    callback.operationComplete(rc, resultList);
+                    int retCode;
+                    if (throwable instanceof BKException) {
+                        retCode = ((BKException) throwable).getCode();
+                    } else {
+                        retCode = Code.UnexpectedConditionException;
+                    }
+                    callback.operationComplete(retCode, resultList);
                 }
             }
         };
@@ -169,13 +190,9 @@ public class LedgerReader {
             }
 
             long entryId = recoveryData.lastAddConfirmed;
-            PendingReadOp readOp = new PendingReadOp(lh, lh.bk.scheduler, entryId, entryId, readCallback, entryId);
-            try {
-                readOp.initiate();
-            } catch (Throwable t) {
-                logger.error("Failed to initialize pending read entry {} for ledger {} : ",
-                             new Object[] { entryId, lh.getLedgerMetadata(), t });
-            }
+            PendingReadOp op = new PendingReadOp(lh, lh.bk.scheduler, entryId, entryId, false);
+            op.future().whenComplete(readListener);
+            op.submit();
         };
         // Read Last AddConfirmed
         new ReadLastConfirmedOp(lh, readLACCallback).initiate();
