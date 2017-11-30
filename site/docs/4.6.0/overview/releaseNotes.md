@@ -17,7 +17,7 @@ The main features in 4.6.0 cover are around following areas:
 - BookKeeper Admin REST API
 - New BookKeeper API
 - Performance improvement
-- Kubernetes deployment for BookKeeper Docker 
+- Deployment or Ease of use 
 
 ### Dependencies Upgrade
 
@@ -28,7 +28,7 @@ The main features in 4.6.0 cover are around following areas:
 - Persistable bookie status.
   - Prior to this release, bookie status was transient. It is a bit hard for management tooling. This feature adds persistable bookies status. See [Issue-265](https://github.com/apache/bookkeeper/issues/265) for more details.
 
-- Introduce Bookie Registration Manager. 
+- Introduce Bookie Discovery Interface.  Prior to this release, bookkeeper client only provides interfaces for ledger metadata management. It doesn't provide any interface for service discovery part. This feature introduces bookie discovery interface, so it allows plugging in different service discovery backends for bookkeeper.
   - Introduce Bookie Registration Manager for bookie server, see [Issue-662](https://github.com/apache/bookkeeper/issues/662) for more details.
   - Introduce registration client for bookkeeper client, see [Issue-666](https://github.com/apache/bookkeeper/issues/666) for more details.
 
@@ -40,22 +40,21 @@ The main features in 4.6.0 cover are around following areas:
 
 ### BookKeeper Admin REST API
 
-- Provide module for Bookkeeper Http Endpoint, see [PR-278](https://github.com/apache/bookkeeper/pull/278), [Issue-520](https://github.com/apache/bookkeeper/issues/520), and [Issue-674](https://github.com/apache/bookkeeper/issues/674) for more details.
+- Introduce a bookkeeper admin endpoint for operations to interact and administer the bookkeeper cluster using REST API. see [PR-278](https://github.com/apache/bookkeeper/pull/278), [Issue-520](https://github.com/apache/bookkeeper/issues/520), and [Issue-674](https://github.com/apache/bookkeeper/issues/674) for more details.
 
 ### New BookKeeper API
 
-- New CreateLedger API.
+- New Fluent Style API.
   - A brand new API to manage ledgers using the Builder pattern, and new interfaces to make it clear operations on ledgers, like WriteHandle and ReadHandle, are provided in this release. See [Issue-506](https://github.com/apache/bookkeeper/issues/506), [Issue-673](https://github.com/apache/bookkeeper/issues/673) and [Issue-550](https://github.com/apache/bookkeeper/issues/550) for more details
 
-- Refine LedgerEntry interface and provide LedgerEntries interface. See [Issue-693](https://github.com/apache/bookkeeper/issues/693) and [Issue-731](https://github.com/apache/bookkeeper/issues/693) for more details.
-
 ### Performance improvement
-- Use ByteBuf for entrylogger reads. See [PR-640](https://github.com/apache/bookkeeper/pull/640) for more details.
+- Use ByteBuf in multiple places to avoid unnecessary memory allocation and reduce the garbage produced in JVM. See [PR-640](https://github.com/apache/bookkeeper/pull/640) for more details.
 
-- Introduce write FileInfo cache and read FileInfo cache. See [PR-513](https://github.com/apache/bookkeeper/pull/513) for more details.
+- Separate the FileInfo cache into write and read cache. It avoids catchup reads impact tailing reads and writes. See [PR-513](https://github.com/apache/bookkeeper/pull/513) for more details.
 
-### Kubernetes deployment for BookKeeper Docker
-- Provide yaml files to run BookKeeper on Kubernetes using both StatefulSets and DaemonSet. See [Issue-337](https://github.com/apache/bookkeeper/issues/337) and [Issue-681](https://github.com/apache/bookkeeper/issues/681)for more details.
+### Deployment or Ease of use
+- Deployment BookKeeper on K8s. 
+  - Provide yaml files to run BookKeeper on Kubernetes using both StatefulSets and DaemonSet. See [Issue-337](https://github.com/apache/bookkeeper/issues/337) and [Issue-681](https://github.com/apache/bookkeeper/issues/681)for more details.
 
 ## Full list of changes
 
