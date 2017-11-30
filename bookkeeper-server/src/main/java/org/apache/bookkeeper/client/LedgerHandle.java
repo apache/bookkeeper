@@ -356,8 +356,9 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
-     * Has the ledger been closed?
+     * {@inheritDoc}
      */
+    @Override
     public synchronized boolean isClosed() {
         return metadata.isClosed();
     }

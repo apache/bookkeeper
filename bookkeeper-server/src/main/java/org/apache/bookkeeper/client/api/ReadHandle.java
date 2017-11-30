@@ -116,6 +116,20 @@ public interface ReadHandle extends Handle {
     long getLength();
 
     /**
+     * Returns whether the ledger is sealed or not.
+     *
+     * <p>A ledger is sealed when either the client explicitly closes it ({@link WriteHandle#close()} or
+     * {@link WriteAdvHandle#close()}) or another client explicitly open and recovery it
+     * {@link OpenBuilder#withRecovery(boolean)}.
+     *
+     * <p>This method only checks the metadata cached locally. The metadata can be not update-to-date because
+     * the metadata notification is delayed.
+     *
+     * @return true if the ledger is sealed, otherwise false.
+     */
+    boolean isClosed();
+
+    /**
      * Asynchronous read specific entry and the latest last add confirmed.
      * If the next entryId is less than known last add confirmed, the call will read next entry directly.
      * If the next entryId is ahead of known last add confirmed, the call will issue a long poll read
