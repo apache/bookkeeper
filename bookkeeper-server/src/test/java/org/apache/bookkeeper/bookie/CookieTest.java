@@ -28,14 +28,13 @@ import static org.apache.bookkeeper.bookie.UpgradeTest.newV2LedgerDirectory;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import com.google.common.base.Stopwatch;
 import com.google.common.collect.Sets;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -45,12 +44,12 @@ import org.apache.bookkeeper.discover.ZKRegistrationManager;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.PortManager;
+import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -184,6 +183,66 @@ public class CookieTest extends BookKeeperClusterTestCase {
         b = new Bookie(conf);
         b.start();
         b.shutdown();
+    }
+
+    /**
+     * Test that if a cookie is missing from a journal directory
+     * the bookie will fail to start
+     */
+    @Test
+    public void testCookieMissingOnJournalDir() throws Exception {
+        String[] ledgerDirs = new String[] {
+            newDirectory(), newDirectory(), newDirectory() };
+        String journalDir = newDirectory();
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
+            .setZkServers(zkUtil.getZooKeeperConnectString())
+            .setJournalDirName(journalDir)
+            .setLedgerDirNames(ledgerDirs)
+            .setBookiePort(bookiePort);
+
+        Bookie b = new Bookie(conf); // should work fine
+        b.start();
+        b.shutdown();
+
+        File cookieFile =
+            new File(Bookie.getCurrentDirectory(new File(journalDir)), BookKeeperConstants.VERSION_FILENAME);
+        assertTrue(cookieFile.delete());
+        try {
+            new Bookie(conf);
+            fail("Shouldn't have been able to start");
+        } catch (BookieException.InvalidCookieException ice) {
+            // correct behaviour
+        }
+    }
+
+    /**
+     * Test that if a cookie is missing from a journal directory
+     * the bookie will fail to start
+     */
+    @Test
+    public void testCookieMissingOnLedgerDir() throws Exception {
+        String[] ledgerDirs = new String[] {
+            newDirectory(), newDirectory(), newDirectory() };
+        String journalDir = newDirectory();
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
+            .setZkServers(zkUtil.getZooKeeperConnectString())
+            .setJournalDirName(journalDir)
+            .setLedgerDirNames(ledgerDirs)
+            .setBookiePort(bookiePort);
+
+        Bookie b = new Bookie(conf); // should work fine
+        b.start();
+        b.shutdown();
+
+        File cookieFile =
+            new File(Bookie.getCurrentDirectory(new File(ledgerDirs[0])), BookKeeperConstants.VERSION_FILENAME);
+        assertTrue(cookieFile.delete());
+        try {
+            new Bookie(conf);
+            fail("Shouldn't have been able to start");
+        } catch (BookieException.InvalidCookieException ice) {
+            // correct behaviour
+        }
     }
 
     /**
@@ -543,10 +602,38 @@ public class CookieTest extends BookKeeperClusterTestCase {
         b.shutdown();
 
         conf.setUseHostNameAsBookieID(true);
-        b = new Bookie(conf);
+        try {
+            new Bookie(conf);
+            fail("Should not start a bookie with hostname if the bookie has been started with an ip");
+        } catch (InvalidCookieException e) {
+            // expected
+        }
+    }
+
+    /**
+     * Test restart bookie with new advertisedAddress, which had cookie generated with ip.
+     */
+    @Test
+    public void testRestartWithAdvertisedAddressAsBookieID() throws Exception {
+        String[] ledgerDirs = new String[] { newDirectory(), newDirectory(),
+                newDirectory() };
+        String journalDir = newDirectory();
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
+                .setZkServers(zkUtil.getZooKeeperConnectString())
+                .setJournalDirName(journalDir).setLedgerDirNames(ledgerDirs)
+                .setBookiePort(bookiePort);
+        conf.setUseHostNameAsBookieID(false);
+        Bookie b = new Bookie(conf); // should work fine
         b.start();
-        assertTrue("Fails to recognize bookie which was started with IPAddr as ID", !conf.getUseHostNameAsBookieID());
         b.shutdown();
+
+        conf.setAdvertisedAddress("unknown");
+        try {
+            new Bookie(conf);
+            fail("Should not start a bookie with ip if the bookie has been started with an ip");
+        } catch (InvalidCookieException e) {
+            // expected
+        }
     }
 
     /**
@@ -568,10 +655,12 @@ public class CookieTest extends BookKeeperClusterTestCase {
         b.shutdown();
 
         conf.setUseHostNameAsBookieID(false);
-        b = new Bookie(conf);
-        b.start();
-        assertTrue("Fails to recognize bookie which was started with HostName as ID", conf.getUseHostNameAsBookieID());
-        b.shutdown();
+        try {
+            new Bookie(conf);
+            fail("Should not start a bookie with ip if the bookie has been started with an ip");
+        } catch (InvalidCookieException e) {
+            // expected
+        }
     }
 
     /**

@@ -95,6 +95,12 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector{
 
     @Override
     public void gc(GarbageCleaner garbageCleaner) {
+        if (null == ledgerManager) {
+            // if ledger manager is null, the bookie is not started to connect to metadata store.
+            // so skip garbage collection
+            return;
+        }
+
         try {
             // Get a set of all ledgers on the bookie
             NavigableSet<Long> bkActiveLedgers = Sets.newTreeSet(ledgerStorage.getActiveLedgersInRange(0,
