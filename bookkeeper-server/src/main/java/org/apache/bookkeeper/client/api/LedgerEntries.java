@@ -52,5 +52,6 @@ public interface LedgerEntries
     /**
      * Close to release the resources held by this instance.
      */
+    @Override
     void close();
 }
