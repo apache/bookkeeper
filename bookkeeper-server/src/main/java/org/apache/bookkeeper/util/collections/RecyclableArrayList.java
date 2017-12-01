@@ -48,9 +48,8 @@ public final class RecyclableArrayList<T> extends ArrayList<T> {
         this.handle = handle;
     }
 
-    public boolean recycle() {
+    public void recycle() {
         clear();
         handle.recycle(this);
-        return true;
     }
 }
