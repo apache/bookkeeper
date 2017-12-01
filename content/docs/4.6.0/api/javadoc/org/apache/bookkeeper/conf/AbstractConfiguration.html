@@ -158,12 +158,12 @@ extends org.apache.commons.configuration.CompositeConfiguration</pre>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#AVAILABLE_NODE">AVAILABLE_NODE</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>protected static int</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#DEFAULT_NETTY_MAX_FRAME_SIZE">DEFAULT_NETTY_MAX_FRAME_SIZE</a></span></code>&nbsp;</td>
+<td class="colFirst"><code>protected static <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/ClassLoader.html?is-external=true" title="class or interface in java.lang">ClassLoader</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#DEFAULT_LOADER">DEFAULT_LOADER</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>protected static <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/ClassLoader.html?is-external=true" title="class or interface in java.lang">ClassLoader</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#defaultLoader">defaultLoader</a></span></code>&nbsp;</td>
+<td class="colFirst"><code>protected static int</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#DEFAULT_NETTY_MAX_FRAME_SIZE">DEFAULT_NETTY_MAX_FRAME_SIZE</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>protected static <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
@@ -320,31 +320,31 @@ extends org.apache.commons.configuration.CompositeConfiguration</pre>
 <tr id="i7" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getRereplicationEntryBatchSize--">getRereplicationEntryBatchSize</a></span>()</code>
-<div class="block">Get the re-replication entry batch size</div>
+<div class="block">Get the re-replication entry batch size.</div>
 </td>
 </tr>
 <tr id="i8" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getTLSClientAuthentication--">getTLSClientAuthentication</a></span>()</code>
-<div class="block">Whether the client will send an TLS certificate on TLS-handshake</div>
+<div class="block">Whether the client will send an TLS certificate on TLS-handshake.</div>
 </td>
 </tr>
 <tr id="i9" class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getTLSEnabledCipherSuites--">getTLSEnabledCipherSuites</a></span>()</code>
-<div class="block">Get the list of enabled TLS cipher suites</div>
+<div class="block">Get the list of enabled TLS cipher suites.</div>
 </td>
 </tr>
 <tr id="i10" class="altColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getTLSEnabledProtocols--">getTLSEnabledProtocols</a></span>()</code>
-<div class="block">Get the list of enabled TLS protocols</div>
+<div class="block">Get the list of enabled TLS protocols.</div>
 </td>
 </tr>
 <tr id="i11" class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getTLSProvider--">getTLSProvider</a></span>()</code>
-<div class="block">Get TLS Provider (JDK or OpenSSL)</div>
+<div class="block">Get TLS Provider (JDK or OpenSSL).</div>
 </td>
 </tr>
 <tr id="i12" class="altColor">
@@ -356,7 +356,7 @@ extends org.apache.commons.configuration.CompositeConfiguration</pre>
 <tr id="i13" class="rowColor">
 <td class="colFirst"><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#getZkAvailableBookiesPath--">getZkAvailableBookiesPath</a></span>()</code>
-<div class="block">Get the node under which available bookies are stored</div>
+<div class="block">Get the node under which available bookies are stored.</div>
 </td>
 </tr>
 <tr id="i14" class="altColor">
@@ -374,13 +374,13 @@ extends org.apache.commons.configuration.CompositeConfiguration</pre>
 <tr id="i16" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#isZkEnableSecurity--">isZkEnableSecurity</a></span>()</code>
-<div class="block">Are z-node created with strict ACLs</div>
+<div class="block">Are z-node created with strict ACLs.</div>
 </td>
 </tr>
 <tr id="i17" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#loadConf-org.apache.commons.configuration.CompositeConfiguration-">loadConf</a></span>(org.apache.commons.configuration.CompositeConfiguration&nbsp;baseConf)</code>
-<div class="block">You can load configuration from other configuration</div>
+<div class="block">You can load configuration from other configuration.</div>
 </td>
 </tr>
 <tr id="i18" class="altColor">
@@ -447,7 +447,7 @@ extends org.apache.commons.configuration.CompositeConfiguration</pre>
 <tr id="i28" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setTLSClientAuthentication-boolean-">setTLSClientAuthentication</a></span>(boolean&nbsp;enabled)</code>
-<div class="block">Specify whether the client will send an TLS certificate on TLS-handshake</div>
+<div class="block">Specify whether the client will send an TLS certificate on TLS-handshake.</div>
 </td>
 </tr>
 <tr id="i29" class="rowColor">
@@ -465,7 +465,7 @@ extends org.apache.commons.configuration.CompositeConfiguration</pre>
 <tr id="i31" class="rowColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setTLSProvider-java.lang.String-">setTLSProvider</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;provider)</code>
-<div class="block">Set TLS Provider (JDK or OpenSSL)</div>
+<div class="block">Set TLS Provider (JDK or OpenSSL).</div>
 </td>
 </tr>
 <tr id="i32" class="altColor">
@@ -477,7 +477,7 @@ extends org.apache.commons.configuration.CompositeConfiguration</pre>
 <tr id="i33" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setZkEnableSecurity-boolean-">setZkEnableSecurity</a></span>(boolean&nbsp;zkEnableSecurity)</code>
-<div class="block">Set the usage of ACLs of new z-nodes</div>
+<div class="block">Set the usage of ACLs of new z-nodes.</div>
 </td>
 </tr>
 <tr id="i34" class="altColor">
@@ -548,13 +548,13 @@ extends org.apache.commons.configuration.CompositeConfiguration</pre>
 </dl>
 </li>
 </ul>
-<a name="defaultLoader">
+<a name="DEFAULT_LOADER">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>defaultLoader</h4>
-<pre>protected static final&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/ClassLoader.html?is-external=true" title="class or interface in java.lang">ClassLoader</a> defaultLoader</pre>
+<h4>DEFAULT_LOADER</h4>
+<pre>protected static final&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/ClassLoader.html?is-external=true" title="class or interface in java.lang">ClassLoader</a> DEFAULT_LOADER</pre>
 </li>
 </ul>
 <a name="LEDGER_MANAGER_TYPE">
@@ -832,7 +832,7 @@ extends org.apache.commons.configuration.CompositeConfiguration</pre>
 <li class="blockList">
 <h4>loadConf</h4>
 <pre>public&nbsp;void&nbsp;loadConf(org.apache.commons.configuration.CompositeConfiguration&nbsp;baseConf)</pre>
-<div class="block">You can load configuration from other configuration</div>
+<div class="block">You can load configuration from other configuration.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>baseConf</code> - Other Configuration</dd>
@@ -981,7 +981,7 @@ public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.h
 <li class="blockList">
 <h4>isZkEnableSecurity</h4>
 <pre>public&nbsp;boolean&nbsp;isZkEnableSecurity()</pre>
-<div class="block">Are z-node created with strict ACLs</div>
+<div class="block">Are z-node created with strict ACLs.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>usage of secure ZooKeeper ACLs</dd>
@@ -995,7 +995,7 @@ public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.h
 <li class="blockList">
 <h4>setZkEnableSecurity</h4>
 <pre>public&nbsp;void&nbsp;setZkEnableSecurity(boolean&nbsp;zkEnableSecurity)</pre>
-<div class="block">Set the usage of ACLs of new z-nodes</div>
+<div class="block">Set the usage of ACLs of new z-nodes.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>zkEnableSecurity</code> - </dd>
@@ -1009,7 +1009,7 @@ public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.h
 <li class="blockList">
 <h4>getZkAvailableBookiesPath</h4>
 <pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;getZkAvailableBookiesPath()</pre>
-<div class="block">Get the node under which available bookies are stored</div>
+<div class="block">Get the node under which available bookies are stored.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>Node under which available bookies are stored.</dd>
@@ -1037,7 +1037,7 @@ public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.h
 <li class="blockList">
 <h4>getRereplicationEntryBatchSize</h4>
 <pre>public&nbsp;long&nbsp;getRereplicationEntryBatchSize()</pre>
-<div class="block">Get the re-replication entry batch size</div>
+<div class="block">Get the re-replication entry batch size.</div>
 </li>
 </ul>
 <a name="getMetastoreImplClass--">
@@ -1217,7 +1217,7 @@ public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.h
 <li class="blockList">
 <h4>getTLSProvider</h4>
 <pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;getTLSProvider()</pre>
-<div class="block">Get TLS Provider (JDK or OpenSSL)</div>
+<div class="block">Get TLS Provider (JDK or OpenSSL).</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the TLS provider to use in creating TLS Context</dd>
@@ -1231,7 +1231,7 @@ public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.h
 <li class="blockList">
 <h4>setTLSProvider</h4>
 <pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&nbsp;setTLSProvider(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;provider)</pre>
-<div class="block">Set TLS Provider (JDK or OpenSSL)</div>
+<div class="block">Set TLS Provider (JDK or OpenSSL).</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>provider</code> - TLS Provider type</dd>
@@ -1247,7 +1247,7 @@ public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.h
 <li class="blockList">
 <h4>getTLSClientAuthentication</h4>
 <pre>public&nbsp;boolean&nbsp;getTLSClientAuthentication()</pre>
-<div class="block">Whether the client will send an TLS certificate on TLS-handshake</div>
+<div class="block">Whether the client will send an TLS certificate on TLS-handshake.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>whether TLS is enabled on the bookie or not.</dd>
@@ -1263,7 +1263,7 @@ public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.h
 <li class="blockList">
 <h4>setTLSClientAuthentication</h4>
 <pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&nbsp;setTLSClientAuthentication(boolean&nbsp;enabled)</pre>
-<div class="block">Specify whether the client will send an TLS certificate on TLS-handshake</div>
+<div class="block">Specify whether the client will send an TLS certificate on TLS-handshake.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>enabled</code> - Whether to send a certificate or not</dd>
@@ -1296,7 +1296,7 @@ public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.h
 <li class="blockList">
 <h4>getTLSEnabledCipherSuites</h4>
 <pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;getTLSEnabledCipherSuites()</pre>
-<div class="block">Get the list of enabled TLS cipher suites</div>
+<div class="block">Get the list of enabled TLS cipher suites.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>this list of enabled TLS cipher suites</dd>
@@ -1329,7 +1329,7 @@ public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.h
 <li class="blockList">
 <h4>getTLSEnabledProtocols</h4>
 <pre>public&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;getTLSEnabledProtocols()</pre>
-<div class="block">Get the list of enabled TLS protocols</div>
+<div class="block">Get the list of enabled TLS protocols.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the list of enabled TLS protocols.</dd>
