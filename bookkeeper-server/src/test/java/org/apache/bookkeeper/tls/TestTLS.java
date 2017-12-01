@@ -53,11 +53,22 @@ import org.apache.bookkeeper.proto.ClientConnectionPeer;
 import org.apache.bookkeeper.proto.TestPerChannelBookieClient;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.After;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
+import org.apache.bookkeeper.tls.TLSContextFactory;
+import org.apache.bookkeeper.tls.SecurityException;
+import org.apache.bookkeeper.tls.TLSContextFactory.KeyStoreType;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,28 +86,28 @@ public class TestTLS extends BookKeeperClusterTestCase {
     private static boolean secureBookieSideChannel = false;
     private static Collection<Object> secureBookieSideChannelPrincipals = null;
 
-    private TLSContextFactory.KeyStoreType clientKeyStoreFormat;
-    private TLSContextFactory.KeyStoreType clientTrustStoreFormat;
-    private TLSContextFactory.KeyStoreType serverKeyStoreFormat;
-    private TLSContextFactory.KeyStoreType serverTrustStoreFormat;
+    private KeyStoreType clientKeyStoreFormat;
+    private KeyStoreType clientTrustStoreFormat;
+    private KeyStoreType serverKeyStoreFormat;
+    private KeyStoreType serverTrustStoreFormat;
 
     @Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
-                { "JKS", "JKS" },
-                { "PEM", "PEM" },
-                { "PKCS12", "PKCS12" },
-                { "JKS", "PEM" },
-                { "PEM", "PKCS12" },
-                { "PKCS12", "JKS" }
+                 { "JKS", "JKS" },
+                 { "PEM", "PEM" },
+                 { "PKCS12", "PKCS12" },
+                 { "JKS", "PEM" },
+                 { "PEM", "PKCS12" },
+                 { "PKCS12", "JKS" }
             });
     }
     public TestTLS(String keyStoreFormat, String trustStoreFormat) {
         super(3);
-        this.clientKeyStoreFormat = TLSContextFactory.KeyStoreType.valueOf(keyStoreFormat);
-        this.clientTrustStoreFormat = TLSContextFactory.KeyStoreType.valueOf(trustStoreFormat);
-        this.serverKeyStoreFormat = TLSContextFactory.KeyStoreType.valueOf(keyStoreFormat);
-        this.serverTrustStoreFormat = TLSContextFactory.KeyStoreType.valueOf(trustStoreFormat);
+        this.clientKeyStoreFormat = KeyStoreType.valueOf(keyStoreFormat);
+        this.clientTrustStoreFormat = KeyStoreType.valueOf(trustStoreFormat);
+        this.serverKeyStoreFormat = KeyStoreType.valueOf(keyStoreFormat);
+        this.serverTrustStoreFormat = KeyStoreType.valueOf(trustStoreFormat);
     }
 
     private String getResourcePath(String resource) throws Exception {
@@ -230,7 +241,43 @@ public class TestTLS extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Verify that a server will not start if tls is enabled but the cert password is incorrect.
+     * Verify handshake failure with a bad cert.
+     */
+    @Test(timeout = 60000)
+    public void testKeyMismatchFailure() throws Exception {
+        // Valid test case only for PEM format keys
+        Assume.assumeTrue(serverKeyStoreFormat == KeyStoreType.PEM);
+
+        ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
+
+        // restart a bookie with bad cert
+        int restartBookieIdx = 0;
+        ServerConfiguration bookieConf = bsConfs.get(restartBookieIdx)
+                .setTLSCertificatePath(getResourcePath("client-cert.pem"));
+        killBookie(restartBookieIdx);
+        LOG.info("Sleeping for 1s before restarting bookie with bad cert");
+        Thread.sleep(1000);
+        bs.add(startBookie(bookieConf));
+        bsConfs.add(bookieConf);
+
+        // Create ledger and write entries
+        BookKeeper client = new BookKeeper(clientConf);
+        byte[] passwd = "testPassword".getBytes();
+        int numEntries = 2;
+        byte[] testEntry = "testEntry".getBytes();
+
+        try (LedgerHandle lh = client.createLedger(numBookies, numBookies, DigestType.CRC32, passwd)) {
+            for (int i = 0; i <= numEntries; i++) {
+                lh.addEntry(testEntry);
+            }
+            fail("Should have failed with not enough bookies to write");
+        } catch (BKException.BKNotEnoughBookiesException bke) {
+            // expected
+        }
+    }
+
+    /**
+     * Verify that a server will not start if ssl is enabled but the cert password is incorrect
      */
     @Test
     public void testStartTLSServerBadPassword() throws Exception {
