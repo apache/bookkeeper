@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.meta;
-
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -17,22 +15,25 @@ package org.apache.bookkeeper.meta;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.bookkeeper.meta;
 
 import java.io.IOException;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
+import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+/**
+ * A factory for creating ledger managers.
+ */
 public abstract class LedgerManagerFactory {
 
     static final Logger LOG = LoggerFactory.getLogger(LedgerManagerFactory.class);
@@ -165,9 +166,9 @@ public abstract class LedgerManagerFactory {
         }
 
         // handle V2 layout case
-        if (factoryClass != null &&
-            !layout.getManagerFactoryClass().equals(factoryClass.getName()) &&
-            conf.getProperty(AbstractConfiguration.LEDGER_MANAGER_FACTORY_DISABLE_CLASS_CHECK) == null) { // Disable should ONLY happen during compatibility testing.
+        if (factoryClass != null && !layout.getManagerFactoryClass().equals(factoryClass.getName())
+                && conf.getProperty(AbstractConfiguration.LEDGER_MANAGER_FACTORY_DISABLE_CLASS_CHECK) == null) {
+                // Disable should ONLY happen during compatibility testing.
 
             throw new IOException("Configured layout " + factoryClass.getName()
                                 + " does not match existing layout "  + layout.getManagerFactoryClass());
@@ -181,7 +182,8 @@ public abstract class LedgerManagerFactory {
                 }
                 factoryClass = theCls.asSubclass(LedgerManagerFactory.class);
             } catch (ClassNotFoundException cnfe) {
-                throw new IOException("Failed to instantiate ledger manager factory " + layout.getManagerFactoryClass());
+                throw new IOException("Failed to instantiate ledger manager factory "
+                        + layout.getManagerFactoryClass());
             }
         }
         // instantiate a factory
@@ -243,7 +245,7 @@ public abstract class LedgerManagerFactory {
     }
 
     /**
-     * Format the ledger metadata for LedgerManager
+     * Format the ledger metadata for LedgerManager.
      *
      * @param conf
      *            Configuration instance

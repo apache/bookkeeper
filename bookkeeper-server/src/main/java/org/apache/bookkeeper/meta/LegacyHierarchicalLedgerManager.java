@@ -37,8 +37,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Hierarchical Ledger Manager which manages ledger meta in zookeeper using 2-level hierarchical znodes.
  *
- * <p>
- * LegacyHierarchicalLedgerManager splits the generated id into 3 parts (2-4-4):
+ * <p>LegacyHierarchicalLedgerManager splits the generated id into 3 parts (2-4-4):
  * <pre>&lt;level1 (2 digits)&gt;&lt;level2 (4 digits)&gt;&lt;level3 (4 digits)&gt;</pre>
  * These 3 parts are used to form the actual ledger node path used to store ledger metadata:
  * <pre>(ledgersRootPath)/level1/level2/L(level3)</pre>
@@ -60,9 +59,9 @@ class LegacyHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager 
             return new StringBuilder();
         }
     };
-    
+
     /**
-     * Constructor
+     * Constructor.
      *
      * @param conf
      *          Configuration object
@@ -92,7 +91,7 @@ class LegacyHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager 
     //
 
     /**
-     * Get the smallest cache id in a specified node /level1/level2
+     * Get the smallest cache id in a specified node /level1/level2.
      *
      * @param level1
      *          1st level node name
@@ -105,7 +104,7 @@ class LegacyHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager 
     }
 
     /**
-     * Get the largest cache id in a specified node /level1/level2
+     * Get the largest cache id in a specified node /level1/level2.
      *
      * @param level1
      *          1st level node name
@@ -148,7 +147,8 @@ class LegacyHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager 
     }
 
     protected static boolean isSpecialZnode(String znode) {
-        return IDGEN_ZNODE.equals(znode) || LongHierarchicalLedgerManager.IDGEN_ZNODE.equals(znode) || AbstractHierarchicalLedgerManager.isSpecialZnode(znode);
+        return IDGEN_ZNODE.equals(znode) || LongHierarchicalLedgerManager.IDGEN_ZNODE.equals(znode)
+            || AbstractHierarchicalLedgerManager.isSpecialZnode(znode);
     }
 
     @Override
@@ -157,7 +157,7 @@ class LegacyHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager 
     }
 
     /**
-     * Iterator through each metadata bucket with hierarchical mode
+     * Iterator through each metadata bucket with hierarchical mode.
      */
     private class HierarchicalLedgerRangeIterator implements LedgerRangeIterator {
         private Iterator<String> l1NodesIter = null;
@@ -167,7 +167,7 @@ class LegacyHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager 
         private LedgerRange nextRange = null;
 
         /**
-         * iterate next level1 znode
+         * Iterate next level1 znode.
          *
          * @return false if have visited all level1 nodes
          * @throws InterruptedException/KeeperException if error occurs reading zookeeper children
@@ -195,7 +195,7 @@ class LegacyHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager 
             return true;
         }
 
-        synchronized private void preload() throws IOException {
+        private synchronized void preload() throws IOException {
             while (nextRange == null && !iteratorDone) {
                 boolean hasMoreElements = false;
                 try {
@@ -227,13 +227,13 @@ class LegacyHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager 
         }
 
         @Override
-        synchronized public boolean hasNext() throws IOException {
+        public synchronized boolean hasNext() throws IOException {
             preload();
             return nextRange != null && !iteratorDone;
         }
 
         @Override
-        synchronized public LedgerRange next() throws IOException {
+        public synchronized LedgerRange next() throws IOException {
             if (!hasNext()) {
                 throw new NoSuchElementException();
             }
@@ -243,7 +243,7 @@ class LegacyHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager 
         }
 
         /**
-         * Get a single node level1/level2
+         * Get a single node level1/level2.
          *
          * @param level1
          *          1st level node name
