@@ -475,10 +475,21 @@ public class LedgerCacheTest {
         }
 
         @Override
-        public void initialize(ServerConfiguration conf, LedgerManager ledgerManager,
-                LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
-                final CheckpointSource checkpointSource, StatsLogger statsLogger) throws IOException {
-            super.initialize(conf, ledgerManager, ledgerDirsManager, indexDirsManager, checkpointSource, statsLogger);
+        public void initialize(ServerConfiguration conf,
+                               LedgerManager ledgerManager,
+                               LedgerDirsManager ledgerDirsManager,
+                               LedgerDirsManager indexDirsManager,
+                               CheckpointSource checkpointSource,
+                               Checkpointer checkpointer,
+                               StatsLogger statsLogger) throws IOException {
+            super.initialize(
+                conf,
+                ledgerManager,
+                ledgerDirsManager,
+                indexDirsManager,
+                checkpointSource,
+                checkpointer,
+                statsLogger);
             this.memTable = new EntryMemTable(conf, checkpointSource, statsLogger) {
                 @Override
                 boolean isSizeLimitReached() {

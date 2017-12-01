@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
@@ -53,16 +54,32 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
     }
 
     @Override
-    public void initialize(ServerConfiguration conf, LedgerManager ledgerManager,
-                           LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
-                           final CheckpointSource checkpointSource, StatsLogger statsLogger)
+    public void initialize(ServerConfiguration conf,
+                           LedgerManager ledgerManager,
+                           LedgerDirsManager ledgerDirsManager,
+                           LedgerDirsManager indexDirsManager,
+                           CheckpointSource checkpointSource,
+                           Checkpointer checkpointer,
+                           StatsLogger statsLogger)
             throws IOException {
-        super.initialize(conf, ledgerManager, ledgerDirsManager, indexDirsManager, checkpointSource, statsLogger);
+        super.initialize(
+            conf,
+            ledgerManager,
+            ledgerDirsManager,
+            indexDirsManager,
+            checkpointSource,
+            checkpointer,
+            statsLogger);
         this.memTable = new EntryMemTable(conf, checkpointSource, statsLogger);
         this.scheduler = Executors.newSingleThreadScheduledExecutor(
                 new ThreadFactoryBuilder()
                 .setNameFormat("SortedLedgerStorage-%d")
                 .setPriority((Thread.NORM_PRIORITY + Thread.MAX_PRIORITY) / 2).build());
+    }
+
+    @VisibleForTesting
+    ScheduledExecutorService getScheduler() {
+        return scheduler;
     }
 
     @Override
@@ -146,14 +163,16 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
     }
 
     @Override
-    public Checkpoint checkpoint(final Checkpoint checkpoint) throws IOException {
-        Checkpoint lastCheckpoint = checkpointHolder.getLastCheckpoint();
-        // if checkpoint is less than last checkpoint, we don't need to do checkpoint again.
-        if (lastCheckpoint.compareTo(checkpoint) > 0) {
-            return lastCheckpoint;
+    public void checkpoint(final Checkpoint checkpoint) throws IOException {
+        long numBytesFlushed = memTable.flush(this, checkpoint);
+        if (numBytesFlushed > 0) {
+            // if bytes are added between previous flush and this checkpoint,
+            // it means bytes might live at current active entry log, we need
+            // roll current entry log and then issue checkpoint to underlying
+            // interleaved ledger storage.
+            entryLogger.rollLog();
         }
-        memTable.flush(this, checkpoint);
-        return super.checkpoint(checkpoint);
+        super.checkpoint(checkpoint);
     }
 
     @Override
@@ -170,7 +189,8 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
 
     // CacheCallback functions.
     @Override
-    public void onSizeLimitReached() throws IOException {
+    public void onSizeLimitReached(final Checkpoint cp) throws IOException {
+        LOG.info("Reached size {}", cp);
         // when size limit reached, we get the previous checkpoint from snapshot mem-table.
         // at this point, we are safer to schedule a checkpoint, since the entries added before
         // this checkpoint already written to entry logger.
@@ -194,8 +214,9 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
                     // for performance consideration: since we don't wanna checkpoint a new log file that ledger
                     // storage is writing to.
                     if (entryLogger.reachEntryLogLimit(0) || logIdAfterFlush != logIdBeforeFlush) {
-                        entryLogger.rollLog();
                         LOG.info("Rolling entry logger since it reached size limitation");
+                        entryLogger.rollLog();
+                        checkpointer.startCheckpoint(cp);
                     }
                 } catch (IOException e) {
                     // TODO: if we failed to flush data, we should switch the bookie back to readonly mode
@@ -204,5 +225,13 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
                 }
             }
         });
+    }
+
+    @Override
+    public void onRotateEntryLog() {
+        // override the behavior at interleaved ledger storage.
+        // we don't trigger any checkpoint logic when an entry log file is rotated, because entry log file rotation
+        // can happen because compaction. in a sorted ledger storage, checkpoint should happen after the data is
+        // flushed to the entry log file.
     }
 }
