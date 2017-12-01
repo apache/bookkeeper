@@ -22,15 +22,17 @@
 package org.apache.bookkeeper.proto;
 
 import io.netty.buffer.ByteBuf;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
-import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
@@ -67,26 +69,44 @@ public class BookkeeperInternalCallbacks {
         void onChanged(long ledgerId, LedgerMetadata metadata);
     }
 
+    /**
+     * A writer callback interface.
+     */
     public interface WriteCallback {
         void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx);
     }
 
+    /**
+     * A last-add-confirmed (LAC) reader callback interface.
+     */
     public interface ReadLacCallback {
         void readLacComplete(int rc, long ledgerId, ByteBuf lac, ByteBuf buffer, Object ctx);
     }
 
+    /**
+     * A last-add-confirmed (LAC) writer callback interface.
+     */
     public interface WriteLacCallback {
         void writeLacComplete(int rc, long ledgerId, BookieSocketAddress addr, Object ctx);
     }
 
+    /**
+     * A callback interface for a STARTTLS command.
+     */
     public interface StartTLSCallback {
         void startTLSComplete(int rc, Object ctx);
     }
 
+    /**
+     * A generic callback interface.
+     */
     public interface GenericCallback<T> {
         void operationComplete(int rc, T result);
     }
-    
+
+    /**
+     * A callback implementation with an internal timer.
+     */
     public static class TimedGenericCallback<T> implements GenericCallback<T> {
 
         final GenericCallback<T> cb;
@@ -112,6 +132,9 @@ public class BookkeeperInternalCallbacks {
         }
     }
 
+    /**
+     * Declaration of a callback interface for the Last Add Confirmed context of a reader.
+     */
     public interface ReadEntryCallbackCtx {
         void setLastAddConfirmed(long lac);
         long getLastAddConfirmed();
@@ -145,7 +168,10 @@ public class BookkeeperInternalCallbacks {
          */
         void onEntryComplete(int rc, LedgerHandle lh, LedgerEntry entry, Object ctx);
     }
-    
+
+    /**
+     * This is a callback interface for fetching metadata about a bookie.
+     */
     public interface GetBookieInfoCallback {
         void getBookieInfoComplete(int rc, BookieInfo bInfo, Object ctx);
     }
@@ -231,18 +257,18 @@ public class BookkeeperInternalCallbacks {
     }
 
     /**
-     * Processor to process a specific element
+     * Processor to process a specific element.
      */
-    public static interface Processor<T> {
+    public interface Processor<T> {
         /**
-         * Process a specific element
+         * Process a specific element.
          *
          * @param data
          *          data to process
          * @param cb
          *          Callback to invoke when process has been done.
          */
-        public void process(T data, AsyncCallback.VoidCallback cb);
+        void process(T data, AsyncCallback.VoidCallback cb);
     }
 
 }

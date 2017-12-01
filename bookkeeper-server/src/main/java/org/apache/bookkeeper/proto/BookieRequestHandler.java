@@ -20,6 +20,9 @@
  */
 package org.apache.bookkeeper.proto;
 
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.group.ChannelGroup;
 
 import java.nio.channels.ClosedChannelException;
 
@@ -28,16 +31,12 @@ import org.apache.bookkeeper.processor.RequestProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.group.ChannelGroup;
-
 /**
- * Serverside handler for bookkeeper requests
+ * Serverside handler for bookkeeper requests.
  */
 class BookieRequestHandler extends ChannelInboundHandlerAdapter {
 
-    private final static Logger LOG = LoggerFactory.getLogger(BookieRequestHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BookieRequestHandler.class);
     private final RequestProcessor requestProcessor;
     private final ChannelGroup allChannels;
 
