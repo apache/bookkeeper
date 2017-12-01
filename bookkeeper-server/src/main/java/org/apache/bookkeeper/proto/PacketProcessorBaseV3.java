@@ -33,6 +33,9 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.SafeRunnable;
 
+/**
+ * A base class for bookkeeper protocol v3 packet processors.
+ */
 public abstract class PacketProcessorBaseV3 extends SafeRunnable {
 
     final Request request;

@@ -20,8 +20,8 @@ package org.apache.bookkeeper.proto;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.util.Recycler;
-import io.netty.util.ReferenceCountUtil;
 import io.netty.util.Recycler.Handle;
+import io.netty.util.ReferenceCountUtil;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
@@ -37,7 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 class ReadEntryProcessor extends PacketProcessorBase {
-    private final static Logger LOG = LoggerFactory.getLogger(ReadEntryProcessor.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ReadEntryProcessor.class);
 
     public static ReadEntryProcessor create(Request request, Channel channel,
                               BookieRequestProcessor requestProcessor) {

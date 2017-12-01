@@ -19,10 +19,12 @@ package org.apache.bookkeeper.proto;
 
 import com.google.common.base.Optional;
 import com.google.common.base.Stopwatch;
+
 import io.netty.channel.Channel;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
+
 import java.io.IOException;
 import java.util.Observable;
 import java.util.Observer;
@@ -30,10 +32,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadResponse;
+import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +46,7 @@ import org.slf4j.LoggerFactory;
  */
 class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Observer {
 
-    private final static Logger logger = LoggerFactory.getLogger(LongPollReadEntryProcessorV3.class);
+    private static final Logger logger = LoggerFactory.getLogger(LongPollReadEntryProcessorV3.class);
 
     private final Long previousLAC;
     private Optional<Long> lastAddConfirmedUpdateTime = Optional.absent();
@@ -83,7 +86,7 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Obser
                                      Stopwatch startTimeSw)
             throws IOException {
         if (RequestUtils.shouldPiggybackEntry(readRequest)) {
-            if(!readRequest.hasPreviousLAC() || (BookieProtocol.LAST_ADD_CONFIRMED != entryId)) {
+            if (!readRequest.hasPreviousLAC() || (BookieProtocol.LAST_ADD_CONFIRMED != entryId)) {
                 // This is not a valid request - client bug?
                 logger.error("Incorrect read request, entry piggyback requested incorrectly for ledgerId {} entryId {}",
                         ledgerId, entryId);
@@ -104,7 +107,8 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Obser
                         return super.readEntry(readResponseBuilder, entryId, true, startTimeSw);
                     } catch (Bookie.NoEntryException e) {
                         requestProcessor.readLastEntryNoEntryErrorCounter.inc();
-                        logger.info("No entry found while piggyback reading entry {} from ledger {} : previous lac = {}",
+                        logger.info(
+                                "No entry found while piggyback reading entry {} from ledger {} : previous lac = {}",
                                 new Object[] { entryId, ledgerId, previousLAC });
                         // piggy back is best effort and this request can fail genuinely because of striping
                         // entries across the ensemble
@@ -113,8 +117,8 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Obser
                 } else {
                     if (knownLAC < previousLAC) {
                         if (logger.isDebugEnabled()) {
-                            logger.debug("Found smaller lac when piggy back reading lac and entry from ledger {} :" +
-                                    " previous lac = {}, known lac = {}",
+                            logger.debug("Found smaller lac when piggy back reading lac and entry from ledger {} :"
+                                    + " previous lac = {}, known lac = {}",
                                     new Object[]{ ledgerId, previousLAC, knownLAC });
                         }
                     }
@@ -189,10 +193,9 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Obser
 
     @Override
     public void update(Observable observable, Object o) {
-        LastAddConfirmedUpdateNotification newLACNotification = (LastAddConfirmedUpdateNotification)o;
+        LastAddConfirmedUpdateNotification newLACNotification = (LastAddConfirmedUpdateNotification) o;
         if (newLACNotification.lastAddConfirmed > previousLAC) {
-            if (newLACNotification.lastAddConfirmed != Long.MAX_VALUE &&
-                    !lastAddConfirmedUpdateTime.isPresent()) {
+            if (newLACNotification.lastAddConfirmed != Long.MAX_VALUE && !lastAddConfirmedUpdateTime.isPresent()) {
                 lastAddConfirmedUpdateTime = Optional.of(newLACNotification.timestamp);
             }
             if (logger.isTraceEnabled()) {

@@ -34,11 +34,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Processes add entry requests
+ * Processes add entry requests.
  */
 class WriteEntryProcessor extends PacketProcessorBase implements WriteCallback {
 
-    private final static Logger LOG = LoggerFactory.getLogger(WriteEntryProcessor.class);
+    private static final Logger LOG = LoggerFactory.getLogger(WriteEntryProcessor.class);
 
     long startTimeNanos;
 
@@ -123,7 +123,7 @@ class WriteEntryProcessor extends PacketProcessorBase implements WriteCallback {
         return String.format("WriteEntry(%d, %d)",
                              request.getLedgerId(), request.getEntryId());
     }
-    
+
     private void recycle() {
         reset();
         recyclerHandle.recycle(this);

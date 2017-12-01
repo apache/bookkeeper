@@ -39,7 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
-    private final static Logger logger = LoggerFactory.getLogger(WriteEntryProcessorV3.class);
+    private static final Logger logger = LoggerFactory.getLogger(WriteEntryProcessorV3.class);
 
     public WriteEntryProcessorV3(Request request, Channel channel,
                                  BookieRequestProcessor requestProcessor) {

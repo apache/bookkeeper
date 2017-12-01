@@ -42,17 +42,17 @@ import org.slf4j.LoggerFactory;
 
 class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
 
-    private final static Logger LOG = LoggerFactory.getLogger(ReadEntryProcessorV3.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ReadEntryProcessorV3.class);
 
     protected Stopwatch lastPhaseStartTime;
     private final ExecutorService fenceThreadPool;
 
     private SettableFuture<Boolean> fenceResult = null;
-    
+
     protected final ReadRequest readRequest;
     protected final long ledgerId;
     protected final long entryId;
-    
+
     // Stats
     protected final OpStatsLogger readStats;
     protected final OpStatsLogger reqStats;
@@ -75,7 +75,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
             this.readStats = requestProcessor.readEntryStats;
             this.reqStats = requestProcessor.readRequestStats;
         }
-        
+
         this.fenceThreadPool = fenceThreadPool;
         lastPhaseStartTime = Stopwatch.createStarted();
     }

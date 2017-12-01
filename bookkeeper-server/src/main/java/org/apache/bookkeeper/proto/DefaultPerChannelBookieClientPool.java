@@ -20,6 +20,9 @@
  */
 package org.apache.bookkeeper.proto;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -31,10 +34,6 @@ import org.apache.bookkeeper.tls.SecurityProviderFactoryFactory;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-
-import java.util.concurrent.atomic.AtomicInteger;
-import com.google.common.base.Preconditions;
 
 /**
  *  Provide a simple round-robin style channel pool. We could improve it later to do more
@@ -59,7 +58,7 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
     DefaultPerChannelBookieClientPool(ClientConfiguration conf, PerChannelBookieClientFactory factory,
                                       BookieSocketAddress address,
                                       int coreSize) throws SecurityException {
-        Preconditions.checkArgument(coreSize > 0);
+        checkArgument(coreSize > 0);
         this.factory = factory;
         this.address = address;
         this.conf = conf;

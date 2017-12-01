@@ -20,16 +20,40 @@
  */
 package org.apache.bookkeeper.proto;
 
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY_REQUEST;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.CHANNEL_WRITE;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.GET_BOOKIE_INFO;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.GET_BOOKIE_INFO_REQUEST;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_FENCE_READ;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_FENCE_REQUEST;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_FENCE_WAIT;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_LONG_POLL_PRE_WAIT;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_LONG_POLL_READ;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_LONG_POLL_REQUEST;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_LONG_POLL_WAIT;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_REQUEST;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_SCHEDULING_DELAY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_LAC;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_LAC_REQUEST;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_LAST_ENTRY_NOENTRY_ERROR;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_LAC;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_LAC_REQUEST;
+
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.protobuf.ByteString;
+
 import io.netty.channel.Channel;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
-import io.netty.util.HashedWheelTimer;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
 import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.bookie.Bookie;
@@ -46,28 +70,9 @@ import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.ADD_ENTRY_REQUEST;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.CHANNEL_WRITE;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.GET_BOOKIE_INFO_REQUEST;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_FENCE_READ;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_FENCE_REQUEST;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_FENCE_WAIT;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_LONG_POLL_PRE_WAIT;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_LONG_POLL_READ;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_LONG_POLL_REQUEST;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_LONG_POLL_WAIT;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_REQUEST;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_ENTRY_SCHEDULING_DELAY;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_LAC_REQUEST;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_LAST_ENTRY_NOENTRY_ERROR;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_LAC;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_LAC;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_LAC;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.GET_BOOKIE_INFO;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_LAC_REQUEST;
-
+/**
+ * An implementation of the RequestProcessor interface.
+ */
 public class BookieRequestProcessor implements RequestProcessor {
 
     private static final Logger LOG = LoggerFactory.getLogger(BookieRequestProcessor.class);
@@ -94,18 +99,18 @@ public class BookieRequestProcessor implements RequestProcessor {
     private final OrderedSafeExecutor writeThreadPool;
 
     /**
-     * TLS management
+     * TLS management.
      */
     private final SecurityHandlerFactory shFactory;
 
     /**
      * The threadpool used to execute all long poll requests issued to this server
-     * after they are done waiting
+     * after they are done waiting.
      */
     private final OrderedSafeExecutor longPollThreadPool;
 
     /**
-     * The Timer used to time out requests for long polling
+     * The Timer used to time out requests for long polling.
      */
     private final HashedWheelTimer requestTimer;
 
@@ -137,9 +142,11 @@ public class BookieRequestProcessor implements RequestProcessor {
             StatsLogger statsLogger, SecurityHandlerFactory shFactory) throws SecurityException {
         this.serverCfg = serverCfg;
         this.bookie = bookie;
-        this.readThreadPool = createExecutor(this.serverCfg.getNumReadWorkerThreads(), "BookieReadThread-" + serverCfg.getBookiePort(),
+        this.readThreadPool = createExecutor(this.serverCfg.getNumReadWorkerThreads(),
+                "BookieReadThread-" + serverCfg.getBookiePort(),
                 serverCfg.getMaxPendingReadRequestPerThread());
-        this.writeThreadPool = createExecutor(this.serverCfg.getNumAddWorkerThreads(), "BookieWriteThread-" + serverCfg.getBookiePort(),
+        this.writeThreadPool = createExecutor(this.serverCfg.getNumAddWorkerThreads(),
+                "BookieWriteThread-" + serverCfg.getBookiePort(),
                 serverCfg.getMaxPendingAddRequestPerThread());
         this.longPollThreadPool =
             createExecutor(
@@ -188,7 +195,8 @@ public class BookieRequestProcessor implements RequestProcessor {
         if (numThreads <= 0) {
             return null;
         } else {
-            return OrderedSafeExecutor.newBuilder().numThreads(numThreads).name(nameFormat).maxTasksInQueue(maxTasksInQueue).build();
+            return OrderedSafeExecutor.newBuilder().numThreads(numThreads).name(nameFormat)
+                .maxTasksInQueue(maxTasksInQueue).build();
         }
     }
 
@@ -213,26 +221,26 @@ public class BookieRequestProcessor implements RequestProcessor {
                     processReadRequestV3(r, c);
                     break;
                 case AUTH:
-                    LOG.info("Ignoring auth operation from client {}",c.remoteAddress());
+                    LOG.info("Ignoring auth operation from client {}", c.remoteAddress());
                     BookkeeperProtocol.AuthMessage message = BookkeeperProtocol.AuthMessage
                         .newBuilder()
                         .setAuthPluginName(AuthProviderFactoryFactory.AUTHENTICATION_DISABLED_PLUGIN_NAME)
                         .setPayload(ByteString.copyFrom(AuthToken.NULL.getData()))
                         .build();
-                    BookkeeperProtocol.Response.Builder authResponse =
-                            BookkeeperProtocol.Response.newBuilder().setHeader(r.getHeader())
-                            .setStatus(BookkeeperProtocol.StatusCode.EOK)
-                            .setAuthResponse(message);
+                    BookkeeperProtocol.Response.Builder authResponse = BookkeeperProtocol.Response
+                        .newBuilder().setHeader(r.getHeader())
+                        .setStatus(BookkeeperProtocol.StatusCode.EOK)
+                        .setAuthResponse(message);
                     c.writeAndFlush(authResponse.build());
                     break;
                 case WRITE_LAC:
-                    processWriteLacRequestV3(r,c);
+                    processWriteLacRequestV3(r, c);
                     break;
                 case READ_LAC:
-                    processReadLacRequestV3(r,c);
+                    processReadLacRequestV3(r, c);
                     break;
                 case GET_BOOKIE_INFO:
-                    processGetBookieInfoRequestV3(r,c);
+                    processGetBookieInfoRequestV3(r, c);
                     break;
                 case START_TLS:
                     processStartTLSRequestV3(r, c);

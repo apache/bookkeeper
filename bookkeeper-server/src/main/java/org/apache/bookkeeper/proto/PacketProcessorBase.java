@@ -17,6 +17,8 @@
  */
 package org.apache.bookkeeper.proto;
 
+import io.netty.channel.Channel;
+
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.proto.BookieProtocol.Request;
@@ -26,10 +28,11 @@ import org.apache.bookkeeper.util.SafeRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.netty.channel.Channel;
-
+/**
+ * A base class for bookeeper packet processors.
+ */
 abstract class PacketProcessorBase extends SafeRunnable {
-    private final static Logger logger = LoggerFactory.getLogger(PacketProcessorBase.class);
+    private static final Logger logger = LoggerFactory.getLogger(PacketProcessorBase.class);
     Request request;
     Channel channel;
     BookieRequestProcessor requestProcessor;

@@ -20,22 +20,8 @@
  */
 package org.apache.bookkeeper.proto;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.apache.bookkeeper.bookie.Bookie;
-import org.apache.bookkeeper.bookie.BookieException;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.auth.BookieAuthProvider;
-import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
-import org.apache.bookkeeper.processor.RequestProcessor;
-import org.apache.commons.lang.SystemUtils;
-import org.apache.zookeeper.KeeperException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.protobuf.ExtensionRegistry;
 
 import io.netty.bootstrap.ServerBootstrap;
@@ -64,25 +50,40 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.ssl.SslHandler;
 
-import com.google.common.annotations.VisibleForTesting;
+import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.Collection;
-import java.util.Collections;
 import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import javax.net.ssl.SSLPeerUnverifiedException;
+
+import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
 import org.apache.bookkeeper.auth.BookKeeperPrincipal;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.apache.bookkeeper.auth.BookieAuthProvider;
+import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.processor.RequestProcessor;
+import org.apache.commons.lang.SystemUtils;
+import org.apache.zookeeper.KeeperException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Netty server for serving bookie requests
+ * Netty server for serving bookie requests.
  */
 class BookieNettyServer {
 
-    private final static Logger LOG = LoggerFactory.getLogger(BookieNettyServer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BookieNettyServer.class);
 
     final int maxFrameSize;
     final ServerConfiguration conf;
@@ -296,7 +297,8 @@ class BookieNettyServer {
                         }
                     }
 
-                    BookieSideConnectionPeerContextHandler contextHandler = new BookieSideConnectionPeerContextHandler();
+                    BookieSideConnectionPeerContextHandler contextHandler =
+                        new BookieSideConnectionPeerContextHandler();
                     ChannelPipeline pipeline = ch.pipeline();
 
                     pipeline.addLast("lengthbaseddecoder", new LengthFieldBasedFrameDecoder(maxFrameSize, 0, 4, 0, 4));
@@ -304,10 +306,12 @@ class BookieNettyServer {
 
                     pipeline.addLast("bookieProtoDecoder", new BookieProtoEncoding.RequestDecoder(registry));
                     pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.ResponseEncoder(registry));
-                    pipeline.addLast("bookieAuthHandler", new AuthHandler.ServerSideHandler(contextHandler.getConnectionPeer(), authProviderFactory));
+                    pipeline.addLast("bookieAuthHandler", new AuthHandler.ServerSideHandler(
+                                contextHandler.getConnectionPeer(), authProviderFactory));
 
                     ChannelInboundHandler requestHandler = isRunning.get()
-                            ? new BookieRequestHandler(conf, requestProcessor, allChannels) : new RejectRequestHandler();
+                            ? new BookieRequestHandler(conf, requestProcessor, allChannels)
+                            : new RejectRequestHandler();
                     pipeline.addLast("bookieRequestHandler", requestHandler);
 
                     pipeline.addLast("contextHandler", contextHandler);
@@ -351,7 +355,8 @@ class BookieNettyServer {
                         }
                     }
 
-                    BookieSideConnectionPeerContextHandler contextHandler = new BookieSideConnectionPeerContextHandler();
+                    BookieSideConnectionPeerContextHandler contextHandler =
+                        new BookieSideConnectionPeerContextHandler();
                     ChannelPipeline pipeline = ch.pipeline();
 
                     pipeline.addLast("lengthbaseddecoder", new LengthFieldBasedFrameDecoder(maxFrameSize, 0, 4, 0, 4));
@@ -359,10 +364,12 @@ class BookieNettyServer {
 
                     pipeline.addLast("bookieProtoDecoder", new BookieProtoEncoding.RequestDecoder(registry));
                     pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.ResponseEncoder(registry));
-                    pipeline.addLast("bookieAuthHandler", new AuthHandler.ServerSideHandler(contextHandler.getConnectionPeer(), authProviderFactory));
+                    pipeline.addLast("bookieAuthHandler", new AuthHandler.ServerSideHandler(
+                                contextHandler.getConnectionPeer(), authProviderFactory));
 
                     ChannelInboundHandler requestHandler = isRunning.get()
-                            ? new BookieRequestHandler(conf, requestProcessor, allChannels) : new RejectRequestHandler();
+                            ? new BookieRequestHandler(conf, requestProcessor, allChannels)
+                            : new RejectRequestHandler();
                     pipeline.addLast("bookieRequestHandler", requestHandler);
 
                 }

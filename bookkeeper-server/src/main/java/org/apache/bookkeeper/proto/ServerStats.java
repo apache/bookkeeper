@@ -16,6 +16,9 @@ package org.apache.bookkeeper.proto;
 
 import org.apache.bookkeeper.util.MathUtils;
 
+/**
+ * A class to hold server statistics.
+ */
 public class ServerStats {
     private static ServerStats instance = new ServerStats();
     private long packetsSent;
@@ -25,7 +28,7 @@ public class ServerStats {
     private long totalLatency = 0;
     private long count = 0;
 
-    static public ServerStats getInstance() {
+    public static ServerStats getInstance() {
         return instance;
     }
 
@@ -33,26 +36,26 @@ public class ServerStats {
     }
 
     // getters
-    synchronized public long getMinLatency() {
+    public synchronized long getMinLatency() {
         return (minLatency == Long.MAX_VALUE) ? 0 : minLatency;
     }
 
-    synchronized public long getAvgLatency() {
-        if (count != 0)
+    public synchronized long getAvgLatency() {
+        if (count != 0) {
             return totalLatency / count;
+        }
         return 0;
     }
 
-    synchronized public long getMaxLatency() {
+    public synchronized long getMaxLatency() {
         return maxLatency;
     }
 
-
-    synchronized public long getPacketsReceived() {
+    public synchronized long getPacketsReceived() {
         return packetsReceived;
     }
 
-    synchronized public long getPacketsSent() {
+    public synchronized long getPacketsSent() {
         return packetsSent;
     }
 
@@ -77,24 +80,24 @@ public class ServerStats {
         }
     }
 
-    synchronized public void resetLatency() {
+    public synchronized void resetLatency() {
         totalLatency = count = maxLatency = 0;
         minLatency = Long.MAX_VALUE;
     }
 
-    synchronized public void resetMaxLatency() {
+    public synchronized void resetMaxLatency() {
         maxLatency = getMinLatency();
     }
 
-    synchronized public void incrementPacketsReceived() {
+    public synchronized void incrementPacketsReceived() {
         packetsReceived++;
     }
 
-    synchronized public void incrementPacketsSent() {
+    public synchronized void incrementPacketsSent() {
         packetsSent++;
     }
 
-    synchronized public void resetRequestCounters() {
+    public synchronized void resetRequestCounters() {
         packetsReceived = packetsSent = 0;
     }
 
