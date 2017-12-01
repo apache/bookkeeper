@@ -27,7 +27,7 @@ import java.util.EnumSet;
 import org.junit.Test;
 
 /**
- * Utit tests for WriteFlag
+ * Unit tests for WriteFlag.
  */
 public class WriteFlagTest {
 
