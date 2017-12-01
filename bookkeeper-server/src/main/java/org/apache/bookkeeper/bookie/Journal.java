@@ -40,7 +40,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
-
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.Counter;
@@ -400,7 +399,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                           RecyclableArrayList<QueueEntry> forceWriteWaiters,
                           boolean shouldClose,
                           boolean isMarker) {
-        ForceWriteRequest req = ForceWriteRequestsRecycler.get();
+        ForceWriteRequest req = forceWriteRequestsRecycler.get();
         req.forceWriteWaiters = forceWriteWaiters;
         req.logFile = logFile;
         req.logId = logId;
@@ -411,7 +410,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         return req;
     }
 
-    private final Recycler<ForceWriteRequest> ForceWriteRequestsRecycler
+    private final Recycler<ForceWriteRequest> forceWriteRequestsRecycler
         = new Recycler<ForceWriteRequest>() {
                 protected ForceWriteRequest newObject(
                         Recycler.Handle<ForceWriteRequest> handle) {
