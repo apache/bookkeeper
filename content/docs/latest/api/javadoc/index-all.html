@@ -1739,6 +1739,10 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#GET_BOOKIE_INFO_TIMEOUT_SECS">GET_BOOKIE_INFO_TIMEOUT_SECS</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/LedgerMetadata.html#getAckQuorumSize--">getAckQuorumSize()</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></dt>
+<dd>
+<div class="block">Returns the ack quorum size of this ledger.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#getAckQuorumSize--">getAckQuorumSize()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/DistributionSchedule.html#getAckSet--">getAckSet()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/DistributionSchedule.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule</a></dt>
@@ -1769,6 +1773,12 @@
 <dd>
 <div class="block">Get the configured advertised address for the bookie.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/LedgerMetadata.html#getAllEnsembles--">getAllEnsembles()</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></dt>
+<dd>
+<div class="block">Returns all the ensembles of this entry.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#getAllEnsembles--">getAllEnsembles()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getAllowEphemeralPorts--">getAllowEphemeralPorts()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Is the bookie allowed to use an ephemeral port (port 0) as its server port.</div>
@@ -1946,9 +1956,15 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#getCreateOpLogger--">getCreateOpLogger()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#getCtime--">getCtime()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/LedgerMetadata.html#getCtime--">getCtime()</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></dt>
 <dd>
-<div class="block">Get the creation timestamp of the ledger</div>
+<div class="block">Returns the creation timestamp of this ledger.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#getCtime--">getCtime()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/LedgerMetadata.html#getCustomMetadata--">getCustomMetadata()</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></dt>
+<dd>
+<div class="block">Returns the custom metadata stored with the ledgers.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#getCustomMetadata--">getCustomMetadata()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>
@@ -1975,6 +1991,10 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#getDigestManager--">getDigestManager()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>
 <div class="block">Get the DigestManager</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/LedgerMetadata.html#getDigestType--">getDigestType()</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></dt>
+<dd>
+<div class="block">Returns the digest type used by this ledger.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#getDigestType--">getDigestType()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
 <dd>&nbsp;</dd>
@@ -2028,6 +2048,12 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#getEnsemble-long-">getEnsemble(long)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/LedgerMetadata.html#getEnsembleAt-long-">getEnsembleAt(long)</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></dt>
+<dd>
+<div class="block">Returns the ensemble at the given <code>entryId</code>.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#getEnsembleAt-long-">getEnsembleAt(long)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#getEnsemblePlacementPolicy--">getEnsemblePlacementPolicy()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
 <div class="block">Get Ensemble Placement Policy Class.</div>
@@ -2036,6 +2062,10 @@
 <dd>
 <div class="block">Get the Map of bookie ensembles for the various ledger fragments
  that make up the ledger.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/LedgerMetadata.html#getEnsembleSize--">getEnsembleSize()</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></dt>
+<dd>
+<div class="block">Returns the ensemble size of this ledger.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#getEnsembleSize--">getEnsembleSize()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
 <dd>&nbsp;</dd>
@@ -2308,6 +2338,10 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.LastConfirmedCtx.html#getlastConfirmed--">getlastConfirmed()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.LastConfirmedCtx.html" title="class in org.apache.bookkeeper.client">LedgerHandle.LastConfirmedCtx</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/LedgerMetadata.html#getLastEntryId--">getLastEntryId()</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></dt>
+<dd>
+<div class="block">Returns the last entry id of this ledger.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#getLastEntryId--">getLastEntryId()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerFragment.html#getLastKnownEntryId--">getLastKnownEntryId()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a></dt>
@@ -2364,11 +2398,15 @@
 <div class="block"><span class="deprecationComment">replaced by <a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#getLedgerManagerFactoryClass--"><code>AbstractConfiguration.getLedgerManagerFactoryClass()</code></a></span></div>
 </div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/Handle.html#getLedgerMetadata--">getLedgerMetadata()</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/Handle.html" title="interface in org.apache.bookkeeper.client.api">Handle</a></dt>
+<dd>
+<div class="block">Returns the metadata of this ledger.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperAdmin.html#getLedgerMetadata-org.apache.bookkeeper.client.LedgerHandle-">getLedgerMetadata(LedgerHandle)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperAdmin.html" title="class in org.apache.bookkeeper.client">BookKeeperAdmin</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#getLedgerMetadata--">getLedgerMetadata()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>
-<div class="block">Get the LedgerMetadata</div>
+<div class="block">Returns the metadata of this ledger.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerRecoveryOp.RecoveryReadOp.html#getLedgerMetadata--">getLedgerMetadata()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerRecoveryOp.RecoveryReadOp.html" title="class in org.apache.bookkeeper.client">LedgerRecoveryOp.RecoveryReadOp</a></dt>
 <dd>&nbsp;</dd>
@@ -2383,6 +2421,10 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/LedgerEntry.html#getLength--">getLength()</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a></dt>
 <dd>
 <div class="block">The length of the entry, that is the size of the content expressed in bytes.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/LedgerMetadata.html#getLength--">getLength()</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></dt>
+<dd>
+<div class="block">Returns the length of this ledger.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/ReadHandle.html#getLength--">getLength()</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api">ReadHandle</a></dt>
 <dd>
@@ -2909,6 +2951,10 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#getWriteLacOpLogger--">getWriteLacOpLogger()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/LedgerMetadata.html#getWriteQuorumSize--">getWriteQuorumSize()</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></dt>
+<dd>
+<div class="block">Returns the write quorum size of this ledger.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#getWriteQuorumSize--">getWriteQuorumSize()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/DistributionSchedule.html#getWriteSet-long-">getWriteSet(long)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/DistributionSchedule.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule</a></dt>
@@ -3227,6 +3273,10 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#isBookieHealthCheckEnabled--">isBookieHealthCheckEnabled()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
 <div class="block">Check if bookie health check is enabled.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/LedgerMetadata.html#isClosed--">isClosed()</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></dt>
+<dd>
+<div class="block">Returns whether the ledger is sealed or not.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/ReadHandle.html#isClosed--">isClosed()</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/ReadHandle.html" title="interface in org.apache.bookkeeper.client.api">ReadHandle</a></dt>
 <dd>
@@ -3619,6 +3669,10 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#ledgerManagerFactory">ledgerManagerFactory</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>&nbsp;</dd>
+<dt><a href="org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api"><span class="typeNameLink">LedgerMetadata</span></a> - Interface in <a href="org/apache/bookkeeper/client/api/package-summary.html">org.apache.bookkeeper.client.api</a></dt>
+<dd>
+<div class="block">Represents the client-side metadata of a ledger.</div>
+</dd>
 <dt><a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">LedgerMetadata</span></a> - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
 <dd>
 <div class="block">This class encapsulates all the ledger metadata that is persistently stored
@@ -5358,7 +5412,7 @@
 <dd>
 <div class="block">Set Ensemble Placement Policy Class.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#setEnsembles-java.util.SortedMap-">setEnsembles(SortedMap&lt;Long, ArrayList&lt;BookieSocketAddress&gt;&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#setEnsembles-java.util.TreeMap-">setEnsembles(TreeMap&lt;Long, ArrayList&lt;BookieSocketAddress&gt;&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/LedgerEntryImpl.html#setEntryBuf-io.netty.buffer.ByteBuf-">setEntryBuf(ByteBuf)</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/LedgerEntryImpl.html" title="class in org.apache.bookkeeper.client.impl">LedgerEntryImpl</a></dt>
 <dd>&nbsp;</dd>

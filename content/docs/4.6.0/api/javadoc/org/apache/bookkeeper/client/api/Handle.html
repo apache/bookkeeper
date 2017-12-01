@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":6,"i1":18,"i2":6};
+var methods = {"i0":6,"i1":18,"i2":6,"i3":6};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],16:["t5","Default Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -158,6 +158,12 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseabl
 <div class="block">Get the id of the current ledger.</div>
 </td>
 </tr>
+<tr id="i3" class="rowColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/Handle.html#getLedgerMetadata--">getLedgerMetadata</a></span>()</code>
+<div class="block">Returns the metadata of this ledger.</div>
+</td>
+</tr>
 </table>
 </li>
 </ul>
@@ -205,6 +211,24 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseabl
 <dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../../../org/apache/bookkeeper/client/api/Handle.html#asyncClose--"><code>asyncClose()</code></a></dd>
+</dl>
+</li>
+</ul>
+<a name="getLedgerMetadata--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getLedgerMetadata</h4>
+<pre><a href="../../../../../org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a>&nbsp;getLedgerMetadata()</pre>
+<div class="block">Returns the metadata of this ledger.
+
+ <p>This call only retrieves the metadata cached locally. If there is any metadata updated, the read
+ handle will receive the metadata updates and update the metadata locally. The metadata notification
+ can be deplayed, so it is possible you can receive a stale copy of ledger metadata from this call.</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the metadata of this ledger.</dd>
 </dl>
 </li>
 </ul>
