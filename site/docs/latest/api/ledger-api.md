@@ -20,7 +20,7 @@ If you're using [Maven](https://maven.apache.org/), add this to your [`pom.xml`]
 
 ```xml
 <!-- in your <properties> block -->
-<bookkeeper.version>4.6.0</bookkeeper.version>
+<bookkeeper.version>{{ site.latest_version }}</bookkeeper.version>
 
 <!-- in your <dependencies> block -->
 <dependency>
@@ -36,12 +36,12 @@ If you're using [Gradle](https://gradle.org/), add this to your [`build.gradle`]
 
 ```groovy
 dependencies {
-    compile group: 'org.apache.bookkeeper', name: 'bookkeeper-server', version: '4.6.0'
+    compile group: 'org.apache.bookkeeper', name: 'bookkeeper-server', version: '{{ site.latest_version }}'
 }
 
 // Alternatively:
 dependencies {
-    compile 'org.apache.bookkeeper:bookkeeper-server:4.6.0'
+    compile 'org.apache.bookkeeper:bookkeeper-server:{{ site.latest_version }}'
 }
 ```
 
@@ -530,10 +530,13 @@ A [`WriteHandle`](../javadoc/org/apache/bookkeeper/client/api/WriteHandle) is re
 You can specify behaviour of the writer by setting [`WriteFlags`](../javadoc/org/apache/bookkeeper/client/api/WriteFlag) at ledger creation type.
 These flags are applied only during write operations and are not recorded on metadata.
 
-For instance we have the [`DEFERRED_SYNC`](../javadoc/org/apache/bookkeeper/client/api/WriteFlag#DEFERRED_SYNC) write flag which allows writes to be acknowledged by the server early, without waiting for
-guarantees of durability, data will be only written to the OS page cache, without forcing an fsync.
-In this case the writer can still explicitly use the force() API to guarantee that data has been persisted to the disk,
-by forcing or waiting for an fsync to be performed on journals.  
+
+Available write flags:
+
+| Flag  | Explanation  | Notes |
+:---------|:------------|:-------
+DEFERRED_SYNC | Writes are acknowledged early, without waiting for
+guarantees of durability | Data will be only written to the OS page cache, without forcing an fsync.
 
 ```java
 BookKeeper bk = ...;
