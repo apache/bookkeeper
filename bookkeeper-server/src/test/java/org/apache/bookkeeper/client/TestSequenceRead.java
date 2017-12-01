@@ -55,7 +55,7 @@ public class TestSequenceRead extends BookKeeperClusterTestCase {
         final LedgerHandle lh = bkc.createLedger(3, 3, 3, digestType, passwd);
         // introduce duplicated bookies in an ensemble.
         SortedMap<Long, ArrayList<BookieSocketAddress>> ensembles = lh.getLedgerMetadata().getEnsembles();
-        SortedMap<Long, ArrayList<BookieSocketAddress>> newEnsembles = new TreeMap<Long, ArrayList<BookieSocketAddress>>();
+        TreeMap<Long, ArrayList<BookieSocketAddress>> newEnsembles = new TreeMap<>();
         for (Map.Entry<Long, ArrayList<BookieSocketAddress>> entry : ensembles.entrySet()) {
             ArrayList<BookieSocketAddress> newList = new ArrayList<BookieSocketAddress>(entry.getValue().size());
             BookieSocketAddress firstBookie = entry.getValue().get(0);

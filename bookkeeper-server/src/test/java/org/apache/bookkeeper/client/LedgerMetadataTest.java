@@ -20,10 +20,13 @@
 package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.Collections;
+import java.util.NoSuchElementException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
 import org.junit.Test;
@@ -34,6 +37,36 @@ import org.junit.Test;
 public class LedgerMetadataTest {
 
     private static final byte[] passwd = "testPasswd".getBytes(UTF_8);
+
+    @Test
+    public void testGetters() {
+        org.apache.bookkeeper.client.api.LedgerMetadata metadata = new LedgerMetadata(
+            3,
+            2,
+            1,
+            DigestType.CRC32,
+            passwd,
+            Collections.emptyMap(),
+            false);
+
+        assertEquals(3, metadata.getEnsembleSize());
+        assertEquals(2, metadata.getWriteQuorumSize());
+        assertEquals(1, metadata.getAckQuorumSize());
+        assertEquals(org.apache.bookkeeper.client.api.DigestType.CRC32, metadata.getDigestType());
+        assertEquals(Collections.emptyMap(), metadata.getCustomMetadata());
+        assertEquals(-1L, metadata.getCtime());
+        assertEquals(-1L, metadata.getLastEntryId());
+        assertEquals(0, metadata.getLength());
+        assertFalse(metadata.isClosed());
+        assertTrue(metadata.getAllEnsembles().isEmpty());
+
+        try {
+            metadata.getEnsembleAt(99L);
+            fail("Should fail to retrieve ensemble if ensembles is empty");
+        } catch (NoSuchElementException e) {
+            // expected
+        }
+    }
 
     @Test
     public void testStoreSystemtimeAsLedgerCtimeEnabled()

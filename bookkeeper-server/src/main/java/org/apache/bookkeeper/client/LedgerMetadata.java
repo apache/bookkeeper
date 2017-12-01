@@ -35,9 +35,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NavigableMap;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
 import org.apache.bookkeeper.versioning.Version;
@@ -50,7 +52,7 @@ import org.slf4j.LoggerFactory;
  *
  * <p>It provides parsing and serialization methods of such metadata.
  */
-public class LedgerMetadata {
+public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMetadata {
     static final Logger LOG = LoggerFactory.getLogger(LedgerMetadata.class);
 
     private static final String closed = "CLOSED";
@@ -77,7 +79,7 @@ public class LedgerMetadata {
     private boolean storeSystemtimeAsLedgerCreationTime;
 
     private LedgerMetadataFormat.State state;
-    private SortedMap<Long, ArrayList<BookieSocketAddress>> ensembles =
+    private TreeMap<Long, ArrayList<BookieSocketAddress>> ensembles =
         new TreeMap<Long, ArrayList<BookieSocketAddress>>();
     ArrayList<BookieSocketAddress> currentEnsemble;
     volatile Version version = Version.NEW;
@@ -173,30 +175,35 @@ public class LedgerMetadata {
      * @return SortedMap of Ledger Fragments and the corresponding
      * bookie ensembles that store the entries.
      */
-    public SortedMap<Long, ArrayList<BookieSocketAddress>> getEnsembles() {
+    public TreeMap<Long, ArrayList<BookieSocketAddress>> getEnsembles() {
         return ensembles;
     }
 
-    void setEnsembles(SortedMap<Long, ArrayList<BookieSocketAddress>> ensembles) {
+    @Override
+    public NavigableMap<Long, ? extends List<BookieSocketAddress>> getAllEnsembles() {
+        return ensembles;
+    }
+
+    void setEnsembles(TreeMap<Long, ArrayList<BookieSocketAddress>> ensembles) {
         this.ensembles = ensembles;
     }
 
+    @Override
     public int getEnsembleSize() {
         return ensembleSize;
     }
 
+    @Override
     public int getWriteQuorumSize() {
         return writeQuorumSize;
     }
 
+    @Override
     public int getAckQuorumSize() {
         return ackQuorumSize;
     }
 
-    /**
-     * Get the creation timestamp of the ledger
-     * @return
-     */
+    @Override
     public long getCtime() {
         return ctime;
     }
@@ -221,18 +228,21 @@ public class LedgerMetadata {
         return Arrays.copyOf(password, password.length);
     }
 
-    BookKeeper.DigestType getDigestType() {
+    @Override
+    public DigestType getDigestType() {
         if (digestType.equals(LedgerMetadataFormat.DigestType.HMAC)) {
-            return BookKeeper.DigestType.MAC;
+            return DigestType.MAC;
         } else {
-            return BookKeeper.DigestType.CRC32;
+            return DigestType.CRC32;
         }
     }
 
+    @Override
     public long getLastEntryId() {
         return lastEntryId;
     }
 
+    @Override
     public long getLength() {
         return length;
     }
@@ -241,6 +251,7 @@ public class LedgerMetadata {
         this.length = length;
     }
 
+    @Override
     public boolean isClosed() {
         return state == LedgerMetadataFormat.State.CLOSED;
     }
@@ -279,6 +290,11 @@ public class LedgerMetadata {
         return ensembles.get(ensembles.headMap(entryId + 1).lastKey());
     }
 
+    @Override
+    public List<BookieSocketAddress> getEnsembleAt(long entryId) {
+        return getEnsemble(entryId);
+    }
+
     /**
      * the entry id greater than the given entry-id at which the next ensemble change takes
      * place
@@ -296,6 +312,7 @@ public class LedgerMetadata {
         }
     }
 
+    @Override
     public Map<String, byte[]> getCustomMetadata() {
         return this.customMetadata;
     }
