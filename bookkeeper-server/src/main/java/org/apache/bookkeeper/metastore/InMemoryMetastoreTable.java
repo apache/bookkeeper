@@ -17,6 +17,8 @@
  */
 package org.apache.bookkeeper.metastore;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
@@ -27,10 +29,14 @@ import org.apache.bookkeeper.metastore.MSException.Code;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
+/**
+ * An in-memory implementation of a Metastore table.
+ */
 public class InMemoryMetastoreTable implements MetastoreScannableTable {
 
+    /**
+     * An implementation of the Version interface for metadata.
+     */
     public static class MetadataVersion implements Version {
         int version;
 
@@ -59,7 +65,7 @@ public class InMemoryMetastoreTable implements MetastoreScannableTable {
             } else if (!(v instanceof MetadataVersion)) {
                 throw new IllegalArgumentException("Invalid version type");
             }
-            MetadataVersion mv = (MetadataVersion)v;
+            MetadataVersion mv = (MetadataVersion) v;
             int res = version - mv.version;
             if (res == 0) {
                 return Occurred.CONCURRENTLY;
@@ -72,11 +78,10 @@ public class InMemoryMetastoreTable implements MetastoreScannableTable {
 
         @Override
         public boolean equals(Object obj) {
-            if (null == obj ||
-                !(obj instanceof MetadataVersion)) {
+            if (null == obj || !(obj instanceof MetadataVersion)) {
                 return false;
             }
-            MetadataVersion v = (MetadataVersion)obj;
+            MetadataVersion v = (MetadataVersion) obj;
             return 0 == (version - v.version);
         }
 
@@ -98,7 +103,7 @@ public class InMemoryMetastoreTable implements MetastoreScannableTable {
 
     public InMemoryMetastoreTable(InMemoryMetaStore metastore, String name) {
         this.map = new TreeMap<String, Versioned<Value>>();
-        this.watcherMap = new TreeMap<String,MetastoreWatcher>();
+        this.watcherMap = new TreeMap<String, MetastoreWatcher>();
         this.name = name;
         String thName = "InMemoryMetastore-Table(" + name + ")-Scheduler-%d";
         ThreadFactoryBuilder tfb = new ThreadFactoryBuilder()
@@ -129,7 +134,7 @@ public class InMemoryMetastoreTable implements MetastoreScannableTable {
         }
         if (Version.ANY != version && Version.NEW != version) {
             if (version instanceof MetadataVersion) {
-                version = new MetadataVersion(((MetadataVersion)version).version);
+                version = new MetadataVersion(((MetadataVersion) version).version);
             } else {
                 throw new IllegalStateException("Wrong version type.");
             }
@@ -146,15 +151,16 @@ public class InMemoryMetastoreTable implements MetastoreScannableTable {
             }
         });
     }
-    
+
     @Override
-    public void get(final String key, final MetastoreWatcher watcher, final MetastoreCallback<Versioned<Value>> cb, final Object ctx) {
+    public void get(final String key, final MetastoreWatcher watcher, final MetastoreCallback<Versioned<Value>> cb,
+            final Object ctx) {
         scheduler.submit(new Runnable() {
             @Override
             public void run() {
                 scheduleGet(key, ALL_FIELDS, cb, ctx);
-                synchronized(watcherMap) {
-                    watcherMap.put( key, watcher );
+                synchronized (watcherMap) {
+                    watcherMap.put(key, watcher);
                 }
             }
         });
@@ -197,18 +203,18 @@ public class InMemoryMetastoreTable implements MetastoreScannableTable {
                 }
                 Result<Version> result = put(key, value, version);
                 cb.complete(result.code.getCode(), result.value, ctx);
-                
+
                 /*
                  * If there is a watcher set for this key, we need
                  * to trigger it.
                  */
-                if(result.code == MSException.Code.OK){
+                if (result.code == MSException.Code.OK) {
                     triggerWatch(key, MSWatchedEvent.EventType.CHANGED);
                 }
             }
         });
     }
-    
+
     @Override
     public void remove(final String key, final Version version, final MetastoreCallback<Void> cb, final Object ctx) {
         scheduler.submit(new Runnable() {
@@ -220,8 +226,8 @@ public class InMemoryMetastoreTable implements MetastoreScannableTable {
                 }
                 Code code = remove(key, version);
                 cb.complete(code.getCode(), null, ctx);
-                
-                if(code == MSException.Code.OK){
+
+                if (code == MSException.Code.OK) {
                     triggerWatch(key, MSWatchedEvent.EventType.REMOVED);
                 }
             }
@@ -266,15 +272,15 @@ public class InMemoryMetastoreTable implements MetastoreScannableTable {
     }
 
     private void triggerWatch(String key, MSWatchedEvent.EventType type) {
-        synchronized(watcherMap){
-            if(watcherMap.containsKey( key )) {
+        synchronized (watcherMap){
+            if (watcherMap.containsKey(key)) {
                 MSWatchedEvent event = new MSWatchedEvent(key, type);
-                watcherMap.get( key ).process( event );
-                watcherMap.remove( key );
+                watcherMap.get(key).process(event);
+                watcherMap.remove(key);
             }
         }
     }
-    
+
     private synchronized Versioned<Value> get(String key) {
         return map.get(key);
     }
@@ -318,9 +324,9 @@ public class InMemoryMetastoreTable implements MetastoreScannableTable {
         if (Version.Occurred.CONCURRENTLY != vv.getVersion().compare(version)) {
             return new Result<Version>(Code.BadVersion, null);
         }
-        vv.setVersion(((MetadataVersion)vv.getVersion()).incrementVersion());
+        vv.setVersion(((MetadataVersion) vv.getVersion()).incrementVersion());
         vv.setValue(vv.getValue().merge(value));
-        return new Result<Version>(Code.OK, new MetadataVersion((MetadataVersion)vv.getVersion()));
+        return new Result<Version>(Code.OK, new MetadataVersion((MetadataVersion) vv.getVersion()));
     }
 
     private synchronized Result<MetastoreCursor> openCursor(
@@ -335,13 +341,11 @@ public class InMemoryMetastoreTable implements MetastoreScannableTable {
         NavigableMap<String, Versioned<Value>> myMap = null;
         if (Order.ASC == order) {
             myMap = map;
-            if (EMPTY_END_KEY == lastKey ||
-                lastKey.compareTo(myMap.lastKey()) > 0) {
+            if (EMPTY_END_KEY == lastKey || lastKey.compareTo(myMap.lastKey()) > 0) {
                 lastKey = myMap.lastKey();
                 lastInclusive = true;
             }
-            if (EMPTY_START_KEY == firstKey ||
-                firstKey.compareTo(myMap.firstKey()) < 0) {
+            if (EMPTY_START_KEY == firstKey || firstKey.compareTo(myMap.firstKey()) < 0) {
                 firstKey = myMap.firstKey();
                 firstInclusive = true;
             }
@@ -350,13 +354,11 @@ public class InMemoryMetastoreTable implements MetastoreScannableTable {
             }
         } else if (Order.DESC == order) {
             myMap = map.descendingMap();
-            if (EMPTY_START_KEY == lastKey ||
-                lastKey.compareTo(myMap.lastKey()) < 0) {
+            if (EMPTY_START_KEY == lastKey || lastKey.compareTo(myMap.lastKey()) < 0) {
                 lastKey = myMap.lastKey();
                 lastInclusive = true;
             }
-            if (EMPTY_END_KEY == firstKey ||
-                firstKey.compareTo(myMap.firstKey()) > 0) {
+            if (EMPTY_END_KEY == firstKey || firstKey.compareTo(myMap.firstKey()) > 0) {
                 firstKey = myMap.firstKey();
                 firstInclusive = true;
             }

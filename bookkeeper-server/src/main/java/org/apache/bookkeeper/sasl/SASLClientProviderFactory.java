@@ -20,7 +20,14 @@
  */
 package org.apache.bookkeeper.sasl;
 
+import static org.apache.bookkeeper.conf.ClientConfiguration.CLIENT_ROLE_SYSTEM;
+import static org.apache.bookkeeper.sasl.SaslConstants.JAAS_AUDITOR_SECTION_NAME;
+import static org.apache.bookkeeper.sasl.SaslConstants.JAAS_CLIENT_SECTION_NAME;
+import static org.apache.bookkeeper.sasl.SaslConstants.JAAS_DEFAULT_AUDITOR_SECTION_NAME;
+import static org.apache.bookkeeper.sasl.SaslConstants.JAAS_DEFAULT_CLIENT_SECTION_NAME;
+
 import java.io.IOException;
+
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.login.AppConfigurationEntry;
@@ -28,15 +35,16 @@ import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import javax.security.sasl.SaslException;
+
 import org.apache.bookkeeper.auth.AuthCallbacks;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
-import org.apache.bookkeeper.proto.ClientConnectionPeer;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.proto.ClientConnectionPeer;
 import org.slf4j.LoggerFactory;
 
 /**
- * ClientAuthProvider which uses JDK-bundled SASL
+ * ClientAuthProvider which uses JDK-bundled SASL.
  */
 public class SASLClientProviderFactory implements
     org.apache.bookkeeper.auth.ClientAuthProvider.Factory, JAASCredentialsContainer {
@@ -60,10 +68,10 @@ public class SASLClientProviderFactory implements
             this.login = loginClient();
             this.subject = login.getSubject();
             this.isKrbTicket = !subject.getPrivateCredentials(KerberosTicket.class).isEmpty();
-            boolean systemRole = ClientConfiguration.CLIENT_ROLE_SYSTEM.equals(clientConfiguration.getClientRole());
+            boolean systemRole = CLIENT_ROLE_SYSTEM.equals(clientConfiguration.getClientRole());
             this.loginContextName = systemRole
-                ? clientConfiguration.getString(SaslConstants.JAAS_AUDITOR_SECTION_NAME, SaslConstants.JAAS_DEFAULT_AUDITOR_SECTION_NAME)
-                : clientConfiguration.getString(SaslConstants.JAAS_CLIENT_SECTION_NAME, SaslConstants.JAAS_DEFAULT_CLIENT_SECTION_NAME);
+                ? clientConfiguration.getString(JAAS_AUDITOR_SECTION_NAME, JAAS_DEFAULT_AUDITOR_SECTION_NAME)
+                : clientConfiguration.getString(JAAS_CLIENT_SECTION_NAME, JAAS_DEFAULT_CLIENT_SECTION_NAME);
             if (isKrbTicket) {
                 this.isUsingTicketCache = SaslConstants.isUsingTicketCache(loginContextName);
                 this.principal = SaslConstants.getPrincipal(loginContextName);
@@ -88,8 +96,8 @@ public class SASLClientProviderFactory implements
     private LoginContext loginClient() throws SaslException, LoginException {
         boolean systemRole = ClientConfiguration.CLIENT_ROLE_SYSTEM.equals(clientConfiguration.getClientRole());
         String configurationEntry = systemRole
-            ? clientConfiguration.getString(SaslConstants.JAAS_AUDITOR_SECTION_NAME, SaslConstants.JAAS_DEFAULT_AUDITOR_SECTION_NAME)
-            : clientConfiguration.getString(SaslConstants.JAAS_CLIENT_SECTION_NAME, SaslConstants.JAAS_DEFAULT_CLIENT_SECTION_NAME);
+            ? clientConfiguration.getString(JAAS_AUDITOR_SECTION_NAME, JAAS_DEFAULT_AUDITOR_SECTION_NAME)
+            : clientConfiguration.getString(JAAS_CLIENT_SECTION_NAME, JAAS_DEFAULT_CLIENT_SECTION_NAME);
         AppConfigurationEntry[] entries = Configuration.getConfiguration()
             .getAppConfigurationEntry(configurationEntry);
         if (entries == null) {
@@ -97,7 +105,8 @@ public class SASLClientProviderFactory implements
             return null;
         }
         try {
-            LoginContext loginContext = new LoginContext(configurationEntry, new SaslClientState.ClientCallbackHandler(null));
+            LoginContext loginContext = new LoginContext(configurationEntry,
+                    new SaslClientState.ClientCallbackHandler(null));
             loginContext.login();
             return loginContext;
         } catch (LoginException error) {

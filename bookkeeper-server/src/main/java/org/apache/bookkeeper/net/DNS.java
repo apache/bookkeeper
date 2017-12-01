@@ -18,9 +18,6 @@
 // This code has been copied from hadoop-common 2.0.4-alpha
 package org.apache.bookkeeper.net;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -34,6 +31,9 @@ import javax.naming.NamingException;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A class that provides direct and reverse lookup functionalities, allowing
@@ -69,7 +69,7 @@ public class DNS {
         // This is formed by reversing the IP numbers and appending in-addr.arpa
         //
         String[] parts = hostIp.getHostAddress().split("\\.");
-        if(parts.length !=4) {
+        if (parts.length != 4) {
             //Not proper address. May be IPv6
             throw new NamingException("IPV6");
         }
@@ -80,9 +80,9 @@ public class DNS {
         Attributes attribute;
         try {
             attribute = ictx.getAttributes("dns://"               // Use "dns:///" if the default
-                    + ((ns == null) ? "" : ns) +
+                    + ((ns == null) ? "" : ns)
                     // nameserver is to be used
-                    "/" + reverseIP, new String[]{"PTR"});
+                    + "/" + reverseIP, new String[]{"PTR"});
         } finally {
             ictx.close();
         }
@@ -130,7 +130,7 @@ public class DNS {
     }
 
     /**
-     * Like {@link DNS#getIPs(String, boolean), but returns all
+     * Like {@link DNS#getIPs(String, boolean)}, but returns all
      * IPs associated with the given interface and its subinterfaces.
      */
     public static String[] getIPs(String strInterface)
@@ -164,8 +164,7 @@ public class DNS {
                 netIf = getSubinterface(strInterface);
             }
         } catch (SocketException e) {
-            LOG.warn("I/O error finding interface " + strInterface +
-                    ": " + e.getMessage());
+            LOG.warn("I/O error finding interface {}: {}", strInterface, e.getMessage());
             return new String[]{cachedHostAddress};
         }
         if (netIf == null) {
@@ -208,7 +207,7 @@ public class DNS {
 
     /**
      * Returns all the host names associated by the provided nameserver with the
-     * address bound to the specified network interface
+     * address bound to the specified network interface.
      *
      * @param strInterface The name of the network interface or subinterface to query
      *                     (e.g. eth0 or eth0:0)
@@ -240,7 +239,7 @@ public class DNS {
 
     /**
      * Determine the local hostname; retrieving it from cache if it is known
-     * If we cannot determine our host name, return "localhost"
+     * If we cannot determine our host name, return "localhost".
      *
      * @return the local hostname or "localhost"
      */
@@ -280,8 +279,8 @@ public class DNS {
             } catch (UnknownHostException noLocalHostAddressException) {
                 //at this point, deep trouble
                 LOG.error("Unable to determine local loopback address "
-                        + "of \"" + LOCALHOST + "\" " +
-                        "-this system's network configuration is unsupported", e);
+                        + "of \"" + LOCALHOST + "\" "
+                        + "-this system's network configuration is unsupported", e);
                 address = null;
             }
         }
@@ -290,7 +289,7 @@ public class DNS {
 
     /**
      * Returns all the host names associated by the default nameserver with the
-     * address bound to the specified network interface
+     * address bound to the specified network interface.
      *
      * @param strInterface The name of the network interface to query (e.g. eth0)
      * @return The list of host names associated with IPs bound to the network
@@ -304,7 +303,7 @@ public class DNS {
 
     /**
      * Returns the default (first) host name associated by the provided
-     * nameserver with the address bound to the specified network interface
+     * nameserver with the address bound to the specified network interface.
      *
      * @param strInterface The name of the network interface to query (e.g. eth0)
      * @param nameserver   The DNS host name
@@ -328,7 +327,7 @@ public class DNS {
 
     /**
      * Returns the default (first) host name associated by the default
-     * nameserver with the address bound to the specified network interface
+     * nameserver with the address bound to the specified network interface.
      *
      * @param strInterface The name of the network interface to query (e.g. eth0).
      *                     Must not be null.

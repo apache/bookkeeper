@@ -34,12 +34,12 @@ public class CachedDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
   private Map<String, String> cache = new ConcurrentHashMap<String, String>();
 
   /**
-   * The uncached mapping
+   * The uncached mapping.
    */
   protected final DNSToSwitchMapping rawMapping;
 
   /**
-   * cache a raw DNS mapping
+   * Cache a raw DNS mapping.
    * @param rawMapping the raw mapping to cache
    */
   public CachedDNSToSwitchMapping(DNSToSwitchMapping rawMapping) {
@@ -79,7 +79,7 @@ public class CachedDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
       List<String> resolvedHosts) {
     // Cache the result
     if (resolvedHosts != null) {
-      for (int i=0; i<uncachedHosts.size(); i++) {
+      for (int i = 0; i < uncachedHosts.size(); i++) {
         cache.put(uncachedHosts.get(i), resolvedHosts.get(i));
       }
     }
@@ -131,7 +131,7 @@ public class CachedDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
    */
   @Override
   public Map<String, String> getSwitchMap() {
-    Map<String, String > switchMap = new HashMap<String, String>(cache);
+    Map<String, String> switchMap = new HashMap<String, String>(cache);
     return switchMap;
   }
 
@@ -143,7 +143,7 @@ public class CachedDNSToSwitchMapping extends AbstractDNSToSwitchMapping {
 
   /**
    * Delegate the switch topology query to the raw mapping, via
-   * {@link AbstractDNSToSwitchMapping#isMappingSingleSwitch(DNSToSwitchMapping)}
+   * {@link AbstractDNSToSwitchMapping#isMappingSingleSwitch(DNSToSwitchMapping)}.
    * @return true iff the raw mapper is considered single-switch.
    */
   @Override

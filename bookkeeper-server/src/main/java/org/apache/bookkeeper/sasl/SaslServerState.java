@@ -26,6 +26,7 @@ import java.security.PrivilegedExceptionAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
+
 import javax.security.auth.Subject;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
@@ -40,12 +41,13 @@ import javax.security.sasl.RealmCallback;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
+
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.zookeeper.server.auth.KerberosName;
 import org.slf4j.LoggerFactory;
 
 /**
- * Server side Sasl implementation
+ * Server side Sasl implementation.
  */
 public class SaslServerState {
 
@@ -95,8 +97,8 @@ public class SaslServerState {
                         public SaslServer run() {
                             try {
                                 SaslServer saslServer;
-                                saslServer = Sasl.createSaslServer("GSSAPI", servicePrincipalName, serviceHostname, null,
-                                    callbackHandler);
+                                saslServer = Sasl.createSaslServer("GSSAPI", servicePrincipalName, serviceHostname,
+                                        null, callbackHandler);
                                 return saslServer;
                             } catch (SaslException e) {
                                 throw new RuntimeException(e);
@@ -144,13 +146,15 @@ public class SaslServerState {
         private String userName;
         private final Map<String, String> credentials = new HashMap<>();
 
-        public SaslServerCallbackHandler(Configuration configuration, ServerConfiguration serverConfiguration) throws IOException {
+        public SaslServerCallbackHandler(Configuration configuration, ServerConfiguration serverConfiguration)
+                throws IOException {
             String configurationEntry = serverConfiguration.getString(SaslConstants.JAAS_BOOKIE_SECTION_NAME,
                 SaslConstants.JAAS_DEFAULT_BOOKIE_SECTION_NAME);
             AppConfigurationEntry configurationEntries[] = configuration.getAppConfigurationEntry(configurationEntry);
 
             if (configurationEntries == null) {
-                String errorMessage = "Could not find a '" + configurationEntry + "' entry in this configuration: Server cannot start.";
+                String errorMessage = "Could not find a '" + configurationEntry
+                    + "' entry in this configuration: Server cannot start.";
 
                 throw new IOException(errorMessage);
             }
