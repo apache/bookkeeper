@@ -43,127 +43,130 @@ import org.apache.commons.lang.StringUtils;
 public class ClientConfiguration extends AbstractConfiguration {
 
     // Zookeeper Parameters
-    protected final static String ZK_TIMEOUT = "zkTimeout";
-    protected final static String ZK_SERVERS = "zkServers";
+    protected static final String ZK_TIMEOUT = "zkTimeout";
+    protected static final String ZK_SERVERS = "zkServers";
 
     // Throttle value
-    protected final static String THROTTLE = "throttle";
+    protected static final String THROTTLE = "throttle";
 
     // Digest Type
-    protected final static String DIGEST_TYPE = "digestType";
-    protected final static String ENABLE_DIGEST_TYPE_AUTODETECTION = "enableDigestTypeAutodetection";
+    protected static final String DIGEST_TYPE = "digestType";
+    protected static final String ENABLE_DIGEST_TYPE_AUTODETECTION = "enableDigestTypeAutodetection";
 
     // Passwd
-    protected final static String PASSWD = "passwd";
+    protected static final String PASSWD = "passwd";
 
     // NIO Parameters
-    protected final static String CLIENT_TCP_NODELAY = "clientTcpNoDelay";
-    protected final static String CLIENT_SOCK_KEEPALIVE = "clientSockKeepalive";
-    protected final static String CLIENT_SENDBUFFER_SIZE = "clientSendBufferSize";
-    protected final static String CLIENT_RECEIVEBUFFER_SIZE = "clientReceiveBufferSize";
-    protected final static String CLIENT_WRITEBUFFER_LOW_WATER_MARK = "clientWriteBufferLowWaterMark";
-    protected final static String CLIENT_WRITEBUFFER_HIGH_WATER_MARK = "clientWriteBufferHighWaterMark";
-    protected final static String CLIENT_CONNECT_TIMEOUT_MILLIS = "clientConnectTimeoutMillis";
-    protected final static String NUM_CHANNELS_PER_BOOKIE = "numChannelsPerBookie";
-    protected final static String USE_V2_WIRE_PROTOCOL = "useV2WireProtocol";
-    protected final static String NETTY_USE_POOLED_BUFFERS = "nettyUsePooledBuffers";
+    protected static final String CLIENT_TCP_NODELAY = "clientTcpNoDelay";
+    protected static final String CLIENT_SOCK_KEEPALIVE = "clientSockKeepalive";
+    protected static final String CLIENT_SENDBUFFER_SIZE = "clientSendBufferSize";
+    protected static final String CLIENT_RECEIVEBUFFER_SIZE = "clientReceiveBufferSize";
+    protected static final String CLIENT_WRITEBUFFER_LOW_WATER_MARK = "clientWriteBufferLowWaterMark";
+    protected static final String CLIENT_WRITEBUFFER_HIGH_WATER_MARK = "clientWriteBufferHighWaterMark";
+    protected static final String CLIENT_CONNECT_TIMEOUT_MILLIS = "clientConnectTimeoutMillis";
+    protected static final String NUM_CHANNELS_PER_BOOKIE = "numChannelsPerBookie";
+    protected static final String USE_V2_WIRE_PROTOCOL = "useV2WireProtocol";
+    protected static final String NETTY_USE_POOLED_BUFFERS = "nettyUsePooledBuffers";
 
     // Read Parameters
-    protected final static String READ_TIMEOUT = "readTimeout";
-    protected final static String SPECULATIVE_READ_TIMEOUT = "speculativeReadTimeout";
-    protected final static String FIRST_SPECULATIVE_READ_TIMEOUT = "firstSpeculativeReadTimeout";
-    protected final static String MAX_SPECULATIVE_READ_TIMEOUT = "maxSpeculativeReadTimeout";
-    protected final static String SPECULATIVE_READ_TIMEOUT_BACKOFF_MULTIPLIER = "speculativeReadTimeoutBackoffMultiplier";
-    protected final static String FIRST_SPECULATIVE_READ_LAC_TIMEOUT = "firstSpeculativeReadLACTimeout";
-    protected final static String MAX_SPECULATIVE_READ_LAC_TIMEOUT = "maxSpeculativeReadLACTimeout";
-    protected final static String SPECULATIVE_READ_LAC_TIMEOUT_BACKOFF_MULTIPLIER = "speculativeReadLACTimeoutBackoffMultiplier";
-    protected final static String ENABLE_PARALLEL_RECOVERY_READ = "enableParallelRecoveryRead";
-    protected final static String RECOVERY_READ_BATCH_SIZE = "recoveryReadBatchSize";
-    protected final static String REORDER_READ_SEQUENCE_ENABLED = "reorderReadSequenceEnabled";
+    protected static final String READ_TIMEOUT = "readTimeout";
+    protected static final String SPECULATIVE_READ_TIMEOUT = "speculativeReadTimeout";
+    protected static final String FIRST_SPECULATIVE_READ_TIMEOUT = "firstSpeculativeReadTimeout";
+    protected static final String MAX_SPECULATIVE_READ_TIMEOUT = "maxSpeculativeReadTimeout";
+    protected static final String SPECULATIVE_READ_TIMEOUT_BACKOFF_MULTIPLIER =
+        "speculativeReadTimeoutBackoffMultiplier";
+    protected static final String FIRST_SPECULATIVE_READ_LAC_TIMEOUT = "firstSpeculativeReadLACTimeout";
+    protected static final String MAX_SPECULATIVE_READ_LAC_TIMEOUT = "maxSpeculativeReadLACTimeout";
+    protected static final String SPECULATIVE_READ_LAC_TIMEOUT_BACKOFF_MULTIPLIER =
+        "speculativeReadLACTimeoutBackoffMultiplier";
+    protected static final String ENABLE_PARALLEL_RECOVERY_READ = "enableParallelRecoveryRead";
+    protected static final String RECOVERY_READ_BATCH_SIZE = "recoveryReadBatchSize";
+    protected static final String REORDER_READ_SEQUENCE_ENABLED = "reorderReadSequenceEnabled";
     // Add Parameters
-    protected final static String DELAY_ENSEMBLE_CHANGE = "delayEnsembleChange";
+    protected static final String DELAY_ENSEMBLE_CHANGE = "delayEnsembleChange";
     // Timeout Setting
-    protected final static String ADD_ENTRY_TIMEOUT_SEC = "addEntryTimeoutSec";
-    protected final static String ADD_ENTRY_QUORUM_TIMEOUT_SEC = "addEntryQuorumTimeoutSec";
-    protected final static String READ_ENTRY_TIMEOUT_SEC = "readEntryTimeoutSec";
-    protected final static String TIMEOUT_TASK_INTERVAL_MILLIS = "timeoutTaskIntervalMillis";
-    protected final static String EXPLICIT_LAC_INTERVAL = "explicitLacInterval";
-    protected final static String PCBC_TIMEOUT_TIMER_TICK_DURATION_MS = "pcbcTimeoutTimerTickDurationMs";
-    protected final static String PCBC_TIMEOUT_TIMER_NUM_TICKS = "pcbcTimeoutTimerNumTicks";
-    protected final static String TIMEOUT_TIMER_TICK_DURATION_MS = "timeoutTimerTickDurationMs";
-    protected final static String TIMEOUT_TIMER_NUM_TICKS = "timeoutTimerNumTicks";
+    protected static final String ADD_ENTRY_TIMEOUT_SEC = "addEntryTimeoutSec";
+    protected static final String ADD_ENTRY_QUORUM_TIMEOUT_SEC = "addEntryQuorumTimeoutSec";
+    protected static final String READ_ENTRY_TIMEOUT_SEC = "readEntryTimeoutSec";
+    protected static final String TIMEOUT_TASK_INTERVAL_MILLIS = "timeoutTaskIntervalMillis";
+    protected static final String EXPLICIT_LAC_INTERVAL = "explicitLacInterval";
+    protected static final String PCBC_TIMEOUT_TIMER_TICK_DURATION_MS = "pcbcTimeoutTimerTickDurationMs";
+    protected static final String PCBC_TIMEOUT_TIMER_NUM_TICKS = "pcbcTimeoutTimerNumTicks";
+    protected static final String TIMEOUT_TIMER_TICK_DURATION_MS = "timeoutTimerTickDurationMs";
+    protected static final String TIMEOUT_TIMER_NUM_TICKS = "timeoutTimerNumTicks";
 
     // Bookie health check settings
-    protected final static String BOOKIE_HEALTH_CHECK_ENABLED = "bookieHealthCheckEnabled";
-    protected final static String BOOKIE_HEALTH_CHECK_INTERVAL_SECONDS = "bookieHealthCheckIntervalSeconds";
-    protected final static String BOOKIE_ERROR_THRESHOLD_PER_INTERVAL = "bookieErrorThresholdPerInterval";
-    protected final static String BOOKIE_QUARANTINE_TIME_SECONDS = "bookieQuarantineTimeSeconds";
+    protected static final String BOOKIE_HEALTH_CHECK_ENABLED = "bookieHealthCheckEnabled";
+    protected static final String BOOKIE_HEALTH_CHECK_INTERVAL_SECONDS = "bookieHealthCheckIntervalSeconds";
+    protected static final String BOOKIE_ERROR_THRESHOLD_PER_INTERVAL = "bookieErrorThresholdPerInterval";
+    protected static final String BOOKIE_QUARANTINE_TIME_SECONDS = "bookieQuarantineTimeSeconds";
 
     // Bookie info poll interval
-    protected final static String DISK_WEIGHT_BASED_PLACEMENT_ENABLED = "diskWeightBasedPlacementEnabled";
-    protected final static String GET_BOOKIE_INFO_INTERVAL_SECONDS = "getBookieInfoIntervalSeconds";
-    protected final static String GET_BOOKIE_INFO_RETRY_INTERVAL_SECONDS = "getBookieInfoRetryIntervalSeconds";
-    protected final static String BOOKIE_MAX_MULTIPLE_FOR_WEIGHTED_PLACEMENT = "bookieMaxMultipleForWeightBasedPlacement";
-    protected final static String GET_BOOKIE_INFO_TIMEOUT_SECS = "getBookieInfoTimeoutSecs";
-    protected final static String START_TLS_TIMEOUT_SECS = "startTLSTimeoutSecs";
+    protected static final String DISK_WEIGHT_BASED_PLACEMENT_ENABLED = "diskWeightBasedPlacementEnabled";
+    protected static final String GET_BOOKIE_INFO_INTERVAL_SECONDS = "getBookieInfoIntervalSeconds";
+    protected static final String GET_BOOKIE_INFO_RETRY_INTERVAL_SECONDS = "getBookieInfoRetryIntervalSeconds";
+    protected static final String BOOKIE_MAX_MULTIPLE_FOR_WEIGHTED_PLACEMENT =
+        "bookieMaxMultipleForWeightBasedPlacement";
+    protected static final String GET_BOOKIE_INFO_TIMEOUT_SECS = "getBookieInfoTimeoutSecs";
+    protected static final String START_TLS_TIMEOUT_SECS = "startTLSTimeoutSecs";
 
     // Number Woker Threads
-    protected final static String NUM_WORKER_THREADS = "numWorkerThreads";
+    protected static final String NUM_WORKER_THREADS = "numWorkerThreads";
 
     // Ensemble Placement Policy
-    protected final static String ENSEMBLE_PLACEMENT_POLICY = "ensemblePlacementPolicy";
-    protected final static String NETWORK_TOPOLOGY_STABILIZE_PERIOD_SECONDS = "networkTopologyStabilizePeriodSeconds";
+    protected static final String ENSEMBLE_PLACEMENT_POLICY = "ensemblePlacementPolicy";
+    protected static final String NETWORK_TOPOLOGY_STABILIZE_PERIOD_SECONDS = "networkTopologyStabilizePeriodSeconds";
 
     // Ledger Metadata Parameters
     protected static final String STORE_SYSTEMTIME_AS_LEDGER_CREATION_TIME = "storeSystemTimeAsLedgerCreationTime";
 
     // Stats
-    protected final static String ENABLE_TASK_EXECUTION_STATS = "enableTaskExecutionStats";
-    protected final static String TASK_EXECUTION_WARN_TIME_MICROS = "taskExecutionWarnTimeMicros";
+    protected static final String ENABLE_TASK_EXECUTION_STATS = "enableTaskExecutionStats";
+    protected static final String TASK_EXECUTION_WARN_TIME_MICROS = "taskExecutionWarnTimeMicros";
 
     // Failure History Settings
-    protected final static String ENABLE_BOOKIE_FAILURE_TRACKING = "enableBookieFailureTracking";
-    protected final static String BOOKIE_FAILURE_HISTORY_EXPIRATION_MS = "bookieFailureHistoryExpirationMSec";
+    protected static final String ENABLE_BOOKIE_FAILURE_TRACKING = "enableBookieFailureTracking";
+    protected static final String BOOKIE_FAILURE_HISTORY_EXPIRATION_MS = "bookieFailureHistoryExpirationMSec";
 
     // Names of dynamic features
-    protected final static String DISABLE_ENSEMBLE_CHANGE_FEATURE_NAME = "disableEnsembleChangeFeatureName";
+    protected static final String DISABLE_ENSEMBLE_CHANGE_FEATURE_NAME = "disableEnsembleChangeFeatureName";
 
     // Role of the client
-    protected final static String CLIENT_ROLE = "clientRole";
+    protected static final String CLIENT_ROLE = "clientRole";
 
     /**
-     * This client will act as a standard client
+     * This client will act as a standard client.
      */
-    public final static String CLIENT_ROLE_STANDARD = "standard";
+    public static final String CLIENT_ROLE_STANDARD = "standard";
 
     /**
-     * This client will act as a system client, like the {@link Auditor}
+     * This client will act as a system client, like the {@link Auditor}.
      */
-    public final static String CLIENT_ROLE_SYSTEM = "system";
+    public static final String CLIENT_ROLE_SYSTEM = "system";
 
     // Client auth provider factory class name. It must be configured on Bookies to for the Auditor
-    protected final static String CLIENT_AUTH_PROVIDER_FACTORY_CLASS = "clientAuthProviderFactoryClass";
+    protected static final String CLIENT_AUTH_PROVIDER_FACTORY_CLASS = "clientAuthProviderFactoryClass";
 
     // Client TLS
-    protected final static String TLS_KEYSTORE_TYPE = "clientKeyStoreType";
-    protected final static String TLS_KEYSTORE = "clientKeyStore";
-    protected final static String TLS_KEYSTORE_PASSWORD_PATH = "clientKeyStorePasswordPath";
-    protected final static String TLS_TRUSTSTORE_TYPE = "clientTrustStoreType";
-    protected final static String TLS_TRUSTSTORE = "clientTrustStore";
-    protected final static String TLS_TRUSTSTORE_PASSWORD_PATH = "clientTrustStorePasswordPath";
+    protected static final String TLS_KEYSTORE_TYPE = "clientKeyStoreType";
+    protected static final String TLS_KEYSTORE = "clientKeyStore";
+    protected static final String TLS_KEYSTORE_PASSWORD_PATH = "clientKeyStorePasswordPath";
+    protected static final String TLS_TRUSTSTORE_TYPE = "clientTrustStoreType";
+    protected static final String TLS_TRUSTSTORE = "clientTrustStore";
+    protected static final String TLS_TRUSTSTORE_PASSWORD_PATH = "clientTrustStorePasswordPath";
 
     // Registration Client
-    protected final static String REGISTRATION_CLIENT_CLASS = "registrationClientClass";
+    protected static final String REGISTRATION_CLIENT_CLASS = "registrationClientClass";
 
     /**
-     * Construct a default client-side configuration
+     * Construct a default client-side configuration.
      */
     public ClientConfiguration() {
         super();
     }
 
     /**
-     * Construct a client-side configuration using a base configuration
+     * Construct a client-side configuration using a base configuration.
      *
      * @param conf
      *          Base configuration
@@ -174,7 +177,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get throttle value
+     * Get throttle value.
      *
      * @return throttle value
      * @see #setThrottleValue
@@ -186,12 +189,12 @@ public class ClientConfiguration extends AbstractConfiguration {
     /**
      * Set throttle value.
      *
-     * Since BookKeeper process requests in asynchronous way, it will holds
+     * <p>Since BookKeeper process requests in asynchronous way, it will holds
      * those pending request in queue. You may easily run it out of memory
      * if producing too many requests than the capability of bookie servers can handle.
      * To prevent that from happening, you can set a throttle value here.
      *
-     * Setting the throttle value to 0, will disable any throttling.
+     * <p>Setting the throttle value to 0, will disable any throttling.
      *
      * @param throttle
      *          Throttle Value
@@ -204,7 +207,8 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     /**
      * Get autodetection of digest type.
-     * Ignores provided digestType, if enabled and uses one from ledger metadata instead.
+     *
+     * <p>Ignores provided digestType, if enabled and uses one from ledger metadata instead.
      * Incompatible with ledger created by bookie versions < 4.2
      *
      * @return flag to enable/disable autodetection of digest type.
@@ -224,9 +228,9 @@ public class ClientConfiguration extends AbstractConfiguration {
         this.setProperty(ENABLE_DIGEST_TYPE_AUTODETECTION, enable);
         return this;
     }
-    
+
     /**
-     * Get digest type used in bookkeeper admin
+     * Get digest type used in bookkeeper admin.
      *
      * @return digest type
      * @see #setBookieRecoveryDigestType
@@ -238,7 +242,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     /**
      * Set digest type used in bookkeeper admin.
      *
-     * Digest Type and Passwd used to open ledgers for admin tool
+     * <p>Digest Type and Passwd used to open ledgers for admin tool
      * For now, assume that all ledgers were created with the same DigestType
      * and password. In the future, this admin tool will need to know for each
      * ledger, what was the DigestType and password used to create it before it
@@ -255,7 +259,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get passwd used in bookkeeper admin
+     * Get passwd used in bookkeeper admin.
      *
      * @return password
      * @see #setBookieRecoveryPasswd
@@ -267,7 +271,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     /**
      * Set passwd used in bookkeeper admin.
      *
-     * Digest Type and Passwd used to open ledgers for admin tool
+     * <p>Digest Type and Passwd used to open ledgers for admin tool
      * For now, assume that all ledgers were created with the same DigestType
      * and password. In the future, this admin tool will need to know for each
      * ledger, what was the DigestType and password used to create it before it
@@ -296,7 +300,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     /**
      * Set socket nodelay setting.
      *
-     * This settings is used to enabled/disabled Nagle's algorithm, which is a means of
+     * <p>This settings is used to enabled/disabled Nagle's algorithm, which is a means of
      * improving the efficiency of TCP/IP networks by reducing the number of packets
      * that need to be sent over the network. If you are sending many small messages,
      * such that more than one can fit in a single IP packet, setting client.tcpnodelay
@@ -314,8 +318,8 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * get socket keepalive
-     * 
+     * get socket keepalive.
+     *
      * @return socket keepalive setting
      */
     public boolean getClientSockKeepalive() {
@@ -324,9 +328,9 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     /**
      * Set socket keepalive setting.
-     * 
-     * This setting is used to send keep-alive messages on connection-oriented sockets.
-     * 
+     *
+     * <p>This setting is used to send keep-alive messages on connection-oriented sockets.
+     *
      * @param keepalive
      *            KeepAlive setting
      * @return client configuration
@@ -506,7 +510,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Use older Bookkeeper wire protocol (no protobuf)
+     * Use older Bookkeeper wire protocol (no protobuf).
      *
      * @return whether or not to use older Bookkeeper wire protocol (no protobuf)
      */
@@ -515,7 +519,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set whether or not to use older Bookkeeper wire protocol (no protobuf)
+     * Set whether or not to use older Bookkeeper wire protocol (no protobuf).
      *
      * @param useV2WireProtocol
      *          whether or not to use older Bookkeeper wire protocol (no protobuf)
@@ -527,7 +531,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get zookeeper servers to connect
+     * Get zookeeper servers to connect.
      *
      * @return zookeeper servers
      */
@@ -540,7 +544,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set zookeeper servers to connect
+     * Set zookeeper servers to connect.
      *
      * @param zkServers
      *          ZooKeeper servers to connect
@@ -551,7 +555,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get zookeeper timeout
+     * Get zookeeper timeout.
      *
      * @return zookeeper client timeout
      */
@@ -560,7 +564,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set zookeeper timeout
+     * Set zookeeper timeout.
      *
      * @param zkTimeout
      *          ZooKeeper client timeout
@@ -576,7 +580,7 @@ public class ClientConfiguration extends AbstractConfiguration {
      * seconds we wait without hearing a response from a bookie
      * before we consider it failed.
      *
-     * The default is 5 seconds.
+     * <p>The default is 5 seconds.
      *
      * @return the current read timeout in seconds
      * @deprecated use {@link #getReadEntryTimeout()} or {@link #getAddEntryTimeout()} instead
@@ -603,7 +607,7 @@ public class ClientConfiguration extends AbstractConfiguration {
      * Get the timeout for add request. This is the number of seconds we wait without hearing
      * a response for add request from a bookie before we consider it failed.
      *
-     * The default value is 5 second for backwards compatibility.
+     * <p>The default value is 5 second for backwards compatibility.
      *
      * @return add entry timeout.
      */
@@ -678,7 +682,7 @@ public class ClientConfiguration extends AbstractConfiguration {
      * TimeoutTask. This value is in milliseconds. Every X milliseconds, the timeout task
      * will be executed and it will error out entries that have timed out.
      *
-     * We do it more aggressive to not accumulate pending requests due to slow responses.
+     * <p>We do it more aggressive to not accumulate pending requests due to slow responses.
      * @return the interval at which request timeouts will be checked
      */
     @Deprecated
@@ -808,10 +812,10 @@ public class ClientConfiguration extends AbstractConfiguration {
      * A speculative entry read is sent to the next replica bookie before
      * an error or response has been received for the previous entry read request.
      *
-     * A speculative entry read is only sent if we have not heard from the current
+     * <p>A speculative entry read is only sent if we have not heard from the current
      * replica bookie during the entire read operation which may comprise of many entries.
      *
-     * Speculative reads allow the client to avoid having to wait for the connect timeout
+     * <p>Speculative reads allow the client to avoid having to wait for the connect timeout
      * in the case that a bookie has failed. It induces higher load on the network and on
      * bookies. This should be taken into account before changing this configuration value.
      *
@@ -826,7 +830,7 @@ public class ClientConfiguration extends AbstractConfiguration {
      * Set the speculative read timeout. A lower timeout will reduce read latency in the
      * case of a failed bookie, while increasing the load on bookies and the network.
      *
-     * The default is 2000 milliseconds. A value of 0 will disable speculative reads
+     * <p>The default is 2000 milliseconds. A value of 0 will disable speculative reads
      * completely.
      *
      * @see #getSpeculativeReadTimeout()
@@ -860,7 +864,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Multipler to use when determining time between successive speculative read requests
+     * Multipler to use when determining time between successive speculative read requests.
      *
      * @return speculative read timeout backoff multiplier.
      */
@@ -869,19 +873,20 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set the multipler to use when determining time between successive speculative read requests
+     * Set the multipler to use when determining time between successive speculative read requests.
      *
      * @param speculativeReadTimeoutBackoffMultiplier
      *          multipler to use when determining time between successive speculative read requests.
      * @return client configuration.
      */
-    public ClientConfiguration setSpeculativeReadTimeoutBackoffMultiplier(float speculativeReadTimeoutBackoffMultiplier) {
+    public ClientConfiguration setSpeculativeReadTimeoutBackoffMultiplier(
+            float speculativeReadTimeoutBackoffMultiplier) {
         setProperty(SPECULATIVE_READ_TIMEOUT_BACKOFF_MULTIPLIER, speculativeReadTimeoutBackoffMultiplier);
         return this;
     }
 
     /**
-     * Multipler to use when determining time between successive speculative read LAC requests
+     * Multipler to use when determining time between successive speculative read LAC requests.
      *
      * @return speculative read LAC timeout backoff multiplier.
      */
@@ -890,13 +895,14 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set the multipler to use when determining time between successive speculative read LAC requests
+     * Set the multipler to use when determining time between successive speculative read LAC requests.
      *
      * @param speculativeReadLACTimeoutBackoffMultiplier
      *          multipler to use when determining time between successive speculative read LAC requests.
      * @return client configuration.
      */
-    public ClientConfiguration setSpeculativeReadLACTimeoutBackoffMultiplier(float speculativeReadLACTimeoutBackoffMultiplier) {
+    public ClientConfiguration setSpeculativeReadLACTimeoutBackoffMultiplier(
+            float speculativeReadLACTimeoutBackoffMultiplier) {
         setProperty(SPECULATIVE_READ_LAC_TIMEOUT_BACKOFF_MULTIPLIER, speculativeReadLACTimeoutBackoffMultiplier);
         return this;
     }
@@ -928,10 +934,10 @@ public class ClientConfiguration extends AbstractConfiguration {
      * A speculative entry request is sent to the next replica bookie before
      * an error or response has been received for the previous entry read request.
      *
-     * A speculative entry read is only sent if we have not heard from the current
+     * <p>A speculative entry read is only sent if we have not heard from the current
      * replica bookie during the entire read operation which may comprise of many entries.
      *
-     * Speculative requests allow the client to avoid having to wait for the connect timeout
+     * <p>Speculative requests allow the client to avoid having to wait for the connect timeout
      * in the case that a bookie has failed. It induces higher load on the network and on
      * bookies. This should be taken into account before changing this configuration value.
      *
@@ -958,7 +964,7 @@ public class ClientConfiguration extends AbstractConfiguration {
      * A lower timeout will reduce read latency in the case of a failed bookie,
      * while increasing the load on bookies and the network.
      *
-     * The default is 1500 milliseconds. A value of 0 will disable speculative reads
+     * <p>The default is 1500 milliseconds. A value of 0 will disable speculative reads
      * completely.
      *
      * @see #getSpeculativeReadTimeout()
@@ -1062,7 +1068,7 @@ public class ClientConfiguration extends AbstractConfiguration {
         return ReflectionUtils.getClass(this, ENSEMBLE_PLACEMENT_POLICY,
                 RackawareEnsemblePlacementPolicy.class,
                 EnsemblePlacementPolicy.class,
-                                        defaultLoader);
+                                        DEFAULT_LOADER);
     }
 
     /**
@@ -1157,7 +1163,7 @@ public class ClientConfiguration extends AbstractConfiguration {
      * quarantined period, the client will try not to use this bookie when creating new ensembles.
      * </p>
      *
-     * By default, the bookie health check is <b>disabled</b>.
+     * <p>By default, the bookie health check is <b>disabled</b>.
      *
      * @return client configuration
      */
@@ -1250,14 +1256,14 @@ public class ClientConfiguration extends AbstractConfiguration {
         super.setNettyMaxFrameSizeBytes(maxSize);
         return this;
     }
- 
+
     /**
      * Get the time interval between successive calls for bookie get info. Default is 24 hours.
      *
      * @return
      */
     public int getGetBookieInfoIntervalSeconds() {
-        return getInt(GET_BOOKIE_INFO_INTERVAL_SECONDS, 24*60*60);
+        return getInt(GET_BOOKIE_INFO_INTERVAL_SECONDS, 24 * 60 * 60);
     }
 
     /**
@@ -1271,7 +1277,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Return whether disk weight based placement policy is enabled
+     * Return whether disk weight based placement policy is enabled.
      * @return
      */
     public boolean getDiskWeightBasedPlacementEnabled() {
@@ -1279,7 +1285,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Returns the max multiple to use for nodes with very high weight
+     * Returns the max multiple to use for nodes with very high weight.
      * @return max multiple
      */
     public int getBookieMaxWeightMultipleForWeightBasedPlacement() {
@@ -1287,7 +1293,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Return the timeout value for getBookieInfo request
+     * Return the timeout value for getBookieInfo request.
      * @return
      */
     public int getBookieInfoTimeout() {
@@ -1295,7 +1301,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Return the timeout value for startTLS request
+     * Return the timeout value for startTLS request.
      * @return
      */
     public int getStartTLSTimeout() {
@@ -1326,8 +1332,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set the time interval between retries on unsuccessful GetInfo requests
-     *
+     * Set the time interval between retries on unsuccessful GetInfo requests.
      *
      * @param interval
      * @param unit
@@ -1339,7 +1344,8 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set the max multiple to use for nodes with very high weight
+     * Set the max multiple to use for nodes with very high weight.
+     *
      * @param multiple
      * @return client configuration
      */
@@ -1349,7 +1355,8 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set the timeout value in secs for the GET_BOOKIE_INFO request
+     * Set the timeout value in secs for the GET_BOOKIE_INFO request.
+     *
      * @param timeout
      * @return client configuration
      */
@@ -1359,7 +1366,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set the timeout value in secs for the START_TLS request
+     * Set the timeout value in secs for the START_TLS request.
      * @param timeout
      * @return client configuration
      */
@@ -1369,7 +1376,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set the client role
+     * Set the client role.
      *
      * @param role defines how the client will act
      * @return client configuration
@@ -1383,14 +1390,14 @@ public class ClientConfiguration extends AbstractConfiguration {
             case CLIENT_ROLE_SYSTEM:
                 break;
             default:
-                throw new IllegalArgumentException("invalid role "+role);
+                throw new IllegalArgumentException("invalid role " + role);
         }
         setProperty(CLIENT_ROLE, role);
         return this;
     }
 
     /**
-     * Get the role of the client
+     * Get the role of the client.
      *
      * @return the type of client
      */
@@ -1400,7 +1407,7 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     /**
      * Get the keystore type for client. Default is JKS.
-     * 
+     *
      * @return
      */
     public String getTLSKeyStoreType() {
@@ -1410,7 +1417,7 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     /**
      * Set the keystore type for client.
-     * 
+     *
      * @return
      */
     public ClientConfiguration setTLSKeyStoreType(String arg) {
@@ -1420,7 +1427,7 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     /**
      * Get the keystore path for the client.
-     * 
+     *
      * @return
      */
     public String getTLSKeyStore() {
@@ -1429,7 +1436,7 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     /**
      * Set the keystore path for the client.
-     * 
+     *
      * @return
      */
     public ClientConfiguration setTLSKeyStore(String arg) {
@@ -1439,7 +1446,7 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     /**
      * Get the path to file containing keystore password, if the client keystore is password protected. Default is null.
-     * 
+     *
      * @return
      */
     public String getTLSKeyStorePasswordPath() {
@@ -1448,7 +1455,7 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     /**
      * Set the path to file containing keystore password, if the client keystore is password protected.
-     * 
+     *
      * @return
      */
     public ClientConfiguration setTLSKeyStorePasswordPath(String arg) {
@@ -1458,7 +1465,7 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     /**
      * Get the truststore type for client. Default is JKS.
-     * 
+     *
      * @return
      */
     public String getTLSTrustStoreType() {
@@ -1467,7 +1474,7 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     /**
      * Set the truststore type for client.
-     * 
+     *
      * @return
      */
     public ClientConfiguration setTLSTrustStoreType(String arg) {
@@ -1477,7 +1484,7 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     /**
      * Get the truststore path for the client.
-     * 
+     *
      * @return
      */
     public String getTLSTrustStore() {
@@ -1486,7 +1493,7 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     /**
      * Set the truststore path for the client.
-     * 
+     *
      * @return
      */
     public ClientConfiguration setTLSTrustStore(String arg) {
@@ -1497,7 +1504,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     /**
      * Get the path to file containing truststore password, if the client truststore is password protected. Default is
      * null.
-     * 
+     *
      * @return
      */
     public String getTLSTrustStorePasswordPath() {
@@ -1506,7 +1513,7 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     /**
      * Set the path to file containing truststore password, if the client truststore is password protected.
-     * 
+     *
      * @return
      */
     public ClientConfiguration setTLSTrustStorePasswordPath(String arg) {
@@ -1541,7 +1548,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Whether to enable bookie failure tracking
+     * Whether to enable bookie failure tracking.
      *
      * @return flag to enable/disable bookie failure tracking
      */
@@ -1573,7 +1580,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     /**
      * Set the bookie failure tracking expiration timeout.
      *
-     * @param timeout
+     * @param expirationMSec
      *          bookie failure tracking expiration timeout.
      * @return client configuration.
      */
@@ -1583,7 +1590,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get the name of the dynamic feature that disables ensemble change
+     * Get the name of the dynamic feature that disables ensemble change.
      *
      * @return name of the dynamic feature that disables ensemble change
      */
@@ -1592,7 +1599,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set the name of the dynamic feature that disables ensemble change
+     * Set the name of the dynamic feature that disables ensemble change.
      *
      * @param disableEnsembleChangeFeatureName
      *          name of the dynamic feature that disables ensemble change
@@ -1605,7 +1612,7 @@ public class ClientConfiguration extends AbstractConfiguration {
 
 
     /**
-     * Option to use Netty Pooled ByteBufs
+     * Option to use Netty Pooled ByteBufs.
      *
      * @return the value of the option
      */
@@ -1615,7 +1622,7 @@ public class ClientConfiguration extends AbstractConfiguration {
 
     /**
      * Enable/Disable the usage of Pooled Netty buffers. While using v2 wire protocol the application will be
-     * responsible for releasing ByteBufs returned by BookKeeper
+     * responsible for releasing ByteBufs returned by BookKeeper.
      *
      * @param enabled
      *          if enabled BookKeeper will use default Pooled Netty Buffer allocator
@@ -1630,7 +1637,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set registration manager class
+     * Set registration manager class.
      *
      * @param regClientClass
      *            ClientClass
@@ -1650,7 +1657,7 @@ public class ClientConfiguration extends AbstractConfiguration {
             throws ConfigurationException {
         return ReflectionUtils.getClass(this, REGISTRATION_CLIENT_CLASS,
                 ZKRegistrationClient.class, RegistrationClient.class,
-                defaultLoader);
+                DEFAULT_LOADER);
     }
 
     /**
