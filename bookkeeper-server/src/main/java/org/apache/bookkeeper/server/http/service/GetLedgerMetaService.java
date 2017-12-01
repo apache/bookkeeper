@@ -19,8 +19,8 @@
 package org.apache.bookkeeper.server.http.service;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import java.util.Map;
 import org.apache.bookkeeper.client.LedgerMetadata;
@@ -48,7 +48,7 @@ public class GetLedgerMetaService implements HttpEndpointService {
     protected ZooKeeper zk;
 
     public GetLedgerMetaService(ServerConfiguration conf, ZooKeeper zk) {
-        Preconditions.checkNotNull(conf);
+        checkNotNull(conf);
         this.conf = conf;
         this.zk = zk;
     }

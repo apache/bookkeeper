@@ -61,8 +61,7 @@ public class BookieLedgerIndexer {
     public Map<String, Set<Long>> getBookieToLedgerIndex()
             throws BKAuditException {
         // bookie vs ledgers map
-        final ConcurrentHashMap<String, Set<Long>> bookie2ledgersMap
-            = new ConcurrentHashMap<String, Set<Long>>();
+        final ConcurrentHashMap<String, Set<Long>> bookie2ledgersMap = new ConcurrentHashMap<String, Set<Long>>();
         final CountDownLatch ledgerCollectorLatch = new CountDownLatch(1);
 
         Processor<Long> ledgerProcessor = new Processor<Long>() {

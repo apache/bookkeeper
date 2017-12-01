@@ -18,8 +18,10 @@
  */
 package org.apache.bookkeeper.server.http.service;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.HashMap;
+
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.HttpServer;
@@ -33,7 +35,7 @@ import org.slf4j.LoggerFactory;
 /**
  * HttpEndpointService that handle Bookkeeper lost bookie recovery delay parameter related http request.
  *
- * The GET method will get the value of parameter lostBookieRecoveryDelay,
+ * <p>The GET method will get the value of parameter lostBookieRecoveryDelay,
  * while the PUT method will set the value of parameter lostBookieRecoveryDelay,
  */
 public class LostBookieRecoveryDelayService implements HttpEndpointService {
@@ -44,7 +46,7 @@ public class LostBookieRecoveryDelayService implements HttpEndpointService {
     protected BookKeeperAdmin bka;
 
     public LostBookieRecoveryDelayService(ServerConfiguration conf, BookKeeperAdmin bka) {
-        Preconditions.checkNotNull(conf);
+        checkNotNull(conf);
         this.conf = conf;
         this.bka = bka;
     }
