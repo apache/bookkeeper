@@ -17,21 +17,24 @@
  */
 package org.apache.bookkeeper.meta;
 
-import com.google.common.base.Optional;
 import static org.apache.bookkeeper.metastore.MetastoreTable.ALL_FIELDS;
 import static org.apache.bookkeeper.metastore.MetastoreTable.NON_FIELDS;
+
+import com.google.common.base.Optional;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.client.BKException;
@@ -56,27 +59,25 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataLis
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.util.StringUtils;
+import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import java.util.List;
-import org.apache.bookkeeper.util.ZkUtils;
-import org.apache.zookeeper.data.ACL;
 
 /**
- * MetaStore Based Ledger Manager Factory
+ * MetaStore Based Ledger Manager Factory.
  */
 public class MSLedgerManagerFactory extends LedgerManagerFactory {
 
-    private final static Logger LOG = LoggerFactory.getLogger(MSLedgerManagerFactory.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MSLedgerManagerFactory.class);
 
-    static int MS_CONNECT_BACKOFF_MS = 200;
+    private static final int MS_CONNECT_BACKOFF_MS = 200;
 
     public static final int CUR_VERSION = 1;
 
@@ -238,7 +239,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
                         scheduler.submit(new Runnable() {
                             @Override
                             public void run() {
-                                synchronized(listenerSet) {
+                                synchronized (listenerSet) {
                                     for (LedgerMetadataListener listener : listenerSet) {
                                         listener.onChanged(ledgerId, result);
                                     }
@@ -295,9 +296,9 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
                 Set<LedgerMetadataListener> listenerSet = listeners.get(ledgerId);
                 if (listenerSet != null) {
                     synchronized (listenerSet) {
-                        for(LedgerMetadataListener l : listenerSet){
+                        for (LedgerMetadataListener l : listenerSet){
                             unregisterLedgerMetadataListener(ledgerId, l);
-                            l.onChanged( ledgerId, null );
+                            l.onChanged(ledgerId, null);
                         }
                     }
                 }
@@ -423,8 +424,8 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
                     }
                     LedgerMetadata metadata;
                     try {
-                        metadata = LedgerMetadata
-                                .parseConfig(value.getValue().getField(META_FIELD), value.getVersion(), Optional.<Long>absent());
+                        metadata = LedgerMetadata.parseConfig(value.getValue().getField(META_FIELD),
+                                value.getVersion(), Optional.<Long>absent());
                     } catch (IOException e) {
                         LOG.error("Could not parse ledger metadata for ledger " + ledgerId + " : ", e);
                         readCb.operationComplete(BKException.Code.MetaStoreException, null);
@@ -635,7 +636,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
         ScheduledExecutorService scheduler;
 
         /**
-         * Constructor
+         * Constructor.
          *
          * @param scheduler
          *            Executor used to prevent long stack chains
@@ -645,7 +646,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
         }
 
         /**
-         * Process set of items
+         * Process set of items.
          *
          * @param data
          *            Set of data to process
@@ -685,7 +686,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
                     final AsyncCallback.VoidCallback stub = this;
                     scheduler.submit(new Runnable() {
                         @Override
-                        public final void run() {
+                        public void run() {
                             processor.process(dataToProcess, stub);
                         }
                     });

@@ -20,6 +20,10 @@ package org.apache.bookkeeper.meta;
 
 import static com.google.common.base.Charsets.UTF_8;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Joiner;
+import com.google.protobuf.TextFormat;
+
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -57,29 +61,25 @@ import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Joiner;
-import com.google.protobuf.TextFormat;
-
 /**
  * ZooKeeper implementation of underreplication manager.
  * This is implemented in a heirarchical fashion, so it'll work with
  * FlatLedgerManagerFactory and HierarchicalLedgerManagerFactory.
  *
- * Layout is:
+ * <p>Layout is:
  * /root/underreplication/ LAYOUT
  *                         ledgers/(hierarchicalpath)/urL(ledgerId)
  *                         locks/(ledgerId)
  *
- * The hierarchical path is created by splitting the ledger into 4 2byte
+ * <p>The hierarchical path is created by splitting the ledger into 4 2byte
  * segments which are represented in hexidecimal.
  * e.g. For ledger id 0xcafebeef0000feed, the path is
  *  cafe/beef/0000/feed/
  */
 public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationManager {
     static final Logger LOG = LoggerFactory.getLogger(ZkLedgerUnderreplicationManager.class);
-    static final String LAYOUT="BASIC";
-    static final int LAYOUT_VERSION=1;
+    static final String LAYOUT = "BASIC";
+    static final int LAYOUT_VERSION = 1;
 
     private static final byte[] LOCK_DATA = getLockData();
 
@@ -92,8 +92,13 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             this.ledgerZNodeVersion = ledgerZNodeVersion;
         }
 
-        String getLockZNode() { return lockZNode; }
-        int getLedgerZNodeVersion() { return ledgerZNodeVersion; }
+        String getLockZNode() {
+            return lockZNode;
+        }
+
+        int getLedgerZNodeVersion() {
+            return ledgerZNodeVersion;
+        }
     }
     private final Map<Long, Lock> heldLocks = new ConcurrentHashMap<Long, Lock>();
     private final Pattern idExtractionPattern;
@@ -116,7 +121,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
                 + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH;
         urLockPath = basePath + '/' + BookKeeperConstants.UNDER_REPLICATION_LOCK;
         lostBookieRecoveryDelayZnode = basePath + '/' + BookKeeperConstants.LOSTBOOKIERECOVERYDELAY_NODE;
-        
+
         idExtractionPattern = Pattern.compile("urL(\\d+)$");
         this.zkc = zkc;
         this.subTreeCache = new SubTreeCache(new SubTreeCache.TreeProvider() {
@@ -160,8 +165,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         }
         while (true) {
             if (zkc.exists(layoutZNode, false) == null) {
-                LedgerRereplicationLayoutFormat.Builder builder
-                    = LedgerRereplicationLayoutFormat.newBuilder();
+                LedgerRereplicationLayoutFormat.Builder builder = LedgerRereplicationLayoutFormat.newBuilder();
                 builder.setType(LAYOUT).setVersion(LAYOUT_VERSION);
                 try {
                     zkc.create(layoutZNode, TextFormat.printToString(builder.build()).getBytes(UTF_8),
@@ -173,8 +177,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             } else {
                 byte[] layoutData = zkc.getData(layoutZNode, false, null);
 
-                LedgerRereplicationLayoutFormat.Builder builder
-                    = LedgerRereplicationLayoutFormat.newBuilder();
+                LedgerRereplicationLayoutFormat.Builder builder = LedgerRereplicationLayoutFormat.newBuilder();
 
                 try {
                     TextFormat.merge(new String(layoutData, UTF_8), builder);
@@ -348,13 +351,13 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     /**
      * Get a list of all the ledgers which have been
      * marked for rereplication, filtered by the predicate on the replicas list.
-     * 
-     * Replicas list of an underreplicated ledger is the list of the bookies which are part of 
+     *
+     * <p>Replicas list of an underreplicated ledger is the list of the bookies which are part of
      * the ensemble of this ledger and are currently unavailable/down.
-     * 
-     * If filtering is not needed then it is suggested to pass null for predicate,
+     *
+     * <p>If filtering is not needed then it is suggested to pass null for predicate,
      * otherwise it will read the content of the ZNode to decide on filtering.
-     * 
+     *
      * @param predicate filter to use while listing under replicated ledgers. 'null' if filtering is not required.
      * @return an iterator which returns ledger ids
      */
@@ -692,7 +695,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     }
 
     /**
-     * Check whether the ledger is being replicated by any bookie
+     * Check whether the ledger is being replicated by any bookie.
      */
     public static boolean isLedgerBeingReplicated(ZooKeeper zkc, String zkLedgersRootPath, long ledgerId)
             throws KeeperException,
@@ -701,7 +704,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     }
 
     /**
-     * Acquire the underreplicated ledger lock
+     * Acquire the underreplicated ledger lock.
      */
     public static void acquireUnderreplicatedLedgerLock(ZooKeeper zkc, String zkLedgersRootPath,
         long ledgerId, List<ACL> zkAcls)
@@ -711,7 +714,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     }
 
     /**
-     * Release the underreplicated ledger lock if it exists
+     * Release the underreplicated ledger lock if it exists.
      */
     public static void releaseUnderreplicatedLedgerLock(ZooKeeper zkc, String zkLedgersRootPath, long ledgerId)
             throws InterruptedException, KeeperException {
@@ -727,8 +730,8 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
             zkc.create(lostBookieRecoveryDelayZnode, Integer.toString(lostBookieRecoveryDelay).getBytes(UTF_8),
                     Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         } catch (KeeperException.NodeExistsException ke) {
-            LOG.info(
-                    "lostBookieRecoveryDelay Znode is already present, so using existing lostBookieRecoveryDelay Znode value");
+            LOG.info("lostBookieRecoveryDelay Znode is already present, so using "
+                    + "existing lostBookieRecoveryDelay Znode value");
             return false;
         } catch (KeeperException ke) {
             LOG.error("Error while initializing LostBookieRecoveryDelay", ke);
