@@ -17,7 +17,6 @@
 
 package org.apache.bookkeeper.util.collections;
 
-import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import java.util.ArrayList;
 
@@ -32,7 +31,7 @@ public final class RecyclableArrayList<T> extends ArrayList<T> {
         extends io.netty.util.Recycler<RecyclableArrayList<X>> {
         @Override
         protected RecyclableArrayList<X> newObject(
-                io.netty.util.Recycler.Handle<RecyclableArrayList<X>> handle) {
+                Handle<RecyclableArrayList<X>> handle) {
             return new RecyclableArrayList<X>(handle, DEFAULT_INITIAL_CAPACITY);
         }
 
