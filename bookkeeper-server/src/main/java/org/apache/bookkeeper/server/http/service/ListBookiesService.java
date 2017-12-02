@@ -18,11 +18,14 @@
  */
 package org.apache.bookkeeper.server.http.service;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.collect.Maps;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.HttpServer;
@@ -46,7 +49,7 @@ public class ListBookiesService implements HttpEndpointService {
     protected BookKeeperAdmin bka;
 
     public ListBookiesService(ServerConfiguration conf, BookKeeperAdmin bka) {
-        Preconditions.checkNotNull(conf);
+        checkNotNull(conf);
         this.conf = conf;
         this.bka = bka;
     }
@@ -60,13 +63,13 @@ public class ListBookiesService implements HttpEndpointService {
 
             Map<String, String> params = request.getParams();
             // default print rw
-            boolean readOnly = (params != null) &&
-              params.containsKey("type") &&
-              params.get("type").equals("ro");
+            boolean readOnly = (params != null)
+                && params.containsKey("type")
+                && params.get("type").equals("ro");
             // default not print hostname
-            boolean printHostname = (params != null) &&
-              params.containsKey("print_hostnames") &&
-              params.get("print_hostnames").equals("true");
+            boolean printHostname = (params != null)
+                && params.containsKey("print_hostnames")
+                && params.get("print_hostnames").equals("true");
 
             if (readOnly) {
                 bookies.addAll(bka.getReadOnlyBookies());

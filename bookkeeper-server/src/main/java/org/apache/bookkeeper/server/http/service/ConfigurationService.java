@@ -18,7 +18,8 @@
  */
 package org.apache.bookkeeper.server.http.service;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -38,7 +39,7 @@ public class ConfigurationService implements HttpEndpointService {
     protected ServerConfiguration conf;
 
     public ConfigurationService(ServerConfiguration conf) {
-        Preconditions.checkNotNull(conf);
+        checkNotNull(conf);
         this.conf = conf;
     }
 
@@ -53,14 +54,14 @@ public class ConfigurationService implements HttpEndpointService {
             return response;
         } else if (HttpServer.Method.PUT == request.getMethod()) {
             String requestBody = request.getBody();
-            if(null == requestBody) {
+            if (null == requestBody) {
                 response.setCode(HttpServer.StatusCode.NOT_FOUND);
                 response.setBody("Request body not found. should contains k-v pairs");
                 return response;
             }
             @SuppressWarnings("unchecked")
             HashMap<String, Object> configMap = JsonUtil.fromJson(requestBody, HashMap.class);
-            for(Map.Entry<String, Object> entry: configMap.entrySet()) {
+            for (Map.Entry<String, Object> entry: configMap.entrySet()) {
                 conf.setProperty(entry.getKey(), entry.getValue());
             }
 

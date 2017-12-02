@@ -19,9 +19,10 @@
 package org.apache.bookkeeper.server.http.service;
 
 import static com.google.common.base.Charsets.US_ASCII;
+import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
+
 import java.util.Iterator;
 import java.util.Map;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -38,7 +39,7 @@ import org.slf4j.LoggerFactory;
 /**
  * HttpEndpointService that handle Bookkeeper read ledger entry related http request.
  *
- * The GET method will print all entry content of wanted entry.
+ * <p>The GET method will print all entry content of wanted entry.
  * User should set wanted "ledger_id", and can choose only print out wanted entry
  * by set parameter "start_entry_id", "end_entry_id" and "page".
  */
@@ -50,7 +51,7 @@ public class ReadLedgerEntryService implements HttpEndpointService {
     protected BookKeeperAdmin bka;
 
     public ReadLedgerEntryService(ServerConfiguration conf, BookKeeperAdmin bka) {
-        Preconditions.checkNotNull(conf);
+        checkNotNull(conf);
         this.conf = conf;
         this.bka = bka;
     }
@@ -78,7 +79,7 @@ public class ReadLedgerEntryService implements HttpEndpointService {
 
             // Page index should start from 1;
             Integer pageIndex = params.containsKey("page") ? Integer.parseInt(params.get("page")) : -1;
-            if(pageIndex > 0) {
+            if (pageIndex > 0) {
                 // start and end ledger index for wanted page.
                 Long startIndexInPage = (pageIndex - 1) * ENTRIES_PER_PAE;
                 Long endIndexInPage = startIndexInPage + ENTRIES_PER_PAE - 1;

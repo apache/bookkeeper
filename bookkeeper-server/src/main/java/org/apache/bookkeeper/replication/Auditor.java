@@ -24,6 +24,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.SettableFuture;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,6 +38,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -96,7 +98,7 @@ public class Auditor {
     private volatile Future<?> auditTask;
     private Set<String> bookiesToBeAudited = Sets.newHashSet();
     private volatile int lostBookieRecoveryDelayBeforeChange;
-    
+
     public Auditor(final String bookieIdentifier, ServerConfiguration conf,
                    ZooKeeper zkc, StatsLogger statsLogger) throws UnavailableException {
         this.conf = conf;
@@ -141,7 +143,8 @@ public class Auditor {
 
             ClientConfiguration clientConfiguration = new ClientConfiguration(conf);
             clientConfiguration.setClientRole(ClientConfiguration.CLIENT_ROLE_SYSTEM);
-            LOG.info("AuthProvider used by the Auditor is "+clientConfiguration.getClientAuthProviderFactoryClass());
+            LOG.info("AuthProvider used by the Auditor is {}",
+                    clientConfiguration.getClientAuthProviderFactoryClass());
             this.bkc = new BookKeeper(clientConfiguration, zkc);
             this.admin = new BookKeeperAdmin(bkc, statsLogger);
             if (this.ledgerUnderreplicationManager
@@ -149,8 +152,8 @@ public class Auditor {
                 LOG.info("Initializing lostBookieRecoveryDelay zNode to the conif value: {}",
                         conf.getLostBookieRecoveryDelay());
             } else {
-                LOG.info(
-                        "Valid lostBookieRecoveryDelay zNode is available, so not creating lostBookieRecoveryDelay zNode as part of Auditor initialization ");
+                LOG.info("Valid lostBookieRecoveryDelay zNode is available, so not creating "
+                        + "lostBookieRecoveryDelay zNode as part of Auditor initialization ");
             }
             lostBookieRecoveryDelayBeforeChange = this.ledgerUnderreplicationManager.getLostBookieRecoveryDelay();
         } catch (CompatibilityException ce) {
@@ -229,9 +232,10 @@ public class Auditor {
                         }
                         if (bookiesToBeAudited.size() > 1) {
                             // if more than one bookie is down, start the audit immediately;
-                            LOG.info("Multiple bookie failure; not delaying bookie audit. Bookies lost now: "
-                                     + CollectionUtils.subtract(knownBookies, availableBookies)
-                                     +"; All lost bookies: " + bookiesToBeAudited.toString());
+                            LOG.info("Multiple bookie failure; not delaying bookie audit. "
+                                    + "Bookies lost now: {}; All lost bookies: {}",
+                                    CollectionUtils.subtract(knownBookies, availableBookies),
+                                    bookiesToBeAudited);
                             if (auditTask != null && auditTask.cancel(false)) {
                                 auditTask = null;
                                 numDelayedBookieAuditsCancelled.inc();
@@ -242,7 +246,7 @@ public class Auditor {
                         }
                         if (auditTask == null) {
                             // if there is no scheduled audit, schedule one
-                            auditTask = executor.schedule( new Runnable() {
+                            auditTask = executor.schedule(new Runnable() {
                                 public void run() {
                                     startAudit(false);
                                     auditTask = null;
@@ -250,8 +254,8 @@ public class Auditor {
                                 }
                             }, lostBookieRecoveryDelay, TimeUnit.SECONDS);
                             numBookieAuditsDelayed.inc();
-                            LOG.info("Delaying bookie audit by " + lostBookieRecoveryDelay
-                                     + "secs for " + bookiesToBeAudited.toString());
+                            LOG.info("Delaying bookie audit by {} secs for {}", lostBookieRecoveryDelay,
+                                    bookiesToBeAudited);
                         }
                     } catch (BKException bke) {
                         LOG.error("Exception getting bookie list", bke);
@@ -282,7 +286,7 @@ public class Auditor {
                     // after new lostBookieRecoveryDelay period
                     if (auditTask != null) {
                         LOG.info("lostBookieRecoveryDelay period has been changed so canceling the pending AuditTask");
-                        auditTask.cancel(false);                        
+                        auditTask.cancel(false);
                         numDelayedBookieAuditsCancelled.inc();
                     }
 
@@ -291,12 +295,13 @@ public class Auditor {
                     if ((lostBookieRecoveryDelay == 0)
                             || (lostBookieRecoveryDelay == lostBookieRecoveryDelayBeforeChange)) {
                         LOG.info(
-                                "lostBookieRecoveryDelay has been set to 0 or reset to its previos value, so starting AuditTask. "
-                                + "Current lostBookieRecoveryDelay: {}, previous lostBookieRecoveryDelay: {}",
+                                "lostBookieRecoveryDelay has been set to 0 or reset to its previous value, "
+                                + "so starting AuditTask. Current lostBookieRecoveryDelay: {}, "
+                                + "previous lostBookieRecoveryDelay: {}",
                                 lostBookieRecoveryDelay, lostBookieRecoveryDelayBeforeChange);
                         startAudit(false);
                         auditTask = null;
-                        bookiesToBeAudited.clear();                        
+                        bookiesToBeAudited.clear();
                     } else if (auditTask != null) {
                         LOG.info("lostBookieRecoveryDelay has been set to {}, so rescheduling AuditTask accordingly",
                                 lostBookieRecoveryDelay);
@@ -308,13 +313,13 @@ public class Auditor {
                             }
                         }, lostBookieRecoveryDelay, TimeUnit.SECONDS);
                         numBookieAuditsDelayed.inc();
-                    }                    
+                    }
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                     LOG.error("Interrupted while for LedgersReplication to be enabled ", ie);
                 } catch (UnavailableException ue) {
                     LOG.error("Exception while reading from ZK", ue);
-                } finally{
+                } finally {
                     if (lostBookieRecoveryDelay != -1) {
                         lostBookieRecoveryDelayBeforeChange = lostBookieRecoveryDelay;
                     }
@@ -362,8 +367,7 @@ public class Auditor {
                             } catch (IOException ioe) {
                                 LOG.error("I/O exception running periodic check", ioe);
                             } catch (ReplicationException.UnavailableException ue) {
-                                LOG.error("Underreplication manager unavailable "
-                                          +"running periodic check", ue);
+                                LOG.error("Underreplication manager unavailable running periodic check", ue);
                             }
                         }
                     }, interval, interval, TimeUnit.SECONDS);
@@ -377,7 +381,7 @@ public class Auditor {
                 LOG.error("Couldn't get bookie list, exiting", bke);
                 submitShutdownTask();
             }
-            
+
             try {
                 this.ledgerUnderreplicationManager
                         .notifyLostBookieRecoveryDelayChanged(new LostBookieRecoveryDelayChangedCb());
@@ -389,11 +393,11 @@ public class Auditor {
             long bookieCheckInterval = conf.getAuditorPeriodicBookieCheckInterval();
             if (bookieCheckInterval == 0) {
                 LOG.info("Auditor periodic bookie checking disabled, running once check now anyhow");
-                executor.submit(BOOKIE_CHECK);
+                executor.submit(bookieCheck);
             } else {
                 LOG.info("Auditor periodic bookie checking enabled"
                          + " 'auditorPeriodicBookieCheckInterval' {} seconds", bookieCheckInterval);
-                executor.scheduleAtFixedRate(BOOKIE_CHECK, 0, bookieCheckInterval, TimeUnit.SECONDS);
+                executor.scheduleAtFixedRate(bookieCheck, 0, bookieCheckInterval, TimeUnit.SECONDS);
             }
         }
     }
@@ -410,7 +414,7 @@ public class Auditor {
             Auditor.this.submitLostBookieRecoveryDelayChangedEvent();
         }
     }
-    
+
     private void waitIfLedgerReplicationDisabled() throws UnavailableException,
             InterruptedException {
         ReplicationEnableCb cb = new ReplicationEnableCb();
@@ -439,7 +443,7 @@ public class Auditor {
     }
 
     /**
-     * Start running the actual audit task
+     * Start running the actual audit task.
      *
      * @param shutDownTask
      *      A boolean that indicates whether or not to schedule shutdown task on any failure
@@ -482,7 +486,7 @@ public class Auditor {
             if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
                 // has been disabled while we were generating the index
                 // discard this run, and schedule a new one
-                executor.submit(BOOKIE_CHECK);
+                executor.submit(bookieCheck);
                 return;
             }
         } catch (UnavailableException ue) {
@@ -529,11 +533,10 @@ public class Auditor {
         if (null == ledgers || ledgers.size() == 0) {
             // there is no ledgers available for this bookie and just
             // ignoring the bookie failures
-            LOG.info("There is no ledgers for the failed bookie: " + bookieIP);
+            LOG.info("There is no ledgers for the failed bookie: {}", bookieIP);
             return;
         }
-        LOG.info("Following ledgers: " + ledgers + " of bookie: " + bookieIP
-                + " are identified as underreplicated");
+        LOG.info("Following ledgers: {} of bookie: {} are identified as underreplicated", ledgers, bookieIP);
         numUnderReplicatedLedger.registerSuccessfulValue(ledgers.size());
         for (Long ledgerId : ledgers) {
             try {
@@ -548,7 +551,7 @@ public class Auditor {
     }
 
     /**
-     * Process the result returned from checking a ledger
+     * Process the result returned from checking a ledger.
      */
     private class ProcessLostFragmentsCb implements GenericCallback<Set<LedgerFragment>> {
         final LedgerHandle lh;
@@ -625,8 +628,7 @@ public class Auditor {
                             return;
                         }
                     } catch (ReplicationException.UnavailableException ue) {
-                        LOG.error("Underreplication manager unavailable "
-                                  +"running periodic check", ue);
+                        LOG.error("Underreplication manager unavailable running periodic check", ue);
                         processDone.countDown();
                         return;
                     }
@@ -699,7 +701,7 @@ public class Auditor {
     }
 
     /**
-     * Shutdown the auditor
+     * Shutdown the auditor.
      */
     public void shutdown() {
         LOG.info("Shutting down auditor");
@@ -721,7 +723,7 @@ public class Auditor {
     }
 
     /**
-     * Return true if auditor is running otherwise return false
+     * Return true if auditor is running otherwise return false.
      *
      * @return auditor status
      */
@@ -729,7 +731,7 @@ public class Auditor {
         return !executor.isShutdown();
     }
 
-    private final Runnable BOOKIE_CHECK = new Runnable() {
+    private final Runnable bookieCheck = new Runnable() {
             public void run() {
                 if (auditTask == null) {
                     startAudit(true);
