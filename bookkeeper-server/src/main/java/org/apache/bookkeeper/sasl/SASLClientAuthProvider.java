@@ -26,6 +26,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import javax.security.auth.Subject;
 import javax.security.sasl.SaslException;
+
 import org.apache.bookkeeper.auth.AuthCallbacks;
 import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
@@ -33,6 +34,9 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.proto.ClientConnectionPeer;
 import org.slf4j.LoggerFactory;
 
+/**
+ * SASL Client Authentication Provider.
+ */
 public class SASLClientAuthProvider implements ClientAuthProvider {
 
     private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(SASLClientAuthProvider.class);
