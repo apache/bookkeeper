@@ -25,15 +25,19 @@ import java.util.regex.Pattern;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import javax.security.sasl.SaslException;
+
 import org.apache.bookkeeper.auth.AuthCallbacks;
 import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.auth.BookieAuthProvider;
-import org.apache.bookkeeper.proto.BookieConnectionPeer;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.proto.BookieConnectionPeer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * SASL Bookie Authentication Provider.
+ */
 public class SASLBookieAuthProvider implements BookieAuthProvider {
 
     private static final Logger LOG = LoggerFactory.getLogger(SASLBookieAuthProvider.class);

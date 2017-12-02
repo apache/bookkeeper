@@ -23,9 +23,6 @@
     <!-- suppress packages by packages -->
     <suppress checks=".*" files=".*[\\/]bookie[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]client[\\/](?:[^\\/]+$|(?!api)|(?!impl)[^\\/]+[\\/])"/>
-    <suppress checks=".*" files=".*[\\/]metastore[\\/].*"/>
-    <suppress checks=".*" files=".*[\\/]net[\\/].*"/>
-    <suppress checks=".*" files=".*[\\/]sasl[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]test[\\/].*"/>
     <suppress checks=".*" files=".*[\\/]util[\\/].*"/>
 

@@ -1,5 +1,4 @@
-/**
- *
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,19 +15,26 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-package org.apache.bookkeeper.net;
+
+package org.apache.bookkeeper.bookie;
+
+import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 
 /**
- * Common Configuration Keys.
+ * The instance that is responsible for checkpointing ledger storage.
  */
-public interface CommonConfigurationKeys {
+public interface Checkpointer {
 
-    // script file name to resolve network topology
-    String NET_TOPOLOGY_SCRIPT_FILE_NAME_KEY = "networkTopologyScriptFileName";
-    // number of arguments that network topology resolve script used
-    String NET_TOPOLOGY_SCRIPT_NUMBER_ARGS_KEY = "networkTopologyScriptNumberArgs";
-    // default value of NET_TOPOLOGY_SCRIPT_NUMBER_ARGS_KEY
-    int NET_TOPOLOGY_SCRIPT_NUMBER_ARGS_DEFAULT = 100;
+    Checkpointer NULL = checkpoint -> {
+        // do nothing;
+    };
+
+    /**
+     * Start checkpointing for a given <i>checkpoint</i> location.
+     *
+     * @param checkpoint the checkpoint location to checkpoint.
+     */
+    void startCheckpoint(Checkpoint checkpoint);
+
 }

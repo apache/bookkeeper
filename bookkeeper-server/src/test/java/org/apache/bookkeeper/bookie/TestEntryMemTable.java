@@ -18,20 +18,21 @@
  */
 package org.apache.bookkeeper.bookie;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.HashSet;
-
+import java.util.Random;
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.junit.Test;
 import org.junit.Before;
-import java.nio.ByteBuffer;
-import java.util.Random;
 
 public class TestEntryMemTable implements CacheCallback, SkipListFlusher, CheckpointSource {
 
@@ -92,7 +93,7 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
     }
 
     @Override
-    public void onSizeLimitReached() throws IOException {
+    public void onSizeLimitReached(Checkpoint cp) throws IOException {
         // No-op
     }
 
