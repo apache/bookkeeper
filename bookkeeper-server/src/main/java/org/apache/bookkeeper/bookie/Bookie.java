@@ -705,9 +705,18 @@ public class Bookie extends BookieCriticalThread {
         String ledgerStorageClass = conf.getLedgerStorageClass();
         LOG.info("Using ledger storage: {}", ledgerStorageClass);
         ledgerStorage = LedgerStorageFactory.createLedgerStorage(ledgerStorageClass);
-        ledgerStorage.initialize(conf, ledgerManager, ledgerDirsManager, indexDirsManager, checkpointSource,
-                                 statsLogger);
         syncThread = new SyncThread(conf, getLedgerDirsListener(), ledgerStorage, checkpointSource);
+
+        ledgerStorage.initialize(
+            conf,
+            ledgerManager,
+            ledgerDirsManager,
+            indexDirsManager,
+            checkpointSource,
+            syncThread,
+            statsLogger);
+
+
         handles = new HandleFactoryImpl(ledgerStorage);
 
         // Expose Stats
@@ -817,11 +826,6 @@ public class Bookie extends BookieCriticalThread {
         if (indexDirsManager != ledgerDirsManager) {
             idxMonitor.start();
         }
-
-        // start sync thread first, so during replaying journals, we could do checkpoint
-        // which reduce the chance that we need to replay journals again if bookie restarted
-        // again before finished journal replays.
-        syncThread.start();
 
         // replay journals
         try {

@@ -309,7 +309,7 @@ public class EntryMemTable {
             if (isSizeLimitReached() || (!previousFlushSucceeded.get())) {
                 Checkpoint cp = snapshot();
                 if ((null != cp) || (!previousFlushSucceeded.get())) {
-                    cb.onSizeLimitReached();
+                    cb.onSizeLimitReached(cp);
                 } else {
                     throttleWriters();
                 }
