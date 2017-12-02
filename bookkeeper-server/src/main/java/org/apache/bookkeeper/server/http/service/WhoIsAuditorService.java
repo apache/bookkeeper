@@ -18,7 +18,8 @@
  */
 package org.apache.bookkeeper.server.http.service;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
@@ -33,7 +34,7 @@ import org.slf4j.LoggerFactory;
 /**
  * HttpEndpointService that handle Bookkeeper who is auditor related http request.
  *
- * The GET method will get the auditor bookie address
+ * <p>The GET method will get the auditor bookie address
  */
 public class WhoIsAuditorService implements HttpEndpointService {
 
@@ -43,7 +44,7 @@ public class WhoIsAuditorService implements HttpEndpointService {
     protected ZooKeeper zk;
 
     public WhoIsAuditorService(ServerConfiguration conf, ZooKeeper zk) {
-        Preconditions.checkNotNull(conf);
+        checkNotNull(conf);
         this.conf = conf;
         this.zk = zk;
     }

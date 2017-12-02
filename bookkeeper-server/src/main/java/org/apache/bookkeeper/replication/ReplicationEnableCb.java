@@ -27,7 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Callback which is getting notified when the replication process is enabled
+ * Callback which is getting notified when the replication process is enabled.
  */
 public class ReplicationEnableCb implements GenericCallback<Void> {
 
@@ -45,7 +45,7 @@ public class ReplicationEnableCb implements GenericCallback<Void> {
 
     /**
      * This is a blocking call and causes the current thread to wait until the
-     * replication process is enabled
+     * replication process is enabled.
      *
      * @throws InterruptedException
      *             interrupted while waiting

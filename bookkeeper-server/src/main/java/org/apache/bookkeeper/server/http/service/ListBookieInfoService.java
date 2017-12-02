@@ -18,12 +18,15 @@
  */
 package org.apache.bookkeeper.server.http.service;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.collect.Maps;
+
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookieInfoReader;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -40,7 +43,7 @@ import org.slf4j.LoggerFactory;
 /**
  * HttpEndpointService that handle Bookkeeper list bookie info related http request.
  *
- * The GET method will get the disk usage of all bookies in this bookkeeper cluster.
+ * <p>The GET method will get the disk usage of all bookies in this bookkeeper cluster.
  * Output would be like this:
  *  {
  *    "bookieAddress" : {free: xxx, total: xxx}",
@@ -56,7 +59,7 @@ public class ListBookieInfoService implements HttpEndpointService {
     protected ServerConfiguration conf;
 
     public ListBookieInfoService(ServerConfiguration conf) {
-        Preconditions.checkNotNull(conf);
+        checkNotNull(conf);
         this.conf = conf;
     }
 
