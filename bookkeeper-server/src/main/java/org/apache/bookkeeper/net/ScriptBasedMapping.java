@@ -45,34 +45,34 @@ import org.apache.commons.logging.LogFactory;
 public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
 
     /**
-     * Minimum number of arguments: {@value}
+     * Minimum number of arguments: {@value}.
      */
     static final int MIN_ALLOWABLE_ARGS = 1;
 
     /**
-     * Default number of arguments: {@value}
+     * Default number of arguments: {@value}.
      */
     static final int DEFAULT_ARG_COUNT = CommonConfigurationKeys.NET_TOPOLOGY_SCRIPT_NUMBER_ARGS_DEFAULT;
 
     /**
-     * key to the script filename {@value}
+     * Key to the script filename {@value}.
      */
     static final String SCRIPT_FILENAME_KEY = CommonConfigurationKeys.NET_TOPOLOGY_SCRIPT_FILE_NAME_KEY;
     /**
-     * key to the argument count that the script supports
-     * {@value}
+     * Key to the argument count that the script supports
+     * {@value}.
      */
     static final String SCRIPT_ARG_COUNT_KEY = CommonConfigurationKeys.NET_TOPOLOGY_SCRIPT_NUMBER_ARGS_KEY;
     /**
      * Text used in the {@link #toString()} method if there is no string
-     * {@value}
+     * {@value}.
      */
     public static final String NO_SCRIPT = "no script";
 
     /**
      * Create an instance with the default configuration.
-     * </p>
-     * Calling {@link #setConf(Configuration)} will trigger a
+     *
+     * <p>Calling {@link #setConf(Configuration)} will trigger a
      * re-evaluation of the configuration settings and so be used to
      * set up the mapping script.
      *
@@ -82,7 +82,7 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
     }
 
     /**
-     * Create an instance from the given configuration
+     * Create an instance from the given configuration.
      * @param conf configuration
      */
     public ScriptBasedMapping(Configuration conf) {
@@ -91,7 +91,7 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
     }
 
     /**
-     * Get the cached mapping and convert it to its real type
+     * Get the cached mapping and convert it to its real type.
      * @return the inner raw script mapping.
      */
     private RawScriptBasedMapping getRawMapping() {
@@ -110,8 +110,8 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
 
     /**
      * {@inheritDoc}
-     * <p/>
-     * This will get called in the superclass constructor, so a check is needed
+     *
+     * <p>This will get called in the superclass constructor, so a check is needed
      * to ensure that the raw mapping is defined before trying to relaying a null
      * configuration.
      * @param conf
@@ -124,7 +124,7 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
 
     /**
      * This is the uncached script mapping that is fed into the cache managed
-     * by the superclass {@link CachedDNSToSwitchMapping}
+     * by the superclass {@link CachedDNSToSwitchMapping}.
      */
     private static final class RawScriptBasedMapping extends AbstractDNSToSwitchMapping {
         private String scriptName;
@@ -132,7 +132,7 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
         private static final Log LOG = LogFactory.getLog(ScriptBasedMapping.class);
 
         /**
-         * Set the configuration and extract the configuration parameters of interest
+         * Set the configuration and extract the configuration parameters of interest.
          * @param conf the new configuration
          */
         @Override

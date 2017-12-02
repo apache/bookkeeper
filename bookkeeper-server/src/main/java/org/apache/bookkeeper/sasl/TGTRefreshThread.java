@@ -33,7 +33,9 @@ import org.apache.zookeeper.common.Time;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-// copied from Apache ZooKeeper TGT refresh logic
+/**
+ * TGT Refresh Thread. Copied from Apache ZooKeeper TGT refresh logic.
+ */
 class TGTRefreshThread extends Thread {
 
     private static final Logger LOG = LoggerFactory.getLogger(TGTRefreshThread.class);
@@ -77,7 +79,7 @@ class TGTRefreshThread extends Thread {
     // and try to renew the ticket.
     private static final float TICKET_RENEW_WINDOW = 0.80f;
     /**
-     * Percentage of random jitter added to the renewal time
+     * Percentage of random jitter added to the renewal time.
      */
     private static final float TICKET_RENEW_JITTER = 0.05f;
     // Regardless of TICKET_RENEW_WINDOW setting above and the ticket expiry time,
@@ -175,7 +177,8 @@ class TGTRefreshThread extends Thread {
                 break;
             }
             if (container.isUsingTicketCache()) {
-                String cmd = container.getConfiguration().getString(SaslConstants.KINIT_COMMAND, SaslConstants.KINIT_COMMAND_DEFAULT);
+                String cmd = container.getConfiguration().getString(SaslConstants.KINIT_COMMAND,
+                        SaslConstants.KINIT_COMMAND_DEFAULT);
                 String kinitArgs = "-R";
                 int retry = 1;
                 while (retry >= 0) {

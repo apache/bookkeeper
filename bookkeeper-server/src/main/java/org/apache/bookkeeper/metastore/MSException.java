@@ -21,13 +21,16 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Marker for metastore exceptions.
+ */
 @SuppressWarnings("serial")
 public abstract class MSException extends Exception {
 
     /**
-     * return codes
+     * Return codes.
      */
-    public static enum Code {
+    public enum Code {
         OK (0, "OK"),
         BadVersion (-1, "Version conflict"),
         NoKey (-2, "Key does not exist"),
@@ -39,8 +42,7 @@ public abstract class MSException extends Exception {
         ServiceDown (-102, "Metadata service is down"),
         OperationFailure(-103, "Operaion failed on metadata storage server side");
 
-        private static final Map<Integer, Code> codes
-            = new HashMap<Integer, Code>();
+        private static final Map<Integer, Code> codes = new HashMap<Integer, Code>();
 
         static {
             for (Code c : EnumSet.allOf(Code.class)) {
@@ -131,6 +133,9 @@ public abstract class MSException extends Exception {
         }
     }
 
+    /**
+     * A BadVersion exception.
+     */
     public static class BadVersionException extends MSException {
         public BadVersionException(String errMsg) {
             super(Code.BadVersion, errMsg);
@@ -141,6 +146,9 @@ public abstract class MSException extends Exception {
         }
     }
 
+    /**
+     * Exception in cases where there is no key.
+     */
     public static class NoKeyException extends MSException {
         public NoKeyException(String errMsg) {
             super(Code.NoKey, errMsg);
@@ -151,7 +159,9 @@ public abstract class MSException extends Exception {
         }
     }
 
-    // Exception would be thrown in a cursor if no entries found
+    /**
+     * Exception would be thrown in a cursor if no entries found.
+     */
     public static class NoEntriesException extends MSException {
         public NoEntriesException(String errMsg) {
             super(Code.NoEntries, errMsg);
@@ -162,6 +172,9 @@ public abstract class MSException extends Exception {
         }
     }
 
+    /**
+     * Key Exists Exception.
+     */
     public static class KeyExistsException extends MSException {
         public KeyExistsException(String errMsg) {
             super(Code.KeyExists, errMsg);
@@ -172,6 +185,9 @@ public abstract class MSException extends Exception {
         }
     }
 
+    /**
+     * Metastore interruption exception.
+     */
     public static class MSInterruptedException extends MSException {
         public MSInterruptedException(String errMsg) {
             super(Code.InterruptedException, errMsg);
@@ -182,6 +198,9 @@ public abstract class MSException extends Exception {
         }
     }
 
+    /**
+     * Illegal operation exception.
+     */
     public static class IllegalOpException extends MSException {
         public IllegalOpException(String errMsg) {
             super(Code.IllegalOp, errMsg);
@@ -192,6 +211,9 @@ public abstract class MSException extends Exception {
         }
     }
 
+    /**
+     * Service down exception.
+     */
     public static class ServiceDownException extends MSException {
         public ServiceDownException(String errMsg) {
             super(Code.ServiceDown, errMsg);
@@ -202,6 +224,9 @@ public abstract class MSException extends Exception {
         }
     }
 
+    /**
+     * Operation failure exception.
+     */
     public static class OperationFailureException extends MSException {
         public OperationFailureException(String errMsg) {
             super(Code.OperationFailure, errMsg);
