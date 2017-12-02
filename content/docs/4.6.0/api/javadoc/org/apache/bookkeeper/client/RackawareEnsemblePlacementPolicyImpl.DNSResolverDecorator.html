@@ -200,7 +200,7 @@ implements org.apache.bookkeeper.net.DNSToSwitchMapping</pre>
 <div class="block">Hints what to use with implementation when InetSocketAddress is converted
  to String:
  hostname (addr.getHostName(), default)
- or IP address (addr.getAddress().getHostAddress())</div>
+ or IP address (addr.getAddress().getHostAddress()).</div>
 </td>
 </tr>
 </table>
@@ -286,9 +286,8 @@ implements org.apache.bookkeeper.net.DNSToSwitchMapping</pre>
  Note the hostname/ip-address is not part of the returned path.
  The network topology of the cluster would determine the number of
  components in the network path.
- <p/>
 
- If a name cannot be resolved to a rack, the implementation
+ <p>If a name cannot be resolved to a rack, the implementation
  should return <code>NetworkTopology.DEFAULT_REGION_AND_RACK</code>. This
  is what the bundled implementations do, though it is not a formal requirement</div>
 <dl>
@@ -313,7 +312,7 @@ implements org.apache.bookkeeper.net.DNSToSwitchMapping</pre>
 <div class="block">Hints what to use with implementation when InetSocketAddress is converted
  to String:
  hostname (addr.getHostName(), default)
- or IP address (addr.getAddress().getHostAddress())</div>
+ or IP address (addr.getAddress().getHostAddress()).</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code>useHostName</code>&nbsp;in interface&nbsp;<code>org.apache.bookkeeper.net.DNSToSwitchMapping</code></dd>
@@ -332,7 +331,7 @@ implements org.apache.bookkeeper.net.DNSToSwitchMapping</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code>org.apache.bookkeeper.net.DNSToSwitchMapping</code></span></div>
 <div class="block">Reload all of the cached mappings.
 
- If there is a cache, this method will clear it, so that future accesses
+ <p>If there is a cache, this method will clear it, so that future accesses
  will get a chance to see the new data.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
