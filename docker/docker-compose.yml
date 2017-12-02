@@ -2,12 +2,13 @@ version: '2'
 
 services:
   zookeeper:
-    image: zookeeper:3.4.9
+    image: zookeeper
     hostname: zookeeper
     ports:
       - "2181:2181"
   bookkeeper:
     image: apache/bookkeeper
+    build: .
     depends_on:
       - zookeeper
     links:
