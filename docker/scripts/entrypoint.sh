@@ -37,10 +37,13 @@ export BK_journalDirectory=${BK_journalDirectory:-${BK_DATA_DIR}/journal}
 export BK_ledgerDirectories=${BK_ledgerDirectories:-${BK_DATA_DIR}/ledgers}
 export BK_indexDirectories=${BK_indexDirectories:-${BK_DATA_DIR}/index}
 
+export BK_statsProviderClass=org.apache.bookkeeper.stats.NullStatsProvider
+
 echo "BK_bookiePort bookie service port is $BK_bookiePort"
 echo "BK_zkServers is $BK_zkServers"
 echo "BK_DATA_DIR is $BK_DATA_DIR"
 echo "BK_CLUSTER_ROOT_PATH is $BK_CLUSTER_ROOT_PATH"
+echo "BK_statsProviderClass is $BK_statsProviderClass"
 
 
 mkdir -p "${BK_journalDirectory}" "${BK_ledgerDirectories}" "${BK_indexDirectories}"
