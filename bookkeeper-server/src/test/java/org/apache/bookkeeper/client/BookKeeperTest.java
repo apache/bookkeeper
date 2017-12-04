@@ -400,11 +400,11 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         Assert.assertTrue(
                 "Expected LAC of wlh: " + (2 * numOfEntries - 1) + " actual LAC of wlh: " + wlh.getLastAddConfirmed(),
                 (wlh.getLastAddConfirmed() == (2 * numOfEntries - 1)));
-        // readhandle's lastaddconfirmed wont be updated until readExplicitLastConfirmed call is made   
+        // readhandle's lastaddconfirmed wont be updated until readExplicitLastConfirmed call is made
         Assert.assertTrue(
                 "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
                 (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
-        
+
         long explicitlac = rlh.readExplicitLastConfirmed();
         Assert.assertTrue(
                 "Expected Explicit LAC of rlh: " + (2 * numOfEntries - 1) + " actual ExplicitLAC of rlh: " + explicitlac,
@@ -413,7 +413,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         Assert.assertTrue(
                 "Expected LAC of rlh: " + (2 * numOfEntries - 1) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
                 (rlh.getLastAddConfirmed() == (2 * numOfEntries - 1)));
-        
+
         Enumeration<LedgerEntry> entries = rlh.readEntries(numOfEntries, 2 * numOfEntries - 1);
         int entryId = numOfEntries;
         while (entries.hasMoreElements()) {
@@ -817,5 +817,69 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                 }
             }
         }
+    }
+
+    /**
+     * Tests that issuing multiple reads for the same entry at the same time works as expected.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testDoubleRead() throws Exception {
+        LedgerHandle lh = bkc.createLedger(digestType, "".getBytes());
+
+        lh.addEntry("test".getBytes());
+
+        // Read the same entry more times asynchronously
+        final int N = 10;
+        final CountDownLatch latch = new CountDownLatch(N);
+        for (int i = 0; i < N; i++) {
+            lh.asyncReadEntries(0, 0, new ReadCallback() {
+                public void readComplete(int rc, LedgerHandle lh,
+                                         Enumeration<LedgerEntry> seq, Object ctx) {
+                    if (rc == BKException.Code.OK) {
+                        latch.countDown();
+                    } else {
+                        fail("Read fail");
+                    }
+                }
+            }, null);
+        }
+
+        latch.await();
+    }
+
+    /**
+     * Tests that issuing multiple reads for the same entry at the same time works as expected.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testDoubleReadWithV2Protocol() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration(baseClientConf);
+        conf.setUseV2WireProtocol(true);
+        BookKeeperTestClient bkc = new BookKeeperTestClient(conf);
+        LedgerHandle lh = bkc.createLedger(digestType, "".getBytes());
+
+        lh.addEntry("test".getBytes());
+
+        // Read the same entry more times asynchronously
+        final int N = 10;
+        final CountDownLatch latch = new CountDownLatch(N);
+        for (int i = 0; i < N; i++) {
+            lh.asyncReadEntries(0, 0, new ReadCallback() {
+                public void readComplete(int rc, LedgerHandle lh,
+                                         Enumeration<LedgerEntry> seq, Object ctx) {
+                    if (rc == BKException.Code.OK) {
+                        latch.countDown();
+                    } else {
+                        fail("Read fail");
+                    }
+                }
+            }, null);
+        }
+
+        latch.await();
+        bkc.close();
     }
 }
