@@ -159,8 +159,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
     // Map that hold duplicated read requests. The idea is to only use this map (synchronized) when there is a duplicate
     // read request for the same ledgerId/entryId
-    private final ListMultimap<CompletionKey, CompletionValue> completionObjectsV2Conflicts
-        = LinkedListMultimap.create();
+    private final ListMultimap<CompletionKey, CompletionValue> completionObjectsV2Conflicts =
+        LinkedListMultimap.create();
 
     private final StatsLogger statsLogger;
     private final OpStatsLogger readEntryOpLogger;
