@@ -893,13 +893,17 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
      */
 
     void errorOutOutstandingEntries(int rc) {
-
         // DO NOT rewrite these using Map.Entry iterations. We want to iterate
         // on keys and see if we are successfully able to remove the key from
         // the map. Because the add and the read methods also do the same thing
         // in case they get a write failure on the socket. The one who
         // successfully removes the key from the map is the one responsible for
         // calling the application callback.
+        for (CompletionKey key : completionObjectsV2Conflicts.keySet()) {
+            while (completionObjectsV2Conflicts.get(key).size() > 0) {
+                errorOut(key, rc);
+            }
+        }
         for (CompletionKey key : completionObjects.keySet()) {
             errorOut(key, rc);
         }
