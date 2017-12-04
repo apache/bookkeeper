@@ -73,7 +73,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -120,6 +119,7 @@ import org.apache.bookkeeper.tls.SecurityHandlerFactory.NodeType;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.util.SafeRunnable;
+import org.apache.bookkeeper.util.collections.ConcurrentOpenHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -154,8 +154,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     final int getBookieInfoTimeout;
     final int startTLSTimeout;
 
-    private final ConcurrentHashMap<CompletionKey, CompletionValue> completionObjects =
-        new ConcurrentHashMap<CompletionKey, CompletionValue>();
+    private final ConcurrentOpenHashMap<CompletionKey, CompletionValue> completionObjects =
+        new ConcurrentOpenHashMap<CompletionKey, CompletionValue>();
 
     // Map that hold duplicated read requests. The idea is to only use this map (synchronized) when there is a duplicate
     // read request for the same ledgerId/entryId
@@ -904,7 +904,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 errorOut(key, rc);
             }
         }
-        for (CompletionKey key : completionObjects.keySet()) {
+        for (CompletionKey key : completionObjects.keys()) {
             errorOut(key, rc);
         }
     }
