@@ -134,14 +134,14 @@ Configure access to the [Apache Nexus repository](http://repository.apache.org/)
           </servers>
         </settings>
 
-### Create a new version in JIRA and Github
+### Create a new version in Github
 
-When contributors resolve an issue in JIRA, they are tagging it with a release that will contain their changes. With the release currently underway, new issues should be resolved against a subsequent future release. Therefore, you should create a release item for this subsequent release, as follows:
+When contributors resolve an issue in GitHub, they are tagging it with a release that will contain their changes. With the release currently underway, new issues should be resolved against a subsequent future release. Therefore, you should create a release item for this subsequent release, as follows:
 
-1. In JIRA, navigate to the [`BookKeeper > Administration > Versions`](https://issues.apache.org/jira/plugins/servlet/project-config/BOOKKEEPER/versions).
-2. Add a new release: choose the next minor version number compared to the one currently underway, select today’s date as the `Start Date`, and choose `Add`.
-3. In Github, navigate to the [`Issues > Milestones`](https://github.com/apache/bookkeeper/milestones).
-4. Add a new milestone: choose the next minor version number compared to the one currently underway, select a day that is 3-months from now as the `Due Date`, write a description `Release x.y.z` and choose `Create milestone`.
+1. In Github, navigate to the [`Issues > Milestones`](https://github.com/apache/bookkeeper/milestones).
+2. Add a new milestone: choose the next minor version number compared to the one currently underway, select a day that is 3-months from now as the `Due Date`, write a description `Release x.y.z` and choose `Create milestone`.
+
+Skip this step in case of a minor release, as milestones are only for major releases.
 
 ### Triage release-blocking issues in JIRA and Github
 
@@ -195,7 +195,7 @@ After review the release notes on both JIRA and Github, you should write a `rele
 
 [4.5.0 Release Notes](https://github.com/apache/bookkeeper/pull/402) is a good example to follow.
 
-### Create a release branch
+### Prepare release branch
 
 Release candidates are built from a release branch. As a final step in preparation for the release, you should create the release branch, push it to the code repository, and update version information on the original branch.
 
@@ -206,15 +206,25 @@ Check out the version of the codebase from which you start the release. For a ne
 
 Set up a few environment variables to simplify Maven commands that follow. (We use `bash` Unix syntax in this guide.)
 
+For a major release (for instance 4.5.0):
+
     MAJOR_VERSION="4.5"
     VERSION="4.5.0"
     NEXT_VERSION="4.6.0"
     BRANCH_NAME="branch-${MAJOR_VERSION}"
     DEVELOPMENT_VERSION="${NEXT_VERSION}-SNAPSHOT"
 
+For a minor release (for instance 4.5.1):
+
+    MAJOR_VERSION="4.5"
+    VERSION="4.5.1"
+    NEXT_VERSION="4.5.2"
+    BRANCH_NAME="branch-${MAJOR_VERSION}"
+    DEVELOPMENT_VERSION="${NEXT_VERSION}-SNAPSHOT"
+
 Version represents the release currently underway, while next version specifies the anticipated next version to be released from that branch. Normally, 4.5.0 is followed by 4.6.0, while 4.5.0 is followed by 4.5.1.
 
-Use Maven release plugin to create the release branch and update the current branch to use the new development version. This command applies for the new major or minor version.
+If you are cutting a major release use Maven release plugin to create the release branch and update the current branch to use the new development version. This command applies for the new major or minor version.
 
 > This command automatically check in and tag your code in the code repository configured in the SCM.
 > It is recommended to do a "dry run" before executing the command. To "dry run", you can provide "-DdryRun"
@@ -234,20 +244,13 @@ Use Maven release plugin to create the release branch and update the current bra
 > $ git reset --hard apache/<master branch OR release tag>
 > $ git branch -D ${BRANCH_NAME}
 
-However, if you are doing an incremental/hotfix release, please run the following command after checking out the release tag of the release being patched.
-
-    mvn release:branch \
-        -DbranchName=${BRANCH_NAME} \
-        -DupdateWorkingCopyVersions=false \
-        -DupdateBranchVersions=true \
-        -DreleaseVersion="${VERSION}-SNAPSHOT" \
-        [-DdryRun]
-
 Check out the release branch.
 
     git checkout ${BRANCH_NAME}
 
 The rest of this guide assumes that commands are run in the root of a repository on `${BRANCH_NAME}` with the above environment variables set.
+
+Verify that pom.xml contains the correct VERSION, it should still end with the '-SNAPSHOT' suffix.
 
 ### Checklist to proceed to the next step
 
@@ -353,7 +356,7 @@ Copy the source release to the dev repository of `dist.apache.org`.
 ### Checklist to proceed to the next step
 
 1. Maven artifacts deployed to the staging repository of [repository.apache.org](https://repository.apache.org/content/repositories/)
-1. Source and Binary distribution deployed to the dev repository of [dist.apache.org](https://dist.apache.org/repos/dist/dev/incubator/bookkeeper/)
+1. Source and Binary distribution deployed to the dev repository of [dist.apache.org](https://dist.apache.org/repos/dist/dev/bookkeeper/)
 
 **********
 
@@ -378,10 +381,10 @@ Start the review-and-vote thread on the dev@ mailing list. Here’s an email tem
     * All artifacts to be deployed to the Maven Central Repository [3]
     * Source code tag "release-4.5.0" [4]
 
-    BookKeeper's KEY file contains PGP keys we use to sign this release:
+    BookKeeper's KEYS file contains PGP keys we used to sign this release:
     https://dist.apache.org/repos/dist/release/bookkeeper/KEYS
 
-    Please down this packages and review this release candidate:
+    Please download these packages and review this release candidate:
 
     - Review release notes
     - Download the source package (verify md5, shasum, and asc) and follow the
@@ -407,7 +410,7 @@ If there are any issues found in the release candidate, reply on the vote thread
 If there are no issues, reply on the vote thread to close the voting. Then, tally the votes in a separate email. Here’s an email template; please adjust as you see fit. (NOTE: the approver list are binding approvers.)
 
     From: Release Manager
-    To: dev@bookkeeper.incubator.apache.org
+    To: dev@bookkeeper.apache.org
     Subject: [RESULT] [VOTE] Release 0.4.0, release candidate #0
 
     I'm happy to announce that we have unanimously approved this release.
@@ -446,6 +449,18 @@ Once all issues have been resolved, you should go back and build a new release c
 ## Finalize the release
 
 Once the release candidate has been reviewed and approved by the community, the release should be finalized. This involves the final deployment of the release candidate to the release repositories, merging of the website changes, etc.
+
+### Advance version on release branch
+
+Use the Maven Release plugin in order to advance the version in all poms.
+
+> This command will upgrade the <version> tag on every pom.xml locally to your workspace.
+
+    mvn release:update-versions
+        -DdevelopmentVersion=${DEVELOPMENT_VERSION}
+
+For instance if you have released 4.5.1, you have to change version to 4.5.2-SNAPSHOT.
+Then you have to create a PR and submit it for review.
 
 ### Deploy artifacts to Maven Central Repository
 
@@ -506,7 +521,7 @@ In Github, inside [milestones](https://github.com/apache/bookkeeper/milestones),
 ### Checklist to proceed to the next step
 
 * Maven artifacts released and indexed in the [Maven Central Repository](https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22org.apache.bookkeeper%22)
-* Source and Binary distribution available in the release repository of [dist.apache.org](https://dist.apache.org/repos/dist/release/incubator/bookkeeper/)
+* Source and Binary distribution available in the release repository of [dist.apache.org](https://dist.apache.org/repos/dist/release/bookkeeper/)
 * Website is updated with new release
 * Docker image is built with new release
 * Release tagged in the source code repository
@@ -522,7 +537,9 @@ Once the release has been finalized, the last step of the process is to promote 
 
 - Announce on the dev@ mailing list that the release has been finished.
 - Announce on the release on the user@ mailing list, listing major improvements and contributions.
-- Announce the release on the announce@apache.org mailing list.
+- Announce the release on the announce@apache.org mailing list
+
+Use the template below for all the messages.
 
 > NOTE: Make sure sending the announce email using apache email, otherwise announce@apache.org will reject your email.
 
@@ -561,9 +578,13 @@ Once the release has been finalized, the last step of the process is to promote 
 
 Use reporter.apache.org to seed the information about the release into future project reports.
 
+This step can be done only by PMC.
+
 ### Social media
 
 Tweet, post on Facebook, LinkedIn, and other platforms. Ask other contributors to do the same.
+
+This step can be done only by PMC.
 
 ### Checklist to declare the process completed
 
