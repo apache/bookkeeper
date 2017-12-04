@@ -229,7 +229,7 @@
           <li><a href="#access-to-apache-nexus-repository" id="markdown-toc-access-to-apache-nexus-repository">Access to Apache Nexus repository</a></li>
         </ul>
       </li>
-      <li><a href="#create-a-new-version-in-jira-and-github" id="markdown-toc-create-a-new-version-in-jira-and-github">Create a new version in JIRA and Github</a></li>
+      <li><a href="#create-a-new-version-in-github" id="markdown-toc-create-a-new-version-in-github">Create a new version in Github</a></li>
       <li><a href="#triage-release-blocking-issues-in-jira-and-github" id="markdown-toc-triage-release-blocking-issues-in-jira-and-github">Triage release-blocking issues in JIRA and Github</a>        <ul>
           <li><a href="#jira" id="markdown-toc-jira">JIRA</a></li>
           <li><a href="#github" id="markdown-toc-github">Github</a></li>
@@ -241,7 +241,7 @@
           <li><a href="#prepare-release-notes" id="markdown-toc-prepare-release-notes">Prepare Release Notes</a></li>
         </ul>
       </li>
-      <li><a href="#create-a-release-branch" id="markdown-toc-create-a-release-branch">Create a release branch</a></li>
+      <li><a href="#prepare-release-branch" id="markdown-toc-prepare-release-branch">Prepare release branch</a></li>
       <li><a href="#checklist-to-proceed-to-the-next-step-1" id="markdown-toc-checklist-to-proceed-to-the-next-step-1">Checklist to proceed to the next step</a></li>
     </ul>
   </li>
@@ -260,6 +260,7 @@
     </ul>
   </li>
   <li><a href="#finalize-the-release" id="markdown-toc-finalize-the-release">Finalize the release</a>    <ul>
+      <li><a href="#advance-version-on-release-branch" id="markdown-toc-advance-version-on-release-branch">Advance version on release branch</a></li>
       <li><a href="#deploy-artifacts-to-maven-central-repository" id="markdown-toc-deploy-artifacts-to-maven-central-repository">Deploy artifacts to Maven Central Repository</a></li>
       <li><a href="#deploy-source-release-to-distapacheorg" id="markdown-toc-deploy-source-release-to-distapacheorg">Deploy source release to dist.apache.org</a></li>
       <li><a href="#update-website" id="markdown-toc-update-website">Update Website</a></li>
@@ -426,16 +427,16 @@ export GPG_AGENT_INFO
   </li>
 </ol>
 
-<h3 id="create-a-new-version-in-jira-and-github">Create a new version in JIRA and Github</h3>
+<h3 id="create-a-new-version-in-github">Create a new version in Github</h3>
 
-<p>When contributors resolve an issue in JIRA, they are tagging it with a release that will contain their changes. With the release currently underway, new issues should be resolved against a subsequent future release. Therefore, you should create a release item for this subsequent release, as follows:</p>
+<p>When contributors resolve an issue in GitHub, they are tagging it with a release that will contain their changes. With the release currently underway, new issues should be resolved against a subsequent future release. Therefore, you should create a release item for this subsequent release, as follows:</p>
 
 <ol>
-  <li>In JIRA, navigate to the <a href="https://issues.apache.org/jira/plugins/servlet/project-config/BOOKKEEPER/versions"><code class="highlighter-rouge">BookKeeper &gt; Administration &gt; Versions</code></a>.</li>
-  <li>Add a new release: choose the next minor version number compared to the one currently underway, select today’s date as the <code class="highlighter-rouge">Start Date</code>, and choose <code class="highlighter-rouge">Add</code>.</li>
   <li>In Github, navigate to the <a href="https://github.com/apache/bookkeeper/milestones"><code class="highlighter-rouge">Issues &gt; Milestones</code></a>.</li>
   <li>Add a new milestone: choose the next minor version number compared to the one currently underway, select a day that is 3-months from now as the <code class="highlighter-rouge">Due Date</code>, write a description <code class="highlighter-rouge">Release x.y.z</code> and choose <code class="highlighter-rouge">Create milestone</code>.</li>
 </ol>
+
+<p>Skip this step in case of a minor release, as milestones are only for major releases.</p>
 
 <h3 id="triage-release-blocking-issues-in-jira-and-github">Triage release-blocking issues in JIRA and Github</h3>
 
@@ -497,7 +498,7 @@ We can use <a href="https://github.com/skywinder/github-changelog-generator">git
 
 <p><a href="https://github.com/apache/bookkeeper/pull/402">4.5.0 Release Notes</a> is a good example to follow.</p>
 
-<h3 id="create-a-release-branch">Create a release branch</h3>
+<h3 id="prepare-release-branch">Prepare release branch</h3>
 
 <p>Release candidates are built from a release branch. As a final step in preparation for the release, you should create the release branch, push it to the code repository, and update version information on the original branch.</p>
 
@@ -509,6 +510,8 @@ We can use <a href="https://github.com/skywinder/github-changelog-generator">git
 
 <p>Set up a few environment variables to simplify Maven commands that follow. (We use <code class="highlighter-rouge">bash</code> Unix syntax in this guide.)</p>
 
+<p>For a major release (for instance 4.5.0):</p>
+
 <div class="highlighter-rouge"><pre class="highlight"><code>MAJOR_VERSION="4.5"
 VERSION="4.5.0"
 NEXT_VERSION="4.6.0"
@@ -517,9 +520,19 @@ DEVELOPMENT_VERSION="${NEXT_VERSION}-SNAPSHOT"
 </code></pre>
 </div>
 
+<p>For a minor release (for instance 4.5.1):</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>MAJOR_VERSION="4.5"
+VERSION="4.5.1"
+NEXT_VERSION="4.5.2"
+BRANCH_NAME="branch-${MAJOR_VERSION}"
+DEVELOPMENT_VERSION="${NEXT_VERSION}-SNAPSHOT"
+</code></pre>
+</div>
+
 <p>Version represents the release currently underway, while next version specifies the anticipated next version to be released from that branch. Normally, 4.5.0 is followed by 4.6.0, while 4.5.0 is followed by 4.5.1.</p>
 
-<p>Use Maven release plugin to create the release branch and update the current branch to use the new development version. This command applies for the new major or minor version.</p>
+<p>If you are cutting a major release use Maven release plugin to create the release branch and update the current branch to use the new development version. This command applies for the new major or minor version.</p>
 
 <blockquote>
   <p>This command automatically check in and tag your code in the code repository configured in the SCM.
@@ -545,17 +558,6 @@ You need use <a href="https://help.github.com/articles/creating-a-personal-acces
 $ git branch -D ${BRANCH_NAME}</master></p>
 </blockquote>
 
-<p>However, if you are doing an incremental/hotfix release, please run the following command after checking out the release tag of the release being patched.</p>
-
-<div class="highlighter-rouge"><pre class="highlight"><code>mvn release:branch \
-    -DbranchName=${BRANCH_NAME} \
-    -DupdateWorkingCopyVersions=false \
-    -DupdateBranchVersions=true \
-    -DreleaseVersion="${VERSION}-SNAPSHOT" \
-    [-DdryRun]
-</code></pre>
-</div>
-
 <p>Check out the release branch.</p>
 
 <div class="highlighter-rouge"><pre class="highlight"><code>git checkout ${BRANCH_NAME}
@@ -563,6 +565,8 @@ $ git branch -D ${BRANCH_NAME}</master></p>
 </div>
 
 <p>The rest of this guide assumes that commands are run in the root of a repository on <code class="highlighter-rouge">${BRANCH_NAME}</code> with the above environment variables set.</p>
+
+<p>Verify that pom.xml contains the correct VERSION, it should still end with the ‘-SNAPSHOT’ suffix.</p>
 
 <h3 id="checklist-to-proceed-to-the-next-step-1">Checklist to proceed to the next step</h3>
 
@@ -700,7 +704,7 @@ force push backed out local git branch to github again.</p>
 
 <ol>
   <li>Maven artifacts deployed to the staging repository of <a href="https://repository.apache.org/content/repositories/">repository.apache.org</a></li>
-  <li>Source and Binary distribution deployed to the dev repository of <a href="https://dist.apache.org/repos/dist/dev/incubator/bookkeeper/">dist.apache.org</a></li>
+  <li>Source and Binary distribution deployed to the dev repository of <a href="https://dist.apache.org/repos/dist/dev/bookkeeper/">dist.apache.org</a></li>
 </ol>
 
 <hr />
@@ -726,10 +730,10 @@ The complete staging area is available for your review, which includes:
 * All artifacts to be deployed to the Maven Central Repository [3]
 * Source code tag "release-4.5.0" [4]
 
-BookKeeper's KEY file contains PGP keys we use to sign this release:
+BookKeeper's KEYS file contains PGP keys we used to sign this release:
 https://dist.apache.org/repos/dist/release/bookkeeper/KEYS
 
-Please down this packages and review this release candidate:
+Please download these packages and review this release candidate:
 
 - Review release notes
 - Download the source package (verify md5, shasum, and asc) and follow the
@@ -757,7 +761,7 @@ Release Manager
 <p>If there are no issues, reply on the vote thread to close the voting. Then, tally the votes in a separate email. Here’s an email template; please adjust as you see fit. (NOTE: the approver list are binding approvers.)</p>
 
 <div class="highlighter-rouge"><pre class="highlight"><code>From: Release Manager
-To: dev@bookkeeper.incubator.apache.org
+To: dev@bookkeeper.apache.org
 Subject: [RESULT] [VOTE] Release 0.4.0, release candidate #0
 
 I'm happy to announce that we have unanimously approved this release.
@@ -801,6 +805,22 @@ Thanks everyone!
 <h2 id="finalize-the-release">Finalize the release</h2>
 
 <p>Once the release candidate has been reviewed and approved by the community, the release should be finalized. This involves the final deployment of the release candidate to the release repositories, merging of the website changes, etc.</p>
+
+<h3 id="advance-version-on-release-branch">Advance version on release branch</h3>
+
+<p>Use the Maven Release plugin in order to advance the version in all poms.</p>
+
+<blockquote>
+  <p>This command will upgrade the <version> tag on every pom.xml locally to your workspace.</version></p>
+</blockquote>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>mvn release:update-versions
+    -DdevelopmentVersion=${DEVELOPMENT_VERSION}
+</code></pre>
+</div>
+
+<p>For instance if you have released 4.5.1, you have to change version to 4.5.2-SNAPSHOT.
+Then you have to create a PR and submit it for review.</p>
 
 <h3 id="deploy-artifacts-to-maven-central-repository">Deploy artifacts to Maven Central Repository</h3>
 
@@ -876,7 +896,7 @@ Thanks everyone!
 
 <ul>
   <li>Maven artifacts released and indexed in the <a href="https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22org.apache.bookkeeper%22">Maven Central Repository</a></li>
-  <li>Source and Binary distribution available in the release repository of <a href="https://dist.apache.org/repos/dist/release/incubator/bookkeeper/">dist.apache.org</a></li>
+  <li>Source and Binary distribution available in the release repository of <a href="https://dist.apache.org/repos/dist/release/bookkeeper/">dist.apache.org</a></li>
   <li>Website is updated with new release</li>
   <li>Docker image is built with new release</li>
   <li>Release tagged in the source code repository</li>
@@ -894,8 +914,10 @@ Thanks everyone!
 <ul>
   <li>Announce on the dev@ mailing list that the release has been finished.</li>
   <li>Announce on the release on the user@ mailing list, listing major improvements and contributions.</li>
-  <li>Announce the release on the announce@apache.org mailing list.</li>
+  <li>Announce the release on the announce@apache.org mailing list</li>
 </ul>
+
+<p>Use the template below for all the messages.</p>
 
 <blockquote>
   <p>NOTE: Make sure sending the announce email using apache email, otherwise announce@apache.org will reject your email.</p>
@@ -936,9 +958,13 @@ The BookKeeper Team
 
 <p>Use reporter.apache.org to seed the information about the release into future project reports.</p>
 
+<p>This step can be done only by PMC.</p>
+
 <h3 id="social-media">Social media</h3>
 
 <p>Tweet, post on Facebook, LinkedIn, and other platforms. Ask other contributors to do the same.</p>
+
+<p>This step can be done only by PMC.</p>
 
 <h3 id="checklist-to-declare-the-process-completed">Checklist to declare the process completed</h3>
 
