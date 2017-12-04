@@ -286,16 +286,6 @@
         </executions>
       </plugin>
       <plugin>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <version>${maven-assembly-plugin.version}</version>
-        <configuration>
-	  <tarLongFileMode>gnu</tarLongFileMode>
-          <descriptors>
-            <descriptor>src/assemble/src.xml</descriptor>
-          </descriptors>
-        </configuration>
-      </plugin>
-      <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <version>0.12</version>
