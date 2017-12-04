@@ -30,7 +30,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
  * Represents the entries of a segment of a ledger which are stored on subset of
  * bookies in the segments bookie ensemble.
  *
- * Used for checking and recovery
+ * <p>Used for checking and recovery
  */
 public class LedgerFragment {
     private final Set<Integer> bookieIndexes;
@@ -105,7 +105,7 @@ public class LedgerFragment {
     }
 
     /**
-     * Gets the failedBookie address
+     * Gets the failedBookie address.
      */
     public BookieSocketAddress getAddress(int bookieIndex) {
         return ensemble.get(bookieIndex);
@@ -120,7 +120,7 @@ public class LedgerFragment {
     }
 
     /**
-     * Gets the failedBookie index
+     * Gets the failedBookie index.
      */
     public Set<Integer> getBookiesIndexes() {
         return bookieIndexes;
@@ -202,7 +202,7 @@ public class LedgerFragment {
     }
 
     /**
-     * Gets the ensemble of fragment
+     * Gets the ensemble of fragment.
      *
      * @return the ensemble for the segment which this fragment is a part of
      */

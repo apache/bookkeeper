@@ -18,6 +18,13 @@
 
 package org.apache.bookkeeper.client;
 
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.RateLimiter;
+import com.google.common.util.concurrent.SettableFuture;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,19 +45,12 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.RateLimiter;
-import com.google.common.util.concurrent.SettableFuture;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
 /**
- * Encapsulates updating the ledger metadata operation
+ * Encapsulates updating the ledger metadata operation.
  */
 public class UpdateLedgerOp {
 
-    private final static Logger LOG = LoggerFactory.getLogger(UpdateLedgerOp.class);
+    private static final Logger LOG = LoggerFactory.getLogger(UpdateLedgerOp.class);
     private final BookKeeper bkc;
     private final BookKeeperAdmin admin;
 
@@ -80,7 +80,7 @@ public class UpdateLedgerOp {
      *             interrupted exception when update ledger meta
      */
     public void updateBookieIdInLedgers(final BookieSocketAddress oldBookieId, final BookieSocketAddress newBookieId,
-            final int rate, final int limit, final UpdateLedgerNotifier progressable) throws BKException, IOException {
+            final int rate, final int limit, final UpdateLedgerNotifier progressable) throws IOException {
 
         final ThreadFactoryBuilder tfb = new ThreadFactoryBuilder().setNameFormat("UpdateLedgerThread").setDaemon(true);
         final ExecutorService executor = Executors.newSingleThreadExecutor(tfb.build());
@@ -108,7 +108,8 @@ public class UpdateLedgerOp {
                         throttler.acquire();
 
                         final Long lId = ledgerItr.next();
-                        final ReadLedgerMetadataCb readCb = new ReadLedgerMetadataCb(bkc, lId, oldBookieId, newBookieId);
+                        final ReadLedgerMetadataCb readCb = new ReadLedgerMetadataCb(bkc, lId, oldBookieId,
+                                newBookieId);
                         outstandings.add(lId);
 
                         FutureCallback<Void> updateLedgerCb = new UpdateLedgerCb(lId, stop, issuedLedgerCnt,
@@ -146,7 +147,7 @@ public class UpdateLedgerOp {
         }
     }
 
-    private final static class UpdateLedgerCb implements FutureCallback<Void> {
+    private static final class UpdateLedgerCb implements FutureCallback<Void> {
         final long ledgerId;
         final AtomicBoolean stop;
         final AtomicInteger issuedLedgerCnt;
@@ -191,7 +192,7 @@ public class UpdateLedgerOp {
         }
     }
 
-    private final static class ReadLedgerMetadataCb implements GenericCallback<LedgerMetadata> {
+    private static final class ReadLedgerMetadataCb implements GenericCallback<LedgerMetadata> {
         final BookKeeper bkc;
         final Long ledgerId;
         final BookieSocketAddress curBookieAddr;

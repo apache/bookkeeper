@@ -25,7 +25,7 @@ import org.apache.bookkeeper.client.api.LastConfirmedAndEntry;
 import org.apache.bookkeeper.client.impl.LastConfirmedAndEntryImpl;
 
 /**
- * Utility for callbacks
+ * Utility for callbacks.
  *
  */
 @Slf4j
@@ -47,8 +47,8 @@ class SyncCallbackUtils {
             if (err.getCause() instanceof BKException) {
                 throw (BKException) err.getCause();
             } else {
-                BKException unexpectedConditionException
-                    = BKException.create(BKException.Code.UnexpectedConditionException);
+                BKException unexpectedConditionException =
+                    BKException.create(BKException.Code.UnexpectedConditionException);
                 unexpectedConditionException.initCause(err.getCause());
                 throw unexpectedConditionException;
             }
@@ -57,7 +57,7 @@ class SyncCallbackUtils {
     }
 
     /**
-     * Handle the Response Code and transform it to a BKException
+     * Handle the Response Code and transform it to a BKException.
      *
      * @param <T>
      * @param rc
@@ -129,7 +129,7 @@ class SyncCallbackUtils {
         }
 
         /**
-         * Callback method for synchronous open operation
+         * Callback method for synchronous open operation.
          *
          * @param rc
          *          return code
@@ -256,7 +256,7 @@ class SyncCallbackUtils {
         public void readLastConfirmedComplete(int rc, long lastConfirmed, Object ctx) {
             LedgerHandle.LastConfirmedCtx lcCtx = (LedgerHandle.LastConfirmedCtx) ctx;
 
-            synchronized(lcCtx) {
+            synchronized (lcCtx) {
                 lcCtx.setRC(rc);
                 lcCtx.setLastConfirmed(lastConfirmed);
                 lcCtx.notify();
@@ -273,7 +273,7 @@ class SyncCallbackUtils {
         }
 
         /**
-         * Close callback method
+         * Close callback method.
          *
          * @param rc
          * @param lh

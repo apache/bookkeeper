@@ -17,20 +17,18 @@
  */
 package org.apache.bookkeeper.client;
 
-import com.google.common.collect.ImmutableMap;
-import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.commons.lang3.ArrayUtils;
-
-import java.util.BitSet;
-import java.util.Map;
-import java.util.Arrays;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.MoreObjects;
+import com.google.common.collect.ImmutableMap;
 
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Map;
+
+import org.apache.bookkeeper.net.BookieSocketAddress;
 
 /**
  * A specific {@link DistributionSchedule} that places entries in round-robin
@@ -70,8 +68,7 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
         int size;
 
         private final Handle<WriteSetImpl> recyclerHandle;
-        private static final Recycler<WriteSetImpl> RECYCLER
-            = new Recycler<WriteSetImpl>() {
+        private static final Recycler<WriteSetImpl> RECYCLER = new Recycler<WriteSetImpl>() {
                     protected WriteSetImpl newObject(
                             Recycler.Handle<WriteSetImpl> handle) {
                         return new WriteSetImpl(handle);
@@ -94,7 +91,7 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
                            long entryId) {
             setSize(writeQuorumSize);
             for (int w = 0; w < writeQuorumSize; w++) {
-                set(w, (int)((entryId + w) % ensembleSize));
+                set(w, (int) ((entryId + w) % ensembleSize));
             }
         }
 
@@ -111,7 +108,9 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
         }
 
         @Override
-        public int size() { return size; }
+        public int size() {
+            return size;
+        }
 
         @Override
         public boolean contains(int i) {
@@ -153,7 +152,7 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
                 int oldSize = size;
                 setSize(maxIndex);
                 for (int i = 0, j = oldSize;
-                     i < maxIndex && j < maxIndex; i++) {
+                    i < maxIndex && j < maxIndex; i++) {
                     if (!contains(i)) {
                         set(j, i);
                         j++;
@@ -169,13 +168,13 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
             if (from > to) {
                 int tmp = array[from];
                 for (int i = from; i > to; i--) {
-                    array[i] = array[i-1];
+                    array[i] = array[i - 1];
                 }
                 array[to] = tmp;
             } else if (from < to) {
                 int tmp = array[from];
                 for (int i = from; i < to; i++) {
-                    array[i] = array[i+1];
+                    array[i] = array[i + 1];
                 }
                 array[to] = tmp;
             }
@@ -208,7 +207,7 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
         @Override
         public boolean equals(Object other) {
             if (other instanceof WriteSetImpl) {
-                WriteSetImpl o = (WriteSetImpl)other;
+                WriteSetImpl o = (WriteSetImpl) other;
                 if (o.size() != size()) {
                     return false;
                 }
@@ -301,8 +300,7 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
 
         @Override
         public Map<Integer, BookieSocketAddress> getFailedBookies() {
-            ImmutableMap.Builder<Integer, BookieSocketAddress> builder
-                = new ImmutableMap.Builder<>();
+            ImmutableMap.Builder<Integer, BookieSocketAddress> builder = new ImmutableMap.Builder<>();
             for (int i = 0; i < failureMap.length; i++) {
                 if (failureMap[i] != null) {
                     builder.put(i, failureMap[i]);
@@ -367,8 +365,8 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
                     int nodeIndex = (i + j) % ensembleSize;
                     if (covered[nodeIndex] == BKException.Code.OK) {
                         nodesOkay++;
-                    } else if (covered[nodeIndex] != BKException.Code.NoSuchEntryException &&
-                            covered[nodeIndex] != BKException.Code.NoSuchLedgerExistsException) {
+                    } else if (covered[nodeIndex] != BKException.Code.NoSuchEntryException
+                            && covered[nodeIndex] != BKException.Code.NoSuchLedgerExistsException) {
                         nodesNotCovered++;
                     } else if (covered[nodeIndex] == BKException.Code.UNINITIALIZED) {
                         nodesUninitialized++;
@@ -376,8 +374,7 @@ class RoundRobinDistributionSchedule implements DistributionSchedule {
                 }
                 // if we haven't seen any OK responses and there are still nodes not heard from,
                 // let's wait until
-                if (nodesNotCovered >= ackQuorumSize ||
-                        (nodesOkay == 0 && nodesUninitialized > 0)) {
+                if (nodesNotCovered >= ackQuorumSize || (nodesOkay == 0 && nodesUninitialized > 0)) {
                     return false;
                 }
             }

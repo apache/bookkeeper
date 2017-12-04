@@ -62,10 +62,9 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
     private static final Logger LOG = LoggerFactory.getLogger(Journal.class);
 
-    private static final RecyclableArrayList.Recycler<QueueEntry> entryListRecycler
-        = new RecyclableArrayList.Recycler<QueueEntry>();
-    private static final RecyclableArrayList<QueueEntry> EMPTY_ARRAY_LIST
-        = entryListRecycler.newInstance();
+    private static final RecyclableArrayList.Recycler<QueueEntry> entryListRecycler =
+        new RecyclableArrayList.Recycler<QueueEntry>();
+    private static final RecyclableArrayList<QueueEntry> EMPTY_ARRAY_LIST = entryListRecycler.newInstance();
 
     /**
      * Filter to pickup journals.
@@ -410,8 +409,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         return req;
     }
 
-    private final Recycler<ForceWriteRequest> forceWriteRequestsRecycler
-        = new Recycler<ForceWriteRequest>() {
+    private final Recycler<ForceWriteRequest> forceWriteRequestsRecycler = new Recycler<ForceWriteRequest>() {
                 protected ForceWriteRequest newObject(
                         Recycler.Handle<ForceWriteRequest> handle) {
                     return new ForceWriteRequest(handle);

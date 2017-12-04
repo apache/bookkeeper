@@ -22,8 +22,8 @@ import io.netty.util.ReferenceCountUtil;
 
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.DigestManager.RecoveryData;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookieProtocol;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,10 +43,10 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
     final DistributionSchedule.QuorumCoverageSet coverageSet;
 
     /**
-     * Wrapper to get all recovered data from the request
+     * Wrapper to get all recovered data from the request.
      */
     interface LastConfirmedDataCallback {
-        public void readLastConfirmedDataComplete(int rc, RecoveryData data);
+        void readLastConfirmedDataComplete(int rc, RecoveryData data);
     }
 
     public ReadLastConfirmedOp(LedgerHandle lh, LastConfirmedDataCallback cb) {
@@ -133,7 +133,7 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
 
         if (numResponsesPending == 0 && !completed) {
             // Have got all responses back but was still not enough, just fail the operation
-            LOG.error("While readLastConfirmed ledger: " + ledgerId + " did not hear success responses from all quorums");
+            LOG.error("While readLastConfirmed ledger: {} did not hear success responses from all quorums", ledgerId);
             cb.readLastConfirmedDataComplete(lastSeenError, maxRecoveredData);
         }
 

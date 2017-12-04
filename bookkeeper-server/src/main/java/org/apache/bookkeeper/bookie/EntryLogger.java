@@ -26,12 +26,13 @@ import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.bookie.TransactionalEntryLogCompactor.COMPACTING_SUFFIX;
 import static org.apache.bookkeeper.util.BookKeeperConstants.MAX_LOG_SIZE_LIMIT;
 
+import com.google.common.collect.MapMaker;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 
-import com.google.common.collect.MapMaker;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -116,7 +117,7 @@ public class EntryLogger {
     private volatile long leastUnflushedLogId;
 
     /**
-     * locks for compaction log
+     * locks for compaction log.
      */
     private final Object compactionLogLock = new Object();
 
@@ -387,7 +388,7 @@ public class EntryLogger {
     }
 
     /**
-     * Get the current log file for compaction
+     * Get the current log file for compaction.
      */
     File getCurCompactionLogFile() {
         synchronized (compactionLogLock) {
@@ -1342,7 +1343,7 @@ public class EntryLogger {
     }
 
     /**
-     * Convert log Id to hex string
+     * Convert log Id to hex string.
      */
     static String logId2HexString(long logId) {
         return Long.toHexString(logId);

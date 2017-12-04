@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
  */
 
 abstract class DigestManager {
-    static final Logger logger = LoggerFactory.getLogger(DigestManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(DigestManager.class);
 
     static final int METADATA_LENGTH = 32;
     static final int LAC_METADATA_LENGTH = 16;
@@ -62,7 +62,8 @@ abstract class DigestManager {
         macCodeLength = getMacCodeLength();
     }
 
-    static DigestManager instantiate(long ledgerId, byte[] passwd, DigestType digestType) throws GeneralSecurityException {
+    static DigestManager instantiate(long ledgerId, byte[] passwd, DigestType digestType)
+            throws GeneralSecurityException {
         switch(digestType) {
         case MAC:
             return new MacDigestManager(ledgerId, passwd);

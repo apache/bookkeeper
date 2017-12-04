@@ -17,9 +17,9 @@
  */
 package org.apache.bookkeeper.client;
 
+import io.netty.buffer.ByteBuf;
+
 import java.util.BitSet;
-import java.util.HashSet;
-import java.util.Set;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddLacCallback;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -28,19 +28,17 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.netty.buffer.ByteBuf;
-
 /**
  * This represents a pending WriteLac operation. When it has got
  * success from Ack Quorum bookies, sends success back to the application,
  * otherwise failure is sent back to the caller.
  *
- * This is an optional protocol operations to facilitate tailing readers
+ * <p>This is an optional protocol operations to facilitate tailing readers
  * to be up to date with the writer. This is best effort to get latest LAC
  * from bookies, and doesn't affect the correctness of the protocol.
  */
 class PendingWriteLacOp implements WriteLacCallback {
-    private final static Logger LOG = LoggerFactory.getLogger(PendingWriteLacOp.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PendingWriteLacOp.class);
     ByteBuf toSend;
     AddLacCallback cb;
     long lac;
@@ -79,8 +77,7 @@ class PendingWriteLacOp implements WriteLacCallback {
 
     void initiate(ByteBuf toSend) {
         this.toSend = toSend;
-        DistributionSchedule.WriteSet writeSet
-            = lh.distributionSchedule.getWriteSet(lac);
+        DistributionSchedule.WriteSet writeSet = lh.distributionSchedule.getWriteSet(lac);
         try {
             for (int i = 0; i < writeSet.size(); i++) {
                 sendWriteLacRequest(writeSet.get(i));
@@ -114,8 +111,8 @@ class PendingWriteLacOp implements WriteLacCallback {
         } else {
             LOG.warn("WriteLac did not succeed: Ledger {} on {}", new Object[] { ledgerId, addr });
         }
-        
-        if(receivedResponseSet.isEmpty()){
+
+        if (receivedResponseSet.isEmpty()){
             completed = true;
             cb.addLacComplete(lastSeenError, lh, ctx);
         }
