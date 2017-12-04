@@ -824,7 +824,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
      *
      * @throws Exception
      */
-    @Test(timeout = 20000)
+    @Test
     public void testDoubleRead() throws Exception {
         LedgerHandle lh = bkc.createLedger(digestType, "".getBytes());
 
@@ -854,7 +854,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
      *
      * @throws Exception
      */
-    @Test(timeout = 20000)
+    @Test
     public void testDoubleReadWithV2Protocol() throws Exception {
         ClientConfiguration conf = new ClientConfiguration(baseClientConf);
         conf.setUseV2WireProtocol(true);
