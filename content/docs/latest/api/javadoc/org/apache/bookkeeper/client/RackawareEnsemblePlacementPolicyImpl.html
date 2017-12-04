@@ -126,7 +126,7 @@ var activeTableTab = "activeTableTab";
 extends <a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy</a></pre>
 <div class="block">Simple rackware ensemble placement policy.
 
- Make most of the class and methods as protected, so it could be extended to implement other algorithms.</div>
+ <p>Make most of the class and methods as protected, so it could be extended to implement other algorithms.</div>
 </li>
 </ul>
 </div>
@@ -342,7 +342,7 @@ extends <a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsembleP
 <tr id="i4" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#handleBookiesThatJoined-java.util.Set-">handleBookiesThatJoined</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;joinedBookies)</code>
-<div class="block">Handle bookies that joined</div>
+<div class="block">Handle bookies that joined.</div>
 </td>
 </tr>
 <tr id="i5" class="rowColor">
@@ -489,7 +489,7 @@ extends <a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsembleP
 <tr id="i21" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#uninitalize--">uninitalize</a></span>()</code>
-<div class="block">Uninitialize the policy</div>
+<div class="block">Uninitialize the policy.</div>
 </td>
 </tr>
 <tr id="i22" class="altColor">
@@ -919,7 +919,7 @@ extends <a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsembleP
 <h4>uninitalize</h4>
 <pre>public&nbsp;void&nbsp;uninitalize()</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#uninitalize--">EnsemblePlacementPolicy</a></code></span></div>
-<div class="block">Uninitialize the policy</div>
+<div class="block">Uninitialize the policy.</div>
 </li>
 </ul>
 <a name="resolveNetworkLocation-org.apache.bookkeeper.net.BookieSocketAddress-">
@@ -978,7 +978,7 @@ extends <a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsembleP
 <h4>handleBookiesThatJoined</h4>
 <pre>public&nbsp;void&nbsp;handleBookiesThatJoined(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;joinedBookies)</pre>
 <div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsemblePlacementPolicy.html#handleBookiesThatJoined-java.util.Set-">ITopologyAwareEnsemblePlacementPolicy</a></code></span></div>
-<div class="block">Handle bookies that joined</div>
+<div class="block">Handle bookies that joined.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>joinedBookies</code> - bookies that joined.</dd>
@@ -1024,7 +1024,7 @@ extends <a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsembleP
                        provides in <a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#createLedger-int-int-int-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-"><code>BookKeeper.createLedger(int, int, int, BookKeeper.DigestType, byte[])</code></a></dd>
 <dd><code>excludeBookies</code> - Bookies that should not be considered as targets.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the java.util.ArrayList<org.apache.bookkeeper.net.BookieSocketAddress></dd>
+<dd>the ArrayList&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client">BKException.BKNotEnoughBookiesException</a></code> - if not enough bookies available.</dd>
 </dl>

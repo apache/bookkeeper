@@ -223,7 +223,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#areByteArrayValMapsEqual-java.util.Map-java.util.Map-">areByteArrayValMapsEqual</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;first,
                         <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;second)</code>
-<div class="block">Routine to compare two Map<String, byte[]>; Since the values in the map are byte[], we can't use Map.equals</div>
+<div class="block">Routine to compare two <code>Map&lt;String, byte[]&gt;</code>; Since the values in the map are <code>byte[]</code>, we can't use
+ <code>Map.equals</code>.</div>
 </td>
 </tr>
 <tr id="i2" class="altColor">
@@ -307,7 +308,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.
 <td class="colFirst"><code>(package private) long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#getNextEnsembleChange-long-">getNextEnsembleChange</a></span>(long&nbsp;entryId)</code>
 <div class="block">the entry id greater than the given entry-id at which the next ensemble change takes
- place</div>
+ place.</div>
 </td>
 </tr>
 <tr id="i17" class="rowColor">
@@ -372,7 +373,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#parseConfig-byte:A-org.apache.bookkeeper.versioning.Version-com.google.common.base.Optional-">parseConfig</a></span>(byte[]&nbsp;bytes,
            org.apache.bookkeeper.versioning.Version&nbsp;version,
            com.google.common.base.Optional&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;msCtime)</code>
-<div class="block">Parses a given byte array and transforms into a LedgerConfig object</div>
+<div class="block">Parses a given byte array and transforms into a LedgerConfig object.</div>
 </td>
 </tr>
 <tr id="i29" class="rowColor">
@@ -383,7 +384,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.
 <tr id="i30" class="altColor">
 <td class="colFirst"><code>byte[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerMetadata.html#serialize--">serialize</a></span>()</code>
-<div class="block">Generates a byte array of this object</div>
+<div class="block">Generates a byte array of this object.</div>
 </td>
 </tr>
 <tr id="i31" class="rowColor">
@@ -874,7 +875,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.
 <h4>getNextEnsembleChange</h4>
 <pre>long&nbsp;getNextEnsembleChange(long&nbsp;entryId)</pre>
 <div class="block">the entry id greater than the given entry-id at which the next ensemble change takes
- place</div>
+ place.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>entryId</code> - </dd>
@@ -925,7 +926,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.
 <li class="blockList">
 <h4>serialize</h4>
 <pre>public&nbsp;byte[]&nbsp;serialize()</pre>
-<div class="block">Generates a byte array of this object</div>
+<div class="block">Generates a byte array of this object.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the metadata serialized into a byte array</dd>
@@ -942,7 +943,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.
                                          org.apache.bookkeeper.versioning.Version&nbsp;version,
                                          com.google.common.base.Optional&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;msCtime)
                                   throws <a href="http://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
-<div class="block">Parses a given byte array and transforms into a LedgerConfig object</div>
+<div class="block">Parses a given byte array and transforms into a LedgerConfig object.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>bytes</code> - byte array to parse</dd>
@@ -1022,13 +1023,14 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/LedgerMetadata.
 <h4>areByteArrayValMapsEqual</h4>
 <pre>public static&nbsp;boolean&nbsp;areByteArrayValMapsEqual(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;first,
                                                <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;second)</pre>
-<div class="block">Routine to compare two Map<String, byte[]>; Since the values in the map are byte[], we can't use Map.equals</div>
+<div class="block">Routine to compare two <code>Map&lt;String, byte[]&gt;</code>; Since the values in the map are <code>byte[]</code>, we can't use
+ <code>Map.equals</code>.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>first</code> - The first map</dd>
 <dd><code>second</code> - The second map to compare with</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>true if the 2 maps contain the exact set of <K,V> pairs.</dd>
+<dd>true if the 2 maps contain the exact set of <code>&lt;K,V&gt;</code> pairs.</dd>
 </dl>
 </li>
 </ul>

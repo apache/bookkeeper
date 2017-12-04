@@ -119,8 +119,8 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
 
  <h2>How does it work?</h2>
 
- This interface basically covers three parts:
- <p><ul>
+ <p>This interface basically covers three parts:
+ <ul>
  <li>Initialization and uninitialization</li>
  <li>How to choose bookies to place data</li>
  <li>How to choose bookies to do speculative reads</li>
@@ -204,7 +204,7 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
    bk1  bk2  bk3  bk4
  </pre>
 
- <p> The network location of each bookie is resolved by a <code>DNSToSwitchMapping</code>. The <code>DNSToSwitchMapping</code>
+ <p>The network location of each bookie is resolved by a <code>DNSToSwitchMapping</code>. The <code>DNSToSwitchMapping</code>
  resolves a list of DNS-names or IP-addresses into a list of network locations. The network location that is returned
  must be a network path of the form `/region/rack`, where `/` is the root, and `region` is the region id representing
  the data center where `rack` is located. The network topology of the bookie cluster would determine the number of
@@ -346,7 +346,7 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
 <tr id="i6" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#uninitalize--">uninitalize</a></span>()</code>
-<div class="block">Uninitialize the policy</div>
+<div class="block">Uninitialize the policy.</div>
 </td>
 </tr>
 <tr id="i7" class="rowColor">
@@ -401,7 +401,7 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
 <li class="blockList">
 <h4>uninitalize</h4>
 <pre>void&nbsp;uninitalize()</pre>
-<div class="block">Uninitialize the policy</div>
+<div class="block">Uninitialize the policy.</div>
 </li>
 </ul>
 <a name="onClusterChanged-java.util.Set-java.util.Set-">
@@ -456,7 +456,7 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
                        provides in <a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#createLedger-int-int-int-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-"><code>BookKeeper.createLedger(int, int, int, BookKeeper.DigestType, byte[])</code></a></dd>
 <dd><code>excludeBookies</code> - Bookies that should not be considered as targets.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the java.util.ArrayList<org.apache.bookkeeper.net.BookieSocketAddress></dd>
+<dd>the ArrayList&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client">BKException.BKNotEnoughBookiesException</a></code> - if not enough bookies available.</dd>
 </dl>

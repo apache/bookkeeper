@@ -118,14 +118,14 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadLacCallback</pre>
 <div class="block">This represents a pending ReadLac operation.
 
- LAC is stored in two places on bookies.
+ <p>LAC is stored in two places on bookies.
  1. WriteLac operation sends Explicit LAC and is stored in memory on each bookie.
  2. Each AddEntry operation piggy-backs LAC which is stored on bookie's disk.
 
- This operation returns both of those entries and we pick the latest LAC out of
+ <p>This operation returns both of those entries and we pick the latest LAC out of
  available answers.
 
- This is an optional protocol operations to facilitate tailing readers
+ <p>This is an optional protocol operations to facilitate tailing readers
  to be up to date with the writer. This is best effort to get latest LAC
  from bookies, and doesn't affect the correctness of the protocol.</div>
 </li>

@@ -670,7 +670,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#openLedger-long-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-">openLedger</a></span>(long&nbsp;lId,
           <a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
           byte[]&nbsp;passwd)</code>
-<div class="block">Synchronous open ledger call</div>
+<div class="block">Synchronous open ledger call.</div>
 </td>
 </tr>
 <tr id="i56" class="altColor">
@@ -678,7 +678,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#openLedgerNoRecovery-long-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-">openLedgerNoRecovery</a></span>(long&nbsp;lId,
                     <a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
                     byte[]&nbsp;passwd)</code>
-<div class="block">Synchronous, unsafe open ledger call</div>
+<div class="block">Synchronous, unsafe open ledger call.</div>
 </td>
 </tr>
 <tr id="i57" class="rowColor">
@@ -1058,8 +1058,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code></dd>
 <dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
-<dd><code>org.apache.zookeeper.KeeperException</code> - if the passed zk handle is not connected</dd>
-<dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
+<dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code> - in the event of a bookkeeper connection error</dd>
 </dl>
 </li>
 </ul>
@@ -1338,13 +1337,13 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
  a separate write quorum and ack quorum size. The write quorum must be larger than
  the ack quorum.
 
- Separating the write and the ack quorum allows the BookKeeper client to continue
+ <p>Separating the write and the ack quorum allows the BookKeeper client to continue
  writing when a bookie has failed but the failure has not yet been detected. Detecting
  a bookie has failed can take a number of seconds, as configured by the read timeout
  <a href="../../../../org/apache/bookkeeper/conf/ClientConfiguration.html#getReadTimeout--"><code>ClientConfiguration.getReadTimeout()</code></a>. Once the bookie failure is detected,
  that bookie will be removed from the ensemble.
 
- The other parameters match those of <a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#asyncCreateLedger-int-int-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-org.apache.bookkeeper.client.AsyncCallback.CreateCallback-java.lang.Object-"><code>asyncCreateLedger(int, int, DigestType, byte[],
+ <p>The other parameters match those of <a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#asyncCreateLedger-int-int-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-org.apache.bookkeeper.client.AsyncCallback.CreateCallback-java.lang.Object-"><code>asyncCreateLedger(int, int, DigestType, byte[],
                                       AsyncCallback.CreateCallback, Object)</code></a></div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -1562,13 +1561,13 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
  a separate write quorum and ack quorum size. The write quorum must be larger than
  the ack quorum.
 
- Separating the write and the ack quorum allows the BookKeeper client to continue
+ <p>Separating the write and the ack quorum allows the BookKeeper client to continue
  writing when a bookie has failed but the failure has not yet been detected. Detecting
  a bookie has failed can take a number of seconds, as configured by the read timeout
  <a href="../../../../org/apache/bookkeeper/conf/ClientConfiguration.html#getReadTimeout--"><code>ClientConfiguration.getReadTimeout()</code></a>. Once the bookie failure is detected,
  that bookie will be removed from the ensemble.
 
- The other parameters match those of <a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#asyncCreateLedger-int-int-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-org.apache.bookkeeper.client.AsyncCallback.CreateCallback-java.lang.Object-"><code>asyncCreateLedger(int, int, DigestType, byte[],
+ <p>The other parameters match those of <a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#asyncCreateLedger-int-int-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-org.apache.bookkeeper.client.AsyncCallback.CreateCallback-java.lang.Object-"><code>asyncCreateLedger(int, int, DigestType, byte[],
                                       AsyncCallback.CreateCallback, Object)</code></a></div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -1641,13 +1640,13 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
  a separate write quorum and ack quorum size. The write quorum must be larger than
  the ack quorum.
 
- Separating the write and the ack quorum allows the BookKeeper client to continue
+ <p>Separating the write and the ack quorum allows the BookKeeper client to continue
  writing when a bookie has failed but the failure has not yet been detected. Detecting
  a bookie has failed can take a number of seconds, as configured by the read timeout
  <a href="../../../../org/apache/bookkeeper/conf/ClientConfiguration.html#getReadTimeout--"><code>ClientConfiguration.getReadTimeout()</code></a>. Once the bookie failure is detected,
  that bookie will be removed from the ensemble.
 
- The other parameters match those of <code>#asyncCreateLedger(long, int, int, DigestType, byte[],
+ <p>The other parameters match those of <code>#asyncCreateLedger(long, int, int, DigestType, byte[],
                                       AsyncCallback.CreateCallback, Object)</code></div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -1676,17 +1675,17 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
                             <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</pre>
 <div class="block">Open existing ledger asynchronously for reading.
 
- Opening a ledger with this method invokes fencing and recovery on the ledger
+ <p>Opening a ledger with this method invokes fencing and recovery on the ledger
  if the ledger has not been closed. Fencing will block all other clients from
  writing to the ledger. Recovery will make sure that the ledger is closed
  before reading from it.
 
- Recovery also makes sure that any entries which reached one bookie, but not a
+ <p>Recovery also makes sure that any entries which reached one bookie, but not a
  quorum, will be replicated to a quorum of bookies. This occurs in cases were
  the writer of a ledger crashes after sending a write request to one bookie but
  before being able to send it to the rest of the bookies in the quorum.
 
- If the ledger is already closed, neither fencing nor recovery will be applied.</div>
+ <p>If the ledger is already closed, neither fencing nor recovery will be applied.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>lId</code> - ledger identifier</dd>
@@ -1716,14 +1715,14 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
  of the writer and the ledger is not open in a safe manner, invoking the
  recovery procedure.
 
- Opening a ledger without recovery does not fence the ledger. As such, other
+ <p>Opening a ledger without recovery does not fence the ledger. As such, other
  clients can continue to write to the ledger.
 
- This method returns a read only ledger handle. It will not be possible
+ <p>This method returns a read only ledger handle. It will not be possible
  to add entries to the ledger. Any attempt to add entries will throw an
  exception.
 
- Reads from the returned ledger will be able to read entries up until
+ <p>Reads from the returned ledger will be able to read entries up until
  the lastConfirmedEntry at the point in time at which the ledger was opened.
  If an attempt is made to read beyond the ledger handle's LAC, an attempt is made
  to get the latest LAC from bookies or metadata, and if the entry_id of the read request
@@ -1748,7 +1747,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
                                byte[]&nbsp;passwd)
                         throws <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a>,
                                <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></pre>
-<div class="block">Synchronous open ledger call</div>
+<div class="block">Synchronous open ledger call.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>lId</code> - ledger identifier</dd>
@@ -1775,7 +1774,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
                                          byte[]&nbsp;passwd)
                                   throws <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a>,
                                          <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></pre>
-<div class="block">Synchronous, unsafe open ledger call</div>
+<div class="block">Synchronous, unsafe open ledger call.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>lId</code> - ledger identifier</dd>
@@ -1825,7 +1824,6 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
 <dd><code>lId</code> - ledgerId</dd>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
-<dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.BKNoSuchLedgerExistsException.html" title="class in org.apache.bookkeeper.client">BKException.BKNoSuchLedgerExistsException</a></code> - if the ledger doesn't exist</dd>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
 </dl>
 </li>

@@ -108,7 +108,7 @@ var activeTableTab = "activeTableTab";
 <pre>public interface <span class="typeNameLabel">DistributionSchedule</span></pre>
 <div class="block">This interface determins how entries are distributed among bookies.
 
- Every entry gets replicated to some number of replicas. The first replica for
+ <p>Every entry gets replicated to some number of replicas. The first replica for
  an entry is given a replicaIndex of 0, and so on. To distribute write load,
  not all entries go to all bookies. Given an entry-id and replica index, an
  <a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.html" title="interface in org.apache.bookkeeper.client"><code>DistributionSchedule</code></a> determines which bookie that replica should go
@@ -190,7 +190,7 @@ var activeTableTab = "activeTableTab";
 <tr id="i0" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.AckSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.AckSet</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.html#getAckSet--">getAckSet</a></span>()</code>
-<div class="block">Returns an ackset object, responses should be checked against this</div>
+<div class="block">Returns an ackset object, responses should be checked against this.</div>
 </td>
 </tr>
 <tr id="i1" class="rowColor">
@@ -200,14 +200,14 @@ var activeTableTab = "activeTableTab";
 <tr id="i2" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.html#getWriteSet-long-">getWriteSet</a></span>(long&nbsp;entryId)</code>
-<div class="block">return the set of bookie indices to send the message to</div>
+<div class="block">Return the set of bookie indices to send the message to.</div>
 </td>
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.html#hasEntry-long-int-">hasEntry</a></span>(long&nbsp;entryId,
         int&nbsp;bookieIndex)</code>
-<div class="block">Whether entry presents on given bookie index</div>
+<div class="block">Whether entry presents on given bookie index.</div>
 </td>
 </tr>
 </table>
@@ -249,7 +249,7 @@ var activeTableTab = "activeTableTab";
 <li class="blockList">
 <h4>getWriteSet</h4>
 <pre><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;getWriteSet(long&nbsp;entryId)</pre>
-<div class="block">return the set of bookie indices to send the message to</div>
+<div class="block">Return the set of bookie indices to send the message to.</div>
 </li>
 </ul>
 <a name="getAckSet--">
@@ -259,7 +259,7 @@ var activeTableTab = "activeTableTab";
 <li class="blockList">
 <h4>getAckSet</h4>
 <pre><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.AckSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.AckSet</a>&nbsp;getAckSet()</pre>
-<div class="block">Returns an ackset object, responses should be checked against this</div>
+<div class="block">Returns an ackset object, responses should be checked against this.</div>
 </li>
 </ul>
 <a name="getCoverageSet--">
@@ -279,7 +279,7 @@ var activeTableTab = "activeTableTab";
 <h4>hasEntry</h4>
 <pre>boolean&nbsp;hasEntry(long&nbsp;entryId,
                  int&nbsp;bookieIndex)</pre>
-<div class="block">Whether entry presents on given bookie index</div>
+<div class="block">Whether entry presents on given bookie index.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>entryId</code> - - entryId to check the presence on given bookie index</dd>

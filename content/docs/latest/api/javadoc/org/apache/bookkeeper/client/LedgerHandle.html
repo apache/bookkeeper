@@ -484,7 +484,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
                     int&nbsp;rc)</code>
 <div class="block">Same as public version of asyncClose except that this one takes an
  additional parameter which is the return code to hand to all the pending
- add ops</div>
+ add ops.</div>
 </td>
 </tr>
 <tr id="i25" class="rowColor">
@@ -509,19 +509,19 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <tr id="i29" class="rowColor">
 <td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/DigestManager.html" title="class in org.apache.bookkeeper.client">DigestManager</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#getDigestManager--">getDigestManager</a></span>()</code>
-<div class="block">Get the DigestManager</div>
+<div class="block">Get the DigestManager.</div>
 </td>
 </tr>
 <tr id="i30" class="altColor">
 <td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#getDistributionSchedule--">getDistributionSchedule</a></span>()</code>
-<div class="block">Get the Distribution Schedule</div>
+<div class="block">Get the Distribution Schedule.</div>
 </td>
 </tr>
 <tr id="i31" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#getId--">getId</a></span>()</code>
-<div class="block">Get the id of the current ledger</div>
+<div class="block">Get the id of the current ledger.</div>
 </td>
 </tr>
 <tr id="i32" class="altColor">
@@ -565,7 +565,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <tr id="i38" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#getNumFragments--">getNumFragments</a></span>()</code>
-<div class="block">Get the number of fragments that makeup this ledger</div>
+<div class="block">Get the number of fragments that makeup this ledger.</div>
 </td>
 </tr>
 <tr id="i39" class="rowColor">
@@ -645,7 +645,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
                       long&nbsp;lastEntry)</code>
 <div class="block">Read a sequence of entries synchronously, allowing to read after the LastAddConfirmed range.<br>
  This is the same of
- <a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncReadUnconfirmedEntries-long-long-org.apache.bookkeeper.client.AsyncCallback.ReadCallback-java.lang.Object-"><code>asyncReadUnconfirmedEntries(long, long, org.apache.bookkeeper.client.AsyncCallback.ReadCallback, java.lang.Object)</code></a></div>
+ <code>#asyncReadUnconfirmedEntries(long, long, ReadCallback, Object) </code></div>
 </td>
 </tr>
 <tr id="i52" class="altColor">
@@ -993,7 +993,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <li class="blockList">
 <h4>getId</h4>
 <pre>public&nbsp;long&nbsp;getId()</pre>
-<div class="block">Get the id of the current ledger</div>
+<div class="block">Get the id of the current ledger.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/api/Handle.html#getId--">getId</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/api/Handle.html" title="interface in org.apache.bookkeeper.client.api">Handle</a></code></dd>
@@ -1105,7 +1105,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <li class="blockList">
 <h4>getNumFragments</h4>
 <pre>public&nbsp;long&nbsp;getNumFragments()</pre>
-<div class="block">Get the number of fragments that makeup this ledger</div>
+<div class="block">Get the number of fragments that makeup this ledger.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the count of fragments</dd>
@@ -1134,7 +1134,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <li class="blockList">
 <h4>getDigestManager</h4>
 <pre><a href="../../../../org/apache/bookkeeper/client/DigestManager.html" title="class in org.apache.bookkeeper.client">DigestManager</a>&nbsp;getDigestManager()</pre>
-<div class="block">Get the DigestManager</div>
+<div class="block">Get the DigestManager.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>DigestManager for the LedgerHandle</dd>
@@ -1180,7 +1180,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <li class="blockList">
 <h4>getDistributionSchedule</h4>
 <pre><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule</a>&nbsp;getDistributionSchedule()</pre>
-<div class="block">Get the Distribution Schedule</div>
+<div class="block">Get the Distribution Schedule.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>DistributionSchedule for the LedgerHandle</dd>
@@ -1251,7 +1251,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
                        <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</pre>
 <div class="block">Asynchronous close, any adds in flight will return errors.
 
- Closing a ledger will ensure that all clients agree on what the last entry
+ <p>Closing a ledger will ensure that all clients agree on what the last entry
  of the ledger is. This ensures that, once the ledger has been closed, all
  reads from the ledger will return the same set of entries.</div>
 <dl>
@@ -1306,7 +1306,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
                           int&nbsp;rc)</pre>
 <div class="block">Same as public version of asyncClose except that this one takes an
  additional parameter which is the return code to hand to all the pending
- add ops</div>
+ add ops.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>cb</code> - </dd>
@@ -1334,7 +1334,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
 <dt><span class="seeLabel">See Also:</span></dt>
-<dd><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncReadEntries-long-long-org.apache.bookkeeper.client.AsyncCallback.ReadCallback-java.lang.Object-"><code>asyncReadEntries(long, long, org.apache.bookkeeper.client.AsyncCallback.ReadCallback, java.lang.Object)</code></a></dd>
+<dd><code>#asyncReadEntries(long, long, ReadCallback, Object)</code></dd>
 </dl>
 </li>
 </ul>
@@ -1350,7 +1350,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
                                                        <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
 <div class="block">Read a sequence of entries synchronously, allowing to read after the LastAddConfirmed range.<br>
  This is the same of
- <a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncReadUnconfirmedEntries-long-long-org.apache.bookkeeper.client.AsyncCallback.ReadCallback-java.lang.Object-"><code>asyncReadUnconfirmedEntries(long, long, org.apache.bookkeeper.client.AsyncCallback.ReadCallback, java.lang.Object)</code></a></div>
+ <code>#asyncReadUnconfirmedEntries(long, long, ReadCallback, Object) </code></div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>firstEntry</code> - id of first entry of sequence (included)</dd>
@@ -1360,8 +1360,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#readEntries-long-long-"><code>readEntries(long, long)</code></a>, 
-<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncReadUnconfirmedEntries-long-long-org.apache.bookkeeper.client.AsyncCallback.ReadCallback-java.lang.Object-"><code>asyncReadUnconfirmedEntries(long, long, org.apache.bookkeeper.client.AsyncCallback.ReadCallback, java.lang.Object)</code></a>, 
-<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncReadLastConfirmed-org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback-java.lang.Object-"><code>asyncReadLastConfirmed(org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback, java.lang.Object)</code></a></dd>
+<code>#asyncReadUnconfirmedEntries(long, long, ReadCallback, java.lang.Object)</code>, 
+<code>#asyncReadLastConfirmed(ReadLastConfirmedCallback, java.lang.Object)</code></dd>
 </dl>
 </li>
 </ul>
@@ -1397,14 +1397,14 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
                                         <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</pre>
 <div class="block">Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.
  <br>This is the same of
- <a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncReadEntries-long-long-org.apache.bookkeeper.client.AsyncCallback.ReadCallback-java.lang.Object-"><code>asyncReadEntries(long, long, org.apache.bookkeeper.client.AsyncCallback.ReadCallback, java.lang.Object)</code></a>
+ <code>#asyncReadEntries(long, long, ReadCallback, Object) </code>
  but it lets the client read without checking the local value of LastAddConfirmed, so that it is possibile to
  read entries for which the writer has not received the acknowledge yet. <br>
  For entries which are within the range 0..LastAddConfirmed BookKeeper guarantees that the writer has successfully
  received the acknowledge.<br>
  For entries outside that range it is possible that the writer never received the acknowledge
- and so there is the risk that the reader is seeing entries before the writer and this could result in a consistency
- issue in some cases.<br>
+ and so there is the risk that the reader is seeing entries before the writer and this could result in
+ a consistency issue in some cases.<br>
  With this method you can even read entries before the LastAddConfirmed and entries after it with one call,
  the expected consistency will be as described above for each subrange of ids.</div>
 <dl>
@@ -1414,8 +1414,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <dd><code>cb</code> - object implementing read callback interface</dd>
 <dd><code>ctx</code> - control object</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
-<dd><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncReadEntries-long-long-org.apache.bookkeeper.client.AsyncCallback.ReadCallback-java.lang.Object-"><code>asyncReadEntries(long, long, org.apache.bookkeeper.client.AsyncCallback.ReadCallback, java.lang.Object)</code></a>, 
-<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncReadLastConfirmed-org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback-java.lang.Object-"><code>asyncReadLastConfirmed(org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback, java.lang.Object)</code></a>, 
+<dd><code>#asyncReadEntries(long, long, ReadCallback, Object)</code>, 
+<code>#asyncReadLastConfirmed(ReadLastConfirmedCallback, Object)</code>, 
 <a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#readUnconfirmedEntries-long-long-"><code>readUnconfirmedEntries(long, long)</code></a></dd>
 </dl>
 </li>
@@ -1450,14 +1450,14 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
                                                         long&nbsp;lastEntry)</pre>
 <div class="block">Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.
  <br>This is the same of
- <a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncReadEntries-long-long-org.apache.bookkeeper.client.AsyncCallback.ReadCallback-java.lang.Object-"><code>asyncReadEntries(long, long, org.apache.bookkeeper.client.AsyncCallback.ReadCallback, java.lang.Object)</code></a>
+ <code>#asyncReadEntries(long, long, ReadCallback, Object) </code>
  but it lets the client read without checking the local value of LastAddConfirmed, so that it is possibile to
  read entries for which the writer has not received the acknowledge yet. <br>
  For entries which are within the range 0..LastAddConfirmed BookKeeper guarantees that the writer has successfully
  received the acknowledge.<br>
  For entries outside that range it is possible that the writer never received the acknowledge
- and so there is the risk that the reader is seeing entries before the writer and this could result in a consistency
- issue in some cases.<br>
+ and so there is the risk that the reader is seeing entries before the writer and this could result in
+ a consistency issue in some cases.<br>
  With this method you can even read entries before the LastAddConfirmed and entries after it with one call,
  the expected consistency will be as described above for each subrange of ids.</div>
 <dl>
@@ -1469,8 +1469,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>an handle to the result of the operation</dd>
 <dt><span class="seeLabel">See Also:</span></dt>
-<dd><a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncReadEntries-long-long-org.apache.bookkeeper.client.AsyncCallback.ReadCallback-java.lang.Object-"><code>asyncReadEntries(long, long, org.apache.bookkeeper.client.AsyncCallback.ReadCallback, java.lang.Object)</code></a>, 
-<a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#asyncReadLastConfirmed-org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback-java.lang.Object-"><code>asyncReadLastConfirmed(org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback, java.lang.Object)</code></a>, 
+<dd><code>#asyncReadEntries(long, long, ReadCallback, Object)</code>, 
+<code>#asyncReadLastConfirmed(ReadLastConfirmedCallback, Object)</code>, 
 <a href="../../../../org/apache/bookkeeper/client/LedgerHandle.html#readUnconfirmedEntries-long-long-"><code>readUnconfirmedEntries(long, long)</code></a></dd>
 </dl>
 </li>
@@ -1700,8 +1700,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
                           int&nbsp;offset,
                           int&nbsp;length,
                           <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.AddCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddCallback</a>&nbsp;cb,
-                          <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)
-                   throws <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
+                          <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx)</pre>
 <div class="block">Add entry asynchronously to an open ledger, using an offset and range.
  This can be used only with <a href="../../../../org/apache/bookkeeper/client/LedgerHandleAdv.html" title="class in org.apache.bookkeeper.client"><code>LedgerHandleAdv</code></a> returned through
  ledgers created with <a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#createLedgerAdv-int-int-int-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-"><code>BookKeeper.createLedgerAdv(int, int, int, DigestType, byte[])</code></a>.</div>
@@ -1716,7 +1715,6 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/ArrayIndexOutOfBoundsException.html?is-external=true" title="class or interface in java.lang">ArrayIndexOutOfBoundsException</a></code> - if offset or length is negative or offset and length sum to a
              value higher than the length of data.</dd>
-<dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -1734,10 +1732,10 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
 <div class="block">Make a recovery add entry request. Recovery adds can add to a ledger even
  if it has been fenced.
 
- This is only valid for bookie and ledger recovery, which may need to replicate
+ <p>This is only valid for bookie and ledger recovery, which may need to replicate
  entries to a quorum of bookies to ensure data safety.
 
- Normal client should never call this method.</div>
+ <p>Normal client should never call this method.</div>
 </li>
 </ul>
 <a name="doAsyncAddEntry-org.apache.bookkeeper.client.PendingAddOp-">
@@ -1891,7 +1889,8 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/WriteHandle.htm
  If the next entryId is ahead of known last add confirmed, the call will issue a long poll read
  to wait for the next entry <i>entryId</i>.
 
- The callback will return the latest last add confirmed and next entry if it is available within timeout period <i>timeOutInMillis</i>.</div>
+ <p>The callback will return the latest last add confirmed and next entry if it is available within timeout
+ period <i>timeOutInMillis</i>.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>entryId</code> - next entry id to read</dd>
