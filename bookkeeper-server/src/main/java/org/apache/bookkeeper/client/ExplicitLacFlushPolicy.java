@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.client;
 
+import io.netty.buffer.ByteBuf;
+
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -29,14 +31,12 @@ import org.apache.bookkeeper.util.SafeRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.netty.buffer.ByteBuf;
-
 interface ExplicitLacFlushPolicy {
     void stopExplicitLacFlush();
 
     void updatePiggyBackedLac(long piggyBackedLac);
 
-    static final ExplicitLacFlushPolicy VOID_EXPLICITLAC_FLUSH_POLICY = new ExplicitLacFlushPolicy() {
+    ExplicitLacFlushPolicy VOID_EXPLICITLAC_FLUSH_POLICY = new ExplicitLacFlushPolicy() {
         @Override
         public void stopExplicitLacFlush() {
             // void method
@@ -49,7 +49,7 @@ interface ExplicitLacFlushPolicy {
     };
 
     class ExplicitLacFlushPolicyImpl implements ExplicitLacFlushPolicy {
-        final static Logger LOG = LoggerFactory.getLogger(ExplicitLacFlushPolicyImpl.class);
+        static final Logger LOG = LoggerFactory.getLogger(ExplicitLacFlushPolicyImpl.class);
 
         volatile long piggyBackedLac = LedgerHandle.INVALID_ENTRY_ID;
         volatile long explicitLac = LedgerHandle.INVALID_ENTRY_ID;

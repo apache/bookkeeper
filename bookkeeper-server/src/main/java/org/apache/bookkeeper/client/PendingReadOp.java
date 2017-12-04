@@ -35,7 +35,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
-import org.apache.bookkeeper.client.api.*;
+import org.apache.bookkeeper.client.api.LedgerEntries;
 import org.apache.bookkeeper.client.impl.LedgerEntriesImpl;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.util.SafeRunnable;
@@ -180,20 +180,20 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
          *          read result code
          */
         synchronized void logErrorAndReattemptRead(int bookieIndex, BookieSocketAddress host, String errMsg, int rc) {
-            if (BKException.Code.OK == firstError ||
-                BKException.Code.NoSuchEntryException == firstError ||
-                BKException.Code.NoSuchLedgerExistsException == firstError) {
+            if (BKException.Code.OK == firstError
+                || BKException.Code.NoSuchEntryException == firstError
+                || BKException.Code.NoSuchLedgerExistsException == firstError) {
                 firstError = rc;
-            } else if (BKException.Code.BookieHandleNotAvailableException == firstError &&
-                       BKException.Code.NoSuchEntryException != rc &&
-                       BKException.Code.NoSuchLedgerExistsException != rc) {
+            } else if (BKException.Code.BookieHandleNotAvailableException == firstError
+                       && BKException.Code.NoSuchEntryException != rc
+                       && BKException.Code.NoSuchLedgerExistsException != rc) {
                 // if other exception rather than NoSuchEntryException or NoSuchLedgerExistsException is
                 // returned we need to update firstError to indicate that it might be a valid read but just
                 // failed.
                 firstError = rc;
             }
-            if (BKException.Code.NoSuchEntryException == rc ||
-                BKException.Code.NoSuchLedgerExistsException == rc) {
+            if (BKException.Code.NoSuchEntryException == rc
+                || BKException.Code.NoSuchLedgerExistsException == rc) {
                 ++numMissedEntryReads;
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("No such entry found on bookie.  L{} E{} bookie: {}",
@@ -242,7 +242,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
 
         /**
          * Issues a speculative request and indicates if more speculative
-         * requests should be issued
+         * requests should be issued.
          *
          * @return whether more speculative requests should be issued
          */
@@ -294,8 +294,8 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             --numPendings;
             // if received all responses or this entry doesn't meet quorum write, complete the request.
             if (numMissedEntryReads > maxMissedReadsAllowed || numPendings == 0) {
-                if (BKException.Code.BookieHandleNotAvailableException == firstError &&
-                    numMissedEntryReads > maxMissedReadsAllowed) {
+                if (BKException.Code.BookieHandleNotAvailableException == firstError
+                    && numMissedEntryReads > maxMissedReadsAllowed) {
                     firstError = BKException.Code.NoSuchEntryException;
                 }
 
@@ -311,7 +311,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
     }
 
     class SequenceReadRequest extends LedgerEntryRequest {
-        final static int NOT_FOUND = -1;
+        static final int NOT_FOUND = -1;
         int nextReplicaIndexToReadFrom = 0;
 
         final BitSet sentReplicas;
@@ -378,8 +378,8 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
 
                 // Do it a bit pessimistically, only when finished trying all replicas
                 // to check whether we received more missed reads than maxMissedReadsAllowed
-                if (BKException.Code.BookieHandleNotAvailableException == firstError &&
-                    numMissedEntryReads > maxMissedReadsAllowed) {
+                if (BKException.Code.BookieHandleNotAvailableException == firstError
+                    && numMissedEntryReads > maxMissedReadsAllowed) {
                     firstError = BKException.Code.NoSuchEntryException;
                 }
 
@@ -545,7 +545,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
 
     @Override
     public void readEntryComplete(int rc, long ledgerId, final long entryId, final ByteBuf buffer, Object ctx) {
-        final ReadContext rctx = (ReadContext)ctx;
+        final ReadContext rctx = (ReadContext) ctx;
         final LedgerEntryRequest entry = rctx.entry;
 
         if (rc != BKException.Code.OK) {
@@ -564,9 +564,10 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             submitCallback(BKException.Code.OK);
         }
 
-        if(numPendingEntries < 0)
+        if (numPendingEntries < 0) {
             LOG.error("Read too many values for ledger {} : [{}, {}].", new Object[] { ledgerId,
                     startEntryId, endEntryId });
+        }
     }
 
     protected void submitCallback(int code) {
@@ -594,7 +595,8 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
                 }
             }
             LOG.error("Read of ledger entry failed: L{} E{}-E{}, Heard from {} : bitset = {}. First unread entry is {}",
-                    new Object[] { lh.getId(), startEntryId, endEntryId, heardFromHosts, heardFromHostsBitSet, firstUnread });
+                    new Object[] { lh.getId(), startEntryId, endEntryId, heardFromHosts, heardFromHostsBitSet,
+                        firstUnread });
             readOpLogger.registerFailedEvent(latencyNanos, TimeUnit.NANOSECONDS);
             // release the entries
             seq.forEach(LedgerEntryRequest::close);

@@ -141,7 +141,6 @@ public interface LedgerStorage {
      *
      * @param checkpoint Check Point that {@link Checkpoint} proposed.
      * @throws IOException
-     * @return the checkpoint that the ledger storage finished.
      */
     void checkpoint(Checkpoint checkpoint) throws IOException;
 

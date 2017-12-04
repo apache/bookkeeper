@@ -17,14 +17,14 @@
  */
 package org.apache.bookkeeper.client;
 
-import org.apache.bookkeeper.net.BookieSocketAddress;
-
 import java.util.Map;
+
+import org.apache.bookkeeper.net.BookieSocketAddress;
 
 /**
  * This interface determins how entries are distributed among bookies.
  *
- * Every entry gets replicated to some number of replicas. The first replica for
+ * <p>Every entry gets replicated to some number of replicas. The first replica for
  * an entry is given a replicaIndex of 0, and so on. To distribute write load,
  * not all entries go to all bookies. Given an entry-id and replica index, an
  * {@link DistributionSchedule} determines which bookie that replica should go
@@ -39,38 +39,38 @@ public interface DistributionSchedule {
      * The set consists of a list of indices which can be
      * used to lookup the bookie in the ensemble.
      */
-    public interface WriteSet {
+    interface WriteSet {
         /**
          * The number of indexes in the write set.
          */
-        public int size();
+        int size();
 
         /**
          * Whether the set contains the given index.
          */
-        public boolean contains(int i);
+        boolean contains(int i);
 
         /**
          * Get the index at index i.
          */
-        public int get(int i);
+        int get(int i);
 
         /**
          * Set the index at index i.
          * @return the previous value at that index.
          */
-        public int set(int i, int index);
+        int set(int i, int index);
 
         /**
-         * Sort the indices
+         * Sort the indices.
          */
-        public void sort();
+        void sort();
 
         /**
          * Index of a specified bookie index.
          * -1 if not found.
          */
-        public int indexOf(int index);
+        int indexOf(int index);
 
         /**
          * If we want a write set to cover all bookies in an ensemble
@@ -78,30 +78,34 @@ public interface DistributionSchedule {
          * write set. This method appends those which are missing to the
          * end of the write set.
          */
-        public void addMissingIndices(int maxIndex);
+        void addMissingIndices(int maxIndex);
 
         /**
          * Move an index from one position to another,
          * shifting the other indices accordingly.
          */
-        public void moveAndShift(int from, int to);
+        void moveAndShift(int from, int to);
 
         /**
          * Recycle write set object when not in use.
          */
-        public void recycle();
+        void recycle();
 
         /**
          * Make a deep copy of this write set.
          */
-        public WriteSet copy();
+        WriteSet copy();
     }
 
-    public static WriteSet NULL_WRITE_SET = new WriteSet() {
+    WriteSet NULL_WRITE_SET = new WriteSet() {
             @Override
-            public int size() { return 0; }
+            public int size() {
+                return 0;
+            }
             @Override
-            public boolean contains(int i) { return false; }
+            public boolean contains(int i) {
+                return false;
+            }
             @Override
             public int get(int i) {
                 throw new ArrayIndexOutOfBoundsException();
@@ -113,7 +117,9 @@ public interface DistributionSchedule {
             @Override
             public void sort() {}
             @Override
-            public int indexOf(int index) { return -1; }
+            public int indexOf(int index) {
+                return -1;
+            }
             @Override
             public void addMissingIndices(int maxIndex) {
                 throw new ArrayIndexOutOfBoundsException();
@@ -125,13 +131,15 @@ public interface DistributionSchedule {
             @Override
             public void recycle() {}
             @Override
-            public WriteSet copy() { return this; }
+            public WriteSet copy() {
+                return this;
+            }
         };
 
     /**
-     * return the set of bookie indices to send the message to
+     * Return the set of bookie indices to send the message to.
      */
-    public WriteSet getWriteSet(long entryId);
+    WriteSet getWriteSet(long entryId);
 
 
     /**
@@ -139,12 +147,12 @@ public interface DistributionSchedule {
      * a response must be received so that an entry can be
      * considered to be replicated on a quorum.
      */
-    public interface AckSet {
+    interface AckSet {
         /**
-         * Add a bookie response and check if quorum has been met
+         * Add a bookie response and check if quorum has been met.
          * @return true if quorum has been met, false otherwise
          */
-        public boolean completeBookieAndCheck(int bookieIndexHeardFrom);
+        boolean completeBookieAndCheck(int bookieIndexHeardFrom);
 
         /**
          * Received failure response from a bookie and check if ack quorum
@@ -156,40 +164,40 @@ public interface DistributionSchedule {
          *          bookie address
          * @return true if ack quorum is broken, false otherwise.
          */
-        public boolean failBookieAndCheck(int bookieIndexHeardFrom, BookieSocketAddress address);
+        boolean failBookieAndCheck(int bookieIndexHeardFrom, BookieSocketAddress address);
 
         /**
          * Return the list of bookies that already failed.
          *
          * @return the list of bookies that already failed.
          */
-        public Map<Integer, BookieSocketAddress> getFailedBookies();
+        Map<Integer, BookieSocketAddress> getFailedBookies();
 
         /**
          * Invalidate a previous bookie response.
          * Used for reissuing write requests.
          */
-        public boolean removeBookieAndCheck(int bookie);
+        boolean removeBookieAndCheck(int bookie);
 
         /**
-         * Recycle this ack set when not used anymore
+         * Recycle this ack set when not used anymore.
          */
-        public void recycle();
+        void recycle();
     }
 
     /**
-     * Returns an ackset object, responses should be checked against this
+     * Returns an ackset object, responses should be checked against this.
      */
-    public AckSet getAckSet();
+    AckSet getAckSet();
 
 
     /**
      * Interface to keep track of which bookies in an ensemble, an action
      * has been performed for.
      */
-    public interface QuorumCoverageSet {
+    interface QuorumCoverageSet {
         /**
-         * Add a bookie to the result set
+         * Add a bookie to the result set.
          *
          * @param bookieIndexHeardFrom Bookie we've just heard from
          */
@@ -203,10 +211,10 @@ public interface DistributionSchedule {
         boolean checkCovered();
     }
 
-    public QuorumCoverageSet getCoverageSet();
+    QuorumCoverageSet getCoverageSet();
 
     /**
-     * Whether entry presents on given bookie index
+     * Whether entry presents on given bookie index.
      *
      * @param entryId
      *            - entryId to check the presence on given bookie index
@@ -215,5 +223,5 @@ public interface DistributionSchedule {
      *            of the entry
      * @return true if it has entry otherwise false.
      */
-    public boolean hasEntry(long entryId, int bookieIndex);
+    boolean hasEntry(long entryId, int bookieIndex);
 }

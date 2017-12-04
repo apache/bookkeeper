@@ -48,8 +48,8 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.file.FileStore;
 import java.nio.file.Files;
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -438,8 +438,7 @@ public class Bookie extends BookieCriticalThread {
             //    if it doesn't exist in registration manager, this bookie is a new bookie, otherwise it is
             //    an old bookie.
             List<BookieSocketAddress> possibleBookieIds = possibleBookieIds(conf);
-            final Versioned<Cookie> rmCookie
-                = readAndVerifyCookieFromRegistrationManager(
+            final Versioned<Cookie> rmCookie = readAndVerifyCookieFromRegistrationManager(
                         masterCookie, rm, possibleBookieIds, allowExpansion);
 
             // 4. check if the cookie appear in all the directories.
@@ -979,8 +978,7 @@ public class Bookie extends BookieCriticalThread {
     }
 
     private void doRegisterBookie(boolean isReadOnly) throws IOException {
-        if (null == registrationManager ||
-            ((ZKRegistrationManager) this.registrationManager).getZk() == null) {
+        if (null == registrationManager || ((ZKRegistrationManager) this.registrationManager).getZk() == null) {
             // registration manager is null, means not register itself to zk.
             // ZooKeeper is null existing only for testing.
             LOG.info("null zk while do register");

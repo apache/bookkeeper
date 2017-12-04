@@ -27,8 +27,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.common.util.concurrent.RateLimiter;
-
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
 import org.apache.bookkeeper.util.HardLink;
 import org.slf4j.Logger;
@@ -79,7 +77,8 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
             File[] compactedPhaseFiles = dir.listFiles(file -> file.getName().endsWith(COMPACTED_SUFFIX));
             if (compactedPhaseFiles != null) {
                 for (File compactedFile : compactedPhaseFiles) {
-                    LOG.info("Found compacted log file {} has partially flushed index, recovering index.", compactedFile);
+                    LOG.info("Found compacted log file {} has partially flushed index, recovering index.",
+                            compactedFile);
                     CompactionPhase updateIndex = new UpdateIndexPhase(compactedFile, true);
                     updateIndex.run();
                 }
@@ -116,7 +115,7 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
     }
 
     /**
-     * An abstract class that would be extended to be the actual transactional phases for compaction
+     * An abstract class that would be extended to be the actual transactional phases for compaction.
      */
     abstract static class CompactionPhase {
         private String phaseName = "";
@@ -151,8 +150,8 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
      * If after scanning, there's no data written, it means there's no valid entries to be compacted,
      * so we can remove 1.log directly, clear the offsets and end the compaction.
      * Otherwise, we should move on to the next phase.
-     * <p>
-     * If anything failed in this phase, we should delete the compaction log and clean the offsets.
+     *
+     * <p>If anything failed in this phase, we should delete the compaction log and clean the offsets.
      */
     class ScanEntryLogPhase extends CompactionPhase {
         private final EntryLogMetadata metadata;
@@ -179,8 +178,8 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
                         long lid = entry.getLong();
                         long entryId = entry.getLong();
                         if (lid != ledgerId || entryId < -1) {
-                            LOG.warn("Scanning expected ledgerId {}, but found invalid entry " +
-                                    "with ledgerId {} entryId {} at offset {}",
+                            LOG.warn("Scanning expected ledgerId {}, but found invalid entry "
+                                    + "with ledgerId {} entryId {} at offset {}",
                                 new Object[]{ledgerId, lid, entryId, offset});
                             throw new IOException("Invalid entry found @ offset " + offset);
                         }
@@ -281,8 +280,8 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
      * where 3 is the new compaction logId and 1 is the old entry logId.
      * After the index the flushed successfully, a hardlink "3.log" file should be created,
      * and 3.log.1.compacted file should be deleted to indicate the phase is succeed.
-     * <p>
-     * This phase can also used to recover partially flushed index when we pass isInRecovery=true
+     *
+     * <p>This phase can also used to recover partially flushed index when we pass isInRecovery=true
      */
     class UpdateIndexPhase extends CompactionPhase {
         File compactedLogFile;
@@ -305,7 +304,8 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
                 File dir = compactedLogFile.getParentFile();
                 String compactedFilename = compactedLogFile.getName();
                 // create a hard link "x.log" for file "x.log.y.compacted"
-                this.newEntryLogFile = new File(dir, compactedFilename.substring(0, compactedFilename.indexOf(".log") + 4));
+                this.newEntryLogFile = new File(dir, compactedFilename.substring(0,
+                            compactedFilename.indexOf(".log") + 4));
                 if (!newEntryLogFile.exists()) {
                     HardLink.createHardLink(compactedLogFile, newEntryLogFile);
                 }
@@ -360,8 +360,8 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
                     long lid = entry.getLong();
                     long entryId = entry.getLong();
                     if (lid != ledgerId || entryId < -1) {
-                        LOG.warn("Scanning expected ledgerId {}, but found invalid entry " +
-                                "with ledgerId {} entryId {} at offset {}",
+                        LOG.warn("Scanning expected ledgerId {}, but found invalid entry "
+                                + "with ledgerId {} entryId {} at offset {}",
                             new Object[]{ledgerId, lid, entryId, offset});
                         throw new IOException("Invalid entry found @ offset " + offset);
                     }

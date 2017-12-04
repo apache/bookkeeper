@@ -42,8 +42,8 @@ import org.apache.bookkeeper.stats.StatsLogger;
  *
  * <h2>How does it work?</h2>
  *
- * This interface basically covers three parts:
- * <p><ul>
+ * <p>This interface basically covers three parts:
+ * <ul>
  * <li>Initialization and uninitialization</li>
  * <li>How to choose bookies to place data</li>
  * <li>How to choose bookies to do speculative reads</li>
@@ -127,7 +127,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
  *   bk1  bk2  bk3  bk4
  * </pre>
  *
- * <p> The network location of each bookie is resolved by a {@link DNSToSwitchMapping}. The {@link DNSToSwitchMapping}
+ * <p>The network location of each bookie is resolved by a {@link DNSToSwitchMapping}. The {@link DNSToSwitchMapping}
  * resolves a list of DNS-names or IP-addresses into a list of network locations. The network location that is returned
  * must be a network path of the form `/region/rack`, where `/` is the root, and `region` is the region id representing
  * the data center where `rack` is located. The network topology of the bookie cluster would determine the number of
@@ -137,7 +137,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
  * <p>{@link RackawareEnsemblePlacementPolicy} basically just chooses bookies from different racks in the built
  * network topology. It guarantees that a write quorum will cover at least two racks. It expects the network locations
  * resolved by {@link DNSToSwitchMapping} have at least 2 levels. For example, network location paths like
- * {@code /dc1/rack0} and {@code /dc1/row1/rack0} are okay, but {@link /rack0} is not acceptable.
+ * {@code /dc1/rack0} and {@code /dc1/row1/rack0} are okay, but {@code /rack0} is not acceptable.
  *
  * <p>{@link RegionAwareEnsemblePlacementPolicy} is a hierarchical placement policy, which it chooses
  * equal-sized bookies from regions, and within each region it uses {@link RackawareEnsemblePlacementPolicy} to choose
@@ -206,16 +206,16 @@ public interface EnsemblePlacementPolicy {
      *
      * @since 4.5
      */
-    public EnsemblePlacementPolicy initialize(ClientConfiguration conf,
-                                              Optional<DNSToSwitchMapping> optionalDnsResolver,
-                                              HashedWheelTimer hashedWheelTimer,
-                                              FeatureProvider featureProvider,
-                                              StatsLogger statsLogger);
+    EnsemblePlacementPolicy initialize(ClientConfiguration conf,
+                                       Optional<DNSToSwitchMapping> optionalDnsResolver,
+                                       HashedWheelTimer hashedWheelTimer,
+                                       FeatureProvider featureProvider,
+                                       StatsLogger statsLogger);
 
     /**
-     * Uninitialize the policy
+     * Uninitialize the policy.
      */
-    public void uninitalize();
+    void uninitalize();
 
     /**
      * A consistent view of the cluster (what bookies are available as writable, what bookies are available as
@@ -231,8 +231,8 @@ public interface EnsemblePlacementPolicy {
      *          All the bookies in the cluster available for readonly.
      * @return the dead bookies during this cluster change.
      */
-    public Set<BookieSocketAddress> onClusterChanged(Set<BookieSocketAddress> writableBookies,
-                                                     Set<BookieSocketAddress> readOnlyBookies);
+    Set<BookieSocketAddress> onClusterChanged(Set<BookieSocketAddress> writableBookies,
+                                              Set<BookieSocketAddress> readOnlyBookies);
 
     /**
      * Choose <i>numBookies</i> bookies for ensemble. If the count is more than the number of available
@@ -254,13 +254,13 @@ public interface EnsemblePlacementPolicy {
      *                       provides in {@link BookKeeper#createLedger(int, int, int, BookKeeper.DigestType, byte[])}
      * @param excludeBookies Bookies that should not be considered as targets.
      * @throws BKNotEnoughBookiesException if not enough bookies available.
-     * @return the java.util.ArrayList<org.apache.bookkeeper.net.BookieSocketAddress>
+     * @return the ArrayList&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;
      */
-    public ArrayList<BookieSocketAddress> newEnsemble(int ensembleSize,
-                                                      int writeQuorumSize,
-                                                      int ackQuorumSize,
-                                                      Map<String, byte[]> customMetadata,
-                                                      Set<BookieSocketAddress> excludeBookies)
+    ArrayList<BookieSocketAddress> newEnsemble(int ensembleSize,
+                                               int writeQuorumSize,
+                                               int ackQuorumSize,
+                                               Map<String, byte[]> customMetadata,
+                                               Set<BookieSocketAddress> excludeBookies)
         throws BKNotEnoughBookiesException;
 
     /**
@@ -280,13 +280,13 @@ public interface EnsemblePlacementPolicy {
      * @throws BKNotEnoughBookiesException
      * @return the org.apache.bookkeeper.net.BookieSocketAddress
      */
-    public BookieSocketAddress replaceBookie(int ensembleSize,
-                                             int writeQuorumSize,
-                                             int ackQuorumSize,
-                                             Map<String, byte[]> customMetadata,
-                                             Collection<BookieSocketAddress> currentEnsemble,
-                                             BookieSocketAddress bookieToReplace,
-                                             Set<BookieSocketAddress> excludeBookies)
+    BookieSocketAddress replaceBookie(int ensembleSize,
+                                      int writeQuorumSize,
+                                      int ackQuorumSize,
+                                      Map<String, byte[]> customMetadata,
+                                      Collection<BookieSocketAddress> currentEnsemble,
+                                      BookieSocketAddress bookieToReplace,
+                                      Set<BookieSocketAddress> excludeBookies)
         throws BKNotEnoughBookiesException;
 
     /**
@@ -303,7 +303,7 @@ public interface EnsemblePlacementPolicy {
      *         writeSet.
      * @since 4.5
      */
-    public DistributionSchedule.WriteSet reorderReadSequence(
+    DistributionSchedule.WriteSet reorderReadSequence(
             ArrayList<BookieSocketAddress> ensemble,
             Map<BookieSocketAddress, Long> bookieFailureHistory,
             DistributionSchedule.WriteSet writeSet);
@@ -323,18 +323,18 @@ public interface EnsemblePlacementPolicy {
      *         writeSet.
      * @since 4.5
      */
-    public DistributionSchedule.WriteSet reorderReadLACSequence(
+    DistributionSchedule.WriteSet reorderReadLACSequence(
             ArrayList<BookieSocketAddress> ensemble,
             Map<BookieSocketAddress, Long> bookieFailureHistory,
             DistributionSchedule.WriteSet writeSet);
 
     /**
      * Send the bookie info details.
-     * 
+     *
      * @param bookieInfoMap
      *          A map that has the bookie to BookieInfo
      * @since 4.5
      */
-    default public void updateBookieInfo(Map<BookieSocketAddress, BookieInfo> bookieInfoMap) {
+    default void updateBookieInfo(Map<BookieSocketAddress, BookieInfo> bookieInfoMap) {
     }
 }

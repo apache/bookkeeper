@@ -1874,7 +1874,7 @@ public class BookieShell implements Tool {
             };
             try {
                 updateLedgerOp.updateBookieIdInLedgers(oldBookieId, newBookieId, rate, limit, progressable);
-            } catch (BKException | IOException e) {
+            } catch (IOException e) {
                 LOG.error("Failed to update ledger metadata", e);
                 return -1;
             }

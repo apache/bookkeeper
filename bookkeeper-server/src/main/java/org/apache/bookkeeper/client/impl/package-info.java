@@ -19,7 +19,7 @@
  *
  */
 /**
- * BookKeeper Client implementation package
+ * BookKeeper Client implementation package.
  *
  * @since 4.6
  */

@@ -20,14 +20,16 @@
  */
 package org.apache.bookkeeper.client.impl;
 
-import io.netty.util.Recycler;
-import java.util.Iterator;
-import java.util.List;
-import org.apache.bookkeeper.client.api.LedgerEntries;
-import org.apache.bookkeeper.client.api.LedgerEntry;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import io.netty.util.Recycler;
+
+import java.util.Iterator;
+import java.util.List;
+
+import org.apache.bookkeeper.client.api.LedgerEntries;
+import org.apache.bookkeeper.client.api.LedgerEntry;
 
 /**
  * Ledger entries implementation. It is a simple wrap of a list of ledger entries.
@@ -82,8 +84,8 @@ public class LedgerEntriesImpl implements LedgerEntries {
         long firstId = entries.get(0).getEntryId();
         long lastId = entries.get(entries.size() - 1).getEntryId();
         if (entryId < firstId || entryId > lastId) {
-            throw new IndexOutOfBoundsException("required index: " + entryId +
-                " is out of bounds: [ " + firstId + ", " + lastId + " ].");
+            throw new IndexOutOfBoundsException("required index: " + entryId
+                + " is out of bounds: [ " + firstId + ", " + lastId + " ].");
         }
         return entries.get((int) (entryId - firstId));
     }

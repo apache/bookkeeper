@@ -46,9 +46,9 @@ import org.slf4j.LoggerFactory;
  */
 public class BookieInfoReader {
     private static final Logger LOG = LoggerFactory.getLogger(BookieInfoReader.class);
-    private static final long GET_BOOKIE_INFO_REQUEST_FLAGS
-        = BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE |
-                               BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE;
+    private static final long GET_BOOKIE_INFO_REQUEST_FLAGS =
+        BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE
+                               | BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE;
 
     private final ScheduledExecutorService scheduler;
     private final BookKeeper bk;
@@ -123,7 +123,7 @@ public class BookieInfoReader {
         }
 
         /**
-         * Returns info for bookie, null if not known
+         * Returns info for bookie, null if not known.
          *
          * @param bookie bookie for which to get info
          * @return Info for bookie, null otherwise
@@ -133,7 +133,7 @@ public class BookieInfoReader {
         }
 
         /**
-         * Removes bookie from bookieInfoMap
+         * Removes bookie from bookieInfoMap.
          *
          * @param bookie bookie on which we observed an error
          */
@@ -142,7 +142,7 @@ public class BookieInfoReader {
         }
 
         /**
-         * Report new info on bookie
+         * Report new info on bookie.
          *
          * @param bookie bookie for which we obtained new info
          * @param info the new info
@@ -152,7 +152,7 @@ public class BookieInfoReader {
         }
 
         /**
-         * Get bookie info map
+         * Get bookie info map.
          */
         public Map<BookieSocketAddress, BookieInfo> getBookieMap() {
             return infoMap;
@@ -179,7 +179,7 @@ public class BookieInfoReader {
         }
 
         /**
-         * Mark pending operation FULL and return true if there is no in-progress operation
+         * Mark pending operation FULL and return true if there is no in-progress operation.
          *
          * @return True if we should execute a scan, False if there is already one running
          */
@@ -189,7 +189,7 @@ public class BookieInfoReader {
         }
 
         /**
-         * Mark pending operation PARTIAL if not full and return true if there is no in-progress operation
+         * Mark pending operation PARTIAL if not full and return true if there is no in-progress operation.
          *
          * @return True if we should execute a scan, False if there is already one running
          */
@@ -201,7 +201,7 @@ public class BookieInfoReader {
         }
 
         /**
-         * Gets and clears queuedType
+         * Gets and clears queuedType.
          */
         public State getAndClearQueuedType() {
             State ret = queuedType;
@@ -211,7 +211,7 @@ public class BookieInfoReader {
 
         /**
          * If queuedType != UNQUEUED, returns true, leaves running equal to true
-         * Otherwise, returns false and sets running to false
+         * Otherwise, returns false and sets running to false.
          */
         public boolean completeUnlessQueued() {
             if (queuedType == State.UNQUEUED) {
@@ -277,7 +277,7 @@ public class BookieInfoReader {
     }
 
     /**
-     * Method to allow tests to block until bookie info is available
+     * Method to allow tests to block until bookie info is available.
      *
      * @param bookie to lookup
      * @return None if absent, free disk space if present
@@ -322,8 +322,8 @@ public class BookieInfoReader {
         }
 
         BookieClient bkc = bk.getBookieClient();
-        final long requested = BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE |
-                               BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE;
+        final long requested = BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE
+                               | BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE;
         totalSent = 0;
         completedCnt = 0;
         errorCnt = 0;
@@ -395,10 +395,11 @@ public class BookieInfoReader {
         BookieClient bkc = bk.getBookieClient();
         final AtomicInteger totalSent = new AtomicInteger();
         final AtomicInteger totalCompleted = new AtomicInteger();
-        final ConcurrentMap<BookieSocketAddress, BookieInfo> map = new ConcurrentHashMap<BookieSocketAddress, BookieInfo>();
+        final ConcurrentMap<BookieSocketAddress, BookieInfo> map =
+            new ConcurrentHashMap<BookieSocketAddress, BookieInfo>();
         final CountDownLatch latch = new CountDownLatch(1);
-        long requested = BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE |
-                         BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE;
+        long requested = BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE
+                         | BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE;
 
         Collection<BookieSocketAddress> bookies;
         bookies = bk.bookieWatcher.getBookies();

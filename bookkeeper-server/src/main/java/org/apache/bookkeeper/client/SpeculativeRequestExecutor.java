@@ -34,7 +34,7 @@ public interface SpeculativeRequestExecutor {
 
     /**
      * Issues a speculative request and indicates if more speculative
-     * requests should be issued
+     * requests should be issued.
      *
      * @return whether more speculative requests should be issued
      */
