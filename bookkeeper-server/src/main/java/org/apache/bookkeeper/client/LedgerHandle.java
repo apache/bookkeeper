@@ -87,7 +87,7 @@ import org.slf4j.LoggerFactory;
  * write operations to a ledger.
  */
 public class LedgerHandle implements WriteHandle {
-    final static Logger LOG = LoggerFactory.getLogger(LedgerHandle.class);
+    static final Logger LOG = LoggerFactory.getLogger(LedgerHandle.class);
 
     final byte[] ledgerKey;
     LedgerMetadata metadata;
@@ -108,7 +108,7 @@ public class LedgerHandle implements WriteHandle {
      * Invalid entry id. This value is returned from methods which
      * should return an entry id but there is no valid entry available.
      */
-    final static public long INVALID_ENTRY_ID = BookieProtocol.INVALID_ENTRY_ID;
+    public static final long INVALID_ENTRY_ID = BookieProtocol.INVALID_ENTRY_ID;
 
     final AtomicInteger blockAddCompletions = new AtomicInteger(0);
     final AtomicInteger numEnsembleChanges = new AtomicInteger(0);
@@ -120,7 +120,7 @@ public class LedgerHandle implements WriteHandle {
     final Counter lacUpdateMissesCounter;
 
     // This empty master key is used when an empty password is provided which is the hash of an empty string
-    private final static byte[] emptyLedgerKey;
+    private static final byte[] emptyLedgerKey;
     static {
         try {
             emptyLedgerKey = MacDigestManager.genDigest("ledger", new byte[0]);
@@ -193,7 +193,7 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
-     * Get the id of the current ledger
+     * Get the id of the current ledger.
      *
      * @return the id of the ledger
      */
@@ -248,11 +248,11 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
-     * Get the number of fragments that makeup this ledger
+     * Get the number of fragments that makeup this ledger.
      *
      * @return the count of fragments
      */
-    synchronized public long getNumFragments() {
+    public synchronized long getNumFragments() {
         return metadata.getEnsembles().size();
     }
 
@@ -262,7 +262,7 @@ public class LedgerHandle implements WriteHandle {
      *
      * @return count of unique bookies
      */
-    synchronized public long getNumBookies() {
+    public synchronized long getNumBookies() {
         Map<Long, ArrayList<BookieSocketAddress>> m = metadata.getEnsembles();
         Set<BookieSocketAddress> s = Sets.newHashSet();
         for (ArrayList<BookieSocketAddress> aList : m.values()) {
@@ -272,7 +272,7 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
-     * Get the DigestManager
+     * Get the DigestManager.
      *
      * @return DigestManager for the LedgerHandle
      */
@@ -296,12 +296,12 @@ public class LedgerHandle implements WriteHandle {
      *
      * @return the length of the ledger in bytes
      */
-    synchronized public long getLength() {
+    public synchronized long getLength() {
         return this.length;
     }
 
     /**
-     * Get the Distribution Schedule
+     * Get the Distribution Schedule.
      *
      * @return DistributionSchedule for the LedgerHandle
      */
@@ -318,7 +318,7 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
-     * {@inheritDoc }
+     * {@inheritDoc}
      */
     @Override
     public void close()
@@ -327,7 +327,7 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
-     * {@inheritDoc }
+     * {@inheritDoc}
      */
     @Override
     public CompletableFuture<Void> asyncClose() {
@@ -341,7 +341,7 @@ public class LedgerHandle implements WriteHandle {
     /**
      * Asynchronous close, any adds in flight will return errors.
      *
-     * Closing a ledger will ensure that all clients agree on what the last entry
+     * <p>Closing a ledger will ensure that all clients agree on what the last entry
      * of the ledger is. This ensures that, once the ledger has been closed, all
      * reads from the ledger will return the same set of entries.
      *
@@ -377,7 +377,7 @@ public class LedgerHandle implements WriteHandle {
     /**
      * Same as public version of asyncClose except that this one takes an
      * additional parameter which is the return code to hand to all the pending
-     * add ops
+     * add ops.
      *
      * @param cb
      * @param ctx
@@ -397,9 +397,9 @@ public class LedgerHandle implements WriteHandle {
                     // Although the metadata is already closed, we don't need to proceed zookeeper metadata update, but
                     // we still need to error out the pending add ops.
                     //
-                    // There is a race condition a pending add op is enqueued, after a close op reset ledger metadata state
-                    // to unclosed to resolve metadata conflicts. If we don't error out these pending add ops, they would be
-                    // leak and never callback.
+                    // There is a race condition a pending add op is enqueued, after a close op reset ledger metadata
+                    // state to unclosed to resolve metadata conflicts. If we don't error out these pending add ops,
+                    // they would be leak and never callback.
                     //
                     // The race condition happen in following sequence:
                     // a) ledger L is fenced
@@ -408,7 +408,8 @@ public class LedgerHandle implements WriteHandle {
                     // d) writer tries to write entry E+1, since ledger metadata is still open (reset by c))
                     // e) the close procedure in c) resolved the metadata conflicts and set ledger metadata to closed
                     // f) writing entry E+1 encountered LedgerFencedException which will enter ledger close procedure
-                    // g) it would find that ledger metadata is closed, then it callbacks immediately without erroring out any pendings
+                    // g) it would find that ledger metadata is closed, then it callbacks immediately without erroring
+                    //    out any pendings
                     synchronized (LedgerHandle.this) {
                         pendingAdds = drainPendingAddsToErrorOut();
                     }
@@ -417,7 +418,7 @@ public class LedgerHandle implements WriteHandle {
                     return;
                 }
 
-                synchronized(LedgerHandle.this) {
+                synchronized (LedgerHandle.this) {
                     prevState = metadata.getState();
                     prevLastEntryId = metadata.getLastEntryId();
                     prevLength = metadata.getLength();
@@ -478,7 +479,8 @@ public class LedgerHandle implements WriteHandle {
                                         } else {
                                             metadata.setLength(length);
                                             metadata.close(getLastAddConfirmed());
-                                            LOG.warn("Conditional update ledger metadata for ledger {} failed.", ledgerId);
+                                            LOG.warn("Conditional update ledger metadata for ledger {} failed.",
+                                                    ledgerId);
                                             cb.closeComplete(rc, LedgerHandle.this, ctx);
                                         }
                                     }
@@ -522,7 +524,7 @@ public class LedgerHandle implements WriteHandle {
      * @param lastEntry
      *          id of last entry of sequence (included)
      *
-     * @see #asyncReadEntries(long, long, org.apache.bookkeeper.client.AsyncCallback.ReadCallback, java.lang.Object)
+     * @see #asyncReadEntries(long, long, ReadCallback, Object)
      */
     public Enumeration<LedgerEntry> readEntries(long firstEntry, long lastEntry)
             throws InterruptedException, BKException {
@@ -536,7 +538,7 @@ public class LedgerHandle implements WriteHandle {
     /**
      * Read a sequence of entries synchronously, allowing to read after the LastAddConfirmed range.<br>
      * This is the same of
-     * {@link #asyncReadUnconfirmedEntries(long, long, org.apache.bookkeeper.client.AsyncCallback.ReadCallback, java.lang.Object) }
+     * {@link #asyncReadUnconfirmedEntries(long, long, ReadCallback, Object) }
      *
      * @param firstEntry
      *          id of first entry of sequence (included)
@@ -544,8 +546,8 @@ public class LedgerHandle implements WriteHandle {
      *          id of last entry of sequence (included)
      *
      * @see #readEntries(long, long)
-     * @see #asyncReadUnconfirmedEntries(long, long, org.apache.bookkeeper.client.AsyncCallback.ReadCallback, java.lang.Object)
-     * @see #asyncReadLastConfirmed(org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback, java.lang.Object)
+     * @see #asyncReadUnconfirmedEntries(long, long, ReadCallback, java.lang.Object)
+     * @see #asyncReadLastConfirmed(ReadLastConfirmedCallback, java.lang.Object)
      */
     public Enumeration<LedgerEntry> readUnconfirmedEntries(long firstEntry, long lastEntry)
             throws InterruptedException, BKException {
@@ -590,14 +592,14 @@ public class LedgerHandle implements WriteHandle {
     /**
      * Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.
      * <br>This is the same of
-     * {@link #asyncReadEntries(long, long, org.apache.bookkeeper.client.AsyncCallback.ReadCallback, java.lang.Object) }
+     * {@link #asyncReadEntries(long, long, ReadCallback, Object) }
      * but it lets the client read without checking the local value of LastAddConfirmed, so that it is possibile to
      * read entries for which the writer has not received the acknowledge yet. <br>
      * For entries which are within the range 0..LastAddConfirmed BookKeeper guarantees that the writer has successfully
      * received the acknowledge.<br>
      * For entries outside that range it is possible that the writer never received the acknowledge
-     * and so there is the risk that the reader is seeing entries before the writer and this could result in a consistency
-     * issue in some cases.<br>
+     * and so there is the risk that the reader is seeing entries before the writer and this could result in
+     * a consistency issue in some cases.<br>
      * With this method you can even read entries before the LastAddConfirmed and entries after it with one call,
      * the expected consistency will be as described above for each subrange of ids.
      *
@@ -610,8 +612,8 @@ public class LedgerHandle implements WriteHandle {
      * @param ctx
      *          control object
      *
-     * @see #asyncReadEntries(long, long, org.apache.bookkeeper.client.AsyncCallback.ReadCallback, java.lang.Object)
-     * @see #asyncReadLastConfirmed(org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback, java.lang.Object)
+     * @see #asyncReadEntries(long, long, ReadCallback, Object)
+     * @see #asyncReadLastConfirmed(ReadLastConfirmedCallback, Object)
      * @see #readUnconfirmedEntries(long, long)
      */
     public void asyncReadUnconfirmedEntries(long firstEntry, long lastEntry, ReadCallback cb, Object ctx) {
@@ -655,14 +657,14 @@ public class LedgerHandle implements WriteHandle {
     /**
      * Read a sequence of entries asynchronously, allowing to read after the LastAddConfirmed range.
      * <br>This is the same of
-     * {@link #asyncReadEntries(long, long, org.apache.bookkeeper.client.AsyncCallback.ReadCallback, java.lang.Object) }
+     * {@link #asyncReadEntries(long, long, ReadCallback, Object) }
      * but it lets the client read without checking the local value of LastAddConfirmed, so that it is possibile to
      * read entries for which the writer has not received the acknowledge yet. <br>
      * For entries which are within the range 0..LastAddConfirmed BookKeeper guarantees that the writer has successfully
      * received the acknowledge.<br>
      * For entries outside that range it is possible that the writer never received the acknowledge
-     * and so there is the risk that the reader is seeing entries before the writer and this could result in a consistency
-     * issue in some cases.<br>
+     * and so there is the risk that the reader is seeing entries before the writer and this could result in
+     * a consistency issue in some cases.<br>
      * With this method you can even read entries before the LastAddConfirmed and entries after it with one call,
      * the expected consistency will be as described above for each subrange of ids.
      *
@@ -671,8 +673,8 @@ public class LedgerHandle implements WriteHandle {
      * @param lastEntry
      *          id of last entry of sequence
      *
-     * @see #asyncReadEntries(long, long, org.apache.bookkeeper.client.AsyncCallback.ReadCallback, java.lang.Object)
-     * @see #asyncReadLastConfirmed(org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback, java.lang.Object)
+     * @see #asyncReadEntries(long, long, ReadCallback, Object)
+     * @see #asyncReadLastConfirmed(ReadLastConfirmedCallback, Object)
      * @see #readUnconfirmedEntries(long, long)
      */
     @Override
@@ -688,7 +690,7 @@ public class LedgerHandle implements WriteHandle {
     }
 
     void asyncReadEntriesInternal(long firstEntry, long lastEntry, ReadCallback cb, Object ctx) {
-        if(!bk.isClosed()) {
+        if (!bk.isClosed()) {
             readEntriesInternalAsync(firstEntry, lastEntry)
                 .whenCompleteAsync(new FutureEventListener<LedgerEntries>() {
                     @Override
@@ -723,7 +725,7 @@ public class LedgerHandle implements WriteHandle {
     CompletableFuture<LedgerEntries> readEntriesInternalAsync(long firstEntry,
                                                               long lastEntry) {
         PendingReadOp op = new PendingReadOp(this, bk.getScheduler(), firstEntry, lastEntry);
-        if(!bk.isClosed()) {
+        if (!bk.isClosed()) {
             bk.getMainWorkerPool().submitOrdered(ledgerId, op);
         } else {
             op.future().completeExceptionally(BKException.create(ClientClosedException));
@@ -743,7 +745,7 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
-     * {@inheritDoc }
+     * {@inheritDoc}
      */
     @Override
     public CompletableFuture<Long> append(ByteBuf data) {
@@ -865,11 +867,10 @@ public class LedgerHandle implements WriteHandle {
      */
     public void asyncAddEntry(final byte[] data, final int offset, final int length,
                               final AddCallback cb, final Object ctx) {
-        if (offset < 0 || length < 0
-                || (offset + length) > data.length) {
+        if (offset < 0 || length < 0 || (offset + length) > data.length) {
             throw new ArrayIndexOutOfBoundsException(
-                    "Invalid values for offset("+offset
-                    +") or length("+length+")");
+                    "Invalid values for offset(" + offset
+                    + ") or length(" + length + ")");
         }
 
         asyncAddEntry(Unpooled.wrappedBuffer(data, offset, length), cb, ctx);
@@ -903,7 +904,7 @@ public class LedgerHandle implements WriteHandle {
      *             value higher than the length of data.
      */
     public void asyncAddEntry(final long entryId, final byte[] data, final int offset, final int length,
-            final AddCallback cb, final Object ctx) throws BKException {
+            final AddCallback cb, final Object ctx) {
         LOG.error("To use this feature Ledger must be created with createLedgerAdv() interface.");
         cb.addComplete(BKException.Code.IllegalOpException, LedgerHandle.this, entryId, ctx);
     }
@@ -912,10 +913,10 @@ public class LedgerHandle implements WriteHandle {
      * Make a recovery add entry request. Recovery adds can add to a ledger even
      * if it has been fenced.
      *
-     * This is only valid for bookie and ledger recovery, which may need to replicate
+     * <p>This is only valid for bookie and ledger recovery, which may need to replicate
      * entries to a quorum of bookies to ensure data safety.
      *
-     * Normal client should never call this method.
+     * <p>Normal client should never call this method.
      */
     void asyncRecoveryAddEntry(final byte[] data, final int offset, final int length,
                                final AddCallback cb, final Object ctx) {
@@ -930,7 +931,7 @@ public class LedgerHandle implements WriteHandle {
         }
 
         boolean wasClosed = false;
-        synchronized(this) {
+        synchronized (this) {
             // synchronized on this to ensure that
             // the ledger isn't closed between checking and
             // updating lastAddPushed
@@ -1110,7 +1111,8 @@ public class LedgerHandle implements WriteHandle {
      * If the next entryId is ahead of known last add confirmed, the call will issue a long poll read
      * to wait for the next entry <i>entryId</i>.
      *
-     * The callback will return the latest last add confirmed and next entry if it is available within timeout period <i>timeOutInMillis</i>.
+     * <p>The callback will return the latest last add confirmed and next entry if it is available within timeout
+     * period <i>timeOutInMillis</i>.
      *
      * @param entryId
      *          next entry id to read
@@ -1189,7 +1191,7 @@ public class LedgerHandle implements WriteHandle {
      * Context objects for synchronous call to read last confirmed.
      */
     static class LastConfirmedCtx {
-        final static long ENTRY_ID_PENDING = -10;
+        static final long ENTRY_ID_PENDING = -10;
         long response;
         int rc;
 
@@ -1238,13 +1240,15 @@ public class LedgerHandle implements WriteHandle {
             throws InterruptedException, BKException {
         LastConfirmedCtx ctx = new LastConfirmedCtx();
         asyncReadLastConfirmed(new SyncReadLastConfirmedCallback(), ctx);
-        synchronized(ctx) {
-            while(!ctx.ready()) {
+        synchronized (ctx) {
+            while (!ctx.ready()) {
                 ctx.wait();
             }
         }
 
-        if(ctx.getRC() != BKException.Code.OK) throw BKException.create(ctx.getRC());
+        if (ctx.getRC() != BKException.Code.OK) {
+            throw BKException.create(ctx.getRC());
+        }
         return ctx.getlastConfirmed();
     }
 
@@ -1269,7 +1273,9 @@ public class LedgerHandle implements WriteHandle {
                 ctx.wait();
             }
         }
-        if (ctx.getRC() != BKException.Code.OK) throw BKException.create(ctx.getRC());
+        if (ctx.getRC() != BKException.Code.OK) {
+            throw BKException.create(ctx.getRC());
+        }
         return ctx.getlastConfirmed();
     }
 
@@ -1460,8 +1466,8 @@ public class LedgerHandle implements WriteHandle {
                 }
             }
             if (LOG.isDebugEnabled()) {
-                LOG.debug("[EnsembleChange-L{}-{}] : changing ensemble from: {} to: {} starting at entry: {}," +
-                    " failed bookies: {}, replaced bookies: {}",
+                LOG.debug("[EnsembleChange-L{}-{}] : changing ensemble from: {} to: {} starting at entry: {},"
+                    + " failed bookies: {}, replaced bookies: {}",
                       new Object[] { ledgerId, ensembleChangeIdx, metadata.currentEnsemble, newEnsemble,
                               (getLastAddConfirmed() + 1), failedBookies, replacedBookies });
             }
@@ -1564,8 +1570,8 @@ public class LedgerHandle implements WriteHandle {
                                        ensembleInfo, curBlockAddCompletions, ensembleChangeIdx));
                 return;
             } else if (rc != BKException.Code.OK) {
-                LOG.error("[EnsembleChange-L{}-{}] : could not persist ledger metadata : info = {}, closing ledger : {}.",
-                        new Object[] { getId(), ensembleChangeIdx, ensembleInfo, rc });
+                LOG.error("[EnsembleChange-L{}-{}] : could not persist ledger metadata : info = {}, "
+                        + "closing ledger : {}.", new Object[] { getId(), ensembleChangeIdx, ensembleInfo, rc });
                 handleUnrecoverableErrorDuringAdd(rc);
                 return;
             }
@@ -1612,14 +1618,14 @@ public class LedgerHandle implements WriteHandle {
         @Override
         public void safeOperationComplete(int newrc, LedgerMetadata newMeta) {
             if (newrc != BKException.Code.OK) {
-                LOG.error("[EnsembleChange-L{}-{}] : error re-reading metadata to address ensemble change conflicts," +
-                        " code=", new Object[] { ledgerId, ensembleChangeIdx, newrc });
+                LOG.error("[EnsembleChange-L{}-{}] : error re-reading metadata to address ensemble change conflicts,"
+                        + " code=", new Object[] { ledgerId, ensembleChangeIdx, newrc });
                 handleUnrecoverableErrorDuringAdd(rc);
             } else {
                 if (!resolveConflict(newMeta)) {
-                    LOG.error("[EnsembleChange-L{}-{}] : could not resolve ledger metadata conflict" +
-                            " while changing ensemble to: {}, local meta data is \n {} \n," +
-                            " zk meta data is \n {} \n, closing ledger",
+                    LOG.error("[EnsembleChange-L{}-{}] : could not resolve ledger metadata conflict"
+                            + " while changing ensemble to: {}, local meta data is \n {} \n,"
+                            + " zk meta data is \n {} \n, closing ledger",
                             new Object[] { ledgerId, ensembleChangeIdx, ensembleInfo.newEnsemble, metadata, newMeta });
                     handleUnrecoverableErrorDuringAdd(rc);
                 }
@@ -1628,8 +1634,8 @@ public class LedgerHandle implements WriteHandle {
 
         /**
          * Specific resolve conflicts happened when multiple bookies failures in same ensemble.
-         * <p>
-         * Resolving the version conflicts between local ledgerMetadata and zk
+         *
+         * <p>Resolving the version conflicts between local ledgerMetadata and zk
          * ledgerMetadata. This will do the following:
          * <ul>
          * <li>
@@ -1642,14 +1648,14 @@ public class LedgerHandle implements WriteHandle {
          */
         private boolean resolveConflict(LedgerMetadata newMeta) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("[EnsembleChange-L{}-{}] : resolving conflicts - local metadata = \n {} \n," +
-                    " zk metadata = \n {} \n", new Object[]{ledgerId, ensembleChangeIdx, metadata, newMeta});
+                LOG.debug("[EnsembleChange-L{}-{}] : resolving conflicts - local metadata = \n {} \n,"
+                    + " zk metadata = \n {} \n", new Object[]{ledgerId, ensembleChangeIdx, metadata, newMeta});
             }
             // make sure the ledger isn't closed by other ones.
             if (metadata.getState() != newMeta.getState()) {
                 if (LOG.isDebugEnabled()) {
-                    LOG.info("[EnsembleChange-L{}-{}] : resolving conflicts but state changed," +
-                            " local metadata = \n {} \n, zk metadata = \n {} \n",
+                    LOG.info("[EnsembleChange-L{}-{}] : resolving conflicts but state changed,"
+                            + " local metadata = \n {} \n, zk metadata = \n {} \n",
                         new Object[]{ledgerId, ensembleChangeIdx, metadata, newMeta});
                 }
                 return false;
@@ -1664,8 +1670,8 @@ public class LedgerHandle implements WriteHandle {
             int diff = newMeta.getEnsembles().size() - metadata.getEnsembles().size();
             if (0 != diff) {
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("[EnsembleChange-L{}-{}] : resolving conflicts but ensembles have {} differences," +
-                            " local metadata = \n {} \n, zk metadata = \n {} \n",
+                    LOG.debug("[EnsembleChange-L{}-{}] : resolving conflicts but ensembles have {} differences,"
+                            + " local metadata = \n {} \n, zk metadata = \n {} \n",
                         new Object[]{ledgerId, ensembleChangeIdx, diff, metadata, newMeta});
                 }
                 if (-1 == diff) {
@@ -1736,8 +1742,8 @@ public class LedgerHandle implements WriteHandle {
             // make sure the metadata doesn't changed by other ones.
             if (metadata.isConflictWith(newMeta)) {
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("[EnsembleChange-L{}-{}] : metadata is conflicted, local metadata = \n {} \n," +
-                        " zk metadata = \n {} \n", new Object[]{ledgerId, ensembleChangeIdx, metadata, newMeta});
+                    LOG.debug("[EnsembleChange-L{}-{}] : metadata is conflicted, local metadata = \n {} \n,"
+                        + " zk metadata = \n {} \n", new Object[]{ledgerId, ensembleChangeIdx, metadata, newMeta});
                 }
                 return false;
             }
@@ -1866,9 +1872,10 @@ public class LedgerHandle implements WriteHandle {
                         }
                     });
                 } else if (rc == BKException.Code.OK) {
-                    // we only could issue recovery operation after we successfully update the ledger state to in recovery
-                    // otherwise, it couldn't prevent us advancing last confirmed while the other writer is closing the ledger,
-                    // which will cause inconsistent last add confirmed on bookies & zookeeper metadata.
+                    // we only could issue recovery operation after we successfully update the ledger state to
+                    // in recovery otherwise, it couldn't prevent us advancing last confirmed while the other writer is
+                    // closing the ledger, which will cause inconsistent last add confirmed on bookies & zookeeper
+                    // metadata.
                     new LedgerRecoveryOp(LedgerHandle.this, cb)
                         .parallelRead(enableParallelRecoveryRead)
                         .readBatchSize(recoveryReadBatchSize)

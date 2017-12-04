@@ -45,7 +45,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
 
     static final Logger LOG = LoggerFactory.getLogger(ReadLastConfirmedAndEntryOp.class);
 
-    final private ScheduledExecutorService scheduler;
+    private final ScheduledExecutorService scheduler;
     ReadLACAndEntryRequest request;
     final BitSet heardFromHostsBitSet;
     final BitSet emptyResponsesFromHostsBitSet;
@@ -160,14 +160,14 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
             }
         }
 
-        synchronized private void translateAndSetFirstError(int rc) {
-            if (BKException.Code.OK == firstError ||
-                BKException.Code.NoSuchEntryException == firstError ||
-                BKException.Code.NoSuchLedgerExistsException == firstError) {
+        private synchronized void translateAndSetFirstError(int rc) {
+            if (BKException.Code.OK == firstError
+                || BKException.Code.NoSuchEntryException == firstError
+                || BKException.Code.NoSuchLedgerExistsException == firstError) {
                 firstError = rc;
-            } else if (BKException.Code.BookieHandleNotAvailableException == firstError &&
-                BKException.Code.NoSuchEntryException != rc &&
-                BKException.Code.NoSuchLedgerExistsException != rc) {
+            } else if (BKException.Code.BookieHandleNotAvailableException == firstError
+                && BKException.Code.NoSuchEntryException != rc
+                && BKException.Code.NoSuchLedgerExistsException != rc) {
                 // if other exception rather than NoSuchEntryException is returned
                 // we need to update firstError to indicate that it might be a valid read but just failed.
                 firstError = rc;
@@ -189,8 +189,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         synchronized void logErrorAndReattemptRead(int bookieIndex, BookieSocketAddress host, String errMsg, int rc) {
             translateAndSetFirstError(rc);
 
-            if (BKException.Code.NoSuchEntryException == rc ||
-                BKException.Code.NoSuchLedgerExistsException == rc) {
+            if (BKException.Code.NoSuchEntryException == rc || BKException.Code.NoSuchLedgerExistsException == rc) {
                 // Since we send all long poll requests to every available node, we should only
                 // treat these errors as failures if the node from which we received this is part of
                 // the writeSet
@@ -201,8 +200,8 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
             }
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug(errMsg + " while reading entry: " + entryImpl.getEntryId() + " ledgerId: " + lh.ledgerId + " from bookie: "
-                    + host);
+                LOG.debug("{} while reading entry: {} ledgerId: {} from bookie: {}", errMsg, entryImpl.getEntryId(),
+                        lh.ledgerId, host);
             }
         }
 
@@ -270,8 +269,8 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
             --numPendings;
             // if received all responses or this entry doesn't meet quorum write, complete the request.
             if (numMissedEntryReads > maxMissedReadsAllowed || numPendings == 0) {
-                if (BKException.Code.BookieHandleNotAvailableException == firstError &&
-                    numMissedEntryReads > maxMissedReadsAllowed) {
+                if (BKException.Code.BookieHandleNotAvailableException == firstError
+                        && numMissedEntryReads > maxMissedReadsAllowed) {
                     firstError = BKException.Code.NoSuchEntryException;
                 }
 
@@ -287,7 +286,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
     }
 
     class SequenceReadRequest extends ReadLACAndEntryRequest {
-        final static int NOT_FOUND = -1;
+        static final int NOT_FOUND = -1;
         int nextReplicaIndexToReadFrom = 0;
 
         final BitSet sentReplicas;
@@ -322,7 +321,8 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         }
 
         private boolean readsOutstanding() {
-            return (sentReplicas.cardinality() - erroredReplicas.cardinality() - emptyResponseReplicas.cardinality()) > 0;
+            return (sentReplicas.cardinality() - erroredReplicas.cardinality()
+                    - emptyResponseReplicas.cardinality()) > 0;
         }
 
         /**
@@ -360,8 +360,8 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
 
                 // Do it a bit pessimistically, only when finished trying all replicas
                 // to check whether we received more missed reads than maxMissedReadsAllowed
-                if (BKException.Code.BookieHandleNotAvailableException == firstError &&
-                    numMissedEntryReads > maxMissedReadsAllowed) {
+                if (BKException.Code.BookieHandleNotAvailableException == firstError
+                        && numMissedEntryReads > maxMissedReadsAllowed) {
                     firstError = BKException.Code.NoSuchEntryException;
                 }
 
@@ -440,15 +440,15 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
     }
 
     /**
-     * Speculative Read Logic
+     * Speculative Read Logic.
      */
     @Override
     public ListenableFuture<Boolean> issueSpeculativeRequest() {
         return lh.bk.getMainWorkerPool().submitOrdered(lh.getId(), new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
-                if (!requestComplete.get() && !request.isComplete() &&
-                    (null != request.maybeSendSpeculativeRead(heardFromHostsBitSet))) {
+                if (!requestComplete.get() && !request.isComplete()
+                        && (null != request.maybeSendSpeculativeRead(heardFromHostsBitSet))) {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Send speculative ReadLAC {} for ledger {} (previousLAC: {}). Hosts heard are {}.",
                             new Object[] {request, lh.getId(), lastAddConfirmed, heardFromHostsBitSet });
@@ -489,10 +489,10 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
     }
 
     /**
-     * Wrapper to get all recovered data from the request
+     * Wrapper to get all recovered data from the request.
      */
     interface LastConfirmedAndEntryCallback {
-        public void readLastConfirmedAndEntryComplete(int rc, long lastAddConfirmed, LedgerEntry entry);
+        void readLastConfirmedAndEntryComplete(int rc, long lastAddConfirmed, LedgerEntry entry);
     }
 
     private void submitCallback(int rc) {
@@ -542,7 +542,8 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
                 if (request.complete(rCtx.getBookieIndex(), bookie, buffer, entryId)) {
                     // callback immediately
                     if (rCtx.getLacUpdateTimestamp().isPresent()) {
-                        long elapsedMicros = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis() - rCtx.getLacUpdateTimestamp().get());
+                        long elapsedMicros = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis()
+                                - rCtx.getLacUpdateTimestamp().get());
                         elapsedMicros = Math.max(elapsedMicros, 0);
                         lh.bk.getReadLacAndEntryRespLogger()
                             .registerSuccessfulEvent(elapsedMicros, TimeUnit.MICROSECONDS);
@@ -557,16 +558,18 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
                 if (lastAddConfirmed > prevEntryId) {
                     // received advanced lac
                     completeRequest();
-                } else if(emptyResponsesFromHostsBitSet.cardinality() >= numEmptyResponsesAllowed) {
+                } else if (emptyResponsesFromHostsBitSet.cardinality() >= numEmptyResponsesAllowed) {
                     if (LOG.isDebugEnabled()) {
-                        LOG.debug("Completed readLACAndEntry(lid = {}, previousEntryId = {}) after received {} empty responses ('{}').",
-                                new Object[]{ledgerId, prevEntryId, emptyResponsesFromHostsBitSet.cardinality(), emptyResponsesFromHostsBitSet});
+                        LOG.debug("Completed readLACAndEntry(lid = {}, previousEntryId = {}) "
+                                + "after received {} empty responses ('{}').",
+                                new Object[]{ledgerId, prevEntryId, emptyResponsesFromHostsBitSet.cardinality(),
+                                    emptyResponsesFromHostsBitSet});
                     }
                     completeRequest();
                 } else {
                     if (LOG.isDebugEnabled()) {
-                        LOG.debug("Received empty response for readLACAndEntry(lid = {}, previousEntryId = {}) from" +
-                                        " bookie {} @ {}, reattempting reading next bookie : lac = {}",
+                        LOG.debug("Received empty response for readLACAndEntry(lid = {}, previousEntryId = {}) from"
+                                        + " bookie {} @ {}, reattempting reading next bookie : lac = {}",
                                 new Object[]{ledgerId, prevEntryId, rCtx.getBookieAddress(),
                                         rCtx.getBookieAddress(), lastAddConfirmed});
                     }

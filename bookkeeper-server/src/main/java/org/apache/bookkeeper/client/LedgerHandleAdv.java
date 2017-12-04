@@ -21,8 +21,8 @@
 
 package org.apache.bookkeeper.client;
 
-import static org.apache.bookkeeper.common.concurrent.FutureUtils.createFuture;
-import static org.apache.bookkeeper.common.concurrent.FutureUtils.completeExceptionally;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 import java.io.Serializable;
 import java.security.GeneralSecurityException;
@@ -31,15 +31,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
+
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncAddCallback;
+import org.apache.bookkeeper.client.api.WriteAdvHandle;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import org.apache.bookkeeper.client.api.WriteAdvHandle;
 
 /**
  * Ledger Advanced handle extends {@link LedgerHandle} to provide API to add entries with
@@ -47,7 +46,7 @@ import org.apache.bookkeeper.client.api.WriteAdvHandle;
  * ledger being written.
  */
 public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
-    final static Logger LOG = LoggerFactory.getLogger(LedgerHandleAdv.class);
+    static final Logger LOG = LoggerFactory.getLogger(LedgerHandleAdv.class);
 
     static class PendingOpsComparator implements Comparator<PendingAddOp>, Serializable {
         public int compare(PendingAddOp o1, PendingAddOp o2) {
@@ -227,7 +226,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
     }
 
     /**
-     * LedgerHandleAdv will not allow addEntry without providing an entryId
+     * LedgerHandleAdv will not allow addEntry without providing an entryId.
      */
     @Override
     public void asyncAddEntry(ByteBuf data, AddCallback cb, Object ctx) {
@@ -235,7 +234,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
     }
 
     /**
-     * LedgerHandleAdv will not allow addEntry without providing an entryId
+     * LedgerHandleAdv will not allow addEntry without providing an entryId.
      */
     @Override
     public void asyncAddEntry(final byte[] data, final int offset, final int length,

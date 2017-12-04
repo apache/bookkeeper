@@ -36,7 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Encapsulates asynchronous ledger delete operation
+ * Encapsulates asynchronous ledger delete operation.
  *
  */
 class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
@@ -51,7 +51,7 @@ class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
     final OpStatsLogger deleteOpLogger;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param bk
      *            BookKeeper object
@@ -73,7 +73,7 @@ class LedgerDeleteOp extends OrderedSafeGenericCallback<Void> {
     }
 
     /**
-     * Initiates the operation
+     * Initiates the operation.
      */
     public void initiate() {
         // Asynchronously delete the ledger from meta manager

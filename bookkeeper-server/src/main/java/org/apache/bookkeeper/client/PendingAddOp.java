@@ -18,6 +18,9 @@
 package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+
+import com.google.common.collect.ImmutableMap;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
@@ -25,11 +28,10 @@ import io.netty.util.ReferenceCountUtil;
 import io.netty.util.Timeout;
 import io.netty.util.TimerTask;
 
-import java.util.Arrays;
 import java.util.Map;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.collect.ImmutableMap;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
@@ -37,10 +39,8 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.SafeRunnable;
-import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.concurrent.RejectedExecutionException;
 
 /**
  * This represents a pending add operation. When it has got success from all
@@ -52,7 +52,7 @@ import java.util.concurrent.RejectedExecutionException;
  *
  */
 class PendingAddOp extends SafeRunnable implements WriteCallback, TimerTask {
-    private final static Logger LOG = LoggerFactory.getLogger(PendingAddOp.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PendingAddOp.class);
 
     ByteBuf payload;
     ByteBuf toSend;
@@ -126,8 +126,8 @@ class PendingAddOp extends SafeRunnable implements WriteCallback, TimerTask {
     void sendWriteRequest(int bookieIndex) {
         int flags = isRecoveryAdd ? BookieProtocol.FLAG_RECOVERY_ADD : BookieProtocol.FLAG_NONE;
 
-        lh.bk.getBookieClient().addEntry(lh.metadata.currentEnsemble.get(bookieIndex), lh.ledgerId, lh.ledgerKey, entryId, toSend,
-                this, bookieIndex, flags);
+        lh.bk.getBookieClient().addEntry(lh.metadata.currentEnsemble.get(bookieIndex), lh.ledgerId, lh.ledgerKey,
+                entryId, toSend, this, bookieIndex, flags);
         ++pendingWriteRequests;
     }
 
@@ -177,8 +177,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback, TimerTask {
         // completes.
         //
         // We call sendAddSuccessCallback when unsetting t cover this case.
-        DistributionSchedule.WriteSet writeSet
-            = lh.distributionSchedule.getWriteSet(entryId);
+        DistributionSchedule.WriteSet writeSet = lh.distributionSchedule.getWriteSet(entryId);
         try {
             if (!writeSet.contains(bookieIndex)) {
                 lh.sendAddSuccessCallbacks();
@@ -209,7 +208,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback, TimerTask {
     }
 
     /**
-     * Initiate the add operation
+     * Initiate the add operation.
      */
     public void safeRun() {
         hasRun = true;
@@ -235,8 +234,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback, TimerTask {
                 payload);
 
         // Iterate over set and trigger the sendWriteRequests
-        DistributionSchedule.WriteSet writeSet
-            = lh.distributionSchedule.getWriteSet(entryId);
+        DistributionSchedule.WriteSet writeSet = lh.distributionSchedule.getWriteSet(entryId);
         try {
             for (int i = 0; i < writeSet.size(); i++) {
                 sendWriteRequest(writeSet.get(i));
@@ -272,11 +270,12 @@ class PendingAddOp extends SafeRunnable implements WriteCallback, TimerTask {
             //
             // E.g. entry x is going to complete.
             //
-            // 1) entry x + k hits a failure. lh.handleBookieFailure increases blockAddCompletions to 1, for ensemble change
+            // 1) entry x + k hits a failure. lh.handleBookieFailure increases blockAddCompletions to 1, for ensemble
+            //    change
             // 2) entry x receives all responses, sets completed to true but fails to send success callback because
             //    blockAddCompletions is 1
-            // 3) ensemble change completed. lh unset success starting from x to x+k, but since the unset doesn't break ackSet
-            //    constraint. #removeBookieAndCheck doesn't set completed back to false.
+            // 3) ensemble change completed. lh unset success starting from x to x+k, but since the unset doesn't break
+            //    ackSet constraint. #removeBookieAndCheck doesn't set completed back to false.
             // 4) so when the retry request on new bookie completes, it finds the pending op is already completed.
             //    we have to trigger #sendAddSuccessCallbacks
             //
@@ -307,7 +306,8 @@ class PendingAddOp extends SafeRunnable implements WriteCallback, TimerTask {
             return;
         default:
             if (lh.bk.delayEnsembleChange) {
-                if (ackSet.failBookieAndCheck(bookieIndex, addr) || rc == BKException.Code.WriteOnReadOnlyBookieException) {
+                if (ackSet.failBookieAndCheck(bookieIndex, addr)
+                        || rc == BKException.Code.WriteOnReadOnlyBookieException) {
                     Map<Integer, BookieSocketAddress> failedBookies = ackSet.getFailedBookies();
                     LOG.warn("Failed to write entry ({}, {}) to bookies {}, handling failures.",
                              new Object[] { ledgerId, entryId, failedBookies });
@@ -315,8 +315,8 @@ class PendingAddOp extends SafeRunnable implements WriteCallback, TimerTask {
                     lh.handleBookieFailure(failedBookies);
                 } else {
                     if (LOG.isDebugEnabled()) {
-                        LOG.debug("Failed to write entry ({}, {}) to bookie ({}, {})," +
-                                  " but it didn't break ack quorum, delaying ensemble change : {}",
+                        LOG.debug("Failed to write entry ({}, {}) to bookie ({}, {}),"
+                                  + " but it didn't break ack quorum, delaying ensemble change : {}",
                                   new Object[] { ledgerId, entryId, bookieIndex, addr, BKException.getMessage(rc) });
                     }
                 }
@@ -379,7 +379,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback, TimerTask {
     @Override
     public boolean equals(Object o) {
        if (o instanceof PendingAddOp) {
-           return (this.entryId == ((PendingAddOp)o).entryId);
+           return (this.entryId == ((PendingAddOp) o).entryId);
        }
        return (this == o);
     }

@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
  * <p>NOTE: This class is tended to be used by this project only. External users should not rely on it directly.
  */
 public class LedgerChecker {
-    private final static Logger LOG = LoggerFactory.getLogger(LedgerChecker.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LedgerChecker.class);
 
     public final BookieClient bookieClient;
 
@@ -52,7 +52,7 @@ public class LedgerChecker {
     /**
      * This will collect all the entry read call backs and finally it will give
      * call back to previous call back API which is waiting for it once it meets
-     * the expected call backs from down
+     * the expected call backs from down.
      */
     private static class ReadManyEntriesCallback implements ReadEntryCallback {
         AtomicBoolean completed = new AtomicBoolean(false);
@@ -134,7 +134,7 @@ public class LedgerChecker {
     }
 
     /**
-     * Verify a ledger fragment to collect bad bookies
+     * Verify a ledger fragment to collect bad bookies.
      *
      * @param fragment
      *          fragment to verify
@@ -220,8 +220,7 @@ public class LedgerChecker {
 
         public void readEntryComplete(int rc, long ledgerId, long entryId,
                                       ByteBuf buffer, Object ctx) {
-            if (BKException.Code.NoSuchEntryException != rc &&
-                BKException.Code.NoSuchLedgerExistsException != rc) {
+            if (BKException.Code.NoSuchEntryException != rc && BKException.Code.NoSuchLedgerExistsException != rc) {
                 entryMayExist.set(true);
             }
 
@@ -234,7 +233,7 @@ public class LedgerChecker {
     /**
      * This will collect all the fragment read call backs and finally it will
      * give call back to above call back API which is waiting for it once it
-     * meets the expected call backs from down
+     * meets the expected call backs from down.
      */
     private static class FullLedgerCallback implements
             GenericCallback<LedgerFragment> {
@@ -322,8 +321,7 @@ public class LedgerChecker {
             if (curEntryId == lastEntry) {
                 final long entryToRead = curEntryId;
 
-                final EntryExistsCallback eecb
-                    = new EntryExistsCallback(lh.getLedgerMetadata().getWriteQuorumSize(),
+                final EntryExistsCallback eecb = new EntryExistsCallback(lh.getLedgerMetadata().getWriteQuorumSize(),
                                               new GenericCallback<Boolean>() {
                                                   public void operationComplete(int rc, Boolean result) {
                                                       if (result) {
@@ -333,8 +331,7 @@ public class LedgerChecker {
                                                   }
                                               });
 
-                DistributionSchedule.WriteSet writeSet
-                    = lh.getDistributionSchedule().getWriteSet(entryToRead);
+                DistributionSchedule.WriteSet writeSet = lh.getDistributionSchedule().getWriteSet(entryToRead);
                 for (int i = 0; i < writeSet.size(); i++) {
                     BookieSocketAddress addr = curEnsemble.get(writeSet.get(i));
                     bookieClient.readEntry(addr, lh.getId(), entryToRead, eecb, null);
