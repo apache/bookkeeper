@@ -1,9 +1,11 @@
 ---
 title: "BP-22: Separate closing ledgers from opening ledgers"
 issue: https://github.com/apache/bookkeeper/794
-state: "Under Discussion"
+state: "Rejected"
 release: "4.7.0"
 ---
+
+Rejected due to lack of agreement that the issues raised in the motivation are valid.
 
 ### Motivation
 

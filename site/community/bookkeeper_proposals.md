@@ -105,3 +105,4 @@ Proposal | Release
 Proposal | Reason
 :--------|:------
 [BP-7 - Explicit LAC on addEntry](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-7+-+Explicit+LAC+on+addEntry) | Not A Problem
+[BP-22: Separate closing ledgers from opening ledgers](../../bps/BP-22-separate-closing-ledgers-from-opening-ledgers) | Not A Problem
