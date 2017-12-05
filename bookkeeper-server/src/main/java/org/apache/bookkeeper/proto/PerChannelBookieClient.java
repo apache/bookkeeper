@@ -1079,7 +1079,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         };
     }
 
-    private OperationType getOperationType(byte opCode) {
+    private static OperationType getOperationType(byte opCode) {
         switch (opCode) {
             case BookieProtocol.ADDENTRY:
                 return  OperationType.ADD_ENTRY;
@@ -1094,11 +1094,11 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             case BookieProtocol.GET_BOOKIE_INFO:
                 return OperationType.GET_BOOKIE_INFO;
             default:
-                throw new IllegalArgumentException("Invalid operation type");
+                throw new IllegalArgumentException("Invalid operation type " + opCode);
         }
     }
 
-    private StatusCode getStatusCodeFromErrorCode(int errorCode) {
+    private static StatusCode getStatusCodeFromErrorCode(int errorCode) {
         switch (errorCode) {
             case BookieProtocol.EOK:
                 return StatusCode.EOK;
