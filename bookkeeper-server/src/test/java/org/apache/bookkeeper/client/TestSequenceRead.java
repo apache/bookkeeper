@@ -23,8 +23,11 @@ package org.apache.bookkeeper.client;
 import static org.junit.Assert.assertEquals;
 
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.CountDownLatch;
+
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
@@ -33,15 +36,12 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-
 /**
  * Test reading an entry from replicas in sequence way.
  */
 public class TestSequenceRead extends BookKeeperClusterTestCase {
 
-    static final Logger logger = LoggerFactory.getLogger(TestSequenceRead.class);
+    private static final Logger logger = LoggerFactory.getLogger(TestSequenceRead.class);
 
     final DigestType digestType;
     final byte[] passwd = "sequence-read".getBytes();
@@ -67,13 +67,15 @@ public class TestSequenceRead extends BookKeeperClusterTestCase {
         lh.getLedgerMetadata().setEnsembles(newEnsembles);
         // update the ledger metadata with duplicated bookies
         final CountDownLatch latch = new CountDownLatch(1);
-        bkc.getLedgerManager().writeLedgerMetadata(lh.getId(), lh.getLedgerMetadata(), new BookkeeperInternalCallbacks.GenericCallback<Void>() {
+        bkc.getLedgerManager().writeLedgerMetadata(lh.getId(), lh.getLedgerMetadata(),
+                new BookkeeperInternalCallbacks.GenericCallback<Void>() {
             @Override
             public void operationComplete(int rc, Void result) {
                 if (BKException.Code.OK == rc) {
                     latch.countDown();
                 } else {
-                    logger.error("Error on writing ledger metadata for ledger {} : ", lh.getId(), BKException.getMessage(rc));
+                    logger.error("Error on writing ledger metadata for ledger {} : ", lh.getId(),
+                            BKException.getMessage(rc));
                 }
             }
         });

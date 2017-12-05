@@ -37,11 +37,10 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.junit.Test;
 
 /**
- * Test to verify the readonly feature of bookies
+ * Test to verify the readonly feature of bookies.
  */
 public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
 
@@ -52,7 +51,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Check readonly bookie
+     * Check readonly bookie.
      */
     @Test
     public void testBookieShouldServeAsReadOnly() throws Exception {
@@ -165,7 +164,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
     }
 
     /**
-     * check readOnlyModeEnabled=false
+     * check readOnlyModeEnabled=false.
      */
     @Test
     public void testBookieShutdownIfReadOnlyModeNotEnabled() throws Exception {
@@ -204,7 +203,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Check multiple ledger dirs
+     * Check multiple ledger dirs.
      */
     @Test
     public void testBookieContinueWritingIfMultipleLedgersPresent()
@@ -254,7 +253,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Test ledger creation with readonly bookies
+     * Test ledger creation with readonly bookies.
      */
     @Test
     public void testLedgerCreationShouldFailWithReadonlyBookie() throws Exception {

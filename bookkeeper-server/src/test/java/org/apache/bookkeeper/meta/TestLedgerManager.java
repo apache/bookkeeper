@@ -20,26 +20,31 @@
  */
 package org.apache.bookkeeper.meta;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CyclicBarrier;
+
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.ZooDefs.Ids;
-import java.util.concurrent.CyclicBarrier;
-import java.util.List;
-import java.util.ArrayList;
-import java.lang.reflect.Field;
 import org.apache.zookeeper.ZooDefs;
-
+import org.apache.zookeeper.ZooDefs.Ids;
+import org.apache.zookeeper.ZooKeeper;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
-
+/**
+ * Test the ledger manager.
+ */
 public class TestLedgerManager extends BookKeeperClusterTestCase {
-    private final static Logger LOG = LoggerFactory.getLogger(TestLedgerManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TestLedgerManager.class);
 
     public TestLedgerManager() {
         super(0);
@@ -59,7 +64,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Test bad client configuration
+     * Test bad client configuration.
      */
     @Test
     public void testBadConf() throws Exception {
@@ -105,7 +110,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Test bad client configuration
+     * Test bad client configuration.
      */
     @SuppressWarnings("deprecation")
     @Test
@@ -147,7 +152,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Test bad zk configuration
+     * Test bad zk configuration.
      */
     @Test
     public void testBadZkContents() throws Exception {
@@ -243,7 +248,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
         zkc.create(root0, new byte[0],
                    Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 
-        CyclicBarrier barrier = new CyclicBarrier(numThreads+1);
+        CyclicBarrier barrier = new CyclicBarrier(numThreads + 1);
         List<CreateLMThread> threads = new ArrayList<CreateLMThread>(numThreads);
         for (int i = 0; i < numThreads; i++) {
             CreateLMThread t = new CreateLMThread(zkUtil.getZooKeeperConnectString(),
@@ -273,7 +278,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
         zkc.create(root0, new byte[0],
                    Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
 
-        CyclicBarrier barrier = new CyclicBarrier(numThreadsEach*2+1);
+        CyclicBarrier barrier = new CyclicBarrier(numThreadsEach * 2 + 1);
         List<CreateLMThread> threadsA = new ArrayList<CreateLMThread>(numThreadsEach);
         for (int i = 0; i < numThreadsEach; i++) {
             CreateLMThread t = new CreateLMThread(zkUtil.getZooKeeperConnectString(),

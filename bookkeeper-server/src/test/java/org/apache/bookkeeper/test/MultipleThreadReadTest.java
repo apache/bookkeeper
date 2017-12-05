@@ -20,6 +20,10 @@
  */
 package org.apache.bookkeeper.test;
 
+import static com.google.common.base.Charsets.UTF_8;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,6 +31,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -37,11 +42,11 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
-import static com.google.common.base.Charsets.UTF_8;
-
+/**
+ * Multi-thread read test.
+ */
 public class MultipleThreadReadTest extends BookKeeperClusterTestCase {
-    static Logger LOG = LoggerFactory.getLogger(MultipleThreadReadTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MultipleThreadReadTest.class);
 
     BookKeeper.DigestType digestType;
     byte [] ledgerPassword = "aaa".getBytes();
@@ -81,7 +86,7 @@ public class MultipleThreadReadTest extends BookKeeperClusterTestCase {
                     lh.asyncAddEntry(entry, new AsyncCallback.AddCallback() {
                         @Override
                         public void addComplete(int rc, LedgerHandle ledgerHandle, long eid, Object o) {
-                            SyncObj syncObj = (SyncObj)o;
+                            SyncObj syncObj = (SyncObj) o;
                             synchronized (syncObj) {
                                 if (rc != BKException.Code.OK) {
                                     LOG.error("Add entry {} failed : rc = {}", new String(entry, UTF_8), rc);
@@ -132,7 +137,8 @@ public class MultipleThreadReadTest extends BookKeeperClusterTestCase {
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
-                //LedgerHandle lh = clientList.get(0).openLedger(ledgerIds.get(tNo % numLedgers), digestType, ledgerPassword);
+                //LedgerHandle lh = clientList.get(0).openLedger(ledgerIds.get(tNo % numLedgers),
+                //    digestType, ledgerPassword);
                 long startEntryId = 0;
                 long endEntryId;
                 long eid = 0;
@@ -160,7 +166,7 @@ public class MultipleThreadReadTest extends BookKeeperClusterTestCase {
                             byte[] data = e.getEntry();
                             if (!Arrays.equals(("Entry-" + ledgerNumber + "-" + e.getEntryId()).getBytes(), data)) {
                                 LOG.error("Expected entry data 'Entry-{}-{}' but {} found for ledger {}.",
-                                          new Object[] { ledgerNumber, e.getEntryId(), new String(data, UTF_8), lh.getId() });
+                                          ledgerNumber, e.getEntryId(), new String(data, UTF_8), lh.getId());
                                 success = false;
                                 break;
                             }

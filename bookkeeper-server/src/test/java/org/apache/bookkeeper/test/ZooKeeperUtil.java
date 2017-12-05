@@ -21,12 +21,15 @@
 
 package org.apache.bookkeeper.test;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.bookkeeper.zookeeper.ZooKeeperWatcherBase;
@@ -41,8 +44,10 @@ import org.apache.zookeeper.server.ZooKeeperServer;
 import org.apache.zookeeper.test.ClientBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import static org.junit.Assert.*;
 
+/**
+ * Test the zookeeper utilities.
+ */
 public class ZooKeeperUtil {
 
     static {
@@ -59,7 +64,7 @@ public class ZooKeeperUtil {
     protected ZooKeeperServer zks;
     protected ZooKeeper zkc; // zookeeper client
     protected NIOServerCnxnFactory serverFactory;
-    protected File ZkTmpDir;
+    protected File zkTmpDir;
     private String connectString;
 
     public ZooKeeperUtil() {
@@ -81,7 +86,7 @@ public class ZooKeeperUtil {
         LOG.debug("Running ZK server");
         // ServerStats.registerAsConcrete();
         ClientBase.setupTestEnv();
-        ZkTmpDir = IOUtils.createTempDir("zookeeper", "test");
+        zkTmpDir = IOUtils.createTempDir("zookeeper", "test");
 
         // start the server and client.
         restartServer();
@@ -98,7 +103,7 @@ public class ZooKeeperUtil {
     }
 
     public void restartServer() throws Exception {
-        zks = new ZooKeeperServer(ZkTmpDir, ZkTmpDir,
+        zks = new ZooKeeperServer(zkTmpDir, zkTmpDir,
                 ZooKeeperServer.DEFAULT_TICK_TIME);
         serverFactory = new NIOServerCnxnFactory();
         serverFactory.configure(zkaddr, 100);
@@ -180,6 +185,6 @@ public class ZooKeeperUtil {
     public void killServer() throws Exception {
         stopServer();
         // ServerStats.unregister();
-        FileUtils.deleteDirectory(ZkTmpDir);
+        FileUtils.deleteDirectory(zkTmpDir);
     }
 }

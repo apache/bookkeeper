@@ -20,22 +20,8 @@
  */
 package org.apache.bookkeeper.proto;
 
-import org.apache.bookkeeper.auth.ClientAuthProvider;
-import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
-import org.apache.bookkeeper.bookie.Bookie;
-import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
-import org.apache.bookkeeper.proto.PerChannelBookieClient.ConnectionState;
-import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.util.OrderedSafeExecutor;
-import org.apache.bookkeeper.util.SafeRunnable;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import com.google.protobuf.ExtensionRegistry;
 
@@ -49,14 +35,29 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.*;
+import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
+import org.apache.bookkeeper.auth.ClientAuthProvider;
+import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
+import org.apache.bookkeeper.proto.PerChannelBookieClient.ConnectionState;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.util.OrderedSafeExecutor;
+import org.apache.bookkeeper.util.SafeRunnable;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Tests for PerChannelBookieClient. Historically, this class has
  * had a few race conditions, so this is what these tests focus on.
  */
 public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
-    private final static Logger LOG = LoggerFactory.getLogger(TestPerChannelBookieClient.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TestPerChannelBookieClient.class);
 
     ExtensionRegistry extRegistry = ExtensionRegistry.newInstance();
     ClientAuthProvider.Factory authProvider;
@@ -151,7 +152,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
                 // we just want to trigger it connecting.
             }
         };
-        final int ITERATIONS = 100000;
+        final int iterations = 100000;
         EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
         OrderedSafeExecutor executor = getOrderedSafeExecutor();
         BookieSocketAddress addr = getBookie(0);
@@ -173,7 +174,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
                         Thread.currentThread().interrupt();
                         running.set(false);
                     }
-                    for (int i = 0; i < ITERATIONS && running.get(); i++) {
+                    for (int i = 0; i < iterations && running.get(); i++) {
                         client.connectIfNeededAndDoOp(nullop);
                     }
                     running.set(false);
@@ -226,7 +227,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
 
     /**
      * Test that requests are completed even if the channel is disconnected
-     * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-668}
+     * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-668}.
      */
     @Test
     public void testRequestCompletesAfterDisconnectRace() throws Exception {
