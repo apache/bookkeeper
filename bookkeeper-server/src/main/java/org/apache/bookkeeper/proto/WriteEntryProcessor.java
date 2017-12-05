@@ -88,7 +88,7 @@ class WriteEntryProcessor extends PacketProcessorBase implements WriteCallback {
             LOG.error("Unauthorized access to ledger " + add.getLedgerId(), e);
             rc = BookieProtocol.EUA;
         } catch (Throwable t) {
-            LOG.error("Unexpected exception while writing {}@{} : {}", new Object[] { add.ledgerId, add.entryId, t.getMessage(), t });
+            LOG.error("Unexpected exception while writing {}@{} : {}", add.ledgerId, add.entryId, t.getMessage(), t);
             // some bad request which cause unexpected exception
             rc = BookieProtocol.EBADREQ;
         } finally {
