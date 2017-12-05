@@ -18,6 +18,8 @@
 
 package org.apache.bookkeeper.util;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileStore;
@@ -26,12 +28,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Class that provides utility functions for checking disk problems
+ * Class that provides utility functions for checking disk problems.
  */
 public class DiskChecker {
 
@@ -40,12 +41,18 @@ public class DiskChecker {
     private float diskUsageThreshold;
     private float diskUsageWarnThreshold;
 
+    /**
+     * A general marker for disk-related exceptions.
+     */
     public abstract static class DiskException extends IOException {
         public DiskException(String msg) {
             super(msg);
         }
     }
 
+    /**
+     * A disk error exception.
+     */
     public static class DiskErrorException extends DiskException {
         private static final long serialVersionUID = 9091606022449761729L;
 
@@ -54,6 +61,9 @@ public class DiskChecker {
         }
     }
 
+    /**
+     * An out-of-space disk exception.
+     */
     public static class DiskOutOfSpaceException extends DiskException {
         private static final long serialVersionUID = 160898797915906860L;
 
@@ -69,6 +79,9 @@ public class DiskChecker {
         }
     }
 
+    /**
+     * A disk warn threshold exception.
+     */
     public static class DiskWarnThresholdException extends DiskException {
         private static final long serialVersionUID = -1629284987500841657L;
 
@@ -150,7 +163,7 @@ public class DiskChecker {
                 LOG.warn("Space left on device {} : {}, Used space fraction: {} < WarnThreshold {}.",
                         new Object[] { dir, usableSpace, used, diskUsageThreshold });
                 throw new DiskWarnThresholdException("Space left on device:"
-                        + usableSpace + " Used space fraction:" + used +" < WarnThreshold:" + diskUsageWarnThreshold,
+                        + usableSpace + " Used space fraction:" + used + " < WarnThreshold:" + diskUsageWarnThreshold,
                         used);
             }
             return used;
@@ -165,7 +178,7 @@ public class DiskChecker {
      * in all of the ledger directories put together.
      *
      * @return totalDiskSpace in bytes
-     * @throws IOException 
+     * @throws IOException
      */
     public long getTotalFreeSpace(List<File> dirs) throws IOException {
         long totalFreeSpace = 0;
@@ -184,7 +197,7 @@ public class DiskChecker {
      * in all of the ledger directories put together.
      *
      * @return freeDiskSpace in bytes
-     * @throws IOException 
+     * @throws IOException
      */
     public long getTotalDiskSpace(List<File> dirs) throws IOException {
         long totalDiskSpace = 0;
@@ -197,14 +210,14 @@ public class DiskChecker {
         }
         return totalDiskSpace;
     }
-    
+
     /**
-     * calculates and returns the disk usage factor in the provided list of dirs
-     * 
+     * calculates and returns the disk usage factor in the provided list of dirs.
+     *
      * @param dirs
      *            list of directories
      * @return disk usage factor in the provided list of dirs
-     * @throws IOException 
+     * @throws IOException
      */
     public float getTotalDiskUsage(List<File> dirs) throws IOException {
         if (dirs == null || dirs.isEmpty()) {
@@ -217,7 +230,7 @@ public class DiskChecker {
     }
 
     /**
-     * Create the directory if it doesn't exist and
+     * Create the directory if it doesn't exist.
      *
      * @param dir
      *            Directory to check for the disk error/full.
@@ -231,25 +244,29 @@ public class DiskChecker {
     public float checkDir(File dir) throws DiskErrorException,
             DiskOutOfSpaceException, DiskWarnThresholdException {
         float usage = checkDiskFull(dir);
-        if (!mkdirsWithExistsCheck(dir))
+        if (!mkdirsWithExistsCheck(dir)) {
             throw new DiskErrorException("can not create directory: "
                     + dir.toString());
+        }
 
-        if (!dir.isDirectory())
+        if (!dir.isDirectory()) {
             throw new DiskErrorException("not a directory: " + dir.toString());
+        }
 
-        if (!dir.canRead())
+        if (!dir.canRead()) {
             throw new DiskErrorException("directory is not readable: "
                     + dir.toString());
+        }
 
-        if (!dir.canWrite())
+        if (!dir.canWrite()) {
             throw new DiskErrorException("directory is not writable: "
                     + dir.toString());
+        }
         return usage;
     }
 
     /**
-     * Set the disk space threshold
+     * Set the disk space threshold.
      *
      * @param diskSpaceThreshold
      */

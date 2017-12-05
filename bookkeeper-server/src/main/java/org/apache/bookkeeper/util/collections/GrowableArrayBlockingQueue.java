@@ -36,7 +36,7 @@ import org.apache.bookkeeper.util.MathUtils;
 /**
  * This implements a {@link BlockingQueue} backed by an array with no fixed capacity.
  *
- * When the capacity is reached, data will be moved to a bigger array.
+ * <p>When the capacity is reached, data will be moved to a bigger array.
  *
  */
 public class GrowableArrayBlockingQueue<T> extends AbstractQueue<T> implements BlockingQueue<T> {
@@ -345,7 +345,7 @@ public class GrowableArrayBlockingQueue<T> extends AbstractQueue<T> implements B
         }
     }
 
-    final static class PaddedInt {
+    static final class PaddedInt {
         private int value;
 
         // Padding to avoid false sharing
