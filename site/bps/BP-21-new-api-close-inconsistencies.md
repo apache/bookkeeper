@@ -1,9 +1,11 @@
 ---
 title: "BP-21: New API close inconsistencies"
 issue: https://github.com/apache/bookkeeper/issues/789
-state: "Under Discussion"
+state: "Rejected"
 release: "4.6.0"
 ---
+
+Rejected due to lack of agreement that the issues raised in the motivation are valid.
 
 ### Motivation
 
