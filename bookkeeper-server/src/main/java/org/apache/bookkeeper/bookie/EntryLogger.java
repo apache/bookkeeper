@@ -128,6 +128,7 @@ public class EntryLogger {
     private List<BufferedLogChannel> logChannelsToFlush;
     private volatile BufferedLogChannel logChannel;
     private volatile BufferedLogChannel compactionLogChannel;
+
     private final EntryLoggerAllocator entryLoggerAllocator;
     private final boolean entryLogPreAllocationEnabled;
     private final CopyOnWriteArrayList<EntryLogListener> listeners = new CopyOnWriteArrayList<EntryLogListener>();
@@ -494,6 +495,12 @@ public class EntryLogger {
     }
 
     /**
+     * get EntryLoggerAllocator, Just for tests.
+     */
+    EntryLoggerAllocator getEntryLoggerAllocator() {
+        return entryLoggerAllocator;
+    }
+    /**
      * Append the ledger map at the end of the entry log.
      * Updates the entry log file header with the offset and size of the map.
      */
@@ -561,28 +568,34 @@ public class EntryLogger {
         BufferedLogChannel createNewLog() throws IOException {
             synchronized (createEntryLogLock) {
                 BufferedLogChannel bc;
-                if (!entryLogPreAllocationEnabled || null == preallocation) {
-                    // initialization time to create a new log
+                if (!entryLogPreAllocationEnabled){
+                    // create a new log directly
                     bc = allocateNewLog();
                     return bc;
                 } else {
-                    // has a preallocated entry log
-                    try {
-                        bc = preallocation.get();
-                    } catch (ExecutionException ee) {
-                        if (ee.getCause() instanceof IOException) {
-                            throw (IOException) (ee.getCause());
-                        } else {
-                            throw new IOException("Error to execute entry log allocation.", ee);
+                    // allocate directly to response request
+                    if (null == preallocation){
+                        bc = allocateNewLog();
+                    } else {
+                        // has a preallocated entry log
+                        try {
+                            bc = preallocation.get();
+                        } catch (ExecutionException ee) {
+                            if (ee.getCause() instanceof IOException) {
+                                throw (IOException) (ee.getCause());
+                            } else {
+                                throw new IOException("Error to execute entry log allocation.", ee);
+                            }
+                        } catch (CancellationException ce) {
+                            throw new IOException("Task to allocate a new entry log is cancelled.", ce);
+                        } catch (InterruptedException ie) {
+                            throw new IOException("Intrrupted when waiting a new entry log to be allocated.", ie);
                         }
-                    } catch (CancellationException ce) {
-                        throw new IOException("Task to allocate a new entry log is cancelled.", ce);
-                    } catch (InterruptedException ie) {
-                        throw new IOException("Intrrupted when waiting a new entry log to be allocated.", ie);
                     }
+                    // preallocate a new log in background upon every call
+                    preallocation = allocatorExecutor.submit(() -> allocateNewLog());
+                    return bc;
                 }
-                preallocation = allocatorExecutor.submit(() -> allocateNewLog());
-                return bc;
             }
         }
 
@@ -641,6 +654,13 @@ public class EntryLogger {
             // wait until the preallocation finished.
             allocatorExecutor.shutdown();
             LOG.info("Stopped entry logger preallocator.");
+        }
+
+        /**
+         * get the preallocation for tests.
+         */
+        Future<BufferedLogChannel> getPreallocationFuture(){
+            return preallocation;
         }
     }
 
