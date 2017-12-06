@@ -282,9 +282,10 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         Thread.sleep(1000);
         client.disconnect();
         client.close();
-        eventLoopGroup.shutdownGracefully();
-        executor.shutdown();
 
         assertTrue("Request should have completed", completion.await(5, TimeUnit.SECONDS));
+
+        eventLoopGroup.shutdownGracefully();
+        executor.shutdown();
     }
 }
