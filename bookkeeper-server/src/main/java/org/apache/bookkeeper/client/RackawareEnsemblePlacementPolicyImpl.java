@@ -48,6 +48,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -182,7 +183,7 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
     protected HashedWheelTimer timer;
     protected final Map<BookieSocketAddress, BookieNode> knownBookies;
     // Use a loading cache so slow bookies are expired. Use entryId as values.
-    protected LoadingCache<BookieSocketAddress, Long> slowBookies;
+    protected Cache<BookieSocketAddress, Long> slowBookies;
     protected BookieNode localNode;
     protected final ReentrantReadWriteLock rwLock;
     protected ImmutableSet<BookieSocketAddress> readOnlyBookies = null;
@@ -867,7 +868,7 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
                     || !readOnlyBookies.contains(address)) {
                     writeSet.set(i, idx | UNAVAIL_MASK);
                 } else {
-                    if (slowBookies.asMap().containsKey(address)) {
+                    if (slowBookies.getIfPresent(address) != null) {
                         int numPendingReqs = bookiesHealthInfo.getBookiePendingRequests(address);
                         // use slow bookies with less pending requests first
                         long slowIdx = numPendingReqs * ensembleSize + idx;
@@ -877,7 +878,7 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
                     }
                 }
             } else if (lastFailedEntryOnBookie < 0) {
-                if (slowBookies.asMap().containsKey(address)) {
+                if (slowBookies.getIfPresent(address) != null) {
                     int numPendingReqs = bookiesHealthInfo.getBookiePendingRequests(address);
                     long slowIdx = numPendingReqs * ensembleSize + idx;
                     writeSet.set(i, (int) (slowIdx & ~MASK_BITS) | SLOW_MASK);

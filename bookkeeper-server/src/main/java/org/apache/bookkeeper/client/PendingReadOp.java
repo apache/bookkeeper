@@ -83,10 +83,10 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         int firstError = BKException.Code.OK;
         int numMissedEntryReads = 0;
 
-        final long eId;
         final ArrayList<BookieSocketAddress> ensemble;
         final DistributionSchedule.WriteSet writeSet;
         final LedgerEntryImpl entryImpl;
+        final long eId;
 
         LedgerEntryRequest(ArrayList<BookieSocketAddress> ensemble, long lId, long eId) {
             this.eId = eId;
@@ -97,7 +97,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
                 DistributionSchedule.WriteSet unorderedWriteSet = lh.getDistributionSchedule().getWriteSet(eId);
                 BookiesHealthInfo bookiesHealthInfo = lh.generateHealthInfoForWriteSet(
                     unorderedWriteSet,
-                    ensemble,
+                    ensemble
                 );
                 writeSet = lh.bk.getPlacementPolicy()
                     .reorderReadSequence(
@@ -430,7 +430,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         @Override
         boolean complete(int bookieIndex, BookieSocketAddress host, ByteBuf buffer) {
             boolean completed = super.complete(bookieIndex, host, buffer);
-            if (completed && lh.bk.getConf().getEnsemblePlacementPolicySlowBookies()) {
+            if (completed) {
                 int numReplicasTried = getNextReplicaIndexToReadFrom();
                 // Check if any speculative reads were issued and mark any slow bookies before
                 // the first successful speculative read as "slow"

@@ -313,6 +313,29 @@ public class LedgerHandle implements WriteHandle {
         return distributionSchedule;
     }
 
+    /**
+     * Generate the health info for bookies in the write set.
+     *
+     * @return BookiesHealthInfo for every bookie in the write set.
+     */
+    public BookiesHealthInfo generateHealthInfoForWriteSet(
+        DistributionSchedule.WriteSet writeSet,
+        ArrayList<BookieSocketAddress> ensemble) {
+        Map<BookieSocketAddress, Integer> bookiePendingMap = new HashMap<>();
+        BookieClient client = bk.bookieClient;
+        for(int i = 0; i < writeSet.size(); i++) {
+            int idx = writeSet.get(i);
+            BookieSocketAddress address = ensemble.get(idx);
+            PerChannelBookieClientPool pcbcPool = client.lookupClient(address);
+            if (pcbcPool == null) {
+                continue;
+            }
+            int numPendingReqs = pcbcPool.getNumPendingCompletionRequests();
+            bookiePendingMap.put(address, numPendingReqs);
+        }
+        return new BookiesHealthInfo(bookieFailureHistory.asMap(), bookiePendingMap);
+    }
+
     void writeLedgerConfig(GenericCallback<Void> writeCb) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Writing metadata to ledger manager: {}, {}", this.ledgerId, metadata.getVersion());
