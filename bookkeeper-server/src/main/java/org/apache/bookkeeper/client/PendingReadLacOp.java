@@ -17,25 +17,25 @@
  */
 package org.apache.bookkeeper.client;
 
+import io.netty.buffer.ByteBuf;
+
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.DigestManager.RecoveryData;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadLacCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.netty.buffer.ByteBuf;
-
 /**
  * This represents a pending ReadLac operation.
  *
- * LAC is stored in two places on bookies.
+ * <p>LAC is stored in two places on bookies.
  * 1. WriteLac operation sends Explicit LAC and is stored in memory on each bookie.
  * 2. Each AddEntry operation piggy-backs LAC which is stored on bookie's disk.
  *
- * This operation returns both of those entries and we pick the latest LAC out of
+ * <p>This operation returns both of those entries and we pick the latest LAC out of
  * available answers.
  *
- * This is an optional protocol operations to facilitate tailing readers
+ * <p>This is an optional protocol operations to facilitate tailing readers
  * to be up to date with the writer. This is best effort to get latest LAC
  * from bookies, and doesn't affect the correctness of the protocol.
  */
@@ -54,7 +54,7 @@ class PendingReadLacOp implements ReadLacCallback {
      * Wrapper to get Lac from the request
      */
     interface LacCallback {
-        public void getLacComplete(int rc, long lac);
+        void getLacComplete(int rc, long lac);
     }
 
     PendingReadLacOp(LedgerHandle lh, LacCallback cb) {

@@ -35,9 +35,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NavigableMap;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
 import org.apache.bookkeeper.versioning.Version;
@@ -50,7 +52,7 @@ import org.slf4j.LoggerFactory;
  *
  * <p>It provides parsing and serialization methods of such metadata.
  */
-public class LedgerMetadata {
+public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMetadata {
     static final Logger LOG = LoggerFactory.getLogger(LedgerMetadata.class);
 
     private static final String closed = "CLOSED";
@@ -77,7 +79,7 @@ public class LedgerMetadata {
     private boolean storeSystemtimeAsLedgerCreationTime;
 
     private LedgerMetadataFormat.State state;
-    private SortedMap<Long, ArrayList<BookieSocketAddress>> ensembles =
+    private TreeMap<Long, ArrayList<BookieSocketAddress>> ensembles =
         new TreeMap<Long, ArrayList<BookieSocketAddress>>();
     ArrayList<BookieSocketAddress> currentEnsemble;
     volatile Version version = Version.NEW;
@@ -116,8 +118,8 @@ public class LedgerMetadata {
         this.lastEntryId = LedgerHandle.INVALID_ENTRY_ID;
         this.metadataFormatVersion = CURRENT_METADATA_FORMAT_VERSION;
 
-        this.digestType = digestType.equals(BookKeeper.DigestType.MAC) ?
-            LedgerMetadataFormat.DigestType.HMAC : LedgerMetadataFormat.DigestType.CRC32;
+        this.digestType = digestType.equals(BookKeeper.DigestType.MAC)
+            ? LedgerMetadataFormat.DigestType.HMAC : LedgerMetadataFormat.DigestType.CRC32;
         this.password = Arrays.copyOf(password, password.length);
         this.hasPassword = true;
         if (customMetadata != null) {
@@ -173,30 +175,35 @@ public class LedgerMetadata {
      * @return SortedMap of Ledger Fragments and the corresponding
      * bookie ensembles that store the entries.
      */
-    public SortedMap<Long, ArrayList<BookieSocketAddress>> getEnsembles() {
+    public TreeMap<Long, ArrayList<BookieSocketAddress>> getEnsembles() {
         return ensembles;
     }
 
-    void setEnsembles(SortedMap<Long, ArrayList<BookieSocketAddress>> ensembles) {
+    @Override
+    public NavigableMap<Long, ? extends List<BookieSocketAddress>> getAllEnsembles() {
+        return ensembles;
+    }
+
+    void setEnsembles(TreeMap<Long, ArrayList<BookieSocketAddress>> ensembles) {
         this.ensembles = ensembles;
     }
 
+    @Override
     public int getEnsembleSize() {
         return ensembleSize;
     }
 
+    @Override
     public int getWriteQuorumSize() {
         return writeQuorumSize;
     }
 
+    @Override
     public int getAckQuorumSize() {
         return ackQuorumSize;
     }
 
-    /**
-     * Get the creation timestamp of the ledger
-     * @return
-     */
+    @Override
     public long getCtime() {
         return ctime;
     }
@@ -221,18 +228,21 @@ public class LedgerMetadata {
         return Arrays.copyOf(password, password.length);
     }
 
-    BookKeeper.DigestType getDigestType() {
+    @Override
+    public DigestType getDigestType() {
         if (digestType.equals(LedgerMetadataFormat.DigestType.HMAC)) {
-            return BookKeeper.DigestType.MAC;
+            return DigestType.MAC;
         } else {
-            return BookKeeper.DigestType.CRC32;
+            return DigestType.CRC32;
         }
     }
 
+    @Override
     public long getLastEntryId() {
         return lastEntryId;
     }
 
+    @Override
     public long getLength() {
         return length;
     }
@@ -241,6 +251,7 @@ public class LedgerMetadata {
         this.length = length;
     }
 
+    @Override
     public boolean isClosed() {
         return state == LedgerMetadataFormat.State.CLOSED;
     }
@@ -279,9 +290,14 @@ public class LedgerMetadata {
         return ensembles.get(ensembles.headMap(entryId + 1).lastKey());
     }
 
+    @Override
+    public List<BookieSocketAddress> getEnsembleAt(long entryId) {
+        return getEnsemble(entryId);
+    }
+
     /**
      * the entry id greater than the given entry-id at which the next ensemble change takes
-     * place
+     * place.
      *
      * @param entryId
      * @return the entry id of the next ensemble change (-1 if no further ensemble changes)
@@ -296,6 +312,7 @@ public class LedgerMetadata {
         }
     }
 
+    @Override
     public Map<String, byte[]> getCustomMetadata() {
         return this.customMetadata;
     }
@@ -319,8 +336,9 @@ public class LedgerMetadata {
         }
 
         if (customMetadata != null) {
-            LedgerMetadataFormat.cMetadataMapEntry.Builder cMetadataBuilder = LedgerMetadataFormat.cMetadataMapEntry.newBuilder();
-            for (Map.Entry<String,byte[]> entry : customMetadata.entrySet()) {
+            LedgerMetadataFormat.cMetadataMapEntry.Builder cMetadataBuilder =
+                LedgerMetadataFormat.cMetadataMapEntry.newBuilder();
+            for (Map.Entry<String, byte[]> entry : customMetadata.entrySet()) {
                 cMetadataBuilder.setKey(entry.getKey()).setValue(ByteString.copyFrom(entry.getValue()));
                 builder.addCustomMetadata(cMetadataBuilder.build());
             }
@@ -338,7 +356,7 @@ public class LedgerMetadata {
     }
 
     /**
-     * Generates a byte array of this object
+     * Generates a byte array of this object.
      *
      * @return the metadata serialized into a byte array
      */
@@ -383,7 +401,7 @@ public class LedgerMetadata {
     }
 
     /**
-     * Parses a given byte array and transforms into a LedgerConfig object
+     * Parses a given byte array and transforms into a LedgerConfig object.
      *
      * @param bytes
      *            byte array to parse
@@ -555,15 +573,16 @@ public class LedgerMetadata {
     }
 
     /**
-     * Routine to compare two Map<String, byte[]>; Since the values in the map are byte[], we can't use Map.equals
+     * Routine to compare two {@code Map<String, byte[]>}; Since the values in the map are {@code byte[]}, we can't use
+     * {@code Map.equals}.
      * @param first
      *          The first map
      * @param second
      *          The second map to compare with
-     * @return true if the 2 maps contain the exact set of <K,V> pairs.
+     * @return true if the 2 maps contain the exact set of {@code <K,V>} pairs.
      */
     public static boolean areByteArrayValMapsEqual(Map<String, byte[]> first, Map<String, byte[]> second) {
-        if(first == null && second == null) {
+        if (first == null && second == null) {
             return true;
         }
 
@@ -598,15 +617,15 @@ public class LedgerMetadata {
          *  opened the ledger, can't resolve this conflict.
          */
 
-        if (metadataFormatVersion != newMeta.metadataFormatVersion ||
-            ensembleSize != newMeta.ensembleSize ||
-            writeQuorumSize != newMeta.writeQuorumSize ||
-            ackQuorumSize != newMeta.ackQuorumSize ||
-            length != newMeta.length ||
-            state != newMeta.state ||
-            !digestType.equals(newMeta.digestType) ||
-            !Arrays.equals(password, newMeta.password) ||
-            !LedgerMetadata.areByteArrayValMapsEqual(customMetadata, newMeta.customMetadata)) {
+        if (metadataFormatVersion != newMeta.metadataFormatVersion
+            || ensembleSize != newMeta.ensembleSize
+            || writeQuorumSize != newMeta.writeQuorumSize
+            || ackQuorumSize != newMeta.ackQuorumSize
+            || length != newMeta.length
+            || state != newMeta.state
+            || !digestType.equals(newMeta.digestType)
+            || !Arrays.equals(password, newMeta.password)
+            || !LedgerMetadata.areByteArrayValMapsEqual(customMetadata, newMeta.customMetadata)) {
             return true;
         }
 
@@ -634,7 +653,7 @@ public class LedgerMetadata {
             // using recovery tool.
             Iterator<Long> keyIter = ensembles.keySet().iterator();
             Iterator<Long> newMetaKeyIter = newMeta.ensembles.keySet().iterator();
-            for (int i=0; i<newMeta.ensembles.size(); i++) {
+            for (int i = 0; i < newMeta.ensembles.size(); i++) {
                 Long curKey = keyIter.next();
                 Long newMetaKey = newMetaKeyIter.next();
                 if (!curKey.equals(newMetaKey)) {

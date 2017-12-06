@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.proto;
 
+import static org.apache.bookkeeper.auth.AuthProviderFactoryFactory.AUTHENTICATION_DISABLED_PLUGIN_NAME;
+
 import com.google.protobuf.ByteString;
 
 import io.netty.channel.Channel;
@@ -35,7 +37,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.bookkeeper.auth.AuthCallbacks;
-import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
 import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.auth.BookieAuthProvider;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
@@ -129,8 +130,7 @@ class AuthHandler {
                         && req.hasStartTLSRequest()) {
                     super.channelRead(ctx, msg);
                 } else {
-                    BookkeeperProtocol.Response.Builder builder
-                        = BookkeeperProtocol.Response.newBuilder()
+                    BookkeeperProtocol.Response.Builder builder = BookkeeperProtocol.Response.newBuilder()
                         .setHeader(req.getHeader())
                         .setStatus(BookkeeperProtocol.StatusCode.EUA);
 
@@ -276,13 +276,12 @@ class AuthHandler {
                         } else {
                             assert (resp.hasAuthResponse());
                             BookkeeperProtocol.AuthMessage am = resp.getAuthResponse();
-                            if (AuthProviderFactoryFactory.AUTHENTICATION_DISABLED_PLUGIN_NAME.equals(am.getAuthPluginName())){
+                            if (AUTHENTICATION_DISABLED_PLUGIN_NAME.equals(am.getAuthPluginName())){
                                 SocketAddress remote = ctx.channel().remoteAddress();
                                 LOG.info("Authentication is not enabled."
                                     + "Considering this client {0} authenticated", remote);
-                                AuthHandshakeCompleteCallback authHandshakeCompleteCallback
-                                    = new AuthHandshakeCompleteCallback(ctx);
-                                authHandshakeCompleteCallback.operationComplete(BKException.Code.OK, null);
+                                AuthHandshakeCompleteCallback cb = new AuthHandshakeCompleteCallback(ctx);
+                                cb.operationComplete(BKException.Code.OK, null);
                                 return;
                             }
                             byte[] payload = am.getPayload().toByteArray();
@@ -319,7 +318,7 @@ class AuthHandler {
                     }
                 } else if (msg instanceof BookieProtocol.Request) {
                     // let auth messages through, queue the rest
-                    BookieProtocol.Request req = (BookieProtocol.Request)msg;
+                    BookieProtocol.Request req = (BookieProtocol.Request) msg;
                     if (BookkeeperProtocol.OperationType.AUTH.getNumber() == req.getOpCode()) {
                         super.write(ctx, msg, promise);
                         super.flush(ctx);

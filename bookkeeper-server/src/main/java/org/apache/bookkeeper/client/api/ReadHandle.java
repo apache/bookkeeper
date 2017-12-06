@@ -98,7 +98,7 @@ public interface ReadHandle extends Handle {
     /**
      * Get the last confirmed entry id on this ledger. It reads the local state of the ledger handle,
      * which is different from the {@link #readLastAddConfirmed()} call.
-
+     *
      * <p>In the case the ledger is not closed and the client is a reader, it is necessary to
      * call {@link #readLastAddConfirmed()} to obtain a fresh value of last add confirmed entry id.
      *

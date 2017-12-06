@@ -24,6 +24,9 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 
+/**
+ * JAAS Credentials Container.
+ */
 public interface JAASCredentialsContainer {
 
     Subject getSubject();

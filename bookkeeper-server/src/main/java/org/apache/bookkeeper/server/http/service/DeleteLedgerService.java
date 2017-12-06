@@ -18,7 +18,8 @@
  */
 package org.apache.bookkeeper.server.http.service;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.Map;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -42,7 +43,7 @@ public class DeleteLedgerService implements HttpEndpointService {
     protected ServerConfiguration conf;
 
     public DeleteLedgerService(ServerConfiguration conf) {
-        Preconditions.checkNotNull(conf);
+        checkNotNull(conf);
         this.conf = conf;
     }
 

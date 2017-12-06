@@ -17,14 +17,14 @@
  */
 package org.apache.bookkeeper.client;
 
+import io.netty.buffer.ByteBuf;
+
 import org.apache.bookkeeper.client.DigestManager.RecoveryData;
 import org.apache.bookkeeper.client.ReadLastConfirmedOp.LastConfirmedDataCallback;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import io.netty.buffer.ByteBuf;
 
 /**
  * This op is try to read last confirmed without involving quorum coverage checking.
@@ -88,8 +88,7 @@ class TryReadLastConfirmedOp implements ReadEntryCallback {
         } else if (BKException.Code.UnauthorizedAccessException == rc && !completed) {
             cb.readLastConfirmedDataComplete(rc, maxRecoveredData);
             completed = true;
-        } else if (BKException.Code.NoSuchLedgerExistsException == rc ||
-                   BKException.Code.NoSuchEntryException == rc) {
+        } else if (BKException.Code.NoSuchLedgerExistsException == rc || BKException.Code.NoSuchEntryException == rc) {
             hasValidResponse = true;
         }
         if (numResponsesPending == 0 && !completed) {

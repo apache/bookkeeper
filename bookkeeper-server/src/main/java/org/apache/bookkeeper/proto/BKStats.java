@@ -27,7 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Bookie Server Stats
+ * Bookie Server Stats.
  */
 public class BKStats {
     private static final Logger LOG = LoggerFactory.getLogger(BKStats.class);
@@ -38,7 +38,7 @@ public class BKStats {
     }
 
     /**
-     * A read view of stats, also used in CompositeViewData to expose to JMX
+     * A read view of stats, also used in CompositeViewData to expose to JMX.
      */
     public static class OpStatData {
         private final long maxLatency, minLatency;
@@ -84,10 +84,10 @@ public class BKStats {
     }
 
     /**
-     * Operation Statistics
+     * Operation Statistics.
      */
     public static class OpStats {
-        static final int NUM_BUCKETS = 3*9 + 2;
+        static final int NUM_BUCKETS = 3 * 9 + 2;
 
         long maxLatency = 0;
         long minLatency = Long.MAX_VALUE;
@@ -99,16 +99,16 @@ public class BKStats {
         OpStats() {}
 
         /**
-         * Increment number of failed operations
+         * Increment number of failed operations.
          */
-        synchronized public void incrementFailedOps() {
+        public synchronized void incrementFailedOps() {
             ++numFailedOps;
         }
 
         /**
-         * Update Latency
+         * Update Latency.
          */
-        synchronized public void updateLatency(long latency) {
+        public synchronized void updateLatency(long latency) {
             if (latency < 0) {
                 // less than 0ms . Ideally this should not happen.
                 // We have seen this latency negative in some cases due to the
@@ -127,11 +127,11 @@ public class BKStats {
             }
             int bucket;
             if (latency <= 100) { // less than 100ms
-                bucket = (int)(latency / 10);
+                bucket = (int) (latency / 10);
             } else if (latency <= 1000) { // 100ms ~ 1000ms
-                bucket = 1 * 9 + (int)(latency / 100);
+                bucket = 1 * 9 + (int) (latency / 100);
             } else if (latency <= 10000) { // 1s ~ 10s
-                bucket = 2 * 9 + (int)(latency / 1000);
+                bucket = 2 * 9 + (int) (latency / 1000);
             } else { // more than 10s
                 bucket = 3 * 9 + 1;
             }
@@ -141,7 +141,7 @@ public class BKStats {
         public OpStatData toOpStatData() {
             double avgLatency = numSuccessOps > 0 ? totalLatency / numSuccessOps : 0.0f;
             StringBuilder sb = new StringBuilder();
-            for (int i=0; i<NUM_BUCKETS; i++) {
+            for (int i = 0; i < NUM_BUCKETS; i++) {
                 sb.append(latencyBuckets[i]);
                 if (i != NUM_BUCKETS - 1) {
                     sb.append(',');
@@ -152,7 +152,7 @@ public class BKStats {
         }
 
         /**
-         * Diff with base opstats
+         * Diff with base opstats.
          *
          * @param base
          *        base opstats
@@ -172,10 +172,9 @@ public class BKStats {
         }
 
         /**
-         * Copy stats from other OpStats
+         * Copy stats from other OpStats.
          *
          * @param other other op stats
-         * @return void
          */
         public synchronized void copyOf(OpStats other) {
             this.maxLatency = other.maxLatency;
@@ -196,13 +195,13 @@ public class BKStats {
     OpStats[] stats = new OpStats[NUM_STATS];
 
     private BKStats() {
-        for (int i=0; i<NUM_STATS; i++) {
+        for (int i = 0; i < NUM_STATS; i++) {
             stats[i] = new OpStats();
         }
     }
 
     /**
-     * Stats of operations
+     * Stats of operations.
      *
      * @return op stats
      */
@@ -211,7 +210,7 @@ public class BKStats {
     }
 
     /**
-     * Set stats of a specified operation
+     * Set stats of a specified operation.
      *
      * @param type operation type
      * @param stat operation stats
@@ -221,27 +220,26 @@ public class BKStats {
     }
 
     /**
-     * Diff with base stats
+     * Diff with base stats.
      *
      * @param base base stats
      * @return diff stats
      */
     public BKStats diff(BKStats base) {
         BKStats diff = new BKStats();
-        for (int i=0; i<NUM_STATS; i++) {
+        for (int i = 0; i < NUM_STATS; i++) {
             diff.setOpStats(i, stats[i].diff(base.getOpStats(i)));
         }
         return diff;
     }
 
     /**
-     * Copy stats from other stats
+     * Copy stats from other stats.
      *
      * @param other other stats
-     * @return void
      */
     public void copyOf(BKStats other) {
-        for (int i=0; i<NUM_STATS; i++) {
+        for (int i = 0; i < NUM_STATS; i++) {
             stats[i].copyOf(other.getOpStats(i));
         }
     }

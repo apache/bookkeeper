@@ -20,9 +20,10 @@
  */
 package org.apache.bookkeeper.client;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Optional;
-import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
@@ -276,7 +277,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         }
 
         /**
-         * Feature Provider
+         * Feature Provider.
          *
          * @param featureProvider
          * @return
@@ -287,7 +288,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         }
 
         public BookKeeper build() throws IOException, InterruptedException, BKException {
-            Preconditions.checkNotNull(statsLogger, "No stats logger provided");
+            checkNotNull(statsLogger, "No stats logger provided");
             return new BookKeeper(conf, zk, eventLoopGroup, statsLogger, dnsResolver, requestTimer, featureProvider);
         }
     }
@@ -332,7 +333,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     }
 
     private static ZooKeeper validateZooKeeper(ZooKeeper zk) throws NullPointerException, IOException {
-        Preconditions.checkNotNull(zk, "No zookeeper instance provided");
+        checkNotNull(zk, "No zookeeper instance provided");
         if (!zk.getState().isConnected()) {
             LOG.error("Unconnected zookeeper handle passed to bookkeeper");
             throw new IOException(KeeperException.create(KeeperException.Code.CONNECTIONLOSS));
@@ -342,7 +343,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
     private static EventLoopGroup validateEventLoopGroup(EventLoopGroup eventLoopGroup)
             throws NullPointerException {
-        Preconditions.checkNotNull(eventLoopGroup, "No Event Loop Group provided");
+        checkNotNull(eventLoopGroup, "No Event Loop Group provided");
         return eventLoopGroup;
     }
 
@@ -380,7 +381,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      *          An event loop group that will be used to create connections to the bookies
      * @throws IOException
      * @throws InterruptedException
-     * @throws KeeperException if the passed zk handle is not connected
+     * @throws BKException in the event of a bookkeeper connection error
      */
     public BookKeeper(ClientConfiguration conf, ZooKeeper zk, EventLoopGroup eventLoopGroup)
             throws IOException, InterruptedException, BKException {
@@ -479,7 +480,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
         if (conf.getFirstSpeculativeReadLACTimeout() > 0) {
             this.readLACSpeculativeRequestPolicy =
-                    Optional.of((SpeculativeRequestExecutionPolicy)(new DefaultSpeculativeRequestExecutionPolicy(
+                    Optional.of((SpeculativeRequestExecutionPolicy) (new DefaultSpeculativeRequestExecutionPolicy(
                         conf.getFirstSpeculativeReadLACTimeout(),
                         conf.getMaxSpeculativeReadLACTimeout(),
                         conf.getSpeculativeReadLACTimeoutBackoffMultiplier())));
@@ -709,8 +710,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     public void asyncCreateLedger(final int ensSize,
                                   final int writeQuorumSize,
                                   final DigestType digestType,
-                                  final byte[] passwd, final CreateCallback cb, final Object ctx)
-    {
+                                  final byte[] passwd, final CreateCallback cb, final Object ctx) {
         asyncCreateLedger(ensSize, writeQuorumSize, writeQuorumSize, digestType, passwd, cb, ctx, null);
     }
 
@@ -719,13 +719,13 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * a separate write quorum and ack quorum size. The write quorum must be larger than
      * the ack quorum.
      *
-     * Separating the write and the ack quorum allows the BookKeeper client to continue
+     * <p>Separating the write and the ack quorum allows the BookKeeper client to continue
      * writing when a bookie has failed but the failure has not yet been detected. Detecting
      * a bookie has failed can take a number of seconds, as configured by the read timeout
      * {@link ClientConfiguration#getReadTimeout()}. Once the bookie failure is detected,
      * that bookie will be removed from the ensemble.
      *
-     * The other parameters match those of {@link #asyncCreateLedger(int, int, DigestType, byte[],
+     * <p>The other parameters match those of {@link #asyncCreateLedger(int, int, DigestType, byte[],
      *                                      AsyncCallback.CreateCallback, Object)}
      *
      * @param ensSize
@@ -923,13 +923,13 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * a separate write quorum and ack quorum size. The write quorum must be larger than
      * the ack quorum.
      *
-     * Separating the write and the ack quorum allows the BookKeeper client to continue
+     * <p>Separating the write and the ack quorum allows the BookKeeper client to continue
      * writing when a bookie has failed but the failure has not yet been detected. Detecting
      * a bookie has failed can take a number of seconds, as configured by the read timeout
      * {@link ClientConfiguration#getReadTimeout()}. Once the bookie failure is detected,
      * that bookie will be removed from the ensemble.
      *
-     * The other parameters match those of {@link #asyncCreateLedger(int, int, DigestType, byte[],
+     * <p>The other parameters match those of {@link #asyncCreateLedger(int, int, DigestType, byte[],
      *                                      AsyncCallback.CreateCallback, Object)}
      *
      * @param ensSize
@@ -962,7 +962,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata).initiateAdv((long)(-1));
+                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata).initiateAdv((long) (-1));
         } finally {
             closeLock.readLock().unlock();
         }
@@ -991,7 +991,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                                         int ackQuorumSize,
                                         DigestType digestType,
                                         byte passwd[],
-                                        final Map<String, byte[]> customMetadata) throws InterruptedException, BKException{
+                                        final Map<String, byte[]> customMetadata)
+            throws InterruptedException, BKException {
         CompletableFuture<LedgerHandleAdv> future = new CompletableFuture<>();
         SyncCreateAdvCallback result = new SyncCreateAdvCallback(future);
 
@@ -1023,13 +1024,13 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * a separate write quorum and ack quorum size. The write quorum must be larger than
      * the ack quorum.
      *
-     * Separating the write and the ack quorum allows the BookKeeper client to continue
+     * <p>Separating the write and the ack quorum allows the BookKeeper client to continue
      * writing when a bookie has failed but the failure has not yet been detected. Detecting
      * a bookie has failed can take a number of seconds, as configured by the read timeout
      * {@link ClientConfiguration#getReadTimeout()}. Once the bookie failure is detected,
      * that bookie will be removed from the ensemble.
      *
-     * The other parameters match those of {@link #asyncCreateLedger(long, int, int, DigestType, byte[],
+     * <p>The other parameters match those of {@link #asyncCreateLedger(long, int, int, DigestType, byte[],
      *                                      AsyncCallback.CreateCallback, Object)}
      *
      * @param ledgerId
@@ -1079,17 +1080,17 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     /**
      * Open existing ledger asynchronously for reading.
      *
-     * Opening a ledger with this method invokes fencing and recovery on the ledger
+     * <p>Opening a ledger with this method invokes fencing and recovery on the ledger
      * if the ledger has not been closed. Fencing will block all other clients from
      * writing to the ledger. Recovery will make sure that the ledger is closed
      * before reading from it.
      *
-     * Recovery also makes sure that any entries which reached one bookie, but not a
+     * <p>Recovery also makes sure that any entries which reached one bookie, but not a
      * quorum, will be replicated to a quorum of bookies. This occurs in cases were
      * the writer of a ledger crashes after sending a write request to one bookie but
      * before being able to send it to the rest of the bookies in the quorum.
      *
-     * If the ledger is already closed, neither fencing nor recovery will be applied.
+     * <p>If the ledger is already closed, neither fencing nor recovery will be applied.
      *
      * @see LedgerHandle#asyncClose
      *
@@ -1124,14 +1125,14 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * of the writer and the ledger is not open in a safe manner, invoking the
      * recovery procedure.
      *
-     * Opening a ledger without recovery does not fence the ledger. As such, other
+     * <p>Opening a ledger without recovery does not fence the ledger. As such, other
      * clients can continue to write to the ledger.
      *
-     * This method returns a read only ledger handle. It will not be possible
+     * <p>This method returns a read only ledger handle. It will not be possible
      * to add entries to the ledger. Any attempt to add entries will throw an
      * exception.
      *
-     * Reads from the returned ledger will be able to read entries up until
+     * <p>Reads from the returned ledger will be able to read entries up until
      * the lastConfirmedEntry at the point in time at which the ledger was opened.
      * If an attempt is made to read beyond the ledger handle's LAC, an attempt is made
      * to get the latest LAC from bookies or metadata, and if the entry_id of the read request
@@ -1162,7 +1163,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
 
     /**
-     * Synchronous open ledger call
+     * Synchronous open ledger call.
      *
      * @see #asyncOpenLedger
      * @param lId
@@ -1189,7 +1190,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     }
 
     /**
-     * Synchronous, unsafe open ledger call
+     * Synchronous, unsafe open ledger call.
      *
      * @see #asyncOpenLedgerNoRecovery
      * @param lId
@@ -1247,7 +1248,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @param lId
      *            ledgerId
      * @throws InterruptedException
-     * @throws BKException.BKNoSuchLedgerExistsException if the ledger doesn't exist
      * @throws BKException
      */
     @SuppressWarnings("unchecked")
@@ -1376,14 +1376,15 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         this.regClient.close();
     }
 
-    private final void initOpLoggers(StatsLogger stats) {
+    private void initOpLoggers(StatsLogger stats) {
         createOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.CREATE_OP);
         deleteOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.DELETE_OP);
         openOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.OPEN_OP);
         recoverOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.RECOVER_OP);
         readOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_OP);
         readLacAndEntryOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY);
-        readLacAndEntryRespLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY_RESPONSE);
+        readLacAndEntryRespLogger = stats.getOpStatsLogger(
+                BookKeeperClientStats.READ_LAST_CONFIRMED_AND_ENTRY_RESPONSE);
         addOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.ADD_OP);
         writeLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.WRITE_LAC_OP);
         readLacOpLogger = stats.getOpStatsLogger(BookKeeperClientStats.READ_LAC_OP);
@@ -1391,18 +1392,42 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         recoverReadEntriesStats = stats.getOpStatsLogger(BookKeeperClientStats.LEDGER_RECOVER_READ_ENTRIES);
     }
 
-    OpStatsLogger getCreateOpLogger() { return createOpLogger; }
-    OpStatsLogger getOpenOpLogger() { return openOpLogger; }
-    OpStatsLogger getDeleteOpLogger() { return deleteOpLogger; }
-    OpStatsLogger getRecoverOpLogger() { return recoverOpLogger; }
-    OpStatsLogger getReadOpLogger() { return readOpLogger; }
-    OpStatsLogger getReadLacAndEntryOpLogger() { return readLacAndEntryOpLogger; }
-    OpStatsLogger getReadLacAndEntryRespLogger() { return readLacAndEntryRespLogger; }
-    OpStatsLogger getAddOpLogger() { return addOpLogger; }
-    OpStatsLogger getWriteLacOpLogger() { return writeLacOpLogger; }
-    OpStatsLogger getReadLacOpLogger() { return readLacOpLogger; }
-    OpStatsLogger getRecoverAddCountLogger() { return recoverAddEntriesStats; }
-    OpStatsLogger getRecoverReadCountLogger() { return recoverReadEntriesStats; }
+    OpStatsLogger getCreateOpLogger() {
+        return createOpLogger;
+    }
+    OpStatsLogger getOpenOpLogger() {
+        return openOpLogger;
+    }
+    OpStatsLogger getDeleteOpLogger() {
+        return deleteOpLogger;
+    }
+    OpStatsLogger getRecoverOpLogger() {
+        return recoverOpLogger;
+    }
+    OpStatsLogger getReadOpLogger() {
+        return readOpLogger;
+    }
+    OpStatsLogger getReadLacAndEntryOpLogger() {
+        return readLacAndEntryOpLogger;
+    }
+    OpStatsLogger getReadLacAndEntryRespLogger() {
+        return readLacAndEntryRespLogger;
+    }
+    OpStatsLogger getAddOpLogger() {
+        return addOpLogger;
+    }
+    OpStatsLogger getWriteLacOpLogger() {
+        return writeLacOpLogger;
+    }
+    OpStatsLogger getReadLacOpLogger() {
+        return readLacOpLogger;
+    }
+    OpStatsLogger getRecoverAddCountLogger() {
+        return recoverAddEntriesStats;
+    }
+    OpStatsLogger getRecoverReadCountLogger() {
+        return recoverReadEntriesStats;
+    }
 
     static EventLoopGroup getDefaultEventLoopGroup() {
         ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat("bookkeeper-io-%s").build();

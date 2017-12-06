@@ -71,13 +71,15 @@ fi
 
 find-server-jar() {
   DIR=$1
-  cd $DIR
-  for f in *.jar; do
-    if [[ $f =~ ^bookkeeper-server-[0-9\\.]*(-SNAPSHOT)?.jar$ ]]; then
-      echo $DIR/$f
-        return
-    fi
-  done
+  if [ -d $DIR ]; then
+    cd $DIR
+    for f in *.jar; do
+      if [[ $f =~ ^(org.apache.bookkeeper-)?bookkeeper-server-[0-9\\.]*(-SNAPSHOT)?.jar$ ]]; then
+        echo $DIR/$f
+          return
+      fi
+    done
+  fi
 }
 
 RELEASE_JAR=$(find-server-jar ${BK_HOME})

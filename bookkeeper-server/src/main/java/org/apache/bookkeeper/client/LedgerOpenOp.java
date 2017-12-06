@@ -21,11 +21,14 @@
 
 package org.apache.bookkeeper.client;
 
+import static org.apache.bookkeeper.client.BookKeeper.DigestType.fromApiDigestType;
+
+import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.security.GeneralSecurityException;
+
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -40,7 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Encapsulates the ledger open operation
+ * Encapsulates the ledger open operation.
  *
  */
 class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
@@ -56,7 +59,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
     boolean administrativeOpen = false;
     long startTime;
     final OpStatsLogger openOpLogger;
-    
+
     final DigestType suggestedDigestType;
     final boolean enableDigestAutodetection;
 
@@ -96,7 +99,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
     }
 
     /**
-     * Inititates the ledger open operation
+     * Inititates the ledger open operation.
      */
     public void initiate() {
         startTime = MathUtils.nowInNano();
@@ -108,7 +111,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
     }
 
     /**
-     * Inititates the ledger open operation without recovery
+     * Inititates the ledger open operation without recovery.
      */
     public void initiateWithoutRecovery() {
         this.doRecovery = false;
@@ -127,16 +130,16 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
         }
 
         final byte[] passwd;
-        DigestType digestType = enableDigestAutodetection 
-                                    ? metadata.getDigestType() 
+        DigestType digestType = enableDigestAutodetection
+                                    ? fromApiDigestType(metadata.getDigestType())
                                     : suggestedDigestType;
-										
+
         /* For an administrative open, the default passwords
          * are read from the configuration, but if the metadata
          * already contains passwords, use these instead. */
         if (administrativeOpen && metadata.hasPassword()) {
             passwd = metadata.getPassword();
-            digestType = metadata.getDigestType();
+            digestType = fromApiDigestType(metadata.getDigestType());
         } else {
             passwd = this.passwd;
 
@@ -146,7 +149,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
                     openComplete(BKException.Code.UnauthorizedAccessException, null);
                     return;
                 }
-                if (digestType != metadata.getDigestType()) {
+                if (digestType != fromApiDigestType(metadata.getDigestType())) {
                     LOG.error("Provided digest does not match that in metadata");
                     openComplete(BKException.Code.DigestMatchException, null);
                     return;
@@ -221,8 +224,8 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
         private boolean builderRecovery = false;
         private Long builderLedgerId;
         private byte[] builderPassword;
-        private org.apache.bookkeeper.client.api.DigestType builderDigestType
-                = org.apache.bookkeeper.client.api.DigestType.CRC32;
+        private org.apache.bookkeeper.client.api.DigestType builderDigestType =
+            org.apache.bookkeeper.client.api.DigestType.CRC32;
         private final BookKeeper bk;
 
         OpenBuilderImpl(BookKeeper bookkeeper) {
@@ -276,7 +279,7 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
                 return;
             }
 
-            LedgerOpenOp op = new LedgerOpenOp(bk, builderLedgerId, DigestType.fromApiDigestType(builderDigestType),
+            LedgerOpenOp op = new LedgerOpenOp(bk, builderLedgerId, fromApiDigestType(builderDigestType),
                 builderPassword, cb, null);
             ReentrantReadWriteLock closeLock = bk.getCloseLock();
             closeLock.readLock().lock();

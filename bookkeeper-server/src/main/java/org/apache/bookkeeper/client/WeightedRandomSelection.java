@@ -58,7 +58,7 @@ class WeightedRandomSelection<T> {
     void updateMap(Map<T, WeightedObject> map) {
         // get the sum total of all the values; this will be used to
         // calculate the weighted probability later on
-        Long totalWeight = 0L, min= Long.MAX_VALUE;
+        Long totalWeight = 0L, min = Long.MAX_VALUE;
         List<WeightedObject> values = new ArrayList<WeightedObject>(map.values());
         Collections.sort(values, new Comparator<WeightedObject>() {
             public int compare(WeightedObject o1, WeightedObject o2) {
@@ -72,7 +72,7 @@ class WeightedRandomSelection<T> {
                 }
             }
         });
-        for (int i=0; i < values.size(); i++) {
+        for (int i = 0; i < values.size(); i++) {
             totalWeight += values.get(i).getWeight();
             if (values.get(i).getWeight() != 0 && min > values.get(i).getWeight()) {
                 min = values.get(i).getWeight();
@@ -85,38 +85,38 @@ class WeightedRandomSelection<T> {
             // to the size of the values
             min = 1L;
             median = 1;
-            totalWeight = (long)values.size();
+            totalWeight = (long) values.size();
         } else {
-            int mid = values.size()/2;
+            int mid = values.size() / 2;
             if ((values.size() % 2) == 1) {
                 median = values.get(mid).getWeight();
             } else {
-                median = (double)(values.get(mid-1).getWeight() + values.get(mid).getWeight())/2;
+                median = (double) (values.get(mid - 1).getWeight() + values.get(mid).getWeight()) / 2;
             }
         }
 
         double medianWeight, minWeight;
-        medianWeight = median/(double)totalWeight;
-        minWeight = (double)min/totalWeight;
+        medianWeight = median / (double) totalWeight;
+        minWeight = (double) min / totalWeight;
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Updating weights map. MediaWeight: " + medianWeight + " MinWeight: " + minWeight);
+            LOG.debug("Updating weights map. MediaWeight: {} MinWeight: {}", medianWeight, minWeight);
         }
 
-        double maxWeight = maxProbabilityMultiplier*medianWeight;
+        double maxWeight = maxProbabilityMultiplier * medianWeight;
         Map<T, Double> weightMap = new HashMap<T, Double>();
         for (Map.Entry<T, WeightedObject> e : map.entrySet()) {
             double weightedProbability;
             if (e.getValue().getWeight() > 0) {
-                weightedProbability = (double)e.getValue().getWeight()/(double)totalWeight;
+                weightedProbability = (double) e.getValue().getWeight() / (double) totalWeight;
             } else {
                 weightedProbability = minWeight;
             }
             if (maxWeight > 0 && weightedProbability > maxWeight) {
-                weightedProbability=maxWeight;
+                weightedProbability = maxWeight;
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Capping the probability to " + weightedProbability + " for " + e.getKey() + " Value: "
-                            + e.getValue());
+                    LOG.debug("Capping the probability to {} for {} Value: {}",
+                            weightedProbability, e.getKey(), e.getValue());
                 }
             }
             weightMap.put(e.getKey(), weightedProbability);
@@ -126,12 +126,12 @@ class WeightedRandomSelection<T> {
         // but we change that priority by looking at the weight that each bookie
         // carries.
         TreeMap<Double, T> tmpCummulativeMap = new TreeMap<Double, T>();
-        Double key=0.0;
+        Double key = 0.0;
         for (Map.Entry<T, Double> e : weightMap.entrySet()) {
             tmpCummulativeMap.put(key, e.getKey());
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Key: " + e.getKey() + " Value: " + e.getValue() + " AssignedKey: " + key
-                        + " AssignedWeight: " + e.getValue());
+                LOG.debug("Key: {} Value: {} AssignedKey: {} AssignedWeight: {}",
+                        e.getKey(), e.getValue(), key, e.getValue());
             }
             key += e.getValue();
         }
@@ -150,10 +150,11 @@ class WeightedRandomSelection<T> {
         rwLock.readLock().lock();
         try {
             // pick a random number between 0 and randMax
-            Double randomNum = randomMax*Math.random();
+            Double randomNum = randomMax * Math.random();
             // find the nearest key in the map corresponding to the randomNum
             Double key = cummulativeMap.floorKey(randomNum);
-            //LOG.info("Random max: " + randomMax + " CummulativeMap size: " + cummulativeMap.size() + " selected key: " + key);
+            //LOG.info("Random max: {} CummulativeMap size: {} selected key: {}", randomMax, cummulativeMap.size(),
+            //    key);
             return cummulativeMap.get(key);
         } finally {
             rwLock.readLock().unlock();

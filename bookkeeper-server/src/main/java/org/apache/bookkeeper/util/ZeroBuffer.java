@@ -29,10 +29,10 @@ import java.nio.ByteBuffer;
  */
 
 public class ZeroBuffer {
-    static final byte zeroBytes[] = new byte[64*1024];
+    private static final byte zeroBytes[] = new byte[64 * 1024];
 
     /**
-     * fill zeros into given buffer
+     * Fill zeros into given buffer.
      * @param dst
      */
     public static void put(ByteBuffer dst) {
@@ -40,7 +40,7 @@ public class ZeroBuffer {
     }
 
     /**
-     * fill zeros into given buffer up to given length
+     * Fill zeros into given buffer up to given length.
      * @param dst
      * @param length
      */
@@ -55,7 +55,7 @@ public class ZeroBuffer {
     }
 
     /**
-     * returns read-only zero-filled buffer,
+     * Returns read-only zero-filled buffer.
      * @param length
      * @return ByteBuffer
      */
@@ -63,8 +63,7 @@ public class ZeroBuffer {
         ByteBuffer buffer;
         if (length <= zeroBytes.length) {
             buffer = ByteBuffer.wrap(zeroBytes, 0, length);
-        }
-        else {
+        } else {
             buffer = ByteBuffer.allocate(length);
             put(buffer);
             buffer.rewind();

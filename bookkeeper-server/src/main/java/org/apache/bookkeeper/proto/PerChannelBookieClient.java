@@ -20,10 +20,13 @@ package org.apache.bookkeeper.proto;
 
 import static org.apache.bookkeeper.client.LedgerHandle.INVALID_ENTRY_ID;
 
-import com.google.common.collect.Sets;
 import com.google.common.base.Joiner;
+import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.ExtensionRegistry;
+
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -33,6 +36,7 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
@@ -41,7 +45,6 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.DefaultEventLoopGroup;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.WriteBufferWaterMark;
-import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollSocketChannel;
 import io.netty.channel.local.LocalChannel;
@@ -61,17 +64,21 @@ import io.netty.util.concurrent.GenericFutureListener;
 
 import java.io.IOException;
 import java.net.SocketAddress;
-import java.nio.channels.ClosedChannelException;
+import java.security.cert.Certificate;
 import java.util.ArrayDeque;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Objects;
+import java.util.Collections;
+import java.util.List;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import javax.net.ssl.SSLPeerUnverifiedException;
+
 import org.apache.bookkeeper.auth.BookKeeperPrincipal;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
@@ -80,13 +87,13 @@ import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallbackCtx;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadLacCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.StartTLSCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AddRequest;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AddResponse;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.BKPacketHeader;
@@ -112,22 +119,9 @@ import org.apache.bookkeeper.tls.SecurityHandlerFactory.NodeType;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.util.SafeRunnable;
+import org.apache.bookkeeper.util.collections.ConcurrentOpenHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.Sets;
-import com.google.protobuf.ExtensionRegistry;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.UnpooledByteBufAllocator;
-import java.net.SocketAddress;
-
-import java.net.SocketAddress;
-import java.security.cert.Certificate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import javax.net.ssl.SSLPeerUnverifiedException;
-import org.apache.bookkeeper.auth.BookKeeperPrincipal;
 
 /**
  * This class manages all details of connection to a particular bookie. It also
@@ -148,7 +142,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                         BKException.Code.DuplicateEntryIdException,
                         BKException.Code.WriteOnReadOnlyBookieException));
 
-    public static final AtomicLong txnIdGenerator = new AtomicLong(0);
+    private static final AtomicLong txnIdGenerator = new AtomicLong(0);
 
     final BookieSocketAddress addr;
     final EventLoopGroup eventLoopGroup;
@@ -160,7 +154,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     final int getBookieInfoTimeout;
     final int startTLSTimeout;
 
-    private final ConcurrentHashMap<CompletionKey, CompletionValue> completionObjects = new ConcurrentHashMap<CompletionKey, CompletionValue>();
+    private final ConcurrentOpenHashMap<CompletionKey, CompletionValue> completionObjects =
+        new ConcurrentOpenHashMap<CompletionKey, CompletionValue>();
+
+    // Map that hold duplicated read requests. The idea is to only use this map (synchronized) when there is a duplicate
+    // read request for the same ledgerId/entryId
+    private final ListMultimap<CompletionKey, CompletionValue> completionObjectsV2Conflicts =
+        LinkedListMultimap.create();
 
     private final StatsLogger statsLogger;
     private final OpStatsLogger readEntryOpLogger;
@@ -180,7 +180,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
     /**
      * The following member variables do not need to be concurrent, or volatile
-     * because they are always updated under a lock
+     * because they are always updated under a lock.
      */
     private volatile Queue<GenericCallback<PerChannelBookieClient>> pendingOps =
             new ArrayDeque<GenericCallback<PerChannelBookieClient>>();
@@ -416,7 +416,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 pipeline.addLast("lengthprepender", new LengthFieldPrepender(4));
                 pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.RequestEncoder(extRegistry));
                 pipeline.addLast("bookieProtoDecoder", new BookieProtoEncoding.ResponseDecoder(extRegistry));
-                pipeline.addLast("authHandler", new AuthHandler.ClientSideHandler(authProviderFactory, txnIdGenerator, connectionPeer));
+                pipeline.addLast("authHandler", new AuthHandler.ClientSideHandler(authProviderFactory, txnIdGenerator,
+                            connectionPeer));
                 pipeline.addLast("mainhandler", PerChannelBookieClient.this);
             }
         });
@@ -510,7 +511,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
     /**
      * This method should be called only after connection has been checked for
-     * {@link #connectIfNeededAndDoOp(GenericCallback)}
+     * {@link #connectIfNeededAndDoOp(GenericCallback)}.
      *
      * @param ledgerId
      *          Ledger Id
@@ -610,14 +611,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     .build();
         }
 
-        CompletionValue completion = new ReadCompletion(completionKey,
-                                                        cb, ctx,
-                                                        ledgerId, entryId);
-        if (completionObjects.putIfAbsent(
-                    completionKey, completion) != null) {
-            // We cannot have more than 1 pending read on the same ledger/entry in the v2 protocol
-            completion.errorOut(BKException.Code.BookieHandleNotAvailableException);
-            return;
+        ReadCompletion readCompletion = new ReadCompletion(completionKey, cb, ctx, ledgerId, entryId);
+        CompletionValue existingValue = completionObjects.putIfAbsent(completionKey, readCompletion);
+        if (existingValue != null) {
+            // There's a pending read request on same ledger/entry. Use the multimap to track all of them
+            synchronized (completionObjectsV2Conflicts) {
+                completionObjectsV2Conflicts.put(completionKey, readCompletion);
+            }
         }
 
         writeAndFlush(channel, completionKey, request);
@@ -653,7 +653,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     }
 
     /**
-     * Long Poll Reads
+     * Long Poll Reads.
      */
     public void readEntryWaitForLACUpdate(final long ledgerId,
                                           final long entryId,
@@ -732,15 +732,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     .build();
         }
 
-        CompletionValue completion = new ReadCompletion(completionKey, cb,
-                                                        ctx, ledgerId, entryId);
-        CompletionValue existingValue = completionObjects.putIfAbsent(
-                completionKey, completion);
+        ReadCompletion readCompletion = new ReadCompletion(completionKey, cb, ctx, ledgerId, entryId);
+        CompletionValue existingValue = completionObjects.putIfAbsent(completionKey, readCompletion);
         if (existingValue != null) {
-            // There's a pending read request on same ledger/entry. This is not supported in V2 protocol
-            LOG.warn("Failing concurrent request to read at ledger: {} entry: {}", ledgerId, entryId);
-            completion.errorOut(BKException.Code.UnexpectedConditionException);
-            return;
+            // There's a pending read request on same ledger/entry. Use the multimap to track all of them
+            synchronized (completionObjectsV2Conflicts) {
+                completionObjectsV2Conflicts.put(completionKey, readCompletion);
+            }
         }
 
         writeAndFlush(channel, completionKey, request);
@@ -838,9 +836,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             return;
         }
 
-        try{
+        try {
             channel.writeAndFlush(request, channel.voidPromise());
-        } catch(Throwable e) {
+        } catch (Throwable e) {
             LOG.warn("Operation {} failed", requestToString(request), e);
             errorOut(key);
         }
@@ -848,8 +846,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
     private static String requestToString(Object request) {
         if (request instanceof BookkeeperProtocol.Request) {
-            BookkeeperProtocol.BKPacketHeader header
-                = ((BookkeeperProtocol.Request)request).getHeader();
+            BookkeeperProtocol.BKPacketHeader header = ((BookkeeperProtocol.Request) request).getHeader();
             return String.format("Req(txnId=%d,op=%s,version=%s)",
                                  header.getTxnId(), header.getOperation(),
                                  header.getVersion());
@@ -875,6 +872,16 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         CompletionValue completion = completionObjects.remove(key);
         if (completion != null) {
             completion.errorOut(rc);
+        } else {
+            // If there's no completion object here, try in the multimap
+            synchronized (completionObjectsV2Conflicts) {
+                if (completionObjectsV2Conflicts.containsKey(key)) {
+                    completion = completionObjectsV2Conflicts.get(key).get(0);
+                    completionObjectsV2Conflicts.remove(key, completion);
+
+                    completion.errorOut(rc);
+                }
+            }
         }
     }
 
@@ -886,14 +893,18 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
      */
 
     void errorOutOutstandingEntries(int rc) {
-
         // DO NOT rewrite these using Map.Entry iterations. We want to iterate
         // on keys and see if we are successfully able to remove the key from
         // the map. Because the add and the read methods also do the same thing
         // in case they get a write failure on the socket. The one who
         // successfully removes the key from the map is the one responsible for
         // calling the application callback.
-        for (CompletionKey key : completionObjects.keySet()) {
+        for (CompletionKey key : completionObjectsV2Conflicts.keySet()) {
+            while (completionObjectsV2Conflicts.get(key).size() > 0) {
+                errorOut(key, rc);
+            }
+        }
+        for (CompletionKey key : completionObjects.keys()) {
             errorOut(key, rc);
         }
     }
@@ -905,7 +916,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     }
 
     /**
-     * If our channel has disconnected, we just error out the pending entries
+     * If our channel has disconnected, we just error out the pending entries.
      */
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
@@ -929,7 +940,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
     /**
      * Called by netty when an exception happens in one of the netty threads
-     * (mostly due to what we do in the netty threads)
+     * (mostly due to what we do in the netty threads).
      */
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
@@ -973,7 +984,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     }
 
     /**
-     * Called by netty when a message is received on a channel
+     * Called by netty when a message is received on a channel.
      */
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -997,8 +1008,17 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         final StatusCode status = getStatusCodeFromErrorCode(response.errorCode);
 
         final CompletionKey key = acquireV2Key(ledgerId, entryId, operationType);
-        final CompletionValue completionValue = completionObjects.remove(key);
+        CompletionValue completionValue = completionObjects.remove(key);
         key.release();
+        if (completionValue == null) {
+            // If there's no completion object here, try in the multimap
+            synchronized (this) {
+                if (completionObjectsV2Conflicts.containsKey(key)) {
+                    completionValue = completionObjectsV2Conflicts.get(key).get(0);
+                    completionObjectsV2Conflicts.remove(key, completionValue);
+                }
+            }
+        }
 
         if (null == completionValue) {
             // Unexpected response, so log it. The txnId should have been present.
@@ -1008,14 +1028,11 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             }
         } else {
             long orderingKey = completionValue.ledgerId;
+            final CompletionValue finalCompletionValue = completionValue;
 
-            executor.submitOrdered(orderingKey, new SafeRunnable() {
-                    @Override
-                    public void safeRun() {
-                        completionValue.handleV2Response(ledgerId, entryId,
-                                                         status, response);
-                        response.recycle();
-                    }
+            executor.submitOrdered(orderingKey, () -> {
+                    finalCompletionValue.handleV2Response(ledgerId, entryId, status, response);
+                    response.recycle();
                 });
         }
     }
@@ -1163,7 +1180,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     }
 
     /**
-     * Boiler-plate wrapper classes follow
+     * Boiler-plate wrapper classes follow.
      *
      */
 
@@ -1314,8 +1331,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         @Override
         public void handleV3Response(BookkeeperProtocol.Response response) {
             WriteLacResponse writeLacResponse = response.getWriteLacResponse();
-            StatusCode status = response.getStatus() == StatusCode.EOK ?
-                writeLacResponse.getStatus() : response.getStatus();
+            StatusCode status = response.getStatus() == StatusCode.EOK
+                ? writeLacResponse.getStatus() : response.getStatus();
             long ledgerId = writeLacResponse.getLedgerId();
 
             int rc = logAndConvertStatus(status,
@@ -1365,7 +1382,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             ReadLacResponse readLacResponse = response.getReadLacResponse();
             ByteBuf lacBuffer = Unpooled.EMPTY_BUFFER;
             ByteBuf lastEntryBuffer = Unpooled.EMPTY_BUFFER;
-            StatusCode status = response.getStatus() == StatusCode.EOK ? readLacResponse.getStatus() : response.getStatus();
+            StatusCode status = response.getStatus() == StatusCode.EOK
+                ? readLacResponse.getStatus() : response.getStatus();
 
             if (readLacResponse.hasLacBody()) {
                 lacBuffer = Unpooled.wrappedBuffer(readLacResponse.getLacBody().asReadOnlyByteBuffer());
@@ -1472,16 +1490,14 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                          "entry", entryId,
                                          "entryLength", readableBytes);
 
-            if(buffer != null) {
+            if (buffer != null) {
                 buffer = buffer.slice();
             }
-            if (maxLAC > INVALID_ENTRY_ID
-                && (ctx instanceof ReadEntryCallbackCtx)) {
-                ((ReadEntryCallbackCtx)ctx).setLastAddConfirmed(maxLAC);
+            if (maxLAC > INVALID_ENTRY_ID && (ctx instanceof ReadEntryCallbackCtx)) {
+                ((ReadEntryCallbackCtx) ctx).setLastAddConfirmed(maxLAC);
             }
-            if (lacUpdateTimestamp > -1L
-                && (ctx instanceof ReadLastConfirmedAndEntryContext)) {
-                ((ReadLastConfirmedAndEntryContext)ctx).setLacUpdateTimestamp(lacUpdateTimestamp);
+            if (lacUpdateTimestamp > -1L && (ctx instanceof ReadLastConfirmedAndEntryContext)) {
+                ((ReadLastConfirmedAndEntryContext) ctx).setLacUpdateTimestamp(lacUpdateTimestamp);
             }
             cb.readEntryComplete(rc, ledgerId, entryId, buffer, ctx);
         }
@@ -1570,8 +1586,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         @Override
         public void handleV3Response(BookkeeperProtocol.Response response) {
-            GetBookieInfoResponse getBookieInfoResponse
-                = response.getGetBookieInfoResponse();
+            GetBookieInfoResponse getBookieInfoResponse = response.getGetBookieInfoResponse();
             StatusCode status = response.getStatus() == StatusCode.EOK
                 ? getBookieInfoResponse.getStatus() : response.getStatus();
 
@@ -1588,7 +1603,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
     }
 
-    private final Recycler<AddCompletion> ADD_COMPLETION_RECYCLER = new Recycler<AddCompletion>() {
+    private final Recycler<AddCompletion> addCompletionRecycler = new Recycler<AddCompletion>() {
             protected AddCompletion newObject(Recycler.Handle<AddCompletion> handle) {
                 return new AddCompletion(handle);
             }
@@ -1598,7 +1613,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                        final WriteCallback originalCallback,
                                        final Object originalCtx,
                                        final long ledgerId, final long entryId) {
-        AddCompletion completion = ADD_COMPLETION_RECYCLER.get();
+        AddCompletion completion = addCompletionRecycler.get();
         completion.reset(key, originalCallback, originalCtx, ledgerId, entryId);
         return completion;
     }
@@ -1786,7 +1801,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         return txnIdGenerator.incrementAndGet();
     }
 
-    private final Recycler<V2CompletionKey> V2_KEY_RECYCLER = new Recycler<V2CompletionKey>() {
+    private final Recycler<V2CompletionKey> v2KeyRecycler = new Recycler<V2CompletionKey>() {
             protected V2CompletionKey newObject(
                     Recycler.Handle<V2CompletionKey> handle) {
                 return new V2CompletionKey(handle);
@@ -1795,7 +1810,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
     V2CompletionKey acquireV2Key(long ledgerId, long entryId,
                              OperationType operationType) {
-        V2CompletionKey key = V2_KEY_RECYCLER.get();
+        V2CompletionKey key = v2KeyRecycler.get();
         key.reset(ledgerId, entryId, operationType);
         return key;
     }
@@ -1843,6 +1858,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
     }
 
+    /**
+     * Connection listener.
+     */
     public class ConnectionFutureListener implements ChannelFutureListener {
         @Override
         public void operationComplete(ChannelFuture future) throws Exception {
@@ -1908,7 +1926,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     }
 
     private void initiateTLS() {
-        LOG.info("Initializing TLS to {}",channel);
+        LOG.info("Initializing TLS to {}", channel);
         assert state == ConnectionState.CONNECTING;
         final long txnId = getTxnId();
         final CompletionKey completionKey = new V3CompletionKey(txnId, OperationType.START_TLS);
@@ -1928,7 +1946,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     private void failTLS(int rc) {
         LOG.error("TLS failure on: {}, rc: {}", channel, rc);
         Queue<GenericCallback<PerChannelBookieClient>> oldPendingOps;
-        synchronized(this) {
+        synchronized (this) {
             disconnect();
             oldPendingOps = pendingOps;
             pendingOps = new ArrayDeque<>();

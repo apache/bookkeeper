@@ -23,6 +23,9 @@ package org.apache.bookkeeper.sasl;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
 
+/**
+ * SASL Constants.
+ */
 public class SaslConstants {
 
     static final String PLUGIN_NAME = "sasl";
@@ -37,8 +40,8 @@ public class SaslConstants {
     public static final String JAAS_DEFAULT_CLIENT_SECTION_NAME = "BookKeeper";
 
     /**
-     * This is a regexp which limits the range of possible ids which can connect to the Bookie using SASL
-     * By default only clients whose id contains the word 'bookkeeper' are allowed to connect
+     * This is a regexp which limits the range of possible ids which can connect to the Bookie using SASL.
+     * By default only clients whose id contains the word 'bookkeeper' are allowed to connect.
      */
     public static final String JAAS_CLIENT_ALLOWED_IDS = "saslJaasClientAllowedIds";
     public static final String JAAS_CLIENT_ALLOWED_IDS_DEFAULT = ".*bookkeeper.*";

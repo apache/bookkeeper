@@ -24,7 +24,7 @@ package org.apache.bookkeeper.client;
 import java.util.Enumeration;
 
 /**
- * Implements objects to help with the synchronization of asynchronous calls
+ * Implements objects to help with the synchronization of asynchronous calls.
  *
  */
 

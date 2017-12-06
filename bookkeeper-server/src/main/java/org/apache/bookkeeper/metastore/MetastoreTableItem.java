@@ -62,7 +62,7 @@ public class MetastoreTableItem {
     /**
      * Set the value of the item.
      *
-     * @return value of the item.
+     * @param value of the item.
      */
     public void setValue(Versioned<Value> value) {
         this.value = value;

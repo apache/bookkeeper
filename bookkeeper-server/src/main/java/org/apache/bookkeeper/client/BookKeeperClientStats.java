@@ -25,43 +25,43 @@ package org.apache.bookkeeper.client;
  * List of constants for defining client stats names.
  */
 public interface BookKeeperClientStats {
-    public final static String CLIENT_SCOPE = "bookkeeper_client";
+    String CLIENT_SCOPE = "bookkeeper_client";
 
     // Metadata Operations
 
-    public final static String CREATE_OP = "LEDGER_CREATE";
-    public final static String DELETE_OP = "LEDGER_DELETE";
-    public final static String OPEN_OP = "LEDGER_OPEN";
-    public final static String RECOVER_OP = "LEDGER_RECOVER";
-    public final static String LEDGER_RECOVER_READ_ENTRIES = "LEDGER_RECOVER_READ_ENTRIES";
-    public final static String LEDGER_RECOVER_ADD_ENTRIES = "LEDGER_RECOVER_ADD_ENTRIES";
+    String CREATE_OP = "LEDGER_CREATE";
+    String DELETE_OP = "LEDGER_DELETE";
+    String OPEN_OP = "LEDGER_OPEN";
+    String RECOVER_OP = "LEDGER_RECOVER";
+    String LEDGER_RECOVER_READ_ENTRIES = "LEDGER_RECOVER_READ_ENTRIES";
+    String LEDGER_RECOVER_ADD_ENTRIES = "LEDGER_RECOVER_ADD_ENTRIES";
 
     // Data Operations
 
-    public final static String ADD_OP = "ADD_ENTRY";
-    public final static String READ_OP = "READ_ENTRY";
-    public final static String WRITE_LAC_OP = "WRITE_LAC";
-    public final static String READ_LAC_OP = "READ_LAC";
-    public final static String READ_LAST_CONFIRMED_AND_ENTRY = "READ_LAST_CONFIRMED_AND_ENTRY";
-    public final static String READ_LAST_CONFIRMED_AND_ENTRY_RESPONSE = "READ_LAST_CONFIRMED_AND_ENTRY_RESPONSE";
-    public final static String PENDING_ADDS = "NUM_PENDING_ADD";
-    public final static String ENSEMBLE_CHANGES = "NUM_ENSEMBLE_CHANGE";
-    public final static String LAC_UPDATE_HITS = "LAC_UPDATE_HITS";
-    public final static String LAC_UPDATE_MISSES = "LAC_UPDATE_MISSES";
-    public final static String GET_BOOKIE_INFO_OP = "GET_BOOKIE_INFO";
+    String ADD_OP = "ADD_ENTRY";
+    String READ_OP = "READ_ENTRY";
+    String WRITE_LAC_OP = "WRITE_LAC";
+    String READ_LAC_OP = "READ_LAC";
+    String READ_LAST_CONFIRMED_AND_ENTRY = "READ_LAST_CONFIRMED_AND_ENTRY";
+    String READ_LAST_CONFIRMED_AND_ENTRY_RESPONSE = "READ_LAST_CONFIRMED_AND_ENTRY_RESPONSE";
+    String PENDING_ADDS = "NUM_PENDING_ADD";
+    String ENSEMBLE_CHANGES = "NUM_ENSEMBLE_CHANGE";
+    String LAC_UPDATE_HITS = "LAC_UPDATE_HITS";
+    String LAC_UPDATE_MISSES = "LAC_UPDATE_MISSES";
+    String GET_BOOKIE_INFO_OP = "GET_BOOKIE_INFO";
 
     // per channel stats
-    public final static String CHANNEL_SCOPE = "per_channel_bookie_client";
+    String CHANNEL_SCOPE = "per_channel_bookie_client";
 
-    public final static String CHANNEL_READ_OP = "READ_ENTRY";
-    public final static String CHANNEL_TIMEOUT_READ = "TIMEOUT_READ_ENTRY";
-    public final static String CHANNEL_ADD_OP = "ADD_ENTRY";
-    public final static String CHANNEL_TIMEOUT_ADD = "TIMEOUT_ADD_ENTRY";
-    public final static String CHANNEL_WRITE_LAC_OP = "WRITE_LAC";
-    public final static String CHANNEL_TIMEOUT_WRITE_LAC = "TIMEOUT_WRITE_LAC";
-    public final static String CHANNEL_READ_LAC_OP = "READ_LAC";
-    public final static String CHANNEL_TIMEOUT_READ_LAC = "TIMEOUT_READ_LAC";
-    public final static String TIMEOUT_GET_BOOKIE_INFO = "TIMEOUT_GET_BOOKIE_INFO";
-    public final static String CHANNEL_START_TLS_OP = "START_TLS";
-    public final static String CHANNEL_TIMEOUT_START_TLS_OP = "TIMEOUT_START_TLS";
+    String CHANNEL_READ_OP = "READ_ENTRY";
+    String CHANNEL_TIMEOUT_READ = "TIMEOUT_READ_ENTRY";
+    String CHANNEL_ADD_OP = "ADD_ENTRY";
+    String CHANNEL_TIMEOUT_ADD = "TIMEOUT_ADD_ENTRY";
+    String CHANNEL_WRITE_LAC_OP = "WRITE_LAC";
+    String CHANNEL_TIMEOUT_WRITE_LAC = "TIMEOUT_WRITE_LAC";
+    String CHANNEL_READ_LAC_OP = "READ_LAC";
+    String CHANNEL_TIMEOUT_READ_LAC = "TIMEOUT_READ_LAC";
+    String TIMEOUT_GET_BOOKIE_INFO = "TIMEOUT_GET_BOOKIE_INFO";
+    String CHANNEL_START_TLS_OP = "START_TLS";
+    String CHANNEL_TIMEOUT_START_TLS_OP = "TIMEOUT_START_TLS";
 }

@@ -24,18 +24,18 @@ import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.util.StringUtils;
 import org.apache.zookeeper.AsyncCallback.VoidCallback;
+import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.zookeeper.ZooKeeper;
 
 /**
  * HierarchicalLedgerManager makes use of both LongHierarchicalLedgerManager and LegacyHierarchicalLedgerManager
- * to extend the 31-bit ledger id range of the LegacyHierarchicalLedgerManager to that of the LongHierarchicalLedgerManager
- * while remaining backwards-compatible with the legacy manager.
+ * to extend the 31-bit ledger id range of the LegacyHierarchicalLedgerManager to that of the
+ * LongHierarchicalLedgerManager while remaining backwards-compatible with the legacy manager.
  *
- * In order to achieve backwards-compatibility, the HierarchicalLedgerManager forwards requests relating to ledger IDs which
- * are < Integer.MAX_INT to the LegacyHierarchicalLedgerManager. The new 5-part directory structure will not appear until a
- * ledger with an ID >= Integer.MAX_INT is created.
+ * <p>In order to achieve backwards-compatibility, the HierarchicalLedgerManager forwards requests relating to ledger
+ * IDs which are < Integer.MAX_INT to the LegacyHierarchicalLedgerManager. The new 5-part directory structure will not
+ * appear until a ledger with an ID >= Integer.MAX_INT is created.
  *
  * @see LongHierarchicalLedgerManager
  * @see LegacyHierarchicalLedgerManager
@@ -60,11 +60,10 @@ class HierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
 
             @Override
             public void processResult(int rc, String path, Object ctx) {
-                if(rc == failureRc) {
+                if (rc == failureRc) {
                     // If it fails, return the failure code to the callback
                     finalCb.processResult(rc, path, ctx);
-                }
-                else {
+                } else {
                     // If it succeeds, proceed with our own recursive ledger processing for the 63-bit id ledgers
                     longLM.asyncProcessLedgers(processor, finalCb, context, successRc, failureRc);
                 }
@@ -99,7 +98,8 @@ class HierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
         LedgerRangeIterator legacyLedgerRangeIterator;
         LedgerRangeIterator longLedgerRangeIterator;
 
-        HierarchicalLedgerRangeIterator(LedgerRangeIterator legacyLedgerRangeIterator, LedgerRangeIterator longLedgerRangeIterator) {
+        HierarchicalLedgerRangeIterator(LedgerRangeIterator legacyLedgerRangeIterator,
+                LedgerRangeIterator longLedgerRangeIterator) {
             this.legacyLedgerRangeIterator = legacyLedgerRangeIterator;
             this.longLedgerRangeIterator = longLedgerRangeIterator;
         }
@@ -111,7 +111,7 @@ class HierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
 
         @Override
         public LedgerRange next() throws IOException {
-            if(legacyLedgerRangeIterator.hasNext()) {
+            if (legacyLedgerRangeIterator.hasNext()) {
                 return legacyLedgerRangeIterator.next();
             }
             return longLedgerRangeIterator.next();

@@ -22,6 +22,20 @@ package org.apache.bookkeeper.proto;
 
 import static com.google.common.base.Charsets.UTF_8;
 
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.protobuf.ExtensionRegistry;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.util.HashedWheelTimer;
+import io.netty.util.Recycler;
+import io.netty.util.Recycler.Handle;
+import io.netty.util.Timeout;
+import io.netty.util.TimerTask;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,8 +54,8 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadLacCallback;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.tls.SecurityException;
@@ -50,20 +64,6 @@ import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.google.protobuf.ExtensionRegistry;
-
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.util.HashedWheelTimer;
-import io.netty.util.Recycler;
-import io.netty.util.Recycler.Handle;
-import io.netty.util.Timeout;
-import io.netty.util.TimerTask;
 
 /**
  * Implements the client-side part of the BookKeeper protocol.
@@ -81,8 +81,8 @@ public class BookieClient implements PerChannelBookieClientFactory {
             new ConcurrentHashMap<BookieSocketAddress, PerChannelBookieClientPool>();
     final HashedWheelTimer requestTimer;
 
-    final private ClientAuthProvider.Factory authProviderFactory;
-    final private ExtensionRegistry registry;
+    private final ClientAuthProvider.Factory authProviderFactory;
+    private final ExtensionRegistry registry;
 
     private final ClientConfiguration conf;
     private volatile boolean closed;
@@ -337,8 +337,8 @@ public class BookieClient implements PerChannelBookieClientFactory {
             this.recyclerHandle = recyclerHandle;
         }
 
-        private static final Recycler<ChannelReadyForAddEntryCallback> RECYCLER
-            = new Recycler<ChannelReadyForAddEntryCallback>() {
+        private static final Recycler<ChannelReadyForAddEntryCallback> RECYCLER =
+            new Recycler<ChannelReadyForAddEntryCallback>() {
                     protected ChannelReadyForAddEntryCallback newObject(
                             Recycler.Handle<ChannelReadyForAddEntryCallback> recyclerHandle) {
                         return new ChannelReadyForAddEntryCallback(recyclerHandle);
@@ -380,17 +380,19 @@ public class BookieClient implements PerChannelBookieClientFactory {
         }
     }
 
-    public void readLac(final BookieSocketAddress addr, final long ledgerId, final ReadLacCallback cb, final Object ctx) {
+    public void readLac(final BookieSocketAddress addr, final long ledgerId, final ReadLacCallback cb,
+            final Object ctx) {
         closeLock.readLock().lock();
         try {
             final PerChannelBookieClientPool client = lookupClient(addr);
             if (client == null) {
-                cb.readLacComplete(getRc(BKException.Code.BookieHandleNotAvailableException), ledgerId, null, null, ctx);
+                cb.readLacComplete(getRc(BKException.Code.BookieHandleNotAvailableException), ledgerId, null, null,
+                        ctx);
                 return;
             }
             client.obtain(new GenericCallback<PerChannelBookieClient>() {
                 @Override
-                public void operationComplete(final int rc,PerChannelBookieClient pcbc) {
+                public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
                     if (rc != BKException.Code.OK) {
                         try {
                             executor.submitOrdered(ledgerId, new SafeRunnable() {
@@ -438,8 +440,8 @@ public class BookieClient implements PerChannelBookieClientFactory {
             closeLock.readLock().unlock();
         }
     }
-    
-    
+
+
     public void readEntryWaitForLACUpdate(final BookieSocketAddress addr,
                                           final long ledgerId,
                                           final long entryId,
@@ -465,7 +467,8 @@ public class BookieClient implements PerChannelBookieClientFactory {
                         completeRead(rc, ledgerId, entryId, null, cb, ctx);
                         return;
                     }
-                    pcbc.readEntryWaitForLACUpdate(ledgerId, entryId, previousLAC, timeOutInMillis, piggyBackEntry, cb, ctx);
+                    pcbc.readEntryWaitForLACUpdate(ledgerId, entryId, previousLAC, timeOutInMillis, piggyBackEntry, cb,
+                            ctx);
                 }
             }, ledgerId);
         } finally {
@@ -473,12 +476,14 @@ public class BookieClient implements PerChannelBookieClientFactory {
         }
     }
 
-    public void getBookieInfo(final BookieSocketAddress addr, final long requested, final GetBookieInfoCallback cb, final Object ctx) {
+    public void getBookieInfo(final BookieSocketAddress addr, final long requested, final GetBookieInfoCallback cb,
+            final Object ctx) {
         closeLock.readLock().lock();
         try {
             final PerChannelBookieClientPool client = lookupClient(addr);
             if (client == null) {
-                cb.getBookieInfoComplete(getRc(BKException.Code.BookieHandleNotAvailableException), new BookieInfo(), ctx);
+                cb.getBookieInfoComplete(getRc(BKException.Code.BookieHandleNotAvailableException), new BookieInfo(),
+                        ctx);
                 return;
             }
             client.obtain(new GenericCallback<PerChannelBookieClient>() {

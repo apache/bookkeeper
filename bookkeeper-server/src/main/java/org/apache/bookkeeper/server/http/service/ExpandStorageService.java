@@ -18,11 +18,14 @@
  */
 package org.apache.bookkeeper.server.http.service;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.collect.Lists;
+
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
+
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -51,7 +54,7 @@ public class ExpandStorageService implements HttpEndpointService {
     private ZooKeeper zk;
 
     public ExpandStorageService(ServerConfiguration conf, ZooKeeper zk) {
-        Preconditions.checkNotNull(conf);
+        checkNotNull(conf);
         this.conf = conf;
         this.zk = zk;
     }

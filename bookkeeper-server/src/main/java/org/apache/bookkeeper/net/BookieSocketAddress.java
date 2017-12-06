@@ -20,18 +20,18 @@
  */
 package org.apache.bookkeeper.net;
 
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
+import static org.apache.bookkeeper.util.BookKeeperConstants.COLON;
 
 import io.netty.channel.local.LocalAddress;
 
-import static org.apache.bookkeeper.util.BookKeeperConstants.COLON;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 
 /**
  * This is a data wrapper class that is an InetSocketAddress, it would use the hostname
  * provided in constructors directly.
- * <p>
- * The string representation of a BookieSocketAddress is : <hostname>:<port>
+ *
+ * <p>The string representation of a BookieSocketAddress is : &lt;hostname&gt;:&lt;port&gt;
  */
 public class BookieSocketAddress {
 
@@ -78,7 +78,7 @@ public class BookieSocketAddress {
     }
 
     /**
-     * Maps the socketAddress to a "local" address
+     * Maps the socketAddress to a "local" address.
      */
     public LocalAddress getLocalAddress() {
         return new LocalAddress(socketAddress.toString());
@@ -95,8 +95,9 @@ public class BookieSocketAddress {
     // Implement an equals method comparing two BookiSocketAddress objects.
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof BookieSocketAddress))
+        if (!(obj instanceof BookieSocketAddress)) {
             return false;
+        }
         BookieSocketAddress that = (BookieSocketAddress) obj;
         return this.hostname.equals(that.hostname) && (this.port == that.port);
     }

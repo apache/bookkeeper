@@ -45,6 +45,9 @@ public class JsonUtil {
         }
     }
 
+    /**
+     * A JSON parsing exception.
+     */
     public static class ParseJsonException extends Exception {
         public ParseJsonException(String message) {
             super(message);

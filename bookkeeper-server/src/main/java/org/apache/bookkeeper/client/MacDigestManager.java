@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
  * <p>NOTE: This class is tended to be used by this project only. External users should not rely on it directly.
  */
 public class MacDigestManager extends DigestManager {
-    private final static Logger LOG = LoggerFactory.getLogger(MacDigestManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MacDigestManager.class);
 
     public static final String DIGEST_ALGORITHM = "SHA-1";
     public static final String KEY_ALGORITHM = "HmacSHA1";

@@ -42,8 +42,13 @@ public interface LedgerStorage {
      * @param ledgerManager
      * @param ledgerDirsManager
      */
-    void initialize(ServerConfiguration conf, LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager,
-                    LedgerDirsManager indexDirsManager, CheckpointSource checkpointSource, StatsLogger statsLogger)
+    void initialize(ServerConfiguration conf,
+                    LedgerManager ledgerManager,
+                    LedgerDirsManager ledgerDirsManager,
+                    LedgerDirsManager indexDirsManager,
+                    CheckpointSource checkpointSource,
+                    Checkpointer checkpointer,
+                    StatsLogger statsLogger)
             throws IOException;
 
     /**
@@ -136,9 +141,8 @@ public interface LedgerStorage {
      *
      * @param checkpoint Check Point that {@link Checkpoint} proposed.
      * @throws IOException
-     * @return the checkpoint that the ledger storage finished.
      */
-    Checkpoint checkpoint(Checkpoint checkpoint) throws IOException;
+    void checkpoint(Checkpoint checkpoint) throws IOException;
 
     /**
      * @param ledgerId

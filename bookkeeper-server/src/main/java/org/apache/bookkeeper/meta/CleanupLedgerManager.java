@@ -18,13 +18,6 @@
 package org.apache.bookkeeper.meta;
 
 import com.google.common.annotations.VisibleForTesting;
-import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.LedgerMetadata;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
-import org.apache.bookkeeper.versioning.Version;
-import org.apache.zookeeper.AsyncCallback;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -33,6 +26,17 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
+import org.apache.bookkeeper.versioning.Version;
+import org.apache.zookeeper.AsyncCallback;
+
+/**
+ * A ledger manager that cleans up resources upon closing.
+ */
 public class CleanupLedgerManager implements LedgerManager {
 
     private class CleanupGenericCallback<T> implements GenericCallback<T> {

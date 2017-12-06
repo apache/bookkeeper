@@ -20,16 +20,16 @@ package org.apache.bookkeeper.net;
 import java.util.Set;
 
 /**
- * Network Topology Interface
+ * Network Topology Interface.
  */
 public interface NetworkTopology {
 
-    public final static String DEFAULT_REGION = "/default-region";
-    public final static String DEFAULT_RACK = "/default-rack";
-    public final static String DEFAULT_REGION_AND_RACK = DEFAULT_REGION + DEFAULT_RACK;
+    String DEFAULT_REGION = "/default-region";
+    String DEFAULT_RACK = "/default-rack";
+    String DEFAULT_REGION_AND_RACK = DEFAULT_REGION + DEFAULT_RACK;
 
     /**
-     * Add a node to the network topology
+     * Add a node to the network topology.
      *
      * @param node
      *          add the node to network topology
@@ -37,7 +37,7 @@ public interface NetworkTopology {
     void add(Node node);
 
     /**
-     * Remove a node from nework topology
+     * Remove a node from nework topology.
      *
      * @param node
      *          remove the node from network topology
@@ -54,7 +54,7 @@ public interface NetworkTopology {
     boolean contains(Node node);
 
     /**
-     * Retrieve a node from the network topology
+     * Retrieve a node from the network topology.
      * @param loc
      * @return
      */

@@ -56,6 +56,17 @@ public interface Handle extends AutoCloseable {
     }
 
     /**
+     * Returns the metadata of this ledger.
+     *
+     * <p>This call only retrieves the metadata cached locally. If there is any metadata updated, the read
+     * handle will receive the metadata updates and update the metadata locally. The metadata notification
+     * can be deplayed, so it is possible you can receive a stale copy of ledger metadata from this call.
+     *
+     * @return the metadata of this ledger.
+     */
+    LedgerMetadata getLedgerMetadata();
+
+    /**
      * Asynchronous close, any adds in flight will return errors.
      *
      * <p>Closing a ledger will ensure that all clients agree on what the last

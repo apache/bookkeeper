@@ -57,7 +57,7 @@ public class BookieServer {
     private volatile boolean running = false;
     Bookie bookie;
     DeathWatcher deathWatcher;
-    private final static Logger LOG = LoggerFactory.getLogger(BookieServer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BookieServer.class);
 
     int exitCode = ExitCode.OK;
 
@@ -97,9 +97,9 @@ public class BookieServer {
 
     protected Bookie newBookie(ServerConfiguration conf)
         throws IOException, KeeperException, InterruptedException, BookieException {
-        return conf.isForceReadOnlyBookie() ?
-                new ReadOnlyBookie(conf, statsLogger.scope(BOOKIE_SCOPE)) :
-                new Bookie(conf, statsLogger.scope(BOOKIE_SCOPE));
+        return conf.isForceReadOnlyBookie()
+            ? new ReadOnlyBookie(conf, statsLogger.scope(BOOKIE_SCOPE))
+            : new Bookie(conf, statsLogger.scope(BOOKIE_SCOPE));
     }
 
     public void start() throws IOException, UnavailableException, InterruptedException, BKException {
@@ -127,7 +127,7 @@ public class BookieServer {
     }
 
     /**
-     * Suspend processing of requests in the bookie (for testing)
+     * Suspend processing of requests in the bookie (for testing).
      */
     @VisibleForTesting
     public void suspendProcessing() {
@@ -138,7 +138,7 @@ public class BookieServer {
     }
 
     /**
-     * Resume processing requests in the bookie (for testing)
+     * Resume processing requests in the bookie (for testing).
      */
     @VisibleForTesting
     public void resumeProcessing() {
@@ -181,7 +181,7 @@ public class BookieServer {
     }
 
     /**
-     * A thread to watch whether bookie & nioserver is still alive
+     * A thread to watch whether bookie and nioserver are still alive.
      */
     private class DeathWatcher extends BookieCriticalThread {
 
@@ -194,7 +194,7 @@ public class BookieServer {
 
         @Override
         public void run() {
-            while(true) {
+            while (true) {
                 try {
                     Thread.sleep(watchInterval);
                 } catch (InterruptedException ie) {
