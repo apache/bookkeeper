@@ -100,30 +100,6 @@ public class LedgerEntry {
     }
 
     /**
-     * Generate the health info for bookies in the write set.
-     *
-     * @return BookiesHealthInfo for every bookie in the write set.
-     */
-    public BookiesHealthInfo generateHealthInfoForWriteSet(
-        DistributionSchedule.WriteSet writeSet,
-        ArrayList<BookieSocketAddress> ensemble,
-        LedgerHandle lh) {
-        Map<BookieSocketAddress, Integer> bookiePendingMap = new HashMap<>();
-        BookieClient client = lh.bk.bookieClient;
-        for(int i = 0; i < writeSet.size(); i++) {
-            int idx = writeSet.get(i);
-            BookieSocketAddress address = ensemble.get(idx);
-            PerChannelBookieClientPool pcbcPool = client.lookupClient(address);
-            if (pcbcPool == null) {
-                continue;
-            }
-            int numPendingReqs = pcbcPool.getNumPendingCompletionRequests();
-            bookiePendingMap.put(address, numPendingReqs);
-        }
-        return new BookiesHealthInfo(lh.bookieFailureHistory.asMap(), bookiePendingMap);
-    }
-
-    /**
      * Return the internal buffer that contains the entry payload.
      *
      * Note: Using v2 wire protocol it is responsibility of the caller to ensure to release the buffer after usage.
