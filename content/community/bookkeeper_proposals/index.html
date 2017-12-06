@@ -268,40 +268,73 @@
 All the implementations of this BP should be listed and linked to this master issues.</li>
     </ul>
   </li>
-  <li>Write the proposal for this BP.
+  <li>Write the proposal for this BP. There are two ways to write a bookkeeper proposal. You can choose to write a BP using markdown, or write a BP
+using Google Doc.
     <ul>
-      <li>Make a copy of the <a href="https://github.com/apache/bookkeeper/tree/master/site/bps/BP-template.md">BP-Template</a>. Name the BP file as <code class="highlighter-rouge">BP-&lt;number&gt;-[caption-of-proposal].md</code>.
-        <div class="language-shell highlighter-rouge"><pre class="highlight"><code> <span class="nv">$ </span>cp site/bps/BP-template.md site/bps/BP-xyz-capation-of-proposal.md
-</code></pre>
-        </div>
-      </li>
-      <li>Fill the sections listed in the BP template.
+      <li>Markdown
         <ul>
-          <li>issue: replace <code class="highlighter-rouge">&lt;issue-number&gt;</code> with the issue number.</li>
-          <li>state: “Under Discussion”</li>
-          <li>release: leave the release to <code class="highlighter-rouge">N/A</code>. you can only mark a release after a BP is implemented.</li>
+          <li>Make a copy of the <a href="https://github.com/apache/bookkeeper/tree/master/site/bps/BP-template.md">BP-Template</a>. Name the BP file as <code class="highlighter-rouge">BP-&lt;number&gt;-[caption-of-proposal].md</code>.
+            <div class="language-shell highlighter-rouge"><pre class="highlight"><code>  <span class="nv">$ </span>cp site/bps/BP-template.md site/bps/BP-xyz-capation-of-proposal.md
+</code></pre>
+            </div>
+          </li>
+          <li>Fill the sections listed in the BP template.
+            <ul>
+              <li>issue: replace <code class="highlighter-rouge">&lt;issue-number&gt;</code> with the issue number.</li>
+              <li>state: “Under Discussion”</li>
+              <li>release: leave the release to <code class="highlighter-rouge">N/A</code>. you can only mark a release after a BP is implemented.</li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li>Google Doc
+        <ul>
+          <li>Make a copy of the <a href="https://docs.google.com/document/d/1DsmH54LoohgwqnEjESPQNtIYxxcOy2rwonZ_TJCwws0">BP-Template</a>. Name the BP file as <code class="highlighter-rouge">BP-&lt;number&gt;-[caption-of-proposal]</code>.</li>
+          <li>Fill the sections listed in the BP template.</li>
         </ul>
       </li>
     </ul>
   </li>
   <li>Send a PR for this BP. Following the instructions in the pull request template.
     <ul>
-      <li>add <code class="highlighter-rouge">BP</code> label to this BP</li>
+      <li>add <code class="highlighter-rouge">BP</code> label to this PR</li>
+      <li>attach the google doc link in the PR description if the BP is written in google doc</li>
       <li>don’t associate this PR with any release or milestone</li>
+      <li>edit <code class="highlighter-rouge">site/community/bookkeeper_proposals.md</code>:
+        <ul>
+          <li>bump the next bp number</li>
+          <li>add this BP to <code class="highlighter-rouge">Inprogress</code> section</li>
+        </ul>
+      </li>
     </ul>
   </li>
   <li>You can tag committers on this RP for reviewers, or start a <code class="highlighter-rouge">[DISCUSS]</code> thread on Apache mailing list. If you are sending an email, please make sure that the subject
 of the thread is of the format <code class="highlighter-rouge">[DISCUSS] BP-&lt;number&gt;: capation of bookkeeper proposal</code>.</li>
-  <li>Once the BP is finalized, reviewed and approved by committers, the BP is accepted. The criteria for acceptance is <a href="http://bookkeeper.apache.org/bylaws.html">lazy majority</a>.</li>
-  <li>Committers merge the PR after a BP is accepted. The development for this BP moves forward with implementations. The BP should be updated if there is anything changed during
-implementing it.</li>
-  <li>After all the implementations for a given BP are completed, a new PR should be sent for changing the state of a BP:
-    <ul>
-      <li>state: “Adopted”</li>
-      <li>release: set to the release that includes this BP.</li>
-    </ul>
+  <li>Once the BP is finalized, reviewed and approved by committers, the BP is accepted. The criteria for acceptance is <a href="http://bookkeeper.apache.org/bylaws.html">lazy majority</a>.
+    <ol>
+      <li>Committers merge the PR after a BP is accepted. The development for this BP moves forward with implementations. The BP should be updated if there is anything changed during implementing it.</li>
+      <li>After all the implementations for a given BP are completed, a new PR should be sent for changing the state of a BP:
+        <ul>
+          <li>state: “Adopted”</li>
+          <li>release: set to the release that includes this BP.</li>
+          <li>moving the BP from <code class="highlighter-rouge">Inprogress</code> to <code class="highlighter-rouge">Adopted</code>.</li>
+        </ul>
+      </li>
+      <li>The final PR for changing BP state will be used as the criteria for marking a BP as completed.</li>
+    </ol>
   </li>
-  <li>The final PR for changing BP state will be used as the criteria for marking a BP as completed.</li>
+  <li>If a BP is failed or rejected:
+    <ol>
+      <li>Update the PR to change the state of a BP
+        <ul>
+          <li>state: “Discarded”</li>
+          <li>add a paragraph at the first paragraph of this BP for describing the reasons.</li>
+          <li>moving the BP from <code class="highlighter-rouge">Inprogress</code> to <code class="highlighter-rouge">Discarded</code>.</li>
+        </ul>
+      </li>
+      <li>Once the PR is updated, committers can merge this proposal PR and close the master issue of this BP.</li>
+    </ol>
+  </li>
 </ol>
 
 <h2 id="all-proposals">All Proposals</h2>
@@ -343,10 +376,6 @@ implementing it.</li>
     <tr>
       <td style="text-align: left"><a href="https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-18%3A+LedgerType%2C+Flags+and+StorageHints">BP-18: LedgerType, Flags and StorageHints</a></td>
       <td style="text-align: left">Accepted</td>
-    </tr>
-    <tr>
-      <td style="text-align: left"><a href="../../bps/BP-20-github-workflow-for-bookkeeper-proposals">BP-20: Github workflow for bookkeeper proposals</a></td>
-      <td style="text-align: left">Under Discussion</td>
     </tr>
   </tbody>
 </table>
@@ -404,6 +433,10 @@ implementing it.</li>
     <tr>
       <td style="text-align: left"><a href="https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-17%3A+Define+BookKeeper+public+http+endpoints">BP-17 - Define BookKeeper public http endpoints</a></td>
       <td style="text-align: left">4.6.0</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><a href="../../bps/BP-20-github-workflow-for-bookkeeper-proposals">BP-20: Github workflow for bookkeeper proposals</a></td>
+      <td style="text-align: left">4.7.0</td>
     </tr>
   </tbody>
 </table>

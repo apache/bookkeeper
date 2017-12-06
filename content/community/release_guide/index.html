@@ -406,7 +406,7 @@ export GPG_AGENT_INFO
   <li>Navigate to your <code class="highlighter-rouge">Profile</code> (top right dropdown menu of the page).</li>
   <li>Choose <code class="highlighter-rouge">User Token</code> from the dropdown, then click <code class="highlighter-rouge">Access User Token</code>. Copy a snippet of the Maven XML configuration block.</li>
   <li>
-    <p>Insert this snippet twice into your global Maven <code class="highlighter-rouge">settings.xml</code> file, typically <code class="highlighter-rouge">${HOME}/.m2/settings.xml</code>. The end result should look like this, where <code class="highlighter-rouge">TOKEN_NAME</code> and <code class="highlighter-rouge">TOKEN_PASSWORD</code> are your secret tokens:</p>
+    <p>Insert this snippet twice into your global Maven <code class="highlighter-rouge">settings.xml</code> file (use command <code class="highlighter-rouge">mvn -X | grep settings</code>, and read out the global Maven setting file), typically <code class="highlighter-rouge">${HOME}/.m2/settings.xml</code>. The end result should look like this, where <code class="highlighter-rouge">TOKEN_NAME</code> and <code class="highlighter-rouge">TOKEN_PASSWORD</code> are your secret tokens:</p>
 
     <div class="highlighter-rouge"><pre class="highlight"><code> &lt;settings&gt;
    &lt;servers&gt;
@@ -630,7 +630,7 @@ RC_DIR="bookkeeper-${VERSION}-rc${RC_NUM}"
 
 <blockquote>
   <p>If <code class="highlighter-rouge">release:perform</code> failed, 
-delete the release tag: git tag -d ${VERSION} &amp;&amp; git push apache :refs/tags/${VERSION}</p>
+delete the release tag: git tag -d release-${VERSION} &amp;&amp; git push apache :refs/tags/release-${VERSION}</p>
 
   <p>Also, you need to check the git commits on the github and if needed you may have to
 force push backed out local git branch to github again.</p>
