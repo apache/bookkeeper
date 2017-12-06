@@ -1,5 +1,4 @@
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,33 +15,9 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
-
-package org.apache.bookkeeper.util;
-
-import com.google.protobuf.ByteString;
-
-import java.io.IOException;
 
 /**
- * A String-based entry formatter.
+ * Bookkeeper utilities.
  */
-public class StringEntryFormatter extends EntryFormatter {
-    @Override
-    public void formatEntry(byte[] data) {
-        System.out.println(ByteString.copyFrom(data).toStringUtf8());
-    }
-
-    @Override
-    public void formatEntry(java.io.InputStream input) {
-        try {
-            byte[] data = new byte[input.available()];
-            input.read(data, 0, data.length);
-            formatEntry(data);
-        } catch (IOException ie) {
-            System.out.println("Warn: Unreadable entry : " + ie.getMessage());
-        }
-    }
-
-}
+package org.apache.bookkeeper.util;
