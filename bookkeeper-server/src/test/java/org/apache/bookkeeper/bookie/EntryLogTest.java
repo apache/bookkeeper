@@ -304,4 +304,43 @@ public class EntryLogTest {
         assertEquals(120, meta.getRemainingSize());
     }
 
+    /**
+     * Test pre-allocate for entry log in EntryLoggerAllocator.
+     * @throws Exception
+     */
+    @Test
+    public void testPreAllocateLog() throws Exception {
+        File tmpDir = createTempDir("bkTest", ".dir");
+        File curDir = Bookie.getCurrentDirectory(tmpDir);
+        Bookie.checkDirectoryStructure(curDir);
+
+        // enable pre-allocation case
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setLedgerDirNames(new String[] {tmpDir.toString()});
+        conf.setEntryLogFilePreAllocationEnabled(true);
+        Bookie bookie = new Bookie(conf);
+        // create a logger whose initialization phase allocating a new entry log
+        EntryLogger logger = ((InterleavedLedgerStorage)bookie.ledgerStorage).entryLogger;
+        assertNotNull(logger.getEntryLoggerAllocator().getPreallocation());
+
+        logger.addEntry(1, generateEntry(1, 1).nioBuffer());
+        // the Future<BufferedLogChannel> is not null all the time
+        assertNotNull(logger.getEntryLoggerAllocator().getPreallocation());
+
+        // disable pre-allocation case
+        ServerConfiguration conf2 = TestBKConfiguration.newServerConfiguration();
+        conf2.setLedgerDirNames(new String[] {tmpDir.toString()});
+        conf2.setEntryLogFilePreAllocationEnabled(false);
+        Bookie bookie2 = new Bookie(conf2);
+        // create a logger
+        EntryLogger logger2 = ((InterleavedLedgerStorage)bookie2.ledgerStorage).entryLogger;
+        assertNull(logger2.getEntryLoggerAllocator().getPreallocation());
+
+        logger2.addEntry(2, generateEntry(1, 1).nioBuffer());
+
+        // the Future<BufferedLogChannel> is null all the time
+        assertNull(logger2.getEntryLoggerAllocator().getPreallocation());
+
+    }
+
 }

@@ -128,6 +128,7 @@ public class EntryLogger {
     private List<BufferedLogChannel> logChannelsToFlush;
     private volatile BufferedLogChannel logChannel;
     private volatile BufferedLogChannel compactionLogChannel;
+
     private final EntryLoggerAllocator entryLoggerAllocator;
     private final boolean entryLogPreAllocationEnabled;
     private final CopyOnWriteArrayList<EntryLogListener> listeners = new CopyOnWriteArrayList<EntryLogListener>();
@@ -494,6 +495,12 @@ public class EntryLogger {
     }
 
     /**
+     * get EntryLoggerAllocator, Just for tests.
+     */
+    protected EntryLoggerAllocator getEntryLoggerAllocator() {
+        return entryLoggerAllocator;
+    }
+    /**
      * Append the ledger map at the end of the entry log.
      * Updates the entry log file header with the offset and size of the map.
      */
@@ -647,6 +654,13 @@ public class EntryLogger {
             // wait until the preallocation finished.
             allocatorExecutor.shutdown();
             LOG.info("Stopped entry logger preallocator.");
+        }
+
+        /**
+         * get the preallocation for tests.
+         */
+        protected Future<BufferedLogChannel> getPreallocation(){
+            return preallocation;
         }
     }
 
