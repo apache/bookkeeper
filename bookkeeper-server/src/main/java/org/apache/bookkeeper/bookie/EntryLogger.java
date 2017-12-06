@@ -497,7 +497,7 @@ public class EntryLogger {
     /**
      * get EntryLoggerAllocator, Just for tests.
      */
-    protected EntryLoggerAllocator getEntryLoggerAllocator() {
+    EntryLoggerAllocator getEntryLoggerAllocator() {
         return entryLoggerAllocator;
     }
     /**
@@ -659,7 +659,7 @@ public class EntryLogger {
         /**
          * get the preallocation for tests.
          */
-        protected Future<BufferedLogChannel> getPreallocation(){
+        Future<BufferedLogChannel> getPreallocationFuture(){
             return preallocation;
         }
     }
