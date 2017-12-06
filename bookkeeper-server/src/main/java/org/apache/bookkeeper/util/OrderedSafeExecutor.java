@@ -32,18 +32,18 @@ import org.slf4j.LoggerFactory;
 /**
  * This class provides 2 things over the java {@link ScheduledExecutorService}.
  *
- * 1. It takes {@link SafeRunnable objects} instead of plain Runnable objects.
+ * <p>1. It takes {@link SafeRunnable objects} instead of plain Runnable objects.
  * This means that exceptions in scheduled tasks wont go unnoticed and will be
  * logged.
  *
- * 2. It supports submitting tasks with an ordering key, so that tasks submitted
+ * <p>2. It supports submitting tasks with an ordering key, so that tasks submitted
  * with the same key will always be executed in order, but tasks across
  * different keys can be unordered. This retains parallelism while retaining the
  * basic amount of ordering we want (e.g. , per ledger handle). Ordering is
  * achieved by hashing the key objects to threads by their {@link #hashCode()}
  * method.
  *
- * @Deprecated since 4.6.0, in favor of using {@link org.apache.bookkeeper.common.util.OrderedScheduler}.
+ * <p>Note: deprecated since 4.6.0, in favor of using {@link org.apache.bookkeeper.common.util.OrderedScheduler}.
  */
 public class OrderedSafeExecutor extends org.apache.bookkeeper.common.util.OrderedScheduler {
 
@@ -51,6 +51,9 @@ public class OrderedSafeExecutor extends org.apache.bookkeeper.common.util.Order
         return new Builder();
     }
 
+    /**
+     * A builder class for an OrderedSafeExecutor.
+     */
     public static class Builder extends AbstractBuilder<OrderedSafeExecutor> {
 
         public OrderedSafeExecutor build() {
@@ -64,7 +67,7 @@ public class OrderedSafeExecutor extends org.apache.bookkeeper.common.util.Order
     }
 
     /**
-     * Constructs Safe executor
+     * Constructs Safe executor.
      *
      * @param numThreads
      *            - number of threads
@@ -88,14 +91,14 @@ public class OrderedSafeExecutor extends org.apache.bookkeeper.common.util.Order
     }
 
     /**
-     * schedules a one time action to execute
+     * Schedules a one time action to execute.
      */
     public void submit(SafeRunnable r) {
         super.submit(r);
     }
 
     /**
-     * schedules a one time action to execute with an ordering guarantee on the key
+     * Schedules a one time action to execute with an ordering guarantee on the key.
      * @param orderingKey
      * @param r
      */
@@ -104,7 +107,7 @@ public class OrderedSafeExecutor extends org.apache.bookkeeper.common.util.Order
     }
 
     /**
-     * schedules a one time action to execute with an ordering guarantee on the key
+     * Schedules a one time action to execute with an ordering guarantee on the key.
      * @param orderingKey
      * @param r
      */
@@ -113,7 +116,7 @@ public class OrderedSafeExecutor extends org.apache.bookkeeper.common.util.Order
     }
 
     /**
-     * schedules a one time action to execute with an ordering guarantee on the key
+     * Schedules a one time action to execute with an ordering guarantee on the key.
      * @param orderingKey
      * @param r
      */
@@ -127,7 +130,8 @@ public class OrderedSafeExecutor extends org.apache.bookkeeper.common.util.Order
      * @param command - the SafeRunnable to execute
      * @param delay - the time from now to delay execution
      * @param unit - the time unit of the delay parameter
-     * @return a ScheduledFuture representing pending completion of the task and whose get() method will return null upon completion
+     * @return a ScheduledFuture representing pending completion of the task and whose get() method
+     *      will return null upon completion
      */
     public ScheduledFuture<?> schedule(SafeRunnable command, long delay, TimeUnit unit) {
         return super.schedule(command, delay, unit);
@@ -140,7 +144,8 @@ public class OrderedSafeExecutor extends org.apache.bookkeeper.common.util.Order
      * @param command - the SafeRunnable to execute
      * @param delay - the time from now to delay execution
      * @param unit - the time unit of the delay parameter
-     * @return a ScheduledFuture representing pending completion of the task and whose get() method will return null upon completion
+     * @return a ScheduledFuture representing pending completion of the task and whose get() method
+     *      will return null upon completion
      */
     public ScheduledFuture<?> scheduleOrdered(Object orderingKey, SafeRunnable command, long delay, TimeUnit unit) {
         return super.scheduleOrdered(orderingKey, command, delay, unit);
@@ -148,16 +153,16 @@ public class OrderedSafeExecutor extends org.apache.bookkeeper.common.util.Order
 
     /**
      * Creates and executes a periodic action that becomes enabled first after
-     * the given initial delay, and subsequently with the given period;
+     * the given initial delay, and subsequently with the given period.
      *
-     * For more details check scheduleAtFixedRate in interface ScheduledExecutorService
+     * <p>For more details check scheduleAtFixedRate in interface ScheduledExecutorService
      *
      * @param command - the SafeRunnable to execute
      * @param initialDelay - the time to delay first execution
      * @param period - the period between successive executions
      * @param unit - the time unit of the initialDelay and period parameters
      * @return a ScheduledFuture representing pending completion of the task, and whose get()
-     * method will throw an exception upon cancellation
+     *      method will throw an exception upon cancellation
      */
     public ScheduledFuture<?> scheduleAtFixedRate(SafeRunnable command, long initialDelay, long period, TimeUnit unit) {
         return super.scheduleAtFixedRate(command, initialDelay, period, unit);
@@ -165,9 +170,9 @@ public class OrderedSafeExecutor extends org.apache.bookkeeper.common.util.Order
 
     /**
      * Creates and executes a periodic action that becomes enabled first after
-     * the given initial delay, and subsequently with the given period;
+     * the given initial delay, and subsequently with the given period.
      *
-     * For more details check scheduleAtFixedRate in interface ScheduledExecutorService
+     * <p>For more details check scheduleAtFixedRate in interface ScheduledExecutorService
      *
      * @param orderingKey - the key used for ordering
      * @param command - the SafeRunnable to execute
@@ -186,7 +191,7 @@ public class OrderedSafeExecutor extends org.apache.bookkeeper.common.util.Order
      * Creates and executes a periodic action that becomes enabled first after the given initial delay, and subsequently
      * with the given delay between the termination of one execution and the commencement of the next.
      *
-     * For more details check scheduleWithFixedDelay in interface ScheduledExecutorService
+     * <p>For more details check scheduleWithFixedDelay in interface ScheduledExecutorService
      *
      * @param command - the SafeRunnable to execute
      * @param initialDelay - the time to delay first execution
@@ -204,7 +209,7 @@ public class OrderedSafeExecutor extends org.apache.bookkeeper.common.util.Order
      * Creates and executes a periodic action that becomes enabled first after the given initial delay, and subsequently
      * with the given delay between the termination of one execution and the commencement of the next.
      *
-     * For more details check scheduleWithFixedDelay in interface ScheduledExecutorService
+     * <p>For more details check scheduleWithFixedDelay in interface ScheduledExecutorService
      *
      * @param orderingKey - the key used for ordering
      * @param command - the SafeRunnable to execute
@@ -221,9 +226,9 @@ public class OrderedSafeExecutor extends org.apache.bookkeeper.common.util.Order
 
     /**
      * Generic callback implementation which will run the
-     * callback in the thread which matches the ordering key
+     * callback in the thread which matches the ordering key.
      */
-    public static abstract class OrderedSafeGenericCallback<T>
+    public abstract static class OrderedSafeGenericCallback<T>
             implements GenericCallback<T> {
         private static final Logger LOG = LoggerFactory.getLogger(OrderedSafeGenericCallback.class);
 

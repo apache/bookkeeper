@@ -36,17 +36,19 @@ import org.apache.commons.logging.LogFactory;
  * <code>df</code>. It also offers facilities to gate commands by
  * time-intervals.
  */
-abstract public class Shell {
+public abstract class Shell {
 
     public static final Log LOG = LogFactory.getLog(Shell.class);
 
     protected long timeOutInterval = 0L;
-    /** If or not script timed out*/
+    /* If or not script timed out */
     private AtomicBoolean timedOut;
 
-    /** Set to true on Windows platforms */
-    public static final boolean WINDOWS /* borrowed from Path.WINDOWS */
-    = System.getProperty("os.name").startsWith("Windows");
+    /**
+     * Set to true on Windows platforms.
+     */
+    public static final boolean WINDOWS = /* borrowed from Path.WINDOWS */
+            System.getProperty("os.name").startsWith("Windows");
 
     private long interval; // refresh interval in msec
     private long lastTime; // last time the command was performed
@@ -55,7 +57,7 @@ abstract public class Shell {
     private Process process; // sub process used to execute the command
     private int exitCode;
 
-    /**If or not script finished executing*/
+    /* If or not script finished executing */
     private volatile AtomicBoolean completed;
 
     public Shell() {
@@ -71,29 +73,36 @@ abstract public class Shell {
         this.lastTime = (interval < 0) ? 0 : -interval;
     }
 
-    /** set the environment for the command
+    /**
+     * Set the environment for the command.
      * @param env Mapping of environment variables
      */
     protected void setEnvironment(Map<String, String> env) {
         this.environment = env;
     }
 
-    /** set the working directory
+    /**
+     * Set the working directory.
      * @param dir The directory where the command would be executed
      */
     protected void setWorkingDirectory(File dir) {
         this.dir = dir;
     }
 
-    /** check to see if a command needs to be executed and execute if needed */
+    /**
+     * Check to see if a command needs to be executed and execute if needed.
+     */
     protected void run() throws IOException {
-        if (lastTime + interval > MathUtils.now())
+        if (lastTime + interval > MathUtils.now()) {
             return;
+        }
         exitCode = 0; // reset for next run
         runCommand();
     }
 
-    /** Run a command */
+    /**
+     * Run a command.
+     */
     private void runCommand() throws IOException {
         ProcessBuilder builder = new ProcessBuilder(getExecString());
         Timer timeOutTimer = null;
@@ -192,20 +201,26 @@ abstract public class Shell {
         }
     }
 
-    /** return an array containing the command name & its parameters */
+    /**
+     * Return an array containing the command name &amp; its parameters.
+     */
     protected abstract String[] getExecString();
 
-    /** Parse the execution result */
+    /**
+     * Parse the execution result.
+     */
     protected abstract void parseExecResult(BufferedReader lines) throws IOException;
 
-    /** get the current sub-process executing the given command
+    /**
+     * Get the current sub-process executing the given command.
      * @return process executing the command
      */
     public Process getProcess() {
         return process;
     }
 
-    /** get the exit code
+    /**
+     * Get the exit code.
      * @return the exit code of the process
      */
     public int getExitCode() {

@@ -28,10 +28,10 @@ import java.io.IOException;
 public class StringUtils {
 
     // Ledger Node Prefix
-    static public final String LEDGER_NODE_PREFIX = "L";
+    public static final String LEDGER_NODE_PREFIX = "L";
 
     /**
-     * Formats ledger ID according to ZooKeeper rules
+     * Formats ledger ID according to ZooKeeper rules.
      *
      * @param id
      *            znode id
@@ -41,7 +41,7 @@ public class StringUtils {
     }
 
     /**
-     * Formats ledger ID according to ZooKeeper rules
+     * Formats ledger ID according to ZooKeeper rules.
      *
      * @param id
      *            znode id
@@ -49,9 +49,9 @@ public class StringUtils {
     public static String getZKStringIdForLongHierarchical(long id) {
         return String.format("%019d", id);
     }
-    
+
     /**
-     * Get the hierarchical ledger path according to the ledger id
+     * Get the hierarchical ledger path according to the ledger id.
      *
      * @param ledgerId
      *          ledger id
@@ -70,7 +70,7 @@ public class StringUtils {
     }
 
     /**
-     * Get the long hierarchical ledger path according to the ledger id
+     * Get the long hierarchical ledger path according to the ledger id.
      *
      * @param ledgerId
      *          ledger id
@@ -89,16 +89,16 @@ public class StringUtils {
           .append(ledgerIdStr.substring(15, 19));
         return sb.toString();
     }
-    
+
     public static String getHybridHierarchicalLedgerPath(long ledgerId) {
-        if(ledgerId < Integer.MAX_VALUE) {
+        if (ledgerId < Integer.MAX_VALUE) {
             return getShortHierarchicalLedgerPath(ledgerId);
         }
         return getLongHierarchicalLedgerPath(ledgerId);
     }
-    
+
     /**
-     * Parse the hierarchical ledger path to its ledger id
+     * Parse the hierarchical ledger path to its ledger id.
      *
      * @param hierarchicalLedgerPath
      * @return the ledger id
@@ -116,7 +116,7 @@ public class StringUtils {
     }
 
     /**
-     * Parse the long hierarchical ledger path to its ledger id
+     * Parse the long hierarchical ledger path to its ledger id.
      *
      * @param longHierarchicalLedgerPaths
      * @return the ledger id
@@ -132,9 +132,9 @@ public class StringUtils {
                 longHierarchicalParts[4].substring(LEDGER_NODE_PREFIX.length());
         return stringToHierarchicalLedgerId(longHierarchicalParts);
     }
-    
+
     /**
-     * Get ledger id
+     * Get ledger id.
      *
      * @param levelNodes
      *          level of the ledger path
