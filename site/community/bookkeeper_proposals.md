@@ -85,7 +85,7 @@ using Google Doc.
 
 This section lists all the _bookkeeper proposals_ made to BookKeeper.
 
-*Next Proposal Number: 21*
+*Next Proposal Number: 23*
 
 ### Inprogress
 
@@ -122,3 +122,4 @@ Proposal | Reason
 :--------|:------
 [BP-7 - Explicit LAC on addEntry](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-7+-+Explicit+LAC+on+addEntry) | Not A Problem
 [BP-21: New API close inconsistencies](../../bps/BP-21-new-api-close-inconsistencies) | Not A Problem
+[BP-22: Separate closing ledgers from opening ledgers](../../bps/BP-22-separate-closing-ledgers-from-opening-ledgers) | Not A Problem
