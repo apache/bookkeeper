@@ -26,12 +26,16 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.List;
+
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.junit.Test;
 
+/**
+ * Manage the test server lifecycle.
+ */
 public class TestServerLifecycleComponent {
 
     static class TestComponent extends ServerLifecycleComponent {

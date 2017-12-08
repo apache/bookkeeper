@@ -21,6 +21,16 @@ import static org.apache.bookkeeper.metastore.MetastoreScannableTable.EMPTY_END_
 import static org.apache.bookkeeper.metastore.MetastoreScannableTable.EMPTY_START_KEY;
 import static org.apache.bookkeeper.metastore.MetastoreTable.ALL_FIELDS;
 import static org.apache.bookkeeper.metastore.MetastoreTable.NON_FIELDS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import com.google.common.collect.MapDifference;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -42,19 +52,16 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.MapDifference;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-
-import static org.junit.Assert.*;
-
+/**
+ * Test the metastore.
+ */
 public class TestMetaStore {
-    private final static Logger logger = LoggerFactory.getLogger(TestMetaStore.class);
+    private static final Logger logger = LoggerFactory.getLogger(TestMetaStore.class);
 
-    protected final static String TABLE = "myTable";
-    protected final static String RECORDID = "test";
-    protected final static String FIELD_NAME = "name";
-    protected final static String FIELD_COUNTER = "counter";
+    protected static final String TABLE = "myTable";
+    protected static final String RECORDID = "test";
+    protected static final String FIELD_NAME = "name";
+    protected static final String FIELD_COUNTER = "counter";
 
     protected String getFieldFromValue(Value value, String field) {
         byte[] v = value.getField(field);
@@ -75,6 +82,9 @@ public class TestMetaStore {
         return data;
     }
 
+    /**
+     * A metastore record.
+     */
     protected class Record {
         String name;
         Integer counter;
@@ -219,7 +229,7 @@ public class TestMetaStore {
     }
 
     protected Integer getRandom() {
-        return (int)(Math.random()*65536);
+        return (int) (Math.random() * 65536);
     }
 
     protected Versioned<Value> getRecord(String recordId) throws Exception {
@@ -240,7 +250,7 @@ public class TestMetaStore {
     }
 
     /**
-     * put and check fields
+     * put and check fields.
      */
     protected void putAndCheck(String recordId, String name,
                                       Integer counter, Version version,
@@ -548,8 +558,8 @@ public class TestMetaStore {
 
         Set<String> counterFields = Sets.newHashSet(FIELD_COUNTER);
 
-        for (int i=5; i<24; i++) {
-            char c = (char)('a' + i);
+        for (int i = 5; i < 24; i++) {
+            char c = (char) ('a' + i);
             String key = String.valueOf(c);
             Value v = makeValue("value" + i, i);
             Value cv = v.project(counterFields);

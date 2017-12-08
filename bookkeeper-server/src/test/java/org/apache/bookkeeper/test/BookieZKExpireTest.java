@@ -21,15 +21,20 @@
 
 package org.apache.bookkeeper.test;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.File;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import java.util.HashSet;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
-
-import java.util.HashSet;
 import org.apache.bookkeeper.proto.BookieServer;
+import org.junit.Test;
 
+/**
+ * Test bookie expiration.
+ */
 public class BookieZKExpireTest extends BookKeeperClusterTestCase {
 
     public BookieZKExpireTest() {
@@ -48,9 +53,9 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
 
             HashSet<Thread> threadset = new HashSet<Thread>();
             int threadCount = Thread.activeCount();
-            Thread threads[] = new Thread[threadCount*2];
+            Thread threads[] = new Thread[threadCount * 2];
             threadCount = Thread.enumerate(threads);
-            for(int i = 0; i < threadCount; i++) {
+            for (int i = 0; i < threadCount; i++) {
                 if (threads[i].getName().indexOf("SendThread") != -1) {
                     threadset.add(threads[i]);
                 }
@@ -70,9 +75,9 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
             }
             Thread sendthread = null;
             threadCount = Thread.activeCount();
-            threads = new Thread[threadCount*2];
+            threads = new Thread[threadCount * 2];
             threadCount = Thread.enumerate(threads);
-            for(int i = 0; i < threadCount; i++) {
+            for (int i = 0; i < threadCount; i++) {
                 if (threads[i].getName().indexOf("SendThread") != -1
                         && !threadset.contains(threads[i])) {
                     sendthread = threads[i];
@@ -82,7 +87,7 @@ public class BookieZKExpireTest extends BookKeeperClusterTestCase {
             assertNotNull("Send thread not found", sendthread);
 
             sendthread.suspend();
-            Thread.sleep(2*conf.getZkTimeout());
+            Thread.sleep(2 * conf.getZkTimeout());
             sendthread.resume();
 
             // allow watcher thread to run

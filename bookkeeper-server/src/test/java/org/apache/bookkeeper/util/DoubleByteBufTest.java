@@ -20,13 +20,16 @@ package org.apache.bookkeeper.util;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
 import java.nio.ByteBuffer;
 
 import org.junit.Test;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-
+/**
+ * Test the Double byte buffer.
+ */
 public class DoubleByteBufTest {
 
     @Test

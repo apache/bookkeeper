@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.test;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,6 +18,7 @@ package org.apache.bookkeeper.test;
  * under the License.
  *
  */
+package org.apache.bookkeeper.test;
 
 import io.netty.buffer.Unpooled;
 import io.netty.channel.EventLoopGroup;
@@ -60,12 +59,14 @@ class LoopbackClient implements WriteCallback {
         }
 
         synchronized void increment() {
-            if (++c == limit)
+            if (++c == limit) {
                 this.notify();
+            }
         }
     }
 
-    LoopbackClient(EventLoopGroup eventLoopGroup, OrderedSafeExecutor executor, long begin, int limit) throws IOException {
+    LoopbackClient(EventLoopGroup eventLoopGroup, OrderedSafeExecutor executor, long begin, int limit)
+            throws IOException {
         this.client = new BookieClient(new ClientConfiguration(), eventLoopGroup, executor);
         this.begin = begin;
     }

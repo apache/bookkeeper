@@ -20,25 +20,28 @@
  */
 package org.apache.bookkeeper.test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Random;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
+import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BookKeeperTestClient;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This test tests read and write, synchronous and asynchronous, strings and
@@ -52,8 +55,8 @@ public class BookieFailureTest extends BookKeeperClusterTestCase
 
     // Depending on the taste, select the amount of logging
     // by decommenting one of the two lines below
-    // private final static Logger LOG = Logger.getRootLogger();
-    private final static Logger LOG = LoggerFactory.getLogger(BookieFailureTest.class);
+    // private static final Logger LOG = Logger.getRootLogger();
+    private static final Logger LOG = LoggerFactory.getLogger(BookieFailureTest.class);
 
     byte[] ledgerPassword = "aaa".getBytes();
     LedgerHandle lh, lh2;
@@ -93,7 +96,7 @@ public class BookieFailureTest extends BookKeeperClusterTestCase
     /**
      * Tests writes and reads when a bookie fails.
      *
-     * @throws {@link IOException}
+     * @throws IOException
      */
     @Test
     public void testAsyncBK1() throws IOException {
@@ -127,11 +130,11 @@ public class BookieFailureTest extends BookKeeperClusterTestCase
         bs.get(2).shutdown();
 
         byte[] passwd = "blah".getBytes();
-        LedgerHandle lh = bkc.createLedger(1, 1,digestType, passwd);
+        LedgerHandle lh = bkc.createLedger(1, 1, digestType, passwd);
 
         int numEntries = 100;
-        for (int i=0; i< numEntries; i++) {
-            byte[] data = (""+i).getBytes();
+        for (int i = 0; i < numEntries; i++) {
+            byte[] data = ("" + i).getBytes();
             lh.addEntry(data);
         }
 
@@ -145,7 +148,7 @@ public class BookieFailureTest extends BookKeeperClusterTestCase
 
         int numScanned = 0;
         while (entries.hasMoreElements()) {
-            assertEquals((""+numScanned), new String(entries.nextElement().getEntry()));
+            assertEquals(("" + numScanned), new String(entries.nextElement().getEntry()));
             numScanned++;
         }
         assertEquals(numEntries, numScanned);
@@ -286,7 +289,7 @@ public class BookieFailureTest extends BookKeeperClusterTestCase
 
         int numEntries = 10;
         String tmp = "BookKeeper is cool!";
-        for (int i=0; i<numEntries; i++) {
+        for (int i = 0; i < numEntries; i++) {
             beforelh.addEntry(tmp.getBytes());
         }
 
@@ -301,7 +304,7 @@ public class BookieFailureTest extends BookKeeperClusterTestCase
         startNewBookie();
         LedgerHandle beforelh2 = bkc.createLedger(numBookies, 1, digestType, "".getBytes());
 
-        for (int i=0; i<numEntries; i++) {
+        for (int i = 0; i < numEntries; i++) {
             beforelh2.addEntry(tmp.getBytes());
         }
 
@@ -324,7 +327,7 @@ public class BookieFailureTest extends BookKeeperClusterTestCase
 
         int numEntries = 10;
         String tmp = "BookKeeper is cool!";
-        for (int i=0; i<numEntries; i++) {
+        for (int i = 0; i < numEntries; i++) {
             beforelh.addEntry(tmp.getBytes());
         }
 
@@ -339,7 +342,7 @@ public class BookieFailureTest extends BookKeeperClusterTestCase
 
         LedgerHandle beforelh2 = bkc.createLedger(numBookies, 1, digestType, "".getBytes());
 
-        for (int i=0; i<numEntries; i++) {
+        for (int i = 0; i < numEntries; i++) {
             beforelh2.addEntry(tmp.getBytes());
         }
 
@@ -363,7 +366,7 @@ public class BookieFailureTest extends BookKeeperClusterTestCase
      * establishment. Now the future.addlistener() will notify back in the same
      * thread and simultaneously invoke the pendingOp.operationComplete() event.
      *
-     * BOOKKEEPER-326
+     * <p>BOOKKEEPER-326
      */
     @Test
     public void testReadLastConfirmedOp() throws Exception {

@@ -19,6 +19,11 @@
  */
 package org.apache.bookkeeper.replication;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,8 +55,6 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
-
 /**
  * Integration tests verifies the complete functionality of the
  * Auditor-rereplication process: Auditor will publish the bookie failures,
@@ -69,7 +72,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
     private LedgerUnderreplicationManager underReplicationManager;
     private LedgerManager ledgerManager;
 
-    private final String UNDERREPLICATED_PATH = baseClientConf
+    private final String underreplicatedPath = baseClientConf
             .getZkLedgersRootPath() + "/underreplication/ledgers";
 
     public BookieAutoRecoveryTest() throws IOException, KeeperException,
@@ -118,7 +121,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
 
     /**
      * Test verifies publish urLedger by Auditor and replication worker is
-     * picking up the entries and finishing the rereplication of open ledger
+     * picking up the entries and finishing the rereplication of open ledger.
      */
     @Test
     public void testOpenLedgers() throws Exception {
@@ -165,7 +168,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
 
     /**
      * Test verifies publish urLedger by Auditor and replication worker is
-     * picking up the entries and finishing the rereplication of closed ledgers
+     * picking up the entries and finishing the rereplication of closed ledgers.
      */
     @Test
     public void testClosedLedgers() throws Exception {
@@ -305,7 +308,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
     /**
      * Verify the published urledgers of deleted ledgers(those ledgers where
      * deleted after publishing as urledgers by Auditor) should be cleared off
-     * by the newly selected replica bookie
+     * by the newly selected replica bookie.
      */
     @Test
     public void testNoSuchLedgerExists() throws Exception {
@@ -394,7 +397,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
 
     /**
      * Test verifies bookie recovery, the host (recorded via ipaddress in
-     * ledgermetadata)
+     * ledgermetadata).
      */
     @Test
     public void testLedgerMetadataContainsIpAddressAsBookieID()
@@ -423,7 +426,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         final ArrayList<BookieSocketAddress> bkAddresses = ensembles.get(0L);
         BookieSocketAddress replicaToKillAddr = bkAddresses.get(0);
         for (BookieSocketAddress bookieSocketAddress : bkAddresses) {
-            if(!isCreatedFromIp(bookieSocketAddress)){
+            if (!isCreatedFromIp(bookieSocketAddress)){
                 replicaToKillAddr = bookieSocketAddress;
                 LOG.info("Kill bookie which has registered using hostname");
                 break;
@@ -472,7 +475,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
 
     /**
      * Test verifies bookie recovery, the host (recorded via useHostName in
-     * ledgermetadata)
+     * ledgermetadata).
      */
     @Test
     public void testLedgerMetadataContainsHostNameAsBookieID()
@@ -602,7 +605,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
 
     private String getUrLedgerZNode(LedgerHandle lh) {
         return ZkLedgerUnderreplicationManager.getUrLedgerZnode(
-                UNDERREPLICATED_PATH, lh.getId());
+                underreplicatedPath, lh.getId());
     }
 
     private Stat watchUrLedgerNode(final String znode,

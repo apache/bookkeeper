@@ -21,17 +21,15 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.bookkeeper.metastore.MetastoreCallback;
-import org.apache.bookkeeper.metastore.MetastoreTable;
-import org.apache.bookkeeper.metastore.MSException;
 import org.apache.bookkeeper.metastore.MSException.Code;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 
-// Converts async calls to sync calls for MetastoreTable. Currently not
-// intended to be used other than for simple functional tests, however,
-// could be developed into a sync API.
-
+/**
+ * Converts async calls to sync calls for MetastoreTable. Currently not
+ * intended to be used other than for simple functional tests, however,
+ * could be developed into a sync API.
+ */
 public class MetastoreTableAsyncToSyncConverter {
 
     static class HeldValue<T> implements MetastoreCallback<T> {

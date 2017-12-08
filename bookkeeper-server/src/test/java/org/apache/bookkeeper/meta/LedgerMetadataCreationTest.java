@@ -40,6 +40,9 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Test the creation of ledger metadata.
+ */
 public class LedgerMetadataCreationTest extends LedgerManagerTestCase {
     static final Logger LOG = LoggerFactory.getLogger(LedgerMetadataCreationTest.class);
 
@@ -57,7 +60,7 @@ public class LedgerMetadataCreationTest extends LedgerManagerTestCase {
     public void testLedgerCreationAndDeletion() throws Exception{
         testExecution(false);
     }
-    
+
     public void testExecution(boolean randomLedgerId) throws Exception {
         Set<Long> createRequestsLedgerIds = ConcurrentHashMap.newKeySet();
         ConcurrentLinkedDeque<Long> existingLedgerIds = new ConcurrentLinkedDeque<Long>();
@@ -128,7 +131,7 @@ public class LedgerMetadataCreationTest extends LedgerManagerTestCase {
                 failedDeletes.isEmpty());
         bookKeeper.close();
     }
-    
+
     @Test
     public void testParentNodeDeletion() throws Exception {
         /*

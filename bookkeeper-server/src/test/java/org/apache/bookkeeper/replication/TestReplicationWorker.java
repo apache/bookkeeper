@@ -93,11 +93,11 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
     @Override
     public void tearDown() throws Exception {
         super.tearDown();
-        if(null != mFactory){
+        if (null != mFactory){
             mFactory.uninitialize();
             mFactory = null;
         }
-        if(null != underReplicationManager){
+        if (null != underReplicationManager){
             underReplicationManager.close();
             underReplicationManager = null;
         }
@@ -154,7 +154,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
     /**
      * Tests that replication worker should retry for replication until enough
-     * bookies available for replication
+     * bookies available for replication.
      */
     @Test
     public void testRWShouldRetryUntilThereAreEnoughBksAvailableForReplication()
@@ -272,7 +272,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
     /**
      * Tests that Replication worker should clean the leadger under replication
-     * node of the ledger already deleted
+     * node of the ledger already deleted.
      */
     @Test
     public void testRWShouldCleanTheLedgerFromUnderReplicationIfLedgerAlreadyDeleted()
@@ -506,7 +506,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Test that the replication worker will not shutdown on a simple ZK disconnection
+     * Test that the replication worker will not shutdown on a simple ZK disconnection.
      */
     @Test
     public void testRWZKConnectionLost() throws Exception {
