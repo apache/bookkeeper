@@ -1348,7 +1348,6 @@ public class EntryLogger {
             return;
         }
 
-        channel.close();
         FileChannel fileChannel = channel.getFileChannel();
         if (null != fileChannel) {
             fileChannel.close();

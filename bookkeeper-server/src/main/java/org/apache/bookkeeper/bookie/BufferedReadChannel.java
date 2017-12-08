@@ -25,14 +25,13 @@ package org.apache.bookkeeper.bookie;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 
 /**
  * A Buffered channel without a write buffer. Only reads are buffered.
  */
-public class BufferedReadChannel extends BufferedChannelBase implements Closeable {
+public class BufferedReadChannel extends BufferedChannelBase  {
 
     // The capacity of the read buffer.
     protected final int readCapacity;
@@ -50,11 +49,6 @@ public class BufferedReadChannel extends BufferedChannelBase implements Closeabl
         super(fileChannel);
         this.readCapacity = readCapacity;
         this.readBuffer = Unpooled.buffer(readCapacity);
-    }
-
-    @Override
-    public void close() throws IOException {
-        readBuffer.release();
     }
 
     /**

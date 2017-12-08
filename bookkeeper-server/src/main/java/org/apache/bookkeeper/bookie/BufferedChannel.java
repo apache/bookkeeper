@@ -24,6 +24,7 @@ package org.apache.bookkeeper.bookie;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -32,7 +33,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Provides a buffering layer in front of a FileChannel.
  */
-public class BufferedChannel extends BufferedReadChannel {
+public class BufferedChannel extends BufferedReadChannel implements Closeable {
     // The capacity of the write buffer.
     protected final int writeCapacity;
     // The position of the file channel's write pointer.
@@ -58,7 +59,6 @@ public class BufferedChannel extends BufferedReadChannel {
 
     @Override
     public void close() throws IOException {
-        super.close();
         writeBuffer.release();
     }
 

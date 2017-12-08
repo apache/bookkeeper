@@ -17,7 +17,6 @@
  */
 package org.apache.bookkeeper.bookie;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 
@@ -25,7 +24,7 @@ import java.nio.channels.FileChannel;
  * A {@code BufferedChannelBase} adds functionality to an existing file channel, the ability
  * to buffer the input and output data. This class is a base class for wrapping the {@link FileChannel}.
  */
-public abstract class BufferedChannelBase implements Closeable {
+public abstract class BufferedChannelBase {
     protected final FileChannel fileChannel;
 
     protected BufferedChannelBase(FileChannel fc) {
