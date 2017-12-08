@@ -20,6 +20,11 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -29,8 +34,8 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 import org.apache.bookkeeper.client.ClientUtil;
@@ -40,12 +45,10 @@ import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.ZeroBuffer;
 import org.apache.commons.io.FileUtils;
+import org.junit.After;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.junit.Test;
-import org.junit.After;
-
-import static org.junit.Assert.*;
 
 public class BookieJournalTest {
     private final static Logger LOG = LoggerFactory.getLogger(BookieJournalTest.class);
@@ -204,8 +207,8 @@ public class BookieJournalTest {
             lenBuff.putInt(packet.readableBytes());
             lenBuff.flip();
 
-            bc.write(lenBuff);
-            bc.write(packet.nioBuffer());
+            bc.write(Unpooled.wrappedBuffer(lenBuff));
+            bc.write(packet);
             packet.release();
         }
         bc.flush(true);
@@ -238,8 +241,8 @@ public class BookieJournalTest {
             lenBuff.putInt(packet.readableBytes());
             lenBuff.flip();
 
-            bc.write(lenBuff);
-            bc.write(packet.nioBuffer());
+            bc.write(Unpooled.wrappedBuffer(lenBuff));
+            bc.write(packet);
             packet.release();
         }
         bc.flush(true);
@@ -271,8 +274,8 @@ public class BookieJournalTest {
             ByteBuffer lenBuff = ByteBuffer.allocate(4);
             lenBuff.putInt(packet.readableBytes());
             lenBuff.flip();
-            bc.write(lenBuff);
-            bc.write(packet.nioBuffer());
+            bc.write(Unpooled.wrappedBuffer(lenBuff));
+            bc.write(packet);
             packet.release();
         }
         // write fence key
@@ -280,8 +283,8 @@ public class BookieJournalTest {
         ByteBuffer lenBuf = ByteBuffer.allocate(4);
         lenBuf.putInt(packet.remaining());
         lenBuf.flip();
-        bc.write(lenBuf);
-        bc.write(packet);
+        bc.write(Unpooled.wrappedBuffer(lenBuf));
+        bc.write(Unpooled.wrappedBuffer(packet));
         bc.flush(true);
         updateJournalVersion(jc, JournalChannel.V4);
         return jc;
@@ -311,19 +314,19 @@ public class BookieJournalTest {
             ByteBuffer lenBuff = ByteBuffer.allocate(4);
             lenBuff.putInt(packet.readableBytes());
             lenBuff.flip();
-            bc.write(lenBuff);
-            bc.write(packet.nioBuffer());
+            bc.write(Unpooled.wrappedBuffer(lenBuff));
+            bc.write(packet);
             packet.release();
-            Journal.writePaddingBytes(jc, paddingBuff, JournalChannel.SECTOR_SIZE);
+            Journal.writePaddingBytes(jc, Unpooled.wrappedBuffer(paddingBuff), JournalChannel.SECTOR_SIZE);
         }
         // write fence key
         ByteBuffer packet = generateFenceEntry(1);
         ByteBuffer lenBuf = ByteBuffer.allocate(4);
         lenBuf.putInt(packet.remaining());
         lenBuf.flip();
-        bc.write(lenBuf);
-        bc.write(packet);
-        Journal.writePaddingBytes(jc, paddingBuff, JournalChannel.SECTOR_SIZE);
+        bc.write(Unpooled.wrappedBuffer(lenBuf));
+        bc.write(Unpooled.wrappedBuffer(packet));
+        Journal.writePaddingBytes(jc, Unpooled.wrappedBuffer(paddingBuff), JournalChannel.SECTOR_SIZE);
         bc.flush(true);
         updateJournalVersion(jc, JournalChannel.V5);
         return jc;
@@ -519,7 +522,7 @@ public class BookieJournalTest {
         Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
 
         JournalChannel jc = writeV2Journal(Bookie.getCurrentDirectory(journalDir), 0);
-        jc.getBufferedChannel().write(ByteBuffer.wrap("JunkJunkJunk".getBytes()));
+        jc.getBufferedChannel().write(Unpooled.wrappedBuffer("JunkJunkJunk".getBytes()));
         jc.getBufferedChannel().flush(true);
 
         writeIndexFileForLedger(ledgerDir, 1, "testPasswd".getBytes());

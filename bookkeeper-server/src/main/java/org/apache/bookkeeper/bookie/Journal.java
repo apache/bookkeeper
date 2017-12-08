@@ -22,6 +22,7 @@
 package org.apache.bookkeeper.bookie;
 
 import com.google.common.base.Stopwatch;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.Recycler;
@@ -39,6 +40,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
@@ -49,7 +51,6 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.DaemonThreadFactory;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
-import org.apache.bookkeeper.util.ZeroBuffer;
 import org.apache.bookkeeper.util.collections.GrowableArrayBlockingQueue;
 import org.apache.bookkeeper.util.collections.RecyclableArrayList;
 import org.slf4j.Logger;
@@ -291,7 +292,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         static QueueEntry create(ByteBuf entry, long ledgerId, long entryId, WriteCallback cb, Object ctx,
                 long enqueueTime, OpStatsLogger journalAddEntryStats) {
             QueueEntry qe = RECYCLER.get();
-            qe.entry = entry.duplicate();
+            qe.entry = entry;
             qe.cb = cb;
             qe.ctx = ctx;
             qe.ledgerId = ledgerId;
@@ -508,7 +509,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
     static final int PADDING_MASK = -0x100;
 
-    static void writePaddingBytes(JournalChannel jc, ByteBuffer paddingBuffer, int journalAlignSize)
+    static void writePaddingBytes(JournalChannel jc, ByteBuf paddingBuffer, int journalAlignSize)
             throws IOException {
         int bytesToAlign = (int) (jc.bc.position() % journalAlignSize);
         if (0 != bytesToAlign) {
@@ -520,14 +521,13 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             }
             paddingBuffer.clear();
             // padding mask
-            paddingBuffer.putInt(PADDING_MASK);
+            paddingBuffer.writeInt(PADDING_MASK);
             // padding len
-            paddingBuffer.putInt(paddingBytes);
+            paddingBuffer.writeInt(paddingBytes);
             // padding bytes
-            paddingBuffer.position(8 + paddingBytes);
+            paddingBuffer.writerIndex(paddingBuffer.writerIndex() + 8);
 
-            paddingBuffer.flip();
-            jc.preAllocIfNeeded(paddingBuffer.limit());
+            jc.preAllocIfNeeded(paddingBuffer.readableBytes());
             // write padding bytes
             jc.bc.write(paddingBuffer);
         }
@@ -860,9 +860,9 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         LOG.info("Starting journal on {}", journalDirectory);
 
         RecyclableArrayList<QueueEntry> toFlush = entryListRecycler.newInstance();
-        ByteBuffer lenBuff = ByteBuffer.allocate(4);
-        ByteBuffer paddingBuff = ByteBuffer.allocate(2 * conf.getJournalAlignmentSize());
-        ZeroBuffer.put(paddingBuff);
+        ByteBuf lenBuff = Unpooled.buffer(4);
+        ByteBuf paddingBuff = Unpooled.buffer(2 * conf.getJournalAlignmentSize());
+        paddingBuff.writeZero(paddingBuff.capacity());
         final int journalFormatVersionToWrite = conf.getJournalFormatVersionToWrite();
         final int journalAlignmentSize = conf.getJournalAlignmentSize();
         JournalChannel logFile = null;
@@ -1020,24 +1020,20 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                     continue;
                 }
 
-                journalWriteBytes.add(qe.entry.readableBytes());
+                int entrySize = qe.entry.readableBytes();
+                journalWriteBytes.add(entrySize);
                 journalQueueSize.dec();
 
-                batchSize += (4 + qe.entry.readableBytes());
+                batchSize += (4 + entrySize);
 
                 lenBuff.clear();
-                lenBuff.putInt(qe.entry.readableBytes());
-                lenBuff.flip();
+                lenBuff.writeInt(entrySize);
 
                 // preAlloc based on size
-                logFile.preAllocIfNeeded(4 + qe.entry.readableBytes());
+                logFile.preAllocIfNeeded(4 + entrySize);
 
-                //
-                // we should be doing the following, but then we run out of
-                // direct byte buffers
-                // logFile.write(new ByteBuffer[] { lenBuff, qe.entry });
                 bc.write(lenBuff);
-                bc.write(qe.entry.nioBuffer());
+                bc.write(qe.entry);
                 qe.entry.release();
 
                 toFlush.add(qe);
