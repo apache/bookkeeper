@@ -89,9 +89,9 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         final long eId;
 
         LedgerEntryRequest(ArrayList<BookieSocketAddress> ensemble, long lId, long eId) {
-            this.eId = eId;
             this.entryImpl = LedgerEntryImpl.create(lId, eId);
             this.ensemble = ensemble;
+            this.eId = eId;
 
             if (lh.bk.isReorderReadSequence()) {
                 DistributionSchedule.WriteSet unorderedWriteSet = lh.getDistributionSchedule().getWriteSet(eId);
