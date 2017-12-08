@@ -20,9 +20,13 @@
  */
 package org.apache.bookkeeper.zookeeper;
 
-import org.junit.Test;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
+import org.junit.Test;
+
+/**
+ * Test the retry policy.
+ */
 public class TestRetryPolicy {
 
     private static void assertTimeRange(long waitTime, long minTime, long maxTime) {

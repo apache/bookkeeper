@@ -1,10 +1,3 @@
-package org.apache.bookkeeper.sasl;
-
-import java.io.File;
-import java.util.Arrays;
-import org.apache.bookkeeper.client.*;
-import java.util.Enumeration;
-
 /*
 *
 * Licensed to the Apache Software Foundation (ASF) under one
@@ -24,24 +17,36 @@ import java.util.Enumeration;
 * specific language governing permissions and limitations
 * under the License.
 *
- */
+*/
+package org.apache.bookkeeper.sasl;
+
+import static org.apache.bookkeeper.sasl.SaslConstants.JAAS_CLIENT_ALLOWED_IDS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.io.File;
+import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.security.auth.login.Configuration;
 
-import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.LedgerEntry;
+import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
-import static org.apache.bookkeeper.sasl.SaslConstants.JAAS_CLIENT_ALLOWED_IDS;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.AfterClass;
-
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
-
+/**
+ * MD5 digest test.
+ */
 public class MD5DigestBookKeeperTest extends BookKeeperClusterTestCase {
 
     static final Logger LOG = LoggerFactory.getLogger(MD5DigestBookKeeperTest.class);
@@ -50,7 +55,8 @@ public class MD5DigestBookKeeperTest extends BookKeeperClusterTestCase {
     private static final byte[] ENTRY = "TestEntry".getBytes();
 
     static {
-        System.setProperty("java.security.auth.login.config", new File("src/test/resources/jaas_md5.conf").getAbsolutePath());
+        System.setProperty("java.security.auth.login.config",
+                new File("src/test/resources/jaas_md5.conf").getAbsolutePath());
     }
 
     public MD5DigestBookKeeperTest() {

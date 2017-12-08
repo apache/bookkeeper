@@ -17,14 +17,14 @@
  */
 package org.apache.bookkeeper.conf;
 
-import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
+import org.junit.Test;
+
 /**
- * Test Configuration API
+ * Test Configuration API.
  *
- * @author enrico.olivelli
- * @see  NoSystemPropertiesConfigurationTest
+ * @see NoSystemPropertiesConfigurationTest
  */
 public class SystemPropertiesConfigurationTest {
 

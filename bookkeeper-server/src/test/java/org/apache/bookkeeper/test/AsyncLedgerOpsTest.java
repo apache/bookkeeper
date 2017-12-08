@@ -20,27 +20,29 @@
  */
 package org.apache.bookkeeper.test;
 
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Random;
 import java.util.Set;
+
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
-import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
-import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BKException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.LedgerEntry;
+import org.apache.bookkeeper.client.LedgerHandle;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This test tests read and write, synchronous and asynchronous, strings and
@@ -51,7 +53,7 @@ import static org.junit.Assert.*;
 public class AsyncLedgerOpsTest extends BookKeeperClusterTestCase
     implements AddCallback, ReadCallback, CreateCallback,
     CloseCallback, OpenCallback {
-    private final static Logger LOG = LoggerFactory.getLogger(AsyncLedgerOpsTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AsyncLedgerOpsTest.class);
 
     private final DigestType digestType;
 

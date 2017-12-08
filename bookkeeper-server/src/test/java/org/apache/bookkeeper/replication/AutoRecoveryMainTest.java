@@ -20,14 +20,15 @@
  */
 package org.apache.bookkeeper.replication;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-
-/*
- * Test the AuditorPeer
+/**
+ * Test the AuditorPeer.
  */
 public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
 
@@ -35,8 +36,8 @@ public class AutoRecoveryMainTest extends BookKeeperClusterTestCase {
         super(3);
     }
 
-    /*
-     * test the startup of the auditorElector and RW.
+    /**
+     * Test the startup of the auditorElector and RW.
      */
     @Test
     public void testStartup() throws Exception {

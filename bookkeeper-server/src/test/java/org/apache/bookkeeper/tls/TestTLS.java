@@ -17,48 +17,44 @@
  */
 package org.apache.bookkeeper.tls;
 
-import org.junit.*;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.Enumeration;
-import java.util.ArrayList;
-import java.util.Arrays;
-
-import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.tls.SecurityException;
-import org.apache.bookkeeper.tls.TLSContextFactory;
-import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.client.LedgerEntry;
-import org.apache.bookkeeper.client.BookKeeper;
-import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
-
-import java.io.IOException;
-import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-
-import org.apache.bookkeeper.auth.AuthCallbacks;
-import org.apache.bookkeeper.auth.AuthToken;
-import org.apache.bookkeeper.auth.BookieAuthProvider;
-import org.apache.bookkeeper.auth.ClientAuthProvider;
-import org.apache.bookkeeper.client.BookKeeperAdmin;
-import org.apache.bookkeeper.client.LedgerMetadata;
-import org.apache.bookkeeper.proto.BookieConnectionPeer;
-import org.apache.bookkeeper.proto.ClientConnectionPeer;
-import org.apache.bookkeeper.proto.TestPerChannelBookieClient;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.IOException;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+
+import org.apache.bookkeeper.auth.AuthCallbacks;
+import org.apache.bookkeeper.auth.AuthToken;
+import org.apache.bookkeeper.auth.BookieAuthProvider;
+import org.apache.bookkeeper.auth.ClientAuthProvider;
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BookKeeper;
+import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.BookKeeperAdmin;
+import org.apache.bookkeeper.client.LedgerEntry;
+import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieConnectionPeer;
+import org.apache.bookkeeper.proto.ClientConnectionPeer;
+import org.apache.bookkeeper.proto.TestPerChannelBookieClient;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,7 +63,7 @@ import org.slf4j.LoggerFactory;
  */
 public class TestTLS extends BookKeeperClusterTestCase {
 
-    static Logger LOG = LoggerFactory.getLogger(TestPerChannelBookieClient.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TestPerChannelBookieClient.class);
 
     private static boolean secureClientSideChannel = false;
     private static Collection<Object> secureClientSideChannelPrincipals = null;
@@ -117,7 +113,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Verify that a server will not start if tls is enabled but no cert is specified
+     * Verify that a server will not start if tls is enabled but no cert is specified.
      */
     @Test
     public void testStartTLSServerNoKeyStore() throws Exception {
@@ -132,7 +128,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Verify that a server will not start if tls is enabled but the cert password is incorrect
+     * Verify that a server will not start if tls is enabled but the cert password is incorrect.
      */
     @Test
     public void testStartTLSServerBadPassword() throws Exception {
@@ -170,7 +166,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Verify the basic use of TLS. TLS client, TLS servers
+     * Verify the basic use of TLS. TLS client, TLS servers.
      */
     @Test
     public void testConnectToTLSClusterTLSClient() throws Exception {
@@ -180,7 +176,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
 
 
     /**
-     * Multiple clients, some with TLS, and some without TLS
+     * Multiple clients, some with TLS, and some without TLS.
      */
     @Test
     public void testConnectToTLSClusterMixedClient() throws Exception {
@@ -219,7 +215,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Verify that a client without tls enabled can connect to a cluster with TLS
+     * Verify that a client without tls enabled can connect to a cluster with TLS.
      */
     @Test
     public void testConnectToTLSClusterNonTLSClient() throws Exception {
@@ -285,7 +281,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Verify that a client-side Auth plugin can access server certificates
+     * Verify that a client-side Auth plugin can access server certificates.
      */
     @Test
     public void testClientAuthPlugin() throws Exception {
@@ -305,7 +301,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Verify that a bookie-side Auth plugin can access server certificates
+     * Verify that a bookie-side Auth plugin can access server certificates.
      */
     @Test
     public void testBookieAuthPluginRequireClientTLSAuthentication() throws Exception {
@@ -327,7 +323,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Verify that a bookie-side Auth plugin can access server certificates
+     * Verify that a bookie-side Auth plugin can access server certificates.
      */
     @Test
     public void testBookieAuthPluginDenyAccesstoClientWithoutTLSAuthentication() throws Exception {
@@ -353,7 +349,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Verify that a bookie-side Auth plugin can access server certificates
+     * Verify that a bookie-side Auth plugin can access server certificates.
      */
     @Test
     public void testBookieAuthPluginDenyAccessToClientWithoutTLS() throws Exception {

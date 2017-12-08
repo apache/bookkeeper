@@ -25,6 +25,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -37,9 +40,9 @@ import java.util.concurrent.Future;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongPairHashMap.LongPair;
 import org.junit.Test;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-
+/**
+ * Test the concurrent long-long pair hashmap class.
+ */
 public class ConcurrentLongLongPairHashMapTest {
 
     @Test
@@ -168,7 +171,7 @@ public class ConcurrentLongLongPairHashMapTest {
         ExecutorService executor = Executors.newCachedThreadPool();
 
         final int nThreads = 16;
-        final int N = 100_000;
+        final int n = 100_000;
         long value = 55;
 
         List<Future<?>> futures = new ArrayList<>();
@@ -178,7 +181,7 @@ public class ConcurrentLongLongPairHashMapTest {
             futures.add(executor.submit(() -> {
                 Random random = new Random();
 
-                for (int j = 0; j < N; j++) {
+                for (int j = 0; j < n; j++) {
                     long key1 = Math.abs(random.nextLong());
                     // Ensure keys are uniques
                     key1 -= key1 % (threadIdx + 1);
@@ -196,7 +199,7 @@ public class ConcurrentLongLongPairHashMapTest {
             future.get();
         }
 
-        assertEquals(map.size(), N * nThreads);
+        assertEquals(map.size(), n * nThreads);
 
         executor.shutdown();
     }
@@ -207,7 +210,7 @@ public class ConcurrentLongLongPairHashMapTest {
         ExecutorService executor = Executors.newCachedThreadPool();
 
         final int nThreads = 16;
-        final int N = 100_000;
+        final int n = 100_000;
         final long value = 55;
 
         List<Future<?>> futures = new ArrayList<>();
@@ -217,7 +220,7 @@ public class ConcurrentLongLongPairHashMapTest {
             futures.add(executor.submit(() -> {
                 Random random = new Random();
 
-                for (int j = 0; j < N; j++) {
+                for (int j = 0; j < n; j++) {
                     long key1 = Math.abs(random.nextLong());
                     // Ensure keys are uniques
                     key1 -= key1 % (threadIdx + 1);
@@ -235,7 +238,7 @@ public class ConcurrentLongLongPairHashMapTest {
             future.get();
         }
 
-        assertEquals(map.size(), N * nThreads);
+        assertEquals(map.size(), n * nThreads);
 
         executor.shutdown();
     }

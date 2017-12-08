@@ -20,34 +20,38 @@
  */
 package org.apache.bookkeeper.test;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Random;
-import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.streaming.LedgerInputStream;
 import org.apache.bookkeeper.streaming.LedgerOutputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This test tests read and write, synchronous and asynchronous, strings and
@@ -60,8 +64,8 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
 
     // Depending on the taste, select the amount of logging
     // by decommenting one of the two lines below
-    // private final static Logger LOG = Logger.getRootLogger();
-    private final static Logger LOG = LoggerFactory.getLogger(BookieReadWriteTest.class);
+    // private static final Logger LOG = Logger.getRootLogger();
+    private static final Logger LOG = LoggerFactory.getLogger(BookieReadWriteTest.class);
 
     byte[] ledgerPassword = "aaa".getBytes();
     LedgerHandle lh, lh2;
@@ -126,9 +130,9 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
     }
 
     /**
-     * test the streaming api for reading and writing
+     * test the streaming api for reading and writing.
      *
-     * @throws {@link IOException}
+     * @throws IOException
      */
     @Test
     public void testStreamingClients() throws IOException, BKException, InterruptedException {
@@ -277,12 +281,12 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
             // bkc.initMessageDigest("SHA1");
             ledgerId = lh.getId();
             LOG.info("Ledger ID: " + lh.getId());
-            byte bytes[] = {'a','b','c','d','e','f','g','h','i'};
+            byte bytes[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'};
 
             lh.asyncAddEntry(bytes, 0, bytes.length, this, sync);
             lh.asyncAddEntry(bytes, 0, 4, this, sync); // abcd
             lh.asyncAddEntry(bytes, 3, 4, this, sync); // defg
-            lh.asyncAddEntry(bytes, 3, (bytes.length-3), this, sync); // defghi
+            lh.asyncAddEntry(bytes, 3, (bytes.length - 3), this, sync); // defghi
             int numEntries = 4;
 
             // wait for all entries to be acknowledged
@@ -301,13 +305,13 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
                 // expected
             }
             try {
-                lh.asyncAddEntry(bytes, 0, bytes.length+1, this, sync);
+                lh.asyncAddEntry(bytes, 0, bytes.length + 1, this, sync);
                 fail("Shouldn't be able to use that much length");
             } catch (ArrayIndexOutOfBoundsException aiob) {
                 // expected
             }
             try {
-                lh.asyncAddEntry(bytes, -1, bytes.length+2, this, sync);
+                lh.asyncAddEntry(bytes, -1, bytes.length + 2, this, sync);
                 fail("Shouldn't be able to use negative offset "
                      + "with that much length");
             } catch (ArrayIndexOutOfBoundsException aiob) {
@@ -367,10 +371,10 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
                     expected = Arrays.copyOfRange(bytes, 0, 4);
                     break;
                 case 2:
-                    expected = Arrays.copyOfRange(bytes, 3, 3+4);
+                    expected = Arrays.copyOfRange(bytes, 3, 3 + 4);
                     break;
                 case 3:
-                    expected = Arrays.copyOfRange(bytes, 3, 3+(bytes.length-3));
+                    expected = Arrays.copyOfRange(bytes, 3, 3 + (bytes.length - 3));
                     break;
                 }
                 assertNotNull("There are more checks than writes", expected);
@@ -403,10 +407,10 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
 
         @Override
         public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
-            SyncObj sync = (SyncObj)ctx;
+            SyncObj sync = (SyncObj) ctx;
             sync.setLedgerEntries(seq);
             sync.setReturnCode(rc);
-            synchronized(sync) {
+            synchronized (sync) {
                 sync.counter += throttle;
                 sync.notify();
             }
@@ -598,7 +602,7 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
             long ledgerId = lh.getId();
             long ledgerId2 = lh2.getId();
 
-            final CountDownLatch completeLatch = new CountDownLatch(numEntriesToWrite*2);
+            final CountDownLatch completeLatch = new CountDownLatch(numEntriesToWrite * 2);
             final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
 
             // bkc.initMessageDigest("SHA1");
@@ -766,7 +770,7 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
             assertTrue("Enumeration of ledger entries has no element", readEntry.hasMoreElements());
             LedgerEntry e = readEntry.nextElement();
             assertEquals(toRead, e.getEntryId());
-            Assert.assertArrayEquals(entries.get((int)toRead), e.getEntry());
+            assertArrayEquals(entries.get((int) toRead), e.getEntry());
             // should not written to a read only ledger
             try {
                 ByteBuffer entry = ByteBuffer.allocate(4);
@@ -835,7 +839,7 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
             ledgerId = lh.getId();
             LOG.info("Ledger ID: " + lh.getId());
             LedgerHandle lhOpen = bkc.openLedgerNoRecovery(ledgerId, digestType, ledgerPassword);
-            writeNEntriesLastWriteSync(lh, numEntriesToWrite/2);
+            writeNEntriesLastWriteSync(lh, numEntriesToWrite / 2);
 
             ByteBuffer entry = ByteBuffer.allocate(4);
             entry.putInt(rng.nextInt(maxInt));
@@ -844,7 +848,7 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
             // no recovery opened ledger 's last confirmed entry id is
             // less than written
             // and it just can read until (i-1)
-            int toRead = numEntriesToWrite/2 - 2;
+            int toRead = numEntriesToWrite / 2 - 2;
 
             long readLastConfirmed = lhOpen.readLastConfirmed();
             assertTrue(readLastConfirmed != 0);
@@ -852,7 +856,7 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
             assertTrue("Enumeration of ledger entries has no element", readEntry.hasMoreElements());
             LedgerEntry e = readEntry.nextElement();
             assertEquals(toRead, e.getEntryId());
-            Assert.assertArrayEquals(entries.get(toRead), e.getEntry());
+            assertArrayEquals(entries.get(toRead), e.getEntry());
             // should not written to a read only ledger
             try {
                 lhOpen.addEntry(entry.array());
@@ -863,7 +867,7 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
                 LOG.error("Unexpected exception", ex);
                 fail("Unexpected exception");
             }
-            writeNEntriesLastWriteSync(lh, numEntriesToWrite/2);
+            writeNEntriesLastWriteSync(lh, numEntriesToWrite / 2);
 
             long last = lh.readLastConfirmed();
             assertTrue("Last confirmed add: " + last, last == (numEntriesToWrite - 2));
@@ -1027,7 +1031,7 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
     public void readLastConfirmedComplete(int rc, long lastConfirmed, Object ctx) {
         SyncObj sync = (SyncObj) ctx;
         sync.setReturnCode(rc);
-        synchronized(sync) {
+        synchronized (sync) {
             sync.lastConfirmed = lastConfirmed;
             sync.notify();
         }
@@ -1050,16 +1054,19 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
             String[] children = dir.list();
             for (String string : children) {
                 boolean success = cleanUpDir(new File(dir, string));
-                if (!success)
+                if (!success) {
                     return false;
+                }
             }
         }
         // The directory is now empty so delete it
         return dir.delete();
     }
 
-    /* User for testing purposes, void */
-    class emptyWatcher implements Watcher {
+    /**
+     * Used for testing purposes, void.
+     */
+    class EmptyWatcher implements Watcher {
         @Override
         public void process(WatchedEvent event) {
         }
