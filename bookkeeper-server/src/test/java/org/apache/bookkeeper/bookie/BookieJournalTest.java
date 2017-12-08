@@ -43,7 +43,6 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.util.IOUtils;
-import org.apache.bookkeeper.util.ZeroBuffer;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Test;
@@ -108,11 +107,10 @@ public class BookieJournalTest {
     /**
      * Generate fence entry
      */
-    private ByteBuffer generateFenceEntry(long ledgerId) {
-        ByteBuffer bb = ByteBuffer.allocate(8 + 8);
-        bb.putLong(ledgerId);
-        bb.putLong(Bookie.METAENTRY_ID_FENCE_KEY);
-        bb.flip();
+    private ByteBuf generateFenceEntry(long ledgerId) {
+        ByteBuf bb = Unpooled.buffer();
+        bb.writeLong(ledgerId);
+        bb.writeLong(Bookie.METAENTRY_ID_FENCE_KEY);
         return bb;
     }
 
@@ -120,13 +118,12 @@ public class BookieJournalTest {
      * Generate meta entry with given master key
      */
     private ByteBuf generateMetaEntry(long ledgerId, byte[] masterKey) {
-        ByteBuffer bb = ByteBuffer.allocate(8 + 8 + 4 + masterKey.length);
-        bb.putLong(ledgerId);
-        bb.putLong(Bookie.METAENTRY_ID_LEDGER_KEY);
-        bb.putInt(masterKey.length);
-        bb.put(masterKey);
-        bb.flip();
-        return Unpooled.wrappedBuffer(bb);
+        ByteBuf bb = Unpooled.buffer();
+        bb.writeLong(ledgerId);
+        bb.writeLong(Bookie.METAENTRY_ID_LEDGER_KEY);
+        bb.writeInt(masterKey.length);
+        bb.writeBytes(masterKey);
+        return bb;
     }
 
     private void writeJunkJournal(File journalDir) throws Exception {
@@ -279,12 +276,11 @@ public class BookieJournalTest {
             packet.release();
         }
         // write fence key
-        ByteBuffer packet = generateFenceEntry(1);
-        ByteBuffer lenBuf = ByteBuffer.allocate(4);
-        lenBuf.putInt(packet.remaining());
-        lenBuf.flip();
-        bc.write(Unpooled.wrappedBuffer(lenBuf));
-        bc.write(Unpooled.wrappedBuffer(packet));
+        ByteBuf packet = generateFenceEntry(1);
+        ByteBuf lenBuf = Unpooled.buffer();
+        lenBuf.writeInt(packet.readableBytes());
+        bc.write(lenBuf);
+        bc.write(packet);
         bc.flush(true);
         updateJournalVersion(jc, JournalChannel.V4);
         return jc;
@@ -296,8 +292,8 @@ public class BookieJournalTest {
 
         BufferedChannel bc = jc.getBufferedChannel();
 
-        ByteBuffer paddingBuff = ByteBuffer.allocateDirect(2 * JournalChannel.SECTOR_SIZE);
-        ZeroBuffer.put(paddingBuff);
+        ByteBuf paddingBuff = Unpooled.buffer();
+        paddingBuff.writeZero(2 * JournalChannel.SECTOR_SIZE);
         byte[] data = new byte[4 * 1024 * 1024];
         Arrays.fill(data, (byte)'X');
         long lastConfirmed = LedgerHandle.INVALID_ENTRY_ID;
@@ -311,22 +307,20 @@ public class BookieJournalTest {
             }
             lastConfirmed = i;
             length += i;
-            ByteBuffer lenBuff = ByteBuffer.allocate(4);
-            lenBuff.putInt(packet.readableBytes());
-            lenBuff.flip();
-            bc.write(Unpooled.wrappedBuffer(lenBuff));
+            ByteBuf lenBuff = Unpooled.buffer();
+            lenBuff.writeInt(packet.readableBytes());
+            bc.write(lenBuff);
             bc.write(packet);
             packet.release();
-            Journal.writePaddingBytes(jc, Unpooled.wrappedBuffer(paddingBuff), JournalChannel.SECTOR_SIZE);
+            Journal.writePaddingBytes(jc, paddingBuff, JournalChannel.SECTOR_SIZE);
         }
         // write fence key
-        ByteBuffer packet = generateFenceEntry(1);
-        ByteBuffer lenBuf = ByteBuffer.allocate(4);
-        lenBuf.putInt(packet.remaining());
-        lenBuf.flip();
-        bc.write(Unpooled.wrappedBuffer(lenBuf));
-        bc.write(Unpooled.wrappedBuffer(packet));
-        Journal.writePaddingBytes(jc, Unpooled.wrappedBuffer(paddingBuff), JournalChannel.SECTOR_SIZE);
+        ByteBuf packet = generateFenceEntry(1);
+        ByteBuf lenBuf = Unpooled.buffer();
+        lenBuf.writeInt(packet.readableBytes());
+        bc.write(lenBuf);
+        bc.write(packet);
+        Journal.writePaddingBytes(jc, paddingBuff, JournalChannel.SECTOR_SIZE);
         bc.flush(true);
         updateJournalVersion(jc, JournalChannel.V5);
         return jc;

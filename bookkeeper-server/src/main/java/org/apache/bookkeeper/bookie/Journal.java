@@ -525,7 +525,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             // padding len
             paddingBuffer.writeInt(paddingBytes);
             // padding bytes
-            paddingBuffer.writerIndex(paddingBuffer.writerIndex() + 8);
+            paddingBuffer.writerIndex(paddingBuffer.writerIndex() + paddingBytes);
 
             jc.preAllocIfNeeded(paddingBuffer.readableBytes());
             // write padding bytes
