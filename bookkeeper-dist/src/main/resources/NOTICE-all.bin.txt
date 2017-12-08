@@ -17,7 +17,6 @@ under the License.
 This project includes:
   Apache Log4j under The Apache Software License, Version 2.0
   Caffeine under The Apache Software License, Version 2.0
-  Commons BeanUtils Core under The Apache Software License, Version 2.0
   Commons CLI under The Apache Software License, Version 2.0
   Commons Codec under The Apache Software License, Version 2.0
   Commons Collections under The Apache Software License, Version 2.0
@@ -25,20 +24,25 @@ This project includes:
   Commons IO under The Apache Software License, Version 2.0
   Commons Lang under The Apache Software License, Version 2.0
   Commons Logging under The Apache Software License, Version 2.0
-  Commons Beanutils under Apache License, Version 2.0
-  Commons Digester under The Apache Software License, Version 2.0
   Dropwizard Metrics under The Apache Software License, Version 2.0
   Guava under The Apache Software License, Version 2.0
   Jackson under The Apache Software License, Version 2.0
   Java Native Access under The Apache Software License, Version 2.0
+  Java Servlet API under Common Development and Distribution License 1.0
+  Javax.inject under The Apache Software License, Version 2.0
   Jetty under The Apache Software License, Version 2.0
+  JSR305 Annotations for Findbugs under The Apache Software License, Version 2.0
+  ParaNamer under New BSD License
   Prometheus under The Apache Software License, Version 2.0
-  Protocol Buffer Java API under New BSD license
-  Scala under New BSD license
+  Protocol Buffer Java API under New BSD License
+  Scala under New BSD License
   SLF4J API Module under MIT License
   SLF4J LOG4J-12 Binding under MIT License
   The Netty Project under The Apache Software License, Version 2.0
   Twitter Finagle under The Apache Software License, Version 2.0
+  Twitter LibThrift under The Apache Software License, Version 2.0
+  Twitter Server under The Apache Software License, Version 2.0
+  Twitter Scrooge under The Apache Software License, Version 2.0
   Twitter Util under The Apache Software License, Version 2.0
   Vertx under The Apache Software License, Version 2.0
-  ZooKeeper under Apache License, Version 2.0
+  ZooKeeper under The Apache Software License, Version 2.0
