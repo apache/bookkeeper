@@ -349,7 +349,7 @@ public class LedgerHandle implements WriteHandle {
      *
      * @return BookKeeperServerHealthInfo for every bookie in the write set.
      */
-    public BookKeeperServerHealthInfo generateHealthInfoForWriteSet(
+    public BookiesHealthInfo generateHealthInfoForWriteSet(
         DistributionSchedule.WriteSet writeSet,
         ArrayList<BookieSocketAddress> ensemble,
         LedgerHandle lh) {
@@ -365,7 +365,7 @@ public class LedgerHandle implements WriteHandle {
             int numPendingReqs = pcbcPool.getNumPendingCompletionRequests();
             bookiePendingMap.put(address, numPendingReqs);
         }
-        return new BookKeeperServerHealthInfo(lh.bookieFailureHistory.asMap(), bookiePendingMap);
+        return new BookiesHealthInfo(lh.bookieFailureHistory.asMap(), bookiePendingMap);
     }
 
     /**
