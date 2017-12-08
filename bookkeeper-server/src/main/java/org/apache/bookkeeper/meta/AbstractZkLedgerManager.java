@@ -18,7 +18,8 @@
 package org.apache.bookkeeper.meta;
 
 import com.google.common.base.Optional;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
+import io.netty.util.concurrent.DefaultThreadFactory;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -147,10 +148,8 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
         this.conf = conf;
         this.zk = zk;
         this.ledgerRootPath = conf.getZkLedgersRootPath();
-        ThreadFactoryBuilder tfb = new ThreadFactoryBuilder().setNameFormat(
-                "ZkLedgerManagerScheduler-%d");
         this.scheduler = Executors
-                .newSingleThreadScheduledExecutor(tfb.build());
+                .newSingleThreadScheduledExecutor(new DefaultThreadFactory("ZkLedgerManagerScheduler"));
         if (LOG.isDebugEnabled()) {
             LOG.debug("Using AbstractZkLedgerManager with root path : {}", ledgerRootPath);
         }

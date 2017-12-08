@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.proto;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.protobuf.ExtensionRegistry;
 
 import io.netty.bootstrap.ServerBootstrap;
@@ -49,6 +48,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.ssl.SslHandler;
+import io.netty.util.concurrent.DefaultThreadFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -109,7 +109,7 @@ class BookieNettyServer {
         this.authProviderFactory = AuthProviderFactoryFactory.newBookieAuthProviderFactory(conf);
 
         if (!conf.isDisableServerSocketBind()) {
-            ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat("bookie-io-%s").build();
+            ThreadFactory threadFactory = new DefaultThreadFactory("bookie-io");
             final int numThreads = Runtime.getRuntime().availableProcessors() * 2;
 
             EventLoopGroup eventLoopGroup;

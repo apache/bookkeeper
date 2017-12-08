@@ -22,18 +22,23 @@
 package org.apache.bookkeeper.bookie;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
+import io.netty.util.concurrent.DefaultThreadFactory;
+
 import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
 import lombok.extern.slf4j.Slf4j;
+
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.MathUtils;
+
 
 /**
  * SyncThread is a background thread which help checkpointing ledger storage
@@ -72,9 +77,7 @@ class SyncThread implements Checkpointer {
         this.dirsListener = dirsListener;
         this.ledgerStorage = ledgerStorage;
         this.checkpointSource = checkpointSource;
-        ThreadFactoryBuilder tfb = new ThreadFactoryBuilder()
-            .setNameFormat("SyncThread-" + conf.getBookiePort() + "-%d");
-        this.executor = Executors.newSingleThreadScheduledExecutor(tfb.build());
+        this.executor = Executors.newSingleThreadScheduledExecutor(new DefaultThreadFactory("SyncThread"));
         flushInterval = conf.getFlushInterval();
         if (log.isDebugEnabled()) {
             log.debug("Flush Interval : {}", flushInterval);
