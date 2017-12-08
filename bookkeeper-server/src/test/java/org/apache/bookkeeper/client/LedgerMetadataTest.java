@@ -32,7 +32,7 @@ import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
 import org.junit.Test;
 
 /**
- * Unit test for ledger metadata
+ * Unit test for ledger metadata.
  */
 public class LedgerMetadataTest {
 

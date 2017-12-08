@@ -50,7 +50,7 @@ public class LedgerEntriesImplTest {
     private final ArrayList<ByteBuf> bufs = Lists.newArrayListWithExpectedSize(entryNumber);
 
     public LedgerEntriesImplTest () {
-        for(int i = 0; i < entryNumber; i++) {
+        for (int i = 0; i < entryNumber; i++) {
             ByteBuf buf = Unpooled.wrappedBuffer(dataBytes);
             bufs.add(buf);
 
@@ -87,7 +87,7 @@ public class LedgerEntriesImplTest {
 
     @Test
     public void testGetEntry() {
-        for(int i = 0; i < entryNumber; i ++) {
+        for (int i = 0; i < entryNumber; i++) {
             LedgerEntry entry = ledgerEntriesImpl.getEntry(entryId + i);
             assertEquals(entryList.get(i).getLedgerId(),  entry.getLedgerId());
             assertEquals(entryList.get(i).getEntryId(),  entry.getEntryId());

@@ -20,6 +20,9 @@ package org.apache.bookkeeper.client;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
+/**
+ * Client utilities.
+ */
 public class ClientUtil {
     public static ByteBuf generatePacket(long ledgerId, long entryId, long lastAddConfirmed,
                                                long length, byte[] data) {
@@ -33,7 +36,9 @@ public class ClientUtil {
                                                     Unpooled.wrappedBuffer(data, offset, len));
     }
 
-    /** Returns that whether ledger is in open state */
+    /**
+     * Returns that whether ledger is in open state.
+     */
     public static boolean isLedgerOpen(LedgerHandle handle) {
         return !handle.metadata.isClosed();
     }

@@ -20,14 +20,21 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.google.common.util.concurrent.SettableFuture;
+
 import io.netty.buffer.ByteBuf;
+
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
@@ -45,11 +52,9 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
-
 /**
  * This unit test verifies the behavior of bookkeeper apis, where the operations
- * are being executed through a closed bookkeeper client
+ * are being executed through a closed bookkeeper client.
  */
 public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
@@ -116,7 +121,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
     /**
      * Test that createledger using bookkeeper client which is closed should
-     * throw ClientClosedException
+     * throw ClientClosedException.
      */
     @Test
     public void testCreateLedger() throws Exception {
@@ -153,7 +158,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
     /**
      * Test that opening a ledger using bookkeeper client which is closed should
-     * throw ClientClosedException
+     * throw ClientClosedException.
      */
     @Test
     public void testFenceLedger() throws Exception {
@@ -200,7 +205,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
     /**
      * Test that deleting a ledger using bookkeeper client which is closed
-     * should throw ClientClosedException
+     * should throw ClientClosedException.
      */
     @Test
     public void testDeleteLedger() throws Exception {
@@ -236,7 +241,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
     /**
      * Test that adding entry to a ledger using bookkeeper client which is
-     * closed should throw ClientClosedException
+     * closed should throw ClientClosedException.
      */
     @Test
     public void testAddLedgerEntry() throws Exception {
@@ -276,7 +281,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
     /**
      * Test that closing a ledger using bookkeeper client which is closed should
-     * throw ClientClosedException
+     * throw ClientClosedException.
      */
     @Test
     public void testCloseLedger() throws Exception {
@@ -314,7 +319,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
     /**
      * Test that reading entry from a ledger using bookkeeper client which is
-     * closed should throw ClientClosedException
+     * closed should throw ClientClosedException.
      */
     @Test
     public void testReadLedgerEntry() throws Exception {
@@ -357,7 +362,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
     /**
      * Test that readlastconfirmed entry from a ledger using bookkeeper client
-     * which is closed should throw ClientClosedException
+     * which is closed should throw ClientClosedException.
      */
     @Test
     public void testReadLastConfirmed() throws Exception {
@@ -403,7 +408,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
     /**
      * Test that checking a ledger using a closed BK client will
-     * throw a ClientClosedException
+     * throw a ClientClosedException.
      */
     @Test
     public void testLedgerCheck() throws Exception {
@@ -460,7 +465,7 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
     }
     /**
      * Test that BookKeeperAdmin operationg using a closed BK client will
-     * throw a ClientClosedException
+     * throw a ClientClosedException.
      */
     @Test
     public void testBookKeeperAdmin() throws Exception {

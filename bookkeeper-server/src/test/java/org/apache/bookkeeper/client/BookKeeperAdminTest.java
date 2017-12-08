@@ -25,6 +25,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.Iterator;
+
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.BKException.BKIllegalOpException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -33,11 +34,13 @@ import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.annotations.FlakyTest;
-import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Test the bookkeeper admin.
+ */
 public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
 
     private static final Logger LOG = LoggerFactory.getLogger(BookKeeperAdminTest.class);
@@ -75,7 +78,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         urLedgerMgr.disableLedgerReplication();
         try {
             bkAdmin.triggerAudit();
-            Assert.fail("Trigger Audit should have failed because LedgerReplication is disabled");
+            fail("Trigger Audit should have failed because LedgerReplication is disabled");
         } catch (UnavailableException une) {
             // expected
         }
@@ -124,7 +127,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
             LedgerHandle emptylh = bkc.createLedger(3, 2, digestType, PASSWORD.getBytes());
             emptylh.close();
         }
-        
+
         try {
             /*
              * if we try to call decommissionBookie for a bookie which is not
@@ -135,7 +138,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         } catch (BKIllegalOpException bkioexc) {
             // expected IllegalException
         }
-        
+
         ServerConfiguration killedBookieConf = killBookie(1);
         /*
          * this decommisionBookie should make sure that there are no
@@ -152,7 +155,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
             }
             fail("There are not supposed to be any underreplicatedledgers");
         }
-        
+
         killedBookieConf = killBookie(0);
         bkAdmin.decommissionBookie(Bookie.getBookieAddress(killedBookieConf));
         bkAdmin.triggerAudit();
@@ -199,14 +202,14 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
             lh1.addEntry(j, "data".getBytes());
             lh2.addEntry(j, "data".getBytes());
         }
-        
+
         /*
          * Here lh1 and lh2 have multiple fragments and are writeclosed. But lh3 and lh4 are
          * not writeclosed and contains only one fragment.
          */
         lh1.close();
         lh2.close();
-        
+
         /*
          * If the last fragment of the ledger is underreplicated and if the
          * ledger is not closed then it will remain underreplicated for

@@ -20,13 +20,20 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import io.netty.buffer.ByteBuf;
+
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
@@ -42,13 +49,11 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
-
 /**
  * This unit test tests ledger recovery.
  */
 public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
-    private final static Logger LOG = LoggerFactory.getLogger(LedgerRecoveryTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LedgerRecoveryTest.class);
 
     private final DigestType digestType;
 
@@ -239,7 +244,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
     @Test
     public void testLedgerRecoveryWithRollingRestart() throws Exception {
         LedgerHandle lhbefore = bkc.createLedger(numBookies, 2, digestType, "".getBytes());
-        for (int i = 0; i < (numBookies*3)+1; i++) {
+        for (int i = 0; i < (numBookies * 3) + 1; i++) {
             lhbefore.addEntry("data".getBytes());
         }
 
@@ -320,7 +325,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
     @Test
     public void testBookieFailureDuringRecovery() throws Exception {
         LedgerHandle lhbefore = bkc.createLedger(numBookies, 2, digestType, "".getBytes());
-        for (int i = 0; i < (numBookies*3)+1; i++) {
+        for (int i = 0; i < (numBookies * 3) + 1; i++) {
             lhbefore.addEntry("data".getBytes());
         }
 
@@ -475,7 +480,8 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
 
         final CountDownLatch recoverLatch = new CountDownLatch(1);
         final AtomicBoolean success = new AtomicBoolean(false);
-        LedgerRecoveryOp recoveryOp = new LedgerRecoveryOp(recoverLh, new BookkeeperInternalCallbacks.GenericCallback<Void>() {
+        LedgerRecoveryOp recoveryOp = new LedgerRecoveryOp(recoverLh,
+                new BookkeeperInternalCallbacks.GenericCallback<Void>() {
             @Override
             public void operationComplete(int rc, Void result) {
                 success.set(BKException.Code.OK == rc);
