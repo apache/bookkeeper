@@ -76,7 +76,7 @@
     </dependency>
     <dependency>
       <groupId>com.twitter</groupId>
-      <artifactId>finagle-core_2.10</artifactId>
+      <artifactId>finagle-core_2.11</artifactId>
       <version>6.34.0</version>
     </dependency>
   </dependencies>
