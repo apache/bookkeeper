@@ -56,6 +56,11 @@ The main features in 4.6.0 cover are around following areas:
 - Deployment BookKeeper on K8s. 
   - Provide yaml files to run BookKeeper on Kubernetes using both StatefulSets and DaemonSet. See [Issue-337](https://github.com/apache/bookkeeper/issues/337) and [Issue-681](https://github.com/apache/bookkeeper/issues/681)for more details.
 
+## Existing API changes
+
+- BookKeeper constructor now throws BKException instead of KeeperException.
+- The signatures of `reorderReadSequence` and `reorderReadLACSequence` are changed in EnsemblePlacementPolicy.
+
 ## Full list of changes
 
-- [https://github.com/apache/bookkeeper/milestone/2](https://github.com/apache/bookkeeper/milestone/2)
+- [https://github.com/apache/bookkeeper/milestone/2?closed=1](https://github.com/apache/bookkeeper/milestone/2?closed=1)
