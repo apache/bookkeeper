@@ -41,17 +41,16 @@ import org.apache.bookkeeper.client.MockBookKeeperTestCase;
 import org.junit.Test;
 
 /**
- * Unit tests of classes in this package
+ * Unit tests of classes in this package.
  */
 public class BookKeeperApiTest extends MockBookKeeperTestCase {
 
-    final static byte[] data = "foo".getBytes(UTF_8);
-    final static byte[] password = "password".getBytes(UTF_8);
+    private static final byte[] data = "foo".getBytes(UTF_8);
+    private static final byte[] password = "password".getBytes(UTF_8);
 
     @Test
     public void testWriteHandle() throws Exception {
-        try (WriteHandle writer
-            = result(newCreateLedgerOp()
+        try (WriteHandle writer = result(newCreateLedgerOp()
                 .withAckQuorumSize(1)
                 .withWriteQuorumSize(2)
                 .withEnsembleSize(3)
@@ -73,8 +72,7 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
     public void testWriteAdvHandle() throws Exception {
         long ledgerId = 12345;
         setNewGeneratedLedgerId(ledgerId);
-        try (WriteAdvHandle writer
-            = result(newCreateLedgerOp()
+        try (WriteAdvHandle writer = result(newCreateLedgerOp()
                 .withAckQuorumSize(1)
                 .withWriteQuorumSize(2)
                 .withEnsembleSize(3)
@@ -96,8 +94,7 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
     @Test
     public void testWriteAdvHandleWithFixedLedgerId() throws Exception {
         setNewGeneratedLedgerId(12345);
-        try (WriteAdvHandle writer
-            = result(newCreateLedgerOp()
+        try (WriteAdvHandle writer = result(newCreateLedgerOp()
                 .withAckQuorumSize(1)
                 .withWriteQuorumSize(2)
                 .withEnsembleSize(3)
@@ -119,8 +116,7 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
 
     @Test(expected = BKDuplicateEntryIdException.class)
     public void testWriteAdvHandleBKDuplicateEntryId() throws Exception {
-        try (WriteAdvHandle writer
-            = result(newCreateLedgerOp()
+        try (WriteAdvHandle writer = result(newCreateLedgerOp()
                 .withAckQuorumSize(1)
                 .withWriteQuorumSize(2)
                 .withEnsembleSize(3)
@@ -139,8 +135,7 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
     @Test(expected = BKUnauthorizedAccessException.class)
     public void testOpenLedgerUnauthorized() throws Exception {
         long lId;
-        try (WriteHandle writer
-            = result(newCreateLedgerOp()
+        try (WriteHandle writer = result(newCreateLedgerOp()
                 .withAckQuorumSize(1)
                 .withWriteQuorumSize(2)
                 .withEnsembleSize(3)
@@ -149,8 +144,7 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
             lId = writer.getId();
             assertEquals(-1L, writer.getLastAddPushed());
         }
-        try (ReadHandle ignored
-            = result(newOpenLedgerOp()
+        try (ReadHandle ignored = result(newOpenLedgerOp()
                 .withPassword("bad-password".getBytes(UTF_8))
                 .withLedgerId(lId)
                 .execute())) {
@@ -160,8 +154,7 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
     @Test(expected = BKDigestMatchException.class)
     public void testOpenLedgerDigestUnmatched() throws Exception {
         long lId;
-        try (WriteHandle writer
-            = result(newCreateLedgerOp()
+        try (WriteHandle writer = result(newCreateLedgerOp()
                 .withAckQuorumSize(1)
                 .withWriteQuorumSize(2)
                 .withEnsembleSize(3)
@@ -181,8 +174,7 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
 
     @Test
     public void testOpenLedgerNoSealed() throws Exception {
-        try (WriteHandle writer
-            = result(newCreateLedgerOp()
+        try (WriteHandle writer = result(newCreateLedgerOp()
                 .withEnsembleSize(3)
                 .withWriteQuorumSize(3)
                 .withAckQuorumSize(2)
@@ -193,8 +185,7 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
             result(writer.append(ByteBuffer.wrap(data)));
             result(writer.append(ByteBuffer.wrap(data)));
 
-            try (ReadHandle reader
-                = result(newOpenLedgerOp()
+            try (ReadHandle reader = result(newOpenLedgerOp()
                     .withPassword(password)
                     .withRecovery(false)
                     .withLedgerId(lId)
@@ -207,8 +198,7 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
     @Test
     public void testOpenLedgerRead() throws Exception {
         long lId;
-        try (WriteHandle writer
-            = result(newCreateLedgerOp()
+        try (WriteHandle writer = result(newCreateLedgerOp()
                 .withAckQuorumSize(1)
                 .withWriteQuorumSize(2)
                 .withEnsembleSize(3)
@@ -348,7 +338,7 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
     private static void checkEntries(LedgerEntries entries, byte[] data)
         throws InterruptedException, BKException {
         Iterator<LedgerEntry> iterator = entries.iterator();
-        while(iterator.hasNext()) {
+        while (iterator.hasNext()) {
             LedgerEntry entry = iterator.next();
             assertArrayEquals(data, entry.getEntryBytes());
         }

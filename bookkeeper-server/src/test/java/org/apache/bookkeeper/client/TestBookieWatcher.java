@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -34,8 +36,10 @@ import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
+/**
+ * Test a bookie watcher.
+ */
 public class TestBookieWatcher extends BookKeeperClusterTestCase {
 
     public TestBookieWatcher() {
@@ -50,8 +54,7 @@ public class TestBookieWatcher extends BookKeeperClusterTestCase {
 
             @Override
             public void process(WatchedEvent event) {
-                if (event.getType() == EventType.None &&
-                        event.getState() == KeeperState.SyncConnected) {
+                if (event.getType() == EventType.None && event.getState() == KeeperState.SyncConnected) {
                     latch.countDown();
                 }
             }
@@ -84,8 +87,8 @@ public class TestBookieWatcher extends BookKeeperClusterTestCase {
         ZooKeeper zk = new ZooKeeper(zkUtil.getZooKeeperConnectString(), timeout, new Watcher() {
             @Override
             public void process(WatchedEvent watchedEvent) {
-                if (EventType.None == watchedEvent.getType() &&
-                        KeeperState.SyncConnected == watchedEvent.getState()) {
+                if (EventType.None == watchedEvent.getType()
+                        && KeeperState.SyncConnected == watchedEvent.getState()) {
                     connectLatch.countDown();
                 }
             }
@@ -116,7 +119,7 @@ public class TestBookieWatcher extends BookKeeperClusterTestCase {
         TimeUnit.MILLISECONDS.sleep(3 * timeout);
 
         // start four new bookies
-        for (int i=0; i<2; i++) {
+        for (int i = 0; i < 2; i++) {
             startNewBookie();
         }
 

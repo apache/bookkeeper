@@ -21,12 +21,15 @@
 
 package org.apache.bookkeeper.client;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -36,11 +39,12 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
-
+/**
+ * Test a slow bookie.
+ */
 @SuppressWarnings("deprecation")
 public class SlowBookieTest extends BookKeeperClusterTestCase {
-    private final static Logger LOG = LoggerFactory.getLogger(SlowBookieTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SlowBookieTest.class);
 
     public SlowBookieTest() {
         super(4);

@@ -25,6 +25,12 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import io.netty.buffer.ByteBuf;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -35,14 +41,12 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicLong;
-
+/**
+ * Test a delayed ensemble change.
+ */
 public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
 
-    final static Logger logger = LoggerFactory.getLogger(TestDelayEnsembleChange.class);
+    private static final Logger logger = LoggerFactory.getLogger(TestDelayEnsembleChange.class);
 
     final DigestType digestType;
     final byte[] testPasswd = "".getBytes();
@@ -76,7 +80,8 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
         public void readEntryComplete(int rc, long ledgerId, long entryId, ByteBuf buffer, Object ctx) {
             if (rc == BKException.Code.OK) {
                 numSuccess.incrementAndGet();
-            } else if (rc == BKException.Code.NoSuchEntryException || rc == BKException.Code.NoSuchLedgerExistsException) {
+            } else if (rc == BKException.Code.NoSuchEntryException
+                    || rc == BKException.Code.NoSuchLedgerExistsException) {
                 logger.error("Missed entry({}, {}) from host {}.", new Object[] { ledgerId, entryId, ctx });
                 numMissing.incrementAndGet();
             } else {

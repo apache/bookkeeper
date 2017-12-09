@@ -17,7 +17,14 @@
  */
 package org.apache.bookkeeper.client;
 
-import static org.apache.bookkeeper.client.RegionAwareEnsemblePlacementPolicy.*;
+import static org.apache.bookkeeper.client.RegionAwareEnsemblePlacementPolicy
+        .REPP_DISALLOW_BOOKIE_PLACEMENT_IN_REGION_FEATURE_NAME;
+import static org.apache.bookkeeper.client.RegionAwareEnsemblePlacementPolicy.REPP_DNS_RESOLVER_CLASS;
+import static org.apache.bookkeeper.client.RegionAwareEnsemblePlacementPolicy
+        .REPP_ENABLE_DURABILITY_ENFORCEMENT_IN_REPLACE;
+import static org.apache.bookkeeper.client.RegionAwareEnsemblePlacementPolicy.REPP_ENABLE_VALIDATION;
+import static org.apache.bookkeeper.client.RegionAwareEnsemblePlacementPolicy.REPP_MINIMUM_REGIONS_FOR_DURABILITY;
+import static org.apache.bookkeeper.client.RegionAwareEnsemblePlacementPolicy.REPP_REGIONS_TO_WRITE;
 import static org.apache.bookkeeper.client.RoundRobinDistributionSchedule.writeSetFromValues;
 import static org.apache.bookkeeper.feature.SettableFeatureProvider.DISABLE_ALL;
 

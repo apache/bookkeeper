@@ -30,8 +30,11 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Test the BookieHealthCheck.
+ */
 public class TestBookieHealthCheck extends BookKeeperClusterTestCase {
-    private final static Logger LOG = LoggerFactory.getLogger(TestBookieHealthCheck.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TestBookieHealthCheck.class);
 
     public TestBookieHealthCheck() {
         super(4);
