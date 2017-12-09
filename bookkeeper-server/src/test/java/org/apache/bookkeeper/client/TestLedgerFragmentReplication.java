@@ -19,7 +19,12 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import com.google.common.collect.Sets;
+
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -27,6 +32,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.concurrent.CountDownLatch;
+
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -34,8 +40,6 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.junit.Assert.*;
 
 /**
  * Tests BKAdmin that it should be able to replicate the failed bookie fragments
@@ -45,7 +49,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
 
     private static final byte[] TEST_PSSWD = "testpasswd".getBytes();
     private static final DigestType TEST_DIGEST_TYPE = BookKeeper.DigestType.CRC32;
-    private final static Logger LOG = LoggerFactory
+    private static final Logger LOG = LoggerFactory
             .getLogger(TestLedgerFragmentReplication.class);
 
     public TestLedgerFragmentReplication() {
@@ -186,7 +190,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
 
     /**
      * Tests that ReplicateLedgerFragment should return false if replication
-     * fails
+     * fails.
      */
     @Test
     public void testReplicateLFShouldReturnFalseIfTheReplicationFails()
@@ -227,7 +231,7 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
 
     /**
      * Tests that splitIntoSubFragment should be able to split the original
-     * passed fragment into sub fragments at correct boundaries
+     * passed fragment into sub fragments at correct boundaries.
      */
     @Test
     public void testSplitIntoSubFragmentsWithDifferentFragmentBoundaries()
@@ -257,7 +261,9 @@ public class TestLedgerFragmentReplication extends BookKeeperClusterTestCase {
         testSplitIntoSubFragments(11, 101, 3, 31, lh);
     }
 
-    /** assert the sub-fragment boundaries */
+    /**
+     * Assert the sub-fragment boundaries.
+     */
     void testSplitIntoSubFragments(final long oriFragmentFirstEntry,
             final long oriFragmentLastEntry, long entriesPerSubFragment,
             long expectedSubFragments, LedgerHandle lh) {

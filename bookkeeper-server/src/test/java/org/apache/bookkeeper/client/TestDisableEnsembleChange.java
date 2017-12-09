@@ -20,7 +20,22 @@
  */
 package org.apache.bookkeeper.client;
 
+import static com.google.common.base.Charsets.UTF_8;
+import static org.apache.bookkeeper.util.BookKeeperConstants.FEATURE_DISABLE_ENSEMBLE_CHANGE;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import com.google.common.util.concurrent.RateLimiter;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.feature.SettableFeature;
@@ -31,23 +46,12 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.google.common.base.Charsets.UTF_8;
-import static org.apache.bookkeeper.util.BookKeeperConstants.*;
-import static org.junit.Assert.*;
-
 /**
- * Test Case on Disabling Ensemble Change Feature
+ * Test Case on Disabling Ensemble Change Feature.
  */
 public class TestDisableEnsembleChange extends BookKeeperClusterTestCase {
 
-    static final Logger logger = LoggerFactory.getLogger(TestDisableEnsembleChange.class);
+    private static final Logger logger = LoggerFactory.getLogger(TestDisableEnsembleChange.class);
 
     public TestDisableEnsembleChange() {
         super(4);
@@ -85,7 +89,7 @@ public class TestDisableEnsembleChange extends BookKeeperClusterTestCase {
 
         assertEquals(1, lh.getLedgerMetadata().getEnsembles().size());
         ArrayList<BookieSocketAddress> ensembleBeforeFailure =
-                new ArrayList<BookieSocketAddress>(lh.getLedgerMetadata().getEnsembles().entrySet().iterator().next().getValue());
+                new ArrayList<>(lh.getLedgerMetadata().getEnsembles().entrySet().iterator().next().getValue());
 
         final RateLimiter rateLimiter = RateLimiter.create(10);
 
@@ -117,7 +121,7 @@ public class TestDisableEnsembleChange extends BookKeeperClusterTestCase {
         assertEquals("No new ensemble should be added when disable ensemble change.",
                 1, lh.getLedgerMetadata().getEnsembles().size());
         ArrayList<BookieSocketAddress> ensembleAfterFailure =
-                new ArrayList<BookieSocketAddress>(lh.getLedgerMetadata().getEnsembles().entrySet().iterator().next().getValue());
+                new ArrayList<>(lh.getLedgerMetadata().getEnsembles().entrySet().iterator().next().getValue());
         assertArrayEquals(ensembleBeforeFailure.toArray(new BookieSocketAddress[ensembleBeforeFailure.size()]),
                 ensembleAfterFailure.toArray(new BookieSocketAddress[ensembleAfterFailure.size()]));
 
@@ -182,7 +186,7 @@ public class TestDisableEnsembleChange extends BookKeeperClusterTestCase {
 
         LedgerHandle lh = bkc.createLedger(4, 4, 4, BookKeeper.DigestType.CRC32, new byte[] {});
         byte[] entry = "testRetryFailureBookie".getBytes();
-        for (int i=0; i<10; i++) {
+        for (int i = 0; i < 10; i++) {
             lh.addEntry(entry);
         }
         // kill a bookie
@@ -232,7 +236,7 @@ public class TestDisableEnsembleChange extends BookKeeperClusterTestCase {
 
         LedgerHandle lh = bkc.createLedger(4, 4, 4, BookKeeper.DigestType.CRC32, new byte[] {});
         byte[] entry = "testRetryFailureBookie".getBytes();
-        for (int i=0; i<10; i++) {
+        for (int i = 0; i < 10; i++) {
             lh.addEntry(entry);
         }
 

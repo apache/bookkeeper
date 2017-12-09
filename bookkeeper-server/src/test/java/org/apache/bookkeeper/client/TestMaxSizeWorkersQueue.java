@@ -31,7 +31,9 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 
-
+/**
+ * Test the maximum size of a worker queue.
+ */
 public class TestMaxSizeWorkersQueue extends BookKeeperClusterTestCase {
     DigestType digestType = DigestType.CRC32;
 
@@ -51,9 +53,9 @@ public class TestMaxSizeWorkersQueue extends BookKeeperClusterTestCase {
         LedgerHandle lh = bkc.createLedger(1, 1, digestType, new byte[0]);
         byte[] content = new byte[100];
 
-        final int N = 1000;
+        final int n = 1000;
         // Write few entries
-        for (int i = 0; i < N; i++) {
+        for (int i = 0; i < n; i++) {
             lh.addEntry(content);
         }
 
@@ -75,7 +77,7 @@ public class TestMaxSizeWorkersQueue extends BookKeeperClusterTestCase {
 
         final AtomicInteger rcSecondReadOperation = new AtomicInteger();
 
-        lh.asyncReadEntries(0, N - 1, new ReadCallback() {
+        lh.asyncReadEntries(0, n - 1, new ReadCallback() {
             @Override
             public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
                 rcSecondReadOperation.set(rc);
@@ -94,16 +96,16 @@ public class TestMaxSizeWorkersQueue extends BookKeeperClusterTestCase {
         LedgerHandle lh = bkc.createLedger(1, 1, digestType, new byte[0]);
         byte[] content = new byte[100];
 
-        final int N = 1000;
+        final int n = 1000;
 
         // Write asynchronously, and expect at least few writes to have failed with NotEnoughBookies,
         // because when we get the TooManyRequestException, the client will try to form a new ensemble and that
         // operation will fail since we only have 1 bookie available
-        final CountDownLatch counter = new CountDownLatch(N);
+        final CountDownLatch counter = new CountDownLatch(n);
         final AtomicBoolean receivedTooManyRequestsException = new AtomicBoolean();
 
         // Write few entries
-        for (int i = 0; i < N; i++) {
+        for (int i = 0; i < n; i++) {
             lh.asyncAddEntry(content, new AddCallback() {
                 @Override
                 public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {

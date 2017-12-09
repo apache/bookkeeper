@@ -21,20 +21,25 @@
 
 package org.apache.bookkeeper.client;
 
-import java.util.Set;
-import java.util.HashSet;
+import static org.apache.bookkeeper.client.RoundRobinDistributionSchedule.writeSetFromValues;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import com.google.common.collect.Sets;
 
-import org.junit.Test;
-import static org.apache.bookkeeper.client.RoundRobinDistributionSchedule.writeSetFromValues;
-import static org.junit.Assert.*;
+import java.util.HashSet;
+import java.util.Set;
 
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Test a round-robin distribution schedule.
+ */
 public class RoundRobinDistributionScheduleTest {
-    private final static Logger LOG = LoggerFactory.getLogger(RoundRobinDistributionScheduleTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RoundRobinDistributionScheduleTest.class);
 
     @Test
     public void testDistributionSchedule() throws Exception {
@@ -88,13 +93,13 @@ public class RoundRobinDistributionScheduleTest {
 
     /**
      * Check whether it is possible for a write to reach
-     * a quorum with a given set of nodes available
+     * a quorum with a given set of nodes available.
      */
     boolean canGetAckQuorum(int ensemble, int writeQuorum, int ackQuorum, boolean[] available) {
         for (int i = 0; i < ensemble; i++) {
             int count = 0;
             for (int j = 0; j < writeQuorum; j++) {
-                if (available[(i+j)%ensemble]) {
+                if (available[(i + j) % ensemble]) {
                     count++;
                 }
             }
@@ -136,24 +141,24 @@ public class RoundRobinDistributionScheduleTest {
 
     @Test
     public void testMoveAndShift() {
-        DistributionSchedule.WriteSet w = writeSetFromValues(1,2,3,4,5);
+        DistributionSchedule.WriteSet w = writeSetFromValues(1, 2, 3, 4, 5);
         w.moveAndShift(3, 1);
-        assertEquals(w, writeSetFromValues(1,4,2,3,5));
+        assertEquals(w, writeSetFromValues(1, 4, 2, 3, 5));
 
-        w = writeSetFromValues(1,2,3,4,5);
+        w = writeSetFromValues(1, 2, 3, 4, 5);
         w.moveAndShift(1, 3);
-        assertEquals(w, writeSetFromValues(1,3,4,2,5));
+        assertEquals(w, writeSetFromValues(1, 3, 4, 2, 5));
 
-        w = writeSetFromValues(1,2,3,4,5);
+        w = writeSetFromValues(1, 2, 3, 4, 5);
         w.moveAndShift(0, 4);
-        assertEquals(w, writeSetFromValues(2,3,4,5,1));
+        assertEquals(w, writeSetFromValues(2, 3, 4, 5, 1));
 
-        w = writeSetFromValues(1,2,3,4,5);
+        w = writeSetFromValues(1, 2, 3, 4, 5);
         w.moveAndShift(0, 0);
-        assertEquals(w, writeSetFromValues(1,2,3,4,5));
+        assertEquals(w, writeSetFromValues(1, 2, 3, 4, 5));
 
-        w = writeSetFromValues(1,2,3,4,5);
+        w = writeSetFromValues(1, 2, 3, 4, 5);
         w.moveAndShift(4, 4);
-        assertEquals(w, writeSetFromValues(1,2,3,4,5));
+        assertEquals(w, writeSetFromValues(1, 2, 3, 4, 5));
     }
 }

@@ -59,11 +59,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Base class for Mock-based Client testcases
+ * Base class for Mock-based Client testcases.
  */
 public abstract class MockBookKeeperTestCase {
 
-    private final static Logger LOG = LoggerFactory.getLogger(MockBookKeeperTestCase.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MockBookKeeperTestCase.class);
 
     protected ScheduledExecutorService scheduler;
     protected OrderedSafeExecutor executor;
@@ -84,7 +84,7 @@ public abstract class MockBookKeeperTestCase {
     }
 
     private Map<Long, MockEntry> getMockLedgerContentsInBookie(long ledgerId, BookieSocketAddress bookieSocketAddress) {
-        return getMockLedgerContents(ledgerId).computeIfAbsent(bookieSocketAddress, (addr) -> new ConcurrentHashMap<>());
+        return getMockLedgerContents(ledgerId).computeIfAbsent(bookieSocketAddress, addr -> new ConcurrentHashMap<>());
     }
 
     private MockEntry getMockLedgerEntry(long ledgerId, BookieSocketAddress bookieSocketAddress, long entryId) {
@@ -220,7 +220,8 @@ public abstract class MockBookKeeperTestCase {
 
     protected void registerMockEntryForRead(long ledgerId, long entryId, BookieSocketAddress bookieSocketAddress,
         byte[] entryData, long lastAddConfirmed) {
-        getMockLedgerContentsInBookie(ledgerId, bookieSocketAddress).put(entryId, new MockEntry(entryData, lastAddConfirmed));
+        getMockLedgerContentsInBookie(ledgerId, bookieSocketAddress).put(entryId, new MockEntry(entryData,
+                    lastAddConfirmed));
     }
 
     protected void registerMockLedgerMetadata(long ledgerId, LedgerMetadata ledgerMetadata) {
@@ -325,7 +326,8 @@ public abstract class MockBookKeeperTestCase {
     protected void setupBookieClientReadEntry() {
         doAnswer(invokation -> {
             Object[] args = invokation.getArguments();
-            BookkeeperInternalCallbacks.ReadEntryCallback callback = (BookkeeperInternalCallbacks.ReadEntryCallback) args[4];
+            BookkeeperInternalCallbacks.ReadEntryCallback callback =
+                (BookkeeperInternalCallbacks.ReadEntryCallback) args[4];
             BookieSocketAddress bookieSocketAddress = (BookieSocketAddress) args[0];
             long ledgerId = (Long) args[1];
             long entryId = (Long) args[3];
@@ -335,13 +337,16 @@ public abstract class MockBookKeeperTestCase {
                 fencedLedgers.add(ledgerId);
                 MockEntry mockEntry = getMockLedgerEntry(ledgerId, bookieSocketAddress, entryId);
                 if (mockEntry != null) {
-                    LOG.info("readEntryAndFenceLedger - found mock entry {}@{} at {}", entryId, ledgerId, bookieSocketAddress);
+                    LOG.info("readEntryAndFenceLedger - found mock entry {}@{} at {}", entryId, ledgerId,
+                            bookieSocketAddress);
                     ByteBuf entry = macManager.computeDigestAndPackageForSending(entryId, mockEntry.lastAddConfirmed,
                         mockEntry.payload.length, Unpooled.wrappedBuffer(mockEntry.payload));
-                    callback.readEntryComplete(BKException.Code.OK, ledgerId, entryId, Unpooled.copiedBuffer(entry), args[5]);
+                    callback.readEntryComplete(BKException.Code.OK, ledgerId, entryId, Unpooled.copiedBuffer(entry),
+                            args[5]);
                     entry.release();
                 } else {
-                    LOG.info("readEntryAndFenceLedger - no such mock entry {}@{} at {}", entryId, ledgerId, bookieSocketAddress);
+                    LOG.info("readEntryAndFenceLedger - no such mock entry {}@{} at {}", entryId, ledgerId,
+                            bookieSocketAddress);
                     callback.readEntryComplete(BKException.Code.NoSuchEntryException, ledgerId, entryId, null, args[5]);
                 }
             });
@@ -354,7 +359,8 @@ public abstract class MockBookKeeperTestCase {
             BookieSocketAddress bookieSocketAddress = (BookieSocketAddress) args[0];
             long ledgerId = (Long) args[1];
             long entryId = (Long) args[2];
-            BookkeeperInternalCallbacks.ReadEntryCallback callback = (BookkeeperInternalCallbacks.ReadEntryCallback) args[3];
+            BookkeeperInternalCallbacks.ReadEntryCallback callback =
+                (BookkeeperInternalCallbacks.ReadEntryCallback) args[3];
 
             executor.submitOrdered(ledgerId, () -> {
                 DigestManager macManager = new CRC32DigestManager(ledgerId);
@@ -362,8 +368,10 @@ public abstract class MockBookKeeperTestCase {
                 if (mockEntry != null) {
                     LOG.info("readEntry - found mock entry {}@{} at {}", entryId, ledgerId, bookieSocketAddress);
                     ByteBuf entry = macManager.computeDigestAndPackageForSending(entryId,
-                        mockEntry.lastAddConfirmed, mockEntry.payload.length, Unpooled.wrappedBuffer(mockEntry.payload));
-                    callback.readEntryComplete(BKException.Code.OK, ledgerId, entryId, Unpooled.copiedBuffer(entry), args[4]);
+                        mockEntry.lastAddConfirmed, mockEntry.payload.length,
+                        Unpooled.wrappedBuffer(mockEntry.payload));
+                    callback.readEntryComplete(BKException.Code.OK, ledgerId, entryId, Unpooled.copiedBuffer(entry),
+                            args[4]);
                     entry.release();
                 } else {
                     LOG.info("readEntry - no such mock entry {}@{} at {}", entryId, ledgerId, bookieSocketAddress);
@@ -375,7 +383,8 @@ public abstract class MockBookKeeperTestCase {
             any(BookkeeperInternalCallbacks.ReadEntryCallback.class), any());
     }
 
-    private static byte[] extractEntryPayload(long ledgerId, long entryId, ByteBuf toSend) throws BKException.BKDigestMatchException {
+    private static byte[] extractEntryPayload(long ledgerId, long entryId, ByteBuf toSend)
+            throws BKException.BKDigestMatchException {
         ByteBuf toSendCopy = Unpooled.copiedBuffer(toSend);
         toSendCopy.resetReaderIndex();
         DigestManager macManager = new CRC32DigestManager(ledgerId);

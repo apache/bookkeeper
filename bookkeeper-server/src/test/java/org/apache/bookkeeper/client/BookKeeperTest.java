@@ -20,34 +20,39 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import io.netty.util.IllegalReferenceCountException;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.bookkeeper.conf.ClientConfiguration;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BKException.BKBookieHandleNotAvailableException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.zookeeper.KeeperException.ConnectionLossException;
 import org.apache.zookeeper.ZooKeeper;
-import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
-
 /**
- * Tests of the main BookKeeper client
+ * Tests of the main BookKeeper client.
  */
 public class BookKeeperTest extends BookKeeperClusterTestCase {
-    private final static Logger LOG = LoggerFactory.getLogger(BookKeeperTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BookKeeperTest.class);
 
     private final DigestType digestType;
 
@@ -97,7 +102,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
 
     /**
      * Test that bookkeeper is not able to open ledgers if
-     * it provides the wrong password or wrong digest
+     * it provides the wrong password or wrong digest.
      */
     @Test
     public void testBookkeeperPassword() throws Exception {
@@ -177,7 +182,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
 
         counter.await();
 
-        Assert.assertTrue(result.get() != 0);
+        assertTrue(result.get() != 0);
     }
 
     /**
@@ -231,11 +236,11 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
 
         lh.addEntry("000".getBytes());
         boolean result = bkc.isClosed(lId);
-        Assert.assertTrue("Ledger shouldn't be flagged as closed!",!result);
+        assertTrue("Ledger shouldn't be flagged as closed!", !result);
 
         lh.close();
         result = bkc.isClosed(lId);
-        Assert.assertTrue("Ledger should be flagged as closed!",result);
+        assertTrue("Ledger should be flagged as closed!", result);
 
         bkc.close();
     }
@@ -290,9 +295,9 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
     public void testAutoCloseableBookKeeper() throws Exception {
         ClientConfiguration conf = new ClientConfiguration()
                 .setZkServers(zkUtil.getZooKeeperConnectString());
-        BookKeeper _bkc;
+        BookKeeper bkc2;
         try (BookKeeper bkc = new BookKeeper(conf)) {
-            _bkc = bkc;
+            bkc2 = bkc;
             long ledgerId;
             try (LedgerHandle lh = bkc.createLedger(digestType, "testPasswd".getBytes())) {
                 ledgerId = lh.getId();
@@ -300,9 +305,9 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                     lh.addEntry("foobar".getBytes());
                 }
             }
-            Assert.assertTrue("Ledger should be closed!", bkc.isClosed(ledgerId));
+            assertTrue("Ledger should be closed!", bkc.isClosed(ledgerId));
         }
-        Assert.assertTrue("BookKeeper should be closed!", _bkc.closed);
+        assertTrue("BookKeeper should be closed!", bkc2.closed);
     }
 
     @Test
@@ -321,7 +326,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         }
 
         LedgerHandle rlh = bkcWithNoExplicitLAC.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes());
-        Assert.assertTrue(
+        assertTrue(
                 "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
                 (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
 
@@ -330,7 +335,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         while (entries.hasMoreElements()) {
             LedgerEntry entry = entries.nextElement();
             String entryString = new String(entry.getEntry());
-            Assert.assertTrue("Expected entry String: " + ("foobar" + entryId) + " actual entry String: " + entryString,
+            assertTrue("Expected entry String: " + ("foobar" + entryId) + " actual entry String: " + entryString,
                     entryString.equals("foobar" + entryId));
             entryId++;
         }
@@ -344,13 +349,13 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         // to read explicitlac for rlh, it will be LedgerHandle.INVALID_ENTRY_ID. But it
         // wont throw some exception.
         long explicitlac = rlh.readExplicitLastConfirmed();
-        Assert.assertTrue(
-                "Expected Explicit LAC of rlh: " + LedgerHandle.INVALID_ENTRY_ID + " actual ExplicitLAC of rlh: " + explicitlac,
+        assertTrue("Expected Explicit LAC of rlh: " + LedgerHandle.INVALID_ENTRY_ID
+                + " actual ExplicitLAC of rlh: " + explicitlac,
                 (explicitlac == LedgerHandle.INVALID_ENTRY_ID));
-        Assert.assertTrue(
+        assertTrue(
                 "Expected LAC of wlh: " + (2 * numOfEntries - 1) + " actual LAC of rlh: " + wlh.getLastAddConfirmed(),
                 (wlh.getLastAddConfirmed() == (2 * numOfEntries - 1)));
-        Assert.assertTrue(
+        assertTrue(
                 "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
                 (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
 
@@ -383,7 +388,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
 
         LedgerHandle rlh = bkcWithExplicitLAC.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes());
 
-        Assert.assertTrue(
+        assertTrue(
                 "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
                 (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
 
@@ -396,21 +401,21 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         // lh.getExplicitLastAddConfirmed() will be <
         // lh.getPiggyBackedLastAddConfirmed(),
         // so it wont make explicit writelac in the first run
-        Thread.sleep((2 * explicitLacIntervalMillis/1000 + 1) * 1000);
-        Assert.assertTrue(
+        Thread.sleep((2 * explicitLacIntervalMillis / 1000 + 1) * 1000);
+        assertTrue(
                 "Expected LAC of wlh: " + (2 * numOfEntries - 1) + " actual LAC of wlh: " + wlh.getLastAddConfirmed(),
                 (wlh.getLastAddConfirmed() == (2 * numOfEntries - 1)));
         // readhandle's lastaddconfirmed wont be updated until readExplicitLastConfirmed call is made
-        Assert.assertTrue(
+        assertTrue(
                 "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
                 (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
 
         long explicitlac = rlh.readExplicitLastConfirmed();
-        Assert.assertTrue(
-                "Expected Explicit LAC of rlh: " + (2 * numOfEntries - 1) + " actual ExplicitLAC of rlh: " + explicitlac,
+        assertTrue("Expected Explicit LAC of rlh: " + (2 * numOfEntries - 1)
+                + " actual ExplicitLAC of rlh: " + explicitlac,
                 (explicitlac == (2 * numOfEntries - 1)));
         // readExplicitLastConfirmed updates the lac of rlh.
-        Assert.assertTrue(
+        assertTrue(
                 "Expected LAC of rlh: " + (2 * numOfEntries - 1) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
                 (rlh.getLastAddConfirmed() == (2 * numOfEntries - 1)));
 
@@ -419,7 +424,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         while (entries.hasMoreElements()) {
             LedgerEntry entry = entries.nextElement();
             String entryString = new String(entry.getEntry());
-            Assert.assertTrue("Expected entry String: " + ("foobar" + entryId) + " actual entry String: " + entryString,
+            assertTrue("Expected entry String: " + ("foobar" + entryId) + " actual entry String: " + entryString,
                     entryString.equals("foobar" + entryId));
             entryId++;
         }
@@ -445,11 +450,11 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
 
             try (BookKeeper bkReader = new BookKeeper(clientConfiguration);
                 LedgerHandle rlh = bkReader.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes())) {
-                Assert.assertTrue(
+                assertTrue(
                     "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
                     (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
 
-                Assert.assertFalse(writeLh.isClosed());
+                assertFalse(writeLh.isClosed());
 
                 // with readUnconfirmedEntries we are able to read all of the entries
                 Enumeration<LedgerEntry> entries = rlh.readUnconfirmedEntries(0, numOfEntries - 1);
@@ -457,7 +462,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                 while (entries.hasMoreElements()) {
                     LedgerEntry entry = entries.nextElement();
                     String entryString = new String(entry.getEntry());
-                    Assert.assertTrue("Expected entry String: " + ("foobar" + entryId)
+                    assertTrue("Expected entry String: " + ("foobar" + entryId)
                         + " actual entry String: " + entryString,
                         entryString.equals("foobar" + entryId));
                     entryId++;
@@ -466,16 +471,16 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
 
             try (BookKeeper bkReader = new BookKeeper(clientConfiguration);
                 LedgerHandle rlh = bkReader.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes())) {
-                Assert.assertTrue(
+                assertTrue(
                     "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
                     (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
 
-                Assert.assertFalse(writeLh.isClosed());
+                assertFalse(writeLh.isClosed());
 
                 // without readUnconfirmedEntries we are not able to read all of the entries
                 try {
                     rlh.readEntries(0, numOfEntries - 1);
-                    fail("shoud not be able to read up to "+ (numOfEntries - 1) + " with readEntries");
+                    fail("shoud not be able to read up to " + (numOfEntries - 1) + " with readEntries");
                 } catch (BKException.BKReadException expected) {
                 }
 
@@ -484,7 +489,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                     Collections.list(rlh.readEntries(0, rlh.getLastAddConfirmed())).size());
 
                 // assert local LAC does not change after reads
-                Assert.assertTrue(
+                assertTrue(
                     "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
                     (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
 
@@ -493,7 +498,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                     Collections.list(rlh.readUnconfirmedEntries(0, rlh.getLastAddConfirmed())).size());
 
                 // assert local LAC does not change after reads
-                Assert.assertTrue(
+                assertTrue(
                     "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
                     (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
 
@@ -502,7 +507,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                     Collections.list(rlh.readUnconfirmedEntries(rlh.getLastAddConfirmed(), numOfEntries - 1)).size());
 
                 // assert local LAC does not change after reads
-                Assert.assertTrue(
+                assertTrue(
                     "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
                     (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
 
@@ -510,7 +515,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                     // read all entries within the LastAddConfirmed..numOfEntries range  with readUnconfirmedEntries
                     // this is an error, we are going outside the range of existing entries
                     rlh.readUnconfirmedEntries(rlh.getLastAddConfirmed(), numOfEntries);
-                    fail("the read tried to access data for unexisting entry id "+numOfEntries);
+                    fail("the read tried to access data for unexisting entry id " + numOfEntries);
                 } catch (BKException.BKNoSuchEntryException expected) {
                     // expecting a BKNoSuchEntryException, as the entry does not exist on bookies
                 }
@@ -519,7 +524,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                     // read all entries within the LastAddConfirmed..numOfEntries range with readEntries
                     // this is an error, we are going outside the range of existing entries
                     rlh.readEntries(rlh.getLastAddConfirmed(), numOfEntries);
-                    fail("the read tries to access data for unexisting entry id "+numOfEntries);
+                    fail("the read tries to access data for unexisting entry id " + numOfEntries);
                 } catch (BKException.BKReadException expected) {
                     // expecting a BKReadException, as the client rejected the request to access entries
                     // after local LastAddConfirmed
@@ -533,11 +538,11 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
 
             try (BookKeeper bkReader = new BookKeeper(clientConfiguration);
                 LedgerHandle rlh = bkReader.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes())) {
-                Assert.assertTrue(
+                assertTrue(
                     "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
                     (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
 
-                Assert.assertFalse(writeLh.isClosed());
+                assertFalse(writeLh.isClosed());
 
                 // with readUnconfirmedEntries we are able to read all of the entries
                 Enumeration<LedgerEntry> entries = rlh.readUnconfirmedEntries(0, numOfEntries - 1);
@@ -545,7 +550,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                 while (entries.hasMoreElements()) {
                     LedgerEntry entry = entries.nextElement();
                     String entryString = new String(entry.getEntry());
-                    Assert.assertTrue("Expected entry String: " + ("foobar" + entryId)
+                    assertTrue("Expected entry String: " + ("foobar" + entryId)
                         + " actual entry String: " + entryString,
                         entryString.equals("foobar" + entryId));
                     entryId++;
@@ -554,16 +559,16 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
 
             try (BookKeeper bkReader = new BookKeeper(clientConfiguration);
                 LedgerHandle rlh = bkReader.openLedgerNoRecovery(ledgerId, digestType, "testPasswd".getBytes())) {
-                Assert.assertTrue(
+                assertTrue(
                     "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
                     (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
 
-                Assert.assertFalse(writeLh.isClosed());
+                assertFalse(writeLh.isClosed());
 
                 // without readUnconfirmedEntries we are not able to read all of the entries
                 try {
                     rlh.readEntries(0, numOfEntries - 1);
-                    fail("shoud not be able to read up to "+ (numOfEntries - 1) + " with readEntries");
+                    fail("shoud not be able to read up to " + (numOfEntries - 1) + " with readEntries");
                 } catch (BKException.BKReadException expected) {
                 }
 
@@ -572,7 +577,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                     Collections.list(rlh.readEntries(0, rlh.getLastAddConfirmed())).size());
 
                 // assert local LAC does not change after reads
-                Assert.assertTrue(
+                assertTrue(
                     "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
                     (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
 
@@ -581,7 +586,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                     Collections.list(rlh.readUnconfirmedEntries(0, rlh.getLastAddConfirmed())).size());
 
                 // assert local LAC does not change after reads
-                Assert.assertTrue(
+                assertTrue(
                     "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
                     (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
 
@@ -590,7 +595,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                     Collections.list(rlh.readUnconfirmedEntries(rlh.getLastAddConfirmed(), numOfEntries - 1)).size());
 
                 // assert local LAC does not change after reads
-                Assert.assertTrue(
+                assertTrue(
                     "Expected LAC of rlh: " + (numOfEntries - 2) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
                     (rlh.getLastAddConfirmed() == (numOfEntries - 2)));
 
@@ -598,7 +603,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                     // read all entries within the LastAddConfirmed..numOfEntries range  with readUnconfirmedEntries
                     // this is an error, we are going outside the range of existing entries
                     rlh.readUnconfirmedEntries(rlh.getLastAddConfirmed(), numOfEntries);
-                    fail("the read tried to access data for unexisting entry id "+numOfEntries);
+                    fail("the read tried to access data for unexisting entry id " + numOfEntries);
                 } catch (BKException.BKNoSuchEntryException expected) {
                     // expecting a BKNoSuchEntryException, as the entry does not exist on bookies
                 }
@@ -607,7 +612,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                     // read all entries within the LastAddConfirmed..numOfEntries range with readEntries
                     // this is an error, we are going outside the range of existing entries
                     rlh.readEntries(rlh.getLastAddConfirmed(), numOfEntries);
-                    fail("the read tries to access data for unexisting entry id "+numOfEntries);
+                    fail("the read tries to access data for unexisting entry id " + numOfEntries);
                 } catch (BKException.BKReadException expected) {
                     // expecting a BKReadException, as the client rejected the request to access entries
                     // after local LastAddConfirmed
@@ -618,11 +623,11 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
             // open ledger with fencing, this will repair the ledger and make the last entry readable
             try (BookKeeper bkReader = new BookKeeper(clientConfiguration);
                 LedgerHandle rlh = bkReader.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
-                Assert.assertTrue(
+                assertTrue(
                     "Expected LAC of rlh: " + (numOfEntries - 1) + " actual LAC of rlh: " + rlh.getLastAddConfirmed(),
                     (rlh.getLastAddConfirmed() == (numOfEntries - 1)));
 
-                Assert.assertFalse(writeLh.isClosed());
+                assertFalse(writeLh.isClosed());
 
                 // without readUnconfirmedEntries we are not able to read all of the entries
                 Enumeration<LedgerEntry> entries = rlh.readEntries(0, numOfEntries - 1);
@@ -630,7 +635,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                 while (entries.hasMoreElements()) {
                     LedgerEntry entry = entries.nextElement();
                     String entryString = new String(entry.getEntry());
-                    Assert.assertTrue("Expected entry String: " + ("foobar" + entryId)
+                    assertTrue("Expected entry String: " + ("foobar" + entryId)
                         + " actual entry String: " + entryString,
                         entryString.equals("foobar" + entryId));
                     entryId++;
@@ -831,9 +836,9 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         lh.addEntry("test".getBytes());
 
         // Read the same entry more times asynchronously
-        final int N = 10;
-        final CountDownLatch latch = new CountDownLatch(N);
-        for (int i = 0; i < N; i++) {
+        final int n = 10;
+        final CountDownLatch latch = new CountDownLatch(n);
+        for (int i = 0; i < n; i++) {
             lh.asyncReadEntries(0, 0, new ReadCallback() {
                 public void readComplete(int rc, LedgerHandle lh,
                                          Enumeration<LedgerEntry> seq, Object ctx) {
@@ -864,9 +869,9 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         lh.addEntry("test".getBytes());
 
         // Read the same entry more times asynchronously
-        final int N = 10;
-        final CountDownLatch latch = new CountDownLatch(N);
-        for (int i = 0; i < N; i++) {
+        final int n = 10;
+        final CountDownLatch latch = new CountDownLatch(n);
+        for (int i = 0; i < n; i++) {
             lh.asyncReadEntries(0, 0, new ReadCallback() {
                 public void readComplete(int rc, LedgerHandle lh,
                                          Enumeration<LedgerEntry> seq, Object ctx) {

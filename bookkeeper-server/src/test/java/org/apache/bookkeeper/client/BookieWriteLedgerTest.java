@@ -25,16 +25,18 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import io.netty.buffer.Unpooled;
+
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.List;
-import java.util.Random;
-import java.util.Map;
-import java.util.UUID;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
@@ -46,12 +48,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Testing ledger write entry cases
+ * Testing ledger write entry cases.
  */
 public class BookieWriteLedgerTest extends
     BookKeeperClusterTestCase implements AddCallback {
 
-    private final static Logger LOG = LoggerFactory
+    private static final Logger LOG = LoggerFactory
             .getLogger(BookieWriteLedgerTest.class);
 
     byte[] ledgerPassword = "aaa".getBytes();
@@ -97,7 +99,7 @@ public class BookieWriteLedgerTest extends
 
     /**
      * Verify write when few bookie failures in last ensemble and forcing
-     * ensemble reformation
+     * ensemble reformation.
      */
     @Test
     public void testWithMultipleBookieFailuresInLastEnsemble() throws Exception {
@@ -182,7 +184,7 @@ public class BookieWriteLedgerTest extends
     }
 
     /**
-     * Verify that LedgerHandleAdv cannnot handle addEntry without the entryId
+     * Verify that LedgerHandleAdv cannnot handle addEntry without the entryId.
      *
      * @throws Exception
      */
@@ -238,7 +240,7 @@ public class BookieWriteLedgerTest extends
 
         try {
             CompletableFuture<Object> done = new CompletableFuture<>();
-            lh.asyncAddEntry(entry.array(),0, 4,
+            lh.asyncAddEntry(entry.array(), 0, 4,
                 (int rc, LedgerHandle lh1, long entryId, Object ctx) -> {
                 SyncCallbackUtils.finish(rc, null, done);
             }, null);
@@ -317,7 +319,7 @@ public class BookieWriteLedgerTest extends
                 inputCustomMetadataMap.put("key" + j, UUID.randomUUID().toString().getBytes());
             }
 
-            if (i < maxLedgers/2) {
+            if (i < maxLedgers / 2) {
                 // 0 to 4 test with createLedger interface
                 lh = bkc.createLedger(5, 3, 2, digestType, ledgerPassword, inputCustomMetadataMap);
                 ledgerId = lh.getId();
@@ -464,7 +466,7 @@ public class BookieWriteLedgerTest extends
     }
 
     /**
-     * Verify Advanced asynchronous writing with entryIds in reverse order
+     * Verify Advanced asynchronous writing with entryIds in reverse order.
      */
     @Test
     public void testLedgerCreateAdvWithAsyncWritesWithBookieFailures() throws Exception {
@@ -518,7 +520,7 @@ public class BookieWriteLedgerTest extends
     }
 
     /**
-     * Verify Advanced asynchronous writing with entryIds in pseudo random order with bookie failures between writes
+     * Verify Advanced asynchronous writing with entryIds in pseudo random order with bookie failures between writes.
      */
     @Test
     public void testLedgerCreateAdvWithRandomAsyncWritesWithBookieFailuresBetweenWrites() throws Exception {
@@ -553,7 +555,7 @@ public class BookieWriteLedgerTest extends
                 byte[] entry2 = entries2.get(j);
                 lh.asyncAddEntry(j, entry1, 0, entry1.length, this, syncObj1);
                 lh2.asyncAddEntry(j, entry2, 0, entry2.length, this, syncObj2);
-                if (j == numEntriesToWrite/2) {
+                if (j == numEntriesToWrite / 2) {
                     // Start One more bookie and shutdown one from last ensemble at half-way
                     startNewBookie();
                     ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsembles().entrySet()
@@ -586,7 +588,7 @@ public class BookieWriteLedgerTest extends
     }
 
     /**
-     * Verify Advanced asynchronous writing with entryIds in pseudo random order
+     * Verify Advanced asynchronous writing with entryIds in pseudo random order.
      */
     @Test
     public void testLedgerCreateAdvWithRandomAsyncWritesWithBookieFailures() throws Exception {
@@ -699,7 +701,7 @@ public class BookieWriteLedgerTest extends
     }
 
     /**
-     * Verify the functionality LedgerHandleAdv addEntry with duplicate entryIds
+     * Verify the functionality LedgerHandleAdv addEntry with duplicate entryIds.
      *
      * @throws Exception
      */
@@ -736,7 +738,7 @@ public class BookieWriteLedgerTest extends
 
     /**
      * Verify the functionality LedgerHandleAdv asyncAddEntry with duplicate
-     * entryIds
+     * entryIds.
      *
      * @throws Exception
      */

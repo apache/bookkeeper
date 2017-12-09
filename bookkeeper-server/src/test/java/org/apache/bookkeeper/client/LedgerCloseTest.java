@@ -17,6 +17,10 @@
  */
 package org.apache.bookkeeper.client;
 
+import static com.google.common.base.Charsets.UTF_8;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import io.netty.buffer.ByteBuf;
 
 import java.io.IOException;
@@ -44,16 +48,13 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
-import static com.google.common.base.Charsets.UTF_8;
-
 /**
  * This class tests the ledger close logic.
  */
 @SuppressWarnings("deprecation")
 public class LedgerCloseTest extends BookKeeperClusterTestCase {
 
-    private final static Logger LOG = LoggerFactory.getLogger(LedgerCloseTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LedgerCloseTest.class);
 
     static final int READ_TIMEOUT = 1;
 
