@@ -22,17 +22,20 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import io.netty.buffer.ByteBuf;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
+
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.junit.Test;
 import org.junit.Before;
+import org.junit.Test;
 
 public class TestEntryMemTable implements CacheCallback, SkipListFlusher, CheckpointSource {
 
@@ -97,7 +100,7 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
         // No-op
     }
 
-    public void process(long ledgerId, long entryId, ByteBuffer entry)
+    public void process(long ledgerId, long entryId, ByteBuf entry)
             throws IOException {
         // No-op
     }
@@ -135,7 +138,7 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
         }
 
         @Override
-        public void process(long ledgerId, long entryId, ByteBuffer entry) throws IOException {
+        public void process(long ledgerId, long entryId, ByteBuf entry) throws IOException {
             assertTrue(ledgerId + ":" + entryId + " is duplicate in store!",
                     keyValues.add(new EntryKeyValue(ledgerId, entryId, entry.array())));
         }
@@ -143,7 +146,7 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
 
     private class NoLedgerFLusher implements SkipListFlusher {
         @Override
-        public void process(long ledgerId, long entryId, ByteBuffer entry) throws IOException {
+        public void process(long ledgerId, long entryId, ByteBuf entry) throws IOException {
             throw new NoLedgerException(ledgerId);
         }
     }
