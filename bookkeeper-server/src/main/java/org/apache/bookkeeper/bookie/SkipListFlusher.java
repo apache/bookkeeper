@@ -21,8 +21,9 @@
 
 package org.apache.bookkeeper.bookie;
 
+import io.netty.buffer.ByteBuf;
+
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 /**
  * Flush entries from skip list.
@@ -36,5 +37,5 @@ public interface SkipListFlusher {
      * @param entry Entry ByteBuffer
      * @throws IOException
      */
-    void process(long ledgerId, long entryId, ByteBuffer entry) throws IOException;
+    void process(long ledgerId, long entryId, ByteBuf entry) throws IOException;
 }

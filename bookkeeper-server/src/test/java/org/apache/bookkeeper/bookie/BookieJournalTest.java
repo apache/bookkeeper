@@ -20,6 +20,11 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -29,8 +34,8 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 
 import org.apache.bookkeeper.client.ClientUtil;
@@ -38,14 +43,11 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.util.IOUtils;
-import org.apache.bookkeeper.util.ZeroBuffer;
 import org.apache.commons.io.FileUtils;
+import org.junit.After;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.junit.Test;
-import org.junit.After;
-
-import static org.junit.Assert.*;
 
 public class BookieJournalTest {
     private final static Logger LOG = LoggerFactory.getLogger(BookieJournalTest.class);
@@ -105,11 +107,10 @@ public class BookieJournalTest {
     /**
      * Generate fence entry
      */
-    private ByteBuffer generateFenceEntry(long ledgerId) {
-        ByteBuffer bb = ByteBuffer.allocate(8 + 8);
-        bb.putLong(ledgerId);
-        bb.putLong(Bookie.METAENTRY_ID_FENCE_KEY);
-        bb.flip();
+    private ByteBuf generateFenceEntry(long ledgerId) {
+        ByteBuf bb = Unpooled.buffer();
+        bb.writeLong(ledgerId);
+        bb.writeLong(Bookie.METAENTRY_ID_FENCE_KEY);
         return bb;
     }
 
@@ -117,13 +118,12 @@ public class BookieJournalTest {
      * Generate meta entry with given master key
      */
     private ByteBuf generateMetaEntry(long ledgerId, byte[] masterKey) {
-        ByteBuffer bb = ByteBuffer.allocate(8 + 8 + 4 + masterKey.length);
-        bb.putLong(ledgerId);
-        bb.putLong(Bookie.METAENTRY_ID_LEDGER_KEY);
-        bb.putInt(masterKey.length);
-        bb.put(masterKey);
-        bb.flip();
-        return Unpooled.wrappedBuffer(bb);
+        ByteBuf bb = Unpooled.buffer();
+        bb.writeLong(ledgerId);
+        bb.writeLong(Bookie.METAENTRY_ID_LEDGER_KEY);
+        bb.writeInt(masterKey.length);
+        bb.writeBytes(masterKey);
+        return bb;
     }
 
     private void writeJunkJournal(File journalDir) throws Exception {
@@ -204,8 +204,8 @@ public class BookieJournalTest {
             lenBuff.putInt(packet.readableBytes());
             lenBuff.flip();
 
-            bc.write(lenBuff);
-            bc.write(packet.nioBuffer());
+            bc.write(Unpooled.wrappedBuffer(lenBuff));
+            bc.write(packet);
             packet.release();
         }
         bc.flush(true);
@@ -238,8 +238,8 @@ public class BookieJournalTest {
             lenBuff.putInt(packet.readableBytes());
             lenBuff.flip();
 
-            bc.write(lenBuff);
-            bc.write(packet.nioBuffer());
+            bc.write(Unpooled.wrappedBuffer(lenBuff));
+            bc.write(packet);
             packet.release();
         }
         bc.flush(true);
@@ -271,15 +271,14 @@ public class BookieJournalTest {
             ByteBuffer lenBuff = ByteBuffer.allocate(4);
             lenBuff.putInt(packet.readableBytes());
             lenBuff.flip();
-            bc.write(lenBuff);
-            bc.write(packet.nioBuffer());
+            bc.write(Unpooled.wrappedBuffer(lenBuff));
+            bc.write(packet);
             packet.release();
         }
         // write fence key
-        ByteBuffer packet = generateFenceEntry(1);
-        ByteBuffer lenBuf = ByteBuffer.allocate(4);
-        lenBuf.putInt(packet.remaining());
-        lenBuf.flip();
+        ByteBuf packet = generateFenceEntry(1);
+        ByteBuf lenBuf = Unpooled.buffer();
+        lenBuf.writeInt(packet.readableBytes());
         bc.write(lenBuf);
         bc.write(packet);
         bc.flush(true);
@@ -293,8 +292,8 @@ public class BookieJournalTest {
 
         BufferedChannel bc = jc.getBufferedChannel();
 
-        ByteBuffer paddingBuff = ByteBuffer.allocateDirect(2 * JournalChannel.SECTOR_SIZE);
-        ZeroBuffer.put(paddingBuff);
+        ByteBuf paddingBuff = Unpooled.buffer();
+        paddingBuff.writeZero(2 * JournalChannel.SECTOR_SIZE);
         byte[] data = new byte[4 * 1024 * 1024];
         Arrays.fill(data, (byte)'X');
         long lastConfirmed = LedgerHandle.INVALID_ENTRY_ID;
@@ -308,19 +307,17 @@ public class BookieJournalTest {
             }
             lastConfirmed = i;
             length += i;
-            ByteBuffer lenBuff = ByteBuffer.allocate(4);
-            lenBuff.putInt(packet.readableBytes());
-            lenBuff.flip();
+            ByteBuf lenBuff = Unpooled.buffer();
+            lenBuff.writeInt(packet.readableBytes());
             bc.write(lenBuff);
-            bc.write(packet.nioBuffer());
+            bc.write(packet);
             packet.release();
             Journal.writePaddingBytes(jc, paddingBuff, JournalChannel.SECTOR_SIZE);
         }
         // write fence key
-        ByteBuffer packet = generateFenceEntry(1);
-        ByteBuffer lenBuf = ByteBuffer.allocate(4);
-        lenBuf.putInt(packet.remaining());
-        lenBuf.flip();
+        ByteBuf packet = generateFenceEntry(1);
+        ByteBuf lenBuf = Unpooled.buffer();
+        lenBuf.writeInt(packet.readableBytes());
         bc.write(lenBuf);
         bc.write(packet);
         Journal.writePaddingBytes(jc, paddingBuff, JournalChannel.SECTOR_SIZE);
@@ -519,7 +516,7 @@ public class BookieJournalTest {
         Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
 
         JournalChannel jc = writeV2Journal(Bookie.getCurrentDirectory(journalDir), 0);
-        jc.getBufferedChannel().write(ByteBuffer.wrap("JunkJunkJunk".getBytes()));
+        jc.getBufferedChannel().write(Unpooled.wrappedBuffer("JunkJunkJunk".getBytes()));
         jc.getBufferedChannel().flush(true);
 
         writeIndexFileForLedger(ledgerDir, 1, "testPasswd".getBytes());

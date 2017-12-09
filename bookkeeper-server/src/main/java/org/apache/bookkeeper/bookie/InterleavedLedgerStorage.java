@@ -26,16 +26,18 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_ENT
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_OFFSET;
 
 import com.google.common.collect.Lists;
+
 import io.netty.buffer.ByteBuf;
+
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogListener;
@@ -263,7 +265,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         long entryId = entry.getLong(entry.readerIndex() + 8);
         long lac = entry.getLong(entry.readerIndex() + 16);
 
-        processEntry(ledgerId, entryId, entry.nioBuffer());
+        processEntry(ledgerId, entryId, entry);
 
         ledgerCache.updateLastAddConfirmed(ledgerId, lac);
         return entryId;
@@ -409,11 +411,11 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         ledgerDeletionListeners.add(listener);
     }
 
-    protected void processEntry(long ledgerId, long entryId, ByteBuffer entry) throws IOException {
+    protected void processEntry(long ledgerId, long entryId, ByteBuf entry) throws IOException {
         processEntry(ledgerId, entryId, entry, true);
     }
 
-    protected synchronized void processEntry(long ledgerId, long entryId, ByteBuffer entry, boolean rollLog)
+    protected synchronized void processEntry(long ledgerId, long entryId, ByteBuf entry, boolean rollLog)
             throws IOException {
         /*
          * Touch dirty flag

@@ -24,6 +24,7 @@ package org.apache.bookkeeper.bookie;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -96,8 +97,8 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
             lenBuff.putInt(packet.readableBytes());
             lenBuff.flip();
 
-            bc.write(lenBuff);
-            bc.write(packet.nioBuffer());
+            bc.write(Unpooled.wrappedBuffer(lenBuff));
+            bc.write(packet);
             packet.release();
         }
         bc.flush(true);
