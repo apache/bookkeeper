@@ -1140,7 +1140,12 @@ public class EntryLogger {
         };
 
         for (File d : ledgerDirsManager.getAllLedgerDirs()) {
-            for (File f : d.listFiles(logFileFilter)) {
+            File[] files = d.listFiles(logFileFilter);
+            if (files == null) {
+                throw new IOException("Failed to get list of files in directory " + d);
+            }
+
+            for (File f : files) {
                 Long entryLogId = Long.parseLong(f.getName().split(".log")[0], 16);
                 entryLogs.add(entryLogId);
             }

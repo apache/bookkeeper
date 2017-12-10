@@ -27,6 +27,7 @@ import io.netty.buffer.Unpooled;
 import java.io.Closeable;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashSet;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
@@ -176,61 +177,67 @@ public class WriteCache implements Closeable {
 
     private static final ArrayGroupSort groupSorter = new ArrayGroupSort(2, 4);
 
-    public synchronized void forEach(EntryConsumer consumer) {
-        int entriesToSort = (int) index.size();
-        int arrayLen = entriesToSort * 4;
-        if (sortedEntries == null || sortedEntries.length < arrayLen) {
-            sortedEntries = new long[(int) (arrayLen * 2)];
-        }
+    public void forEach(EntryConsumer consumer) {
+        sortedEntriesLock.lock();
 
-        long startTime = System.nanoTime();
-
-        sortedEntriesIdx = 0;
-        index.forEach((ledgerId, entryId, offset, length) -> {
-            if (deletedLedgers.contains(ledgerId)) {
-                // Ignore deleted ledgers
-                return;
+        try {
+            int entriesToSort = (int) index.size();
+            int arrayLen = entriesToSort * 4;
+            if (sortedEntries == null || sortedEntries.length < arrayLen) {
+                sortedEntries = new long[(int) (arrayLen * 2)];
             }
 
-            sortedEntries[sortedEntriesIdx] = ledgerId;
-            sortedEntries[sortedEntriesIdx + 1] = entryId;
-            sortedEntries[sortedEntriesIdx + 2] = offset;
-            sortedEntries[sortedEntriesIdx + 3] = length;
-            sortedEntriesIdx += 4;
-        });
+            long startTime = System.nanoTime();
 
-        if (log.isDebugEnabled()) {
-            log.debug("iteration took {} ms", (System.nanoTime() - startTime) / 1e6);
-        }
-        startTime = System.nanoTime();
+            sortedEntriesIdx = 0;
+            index.forEach((ledgerId, entryId, offset, length) -> {
+                if (deletedLedgers.contains(ledgerId)) {
+                    // Ignore deleted ledgers
+                    return;
+                }
 
-        // Sort entries by (ledgerId, entryId) maintaining the 4 items groups
-        groupSorter.sort(sortedEntries, 0, sortedEntriesIdx);
-        if (log.isDebugEnabled()) {
-            log.debug("sorting {} ms", (System.nanoTime() - startTime) / 1e6);
-        }
-        startTime = System.nanoTime();
+                sortedEntries[sortedEntriesIdx] = ledgerId;
+                sortedEntries[sortedEntriesIdx + 1] = entryId;
+                sortedEntries[sortedEntriesIdx + 2] = offset;
+                sortedEntries[sortedEntriesIdx + 3] = length;
+                sortedEntriesIdx += 4;
+            });
 
-        ByteBuf[] entrySegments = new ByteBuf[segmentsCount];
-        for (int i = 0; i < segmentsCount; i++) {
-            entrySegments[i] = cacheSegments[i].slice(0, cacheSegments[i].capacity());
-        }
+            if (log.isDebugEnabled()) {
+                log.debug("iteration took {} ms", (System.nanoTime() - startTime) / 1e6);
+            }
+            startTime = System.nanoTime();
 
-        for (int i = 0; i < sortedEntriesIdx; i += 4) {
-            long ledgerId = sortedEntries[i];
-            long entryId = sortedEntries[i + 1];
-            long offset = sortedEntries[i + 2];
-            long length = sortedEntries[i + 3];
+            // Sort entries by (ledgerId, entryId) maintaining the 4 items groups
+            groupSorter.sort(sortedEntries, 0, sortedEntriesIdx);
+            if (log.isDebugEnabled()) {
+                log.debug("sorting {} ms", (System.nanoTime() - startTime) / 1e6);
+            }
+            startTime = System.nanoTime();
 
-            int localOffset = (int) (offset & SegmentOffsetMask);
-            int segmentIdx = (int) (offset / MaxSegmentSize);
-            ByteBuf entry = entrySegments[segmentIdx];
-            entry.setIndex(localOffset, localOffset + (int) length);
-            consumer.accept(ledgerId, entryId, entry);
-        }
+            ByteBuf[] entrySegments = new ByteBuf[segmentsCount];
+            for (int i = 0; i < segmentsCount; i++) {
+                entrySegments[i] = cacheSegments[i].slice(0, cacheSegments[i].capacity());
+            }
 
-        if (log.isDebugEnabled()) {
-            log.debug("entry log adding {} ms", (System.nanoTime() - startTime) / 1e6);
+            for (int i = 0; i < sortedEntriesIdx; i += 4) {
+                long ledgerId = sortedEntries[i];
+                long entryId = sortedEntries[i + 1];
+                long offset = sortedEntries[i + 2];
+                long length = sortedEntries[i + 3];
+
+                int localOffset = (int) (offset & SegmentOffsetMask);
+                int segmentIdx = (int) (offset / MaxSegmentSize);
+                ByteBuf entry = entrySegments[segmentIdx];
+                entry.setIndex(localOffset, localOffset + (int) length);
+                consumer.accept(ledgerId, entryId, entry);
+            }
+
+            if (log.isDebugEnabled()) {
+                log.debug("entry log adding {} ms", (System.nanoTime() - startTime) / 1e6);
+            }
+        } finally {
+            sortedEntriesLock.unlock();
         }
     }
 
@@ -254,6 +261,7 @@ public class WriteCache implements Closeable {
         return (size + 64 - 1) & ALIGN_64_MASK;
     }
 
+    private final ReentrantLock sortedEntriesLock = new ReentrantLock();
     private long[] sortedEntries;
     private int sortedEntriesIdx;
 

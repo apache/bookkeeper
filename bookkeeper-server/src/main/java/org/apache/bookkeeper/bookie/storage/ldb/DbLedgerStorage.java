@@ -553,10 +553,10 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
             return;
         }
 
+        long startTime = MathUtils.nowInNano();
+
         // Only a single flush operation can happen at a time
         flushMutex.lock();
-
-        long startTime = MathUtils.nowInNano();
 
         try {
             // Swap the write cache so that writes can continue to happen while the flush is
@@ -613,7 +613,7 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
             writeCacheBeingFlushed.clear();
 
             double flushTimeSeconds = MathUtils.elapsedNanos(startTime) / (double) TimeUnit.SECONDS.toNanos(1);
-            double flushThroughput = sizeToFlush / 1024 / 1024 / flushTimeSeconds;
+            double flushThroughput = sizeToFlush / 1024.0 / 1024.0 / flushTimeSeconds;
 
             if (log.isDebugEnabled()) {
                 log.debug("Flushing done time {} s -- Written {} MB/s", flushTimeSeconds, flushThroughput);
@@ -628,8 +628,11 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
             // Wrap unchecked exceptions
             throw new IOException(e);
         } finally {
-            isFlushOngoing.set(false);
-            flushMutex.unlock();
+            try {
+                isFlushOngoing.set(false);
+            } finally {
+                flushMutex.unlock();
+            }
         }
     }
 
@@ -649,8 +652,11 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
             hasFlushBeenTriggered.set(false);
             flushWriteCacheCondition.signalAll();
         } finally {
-            isFlushOngoing.set(true);
-            writeCacheMutex.writeLock().unlock();
+            try {
+                isFlushOngoing.set(true);
+            } finally {
+                writeCacheMutex.writeLock().unlock();
+            }
         }
     }
 

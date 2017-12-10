@@ -147,7 +147,7 @@ public class LedgerMetadataIndex implements Closeable {
         }
 
         pendingDeletedLedgers.add(ledgerId);
-        pendingLedgersUpdates.remove(ledgerId);
+        pendingLedgersUpdates.removeIf(e -> e.getKey() == ledgerId);
     }
 
     public Iterable<Long> getActiveLedgersInRange(final long firstLedgerId, final long lastLedgerId)
