@@ -56,28 +56,37 @@ public class ArraySortGroupTest {
     }
 
     @Test
-    public void errors() {
+    public void keySmallerThanTotalSize() {
         try {
             new ArrayGroupSort(3, 2);
             fail("should have failed");
         } catch (IllegalArgumentException e) {
             // ok
         }
+    }
 
+    @Test
+    public void negativeKeySize() {
         try {
             new ArrayGroupSort(-1, 2);
             fail("should have failed");
         } catch (IllegalArgumentException e) {
             // ok
         }
+    }
 
+    @Test
+    public void negativeTotalSize() {
         try {
             new ArrayGroupSort(1, -1);
             fail("should have failed");
         } catch (IllegalArgumentException e) {
             // ok
         }
+    }
 
+    @Test
+    public void arraySizeIsNotMultiple() {
         ArrayGroupSort sorter = new ArrayGroupSort(1, 3);
 
         try {
@@ -86,6 +95,11 @@ public class ArraySortGroupTest {
         } catch (IllegalArgumentException e) {
             // ok
         }
+    }
+
+    @Test
+    public void arraySizeIsShorterThanRequired() {
+        ArrayGroupSort sorter = new ArrayGroupSort(1, 3);
 
         try {
             sorter.sort(new long[] { 1, 2 });
@@ -94,4 +108,50 @@ public class ArraySortGroupTest {
             // ok
         }
     }
+
+    @Test
+    public void emtpy() {
+        long[] data = new long[] {};
+
+        long[] expectedSorted = new long[] {};
+
+        ArrayGroupSort sorter = new ArrayGroupSort(2, 4);
+        sorter.sort(data);
+
+        assertArrayEquals(expectedSorted, data);
+    }
+
+    @Test
+    public void singleItem() {
+        long[] data = new long[] { 1, 2, 3, 4 };
+        long[] expectedSorted = new long[] { 1, 2, 3, 4 };
+
+        ArrayGroupSort sorter = new ArrayGroupSort(2, 4);
+        sorter.sort(data);
+
+        assertArrayEquals(expectedSorted, data);
+    }
+
+    @Test
+    public void twoItems() {
+        long[] data = new long[] { 1, 2, 3, 4, 1, 1, 5, 5 };
+        long[] expectedSorted = new long[] { 1, 1, 5, 5, 1, 2, 3, 4 };
+
+        ArrayGroupSort sorter = new ArrayGroupSort(2, 4);
+        sorter.sort(data);
+
+        assertArrayEquals(expectedSorted, data);
+    }
+
+    @Test
+    public void threeItems() {
+        long[] data = new long[] { 1, 2, 3, 4, 1, 1, 5, 5, 1, 0, 2, 1 };
+        long[] expectedSorted = new long[] { 1, 0, 2, 1, 1, 1, 5, 5, 1, 2, 3, 4 };
+
+        ArrayGroupSort sorter = new ArrayGroupSort(2, 4);
+        sorter.sort(data);
+
+        assertArrayEquals(expectedSorted, data);
+    }
+
 }

@@ -427,13 +427,13 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
         }
     }
 
-    private static class EntryWrapper implements Entry<byte[], byte[]> {
-        private byte[] key;
-        private byte[] value;
+    private static final class EntryWrapper implements Entry<byte[], byte[]> {
+        private final byte[] key;
+        private final byte[] value;
 
         public EntryWrapper() {
-            key = null;
-            value = null;
+            this.key = null;
+            this.value = null;
         }
 
         public EntryWrapper(byte[] key, byte[] value) {

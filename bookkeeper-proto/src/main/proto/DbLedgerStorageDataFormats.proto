@@ -24,7 +24,7 @@ option optimize_for = SPEED;
  * Ledger metadata stored in the bookie
  */
 message LedgerData {
-	required bool exists = 1;
+    required bool exists = 1;
     required bool fenced = 2;
     required bytes masterKey = 3;
 }

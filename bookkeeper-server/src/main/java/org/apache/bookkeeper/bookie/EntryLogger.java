@@ -840,7 +840,7 @@ public class EntryLogger {
         leastUnflushedLogId = flushedLogId + 1;
     }
 
-    public synchronized void flush() throws IOException {
+    public void flush() throws IOException {
         flushRotatedLogs();
         flushCurrentLog();
     }

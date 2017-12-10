@@ -95,8 +95,8 @@ public class LocationsIndexRebuildOp {
                     long location = (entryLogId << 32L) | (offset + 4);
 
                     if (LOG.isDebugEnabled()) {
-                        LOG.debug("Rebuilding {}:{} at location {} / {}",
-                                new Object[] { ledgerId, entryId, location >> 32, location & (Integer.MAX_VALUE - 1) });
+                        LOG.debug("Rebuilding {}:{} at location {} / {}", ledgerId, entryId, location >> 32,
+                                location & (Integer.MAX_VALUE - 1));
                     }
 
                     // Update the ledger index page
@@ -112,8 +112,8 @@ public class LocationsIndexRebuildOp {
             });
 
             ++completedEntryLogs;
-            LOG.info("Completed scanning of log {}.log -- {} / {}",
-                    new Object[] { Long.toHexString(entryLogId), completedEntryLogs, totalEntryLogs });
+            LOG.info("Completed scanning of log {}.log -- {} / {}", Long.toHexString(entryLogId), completedEntryLogs,
+                    totalEntryLogs);
         }
 
         newIndex.sync();

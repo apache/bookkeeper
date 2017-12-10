@@ -138,8 +138,7 @@ public class EntryLocationIndex implements Closeable {
 
             if (foundLedgerId == ledgerId) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Found last page in storage db for ledger {} - last entry: {}",
-                            new Object[] { ledgerId, lastEntryId });
+                    log.debug("Found last page in storage db for ledger {} - last entry: {}", ledgerId, lastEntryId);
                 }
                 return lastEntryId;
             } else {
@@ -164,8 +163,7 @@ public class EntryLocationIndex implements Closeable {
         LongWrapper value = LongWrapper.get(location);
 
         if (log.isDebugEnabled()) {
-            log.debug("Add location - ledger: {} -- entry: {} -- location: {}",
-                    new Object[] { ledgerId, entryId, location });
+            log.debug("Add location - ledger: {} -- entry: {} -- location: {}", ledgerId, entryId, location);
         }
 
         try {
@@ -196,7 +194,8 @@ public class EntryLocationIndex implements Closeable {
     }
 
     public void delete(long ledgerId) throws IOException {
-        // We need to find all the LedgerIndexPage records belonging to one specific ledgers
+        // We need to find all the LedgerIndexPage records belonging to one specific
+        // ledgers
         deletedLedgers.add(ledgerId);
     }
 
@@ -239,8 +238,6 @@ public class EntryLocationIndex implements Closeable {
             batch.close();
         }
     }
-
-    ///
 
     private static final String NEW_FORMAT_MARKER = "single-location-record";
 
@@ -302,8 +299,8 @@ public class EntryLocationIndex implements Closeable {
                 ++convertedRecords;
                 if (recordsToConvert > 0 && convertedRecords / recordsToConvert >= nextUpdateAtPercent / 100) {
                     // Report progress at 10 percent intervals
-                    log.info("Updated records {}/{}   {} %", new Object[] { convertedRecords, recordsToConvert,
-                            100.0 * convertedRecords / recordsToConvert });
+                    log.info("Updated records {}/{}   {} %", convertedRecords, recordsToConvert,
+                            100.0 * convertedRecords / recordsToConvert);
                     nextUpdateAtPercent += progressIntervalPercent;
                 }
             }

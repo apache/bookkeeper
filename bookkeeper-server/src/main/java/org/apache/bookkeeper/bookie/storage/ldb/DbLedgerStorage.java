@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.bookkeeper.bookie.Bookie;
@@ -89,6 +90,8 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
 
     private final ReentrantReadWriteLock writeCacheMutex = new ReentrantReadWriteLock();
     private final Condition flushWriteCacheCondition = writeCacheMutex.writeLock().newCondition();
+
+    private final ReentrantLock flushMutex = new ReentrantLock();
 
     protected final AtomicBoolean hasFlushBeenTriggered = new AtomicBoolean(false);
     private final AtomicBoolean isFlushOngoing = new AtomicBoolean(false);
@@ -333,7 +336,8 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
         writeCacheMutex.writeLock().lock();
 
         try {
-            // If the flush has already been triggered or flush has already switched the cache, we don't need to
+            // If the flush has already been triggered or flush has already switched the
+            // cache, we don't need to
             // trigger another flush
             if (!isFlushOngoing.get() && hasFlushBeenTriggered.compareAndSet(false, true)) {
                 // Trigger an early flush in background
@@ -409,25 +413,27 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
         }
 
         // Read from main storage
+        long entryLocation;
         try {
-            long entryLocation = entryLocationIndex.getLocation(ledgerId, entryId);
+            entryLocation = entryLocationIndex.getLocation(ledgerId, entryId);
             if (entryLocation == 0) {
                 throw new NoEntryException(ledgerId, entryId);
             }
             entry = entryLogger.readEntry(ledgerId, entryId, entryLocation);
-            readCache.put(ledgerId, entryId, entry);
-
-            // Try to read more entries
-            long nextEntryLocation = entryLocation + 4 /* size header */ + entry.readableBytes();
-            fillReadAheadCache(ledgerId, entryId + 1, nextEntryLocation);
-
-            recordSuccessfulEvent(readCacheMissStats, startTime);
-            recordSuccessfulEvent(readEntryStats, startTime);
-            return entry;
         } catch (NoEntryException e) {
             recordFailedEvent(readEntryStats, startTime);
             throw e;
         }
+
+        readCache.put(ledgerId, entryId, entry);
+
+        // Try to read more entries
+        long nextEntryLocation = entryLocation + 4 /* size header */ + entry.readableBytes();
+        fillReadAheadCache(ledgerId, entryId + 1, nextEntryLocation);
+
+        recordSuccessfulEvent(readCacheMissStats, startTime);
+        recordSuccessfulEvent(readEntryStats, startTime);
+        return entry;
     }
 
     private void fillReadAheadCache(long orginalLedgerId, long firstEntryId, long firstEntryLocation) {
@@ -441,25 +447,27 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
             while (count < readAheadCacheBatchSize && currentEntryLogId == firstEntryLogId) {
                 ByteBuf entry = entryLogger.internalReadEntry(orginalLedgerId, -1, currentEntryLocation);
 
-                long currentEntryLedgerId = entry.getLong(0);
-                long currentEntryId = entry.getLong(8);
+                try {
+                    long currentEntryLedgerId = entry.getLong(0);
+                    long currentEntryId = entry.getLong(8);
 
-                if (currentEntryLedgerId != orginalLedgerId) {
-                    // Found an entry belonging to a different ledger, stopping read-ahead
+                    if (currentEntryLedgerId != orginalLedgerId) {
+                        // Found an entry belonging to a different ledger, stopping read-ahead
+                        entry.release();
+                        return;
+                    }
+
+                    // Insert entry in read cache
+                    readCache.put(orginalLedgerId, currentEntryId, entry);
+
+                    count++;
+                    size += entry.readableBytes();
+
+                    currentEntryLocation += 4 + entry.readableBytes();
+                    currentEntryLogId = currentEntryLocation >> 32;
+                } finally {
                     entry.release();
-                    return;
                 }
-
-                // Insert entry in read cache
-                readCache.put(orginalLedgerId, currentEntryId, entry);
-
-                count++;
-                size += entry.readableBytes();
-
-                currentEntryLocation += 4 + entry.readableBytes();
-                currentEntryLogId = currentEntryLocation >> 32;
-
-                entry.release();
             }
 
             readAheadBatchCountStats.registerSuccessfulValue(count);
@@ -484,8 +492,8 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
                     long entryId = entry.readLong();
                     entry.resetReaderIndex();
                     if (log.isDebugEnabled()) {
-                        log.debug("Found last entry for ledger {} in write cache: {}@{}",
-                                new Object[] { ledgerId, foundLedgerId, entryId });
+                        log.debug("Found last entry for ledger {} in write cache: {}@{}", ledgerId, foundLedgerId,
+                                entryId);
                     }
                 }
 
@@ -539,39 +547,31 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
     }
 
     @Override
-    public synchronized void checkpoint(Checkpoint checkpoint) throws IOException {
+    public void checkpoint(Checkpoint checkpoint) throws IOException {
         Checkpoint thisCheckpoint = checkpointSource.newCheckpoint();
         if (lastCheckpoint.compareTo(checkpoint) > 0) {
             return;
         }
 
+        // Only a single flush operation can happen at a time
+        flushMutex.lock();
+
         long startTime = MathUtils.nowInNano();
 
-        writeCacheMutex.writeLock().lock();
-
         try {
-            // First, swap the current write-cache map with an empty one so that writes will go on unaffected
-            // Only a single flush is happening at the same time
-            WriteCache tmp = writeCacheBeingFlushed;
-            writeCacheBeingFlushed = writeCache;
-            writeCache = tmp;
+            // Swap the write cache so that writes can continue to happen while the flush is
+            // ongoing
+            swapWriteCache();
 
-            // since the cache is switched, we can allow flush to be triggered
-            hasFlushBeenTriggered.set(false);
-            flushWriteCacheCondition.signalAll();
-        } finally {
-            isFlushOngoing.set(true);
-            writeCacheMutex.writeLock().unlock();
-        }
+            long sizeToFlush = writeCacheBeingFlushed.size();
+            if (log.isDebugEnabled()) {
+                log.debug("Flushing entries. count: {} -- size {} Mb", writeCacheBeingFlushed.count(),
+                        sizeToFlush / 1024.0 / 1024);
+            }
 
-        long sizeToFlush = writeCacheBeingFlushed.size();
-        if (log.isDebugEnabled()) {
-            log.debug("Flushing entries. count: {} -- size {} Mb", writeCacheBeingFlushed.count(),
-                    sizeToFlush / 1024.0 / 1024);
-        }
+            // Write all the pending entries into the entry logger and collect the offset
+            // position for each entry
 
-        // Write all the pending entries into the entry logger and collect the offset position for each entry
-        try {
             Batch batch = entryLocationIndex.newBatch();
             writeCacheBeingFlushed.forEach((ledgerId, entryId, entry) -> {
                 try {
@@ -607,7 +607,6 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
                 }
             });
 
-
             lastCheckpoint = thisCheckpoint;
 
             // Discard all the entry from the write cache, since they're now persisted
@@ -630,13 +629,33 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
             throw new IOException(e);
         } finally {
             isFlushOngoing.set(false);
+            flushMutex.unlock();
         }
+    }
 
-        return;
+    /**
+     * Swap the current write cache with the replacement cache.
+     */
+    private void swapWriteCache() {
+        writeCacheMutex.writeLock().lock();
+        try {
+            // First, swap the current write-cache map with an empty one so that writes will
+            // go on unaffected. Only a single flush is happening at the same time
+            WriteCache tmp = writeCacheBeingFlushed;
+            writeCacheBeingFlushed = writeCache;
+            writeCache = tmp;
+
+            // since the cache is switched, we can allow flush to be triggered
+            hasFlushBeenTriggered.set(false);
+            flushWriteCacheCondition.signalAll();
+        } finally {
+            isFlushOngoing.set(true);
+            writeCacheMutex.writeLock().unlock();
+        }
     }
 
     @Override
-    public synchronized void flush() throws IOException {
+    public void flush() throws IOException {
         checkpoint(Checkpoint.MAX);
     }
 

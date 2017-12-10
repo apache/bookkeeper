@@ -20,6 +20,12 @@
  */
 package org.apache.bookkeeper.bookie.storage.ldb;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Set;
@@ -27,10 +33,10 @@ import java.util.Set;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieShell;
 import org.apache.bookkeeper.bookie.CheckpointSource;
+import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.Checkpointer;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
-import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
@@ -38,12 +44,9 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
+import lombok.extern.slf4j.Slf4j;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-
+@Slf4j
 public class ConversionRollbackTest {
 
     CheckpointSource checkpointSource = new CheckpointSource() {
@@ -56,7 +59,7 @@ public class ConversionRollbackTest {
         public void checkpointComplete(Checkpoint checkpoint, boolean compact) throws IOException {
         }
     };
-    
+
     Checkpointer checkpointer = new Checkpointer() {
         @Override
         public void startCheckpoint(Checkpoint checkpoint) {
@@ -72,7 +75,7 @@ public class ConversionRollbackTest {
         File curDir = Bookie.getCurrentDirectory(tmpDir);
         Bookie.checkDirectoryStructure(curDir);
 
-        System.out.println(tmpDir);
+        log.info("Using temp directory: {}", tmpDir);
 
         ServerConfiguration conf = new ServerConfiguration();
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });

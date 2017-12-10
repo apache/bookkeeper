@@ -73,10 +73,11 @@ public class ReadCache implements Closeable {
     }
 
     public void put(long ledgerId, long entryId, ByteBuf entry) {
-        lock.readLock().lock();
-
         int entrySize = entry.readableBytes();
         int alignedSize = align64(entrySize);
+
+        lock.readLock().lock();
+
         try {
             int offset = currentSegmentOffset.getAndAdd(alignedSize);
             if (offset + entrySize > segmentSize) {
