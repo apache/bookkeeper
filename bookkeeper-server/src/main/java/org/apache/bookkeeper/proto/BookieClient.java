@@ -519,7 +519,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
         }
     }
 
-    public void monitorPendingOperations() {
+    private void monitorPendingOperations() {
         for (PerChannelBookieClientPool clientPool : channels.values()) {
             clientPool.checkTimeoutOnPendingOperations();
         }

@@ -1396,7 +1396,9 @@ public class LedgerHandle implements WriteHandle {
                 timedOut++;
             }
         }
-        LOG.info("Timed out {} add ops", timedOut);
+        if (timedOut > 0) {
+            LOG.info("Timed out {} add ops", timedOut);
+        }
     }
 
     void errorOutPendingAdds(int rc) {
