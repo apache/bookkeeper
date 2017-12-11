@@ -18,23 +18,29 @@
  */
 package org.apache.bookkeeper.bookie;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import com.google.common.primitives.Ints;
+
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.bookie.SkipListArena.MemorySlice;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.junit.Test;
 
-import java.util.Set;
-import java.util.HashSet;
-import java.util.HashMap;
-import java.util.TreeMap;
-import com.google.common.primitives.Ints;
-
+/**
+ * Test the SkipListArena class.
+ */
 public class TestSkipListArena {
 
     class CustomConfiguration extends ServerConfiguration {
@@ -56,7 +62,7 @@ public class TestSkipListArena {
     final CustomConfiguration cfg = new CustomConfiguration();
 
     /**
-    * Test random allocations
+    * Test random allocations.
     */
     @Test
     public void testRandomAllocation() {
@@ -104,7 +110,7 @@ public class TestSkipListArena {
         @Override
         public boolean equals(Object object) {
             if (object instanceof ByteArray) {
-                ByteArray other = (ByteArray)object;
+                ByteArray other = (ByteArray) object;
                 return this.bytes.equals(other.bytes);
             }
             return false;
@@ -150,7 +156,7 @@ public class TestSkipListArena {
     }
 
     /**
-    * Test concurrent allocation, check the results don't overlap
+    * Test concurrent allocation, check the results don't overlap.
     */
     @Test
     public void testConcurrency() throws Exception {
@@ -177,12 +183,12 @@ public class TestSkipListArena {
         for (AllocBuffer buf : buffers) {
             if (buf.size != 0) {
                 ByteArray ptr = new ByteArray(buf.alloc.getData());
-                Map<Integer, AllocBuffer> tree_map = mapsByArray.get(ptr);
-                if (tree_map == null) {
-                    tree_map = new TreeMap<Integer, AllocBuffer>();
-                    mapsByArray.put(ptr, tree_map);
+                Map<Integer, AllocBuffer> treeMap = mapsByArray.get(ptr);
+                if (treeMap == null) {
+                    treeMap = new TreeMap<Integer, AllocBuffer>();
+                    mapsByArray.put(ptr, treeMap);
                 }
-                AllocBuffer other = tree_map.put(new Integer(buf.alloc.getOffset()), buf);
+                AllocBuffer other = treeMap.put(new Integer(buf.alloc.getOffset()), buf);
                 if (other != null) {
                     fail("Buffer " + other.toString() + " overlapped with " + buf.toString());
                 }
@@ -190,9 +196,9 @@ public class TestSkipListArena {
         }
 
         // Now check each byte array to make sure allocations don't overlap
-        for (Map<Integer, AllocBuffer> tree_map : mapsByArray.values()) {
+        for (Map<Integer, AllocBuffer> treeMap : mapsByArray.values()) {
             int expectedOff = 0;
-            for (AllocBuffer buf : tree_map.values()) {
+            for (AllocBuffer buf : treeMap.values()) {
                 assertEquals(expectedOff, buf.alloc.getOffset());
                 expectedOff += buf.size;
             }

@@ -24,6 +24,7 @@ import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.util.BookKeeperConstants.BOOKIE_STATUS_FILENAME;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -61,7 +62,6 @@ import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -69,7 +69,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Testing bookie initialization cases
+ * Testing bookie initialization cases.
  */
 public class BookieInitializationTest extends BookKeeperClusterTestCase {
     private static final Logger LOG = LoggerFactory
@@ -96,7 +96,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
     @Override
     public void tearDown() throws Exception {
         super.tearDown();
-        if(rm != null) {
+        if (rm != null) {
             rm.close();
         }
     }
@@ -140,7 +140,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
         bkServer.start();
         bkServer.join();
-        Assert.assertEquals("Failed to return ExitCode.ZK_REG_FAIL",
+        assertEquals("Failed to return ExitCode.ZK_REG_FAIL",
                 ExitCode.ZK_REG_FAIL, bkServer.getExitCode());
     }
 
@@ -163,12 +163,12 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
         b.testRegisterBookie(conf);
         ZooKeeper zooKeeper = ((ZKRegistrationManager) rm).getZk();
-        Assert.assertNotNull("Bookie registration node doesn't exists!",
+        assertNotNull("Bookie registration node doesn't exists!",
             zooKeeper.exists(bkRegPath, false));
 
         // test register bookie again if the registeration node is created by itself.
         b.testRegisterBookie(conf);
-        Assert.assertNotNull("Bookie registration node doesn't exists!",
+        assertNotNull("Bookie registration node doesn't exists!",
             zooKeeper.exists(bkRegPath, false));
     }
 
@@ -197,7 +197,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         b.testRegisterBookie(conf);
 
         Stat bkRegNode1 = ((ZKRegistrationManager) rm).getZk().exists(bkRegPath, false);
-        Assert.assertNotNull("Bookie registration node doesn't exists!",
+        assertNotNull("Bookie registration node doesn't exists!",
                 bkRegNode1);
 
         // simulating bookie restart, on restart bookie will create new
@@ -225,7 +225,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                 Throwable t = e.getCause();
                 if (t instanceof KeeperException) {
                     KeeperException ke = (KeeperException) t;
-                    Assert.assertTrue("ErrorCode:" + ke.code()
+                    assertTrue("ErrorCode:" + ke.code()
                             + ", Registration node exists",
                         ke.code() != KeeperException.Code.NODEEXISTS);
                 }
@@ -234,8 +234,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
             // verify ephemeral owner of the bkReg znode
             Stat bkRegNode2 = newZk.exists(bkRegPath, false);
-            Assert.assertNotNull("Bookie registration has been failed", bkRegNode2);
-            Assert.assertTrue("Bookie is referring to old registration znode:"
+            assertNotNull("Bookie registration has been failed", bkRegNode2);
+            assertTrue("Bookie is referring to old registration znode:"
                 + bkRegNode1 + ", New ZNode:" + bkRegNode2, bkRegNode1
                 .getEphemeralOwner() != bkRegNode2.getEphemeralOwner());
         } finally {
@@ -268,7 +268,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
         b.testRegisterBookie(conf);
         Stat bkRegNode1 = zkc.exists(bkRegPath, false);
-        Assert.assertNotNull("Bookie registration node doesn't exists!",
+        assertNotNull("Bookie registration node doesn't exists!",
                 bkRegNode1);
 
         // simulating bookie restart, on restart bookie will create new
@@ -287,15 +287,15 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
             if (t3 instanceof KeeperException) {
                 KeeperException ke = (KeeperException) t3;
-                Assert.assertTrue("ErrorCode:" + ke.code()
+                assertTrue("ErrorCode:" + ke.code()
                         + ", Registration node doesn't exists",
                         ke.code() == KeeperException.Code.NODEEXISTS);
 
                 // verify ephemeral owner of the bkReg znode
                 Stat bkRegNode2 = newzk.exists(bkRegPath, false);
-                Assert.assertNotNull("Bookie registration has been failed",
+                assertNotNull("Bookie registration has been failed",
                         bkRegNode2);
-                Assert.assertTrue(
+                assertTrue(
                         "Bookie wrongly registered. Old registration znode:"
                                 + bkRegNode1 + ", New znode:" + bkRegNode2,
                         bkRegNode1.getEphemeralOwner() == bkRegNode2
@@ -339,7 +339,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         } catch (BindException e) {
             // Ok
         } catch (IOException e) {
-            Assert.assertTrue("BKServer allowed duplicate Startups!",
+            assertTrue("BKServer allowed duplicate Startups!",
                     e.getMessage().contains("bind"));
         } finally {
             bs1.shutdown();
@@ -412,18 +412,18 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
     /**
      * Verify that if I try to start a bookie without zk initialized, it won't
-     * prevent me from starting the bookie when zk is initialized
+     * prevent me from starting the bookie when zk is initialized.
      */
     @Test
     public void testStartBookieWithoutZKInitialized() throws Exception {
         File tmpDir = createTempDir("bookie", "test");
-        final String ZK_ROOT = "/ledgers2";
+        final String zkRoot = "/ledgers2";
 
         final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
             .setZkServers(zkUtil.getZooKeeperConnectString())
             .setZkTimeout(5000).setJournalDirName(tmpDir.getPath())
             .setLedgerDirNames(new String[] { tmpDir.getPath() });
-        conf.setZkLedgersRootPath(ZK_ROOT);
+        conf.setZkLedgersRootPath(zkRoot);
         try {
             new Bookie(conf);
             fail("Should throw NoNodeException");
@@ -432,7 +432,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         }
         ClientConfiguration clientConf = new ClientConfiguration();
         clientConf.setZkServers(zkUtil.getZooKeeperConnectString());
-        clientConf.setZkLedgersRootPath(ZK_ROOT);
+        clientConf.setZkLedgersRootPath(zkRoot);
         BookKeeperAdmin.format(clientConf, false, false);
 
         Bookie b = new Bookie(conf);
@@ -454,38 +454,38 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                 .setDiskCheckInterval(1000)
                 .setDiskUsageThreshold((1.0f - ((float) usableSpace / (float) totalSpace)) * 0.999f)
                 .setDiskUsageWarnThreshold(0.0f);
-        
-        // if isForceGCAllowWhenNoSpace or readOnlyModeEnabled is not set and Bookie is 
+
+        // if isForceGCAllowWhenNoSpace or readOnlyModeEnabled is not set and Bookie is
         // started when Disk is full, then it will fail to start with NoWritableLedgerDirException
-        
+
         conf.setIsForceGCAllowWhenNoSpace(false)
             .setReadOnlyModeEnabled(false);
         try {
             new Bookie(conf);
             fail("NoWritableLedgerDirException expected");
-        } catch(NoWritableLedgerDirException e) {
+        } catch (NoWritableLedgerDirException e) {
             // expected
         }
-        
+
         conf.setIsForceGCAllowWhenNoSpace(true)
             .setReadOnlyModeEnabled(false);
         try {
             new Bookie(conf);
             fail("NoWritableLedgerDirException expected");
-        } catch(NoWritableLedgerDirException e) {
+        } catch (NoWritableLedgerDirException e) {
             // expected
         }
-        
+
         conf.setIsForceGCAllowWhenNoSpace(false)
             .setReadOnlyModeEnabled(true);
         try {
             new Bookie(conf);
             fail("NoWritableLedgerDirException expected");
-        } catch(NoWritableLedgerDirException e) {
+        } catch (NoWritableLedgerDirException e) {
             // expected
         }
     }
-    
+
     /**
      * Check disk full. Expected to start as read-only.
      */
@@ -501,7 +501,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                 .setDiskCheckInterval(1000)
                 .setDiskUsageThreshold((1.0f - ((float) usableSpace / (float) totalSpace)) * 0.999f)
                 .setDiskUsageWarnThreshold(0.0f);
-        
+
         // if isForceGCAllowWhenNoSpace and readOnlyModeEnabled are set, then Bookie should
         // start with readonlymode when Disk is full (assuming there is no need for creation of index file
         // while replaying the journal)
@@ -510,7 +510,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         final Bookie bk = new Bookie(conf);
         bk.start();
         Thread.sleep((conf.getDiskCheckInterval() * 2) + 100);
-        
+
         assertTrue(bk.isReadOnly());
         bk.shutdown();
     }
@@ -547,7 +547,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             return exitCode;
         }
     }
-    
+
     @Test
     public void testWithDiskFullAndAbilityToCreateNewIndexFile() throws Exception {
         File tmpDir = createTempDir("DiskCheck", "test");
@@ -568,7 +568,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         for (int i = 0; i < numOfEntries; i++) {
             entryId = lh.addEntry("data".getBytes());
         }
-        Assert.assertTrue("EntryId of the recently added entry should be 0", entryId == (numOfEntries - 1));
+        assertTrue("EntryId of the recently added entry should be 0", entryId == (numOfEntries - 1));
         // We want to simulate the scenario where Bookie is killed abruptly, so
         // SortedLedgerStorage's EntryMemTable and IndexInMemoryPageManager are
         // not flushed and hence when bookie is restarted it will replay the
@@ -599,7 +599,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         server = new BookieServer(conf);
         server.start();
         Thread.sleep((conf.getDiskCheckInterval() * 2) + 100);
-        Assert.assertTrue("Bookie should be up and running", server.getBookie().isRunning());
+        assertTrue("Bookie should be up and running", server.getBookie().isRunning());
         assertTrue(server.getBookie().isReadOnly());
         server.shutdown();
         bkClient.close();
@@ -621,7 +621,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             // Simulating disk errors by directly calling #init
             LedgerDirsManager ldm = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                     new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
-            LedgerDirsMonitor ledgerMonitor = new LedgerDirsMonitor(conf, 
+            LedgerDirsMonitor ledgerMonitor = new LedgerDirsMonitor(conf,
                     new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()), ldm);
             ledgerMonitor.init();
             fail("should throw exception");
@@ -645,12 +645,12 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         conf.setZkServers(zkUtil.getZooKeeperConnectString()).setZkTimeout(5000).setBookiePort(port)
         .setJournalDirName(tmpDir1.getPath())
         .setLedgerDirNames(new String[] { tmpDir1.getPath(), tmpDir2.getPath() })
-        .setIndexDirName(new String[] { tmpDir1.getPath()});;
+        .setIndexDirName(new String[] { tmpDir1.getPath() });
         conf.setAllowMultipleDirsUnderSameDiskPartition(false);
         BookieServer bs1 = null;
         try {
             bs1 = new BookieServer(conf);
-            Assert.fail("Bookkeeper should not have started since AllowMultipleDirsUnderSameDiskPartition is not enabled");
+            fail("Bookkeeper should not have started since AllowMultipleDirsUnderSameDiskPartition is not enabled");
         } catch (DiskPartitionDuplicationException dpde) {
             // Expected
         } finally {
@@ -671,7 +671,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         bs1 = null;
         try {
             bs1 = new BookieServer(conf);
-            Assert.fail("Bookkeeper should not have started since AllowMultipleDirsUnderSameDiskPartition is not enabled");
+            fail("Bookkeeper should not have started since AllowMultipleDirsUnderSameDiskPartition is not enabled");
         } catch (DiskPartitionDuplicationException dpde) {
             // Expected
         } finally {
@@ -692,8 +692,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         bs1 = null;
         try {
             bs1 = new BookieServer(conf);
-            Assert.fail(
-                    "Bookkeeper should not have started since AllowMultipleDirsUnderSameDiskPartition is not enabled");
+            fail("Bookkeeper should not have started since AllowMultipleDirsUnderSameDiskPartition is not enabled");
         } catch (DiskPartitionDuplicationException dpde) {
             // Expected
         } finally {
@@ -725,16 +724,16 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         conf.setAllowMultipleDirsUnderSameDiskPartition(true);
         BookieServer bs1 = null;
         try {
-            bs1 = new BookieServer(conf);          
+            bs1 = new BookieServer(conf);
         } catch (DiskPartitionDuplicationException dpde) {
-            Assert.fail("Bookkeeper should have started since AllowMultipleDirsUnderSameDiskPartition is enabled");
+            fail("Bookkeeper should have started since AllowMultipleDirsUnderSameDiskPartition is enabled");
         } finally {
             if (bs1 != null) {
                 bs1.shutdown();
             }
         }
     }
-    
+
     private ZooKeeperClient createNewZKClient() throws Exception {
         // create a zookeeper client
         LOG.debug("Instantiate ZK Client");
@@ -782,7 +781,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Check when we start a ReadOnlyBookie, we should ignore bookie status
+     * Check when we start a ReadOnlyBookie, we should ignore bookie status.
      */
     @Test(timeout = 10000)
     public void testReadOnlyBookieShouldIgnoreBookieStatus() throws Exception {
