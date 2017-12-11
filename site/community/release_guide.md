@@ -117,7 +117,7 @@ Configure access to the [Apache Nexus repository](http://repository.apache.org/)
 2. Confirm you have appropriate access by finding `org.apache.bookkeeper` under `Staging Profiles`.
 3. Navigate to your `Profile` (top right dropdown menu of the page).
 4. Choose `User Token` from the dropdown, then click `Access User Token`. Copy a snippet of the Maven XML configuration block.
-5. Insert this snippet twice into your global Maven `settings.xml` file, typically `${HOME}/.m2/settings.xml`. The end result should look like this, where `TOKEN_NAME` and `TOKEN_PASSWORD` are your secret tokens:
+5. Insert this snippet twice into your global Maven `settings.xml` file (use command `mvn -X | grep settings`, and read out the global Maven setting file), typically `${HOME}/.m2/settings.xml`. The end result should look like this, where `TOKEN_NAME` and `TOKEN_PASSWORD` are your secret tokens:
 
         <settings>
           <servers>
@@ -303,7 +303,7 @@ Use Maven release plugin to stage these artifacts on the Apache Nexus repository
     mvn release:perform [-DdryRun] [-Darguments="-Dmaven.javadoc.skip=true -DskipTests=true"] [-Dresume=true]
 
 > If `release:perform` failed, 
-> delete the release tag: git tag -d ${VERSION} && git push apache :refs/tags/${VERSION}
+> delete the release tag: git tag -d release-${VERSION} && git push apache :refs/tags/release-${VERSION}
 > 
 > Also, you need to check the git commits on the github and if needed you may have to
 > force push backed out local git branch to github again.

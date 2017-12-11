@@ -20,9 +20,9 @@
  */
 package org.apache.bookkeeper.test;
 
-import org.junit.*;
-import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.LedgerHandle;
+import org.junit.Test;
 
 /**
  * This unit test tests closing ledgers sequentially. It creates 4 ledgers, then

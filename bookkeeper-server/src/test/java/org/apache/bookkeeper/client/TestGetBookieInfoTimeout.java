@@ -49,11 +49,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This unit test tests timeout of GetBookieInfo request;
+ * This unit test tests timeout of GetBookieInfo request.
  *
  */
 public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
-    private final static Logger LOG = LoggerFactory.getLogger(TestGetBookieInfoTimeout.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TestGetBookieInfoTimeout.class);
     DigestType digestType;
     public EventLoopGroup eventLoopGroup;
     public OrderedSafeExecutor executor;
@@ -88,7 +88,7 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
     public void testGetBookieInfoTimeout() throws Exception {
 
         // connect to the bookies and create a ledger
-        LedgerHandle writelh = bkc.createLedger(3,3,digestType, "testPasswd".getBytes());
+        LedgerHandle writelh = bkc.createLedger(3, 3, digestType, "testPasswd".getBytes());
         String tmp = "Foobar";
         final int numEntries = 10;
         for (int i = 0; i < numEntries; i++) {
@@ -100,7 +100,7 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
         cConf.setGetBookieInfoTimeout(2);
 
         final BookieSocketAddress bookieToSleep = writelh.getLedgerMetadata().getEnsemble(0).get(0);
-        int sleeptime = cConf.getBookieInfoTimeout()*3;
+        int sleeptime = cConf.getBookieInfoTimeout() * 3;
         CountDownLatch latch = sleepBookie(bookieToSleep, sleeptime);
         latch.await();
 
@@ -108,8 +108,8 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
         BookieSocketAddress addr = new BookieSocketAddress(bookieToSleep.getSocketAddress().getHostString(),
                 bookieToSleep.getPort());
         BookieClient bc = new BookieClient(cConf, eventLoopGroup, executor, scheduler, NullStatsLogger.INSTANCE);
-        long flags = BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE |
-                BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE;
+        long flags = BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE
+                | BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE;
 
         class CallbackObj {
             int rc;
@@ -128,13 +128,14 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
         bc.getBookieInfo(addr, flags, new GetBookieInfoCallback() {
             @Override
             public void getBookieInfoComplete(int rc, BookieInfo bInfo, Object ctx) {
-                CallbackObj obj = (CallbackObj)ctx;
-                obj.rc=rc;
+                CallbackObj obj = (CallbackObj) ctx;
+                obj.rc = rc;
                 if (rc == Code.OK) {
                     if ((obj.requested & BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE) != 0) {
                         obj.freeDiskSpace = bInfo.getFreeDiskSpace();
                     }
-                    if ((obj.requested & BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE) != 0) {
+                    if ((obj.requested & BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE)
+                            != 0) {
                         obj.totalDiskCapacity = bInfo.getTotalDiskSpace();
                     }
                 }

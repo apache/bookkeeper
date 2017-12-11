@@ -28,10 +28,12 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import junit.framework.TestCase;
+
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.ZooKeeperUtil;
-import org.apache.zookeeper.AsyncCallback.Create2Callback;
 import org.apache.zookeeper.AsyncCallback.Children2Callback;
+import org.apache.zookeeper.AsyncCallback.Create2Callback;
 import org.apache.zookeeper.AsyncCallback.DataCallback;
 import org.apache.zookeeper.AsyncCallback.StatCallback;
 import org.apache.zookeeper.AsyncCallback.StringCallback;
@@ -46,20 +48,18 @@ import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.junit.Assert;
-import junit.framework.TestCase;
 
 /**
  * Test the wrapper of {@link org.apache.zookeeper.ZooKeeper} client.
  */
 public class TestZooKeeperClient extends TestCase {
 
-    static final Logger logger = LoggerFactory.getLogger(TestZooKeeperClient.class);
+    private static final Logger logger = LoggerFactory.getLogger(TestZooKeeperClient.class);
 
     // ZooKeeper related variables
     protected ZooKeeperUtil zkUtil = new ZooKeeperUtil();
@@ -86,8 +86,7 @@ public class TestZooKeeperClient extends TestCase {
 
             @Override
             public void process(WatchedEvent event) {
-                if (event.getType() == EventType.None &&
-                        event.getState() == KeeperState.SyncConnected) {
+                if (event.getType() == EventType.None && event.getState() == KeeperState.SyncConnected) {
                     latch.countDown();
                 }
             }
@@ -117,8 +116,7 @@ public class TestZooKeeperClient extends TestCase {
 
         @Override
         public void process(WatchedEvent event) {
-            if (event.getType() == EventType.None &&
-                    event.getState() == KeeperState.Expired) {
+            if (event.getType() == EventType.None && event.getState() == KeeperState.Expired) {
                 try {
                     zkUtil.stopServer();
                 } catch (Exception e) {
@@ -137,8 +135,7 @@ public class TestZooKeeperClient extends TestCase {
 
             @Override
             public void process(WatchedEvent event) {
-                if (event.getType() == EventType.None &&
-                        event.getState() == KeeperState.Expired) {
+                if (event.getType() == EventType.None && event.getState() == KeeperState.Expired) {
                     expireLatch.countDown();
                 }
             }
@@ -178,7 +175,7 @@ public class TestZooKeeperClient extends TestCase {
         zkUtil.restartServer();
 
         // wait for a reconnect cycle
-        Thread.sleep(2*timeout);
+        Thread.sleep(2 * timeout);
         Assert.assertTrue("Client failed to connect zookeeper even it was back.",
                 client.getState().isConnected());
         try {

@@ -29,6 +29,8 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.HashedWheelTimer;
+import io.netty.util.concurrent.DefaultThreadFactory;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -80,7 +82,6 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 /**
  * BookKeeper client.
@@ -406,10 +407,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         this.reorderReadSequence = conf.isReorderReadSequenceEnabled();
 
         // initialize resources
-        ThreadFactoryBuilder tfb = new ThreadFactoryBuilder().setNameFormat(
-                "BookKeeperClientScheduler-%d");
         this.scheduler = Executors
-                .newSingleThreadScheduledExecutor(tfb.build());
+                .newSingleThreadScheduledExecutor(new DefaultThreadFactory("BookKeeperClientScheduler"));
         this.mainWorkerPool = OrderedSafeExecutor.newBuilder()
                 .name("BookKeeperClientWorker")
                 .numThreads(conf.getNumWorkerThreads())
@@ -1432,7 +1431,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     }
 
     static EventLoopGroup getDefaultEventLoopGroup() {
-        ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat("bookkeeper-io-%s").build();
+        ThreadFactory threadFactory = new DefaultThreadFactory("bookkeeper-io");
         final int numThreads = Runtime.getRuntime().availableProcessors() * 2;
 
         if (SystemUtils.IS_OS_LINUX) {

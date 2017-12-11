@@ -27,6 +27,9 @@ public final class RecyclableArrayList<T> extends ArrayList<T> {
 
     private static final int DEFAULT_INITIAL_CAPACITY = 8;
 
+    /**
+     * An ArrayList recycler.
+     */
     public static class Recycler<X>
         extends io.netty.util.Recycler<RecyclableArrayList<X>> {
         @Override

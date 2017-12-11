@@ -20,22 +20,20 @@
  */
 package org.apache.bookkeeper.replication;
 
-import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.test.TestCallbacks;
+import static org.junit.Assert.assertEquals;
 
-import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-
+import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.test.TestCallbacks;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-
 /**
- * Test auditor behaviours during a rolling restart
+ * Test auditor behaviours during a rolling restart.
  */
 public class AuditorRollingRestartTest extends BookKeeperClusterTestCase {
 
@@ -46,7 +44,7 @@ public class AuditorRollingRestartTest extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Test no auditing during restart if disabled
+     * Test no auditing during restart if disabled.
      */
     @Test
     public void testAuditingDuringRollingRestart() throws Exception {

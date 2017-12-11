@@ -20,6 +20,10 @@
  */
 package org.apache.bookkeeper.test;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
@@ -33,19 +37,16 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
-
 /**
- * This class tests that bookie rolling journals
+ * This class tests that bookie rolling journals.
  */
 public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
-    private final static Logger LOG = LoggerFactory.getLogger(BookieJournalRollingTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BookieJournalRollingTest.class);
 
     private final DigestType digestType;
 
@@ -94,7 +95,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
         }
         String msg = msgSB.toString();
 
-        final CountDownLatch completeLatch = new CountDownLatch(numMsgs*lhs.length);
+        final CountDownLatch completeLatch = new CountDownLatch(numMsgs * lhs.length);
         final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
 
         // Write all of the entries for all of the ledgers
@@ -150,7 +151,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
                     StringBuilder sb = new StringBuilder();
                     sb.append(ledgerIds[j]).append('-').append(entryId).append('-')
                       .append(msg);
-                    Assert.assertArrayEquals(sb.toString().getBytes(), e.getEntry());
+                    assertArrayEquals(sb.toString().getBytes(), e.getEntry());
                     entryId++;
                 }
                 assertEquals(entryId - 1, end);
@@ -162,9 +163,9 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
     }
 
     /**
-     * This test writes enough ledger entries to roll over the journals
+     * This test writes enough ledger entries to roll over the journals.
      *
-     * It will then keep only 1 journal file before last marked journal
+     * <p>It will then keep only 1 journal file before last marked journal
      *
      * @throws Exception
      */
@@ -176,7 +177,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
         // Write enough ledger entries so that we roll over journals
         LedgerHandle[] lhs = writeLedgerEntries(4, 1024, 1024);
         long[] ledgerIds = new long[lhs.length];
-        for (int i=0; i<lhs.length; i++) {
+        for (int i = 0; i < lhs.length; i++) {
             ledgerIds[i] = lhs[i].getId();
             lhs[i].close();
         }
@@ -205,7 +206,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
 
     /**
      * This test writes enough ledger entries to roll over the journals
-     * without sync up
+     * without sync up.
      *
      * @throws Exception
      */
@@ -225,7 +226,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
         // Write enough ledger entries so that we roll over journals
         LedgerHandle[] lhs = writeLedgerEntries(4, 1024, 1024);
         long[] ledgerIds = new long[lhs.length];
-        for (int i=0; i<lhs.length; i++) {
+        for (int i = 0; i < lhs.length; i++) {
             ledgerIds[i] = lhs[i].getId();
             lhs[i].close();
         }
@@ -239,7 +240,7 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
 
     /**
      * This test writes enough ledger entries to roll over the journals
-     * without sync up
+     * without sync up.
      *
      * @throws Exception
      */

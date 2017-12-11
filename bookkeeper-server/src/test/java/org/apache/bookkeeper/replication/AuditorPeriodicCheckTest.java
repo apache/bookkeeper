@@ -20,6 +20,25 @@
  */
 package org.apache.bookkeeper.replication;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import io.netty.buffer.ByteBuf;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieAccessor;
 import org.apache.bookkeeper.bookie.IndexPersistenceMgr;
@@ -40,35 +59,18 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.netty.buffer.ByteBuf;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.junit.Assert.*;
-
 /**
  * This test verifies that the period check on the auditor
- * will pick up on missing data in the client
+ * will pick up on missing data in the client.
  */
 public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
-    private final static Logger LOG = LoggerFactory
+    private static final Logger LOG = LoggerFactory
             .getLogger(AuditorPeriodicCheckTest.class);
 
     private HashMap<String, AuditorElector> auditorElectors = new HashMap<String, AuditorElector>();
     private List<ZooKeeper> zkClients = new LinkedList<ZooKeeper>();
 
-    private final static int CHECK_INTERVAL = 1; // run every second
+    private static final int CHECK_INTERVAL = 1; // run every second
 
     public AuditorPeriodicCheckTest() {
         super(3);
@@ -115,7 +117,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
 
     /**
      * test that the periodic checking will detect corruptions in
-     * the bookie entry log
+     * the bookie entry log.
      */
     @Test
     public void testEntryLogCorruption() throws Exception {
@@ -141,7 +143,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
                     return name.endsWith(".log");
                 }
             });
-        ByteBuffer junk = ByteBuffer.allocate(1024*1024);
+        ByteBuffer junk = ByteBuffer.allocate(1024 * 1024);
         for (File f : entryLogs) {
             FileOutputStream out = new FileOutputStream(f);
             out.getChannel().write(junk);
@@ -164,7 +166,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
 
     /**
      * test that the period checker will detect corruptions in
-     * the bookie index files
+     * the bookie index files.
      */
     @Test
     public void testIndexCorruption() throws Exception {
@@ -193,7 +195,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         // corrupt of entryLogs
         File index = new File(ledgerDir, IndexPersistenceMgr.getLedgerName(ledgerToCorrupt));
         LOG.info("file to corrupt{}" , index);
-        ByteBuffer junk = ByteBuffer.allocate(1024*1024);
+        ByteBuffer junk = ByteBuffer.allocate(1024 * 1024);
         FileOutputStream out = new FileOutputStream(index);
         out.getChannel().write(junk);
         out.close();
@@ -211,7 +213,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Test that the period checker will not run when auto replication has been disabled
+     * Test that the period checker will not run when auto replication has been disabled.
      */
     @Test
     public void testPeriodicCheckWhenDisabled() throws Exception {
@@ -219,7 +221,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         final LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
         final int numLedgers = 10;
         final int numMsgs = 2;
-        final CountDownLatch completeLatch = new CountDownLatch(numMsgs*numLedgers);
+        final CountDownLatch completeLatch = new CountDownLatch(numMsgs * numLedgers);
         final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
 
         List<LedgerHandle> lhs = new ArrayList<LedgerHandle>();
@@ -296,7 +298,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Test that the period check will succeed if a ledger is deleted midway
+     * Test that the period check will succeed if a ledger is deleted midway.
      */
     @Test
     public void testPeriodicCheckWhenLedgerDeleted() throws Exception {

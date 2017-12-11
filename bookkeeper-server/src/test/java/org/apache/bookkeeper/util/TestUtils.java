@@ -27,6 +27,9 @@ import java.util.Set;
 
 import org.apache.bookkeeper.bookie.Bookie;
 
+/**
+ * Test utilities.
+ */
 public class TestUtils {
     public static boolean hasLogFiles(File ledgerDirectory, boolean partial, Integer... logsId) {
         boolean result = partial ? false : true;

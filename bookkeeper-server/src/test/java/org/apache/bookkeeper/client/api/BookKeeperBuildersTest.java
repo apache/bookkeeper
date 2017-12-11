@@ -27,31 +27,30 @@ import static org.junit.Assert.fail;
 
 import java.util.HashMap;
 import java.util.Map;
+
 import org.apache.bookkeeper.client.BKException.BKClientClosedException;
-import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.BKException.BKIncorrectParameterException;
 import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.client.MockBookKeeperTestCase;
-
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.proto.BookieProtocol;
 
 import org.junit.Test;
 
 /**
- * Unit tests of builders
+ * Unit tests of builders.
  */
 public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
 
-    private final static int ensembleSize = 3;
-    private final static int writeQuorumSize = 2;
-    private final static int ackQuorumSize = 1;
-    private final static long ledgerId = 12342L;
-    private final static Map<String, byte[]> customMetadata = new HashMap<>();
-    private final static byte[] password = new byte[3];
-    private final static byte[] entryData = new byte[32];
+    private static final int ensembleSize = 3;
+    private static final int writeQuorumSize = 2;
+    private static final int ackQuorumSize = 1;
+    private static final long ledgerId = 12342L;
+    private static final Map<String, byte[]> customMetadata = new HashMap<>();
+    private static final byte[] password = new byte[3];
+    private static final byte[] entryData = new byte[32];
 
     @Test
     public void testCreateLedger() throws Exception {

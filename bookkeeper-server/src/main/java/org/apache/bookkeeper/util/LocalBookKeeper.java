@@ -17,6 +17,8 @@
  */
 package org.apache.bookkeeper.util;
 
+import static com.google.common.base.Charsets.UTF_8;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -27,27 +29,26 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.shims.zk.ZooKeeperServerShim;
-import org.apache.bookkeeper.shims.zk.ZooKeeperServerShimFactory;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
-import org.apache.commons.io.FileUtils;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
-import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.stats.StatsProvider;
+import org.apache.bookkeeper.shims.zk.ZooKeeperServerShim;
+import org.apache.bookkeeper.shims.zk.ZooKeeperServerShimFactory;
 import org.apache.bookkeeper.tls.SecurityException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
+import org.apache.commons.io.FileUtils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs.Ids;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.google.common.base.Charsets.UTF_8;
-
+/**
+ * Local Bookkeeper.
+ */
 public class LocalBookKeeper {
     protected static final Logger LOG = LoggerFactory.getLogger(LocalBookKeeper.class);
     public static final int CONNECTION_TIMEOUT = 30000;
@@ -68,10 +69,10 @@ public class LocalBookKeeper {
         LOG.info("Running {} bookie(s) on zkServer {}.", this.numberOfBookies);
     }
 
-    static String ZooKeeperDefaultHost = "127.0.0.1";
-    static int ZooKeeperDefaultPort = 2181;
-    static int zkSessionTimeOut = 5000;
-    static Integer BookieDefaultInitialPort = 5000;
+    private static String zooKeeperDefaultHost = "127.0.0.1";
+    private static int zooKeeperDefaultPort = 2181;
+    private static int zkSessionTimeOut = 5000;
+    private static Integer bookieDefaultInitialPort = 5000;
 
     //BookKeeper variables
     File journalDirs[];
@@ -170,7 +171,7 @@ public class LocalBookKeeper {
         bs = new BookieServer[numberOfBookies];
         bsConfs = new ServerConfiguration[numberOfBookies];
 
-        for(int i = 0; i < numberOfBookies; i++) {
+        for (int i = 0; i < numberOfBookies; i++) {
             if (null == baseConf.getJournalDirNameWithoutDefault()) {
                 journalDirs[i] = IOUtils.createTempDir("localbookkeeper" + Integer.toString(i), dirSuffix);
                 tempDirs.add(journalDirs[i]);
@@ -220,7 +221,7 @@ public class LocalBookKeeper {
 
             if (null == baseConf.getZkServers()) {
                 bsConfs[i].setZkServers(InetAddress.getLocalHost().getHostAddress() + ":"
-                                  + ZooKeeperDefaultPort);
+                                  + zooKeeperDefaultPort);
             }
 
 
@@ -316,7 +317,7 @@ public class LocalBookKeeper {
     }
 
     public static void main(String[] args) throws Exception, SecurityException {
-        if(args.length < 1) {
+        if (args.length < 1) {
             usage();
             System.exit(-1);
         }
@@ -336,8 +337,8 @@ public class LocalBookKeeper {
             }
         }
 
-        startLocalBookiesInternal(conf, ZooKeeperDefaultHost, ZooKeeperDefaultPort,
-                numBookies, true, BookieDefaultInitialPort, false, "test");
+        startLocalBookiesInternal(conf, zooKeeperDefaultHost, zooKeeperDefaultPort,
+                numBookies, true, bookieDefaultInitialPort, false, "test");
     }
 
     private static void usage() {

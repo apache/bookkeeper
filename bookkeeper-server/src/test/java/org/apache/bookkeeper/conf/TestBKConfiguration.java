@@ -21,6 +21,9 @@
 
 package org.apache.bookkeeper.conf;
 
+/**
+ * Test the BK configuration object.
+ */
 public class TestBKConfiguration {
 
     public static ServerConfiguration newServerConfiguration() {

@@ -21,11 +21,15 @@
 
 package org.apache.bookkeeper.meta;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-
+/**
+ * Test the ledger manager iterator.
+ */
 public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
     public LedgerManagerIteratorTest(Class<? extends LedgerManagerFactory> lmFactoryCls) {
         super(lmFactoryCls);
@@ -36,8 +40,9 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
         LedgerManager lm = getLedgerManager();
         LedgerRangeIterator lri = lm.getLedgerRanges();
         assertNotNull(lri);
-        if (lri.hasNext())
+        if (lri.hasNext()) {
             lri.next();
+        }
 
         assertEquals(false, lri.hasNext());
         assertEquals(false, lri.hasNext());

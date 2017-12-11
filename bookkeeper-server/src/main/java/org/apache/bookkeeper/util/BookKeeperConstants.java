@@ -18,7 +18,7 @@
 package org.apache.bookkeeper.util;
 
 /**
- * This class contains constants used in BookKeeper
+ * This class contains constants used in BookKeeper.
  */
 public class BookKeeperConstants {
 
@@ -29,10 +29,10 @@ public class BookKeeperConstants {
     public static final String COLON = ":";
     public static final String VERSION_FILENAME = "VERSION";
     public static final String BOOKIE_STATUS_FILENAME = "BOOKIE_STATUS";
-    public final static String PASSWD = "passwd";
+    public static final String PASSWD = "passwd";
     public static final String CURRENT_DIR = "current";
     public static final String READONLY = "readonly";
-    
+
     // //////////////////////////
     // ///// Znodes//////////////
     // //////////////////////////

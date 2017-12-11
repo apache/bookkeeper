@@ -18,13 +18,18 @@
 
 package org.apache.bookkeeper.util;
 
-import java.lang.reflect.Field;
-import java.io.FileDescriptor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import com.sun.jna.LastErrorException;
 import com.sun.jna.Native;
 
+import java.io.FileDescriptor;
+import java.lang.reflect.Field;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Native I/O operations.
+ */
 public final class NativeIO {
     private static final Logger LOG = LoggerFactory.getLogger(NativeIO.class);
 
@@ -84,15 +89,12 @@ public final class NativeIO {
 
     /**
      * Remove pages from the file system page cache when they wont
-     * be accessed again
+     * be accessed again.
      *
      * @param fd     The file descriptor of the source file.
      * @param offset The offset within the file.
      * @param len    The length to be flushed.
-     *
-     * @throws nothing => Best effort
      */
-
     public static void bestEffortRemoveFromPageCache(int fd, long offset, long len) {
         if (!initialized || !fadvisePossible || fd < 0) {
             return;

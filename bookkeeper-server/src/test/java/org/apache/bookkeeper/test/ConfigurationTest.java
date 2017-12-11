@@ -20,14 +20,17 @@
  */
 package org.apache.bookkeeper.test;
 
+import static org.junit.Assert.assertEquals;
+
 import org.apache.bookkeeper.conf.AbstractConfiguration;
-import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-
+/**
+ * Test the configuration class.
+ */
 public class ConfigurationTest {
 
     static {

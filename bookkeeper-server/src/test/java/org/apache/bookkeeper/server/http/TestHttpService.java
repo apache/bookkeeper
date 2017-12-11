@@ -23,11 +23,13 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.google.common.collect.Maps;
+
 import java.io.File;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerHandleAdapter;
@@ -53,6 +55,9 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Test the HTTP service.
+ */
 public class TestHttpService extends BookKeeperClusterTestCase {
 
     static final Logger LOG = LoggerFactory.getLogger(TestHttpService.class);
@@ -219,7 +224,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
     }
 
     /**
-     * create ledgers, then test ListLedgerService
+     * Create ledgers, then test ListLedgerService.
      */
     @Test
     public void testListLedgerService() throws Exception {
@@ -283,7 +288,7 @@ public class TestHttpService extends BookKeeperClusterTestCase {
     }
 
     /**
-     * create ledgers, then test Delete Ledger service
+     * Create ledgers, then test Delete Ledger service.
      */
     @Test
     public void testDeleteLedgerService() throws Exception {

@@ -17,6 +17,10 @@
  */
 package org.apache.bookkeeper.replication;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -26,9 +30,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+
 import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.MSLedgerManagerFactory;
@@ -42,10 +47,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
-
 /**
- * Tests verifies bookie vs ledger mapping generating by the BookieLedgerIndexer
+ * Tests verifies bookie vs ledger mapping generating by the BookieLedgerIndexer.
  */
 public class BookieLedgerIndexTest extends BookKeeperClusterTestCase {
 
@@ -106,7 +109,7 @@ public class BookieLedgerIndexTest extends BookKeeperClusterTestCase {
 
     /**
      * Verify the bookie-ledger mapping with minimum number of bookies and few
-     * ledgers
+     * ledgers.
      */
     @Test
     public void testSimpleBookieLedgerMapping() throws Exception {
@@ -135,7 +138,7 @@ public class BookieLedgerIndexTest extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Verify ledger index with failed bookies and throws exception
+     * Verify ledger index with failed bookies and throws exception.
      */
     @Test
     public void testWithoutZookeeper() throws Exception {
@@ -162,7 +165,7 @@ public class BookieLedgerIndexTest extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Verify indexing with multiple ensemble reformation
+     * Verify indexing with multiple ensemble reformation.
      */
     @Test
     public void testEnsembleReformation() throws Exception {

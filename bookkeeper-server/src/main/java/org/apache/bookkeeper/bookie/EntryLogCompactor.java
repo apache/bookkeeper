@@ -21,8 +21,9 @@
 
 package org.apache.bookkeeper.bookie;
 
+import io.netty.buffer.ByteBuf;
+
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -85,15 +86,13 @@ public class EntryLogCompactor extends AbstractLogCompactor {
                 }
 
                 @Override
-                public void process(final long ledgerId, long offset, ByteBuffer entry) throws IOException {
-                    throttler.acquire(entry.remaining());
+                public void process(final long ledgerId, long offset, ByteBuf entry) throws IOException {
+                    throttler.acquire(entry.readableBytes());
 
                     if (offsets.size() > maxOutstandingRequests) {
                         flush();
                     }
-                    entry.getLong(); // discard ledger id, we already have it
-                    long entryId = entry.getLong();
-                    entry.rewind();
+                    long entryId = entry.getLong(entry.readerIndex() + 8);
 
                     long newoffset = entryLogger.addEntry(ledgerId, entry);
                     offsets.add(new EntryLocation(ledgerId, entryId, newoffset));

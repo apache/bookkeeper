@@ -24,7 +24,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -177,7 +176,7 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
 
     @Override
     public void process(long ledgerId, long entryId,
-                        ByteBuffer buffer) throws IOException {
+                        ByteBuf buffer) throws IOException {
         processEntry(ledgerId, entryId, buffer, false);
     }
 

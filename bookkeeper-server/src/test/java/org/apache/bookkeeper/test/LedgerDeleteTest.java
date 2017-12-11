@@ -20,28 +20,29 @@
  */
 package org.apache.bookkeeper.test;
 
+import static org.junit.Assert.assertFalse;
+
 import java.io.File;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
-import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.util.TestUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class tests the ledger delete functionality both from the BookKeeper
  * client and the server side.
  */
 public class LedgerDeleteTest extends BookKeeperClusterTestCase {
-    private final static Logger LOG = LoggerFactory.getLogger(LedgerDeleteTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LedgerDeleteTest.class);
     DigestType digestType;
 
     public LedgerDeleteTest() {
@@ -84,7 +85,7 @@ public class LedgerDeleteTest extends BookKeeperClusterTestCase {
             msgSB.append("a");
         }
         String msg = msgSB.toString();
-        final CountDownLatch completeLatch = new CountDownLatch(numMsgs*numLedgers);
+        final CountDownLatch completeLatch = new CountDownLatch(numMsgs * numLedgers);
         final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
         // Write all of the entries for all of the ledgers
         for (int i = 0; i < numMsgs; i++) {

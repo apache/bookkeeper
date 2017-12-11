@@ -17,18 +17,18 @@
  */
 package org.apache.bookkeeper.conf;
 
-import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
+import org.junit.Test;
+
 /**
- * Test Configuration API
+ * Test Configuration API.
  *
- * @author enrico.olivelli
  * @see SystemPropertiesConfigurationTest
  */
 public class NoSystemPropertiesConfigurationTest {
 
-    static {  
+    static {
         // this property is read when AbstractConfiguration class is loaded.
         // this test will work as expected only using a new JVM (or classloader) for the test
         System.setProperty(ClientConfiguration.THROTTLE, "10");

@@ -22,17 +22,20 @@ package org.apache.bookkeeper.client;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Enumeration;
+
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Enumeration;
-
+/**
+ * Test a piggyback LAC.
+ */
 public class TestPiggybackLAC extends BookKeeperClusterTestCase {
 
-    static Logger LOG = LoggerFactory.getLogger(TestPiggybackLAC.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TestPiggybackLAC.class);
 
     final DigestType digestType;
 
@@ -46,7 +49,7 @@ public class TestPiggybackLAC extends BookKeeperClusterTestCase {
         int numEntries = 10;
         LedgerHandle lh = bkc.createLedger(3, 3, 3, digestType, "".getBytes());
         // tried to add entries
-        for (int i=0; i<numEntries; i++) {
+        for (int i = 0; i < numEntries; i++) {
             lh.addEntry(("data" + i).getBytes());
             LOG.info("Added entry {}.", i);
         }
@@ -54,7 +57,7 @@ public class TestPiggybackLAC extends BookKeeperClusterTestCase {
         long lastLAC = readLh.getLastAddConfirmed();
         assertEquals(numEntries - 2, lastLAC);
         // write add entries
-        for (int i=0; i<numEntries; i++) {
+        for (int i = 0; i < numEntries; i++) {
             lh.addEntry(("data" + (i + numEntries)).getBytes());
             LOG.info("Added entry {}.", (i + numEntries));
         }

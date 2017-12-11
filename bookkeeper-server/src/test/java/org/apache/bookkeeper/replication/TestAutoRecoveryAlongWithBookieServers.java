@@ -37,6 +37,9 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.junit.Test;
 
+/**
+ * Test auto recovery.
+ */
 public class TestAutoRecoveryAlongWithBookieServers extends
         BookKeeperClusterTestCase {
 
@@ -50,7 +53,9 @@ public class TestAutoRecoveryAlongWithBookieServers extends
                 + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH;
     }
 
-    /** Tests that the auto recovery service along with Bookie servers itself */
+    /**
+     * Tests that the auto recovery service along with Bookie servers itself.
+     */
     @Test
     public void testAutoRecoveryAlongWithBookieServers() throws Exception {
         LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32,

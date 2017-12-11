@@ -20,17 +20,21 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-
-import java.io.IOException;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.util.DiskChecker;
@@ -42,10 +46,12 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
 
+/**
+ * Tests for EntryLog.
+ */
 public class EntryLogTest {
-    private final static Logger LOG = LoggerFactory.getLogger(EntryLogTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(EntryLogTest.class);
 
     final List<File> tempDirs = new ArrayList<File>();
 
@@ -75,7 +81,7 @@ public class EntryLogTest {
         conf.setLedgerDirNames(new String[] {tmpDir.toString()});
         Bookie bookie = new Bookie(conf);
         // create some entries
-        EntryLogger logger = ((InterleavedLedgerStorage)bookie.ledgerStorage).entryLogger;
+        EntryLogger logger = ((InterleavedLedgerStorage) bookie.ledgerStorage).entryLogger;
         logger.addEntry(1, generateEntry(1, 1).nioBuffer());
         logger.addEntry(3, generateEntry(3, 1).nioBuffer());
         logger.addEntry(2, generateEntry(2, 1).nioBuffer());
@@ -83,16 +89,16 @@ public class EntryLogTest {
         // now lets truncate the file to corrupt the last entry, which simulates a partial write
         File f = new File(curDir, "0.log");
         RandomAccessFile raf = new RandomAccessFile(f, "rw");
-        raf.setLength(raf.length()-10);
+        raf.setLength(raf.length() - 10);
         raf.close();
         // now see which ledgers are in the log
         logger = new EntryLogger(conf, bookie.getLedgerDirsManager());
 
         EntryLogMetadata meta = logger.getEntryLogMetadata(0L);
         LOG.info("Extracted Meta From Entry Log {}", meta);
-        assertNotNull(meta.getLedgersMap().get(1L));
-        assertNull(meta.getLedgersMap().get(2L));
-        assertNotNull(meta.getLedgersMap().get(3L));
+        assertTrue(meta.getLedgersMap().containsKey(1L));
+        assertFalse(meta.getLedgersMap().containsKey(2L));
+        assertTrue(meta.getLedgersMap().containsKey(3L));
     }
 
     private ByteBuf generateEntry(long ledger, long entry) {
@@ -116,13 +122,13 @@ public class EntryLogTest {
         // create some entries
         int numLogs = 3;
         int numEntries = 10;
-        long[][] positions = new long[2*numLogs][];
-        for (int i=0; i<numLogs; i++) {
+        long[][] positions = new long[2 * numLogs][];
+        for (int i = 0; i < numLogs; i++) {
             positions[i] = new long[numEntries];
 
             EntryLogger logger = new EntryLogger(conf,
                     bookie.getLedgerDirsManager());
-            for (int j=0; j<numEntries; j++) {
+            for (int j = 0; j < numEntries; j++) {
                 positions[i][j] = logger.addEntry(i, generateEntry(i, j).nioBuffer());
             }
             logger.flush();
@@ -132,12 +138,12 @@ public class EntryLogTest {
         lastLogId.delete();
 
         // write another entries
-        for (int i=numLogs; i<2*numLogs; i++) {
+        for (int i = numLogs; i < 2 * numLogs; i++) {
             positions[i] = new long[numEntries];
 
             EntryLogger logger = new EntryLogger(conf,
                     bookie.getLedgerDirsManager());
-            for (int j=0; j<numEntries; j++) {
+            for (int j = 0; j < numEntries; j++) {
                 positions[i][j] = logger.addEntry(i, generateEntry(i, j).nioBuffer());
             }
             logger.flush();
@@ -145,12 +151,12 @@ public class EntryLogTest {
 
         EntryLogger newLogger = new EntryLogger(conf,
                 bookie.getLedgerDirsManager());
-        for (int i=0; i<(2*numLogs+1); i++) {
+        for (int i = 0; i < (2 * numLogs + 1); i++) {
             File logFile = new File(curDir, Long.toHexString(i) + ".log");
             assertTrue(logFile.exists());
         }
-        for (int i=0; i<2*numLogs; i++) {
-            for (int j=0; j<numEntries; j++) {
+        for (int i = 0; i < 2 * numLogs; i++) {
+            for (int j = 0; j < numEntries; j++) {
                 String expectedValue = "ledger-" + i + "-" + j;
                 ByteBuf value = newLogger.readEntry(i, j, positions[i][j]);
                 long ledgerId = value.readLong();
@@ -166,7 +172,9 @@ public class EntryLogTest {
     }
 
     @Test
-    /** Test that EntryLogger Should fail with FNFE, if entry logger directories does not exist*/
+    /**
+     * Test that EntryLogger Should fail with FNFE, if entry logger directories does not exist.
+     */
     public void testEntryLoggerShouldThrowFNFEIfDirectoriesDoesNotExist()
             throws Exception {
         File tmpDir = createTempDir("bkTest", ".dir");
@@ -188,7 +196,7 @@ public class EntryLogTest {
     }
 
     /**
-     * Test to verify the DiskFull during addEntry
+     * Test to verify the DiskFull during addEntry.
      */
     @Test
     public void testAddEntryFailureOnDiskFull() throws Exception {
@@ -219,7 +227,7 @@ public class EntryLogTest {
     }
 
     /**
-     * Explicitely try to recover using the ledgers map index at the end of the entry log
+     * Explicitely try to recover using the ledgers map index at the end of the entry log.
      */
     @Test
     public void testRecoverFromLedgersMap() throws Exception {
@@ -234,7 +242,7 @@ public class EntryLogTest {
         Bookie bookie = new Bookie(conf);
 
         // create some entries
-        EntryLogger logger = ((InterleavedLedgerStorage)bookie.ledgerStorage).entryLogger;
+        EntryLogger logger = ((InterleavedLedgerStorage) bookie.ledgerStorage).entryLogger;
         logger.addEntry(1, generateEntry(1, 1).nioBuffer());
         logger.addEntry(3, generateEntry(3, 1).nioBuffer());
         logger.addEntry(2, generateEntry(2, 1).nioBuffer());
@@ -244,16 +252,16 @@ public class EntryLogTest {
 
         EntryLogMetadata meta = logger.extractEntryLogMetadataFromIndex(0L);
         LOG.info("Extracted Meta From Entry Log {}", meta);
-        assertEquals(60, meta.getLedgersMap().get(1L).longValue());
-        assertEquals(30, meta.getLedgersMap().get(2L).longValue());
-        assertEquals(30, meta.getLedgersMap().get(3L).longValue());
-        assertNull(meta.getLedgersMap().get(4L));
+        assertEquals(60, meta.getLedgersMap().get(1L));
+        assertEquals(30, meta.getLedgersMap().get(2L));
+        assertEquals(30, meta.getLedgersMap().get(3L));
+        assertFalse(meta.getLedgersMap().containsKey(4L));
         assertEquals(120, meta.getTotalSize());
         assertEquals(120, meta.getRemainingSize());
     }
 
     /**
-     * Explicitely try to recover using the ledgers map index at the end of the entry log
+     * Explicitely try to recover using the ledgers map index at the end of the entry log.
      */
     @Test
     public void testRecoverFromLedgersMapOnV0EntryLog() throws Exception {
@@ -296,12 +304,51 @@ public class EntryLogTest {
         // Public method should succeed by falling back to scanning the file
         EntryLogMetadata meta = logger.getEntryLogMetadata(0L);
         LOG.info("Extracted Meta From Entry Log {}", meta);
-        assertEquals(60, meta.getLedgersMap().get(1L).longValue());
-        assertEquals(30, meta.getLedgersMap().get(2L).longValue());
-        assertEquals(30, meta.getLedgersMap().get(3L).longValue());
-        assertNull(meta.getLedgersMap().get(4L));
+        assertEquals(60, meta.getLedgersMap().get(1L));
+        assertEquals(30, meta.getLedgersMap().get(2L));
+        assertEquals(30, meta.getLedgersMap().get(3L));
+        assertFalse(meta.getLedgersMap().containsKey(4L));
         assertEquals(120, meta.getTotalSize());
         assertEquals(120, meta.getRemainingSize());
+    }
+
+    /**
+     * Test pre-allocate for entry log in EntryLoggerAllocator.
+     * @throws Exception
+     */
+    @Test
+    public void testPreAllocateLog() throws Exception {
+        File tmpDir = createTempDir("bkTest", ".dir");
+        File curDir = Bookie.getCurrentDirectory(tmpDir);
+        Bookie.checkDirectoryStructure(curDir);
+
+        // enable pre-allocation case
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setLedgerDirNames(new String[] {tmpDir.toString()});
+        conf.setEntryLogFilePreAllocationEnabled(true);
+        Bookie bookie = new Bookie(conf);
+        // create a logger whose initialization phase allocating a new entry log
+        EntryLogger logger = ((InterleavedLedgerStorage) bookie.ledgerStorage).entryLogger;
+        assertNotNull(logger.getEntryLoggerAllocator().getPreallocationFuture());
+
+        logger.addEntry(1, generateEntry(1, 1).nioBuffer());
+        // the Future<BufferedLogChannel> is not null all the time
+        assertNotNull(logger.getEntryLoggerAllocator().getPreallocationFuture());
+
+        // disable pre-allocation case
+        ServerConfiguration conf2 = TestBKConfiguration.newServerConfiguration();
+        conf2.setLedgerDirNames(new String[] {tmpDir.toString()});
+        conf2.setEntryLogFilePreAllocationEnabled(false);
+        Bookie bookie2 = new Bookie(conf2);
+        // create a logger
+        EntryLogger logger2 = ((InterleavedLedgerStorage) bookie2.ledgerStorage).entryLogger;
+        assertNull(logger2.getEntryLoggerAllocator().getPreallocationFuture());
+
+        logger2.addEntry(2, generateEntry(1, 1).nioBuffer());
+
+        // the Future<BufferedLogChannel> is null all the time
+        assertNull(logger2.getEntryLoggerAllocator().getPreallocationFuture());
+
     }
 
 }

@@ -22,20 +22,21 @@ import static org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicy.shuf
 import static org.apache.bookkeeper.client.RoundRobinDistributionSchedule.writeSetFromValues;
 import static org.apache.bookkeeper.feature.SettableFeatureProvider.DISABLE_ALL;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
+import io.netty.util.HashedWheelTimer;
+
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
-import io.netty.util.HashedWheelTimer;
-import java.util.Optional;
 import junit.framework.TestCase;
+
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -43,20 +44,21 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.net.NetworkTopology;
 import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.StaticDNSResolver;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Test the rackaware ensemble placement policy.
+ */
 public class TestRackawareEnsemblePlacementPolicy extends TestCase {
 
     static final Logger LOG = LoggerFactory.getLogger(TestRackawareEnsemblePlacementPolicy.class);
 
     RackawareEnsemblePlacementPolicy repp;
     final ArrayList<BookieSocketAddress> ensemble = new ArrayList<BookieSocketAddress>();
-    DistributionSchedule.WriteSet writeSet
-        = DistributionSchedule.NULL_WRITE_SET;
+    DistributionSchedule.WriteSet writeSet = DistributionSchedule.NULL_WRITE_SET;
     ClientConfiguration conf = new ClientConfiguration();
     BookieSocketAddress addr1, addr2, addr3, addr4;
     io.netty.util.HashedWheelTimer timer;
@@ -65,7 +67,8 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         StaticDNSResolver.reset();
-        StaticDNSResolver.addNodeToRack(InetAddress.getLocalHost().getHostAddress(), NetworkTopology.DEFAULT_REGION_AND_RACK);
+        StaticDNSResolver.addNodeToRack(InetAddress.getLocalHost().getHostAddress(),
+                NetworkTopology.DEFAULT_REGION_AND_RACK);
         StaticDNSResolver.addNodeToRack("127.0.0.1", NetworkTopology.DEFAULT_REGION_AND_RACK);
         StaticDNSResolver.addNodeToRack("localhost", NetworkTopology.DEFAULT_REGION_AND_RACK);
         LOG.info("Set up static DNS Resolver.");
@@ -83,7 +86,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         ensemble.add(addr2);
         ensemble.add(addr3);
         ensemble.add(addr4);
-        writeSet = writeSetFromValues(0,1,2,3);
+        writeSet = writeSetFromValues(0, 1, 2, 3);
 
         timer = new HashedWheelTimer(
                 new ThreadFactoryBuilder().setNameFormat("TestTimer-%d").build(),
@@ -130,8 +133,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
                 ensemble, new HashMap<BookieSocketAddress, Long>(),
                 writeSet);
-        DistributionSchedule.WriteSet expectedSet
-            = writeSetFromValues(1, 2, 3, 0);
+        DistributionSchedule.WriteSet expectedSet = writeSetFromValues(1, 2, 3, 0);
         LOG.info("reorder set : {}", reorderSet);
         assertFalse(reorderSet.equals(origWriteSet));
         assertEquals(expectedSet, reorderSet);
@@ -161,8 +163,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
         DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
                 ensemble, new HashMap<BookieSocketAddress, Long>(), writeSet);
-        DistributionSchedule.WriteSet expectedSet
-            = writeSetFromValues(1, 2, 3, 0);
+        DistributionSchedule.WriteSet expectedSet = writeSetFromValues(1, 2, 3, 0);
         LOG.info("reorder set : {}", reorderSet);
         assertFalse(reorderSet.equals(origWriteSet));
         assertEquals(expectedSet, reorderSet);
@@ -191,8 +192,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
         DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
                 ensemble, new HashMap<BookieSocketAddress, Long>(), writeSet);
-        DistributionSchedule.WriteSet expectedSet
-            = writeSetFromValues(2, 3, 0, 1);
+        DistributionSchedule.WriteSet expectedSet = writeSetFromValues(2, 3, 0, 1);
         LOG.info("reorder set : {}", reorderSet);
         assertFalse(reorderSet.equals(origWriteSet));
         assertEquals(expectedSet, reorderSet);
@@ -222,8 +222,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         DistributionSchedule.WriteSet origWriteSet = writeSet.copy();
         DistributionSchedule.WriteSet reorderSet = repp.reorderReadSequence(
                 ensemble, new HashMap<BookieSocketAddress, Long>(), writeSet);
-        DistributionSchedule.WriteSet expectedSet
-            = writeSetFromValues(2, 3, 1, 0);
+        DistributionSchedule.WriteSet expectedSet = writeSetFromValues(2, 3, 1, 0);
         assertFalse(reorderSet.equals(origWriteSet));
         assertEquals(expectedSet, reorderSet);
     }
@@ -247,7 +246,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr4);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
         // replace node under r2
-        BookieSocketAddress replacedBookie = repp.replaceBookie(1, 1, 1, null, new HashSet<BookieSocketAddress>(), addr2, new HashSet<BookieSocketAddress>());
+        BookieSocketAddress replacedBookie = repp.replaceBookie(1, 1, 1, null, new HashSet<>(), addr2, new HashSet<>());
         assertEquals(addr3, replacedBookie);
     }
 
@@ -272,7 +271,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         // replace node under r2
         Set<BookieSocketAddress> excludedAddrs = new HashSet<BookieSocketAddress>();
         excludedAddrs.add(addr1);
-        BookieSocketAddress replacedBookie = repp.replaceBookie(1, 1, 1, null, new HashSet<BookieSocketAddress>(), addr2, excludedAddrs);
+        BookieSocketAddress replacedBookie = repp.replaceBookie(1, 1, 1, null, new HashSet<>(), addr2, excludedAddrs);
 
         assertFalse(addr1.equals(replacedBookie));
         assertTrue(addr3.equals(replacedBookie) || addr4.equals(replacedBookie));
@@ -323,9 +322,9 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr4);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
         try {
-            ArrayList<BookieSocketAddress> ensemble = repp.newEnsemble(3, 2, 2, null, new HashSet<BookieSocketAddress>());
+            ArrayList<BookieSocketAddress> ensemble = repp.newEnsemble(3, 2, 2, null, new HashSet<>());
             assertEquals(0, getNumCoveredWriteQuorums(ensemble, 2));
-            ArrayList<BookieSocketAddress> ensemble2 = repp.newEnsemble(4, 2, 2, null, new HashSet<BookieSocketAddress>());
+            ArrayList<BookieSocketAddress> ensemble2 = repp.newEnsemble(4, 2, 2, null, new HashSet<>());
             assertEquals(0, getNumCoveredWriteQuorums(ensemble2, 2));
         } catch (BKNotEnoughBookiesException bnebe) {
             fail("Should not get not enough bookies exception even there is only one rack.");
@@ -351,10 +350,10 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr4);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
         try {
-            ArrayList<BookieSocketAddress> ensemble = repp.newEnsemble(3, 2, 2, null, new HashSet<BookieSocketAddress>());
+            ArrayList<BookieSocketAddress> ensemble = repp.newEnsemble(3, 2, 2, null, new HashSet<>());
             int numCovered = getNumCoveredWriteQuorums(ensemble, 2);
             assertTrue(numCovered >= 1 && numCovered < 3);
-            ArrayList<BookieSocketAddress> ensemble2 = repp.newEnsemble(4, 2, 2, null, new HashSet<BookieSocketAddress>());
+            ArrayList<BookieSocketAddress> ensemble2 = repp.newEnsemble(4, 2, 2, null, new HashSet<>());
             numCovered = getNumCoveredWriteQuorums(ensemble2, 2);
             assertTrue(numCovered >= 1 && numCovered < 3);
         } catch (BKNotEnoughBookiesException bnebe) {
@@ -393,9 +392,9 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr8);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
         try {
-            ArrayList<BookieSocketAddress> ensemble1 = repp.newEnsemble(3, 2, 2, null, new HashSet<BookieSocketAddress>());
+            ArrayList<BookieSocketAddress> ensemble1 = repp.newEnsemble(3, 2, 2, null, new HashSet<>());
             assertEquals(3, getNumCoveredWriteQuorums(ensemble1, 2));
-            ArrayList<BookieSocketAddress> ensemble2 = repp.newEnsemble(4, 2, 2, null, new HashSet<BookieSocketAddress>());
+            ArrayList<BookieSocketAddress> ensemble2 = repp.newEnsemble(4, 2, 2, null, new HashSet<>());
             assertEquals(4, getNumCoveredWriteQuorums(ensemble2, 2));
         } catch (BKNotEnoughBookiesException bnebe) {
             fail("Should not get not enough bookies exception even there is only one rack.");
@@ -403,7 +402,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
     }
 
     /**
-     * Test for BOOKKEEPER-633
+     * Test for BOOKKEEPER-633.
      */
     @Test
     public void testRemoveBookieFromCluster() {
@@ -436,9 +435,12 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         // update dns mapping
         StaticDNSResolver.addNodeToRack(addr1.getSocketAddress().getAddress().getHostAddress(),
                 NetworkTopology.DEFAULT_REGION_AND_RACK);
-        StaticDNSResolver.addNodeToRack(addr2.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
-        StaticDNSResolver.addNodeToRack(addr3.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
-        StaticDNSResolver.addNodeToRack(addr4.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
+        StaticDNSResolver.addNodeToRack(addr2.getSocketAddress().getAddress().getHostAddress(),
+                NetworkTopology.DEFAULT_REGION + "/r2");
+        StaticDNSResolver.addNodeToRack(addr3.getSocketAddress().getAddress().getHostAddress(),
+                NetworkTopology.DEFAULT_REGION + "/r2");
+        StaticDNSResolver.addNodeToRack(addr4.getSocketAddress().getAddress().getHostAddress(),
+                NetworkTopology.DEFAULT_REGION + "/r2");
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);
@@ -457,7 +459,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         bookieInfoMap.put(addr1, new BookieInfo(100L, 100L));
         bookieInfoMap.put(addr2, new BookieInfo(100L, 100L));
         bookieInfoMap.put(addr3, new BookieInfo(100L, 100L));
-        bookieInfoMap.put(addr4, new BookieInfo(multiple*100L, multiple*100L));
+        bookieInfoMap.put(addr4, new BookieInfo(multiple * 100L, multiple * 100L));
         repp.updateBookieInfo(bookieInfoMap);
 
         Map<BookieSocketAddress, Long> selectionCounts = new HashMap<BookieSocketAddress, Long>();
@@ -467,12 +469,12 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         BookieSocketAddress replacedBookie;
         for (int i = 0; i < numTries; i++) {
             // replace node under r2
-            replacedBookie = repp.replaceBookie(1, 1, 1, null, new HashSet<BookieSocketAddress>(), addr2, new HashSet<BookieSocketAddress>());
+            replacedBookie = repp.replaceBookie(1, 1, 1, null, new HashSet<>(), addr2, new HashSet<>());
             assertTrue(addr3.equals(replacedBookie) || addr4.equals(replacedBookie));
-            selectionCounts.put(replacedBookie, selectionCounts.get(replacedBookie)+1);
+            selectionCounts.put(replacedBookie, selectionCounts.get(replacedBookie) + 1);
         }
-        double observedMultiple = ((double)selectionCounts.get(addr4)/(double)selectionCounts.get(addr3));
-        assertTrue("Weights not being honored " + observedMultiple, Math.abs(observedMultiple-multiple) < 1);
+        double observedMultiple = ((double) selectionCounts.get(addr4) / (double) selectionCounts.get(addr3));
+        assertTrue("Weights not being honored " + observedMultiple, Math.abs(observedMultiple - multiple) < 1);
     }
 
     @Test
@@ -483,10 +485,14 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         BookieSocketAddress addr4 = new BookieSocketAddress("127.0.0.4", 3181);
         // update dns mapping
         StaticDNSResolver.reset();
-        StaticDNSResolver.addNodeToRack(addr1.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION_AND_RACK);
-        StaticDNSResolver.addNodeToRack(addr2.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
-        StaticDNSResolver.addNodeToRack(addr3.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r3");
-        StaticDNSResolver.addNodeToRack(addr4.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r4");
+        StaticDNSResolver.addNodeToRack(addr1.getSocketAddress().getAddress().getHostAddress(),
+                NetworkTopology.DEFAULT_REGION_AND_RACK);
+        StaticDNSResolver.addNodeToRack(addr2.getSocketAddress().getAddress().getHostAddress(),
+                NetworkTopology.DEFAULT_REGION + "/r2");
+        StaticDNSResolver.addNodeToRack(addr3.getSocketAddress().getAddress().getHostAddress(),
+                NetworkTopology.DEFAULT_REGION + "/r3");
+        StaticDNSResolver.addNodeToRack(addr4.getSocketAddress().getAddress().getHostAddress(),
+                NetworkTopology.DEFAULT_REGION + "/r4");
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);
@@ -505,7 +511,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         bookieInfoMap.put(addr1, new BookieInfo(100L, 100L));
         bookieInfoMap.put(addr2, new BookieInfo(100L, 100L));
         bookieInfoMap.put(addr3, new BookieInfo(200L, 200L));
-        bookieInfoMap.put(addr4, new BookieInfo(multiple*100L, multiple*100L));
+        bookieInfoMap.put(addr4, new BookieInfo(multiple * 100L, multiple * 100L));
         repp.updateBookieInfo(bookieInfoMap);
 
         Map<BookieSocketAddress, Long> selectionCounts = new HashMap<BookieSocketAddress, Long>();
@@ -519,21 +525,23 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             // addr2 is on /r2 and this is the only one on this rack. So the replacement
             // will come from other racks. However, the weight should be honored in such
             // selections as well
-            replacedBookie = repp.replaceBookie(1, 1, 1, null, new HashSet<BookieSocketAddress>(), addr2, new HashSet<BookieSocketAddress>());
+            replacedBookie = repp.replaceBookie(1, 1, 1, null, new HashSet<>(), addr2, new HashSet<>());
             assertTrue(addr1.equals(replacedBookie) || addr3.equals(replacedBookie) || addr4.equals(replacedBookie));
-            selectionCounts.put(replacedBookie, selectionCounts.get(replacedBookie)+1);
+            selectionCounts.put(replacedBookie, selectionCounts.get(replacedBookie) + 1);
         }
 
         double medianWeight = 150;
-        double medianSelectionCounts = (double)(medianWeight/bookieInfoMap.get(addr1).getWeight())*selectionCounts.get(addr1);
-        double observedMultiple1 = ((double)selectionCounts.get(addr4)/(double)medianSelectionCounts);
-        double observedMultiple2 = ((double)selectionCounts.get(addr4)/(double)selectionCounts.get(addr3));
+        double medianSelectionCounts = (double) (medianWeight / bookieInfoMap.get(addr1).getWeight())
+            * selectionCounts.get(addr1);
+        double observedMultiple1 = ((double) selectionCounts.get(addr4) / (double) medianSelectionCounts);
+        double observedMultiple2 = ((double) selectionCounts.get(addr4) / (double) selectionCounts.get(addr3));
         LOG.info("oM1 " + observedMultiple1 + " oM2 " + observedMultiple2);
         assertTrue("Weights not being honored expected " + maxMultiple + " observed " + observedMultiple1,
-                Math.abs(observedMultiple1-maxMultiple) < 1);
-        double expected = (medianWeight*maxMultiple)/bookieInfoMap.get(addr3).getWeight();// expected multiple for addr3
+                Math.abs(observedMultiple1 - maxMultiple) < 1);
+        // expected multiple for addr3
+        double expected = (medianWeight * maxMultiple) / bookieInfoMap.get(addr3).getWeight();
         assertTrue("Weights not being honored expected " + expected + " observed " + observedMultiple2,
-                Math.abs(observedMultiple2-expected) < 1);
+                Math.abs(observedMultiple2 - expected) < 1);
     }
 
     @Test
@@ -549,15 +557,24 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         BookieSocketAddress addr9 = new BookieSocketAddress("127.0.0.9", 3181);
 
         // update dns mapping
-        StaticDNSResolver.addNodeToRack(addr1.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION_AND_RACK);
-        StaticDNSResolver.addNodeToRack(addr2.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
-        StaticDNSResolver.addNodeToRack(addr3.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
-        StaticDNSResolver.addNodeToRack(addr4.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
-        StaticDNSResolver.addNodeToRack(addr5.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
-        StaticDNSResolver.addNodeToRack(addr6.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r3");
-        StaticDNSResolver.addNodeToRack(addr7.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r3");
-        StaticDNSResolver.addNodeToRack(addr8.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r3");
-        StaticDNSResolver.addNodeToRack(addr9.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r3");
+        StaticDNSResolver.addNodeToRack(addr1.getSocketAddress().getAddress().getHostAddress(),
+                NetworkTopology.DEFAULT_REGION_AND_RACK);
+        StaticDNSResolver.addNodeToRack(addr2.getSocketAddress().getAddress().getHostAddress(),
+                NetworkTopology.DEFAULT_REGION + "/r2");
+        StaticDNSResolver.addNodeToRack(addr3.getSocketAddress().getAddress().getHostAddress(),
+                NetworkTopology.DEFAULT_REGION + "/r2");
+        StaticDNSResolver.addNodeToRack(addr4.getSocketAddress().getAddress().getHostAddress(),
+                NetworkTopology.DEFAULT_REGION + "/r2");
+        StaticDNSResolver.addNodeToRack(addr5.getSocketAddress().getAddress().getHostAddress(),
+                NetworkTopology.DEFAULT_REGION + "/r2");
+        StaticDNSResolver.addNodeToRack(addr6.getSocketAddress().getAddress().getHostAddress(),
+                NetworkTopology.DEFAULT_REGION + "/r3");
+        StaticDNSResolver.addNodeToRack(addr7.getSocketAddress().getAddress().getHostAddress(),
+                NetworkTopology.DEFAULT_REGION + "/r3");
+        StaticDNSResolver.addNodeToRack(addr8.getSocketAddress().getAddress().getHostAddress(),
+                NetworkTopology.DEFAULT_REGION + "/r3");
+        StaticDNSResolver.addNodeToRack(addr9.getSocketAddress().getAddress().getHostAddress(),
+                NetworkTopology.DEFAULT_REGION + "/r3");
 
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
@@ -604,20 +621,21 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
             // will come from other racks. However, the weight should be honored in such
             // selections as well
             ensemble = repp.newEnsemble(3, 2, 2, null, excludeList);
-            assertTrue("Rackaware selection not happening " + getNumCoveredWriteQuorums(ensemble, 2), getNumCoveredWriteQuorums(ensemble, 2) >= 2);
+            assertTrue("Rackaware selection not happening " + getNumCoveredWriteQuorums(ensemble, 2),
+                    getNumCoveredWriteQuorums(ensemble, 2) >= 2);
             for (BookieSocketAddress b : ensemble) {
-                selectionCounts.put(b, selectionCounts.get(b)+1);
+                selectionCounts.put(b, selectionCounts.get(b) + 1);
             }
         }
 
         // the median weight used is 100 since addr2 and addr6 have the same weight, we use their
         // selection counts as the same as median
-        double observedMultiple1 = ((double)selectionCounts.get(addr5)/(double)selectionCounts.get(addr2));
-        double observedMultiple2 = ((double)selectionCounts.get(addr9)/(double)selectionCounts.get(addr6));
+        double observedMultiple1 = ((double) selectionCounts.get(addr5) / (double) selectionCounts.get(addr2));
+        double observedMultiple2 = ((double) selectionCounts.get(addr9) / (double) selectionCounts.get(addr6));
         assertTrue("Weights not being honored expected 2 observed " + observedMultiple1,
-                Math.abs(observedMultiple1-maxMultiple) < 0.5);
+                Math.abs(observedMultiple1 - maxMultiple) < 0.5);
         assertTrue("Weights not being honored expected 4 observed " + observedMultiple2,
-                Math.abs(observedMultiple2-maxMultiple) < 0.5);
+                Math.abs(observedMultiple2 - maxMultiple) < 0.5);
     }
 
     @Test
@@ -629,11 +647,16 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         BookieSocketAddress addr5 = new BookieSocketAddress("127.0.0.5", 3181);
 
         // update dns mapping
-        StaticDNSResolver.addNodeToRack(addr1.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION_AND_RACK);
-        StaticDNSResolver.addNodeToRack(addr2.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
-        StaticDNSResolver.addNodeToRack(addr3.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r2");
-        StaticDNSResolver.addNodeToRack(addr4.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r3");
-        StaticDNSResolver.addNodeToRack(addr5.getSocketAddress().getAddress().getHostAddress(), NetworkTopology.DEFAULT_REGION + "/r3");
+        StaticDNSResolver.addNodeToRack(addr1.getSocketAddress().getAddress().getHostAddress(),
+                NetworkTopology.DEFAULT_REGION_AND_RACK);
+        StaticDNSResolver.addNodeToRack(addr2.getSocketAddress().getAddress().getHostAddress(),
+                NetworkTopology.DEFAULT_REGION + "/r2");
+        StaticDNSResolver.addNodeToRack(addr3.getSocketAddress().getAddress().getHostAddress(),
+                NetworkTopology.DEFAULT_REGION + "/r2");
+        StaticDNSResolver.addNodeToRack(addr4.getSocketAddress().getAddress().getHostAddress(),
+                NetworkTopology.DEFAULT_REGION + "/r3");
+        StaticDNSResolver.addNodeToRack(addr5.getSocketAddress().getAddress().getHostAddress(),
+                NetworkTopology.DEFAULT_REGION + "/r3");
         // Update cluster
         Set<BookieSocketAddress> addrs = new HashSet<BookieSocketAddress>();
         addrs.add(addr1);
@@ -747,7 +770,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         assertTrue(deadBookies.isEmpty());
 
         // we will never use addr4 even it is in the stabilized network topology
-        for (int i = 0 ; i < 5; i++) {
+        for (int i = 0; i < 5; i++) {
             ArrayList<BookieSocketAddress> ensemble =
                     repp.newEnsemble(3, 3, 3, null, new HashSet<BookieSocketAddress>());
             assertFalse(ensemble.contains(addr4));

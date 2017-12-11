@@ -44,33 +44,48 @@ Here is the process for making a BP:
     - Take the next available BP number from this page.
     - Write a brief description about what BP is for in this issue. This issue will be the master issue for tracking the status of this BP and its implementations.
       All the implementations of this BP should be listed and linked to this master issues.
-1. Write the proposal for this BP.
-    - Make a copy of the [BP-Template](https://github.com/apache/bookkeeper/tree/master/site/bps/BP-template.md). Name the BP file as `BP-<number>-[caption-of-proposal].md`.
-    ```shell
-    $ cp site/bps/BP-template.md site/bps/BP-xyz-capation-of-proposal.md
-    ```
-    - Fill the sections listed in the BP template.
-        - issue: replace `<issue-number>` with the issue number.
-        - state: "Under Discussion"
-        - release: leave the release to `N/A`. you can only mark a release after a BP is implemented.
+1. Write the proposal for this BP. There are two ways to write a bookkeeper proposal. You can choose to write a BP using markdown, or write a BP
+using Google Doc.
+    - Markdown
+        - Make a copy of the [BP-Template](https://github.com/apache/bookkeeper/tree/master/site/bps/BP-template.md). Name the BP file as `BP-<number>-[caption-of-proposal].md`.
+        ```shell
+        $ cp site/bps/BP-template.md site/bps/BP-xyz-capation-of-proposal.md
+        ```
+        - Fill the sections listed in the BP template.
+            - issue: replace `<issue-number>` with the issue number.
+            - state: "Under Discussion"
+            - release: leave the release to `N/A`. you can only mark a release after a BP is implemented.
+    - Google Doc
+        - Make a copy of the [BP-Template](https://docs.google.com/document/d/1DsmH54LoohgwqnEjESPQNtIYxxcOy2rwonZ_TJCwws0). Name the BP file as `BP-<number>-[caption-of-proposal]`. 
+        - Fill the sections listed in the BP template.
 1. Send a PR for this BP. Following the instructions in the pull request template.
-    - add `BP` label to this BP
+    - add `BP` label to this PR
+    - attach the google doc link in the PR description if the BP is written in google doc
     - don't associate this PR with any release or milestone
+    - edit `site/community/bookkeeper_proposals.md`:
+        - bump the next bp number
+        - add this BP to `Inprogress` section
 1. You can tag committers on this RP for reviewers, or start a `[DISCUSS]` thread on Apache mailing list. If you are sending an email, please make sure that the subject
    of the thread is of the format `[DISCUSS] BP-<number>: capation of bookkeeper proposal`.
 1. Once the BP is finalized, reviewed and approved by committers, the BP is accepted. The criteria for acceptance is [lazy majority](http://bookkeeper.apache.org/bylaws.html).
-1. Committers merge the PR after a BP is accepted. The development for this BP moves forward with implementations. The BP should be updated if there is anything changed during
-   implementing it.
-1. After all the implementations for a given BP are completed, a new PR should be sent for changing the state of a BP:
-    - state: "Adopted"
-    - release: set to the release that includes this BP.
-1. The final PR for changing BP state will be used as the criteria for marking a BP as completed.
+    1. Committers merge the PR after a BP is accepted. The development for this BP moves forward with implementations. The BP should be updated if there is anything changed during implementing it.
+    1. After all the implementations for a given BP are completed, a new PR should be sent for changing the state of a BP:
+        - state: "Adopted"
+        - release: set to the release that includes this BP.
+        - moving the BP from `Inprogress` to `Adopted`.
+    1. The final PR for changing BP state will be used as the criteria for marking a BP as completed.
+1. If a BP is failed or rejected:
+    1. Update the PR to change the state of a BP
+        - state: "Discarded"
+        - add a paragraph at the first paragraph of this BP for describing the reasons.
+        - moving the BP from `Inprogress` to `Discarded`.
+    2. Once the PR is updated, committers can merge this proposal PR and close the master issue of this BP.
 
 ## All Proposals
 
 This section lists all the _bookkeeper proposals_ made to BookKeeper.
 
-*Next Proposal Number: 21*
+*Next Proposal Number: 23*
 
 ### Inprogress
 
@@ -82,7 +97,7 @@ Proposal | State
 [BP-14 Relax durability](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-14+Relax+durability) | Accepted
 [BP-16: Thin Client - Remove direct metadata storage access from clients](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-16%3A+Thin+Client+-+Remove+direct+metadata+storage+access+from+clients) | Draft
 [BP-18: LedgerType, Flags and StorageHints](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-18%3A+LedgerType%2C+Flags+and+StorageHints) | Accepted
-[BP-20: Github workflow for bookkeeper proposals](../../bps/BP-20-github-workflow-for-bookkeeper-proposals) | Under Discussion
+
 
 ### Adopted
 
@@ -99,9 +114,12 @@ Proposal | Release
 [BP-13 - Time Based Release Plan](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-13+-+Time+Based+Release+Plan) | 4.6.0
 [BP-15 - New CreateLedger API](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-15+New+CreateLedger+API) | 4.6.0
 [BP-17 - Define BookKeeper public http endpoints](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-17%3A+Define+BookKeeper+public+http+endpoints) | 4.6.0
+[BP-20: Github workflow for bookkeeper proposals](../../bps/BP-20-github-workflow-for-bookkeeper-proposals) | 4.7.0
 
 ### Discarded
 
 Proposal | Reason
 :--------|:------
 [BP-7 - Explicit LAC on addEntry](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-7+-+Explicit+LAC+on+addEntry) | Not A Problem
+[BP-21: New API close inconsistencies](../../bps/BP-21-new-api-close-inconsistencies) | Not A Problem
+[BP-22: Separate closing ledgers from opening ledgers](../../bps/BP-22-separate-closing-ledgers-from-opening-ledgers) | Not A Problem
