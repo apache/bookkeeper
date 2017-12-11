@@ -88,7 +88,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
         op.completed = false;
         op.ackSet = lh.distributionSchedule.getAckSet();
         op.addOpLogger = lh.bk.getAddOpLogger();
-        op.timeoutNanos = TimeUnit.SECONDS.toNanos(lh.bk.getConf().getAddEntryQuorumTimeout());
+        op.timeoutNanos = lh.bk.addEntryQuorumTimeoutNanos;
         op.pendingWriteRequests = 0;
         op.callbackTriggered = false;
         op.hasRun = false;

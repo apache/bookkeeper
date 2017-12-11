@@ -1389,7 +1389,7 @@ public class LedgerHandle implements WriteHandle {
         asyncCloseInternal(NoopCloseCallback.instance, null, rc);
     }
 
-    void monitorPendingAddOps() {
+    private void monitorPendingAddOps() {
         int timedOut = 0;
         for (PendingAddOp op : pendingAddOps) {
             if (op.maybeTimeout()) {

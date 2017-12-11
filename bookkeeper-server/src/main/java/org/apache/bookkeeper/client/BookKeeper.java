@@ -145,6 +145,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     final int explicitLacInterval;
     final boolean delayEnsembleChange;
     final boolean reorderReadSequence;
+    final long addEntryQuorumTimeoutNanos;
 
     final Optional<SpeculativeRequestExecutionPolicy> readSpeculativeRequestPolicy;
     final Optional<SpeculativeRequestExecutionPolicy> readLACSpeculativeRequestPolicy;
@@ -521,6 +522,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             LOG.debug("Explicit LAC Interval : {}", this.explicitLacInterval);
         }
 
+        this.addEntryQuorumTimeoutNanos = TimeUnit.SECONDS.toNanos(conf.getAddEntryQuorumTimeout());
         scheduleBookieHealthCheckIfEnabled();
     }
 

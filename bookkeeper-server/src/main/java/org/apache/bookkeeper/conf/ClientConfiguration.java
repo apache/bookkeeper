@@ -679,16 +679,29 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get the interval between successive executions of the operation timeout monitor. This value is in seconds. Every
-     * X seconds, the timeout monitor will be executed and it will error out entries that have timed out.
+     * Get the interval between successive executions of the operation timeout monitor. This value is in seconds.
      *
+     * @see #setTimeoutMonitorIntervalSec(long)
      * @return the interval at which request timeouts will be checked
      */
     public long getTimeoutMonitorIntervalSec() {
-        return getLong(TIMEOUT_MONITOR_INTERVAL_SEC,
-                Math.max(Math.min(getAddEntryTimeout(), getReadEntryTimeout()) / 2, 1));
+        int minTimeout = Math.min(Math.min(getAddEntryQuorumTimeout(),
+                                           getAddEntryTimeout()), getReadEntryTimeout());
+        return getLong(TIMEOUT_MONITOR_INTERVAL_SEC, Math.max(minTimeout / 2, 1));
     }
 
+    /**
+     * Set the interval between successive executions of the operation timeout monitor. The value in seconds.
+     * Every X seconds, all outstanding add and read operations are checked to see if they have been running
+     * for longer than their configured timeout. Any that have been will be errored out.
+     *
+     * <p>This timeout should be set to a value which is a fraction of the values of
+     * {@link #getAddEntryQuorumTimeout}, {@link #getAddEntryTimeout} and {@link #getReadEntryTimeout},
+     * so that these timeouts run in a timely fashion.
+     *
+     * @param timeoutInterval The timeout monitor interval, in seconds
+     * @return client configuration
+     */
     public ClientConfiguration setTimeoutMonitorIntervalSec(long timeoutInterval) {
         setProperty(TIMEOUT_MONITOR_INTERVAL_SEC, Long.toString(timeoutInterval));
         return this;

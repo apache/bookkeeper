@@ -763,7 +763,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         writeAndFlush(channel, completionKey, getBookieInfoRequest);
     }
 
-    private static BiPredicate<CompletionKey, CompletionValue> timeoutCheck = (key, value) -> {
+    private static final BiPredicate<CompletionKey, CompletionValue> timeoutCheck = (key, value) -> {
         return value.maybeTimeout();
     };
 
@@ -783,7 +783,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         if (timedOutOperations > 0) {
             LOG.info("Timed-out {} operations to channel {} for {}",
-                    new Object[] { timedOutOperations, channel, addr });
+                     timedOutOperations, channel, addr);
         }
     }
 
@@ -1670,7 +1670,6 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         @Override
         boolean maybeTimeout() {
-            LOG.info("maybeTimeout");
             if (MathUtils.elapsedNanos(startTime) >= addEntryTimeoutNanos) {
                 timeout();
                 return true;

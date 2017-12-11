@@ -79,7 +79,6 @@ public class BookieClient implements PerChannelBookieClientFactory {
     ScheduledExecutorService scheduler;
     ScheduledFuture<?> timeoutFuture;
 
-    boolean ownsScheduler = false;
     EventLoopGroup eventLoopGroup;
     final ConcurrentHashMap<BookieSocketAddress, PerChannelBookieClientPool> channels =
             new ConcurrentHashMap<BookieSocketAddress, PerChannelBookieClientPool>();
@@ -94,16 +93,6 @@ public class BookieClient implements PerChannelBookieClientFactory {
     private final int numConnectionsPerBookie;
 
     private final long bookieErrorThresholdPerInterval;
-
-    public BookieClient(ClientConfiguration conf, EventLoopGroup eventLoopGroup,
-            OrderedSafeExecutor executor) throws IOException {
-        this(conf, eventLoopGroup, executor, NullStatsLogger.INSTANCE);
-    }
-
-    public BookieClient(ClientConfiguration conf, EventLoopGroup eventLoopGroup,
-                        OrderedSafeExecutor executor, ScheduledExecutorService scheduler) throws IOException {
-        this(conf, eventLoopGroup, executor, scheduler, NullStatsLogger.INSTANCE);
-    }
 
     public BookieClient(ClientConfiguration conf, EventLoopGroup eventLoopGroup,
                         OrderedSafeExecutor executor, ScheduledExecutorService scheduler,
@@ -134,14 +123,6 @@ public class BookieClient implements PerChannelBookieClientFactory {
                                                                     conf.getTimeoutMonitorIntervalSec(),
                                                                     TimeUnit.SECONDS);
         }
-    }
-
-    public BookieClient(ClientConfiguration conf, EventLoopGroup eventLoopGroup, OrderedSafeExecutor executor,
-                        StatsLogger statsLogger) throws IOException {
-        this(conf, eventLoopGroup, executor,
-             Executors.newSingleThreadScheduledExecutor(
-                     new DefaultThreadFactory("BookKeeperClientScheduler")), statsLogger);
-        ownsScheduler = true;
     }
 
     private int getRc(int rc) {
@@ -561,9 +542,6 @@ public class BookieClient implements PerChannelBookieClientFactory {
             if (timeoutFuture != null) {
                 timeoutFuture.cancel(false);
             }
-            if (ownsScheduler) {
-                scheduler.shutdownNow();
-            }
         } finally {
             closeLock.writeLock().unlock();
         }
@@ -623,7 +601,10 @@ public class BookieClient implements PerChannelBookieClientFactory {
                 .name("BookieClientWorker")
                 .numThreads(1)
                 .build();
-        BookieClient bc = new BookieClient(new ClientConfiguration(), eventLoopGroup, executor);
+        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(
+                new DefaultThreadFactory("BookKeeperClientScheduler"));
+        BookieClient bc = new BookieClient(new ClientConfiguration(), eventLoopGroup, executor,
+                                           scheduler, NullStatsLogger.INSTANCE);
         BookieSocketAddress addr = new BookieSocketAddress(args[0], Integer.parseInt(args[1]));
 
         for (int i = 0; i < 100000; i++) {
@@ -632,6 +613,7 @@ public class BookieClient implements PerChannelBookieClientFactory {
         }
         counter.wait(0);
         System.out.println("Total = " + counter.total());
+        scheduler.shutdown();
         eventLoopGroup.shutdownGracefully();
         executor.shutdown();
     }
