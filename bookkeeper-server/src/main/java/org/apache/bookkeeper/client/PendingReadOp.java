@@ -94,15 +94,10 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             this.eId = eId;
 
             if (lh.bk.isReorderReadSequence()) {
-                DistributionSchedule.WriteSet unorderedWriteSet = lh.getDistributionSchedule().getWriteSet(eId);
-                BookiesHealthInfo bookiesHealthInfo = lh.generateHealthInfoForWriteSet(
-                    unorderedWriteSet,
-                    ensemble
-                );
                 writeSet = lh.bk.getPlacementPolicy()
                     .reorderReadSequence(
                             ensemble,
-                            bookiesHealthInfo,
+                            lh.getBookiesHealthInfo(),
                             lh.distributionSchedule.getWriteSet(eId));
             } else {
                 writeSet = lh.distributionSchedule.getWriteSet(eId);

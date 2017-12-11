@@ -82,9 +82,8 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
             this.ensemble = ensemble;
             this.writeSet = lh.distributionSchedule.getWriteSet(eId);
             if (lh.bk.reorderReadSequence) {
-                BookiesHealthInfo bookiesHealthInfo = lh.generateHealthInfoForWriteSet(writeSet, ensemble);
                 this.orderedEnsemble = lh.bk.placementPolicy.reorderReadLACSequence(ensemble,
-                    bookiesHealthInfo, writeSet.copy());
+                    lh.getBookiesHealthInfo(), writeSet.copy());
             } else {
                 this.orderedEnsemble = writeSet.copy();
             }

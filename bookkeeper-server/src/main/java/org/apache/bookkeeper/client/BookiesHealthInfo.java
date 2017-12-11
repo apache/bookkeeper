@@ -20,28 +20,13 @@
  */
 package org.apache.bookkeeper.client;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.bookkeeper.net.BookieSocketAddress;
 
 /**
- * This class encompasses heuristics used to determine the health of a Bookkeeper server for read
- * ordering. Currently we use the history of failed entries and length of the pending requests queue.
+ * This interface returns heuristics used to determine the health of a Bookkeeper server for read
+ * ordering.
  */
-public class BookiesHealthInfo {
-
-  private Map<BookieSocketAddress, Long> bookieFailureHistory;
-  private Map<BookieSocketAddress, Integer> bookiePendingRequests;
-
-  BookiesHealthInfo() {
-    this(new HashMap<BookieSocketAddress, Long>(), new HashMap<BookieSocketAddress, Integer>());
-  }
-
-  BookiesHealthInfo(Map<BookieSocketAddress, Long> bookieFailureHistory, Map<BookieSocketAddress, Integer> bookiePendingRequests) {
-    this.bookieFailureHistory = bookieFailureHistory;
-    this.bookiePendingRequests = bookiePendingRequests;
-  }
+public interface BookiesHealthInfo {
 
   /**
    * Return the failure history for a bookie.
@@ -49,17 +34,13 @@ public class BookiesHealthInfo {
    * @param bookieSocketAddress
    * @return failed entries on a bookie, -1 if there has been no failures.
    */
-  public long getBookieFailureHistory(BookieSocketAddress bookieSocketAddress) {
-    return bookieFailureHistory.getOrDefault(bookieSocketAddress, -1L);
-  }
+  public long getBookieFailureHistory(BookieSocketAddress bookieSocketAddress);
 
   /**
    * Returns pending requests to a bookie.
    * @param bookieSocketAddress
    * @return number of pending requests
    */
-  public int getBookiePendingRequests(BookieSocketAddress bookieSocketAddress) {
-    return bookiePendingRequests.getOrDefault(bookieSocketAddress, 0);
-  }
+  public int getBookiePendingRequests(BookieSocketAddress bookieSocketAddress);
 
 }

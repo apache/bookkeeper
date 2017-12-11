@@ -106,6 +106,7 @@ public class LedgerHandle implements WriteHandle {
     final LoadingCache<BookieSocketAddress, Long> bookieFailureHistory;
     final boolean enableParallelRecoveryRead;
     final int recoveryReadBatchSize;
+    final BookiesHealthInfo bookiesHealthInfo;
 
     /**
      * Invalid entry id. This value is returned from methods which
@@ -171,6 +172,19 @@ public class LedgerHandle implements WriteHandle {
                 return -1L;
             }
         });
+         this.bookiesHealthInfo = new BookiesHealthInfo() {
+            @Override
+            public long getBookieFailureHistory(BookieSocketAddress bookieSocketAddress) {
+                Long lastFailure = bookieFailureHistory.getIfPresent(bookieSocketAddress);
+                return lastFailure == null ? -1L : lastFailure;
+            }
+
+            @Override
+            public int getBookiePendingRequests(BookieSocketAddress bookieSocketAddress) {
+                PerChannelBookieClientPool pcbcPool = bk.bookieClient.lookupClient(bookieSocketAddress);
+                return pcbcPool == null ? 0 : pcbcPool.getNumPendingCompletionRequests();
+            }
+        };
 
         ensembleChangeCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.ENSEMBLE_CHANGES);
         lacUpdateHitsCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.LAC_UPDATE_HITS);
@@ -314,26 +328,12 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
-     * Generate the health info for bookies in the write set.
+     * Get the health info for bookies for this ledger.
      *
      * @return BookiesHealthInfo for every bookie in the write set.
      */
-    public BookiesHealthInfo generateHealthInfoForWriteSet(
-        DistributionSchedule.WriteSet writeSet,
-        ArrayList<BookieSocketAddress> ensemble) {
-        Map<BookieSocketAddress, Integer> bookiePendingMap = new HashMap<>();
-        BookieClient client = bk.bookieClient;
-        for(int i = 0; i < writeSet.size(); i++) {
-            int idx = writeSet.get(i);
-            BookieSocketAddress address = ensemble.get(idx);
-            PerChannelBookieClientPool pcbcPool = client.lookupClient(address);
-            if (pcbcPool == null) {
-                continue;
-            }
-            int numPendingReqs = pcbcPool.getNumPendingCompletionRequests();
-            bookiePendingMap.put(address, numPendingReqs);
-        }
-        return new BookiesHealthInfo(bookieFailureHistory.asMap(), bookiePendingMap);
+    public BookiesHealthInfo getBookiesHealthInfo() {
+        return bookiesHealthInfo;
     }
 
     void writeLedgerConfig(GenericCallback<Void> writeCb) {
@@ -342,30 +342,6 @@ public class LedgerHandle implements WriteHandle {
         }
 
         bk.getLedgerManager().writeLedgerMetadata(ledgerId, metadata, writeCb);
-    }
-
-    /**
-     * Generate the health info for bookies in the write set.
-     *
-     * @return BookKeeperServerHealthInfo for every bookie in the write set.
-     */
-    public BookiesHealthInfo generateHealthInfoForWriteSet(
-        DistributionSchedule.WriteSet writeSet,
-        ArrayList<BookieSocketAddress> ensemble,
-        LedgerHandle lh) {
-        Map<BookieSocketAddress, Integer> bookiePendingMap = new HashMap<>();
-        BookieClient client = lh.bk.bookieClient;
-        for(int i = 0; i < writeSet.size(); i++) {
-            Integer idx = writeSet.get(i);
-            BookieSocketAddress address = ensemble.get(idx);
-            PerChannelBookieClientPool pcbcPool = client.lookupClient(address);
-            if (pcbcPool == null) {
-                continue;
-            }
-            int numPendingReqs = pcbcPool.getNumPendingCompletionRequests();
-            bookiePendingMap.put(address, numPendingReqs);
-        }
-        return new BookiesHealthInfo(lh.bookieFailureHistory.asMap(), bookiePendingMap);
     }
 
     /**
