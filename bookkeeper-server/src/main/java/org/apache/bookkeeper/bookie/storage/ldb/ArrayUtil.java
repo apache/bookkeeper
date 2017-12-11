@@ -67,11 +67,6 @@ class ArrayUtil {
     }
 
     public static final boolean isArrayAllZeros(final byte[] array) {
-        int sum = 0;
-        for (byte b : array) {
-            sum |= b;
-        }
-
-        return sum == 0;
+        return PlatformDependent.isZero(array, 0, array.length);
     }
 }

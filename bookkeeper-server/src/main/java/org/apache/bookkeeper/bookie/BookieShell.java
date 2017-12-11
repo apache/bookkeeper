@@ -150,7 +150,6 @@ public class BookieShell implements Tool {
     static final String CMD_TRIGGERAUDIT = "triggeraudit";
     static final String CMD_CONVERT_TO_DB_STORAGE = "convert-to-db-storage";
     static final String CMD_CONVERT_TO_INTERLEAVED_STORAGE = "convert-to-interleaved-storage";
-    static final String CMD_CONVERT_ROCKSDB_TO_LEVELDB_STORAGE = "convert-rocksdb-to-leveldb-storage";
     static final String CMD_REBUILD_DB_LEDGER_LOCATIONS_INDEX = "rebuild-db-ledger-locations-index";
     static final String CMD_HELP = "help";
 
