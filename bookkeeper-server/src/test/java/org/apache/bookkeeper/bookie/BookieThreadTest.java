@@ -24,12 +24,15 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- * Testing bookie thread cases
+ * Testing bookie thread cases.
  */
 public class BookieThreadTest {
 
     private CountDownLatch runningLatch = new CountDownLatch(1);
 
+    /**
+     * A BookieThread implementation.
+     */
     public class MyThread extends BookieThread {
 
         public MyThread(String threadName) {
@@ -47,6 +50,9 @@ public class BookieThreadTest {
         }
     }
 
+    /**
+     * A critical thread implementation.
+     */
     public class MyCriticalThread extends BookieCriticalThread {
 
         public MyCriticalThread(String threadName) {
@@ -65,7 +71,7 @@ public class BookieThreadTest {
     }
 
     /**
-     * Test verifies uncaught exception handling of BookieThread
+     * Test verifies uncaught exception handling of BookieThread.
      */
     @Test
     public void testUncaughtException() throws Exception {

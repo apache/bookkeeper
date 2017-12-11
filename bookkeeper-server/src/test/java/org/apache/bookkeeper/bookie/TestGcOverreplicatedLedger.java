@@ -21,6 +21,8 @@
 
 package org.apache.bookkeeper.bookie;
 
+import com.google.common.collect.Lists;
+
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -46,6 +48,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.util.SnapshotMap;
+import org.apache.zookeeper.ZooDefs;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,9 +56,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import com.google.common.collect.Lists;
-import org.apache.zookeeper.ZooDefs;
-
+/**
+ * Test GC-overreplicated ledger.
+ */
 @RunWith(Parameterized.class)
 public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
 

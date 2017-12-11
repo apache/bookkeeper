@@ -18,10 +18,11 @@
 
 package org.apache.bookkeeper.bookie;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.util.List;
 
-import org.junit.Assert;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.util.DiskChecker;
@@ -31,74 +32,77 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Test new log creation.
+ */
 public class CreateNewLogTest {
     private static final Logger LOG = LoggerFactory
     .getLogger(CreateNewLogTest.class);
-        
-    private String[] ledgerDirs; 
+
+    private String[] ledgerDirs;
     private int numDirs = 100;
-    
+
     @Before
     public void setUp() throws Exception{
         ledgerDirs = new String[numDirs];
-        for(int i = 0; i < numDirs; i++){
+        for (int i = 0; i < numDirs; i++){
             File temp = File.createTempFile("bookie", "test");
             temp.delete();
             temp.mkdir();
             File currentTemp = new File(temp.getAbsoluteFile() + "/current");
             currentTemp.mkdir();
             ledgerDirs[i] = temp.getPath();
-        }        
+        }
     }
-    
+
     @After
     public void tearDown() throws Exception{
-        for(int i = 0; i < numDirs; i++){
+        for (int i = 0; i < numDirs; i++){
             File f = new File(ledgerDirs[i]);
             deleteRecursive(f);
         }
     }
-    
+
     private void deleteRecursive(File f) {
         if (f.isDirectory()){
             for (File c : f.listFiles()){
                 deleteRecursive(c);
             }
         }
-        
+
         f.delete();
     }
-    
+
     /**
      * Checks if new log file id is verified against all directories.
-     * 
+     *
      * {@link https://issues.apache.org/jira/browse/BOOKKEEPER-465}
-     * 
+     *
      * @throws Exception
      */
     @Test
     public void testCreateNewLog() throws Exception {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
-                     
-        // Creating a new configuration with a number of 
+
+        // Creating a new configuration with a number of
         // ledger directories.
         conf.setLedgerDirNames(ledgerDirs);
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
         EntryLogger el = new EntryLogger(conf, ledgerDirsManager);
-        
+
         // Extracted from createNewLog()
         String logFileName = Long.toHexString(1) + ".log";
         File dir = ledgerDirsManager.pickRandomWritableDir();
         LOG.info("Picked this directory: " + dir);
         File newLogFile = new File(dir, logFileName);
         newLogFile.createNewFile();
-        
+
         // Calls createNewLog, and with the number of directories we
         // are using, if it picks one at random it will fail.
         el.createNewLog();
         LOG.info("This is the current log id: " + el.getCurrentLogId());
-        Assert.assertTrue("Wrong log id", el.getCurrentLogId() > 1);
+        assertTrue("Wrong log id", el.getCurrentLogId() > 1);
     }
 
     @Test
@@ -129,7 +133,7 @@ public class CreateNewLogTest {
         // are using, if it picks one at random it will fail.
         el.createNewLog();
         LOG.info("This is the current log id: " + el.getCurrentLogId());
-        Assert.assertTrue("Wrong log id", el.getCurrentLogId() > 1);
+        assertTrue("Wrong log id", el.getCurrentLogId() > 1);
     }
 
 }

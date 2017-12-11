@@ -36,6 +36,9 @@ import org.apache.bookkeeper.test.PortManager;
 import org.apache.bookkeeper.util.IOUtils;
 import org.junit.Test;
 
+/**
+ * Tests for when the setAdvertisedAddress is specified.
+ */
 public class AdvertisedAddressTest extends BookKeeperClusterTestCase {
     final int bookiePort = PortManager.nextFreePort();
 
@@ -82,7 +85,7 @@ public class AdvertisedAddressTest extends BookKeeperClusterTestCase {
     }
 
     /**
-     * When advertised address is specified, it should override the use
+     * When advertised address is specified, it should override the use.
      */
     @Test
     public void testBothUseHostnameAndAdvertisedAddress() throws Exception {
