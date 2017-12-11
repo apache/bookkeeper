@@ -46,6 +46,9 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Sets;
+
+import static org.junit.Assert.*;
 
 /**
  * Tests for EntryLog.
@@ -351,4 +354,34 @@ public class EntryLogTest {
 
     }
 
+    /**
+     * Test the getEntryLogsSet() method
+     */
+    @Test(timeout = 60000)
+    public void testGetEntryLogsSet() throws Exception {
+        File tmpDir = createTempDir("bkTest", ".dir");
+        File curDir = Bookie.getCurrentDirectory(tmpDir);
+        Bookie.checkDirectoryStructure(curDir);
+
+        int gcWaitTime = 1000;
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setGcWaitTime(gcWaitTime);
+        conf.setLedgerDirNames(new String[] { tmpDir.toString() });
+        Bookie bookie = new Bookie(conf);
+
+        // create some entries
+        EntryLogger logger = ((InterleavedLedgerStorage) bookie.ledgerStorage).entryLogger;
+
+        assertEquals(Sets.newHashSet(0L), logger.getEntryLogsSet());
+
+        logger.rollLog();
+        logger.flushRotatedLogs();
+
+        assertEquals(Sets.newHashSet(0L, 1L), logger.getEntryLogsSet());
+
+        logger.rollLog();
+        logger.flushRotatedLogs();
+
+        assertEquals(Sets.newHashSet(0L, 1L, 2L), logger.getEntryLogsSet());
+    }
 }
