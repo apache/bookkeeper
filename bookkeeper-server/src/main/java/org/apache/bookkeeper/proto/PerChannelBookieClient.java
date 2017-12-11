@@ -1851,7 +1851,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             Queue<GenericCallback<PerChannelBookieClient>> oldPendingOps;
 
             synchronized (PerChannelBookieClient.this) {
-                if (future.isSuccess() && state == ConnectionState.CONNECTING) {
+                if (future.isSuccess() && state == ConnectionState.CONNECTING && future.channel().isActive()) {
                     LOG.info("Successfully connected to bookie: {}", future.channel());
                     rc = BKException.Code.OK;
                     channel = future.channel();
