@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.bookie.storage.ldb;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
@@ -29,6 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashSet;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongPairHashMap;
@@ -39,14 +42,14 @@ import org.slf4j.LoggerFactory;
 /**
  * Write cache implementation.
  *
- * <p>The write cache will allocate the requested size from direct memory
- * and it will break it down into multiple segments.
+ * <p>The write cache will allocate the requested size from direct memory and it
+ * will break it down into multiple segments.
  *
- * <p>The entries are appended in a common buffer and indexed though a
- * hashmap, until the cache is cleared.
+ * <p>The entries are appended in a common buffer and indexed though a hashmap,
+ * until the cache is cleared.
  *
- * <p>There is the possibility to iterate through the stored entries in
- * an ordered way, by (ledgerId, entry).
+ * <p>There is the possibility to iterate through the stored entries in an ordered
+ * way, by (ledgerId, entry).
  */
 public class WriteCache implements Closeable {
 
@@ -57,41 +60,58 @@ public class WriteCache implements Closeable {
         void accept(long ledgerId, long entryId, ByteBuf entry);
     }
 
-    private final ConcurrentLongLongPairHashMap index = new ConcurrentLongLongPairHashMap(4096,
-            2 * Runtime.getRuntime().availableProcessors());
+    private final ConcurrentLongLongPairHashMap index =
+            new ConcurrentLongLongPairHashMap(4096, 2 * Runtime.getRuntime().availableProcessors());
 
-    private final ConcurrentLongLongHashMap lastEntryMap = new ConcurrentLongLongHashMap(4096,
-            2 * Runtime.getRuntime().availableProcessors());
+    private final ConcurrentLongLongHashMap lastEntryMap =
+            new ConcurrentLongLongHashMap(4096, 2 * Runtime.getRuntime().availableProcessors());
 
     private final ByteBuf[] cacheSegments;
     private final int segmentsCount;
 
-    private static final int MaxSegmentSize = Integer.MAX_VALUE;
-    private static final long SegmentOffsetMask = (long) Integer.MAX_VALUE;
-
     private final long maxCacheSize;
+    private final int maxSegmentSize;
+    private final long segmentOffsetMask;
+    private final long segmentOffsetBits;
+
     private final AtomicLong cacheSize = new AtomicLong(0);
+    private final AtomicLong cacheOffset = new AtomicLong(0);
     private final LongAdder cacheCount = new LongAdder();
 
     private final ConcurrentLongHashSet deletedLedgers = new ConcurrentLongHashSet();
 
     public WriteCache(long maxCacheSize) {
+        // Default maxSegmentSize set to 1Gb
+        this(maxCacheSize, 1 * 1024 * 1024 * 1024);
+    }
+
+    public WriteCache(long maxCacheSize, int maxSegmentSize) {
+        checkArgument(maxSegmentSize > 0);
+
+        long alignedMaxSegmentSize = alignToPowerOfTwo(maxSegmentSize);
+        checkArgument(maxSegmentSize == alignedMaxSegmentSize, "Max segment size needs to be in form of 2^n");
+
         this.maxCacheSize = maxCacheSize;
-        this.segmentsCount = 1 + (int) (maxCacheSize / MaxSegmentSize);
+        this.maxSegmentSize = (int) maxSegmentSize;
+        this.segmentOffsetMask = maxSegmentSize - 1;
+        this.segmentOffsetBits = 64 - Long.numberOfLeadingZeros(maxSegmentSize);
+
+        this.segmentsCount = 1 + (int) (maxCacheSize / maxSegmentSize);
 
         this.cacheSegments = new ByteBuf[segmentsCount];
 
         for (int i = 0; i < segmentsCount - 1; i++) {
             // All intermediate segments will be full-size
-            cacheSegments[i] = Unpooled.directBuffer(MaxSegmentSize, MaxSegmentSize);
+            cacheSegments[i] = Unpooled.directBuffer(maxSegmentSize, maxSegmentSize);
         }
 
-        int lastSegmentSize = (int) (maxCacheSize % MaxSegmentSize);
+        int lastSegmentSize = (int) (maxCacheSize % maxSegmentSize);
         cacheSegments[segmentsCount - 1] = Unpooled.directBuffer(lastSegmentSize, lastSegmentSize);
     }
 
     public void clear() {
         cacheSize.set(0L);
+        cacheOffset.set(0L);
         cacheCount.reset();
         index.clear();
         lastEntryMap.clear();
@@ -108,7 +128,8 @@ public class WriteCache implements Closeable {
     public boolean put(long ledgerId, long entryId, ByteBuf entry) {
         int size = entry.readableBytes();
 
-        // Align to 64 bytes so that different threads will not contend the same L1 cache line
+        // Align to 64 bytes so that different threads will not contend the same L1
+        // cache line
         int alignedSize = align64(size);
 
         long offset;
@@ -116,15 +137,16 @@ public class WriteCache implements Closeable {
         int segmentIdx;
 
         while (true) {
-            offset = cacheSize.getAndAdd(alignedSize);
-            localOffset = (int) (offset & SegmentOffsetMask);
-            segmentIdx = (int) (offset / MaxSegmentSize);
+            offset = cacheOffset.getAndAdd(alignedSize);
+            localOffset = (int) (offset & segmentOffsetMask);
+            segmentIdx = (int) (offset >>> segmentOffsetBits);
 
             if ((offset + size) > maxCacheSize) {
                 // Cache is full
                 return false;
-            } else if (MaxSegmentSize - localOffset < size) {
-                // If an entry is at the end of a segment, we need to get a new offset and try again in next segment
+            } else if (maxSegmentSize - localOffset < size) {
+                // If an entry is at the end of a segment, we need to get a new offset and try
+                // again in next segment
                 continue;
             } else {
                 // Found a good offset
@@ -134,9 +156,9 @@ public class WriteCache implements Closeable {
 
         cacheSegments[segmentIdx].setBytes(localOffset, entry, entry.readerIndex(), entry.readableBytes());
 
-        // Update last entryId for ledger. This logic is to handle writes for the same ledger coming out of order and
-        // from different thread, though in practice it should not happen and the compareAndSet should be always
-        // uncontended.
+        // Update last entryId for ledger. This logic is to handle writes for the same
+        // ledger coming out of order and from different thread, though in practice it
+        // should not happen and the compareAndSet should be always uncontended.
         while (true) {
             long currentLastEntryId = lastEntryMap.get(ledgerId);
             if (currentLastEntryId > entryId) {
@@ -151,6 +173,7 @@ public class WriteCache implements Closeable {
 
         index.put(ledgerId, entryId, offset, size);
         cacheCount.increment();
+        cacheSize.addAndGet(size);
         return true;
     }
 
@@ -164,8 +187,8 @@ public class WriteCache implements Closeable {
         int size = (int) result.second;
         ByteBuf entry = ByteBufAllocator.DEFAULT.buffer(size, size);
 
-        int localOffset = (int) (offset & SegmentOffsetMask);
-        int segmentIdx = (int) (offset / MaxSegmentSize);
+        int localOffset = (int) (offset & segmentOffsetMask);
+        int segmentIdx = (int) (offset >>> segmentOffsetBits);
         entry.writeBytes(cacheSegments[segmentIdx], localOffset, size);
         return entry;
     }
@@ -196,7 +219,7 @@ public class WriteCache implements Closeable {
                 sortedEntries = new long[(int) (arrayLen * 2)];
             }
 
-            long startTime = System.nanoTime();
+            long startTime = MathUtils.nowInNano();
 
             sortedEntriesIdx = 0;
             index.forEach((ledgerId, entryId, offset, length) -> {
@@ -213,16 +236,16 @@ public class WriteCache implements Closeable {
             });
 
             if (log.isDebugEnabled()) {
-                log.debug("iteration took {} ms", (System.nanoTime() - startTime) / 1e6);
+                log.debug("iteration took {} ms", MathUtils.elapsedNanos(startTime) / 1e6);
             }
-            startTime = System.nanoTime();
+            startTime = MathUtils.nowInNano();
 
             // Sort entries by (ledgerId, entryId) maintaining the 4 items groups
             groupSorter.sort(sortedEntries, 0, sortedEntriesIdx);
             if (log.isDebugEnabled()) {
-                log.debug("sorting {} ms", (System.nanoTime() - startTime) / 1e6);
+                log.debug("sorting {} ms", (MathUtils.elapsedNanos(startTime) / 1e6));
             }
-            startTime = System.nanoTime();
+            startTime = MathUtils.nowInNano();
 
             ByteBuf[] entrySegments = new ByteBuf[segmentsCount];
             for (int i = 0; i < segmentsCount; i++) {
@@ -235,15 +258,15 @@ public class WriteCache implements Closeable {
                 long offset = sortedEntries[i + 2];
                 long length = sortedEntries[i + 3];
 
-                int localOffset = (int) (offset & SegmentOffsetMask);
-                int segmentIdx = (int) (offset / MaxSegmentSize);
+                int localOffset = (int) (offset & segmentOffsetMask);
+                int segmentIdx = (int) (offset >>> segmentOffsetBits);
                 ByteBuf entry = entrySegments[segmentIdx];
                 entry.setIndex(localOffset, localOffset + (int) length);
                 consumer.accept(ledgerId, entryId, entry);
             }
 
             if (log.isDebugEnabled()) {
-                log.debug("entry log adding {} ms", (System.nanoTime() - startTime) / 1e6);
+                log.debug("entry log adding {} ms", MathUtils.elapsedNanos(startTime) / 1e6);
             }
         } finally {
             sortedEntriesLock.unlock();
@@ -251,9 +274,7 @@ public class WriteCache implements Closeable {
     }
 
     public long size() {
-        // The internal cache size is used as offset and can go above the max cache size, though in that case, the entry
-        // will be rejected
-        return Math.min(maxCacheSize, cacheSize.get());
+        return cacheSize.get();
     }
 
     public long count() {
@@ -268,6 +289,10 @@ public class WriteCache implements Closeable {
 
     static int align64(int size) {
         return (size + 64 - 1) & ALIGN_64_MASK;
+    }
+
+    private static long alignToPowerOfTwo(long n) {
+        return (long) Math.pow(2, 64 - Long.numberOfLeadingZeros(n - 1));
     }
 
     private final ReentrantLock sortedEntriesLock = new ReentrantLock();

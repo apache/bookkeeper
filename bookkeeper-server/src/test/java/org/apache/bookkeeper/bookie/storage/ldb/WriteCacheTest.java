@@ -25,13 +25,20 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.junit.Test;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.Unpooled;
+
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
+import org.junit.Test;
 
 public class WriteCacheTest {
 
@@ -110,4 +117,142 @@ public class WriteCacheTest {
         entry.release();
         cache.close();
     }
+
+    @Test
+    public void testMultipleSegments() {
+        // Create cache with max size 1Mb and each segment is 16Kb
+        WriteCache cache = new WriteCache(1024 * 1024, 16 * 1024);
+
+        ByteBuf entry = Unpooled.buffer(1024);
+        entry.writerIndex(entry.capacity());
+
+        for (int i = 0; i < 48; i++) {
+            cache.put(1, i, entry);
+        }
+
+        assertEquals(48, cache.count());
+        assertEquals(48 * 1024, cache.size());
+
+        cache.close();
+    }
+
+    @Test
+    public void testEmptyCache() {
+        WriteCache cache = new WriteCache(1024 * 1024, 16 * 1024);
+
+        assertEquals(0, cache.count());
+        assertEquals(0, cache.size());
+        assertTrue(cache.isEmpty());
+
+        AtomicLong foundEntries = new AtomicLong();
+        cache.forEach((ledgerId, entryId, entry) -> {
+            foundEntries.incrementAndGet();
+        });
+
+        assertEquals(0, foundEntries.get());
+        cache.close();
+    }
+
+    @Test
+    public void testMultipleWriters() throws Exception {
+        // Create cache with max size 1Mb and each segment is 16Kb
+        WriteCache cache = new WriteCache(10 * 1024 * 1024, 16 * 1024);
+
+        ExecutorService executor = Executors.newCachedThreadPool();
+
+        int numThreads = 10;
+        int entriesPerThread = 10 * 1024 / numThreads;
+
+        CyclicBarrier barrier = new CyclicBarrier(numThreads);
+        CountDownLatch latch = new CountDownLatch(numThreads);
+
+        for (int i = 0; i < numThreads; i++) {
+            int ledgerId = i;
+
+            executor.submit(() -> {
+                try {
+                    barrier.await();
+                } catch (InterruptedException | BrokenBarrierException e) {
+                    throw new RuntimeException(e);
+                }
+
+                ByteBuf entry = Unpooled.buffer(1024);
+                entry.writerIndex(entry.capacity());
+
+                for (int entryId = 0; entryId < entriesPerThread; entryId++) {
+                    assertTrue(cache.put(ledgerId, entryId, entry));
+                }
+
+                latch.countDown();
+            });
+        }
+
+        // Wait for all tasks to be completed
+        latch.await();
+
+        // assertEquals(numThreads * entriesPerThread, cache.count());
+        assertEquals(cache.count() * 1024, cache.size());
+
+        // Verify entries by iterating over write cache
+        AtomicLong currentLedgerId = new AtomicLong(0);
+        AtomicLong currentEntryId = new AtomicLong(0);
+
+        cache.forEach((ledgerId, entryId, entry) -> {
+            assertEquals(currentLedgerId.get(), ledgerId);
+            assertEquals(currentEntryId.get(), entryId);
+
+            if (currentEntryId.incrementAndGet() == entriesPerThread) {
+                currentLedgerId.incrementAndGet();
+                currentEntryId.set(0);
+            }
+        });
+
+        cache.close();
+        executor.shutdown();
+    }
+
+    @Test
+    public void testLedgerDeletion() {
+        WriteCache cache = new WriteCache(1024 * 1024, 16 * 1024);
+
+        ByteBuf entry = Unpooled.buffer(1024);
+        entry.writerIndex(entry.capacity());
+
+        for (long ledgerId = 0; ledgerId < 10; ledgerId++) {
+            for (int entryId = 0; entryId < 10; entryId++) {
+                cache.put(ledgerId, entryId, entry);
+            }
+        }
+
+        assertEquals(100, cache.count());
+        assertEquals(100 * 1024, cache.size());
+
+        cache.deleteLedger(5);
+
+        // Entries are not immediately deleted, just ignored on scan
+        assertEquals(100, cache.count());
+        assertEquals(100 * 1024, cache.size());
+
+        // Verify entries by iterating over write cache
+        AtomicLong currentLedgerId = new AtomicLong(0);
+        AtomicLong currentEntryId = new AtomicLong(0);
+
+        cache.forEach((ledgerId, entryId, e) -> {
+            assertEquals(currentLedgerId.get(), ledgerId);
+            assertEquals(currentEntryId.get(), entryId);
+
+            if (currentEntryId.incrementAndGet() == 10) {
+                currentLedgerId.incrementAndGet();
+                currentEntryId.set(0);
+
+                if (currentLedgerId.get() == 5) {
+                    // Ledger 5 was deleted
+                    currentLedgerId.incrementAndGet();
+                }
+            }
+        });
+
+        cache.close();
+    }
+
 }

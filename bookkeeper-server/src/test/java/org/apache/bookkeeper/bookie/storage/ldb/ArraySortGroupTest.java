@@ -55,62 +55,35 @@ public class ArraySortGroupTest {
         assertArrayEquals(expectedSorted, data);
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void keySmallerThanTotalSize() {
-        try {
-            new ArrayGroupSort(3, 2);
-            fail("should have failed");
-        } catch (IllegalArgumentException e) {
-            // ok
-        }
+        new ArrayGroupSort(3, 2);
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void negativeKeySize() {
-        try {
-            new ArrayGroupSort(-1, 2);
-            fail("should have failed");
-        } catch (IllegalArgumentException e) {
-            // ok
-        }
+        new ArrayGroupSort(-1, 2);
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void negativeTotalSize() {
-        try {
-            new ArrayGroupSort(1, -1);
-            fail("should have failed");
-        } catch (IllegalArgumentException e) {
-            // ok
-        }
+        new ArrayGroupSort(1, -1);
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void arraySizeIsNotMultiple() {
         ArrayGroupSort sorter = new ArrayGroupSort(1, 3);
-
-        try {
-            sorter.sort(new long[] { 1, 2, 3, 4 });
-            fail("should have failed");
-        } catch (IllegalArgumentException e) {
-            // ok
-        }
+        sorter.sort(new long[] { 1, 2, 3, 4 });
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void arraySizeIsShorterThanRequired() {
         ArrayGroupSort sorter = new ArrayGroupSort(1, 3);
-
-        try {
-            sorter.sort(new long[] { 1, 2 });
-            fail("should have failed");
-        } catch (IllegalArgumentException e) {
-            // ok
-        }
+        sorter.sort(new long[] { 1, 2 });
     }
 
     @Test
-    public void emtpy() {
+    public void emptyArray() {
         long[] data = new long[] {};
 
         long[] expectedSorted = new long[] {};
