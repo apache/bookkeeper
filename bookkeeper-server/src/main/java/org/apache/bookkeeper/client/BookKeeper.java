@@ -313,7 +313,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      */
     public BookKeeper(String servers) throws IOException, InterruptedException,
         BKException {
-        this(new ClientConfiguration().setZkServers(servers));
+        this((ClientConfiguration) (new ClientConfiguration().setZkServers(servers)));
     }
 
     /**

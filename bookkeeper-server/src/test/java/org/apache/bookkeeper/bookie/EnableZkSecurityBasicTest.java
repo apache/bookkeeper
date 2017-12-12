@@ -79,9 +79,9 @@ public class EnableZkSecurityBasicTest extends BookKeeperClusterTestCase {
     public void testCreateLedgerAddEntryOnSecureZooKeepeer() throws Exception {
         startNewBookie();
 
-        ClientConfiguration conf = new ClientConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString())
-            .setZkTimeout(20000);
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setZkServers(zkUtil.getZooKeeperConnectString());
+        conf.setZkTimeout(20000);
 
         conf.setZkEnableSecurity(true);
 

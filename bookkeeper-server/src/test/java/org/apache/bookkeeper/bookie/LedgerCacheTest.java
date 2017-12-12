@@ -323,9 +323,9 @@ public class LedgerCacheTest {
         File ledgerDir = createTempDir("bookie", "ledger");
         Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(ledgerDir));
 
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(null)
-            .setJournalDirName(journalDir.getPath())
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setZkServers(null);
+        conf.setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
             .setFlushInterval(1000)
             .setPageLimit(1)
@@ -338,9 +338,9 @@ public class LedgerCacheTest {
             b.addEntry(packet, new Bookie.NopWriteCallback(), null, "passwd".getBytes());
         }
 
-        conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(null)
-            .setJournalDirName(journalDir.getPath())
+        conf = TestBKConfiguration.newServerConfiguration();
+        conf.setZkServers(null);
+        conf.setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() });
 
         b = new Bookie(conf);

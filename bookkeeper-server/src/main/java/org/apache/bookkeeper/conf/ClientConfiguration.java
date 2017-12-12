@@ -34,17 +34,12 @@ import org.apache.bookkeeper.discover.ZKRegistrationClient;
 import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.lang.StringUtils;
 
 
 /**
  * Configuration settings for client side.
  */
 public class ClientConfiguration extends AbstractConfiguration {
-
-    // Zookeeper Parameters
-    protected static final String ZK_TIMEOUT = "zkTimeout";
-    protected static final String ZK_SERVERS = "zkServers";
 
     // Throttle value
     protected static final String THROTTLE = "throttle";
@@ -527,51 +522,6 @@ public class ClientConfiguration extends AbstractConfiguration {
      */
     public ClientConfiguration setUseV2WireProtocol(boolean useV2WireProtocol) {
         setProperty(USE_V2_WIRE_PROTOCOL, useV2WireProtocol);
-        return this;
-    }
-
-    /**
-     * Get zookeeper servers to connect.
-     *
-     * @return zookeeper servers
-     */
-    public String getZkServers() {
-        List servers = getList(ZK_SERVERS, null);
-        if (null == servers || 0 == servers.size()) {
-            return "localhost";
-        }
-        return StringUtils.join(servers, ",");
-    }
-
-    /**
-     * Set zookeeper servers to connect.
-     *
-     * @param zkServers
-     *          ZooKeeper servers to connect
-     */
-    public ClientConfiguration setZkServers(String zkServers) {
-        setProperty(ZK_SERVERS, zkServers);
-        return this;
-    }
-
-    /**
-     * Get zookeeper timeout.
-     *
-     * @return zookeeper client timeout
-     */
-    public int getZkTimeout() {
-        return getInt(ZK_TIMEOUT, 10000);
-    }
-
-    /**
-     * Set zookeeper timeout.
-     *
-     * @param zkTimeout
-     *          ZooKeeper client timeout
-     * @return client configuration
-     */
-    public ClientConfiguration setZkTimeout(int zkTimeout) {
-        setProperty(ZK_TIMEOUT, Integer.toString(zkTimeout));
         return this;
     }
 

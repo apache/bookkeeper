@@ -147,9 +147,9 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
     }
 
     private static void testUpgradeProceedure(String zkServers, String journalDir, String ledgerDir) throws Exception {
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(zkServers)
-            .setJournalDirName(journalDir)
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setZkServers(zkServers);
+        conf.setJournalDirName(journalDir)
             .setLedgerDirNames(new String[] { ledgerDir })
             .setBookiePort(bookiePort);
         Bookie b = null;
@@ -211,11 +211,11 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
         testUpgradeProceedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(), ledgerDir.getPath());
 
         // Upgrade again
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString())
-            .setJournalDirName(journalDir.getPath())
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
-            .setBookiePort(bookiePort);
+            .setBookiePort(bookiePort)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
         FileSystemUpgrade.upgrade(conf); // should work fine with current directory
         Bookie b = new Bookie(conf);
         b.start();
