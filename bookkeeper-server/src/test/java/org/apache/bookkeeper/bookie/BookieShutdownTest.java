@@ -20,25 +20,29 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.junit.Assert.fail;
+
 import java.nio.ByteBuffer;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.LedgerHandle;
+
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
+import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
-
+/**
+ * Test bookie shutdown.
+ */
 public class BookieShutdownTest extends BookKeeperClusterTestCase {
 
-    private final static Logger LOG = LoggerFactory.getLogger(BookieShutdownTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BookieShutdownTest.class);
 
     public BookieShutdownTest() {
         super(3);

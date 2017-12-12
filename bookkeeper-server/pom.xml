@@ -365,7 +365,7 @@
         </dependencies>
         <configuration>
           <configLocation>bookkeeper/checkstyle.xml</configLocation>
-          <suppressionsLocation>bookkeeper/server-suppressions.xml</suppressionsLocation>
+          <suppressionsLocation>bookkeeper/suppressions.xml</suppressionsLocation>
           <consoleOutput>true</consoleOutput>
           <failOnViolation>true</failOnViolation>
           <includeResources>false</includeResources>
