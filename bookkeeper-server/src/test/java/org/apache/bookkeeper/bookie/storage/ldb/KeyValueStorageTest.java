@@ -40,6 +40,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+/**
+ * Unit test for {@link KeyValueStorage}.
+ */
 @RunWith(Parameterized.class)
 public class KeyValueStorageTest {
 
@@ -113,7 +116,7 @@ public class KeyValueStorageTest {
             iter.close();
         }
 
-        assertEquals(Lists.newArrayList(3l, 5l), foundKeys);
+        assertEquals(Lists.newArrayList(3L, 5L), foundKeys);
 
         // Iterate over keys
         foundKeys = Lists.newArrayList();
@@ -126,7 +129,7 @@ public class KeyValueStorageTest {
             iter2.close();
         }
 
-        assertEquals(Lists.newArrayList(3l, 5l), foundKeys);
+        assertEquals(Lists.newArrayList(3L, 5L), foundKeys);
 
         // Scan with limits
         foundKeys = Lists.newArrayList();
@@ -139,7 +142,7 @@ public class KeyValueStorageTest {
             iter2.close();
         }
 
-        assertEquals(Lists.newArrayList(3l), foundKeys);
+        assertEquals(Lists.newArrayList(3L), foundKeys);
 
         // Test deletion
         db.put(toArray(10), toArray(10));
@@ -150,7 +153,7 @@ public class KeyValueStorageTest {
         // Count can be imprecise
         assertTrue(db.count() > 0);
 
-        assertEquals(10l, fromArray(db.get(toArray(10))));
+        assertEquals(10L, fromArray(db.get(toArray(10))));
         db.delete(toArray(10));
         assertEquals(null, db.get(toArray(10)));
         assertTrue(db.count() > 0);
@@ -163,7 +166,7 @@ public class KeyValueStorageTest {
         assertEquals(null, db.get(toArray(11)));
         assertEquals(null, db.get(toArray(12)));
         assertEquals(null, db.get(toArray(13)));
-        assertEquals(14l, fromArray(db.get(toArray(14))));
+        assertEquals(14L, fromArray(db.get(toArray(14))));
         batch.close();
 
         db.close();
