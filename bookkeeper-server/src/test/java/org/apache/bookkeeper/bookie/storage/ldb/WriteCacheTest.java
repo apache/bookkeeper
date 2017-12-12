@@ -40,6 +40,9 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.Test;
 
+/**
+ * Unit test for {@link WriteCache}.
+ */
 public class WriteCacheTest {
 
     @Test

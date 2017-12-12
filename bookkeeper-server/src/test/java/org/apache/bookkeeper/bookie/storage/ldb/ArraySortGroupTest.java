@@ -21,10 +21,12 @@
 package org.apache.bookkeeper.bookie.storage.ldb;
 
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.fail;
 
 import org.junit.Test;
 
+/**
+ * Unit test for {@link ArrayGroupSort}.
+ */
 public class ArraySortGroupTest {
 
     @Test
