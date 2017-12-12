@@ -20,6 +20,17 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static com.google.common.base.Charsets.UTF_8;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.File;
+import java.util.Observable;
+import java.util.Observer;
+
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
@@ -31,19 +42,12 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.util.Observable;
-import java.util.Observer;
-
-import static com.google.common.base.Charsets.UTF_8;
-import static org.junit.Assert.*;
-
 /**
- * Test cases for IndexPersistenceMgr
+ * Test cases for IndexPersistenceMgr.
  */
 public class IndexPersistenceMgrTest {
 
-    static final Logger logger = LoggerFactory.getLogger(IndexPersistenceMgr.class);
+    private static final Logger logger = LoggerFactory.getLogger(IndexPersistenceMgr.class);
 
     ServerConfiguration conf;
     File journalDir, ledgerDir;
@@ -69,7 +73,7 @@ public class IndexPersistenceMgrTest {
 
         ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
-        ledgerMonitor = new LedgerDirsMonitor(conf, 
+        ledgerMonitor = new LedgerDirsMonitor(conf,
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()), ledgerDirsManager);
         ledgerMonitor.init();
     }
@@ -194,7 +198,7 @@ public class IndexPersistenceMgrTest {
         try {
             indexPersistenceMgr = createIndexPersistenceManager(1);
             for (int i = 0; i < 3; i++) {
-                FileInfo fileInfo = indexPersistenceMgr.getFileInfo(lid+i, masterKey);
+                FileInfo fileInfo = indexPersistenceMgr.getFileInfo(lid + i, masterKey);
                 // We need to make sure index file is created, otherwise the test case can be flaky
                 fileInfo.checkOpen(true);
             }
@@ -213,16 +217,16 @@ public class IndexPersistenceMgrTest {
             FileInfo fileInfo = indexPersistenceMgr.writeFileInfoCache.asMap().get(lid);
             assertNotNull(fileInfo);
             assertEquals(2, fileInfo.getUseCount());
-            fileInfo = indexPersistenceMgr.writeFileInfoCache.asMap().get(lid+1);
+            fileInfo = indexPersistenceMgr.writeFileInfoCache.asMap().get(lid + 1);
             assertNull(fileInfo);
-            fileInfo = indexPersistenceMgr.writeFileInfoCache.asMap().get(lid+2);
+            fileInfo = indexPersistenceMgr.writeFileInfoCache.asMap().get(lid + 2);
             assertNull(fileInfo);
             fileInfo = indexPersistenceMgr.readFileInfoCache.asMap().get(lid);
             assertNull(fileInfo);
-            fileInfo = indexPersistenceMgr.readFileInfoCache.asMap().get(lid+1);
+            fileInfo = indexPersistenceMgr.readFileInfoCache.asMap().get(lid + 1);
             assertNotNull(fileInfo);
             assertEquals(2, fileInfo.getUseCount());
-            fileInfo = indexPersistenceMgr.readFileInfoCache.asMap().get(lid+2);
+            fileInfo = indexPersistenceMgr.readFileInfoCache.asMap().get(lid + 2);
             assertNotNull(fileInfo);
             assertEquals(2, fileInfo.getUseCount());
         } finally {

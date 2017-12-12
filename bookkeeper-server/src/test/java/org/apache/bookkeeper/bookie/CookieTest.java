@@ -25,6 +25,7 @@ import static org.apache.bookkeeper.bookie.UpgradeTest.newV1JournalDirectory;
 import static org.apache.bookkeeper.bookie.UpgradeTest.newV1LedgerDirectory;
 import static org.apache.bookkeeper.bookie.UpgradeTest.newV2JournalDirectory;
 import static org.apache.bookkeeper.bookie.UpgradeTest.newV2LedgerDirectory;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -50,9 +51,11 @@ import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.io.FileUtils;
-import org.junit.Assert;
 import org.junit.Test;
 
+/**
+ * Test cookies.
+ */
 public class CookieTest extends BookKeeperClusterTestCase {
     final int bookiePort = PortManager.nextFreePort();
 
@@ -86,7 +89,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
     @Override
     public void tearDown() throws Exception {
         super.tearDown();
-        if(rm != null) {
+        if (rm != null) {
             rm.close();
         }
     }
@@ -111,7 +114,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
     /**
      * Test that if a zookeeper cookie
      * is different to a local cookie, the bookie
-     * will fail to start
+     * will fail to start.
      */
     @Test
     public void testBadJournalCookie() throws Exception {
@@ -146,7 +149,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
     /**
      * Test that if a directory is removed from
      * the configuration, the bookie will fail to
-     * start
+     * start.
      */
     @Test
     public void testDirectoryMissing() throws Exception {
@@ -187,7 +190,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
 
     /**
      * Test that if a cookie is missing from a journal directory
-     * the bookie will fail to start
+     * the bookie will fail to start.
      */
     @Test
     public void testCookieMissingOnJournalDir() throws Exception {
@@ -217,7 +220,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
 
     /**
      * Test that if a cookie is missing from a journal directory
-     * the bookie will fail to start
+     * the bookie will fail to start.
      */
     @Test
     public void testCookieMissingOnLedgerDir() throws Exception {
@@ -248,7 +251,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
     /**
      * Test that if a directory is added to a
      * preexisting bookie, the bookie will fail
-     * to start
+     * to start.
      */
     @Test
     public void testDirectoryAdded() throws Exception {
@@ -363,7 +366,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
 
     /**
      * Test that adding of a non-empty directory is not allowed
-     * even when allowStorageExpansion option is true
+     * even when allowStorageExpansion option is true.
      */
     @Test
     public void testNonEmptyDirAddWithStorageExpansionOption() throws Exception {
@@ -418,7 +421,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
 
     /**
      * Test that if a directory's contents
-     * are emptied, the bookie will fail to start
+     * are emptied, the bookie will fail to start.
      */
     @Test
     public void testDirectoryCleared() throws Exception {
@@ -445,7 +448,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
 
     /**
      * Test that if a bookie's port is changed
-     * the bookie will fail to start
+     * the bookie will fail to start.
      */
     @Test
     public void testBookiePortChanged() throws Exception {
@@ -471,7 +474,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
      * Test that if a bookie tries to start
      * with the address of a bookie which has already
      * existed in the system, then the bookie will fail
-     * to start
+     * to start.
      */
     @Test
     public void testNewBookieStartingWithAnotherBookiesPort() throws Exception {
@@ -497,7 +500,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
         }
     }
 
-    /*
+    /**
      * Test Cookie verification with format.
      */
     @Test
@@ -536,7 +539,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
 
     /**
      * Test that if a bookie is started with directories with
-     * version 2 data, that it will fail to start (it needs upgrade)
+     * version 2 data, that it will fail to start (it needs upgrade).
      */
     @Test
     public void testV2data() throws Exception {
@@ -561,7 +564,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
 
     /**
      * Test that if a bookie is started with directories with
-     * version 1 data, that it will fail to start (it needs upgrade)
+     * version 1 data, that it will fail to start (it needs upgrade).
      */
     @Test
     public void testV1data() throws Exception {
@@ -667,7 +670,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
 
     /**
      * Test old version bookie starts with the cookies generated by new version
-     * (with useHostNameAsBookieID=true)
+     * (with useHostNameAsBookieID=true).
      */
     @Test
     public void testV2dataWithHostNameAsBookieID() throws Exception {
@@ -709,7 +712,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
         b.shutdown();
         Versioned<Cookie> zkCookie = Cookie.readFromRegistrationManager(rm, conf);
         Version version1 = zkCookie.getVersion();
-        Assert.assertTrue("Invalid type expected ZkVersion type",
+        assertTrue("Invalid type expected ZkVersion type",
             version1 instanceof LongVersion);
         LongVersion zkVersion1 = (LongVersion) version1;
         Cookie cookie = zkCookie.getValue();
@@ -717,10 +720,10 @@ public class CookieTest extends BookKeeperClusterTestCase {
 
         zkCookie = Cookie.readFromRegistrationManager(rm, conf);
         Version version2 = zkCookie.getVersion();
-        Assert.assertTrue("Invalid type expected ZkVersion type",
+        assertTrue("Invalid type expected ZkVersion type",
             version2 instanceof LongVersion);
         LongVersion zkVersion2 = (LongVersion) version2;
-        Assert.assertEquals("Version mismatches!",
+        assertEquals("Version mismatches!",
             zkVersion1.getLongVersion() + 1, zkVersion2.getLongVersion());
     }
 

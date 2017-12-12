@@ -36,7 +36,6 @@ import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
-import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.commons.io.FileUtils;
@@ -46,8 +45,11 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Test LedgerDirsManager.
+ */
 public class TestLedgerDirsManager {
-    private final static Logger LOG = LoggerFactory.getLogger(TestLedgerDirsManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TestLedgerDirsManager.class);
 
     ServerConfiguration conf;
     File curDir;
@@ -81,7 +83,7 @@ public class TestLedgerDirsManager {
         mockDiskChecker = new MockDiskChecker(threshold, warnThreshold);
         dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
-        ledgerMonitor = new LedgerDirsMonitor(conf, 
+        ledgerMonitor = new LedgerDirsMonitor(conf,
                 mockDiskChecker, dirsManager);
         ledgerMonitor.init();
     }

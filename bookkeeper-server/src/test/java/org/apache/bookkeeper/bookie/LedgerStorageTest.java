@@ -20,12 +20,16 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.concurrent.CountDownLatch;
 
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.junit.Assert;
 import org.junit.Test;
 
+/**
+ * Test ledger storage.
+ */
 public class LedgerStorageTest extends BookKeeperClusterTestCase {
     public LedgerStorageTest() {
         super(1);
@@ -41,7 +45,7 @@ public class LedgerStorageTest extends BookKeeperClusterTestCase {
         CountDownLatch counter = new CountDownLatch(1);
 
         ledgerStorage.registerLedgerDeletionListener(ledgerId -> {
-            Assert.assertEquals(deletedLedgerId, ledgerId);
+            assertEquals(deletedLedgerId, ledgerId);
 
             counter.countDown();
         });

@@ -20,6 +20,9 @@
  */
 package org.apache.bookkeeper.bookie;
 
+/**
+ * Test compactions by entries.
+ */
 public class CompactionByEntriesTest extends CompactionTest {
     public CompactionByEntriesTest() {
         super(false);

@@ -55,10 +55,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * LedgerCache related test cases
+ * LedgerCache related test cases.
  */
 public class LedgerCacheTest {
-    private final static Logger LOG = LoggerFactory.getLogger(LedgerCacheTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LedgerCacheTest.class);
 
     SnapshotMap<Long, Boolean> activeLedgers;
     LedgerManagerFactory ledgerManagerFactory;
@@ -147,9 +147,9 @@ public class LedgerCacheTest {
          */
         try {
             byte[] masterKey = "blah".getBytes();
-            for( int i = 0; i < 100; i++) {
-                ledgerCache.setMasterKey((long)i, masterKey);
-                ledgerCache.putEntryOffset(i, 0, i*8);
+            for (int i = 0; i < 100; i++) {
+                ledgerCache.setMasterKey((long) i, masterKey);
+                ledgerCache.putEntryOffset(i, 0, i * 8);
             }
         } catch (IOException e) {
             LOG.error("Got IOException.", e);
@@ -168,9 +168,9 @@ public class LedgerCacheTest {
         try {
             int numLedgers = 3;
             byte[] masterKey = "blah".getBytes();
-            for (int i=1; i<=numLedgers; i++) {
-                ledgerCache.setMasterKey((long)i, masterKey);
-                for (int j=0; j<numEntries; j++) {
+            for (int i = 1; i <= numLedgers; i++) {
+                ledgerCache.setMasterKey((long) i, masterKey);
+                for (int j = 0; j < numEntries; j++) {
                     ledgerCache.putEntryOffset(i, j, i * numEntries + j);
                 }
             }
@@ -191,22 +191,22 @@ public class LedgerCacheTest {
         try {
             int numLedgers = 2;
             byte[] masterKey = "blah".getBytes();
-            for (int i=1; i<=numLedgers; i++) {
-                ledgerCache.setMasterKey((long)i, masterKey);
-                for (int j=0; j<numEntries; j++) {
-                    ledgerCache.putEntryOffset(i, j, i*numEntries + j);
+            for (int i = 1; i <= numLedgers; i++) {
+                ledgerCache.setMasterKey((long) i, masterKey);
+                for (int j = 0; j < numEntries; j++) {
+                    ledgerCache.putEntryOffset(i, j, i * numEntries + j);
                 }
             }
             // ledger cache is exhausted
             // delete ledgers
-            for (int i=1; i<=numLedgers; i++) {
-                ledgerCache.deleteLedger((long)i);
+            for (int i = 1; i <= numLedgers; i++) {
+                ledgerCache.deleteLedger((long) i);
             }
             // create num ledgers to add entries
-            for (int i=numLedgers+1; i<=2*numLedgers; i++) {
-                ledgerCache.setMasterKey((long)i, masterKey);
-                for (int j=0; j<numEntries; j++) {
-                    ledgerCache.putEntryOffset(i, j, i*numEntries + j);
+            for (int i = numLedgers + 1; i <= 2 * numLedgers; i++) {
+                ledgerCache.setMasterKey((long) i, masterKey);
+                for (int j = 0; j < numEntries; j++) {
+                    ledgerCache.putEntryOffset(i, j, i * numEntries + j);
                 }
             }
         } catch (Exception e) {
@@ -225,10 +225,10 @@ public class LedgerCacheTest {
         newLedgerCache();
         try {
             // create serveral ledgers
-            for (int i=1; i<=numLedgers; i++) {
-                ledgerCache.setMasterKey((long)i, masterKey);
-                ledgerCache.putEntryOffset(i, 0, i*8);
-                ledgerCache.putEntryOffset(i, 1, i*8);
+            for (int i = 1; i <= numLedgers; i++) {
+                ledgerCache.setMasterKey((long) i, masterKey);
+                ledgerCache.putEntryOffset(i, 0, i * 8);
+                ledgerCache.putEntryOffset(i, 1, i * 8);
             }
 
             // flush all first to clean previous dirty ledgers
@@ -237,7 +237,7 @@ public class LedgerCacheTest {
             ledgerCache.flushLedger(true);
 
             // delete serveral ledgers
-            for (int i=1; i<=numLedgers/2; i++) {
+            for (int i = 1; i <= numLedgers / 2; i++) {
                 ledgerCache.deleteLedger(i);
             }
 
@@ -245,11 +245,11 @@ public class LedgerCacheTest {
             newLedgerCache();
 
             // simulate replaying journals to add entries again
-            for (int i=1; i<=numLedgers; i++) {
+            for (int i = 1; i <= numLedgers; i++) {
                 try {
-                    ledgerCache.putEntryOffset(i, 1, i*8);
+                    ledgerCache.putEntryOffset(i, 1, i * 8);
                 } catch (NoLedgerException nsle) {
-                    if (i<=numLedgers/2) {
+                    if (i <= numLedgers / 2) {
                         // it is ok
                     } else {
                         LOG.error("Error put entry offset : ", nsle);
@@ -264,7 +264,7 @@ public class LedgerCacheTest {
     }
 
     /**
-     * Test Ledger Cache flush failure
+     * Test Ledger Cache flush failure.
      */
     @Test
     public void testLedgerCacheFlushFailureOnDiskFull() throws Exception {
@@ -398,7 +398,7 @@ public class LedgerCacheTest {
                     try {
                         for (int i = 0; i < 1000 && rc.get() == 0; i++) {
                             ledgerCache.setMasterKey(i, masterKey);
-                            ledgerQ.put((long)i);
+                            ledgerQ.put((long) i);
                         }
                     } catch (Exception e) {
                         rc.set(-1);
@@ -418,7 +418,7 @@ public class LedgerCacheTest {
                             }
                             LOG.info("Put entry for {}", id);
                             try {
-                                ledgerCache.putEntryOffset((long)id, 1, 0);
+                                ledgerCache.putEntryOffset((long) id, 1, 0);
                             } catch (Bookie.NoLedgerException nle) {
                                 //ignore
                             }
@@ -524,7 +524,8 @@ public class LedgerCacheTest {
         EntryMemTable memTable = flushTestSortedLedgerStorage.memTable;
 
         // this bookie.addEntry call is required. FileInfo for Ledger 1 would be created with this call.
-        // without the fileinfo, 'flushTestSortedLedgerStorage.addEntry' calls will fail because of BOOKKEEPER-965 change.
+        // without the fileinfo, 'flushTestSortedLedgerStorage.addEntry' calls will fail
+        // because of BOOKKEEPER-965 change.
         bookie.addEntry(generateEntry(1, 1), new Bookie.NopWriteCallback(), null, "passwd".getBytes());
 
         flushTestSortedLedgerStorage.addEntry(generateEntry(1, 2));

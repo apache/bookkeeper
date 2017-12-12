@@ -23,6 +23,7 @@ package org.apache.bookkeeper.bookie;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -40,17 +41,20 @@ import org.apache.bookkeeper.client.ClientUtil;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
-import org.apache.bookkeeper.test.PortManager;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.test.PortManager;
 import org.apache.bookkeeper.util.IOUtils;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Test the protocol upgrade procedure.
+ */
 public class UpgradeTest extends BookKeeperClusterTestCase {
-    private final static Logger LOG = LoggerFactory.getLogger(FileInfo.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FileInfo.class);
 
-    final static int bookiePort = PortManager.nextFreePort();
+    private static final int bookiePort = PortManager.nextFreePort();
 
     public UpgradeTest() {
         super(0);
@@ -69,11 +73,11 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
         fi.close(true);
 
         long logId = 0;
-        ByteBuffer LOGFILE_HEADER = ByteBuffer.allocate(1024);
-        LOGFILE_HEADER.put("BKLO".getBytes());
+        ByteBuffer logfileHeader = ByteBuffer.allocate(1024);
+        logfileHeader.put("BKLO".getBytes());
         FileChannel logfile = new RandomAccessFile(
-                new File(dir, Long.toHexString(logId)+".log"), "rw").getChannel();
-        logfile.write((ByteBuffer) LOGFILE_HEADER.clear());
+                new File(dir, Long.toHexString(logId) + ".log"), "rw").getChannel();
+        logfile.write((ByteBuffer) logfileHeader.clear());
         logfile.close();
     }
 
@@ -86,12 +90,12 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
 
         long ledgerId = 1;
         byte[] data = new byte[1024];
-        Arrays.fill(data, (byte)'X');
+        Arrays.fill(data, (byte) 'X');
         long lastConfirmed = LedgerHandle.INVALID_ENTRY_ID;
 
         for (int i = 1; i <= numEntries; i++) {
             ByteBuf packet = ClientUtil.generatePacket(ledgerId, i, lastConfirmed,
-                                                          i*data.length, data);
+                                                          i * data.length, data);
             lastConfirmed = i;
             ByteBuffer lenBuff = ByteBuffer.allocate(4);
             lenBuff.putInt(packet.readableBytes());
@@ -111,7 +115,7 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
         writeJournal(d, 100, "foobar".getBytes()).close();
         return d;
     }
-              
+
     static File newV1LedgerDirectory() throws Exception {
         File d = IOUtils.createTempDir("bookie", "tmpdir");
         writeLedgerDir(d, "foobar".getBytes());

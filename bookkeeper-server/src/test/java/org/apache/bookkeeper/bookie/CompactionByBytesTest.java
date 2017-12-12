@@ -20,6 +20,9 @@
  */
 package org.apache.bookkeeper.bookie;
 
+/**
+ * Test compaction by bytes.
+ */
 public class CompactionByBytesTest extends CompactionTest {
     public CompactionByBytesTest() {
         super(true);
