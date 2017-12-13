@@ -116,6 +116,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     // Ensemble Placement Policy
     protected static final String ENSEMBLE_PLACEMENT_POLICY = "ensemblePlacementPolicy";
     protected static final String NETWORK_TOPOLOGY_STABILIZE_PERIOD_SECONDS = "networkTopologyStabilizePeriodSeconds";
+    protected static final String ENSEMBLE_PLACEMENT_POLICY_ORDER_SLOW_BOOKIES = "ensemblePlacementPolicyOrderSlowBookies";
 
     // Ledger Metadata Parameters
     protected static final String STORE_SYSTEMTIME_AS_LEDGER_CREATION_TIME = "storeSystemTimeAsLedgerCreationTime";
@@ -1100,6 +1101,27 @@ public class ClientConfiguration extends AbstractConfiguration {
      */
     public ClientConfiguration setNetworkTopologyStabilizePeriodSeconds(int seconds) {
         setProperty(NETWORK_TOPOLOGY_STABILIZE_PERIOD_SECONDS, seconds);
+        return this;
+    }
+
+    /**
+     * Whether to order slow bookies in placement policy.
+     *
+     * @return flag of whether to order slow bookies in placement policy or not.
+     */
+    public boolean getEnsemblePlacementPolicySlowBookies() {
+        return getBoolean(ENSEMBLE_PLACEMENT_POLICY_ORDER_SLOW_BOOKIES, false);
+    }
+
+    /**
+     * Enable/Disable ordering slow bookies in placement policy.
+     *
+     * @param enabled
+     *          flag to enable/disable ordering slow bookies in placement policy.
+     * @return client configuration.
+     */
+    public ClientConfiguration setEnsemblePlacementPolicySlowBookies(boolean enabled) {
+        setProperty(ENSEMBLE_PLACEMENT_POLICY_ORDER_SLOW_BOOKIES, enabled);
         return this;
     }
 

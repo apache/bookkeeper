@@ -121,18 +121,18 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
     @Override
     public DistributionSchedule.WriteSet reorderReadSequence(
             ArrayList<BookieSocketAddress> ensemble,
-            Map<BookieSocketAddress, Long> bookieFailureHistory,
+            BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet) {
-        return super.reorderReadSequence(ensemble, bookieFailureHistory,
+        return super.reorderReadSequence(ensemble, bookiesHealthInfo,
                                          writeSet);
     }
 
     @Override
     public DistributionSchedule.WriteSet reorderReadLACSequence(
             ArrayList<BookieSocketAddress> ensemble,
-            Map<BookieSocketAddress, Long> bookieFailureHistory,
+            BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet) {
-        return super.reorderReadLACSequence(ensemble, bookieFailureHistory,
+        return super.reorderReadLACSequence(ensemble, bookiesHealthInfo,
                                             writeSet);
     }
 

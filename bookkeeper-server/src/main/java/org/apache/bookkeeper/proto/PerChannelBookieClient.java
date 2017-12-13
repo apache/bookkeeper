@@ -360,6 +360,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
     }
 
+    protected long getNumPendingCompletionRequests() {
+        return completionObjects.size();
+    }
+
     protected ChannelFuture connect() {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Connecting to bookie: {}", addr);
