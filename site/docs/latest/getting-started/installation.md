@@ -54,7 +54,7 @@ Command | Action
 :-------|:------
 `mvn clean` | Removes build artifacts
 `mvn compile` | Compiles JAR files from Java sources
-`mvn compile findbugs:findbugs` | Compile using the Maven [FindBugs](http://gleclaire.github.io/findbugs-maven-plugin) plugin
+`mvn compile spotbugs:spotbugs` | Compile using the Maven [SpotBugs](https://github.com/spotbugs/spotbugs-maven-plugin) plugin
 `mvn install` | Install the BookKeeper JAR locally in your local Maven cache (usually in the `~/.m2` directory)
 `mvn deploy` | Deploy the BookKeeper JAR to the Maven repo (if you have the proper credentials)
 `mvn verify` | Performs a wide variety of verification and validation tasks
