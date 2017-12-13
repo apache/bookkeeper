@@ -39,7 +39,7 @@ import org.apache.commons.configuration.ConfigurationException;
 /**
  * Configuration settings for client side.
  */
-public class ClientConfiguration extends AbstractConfiguration {
+public class ClientConfiguration extends AbstractConfiguration<ClientConfiguration> {
 
     // Throttle value
     protected static final String THROTTLE = "throttle";
@@ -1668,5 +1668,10 @@ public class ClientConfiguration extends AbstractConfiguration {
      */
     public boolean getStoreSystemtimeAsLedgerCreationTime() {
         return getBoolean(STORE_SYSTEMTIME_AS_LEDGER_CREATION_TIME, false);
+    }
+
+    @Override
+    protected ClientConfiguration getThis() {
+        return this;
     }
 }

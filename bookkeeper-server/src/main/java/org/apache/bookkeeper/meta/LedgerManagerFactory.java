@@ -109,7 +109,7 @@ public abstract class LedgerManagerFactory {
      * @throws IOException
      */
     public static LedgerManagerFactory newLedgerManagerFactory(
-        final AbstractConfiguration conf, final ZooKeeper zk)
+        final AbstractConfiguration<?> conf, final ZooKeeper zk)
             throws IOException, KeeperException, InterruptedException {
         Class<? extends LedgerManagerFactory> factoryClass;
         try {
@@ -252,7 +252,7 @@ public abstract class LedgerManagerFactory {
      * @param zk
      *            Zookeeper instance
      */
-    public void format(final AbstractConfiguration conf, final ZooKeeper zk)
+    public void format(final AbstractConfiguration<?> conf, final ZooKeeper zk)
             throws InterruptedException, KeeperException, IOException {
 
         Class<? extends LedgerManagerFactory> factoryClass;
