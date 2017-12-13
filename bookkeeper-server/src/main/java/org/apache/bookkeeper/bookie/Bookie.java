@@ -1431,11 +1431,11 @@ public class Bookie extends BookieCriticalThread {
     }
 
     public boolean waitForLastAddConfirmedUpdate(long ledgerId,
-                                                 long previoisLAC,
+                                                 long previousLAC,
                                                  Watcher<LastAddConfirmedUpdateNotification> watcher)
             throws IOException {
         LedgerDescriptor handle = handles.getReadOnlyHandle(ledgerId);
-        return handle.waitForLastAddConfirmedUpdate(previoisLAC, watcher);
+        return handle.waitForLastAddConfirmedUpdate(previousLAC, watcher);
     }
 
     // The rest of the code is test stuff

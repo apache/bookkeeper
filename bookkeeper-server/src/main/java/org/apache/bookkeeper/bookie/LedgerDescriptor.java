@@ -77,7 +77,7 @@ public abstract class LedgerDescriptor {
     abstract ByteBuf readEntry(long entryId) throws IOException;
 
     abstract long getLastAddConfirmed() throws IOException;
-    abstract boolean waitForLastAddConfirmedUpdate(long previoisLAC,
+    abstract boolean waitForLastAddConfirmedUpdate(long previousLAC,
                                                    Watcher<LastAddConfirmedUpdateNotification> watcher)
         throws IOException;
 

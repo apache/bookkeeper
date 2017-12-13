@@ -425,7 +425,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
 
         @Override
         public boolean waitForLastAddConfirmedUpdate(long ledgerId,
-                                                     long previoisLAC,
+                                                     long previousLAC,
                                                      Watcher<LastAddConfirmedUpdateNotification> watcher)
                 throws IOException {
             return false;

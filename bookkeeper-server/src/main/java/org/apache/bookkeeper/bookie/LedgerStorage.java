@@ -118,13 +118,13 @@ public interface LedgerStorage {
     /**
      * Wait for last add confirmed update.
      *
-     * @param previoisLAC - The threshold beyond which we would wait for the update
+     * @param previousLAC - The threshold beyond which we would wait for the update
      * @param watcher  - Watcher to notify on update
      * @return
      * @throws IOException
      */
     boolean waitForLastAddConfirmedUpdate(long ledgerId,
-                                          long previoisLAC,
+                                          long previousLAC,
                                           Watcher<LastAddConfirmedUpdateNotification> watcher) throws IOException;
 
     /**

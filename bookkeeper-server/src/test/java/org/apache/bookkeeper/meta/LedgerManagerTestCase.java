@@ -214,7 +214,7 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
 
         @Override
         public boolean waitForLastAddConfirmedUpdate(long ledgerId,
-                                                     long previoisLAC,
+                                                     long previousLAC,
                                                      Watcher<LastAddConfirmedUpdateNotification> watcher)
                 throws IOException {
             return false;

@@ -20,7 +20,6 @@
 package org.apache.bookkeeper.common.util;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -29,7 +28,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.util.function.Function;
-import org.apache.bookkeeper.common.collections.RecyclableHashSet.Recycler;
+import org.apache.bookkeeper.common.collections.RecyclableArrayList.Recycler;
 import org.junit.After;
 import org.junit.Test;
 
@@ -67,19 +66,6 @@ public class TestWatchable {
 
     @Test
     @SuppressWarnings("unchecked")
-    public void testAddWatcherTwice() {
-        Watcher<Integer> watcher = mock(Watcher.class);
-        assertTrue(watchable.addWatcher(watcher));
-        assertFalse(watchable.addWatcher(watcher));
-        assertEquals(1, watchable.getNumWatchers());
-
-        watchable.notifyWatchers(Function.identity(), 123);
-        verify(watcher, times(1)).update(eq(123));
-        assertEquals(0, watchable.getNumWatchers());
-    }
-
-    @Test
-    @SuppressWarnings("unchecked")
     public void testDeleteWatcher() {
         Watcher<Integer> watcher = mock(Watcher.class);
         assertTrue(watchable.addWatcher(watcher));
@@ -104,6 +90,22 @@ public class TestWatchable {
         watchable.notifyWatchers(Function.identity(), 123);
         verify(watcher1, times(1)).update(eq(123));
         verify(watcher2, times(1)).update(eq(123));
+        assertEquals(0, watchable.getNumWatchers());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testAddWatchMultipleTimes() {
+        Watcher<Integer> watcher = mock(Watcher.class);
+
+        int numTimes = 3;
+        for (int i = 0; i < numTimes; i++) {
+            assertTrue(watchable.addWatcher(watcher));
+        }
+        assertEquals(numTimes, watchable.getNumWatchers());
+
+        watchable.notifyWatchers(Function.identity(), 123);
+        verify(watcher, times(numTimes)).update(eq(123));
         assertEquals(0, watchable.getNumWatchers());
     }
 

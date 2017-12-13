@@ -15,7 +15,7 @@
  * under the License.
  */
 
-package org.apache.bookkeeper.util.collections;
+package org.apache.bookkeeper.common.collections;
 
 import io.netty.util.Recycler.Handle;
 import java.util.ArrayList;
@@ -24,6 +24,8 @@ import java.util.ArrayList;
  * A simple list which is recyclable.
  */
 public final class RecyclableArrayList<T> extends ArrayList<T> {
+
+    private static final long serialVersionUID = -5008878512804043985L;
 
     private static final int DEFAULT_INITIAL_CAPACITY = 8;
 

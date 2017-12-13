@@ -49,7 +49,7 @@ interface LedgerCache extends Closeable {
     Long getLastAddConfirmed(long ledgerId) throws IOException;
     long updateLastAddConfirmed(long ledgerId, long lac) throws IOException;
     boolean waitForLastAddConfirmedUpdate(long ledgerId,
-                                          long previoisLAC,
+                                          long previousLAC,
                                           Watcher<LastAddConfirmedUpdateNotification> watcher) throws IOException;
 
     void deleteLedger(long ledgerId) throws IOException;

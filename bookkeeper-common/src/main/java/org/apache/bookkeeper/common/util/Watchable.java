@@ -22,8 +22,8 @@ package org.apache.bookkeeper.common.util;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.function.Function;
-import org.apache.bookkeeper.common.collections.RecyclableHashSet;
-import org.apache.bookkeeper.common.collections.RecyclableHashSet.Recycler;
+import org.apache.bookkeeper.common.collections.RecyclableArrayList;
+import org.apache.bookkeeper.common.collections.RecyclableArrayList.Recycler;
 
 /**
  * This class represents an watchable object, or "data"
@@ -45,13 +45,13 @@ import org.apache.bookkeeper.common.collections.RecyclableHashSet.Recycler;
  * mechanism of class <tt>Object</tt>.
  *
  * <p>When an watchable object is newly created, its set of watchers is
- * empty. Two watchers are considered the same if and only if the
- * <tt>equals</tt> method returns true for them.
+ * empty. If a same watcher is added multiple times to this watchable, it will
+ * receive the notifications multiple times.
  */
 public class Watchable<T> implements Recyclable {
 
     private final Recycler<Watcher<T>> recycler;
-    private RecyclableHashSet<Watcher<T>> watchers;
+    private RecyclableArrayList<Watcher<T>> watchers;
 
     /** Construct an Watchable with zero watchers. */
 
@@ -94,7 +94,7 @@ public class Watchable<T> implements Recyclable {
      * @param value value to notify
      */
     public <R> void notifyWatchers(Function<R, T> valueFn, R value) {
-        RecyclableHashSet<Watcher<T>> watchersLocal;
+        RecyclableArrayList<Watcher<T>> watchersLocal;
         synchronized (this) {
             watchersLocal = watchers;
             watchers = recycler.newInstance();

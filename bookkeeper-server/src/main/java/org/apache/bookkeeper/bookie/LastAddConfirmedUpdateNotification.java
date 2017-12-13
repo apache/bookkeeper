@@ -24,7 +24,7 @@ import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import java.util.function.Function;
 import lombok.Getter;
-import org.apache.bookkeeper.common.collections.RecyclableHashSet;
+import org.apache.bookkeeper.common.collections.RecyclableArrayList;
 import org.apache.bookkeeper.common.util.Recyclable;
 import org.apache.bookkeeper.common.util.Watcher;
 
@@ -38,8 +38,8 @@ public class LastAddConfirmedUpdateNotification implements Recyclable {
 
     public static final Function<Long, LastAddConfirmedUpdateNotification> FUNC = lac -> of(lac);
 
-    public static final RecyclableHashSet.Recycler<Watcher<LastAddConfirmedUpdateNotification>> WATCHER_RECYCLER =
-        new RecyclableHashSet.Recycler<>();
+    public static final RecyclableArrayList.Recycler<Watcher<LastAddConfirmedUpdateNotification>> WATCHER_RECYCLER =
+        new RecyclableArrayList.Recycler<>();
 
     public static LastAddConfirmedUpdateNotification of(long lastAddConfirmed) {
         LastAddConfirmedUpdateNotification lac = RECYCLER.get();

@@ -433,12 +433,12 @@ public class IndexPersistenceMgr {
     }
 
     boolean waitForLastAddConfirmedUpdate(long ledgerId,
-                                          long previoisLAC,
+                                          long previousLAC,
                                           Watcher<LastAddConfirmedUpdateNotification> watcher) throws IOException {
         FileInfo fi = null;
         try {
             fi = getFileInfo(ledgerId, null);
-            return fi.waitForLastAddConfirmedUpdate(previoisLAC, watcher);
+            return fi.waitForLastAddConfirmedUpdate(previousLAC, watcher);
         } finally {
             if (null != fi) {
                 fi.release();

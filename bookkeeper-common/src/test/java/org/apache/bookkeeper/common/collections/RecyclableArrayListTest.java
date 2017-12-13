@@ -16,34 +16,33 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.bookkeeper.common.collections;
 
 import static org.junit.Assert.assertEquals;
 
-import org.apache.bookkeeper.common.collections.RecyclableHashSet.Recycler;
+import org.apache.bookkeeper.common.collections.RecyclableArrayList.Recycler;
 import org.junit.Test;
 
 /**
- * Unit test of {@link RecyclableHashSet}.
+ * Unit test of {@link RecyclableArrayList}.
  */
-public class RecyclableHashSetTest {
+public class RecyclableArrayListTest {
 
     private final Recycler<Integer> recycler;
 
-    public RecyclableHashSetTest() {
+    public RecyclableArrayListTest() {
         this.recycler = new Recycler<>();
     }
 
     @Test
     public void testRecycle() {
-        RecyclableHashSet<Integer> set = recycler.newInstance();
+        RecyclableArrayList<Integer> array = recycler.newInstance();
         for (int i = 0; i < 5; i++) {
-            set.add(i);
+            array.add(i);
         }
-        assertEquals(5, set.size());
-        set.recycle();
-        assertEquals(0, set.size());
+        assertEquals(5, array.size());
+        array.recycle();
+        assertEquals(0, array.size());
     }
 
 }

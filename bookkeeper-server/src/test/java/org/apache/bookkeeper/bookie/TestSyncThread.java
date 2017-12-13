@@ -346,7 +346,7 @@ public class TestSyncThread {
 
         @Override
         public boolean waitForLastAddConfirmedUpdate(long ledgerId,
-                                                     long previoisLAC,
+                                                     long previousLAC,
                                                      Watcher<LastAddConfirmedUpdateNotification> watcher)
                 throws IOException {
             return false;

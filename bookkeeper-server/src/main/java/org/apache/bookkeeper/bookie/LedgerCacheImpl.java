@@ -85,12 +85,11 @@ public class LedgerCacheImpl implements LedgerCache {
 
     @Override
     public boolean waitForLastAddConfirmedUpdate(long ledgerId,
-                                                 long previoisLAC,
+                                                 long previousLAC,
                                                  Watcher<LastAddConfirmedUpdateNotification> watcher)
             throws IOException {
-        return indexPersistenceManager.waitForLastAddConfirmedUpdate(ledgerId, previoisLAC, watcher);
+        return indexPersistenceManager.waitForLastAddConfirmedUpdate(ledgerId, previousLAC, watcher);
     }
-
 
     @Override
     public void putEntryOffset(long ledger, long entry, long offset) throws IOException {

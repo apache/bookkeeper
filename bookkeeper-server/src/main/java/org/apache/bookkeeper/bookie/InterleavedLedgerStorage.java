@@ -250,10 +250,10 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
 
     @Override
     public boolean waitForLastAddConfirmedUpdate(long ledgerId,
-                                                 long previoisLAC,
+                                                 long previousLAC,
                                                  Watcher<LastAddConfirmedUpdateNotification> watcher)
             throws IOException {
-        return ledgerCache.waitForLastAddConfirmedUpdate(ledgerId, previoisLAC, watcher);
+        return ledgerCache.waitForLastAddConfirmedUpdate(ledgerId, previousLAC, watcher);
     }
 
 
