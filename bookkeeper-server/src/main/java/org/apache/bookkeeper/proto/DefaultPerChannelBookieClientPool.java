@@ -95,6 +95,13 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
     }
 
     @Override
+    public void checkTimeoutOnPendingOperations() {
+        for (int i = 0; i < clients.length; i++) {
+            clients[i].checkTimeoutOnPendingOperations();
+        }
+    }
+
+    @Override
     public void recordError() {
         errorCounter.incrementAndGet();
     }
