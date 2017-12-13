@@ -160,6 +160,8 @@
 <dd>
 <div class="block">Add entry operation timeouts on waiting quorum responses.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#addEntryQuorumTimeoutNanos">addEntryQuorumTimeoutNanos</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/AsyncCallback.AddLacCallback.html#addLacComplete-int-org.apache.bookkeeper.client.LedgerHandle-java.lang.Object-">addLacComplete(int, LedgerHandle, Object)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/AsyncCallback.AddLacCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.AddLacCallback</a></dt>
 <dd>
 <div class="block">Callback declaration.</div>
@@ -2698,15 +2700,11 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#getPCBCTimeoutTimerNumTicks--">getPCBCTimeoutTimerNumTicks()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
-<div class="block">Get number of ticks that used for
- <code>org.jboss.netty.util.HashedWheelTimer</code> that used by PCBC to timeout
- requests.</div>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#getPCBCTimeoutTimerTickDurationMs--">getPCBCTimeoutTimerTickDurationMs()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
-<div class="block">Get the tick duration in milliseconds that used for the
- <code>org.jboss.netty.util.HashedWheelTimer</code> that used by PCBC to timeout
- requests.</div>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#getPlacementPolicy--">getPlacementPolicy()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>&nbsp;</dd>
@@ -2901,6 +2899,10 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#getThrottleValue--">getThrottleValue()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
 <div class="block">Get throttle value.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#getTimeoutMonitorIntervalSec--">getTimeoutMonitorIntervalSec()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
+<dd>
+<div class="block">Get the interval between successive executions of the operation timeout monitor.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#getTimeoutTaskIntervalMillis--">getTimeoutTaskIntervalMillis()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
@@ -3995,6 +3997,8 @@
 <dd>
 <div class="block">Send to next replica speculatively, if required and possible.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingAddOp.html#maybeTimeout--">maybeTimeout()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#mergeEnsembles-java.util.SortedMap-">mergeEnsembles(SortedMap&lt;Long, ArrayList&lt;BookieSocketAddress&gt;&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerCreateOp.html#metadata">metadata</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerCreateOp.html" title="class in org.apache.bookkeeper.client">LedgerCreateOp</a></dt>
@@ -5126,8 +5130,6 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html#RRTopologyAwareCoverageEnsemble-int-int-int-int-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Ensemble-org.apache.bookkeeper.client.ITopologyAwareEnsemblePlacementPolicy.Predicate-java.util.Set-int-">RRTopologyAwareCoverageEnsemble(int, int, int, int, ITopologyAwareEnsemblePlacementPolicy.Ensemble&lt;TopologyAwareEnsemblePlacementPolicy.BookieNode&gt;, ITopologyAwareEnsemblePlacementPolicy.Predicate&lt;TopologyAwareEnsemblePlacementPolicy.BookieNode&gt;, Set&lt;String&gt;, int)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingAddOp.html#run-io.netty.util.Timeout-">run(Timeout)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a></dt>
-<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#RW_REREPLICATE_BACKOFF_MS">RW_REREPLICATE_BACKOFF_MS</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#rwLock">rwLock</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
@@ -5787,14 +5789,11 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#setPCBCTimeoutTimerNumTicks-int-">setPCBCTimeoutTimerNumTicks(int)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
-<div class="block">Set number of ticks that used for
- <code>org.jboss.netty.util.HashedWheelTimer</code> that used by PCBC to timeout request.</div>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#setPCBCTimeoutTimerTickDurationMs-long-">setPCBCTimeoutTimerTickDurationMs(long)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
-<div class="block">Set the tick duration in milliseconds that used for
- <code>org.jboss.netty.util.HashedWheelTimer</code> that used by PCBC to timeout
- requests.</div>
+<div class="block"><span class="deprecatedLabel">Deprecated.</span></div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setPersistBookieStatusEnabled-boolean-">setPersistBookieStatusEnabled(boolean)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
@@ -5956,6 +5955,10 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#setThrottleValue-int-">setThrottleValue(int)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
 <div class="block">Set throttle value.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#setTimeoutMonitorIntervalSec-long-">setTimeoutMonitorIntervalSec(long)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
+<dd>
+<div class="block">Set the interval between successive executions of the operation timeout monitor.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#setTimeoutTaskIntervalMillis-long-">setTimeoutTaskIntervalMillis(long)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
@@ -6332,9 +6335,9 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#throttler">throttler</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingAddOp.html#timeout">timeout</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a></dt>
-<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#TIMEOUT_GET_BOOKIE_INFO">TIMEOUT_GET_BOOKIE_INFO</a></span> - Static variable in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#TIMEOUT_MONITOR_INTERVAL_SEC">TIMEOUT_MONITOR_INTERVAL_SEC</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#TIMEOUT_TASK_INTERVAL_MILLIS">TIMEOUT_TASK_INTERVAL_MILLIS</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>&nbsp;</dd>
@@ -6346,9 +6349,11 @@
 <dd>
 <div class="block">Operations timeouts.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingAddOp.html#timeoutQuorumWait--">timeoutQuorumWait()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#timeoutFuture">timeoutFuture</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingAddOp.html#timeoutSec">timeoutSec</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingAddOp.html#timeoutNanos">timeoutNanos</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingAddOp.html#timeoutQuorumWait--">timeoutQuorumWait()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#timer">timer</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
 <dd>&nbsp;</dd>

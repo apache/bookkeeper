@@ -114,13 +114,13 @@ var activeTableTab = "activeTableTab";
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd>io.netty.util.TimerTask, <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Runnable.html?is-external=true" title="class or interface in java.lang">Runnable</a>, org.apache.bookkeeper.common.util.SafeRunnable, org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback</dd>
+<dd><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Runnable.html?is-external=true" title="class or interface in java.lang">Runnable</a>, org.apache.bookkeeper.common.util.SafeRunnable, org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback</dd>
 </dl>
 <hr>
 <br>
 <pre>class <span class="typeNameLabel">PendingAddOp</span>
 extends org.apache.bookkeeper.util.SafeRunnable
-implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback, io.netty.util.TimerTask</pre>
+implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback</pre>
 <div class="block">This represents a pending add operation. When it has got success from all
  bookies, it sees if its at the head of the pending adds queue, and if yes,
  sends ack back to the application. If a bookie fails, a replacement is made
@@ -205,14 +205,10 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#requestTimeNanos">requestTimeNanos</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>(package private) io.netty.util.Timeout</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#timeout">timeout</a></span></code>&nbsp;</td>
+<td class="colFirst"><code>(package private) long</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#timeoutNanos">timeoutNanos</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>(package private) int</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#timeoutSec">timeoutSec</a></span></code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
 <td class="colFirst"><code>(package private) io.netty.buffer.ByteBuf</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#toSend">toSend</a></span></code>&nbsp;</td>
 </tr>
@@ -264,8 +260,8 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#hashCode--">hashCode</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i5" class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#run-io.netty.util.Timeout-">run</a></span>(io.netty.util.Timeout&nbsp;timeout)</code>&nbsp;</td>
+<td class="colFirst"><code>(package private) boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingAddOp.html#maybeTimeout--">maybeTimeout</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i6" class="altColor">
 <td class="colFirst"><code>void</code></td>
@@ -448,22 +444,13 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback
 <pre>long requestTimeNanos</pre>
 </li>
 </ul>
-<a name="timeoutSec">
+<a name="timeoutNanos">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>timeoutSec</h4>
-<pre>int timeoutSec</pre>
-</li>
-</ul>
-<a name="timeout">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>timeout</h4>
-<pre>io.netty.util.Timeout timeout</pre>
+<h4>timeoutNanos</h4>
+<pre>long timeoutNanos</pre>
 </li>
 </ul>
 <a name="addOpLogger">
@@ -581,17 +568,13 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback
 <pre>void&nbsp;sendWriteRequest(int&nbsp;bookieIndex)</pre>
 </li>
 </ul>
-<a name="run-io.netty.util.Timeout-">
+<a name="maybeTimeout--">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>run</h4>
-<pre>public&nbsp;void&nbsp;run(io.netty.util.Timeout&nbsp;timeout)</pre>
-<dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code>run</code>&nbsp;in interface&nbsp;<code>io.netty.util.TimerTask</code></dd>
-</dl>
+<h4>maybeTimeout</h4>
+<pre>boolean&nbsp;maybeTimeout()</pre>
 </li>
 </ul>
 <a name="timeoutQuorumWait--">
