@@ -146,6 +146,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     final int explicitLacInterval;
     final boolean delayEnsembleChange;
     final boolean reorderReadSequence;
+    final long addEntryQuorumTimeoutNanos;
 
     final Optional<SpeculativeRequestExecutionPolicy> readSpeculativeRequestPolicy;
     final Optional<SpeculativeRequestExecutionPolicy> readLACSpeculativeRequestPolicy;
@@ -313,7 +314,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      */
     public BookKeeper(String servers) throws IOException, InterruptedException,
         BKException {
-        this(new ClientConfiguration().setZkServers(servers));
+        this((ClientConfiguration) (new ClientConfiguration().setZkServers(servers)));
     }
 
     /**
@@ -487,9 +488,9 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             this.readLACSpeculativeRequestPolicy = Optional.<SpeculativeRequestExecutionPolicy>absent();
         }
 
-
         // initialize bookie client
-        this.bookieClient = new BookieClient(conf, this.eventLoopGroup, this.mainWorkerPool, statsLogger);
+        this.bookieClient = new BookieClient(conf, this.eventLoopGroup, this.mainWorkerPool,
+                                             scheduler, statsLogger);
         this.bookieWatcher = new BookieWatcher(conf, this.placementPolicy, regClient);
         if (conf.getDiskWeightBasedPlacementEnabled()) {
             LOG.info("Weighted ledger placement enabled");
@@ -520,6 +521,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             LOG.debug("Explicit LAC Interval : {}", this.explicitLacInterval);
         }
 
+        this.addEntryQuorumTimeoutNanos = TimeUnit.SECONDS.toNanos(conf.getAddEntryQuorumTimeout());
         scheduleBookieHealthCheckIfEnabled();
     }
 

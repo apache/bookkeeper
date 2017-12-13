@@ -21,6 +21,7 @@ import static org.apache.bookkeeper.conf.ClientConfiguration.CLIENT_AUTH_PROVIDE
 
 import java.net.URL;
 import java.util.Iterator;
+import java.util.List;
 import javax.net.ssl.SSLEngine;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
@@ -29,6 +30,7 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Abstract configuration.
@@ -50,6 +52,10 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
         }
         DEFAULT_LOADER = loader;
     }
+
+    // Zookeeper Parameters
+    protected static final String ZK_TIMEOUT = "zkTimeout";
+    protected static final String ZK_SERVERS = "zkServers";
 
     // Ledger Manager
     protected static final String LEDGER_MANAGER_TYPE = "ledgerManagerType";
@@ -131,6 +137,51 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
             String key = iter.next();
             setProperty(key, baseConf.getProperty(key));
         }
+    }
+
+    /**
+     * Get zookeeper servers to connect.
+     *
+     * @return zookeeper servers
+     */
+    public String getZkServers() {
+        List servers = getList(ZK_SERVERS, null);
+        if (null == servers || 0 == servers.size()) {
+            return null;
+        }
+        return StringUtils.join(servers, ",");
+    }
+
+    /**
+     * Set zookeeper servers to connect.
+     *
+     * @param zkServers
+     *          ZooKeeper servers to connect
+     */
+    public AbstractConfiguration setZkServers(String zkServers) {
+        setProperty(ZK_SERVERS, zkServers);
+        return this;
+    }
+
+    /**
+     * Get zookeeper timeout.
+     *
+     * @return zookeeper server timeout
+     */
+    public int getZkTimeout() {
+        return getInt(ZK_TIMEOUT, 10000);
+    }
+
+    /**
+     * Set zookeeper timeout.
+     *
+     * @param zkTimeout
+     *          ZooKeeper server timeout
+     * @return server configuration
+     */
+    public AbstractConfiguration setZkTimeout(int zkTimeout) {
+        setProperty(ZK_TIMEOUT, Integer.toString(zkTimeout));
+        return this;
     }
 
     /**

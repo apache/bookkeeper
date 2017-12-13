@@ -34,17 +34,12 @@ import org.apache.bookkeeper.discover.ZKRegistrationClient;
 import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.lang.StringUtils;
 
 
 /**
  * Configuration settings for client side.
  */
 public class ClientConfiguration extends AbstractConfiguration {
-
-    // Zookeeper Parameters
-    protected static final String ZK_TIMEOUT = "zkTimeout";
-    protected static final String ZK_SERVERS = "zkServers";
 
     // Throttle value
     protected static final String THROTTLE = "throttle";
@@ -88,6 +83,7 @@ public class ClientConfiguration extends AbstractConfiguration {
     protected static final String ADD_ENTRY_TIMEOUT_SEC = "addEntryTimeoutSec";
     protected static final String ADD_ENTRY_QUORUM_TIMEOUT_SEC = "addEntryQuorumTimeoutSec";
     protected static final String READ_ENTRY_TIMEOUT_SEC = "readEntryTimeoutSec";
+    protected static final String TIMEOUT_MONITOR_INTERVAL_SEC = "timeoutMonitorIntervalSec";
     protected static final String TIMEOUT_TASK_INTERVAL_MILLIS = "timeoutTaskIntervalMillis";
     protected static final String EXPLICIT_LAC_INTERVAL = "explicitLacInterval";
     protected static final String PCBC_TIMEOUT_TIMER_TICK_DURATION_MS = "pcbcTimeoutTimerTickDurationMs";
@@ -531,51 +527,6 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get zookeeper servers to connect.
-     *
-     * @return zookeeper servers
-     */
-    public String getZkServers() {
-        List servers = getList(ZK_SERVERS, null);
-        if (null == servers || 0 == servers.size()) {
-            return "localhost";
-        }
-        return StringUtils.join(servers, ",");
-    }
-
-    /**
-     * Set zookeeper servers to connect.
-     *
-     * @param zkServers
-     *          ZooKeeper servers to connect
-     */
-    public ClientConfiguration setZkServers(String zkServers) {
-        setProperty(ZK_SERVERS, zkServers);
-        return this;
-    }
-
-    /**
-     * Get zookeeper timeout.
-     *
-     * @return zookeeper client timeout
-     */
-    public int getZkTimeout() {
-        return getInt(ZK_TIMEOUT, 10000);
-    }
-
-    /**
-     * Set zookeeper timeout.
-     *
-     * @param zkTimeout
-     *          ZooKeeper client timeout
-     * @return client configuration
-     */
-    public ClientConfiguration setZkTimeout(int zkTimeout) {
-        setProperty(ZK_TIMEOUT, Integer.toString(zkTimeout));
-        return this;
-    }
-
-    /**
      * Get the socket read timeout. This is the number of
      * seconds we wait without hearing a response from a bookie
      * before we consider it failed.
@@ -678,11 +629,41 @@ public class ClientConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get the interval between successive executions of the PerChannelBookieClient's
-     * TimeoutTask. This value is in milliseconds. Every X milliseconds, the timeout task
-     * will be executed and it will error out entries that have timed out.
+     * Get the interval between successive executions of the operation timeout monitor. This value is in seconds.
+     *
+     * @see #setTimeoutMonitorIntervalSec(long)
+     * @return the interval at which request timeouts will be checked
+     */
+    public long getTimeoutMonitorIntervalSec() {
+        int minTimeout = Math.min(Math.min(getAddEntryQuorumTimeout(),
+                                           getAddEntryTimeout()), getReadEntryTimeout());
+        return getLong(TIMEOUT_MONITOR_INTERVAL_SEC, Math.max(minTimeout / 2, 1));
+    }
+
+    /**
+     * Set the interval between successive executions of the operation timeout monitor. The value in seconds.
+     * Every X seconds, all outstanding add and read operations are checked to see if they have been running
+     * for longer than their configured timeout. Any that have been will be errored out.
+     *
+     * <p>This timeout should be set to a value which is a fraction of the values of
+     * {@link #getAddEntryQuorumTimeout}, {@link #getAddEntryTimeout} and {@link #getReadEntryTimeout},
+     * so that these timeouts run in a timely fashion.
+     *
+     * @param timeoutInterval The timeout monitor interval, in seconds
+     * @return client configuration
+     */
+    public ClientConfiguration setTimeoutMonitorIntervalSec(long timeoutInterval) {
+        setProperty(TIMEOUT_MONITOR_INTERVAL_SEC, Long.toString(timeoutInterval));
+        return this;
+    }
+
+    /**
+     * Get the interval between successive executions of the PerChannelBookieClient's TimeoutTask. This value is in
+     * milliseconds. Every X milliseconds, the timeout task will be executed and it will error out entries that have
+     * timed out.
      *
      * <p>We do it more aggressive to not accumulate pending requests due to slow responses.
+     *
      * @return the interval at which request timeouts will be checked
      */
     @Deprecated
@@ -729,6 +710,7 @@ public class ClientConfiguration extends AbstractConfiguration {
      *
      * @return tick duration in milliseconds
      */
+    @Deprecated
     public long getPCBCTimeoutTimerTickDurationMs() {
         return getLong(PCBC_TIMEOUT_TIMER_TICK_DURATION_MS, 100);
     }
@@ -745,6 +727,7 @@ public class ClientConfiguration extends AbstractConfiguration {
      *          tick duration in milliseconds.
      * @return client configuration.
      */
+    @Deprecated
     public ClientConfiguration setPCBCTimeoutTimerTickDurationMs(long tickDuration) {
         setProperty(PCBC_TIMEOUT_TIMER_TICK_DURATION_MS, tickDuration);
         return this;
@@ -759,6 +742,7 @@ public class ClientConfiguration extends AbstractConfiguration {
      *
      * @return number of ticks that used for timeout timer.
      */
+    @Deprecated
     public int getPCBCTimeoutTimerNumTicks() {
         return getInt(PCBC_TIMEOUT_TIMER_NUM_TICKS, 1024);
     }
@@ -775,6 +759,7 @@ public class ClientConfiguration extends AbstractConfiguration {
      *          number of ticks that used for timeout timer.
      * @return client configuration.
      */
+    @Deprecated
     public ClientConfiguration setPCBCTimeoutTimerNumTicks(int numTicks) {
         setProperty(PCBC_TIMEOUT_TIMER_NUM_TICKS, numTicks);
         return this;

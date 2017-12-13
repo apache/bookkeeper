@@ -136,7 +136,7 @@ public class BookKeeperAdmin implements AutoCloseable {
      *             BookKeeper client.
      */
     public BookKeeperAdmin(String zkServers) throws IOException, InterruptedException, BKException {
-        this(new ClientConfiguration().setZkServers(zkServers));
+        this((ClientConfiguration) (new ClientConfiguration().setZkServers(zkServers)));
     }
 
     /**

@@ -84,8 +84,8 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
           .sessionTimeoutMs(serverConf.getZkTimeout())
           .build();
 
-        ClientConfiguration clientConfiguration = new ClientConfiguration(serverConf)
-          .setZkServers(serverConf.getZkServers());
+        ClientConfiguration clientConfiguration = new ClientConfiguration(serverConf);
+        clientConfiguration.setZkServers(serverConf.getZkServers());
         this.bka = new BookKeeperAdmin(clientConfiguration);
 
         this.executor = Executors.newSingleThreadExecutor(
