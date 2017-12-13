@@ -20,19 +20,10 @@
  */
 package org.apache.bookkeeper.client;
 
-import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
-import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import io.netty.buffer.ByteBuf;
 
@@ -50,14 +41,26 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.Assert.*;
+import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
+import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class tests the bookie recovery admin functionality.
  */
 public class BookieRecoveryTest extends BookKeeperClusterTestCase {
 
-    private final static Logger LOG = LoggerFactory.getLogger(BookieRecoveryTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BookieRecoveryTest.class);
 
     // Object used for synchronizing async method calls
     class SyncObject {
@@ -123,27 +126,26 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
     @Override
     public void tearDown() throws Exception {
         // Release any resources used by the BookieRecoveryTest instance.
-        if(bkAdmin != null){
+        if (bkAdmin != null){
             bkAdmin.close();
         }
         super.tearDown();
     }
 
     /**
-     * Helper method to create a number of ledgers
+     * Helper method to create a number of ledgers.
      *
      * @param numLedgers
      *            Number of ledgers to create
      * @return List of LedgerHandles for each of the ledgers created
      */
     private List<LedgerHandle> createLedgers(int numLedgers)
-      throws BKException, IOException, InterruptedException
-    {
+      throws BKException, IOException, InterruptedException {
         return createLedgers(numLedgers, 3, 2);
     }
 
     /**
-     * Helper method to create a number of ledgers
+     * Helper method to create a number of ledgers.
      *
      * @param numLedgers
      *            Number of ledgers to create
@@ -211,8 +213,8 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
      * @throws BKException
      * @throws InterruptedException
      */
-    private void verifyRecoveredLedgers(List<LedgerHandle> oldLhs, long startEntryId, long endEntryId) throws BKException,
-      InterruptedException {
+    private void verifyRecoveredLedgers(List<LedgerHandle> oldLhs, long startEntryId, long endEntryId)
+            throws BKException, InterruptedException {
         // Get a set of LedgerHandles for all of the ledgers to verify
         List<LedgerHandle> lhs = new ArrayList<LedgerHandle>();
         for (int i = 0; i < oldLhs.size(); i++) {
@@ -525,16 +527,16 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
           Collections.enumeration(ensembles.keySet()));
         Collections.sort(keyList);
         for (int i = 0; i < keyList.size() - 1; i++) {
-            ranges.put(keyList.get(i), keyList.get(i+1));
+            ranges.put(keyList.get(i), keyList.get(i + 1));
         }
-        ranges.put(keyList.get(keyList.size()-1), untilEntry);
+        ranges.put(keyList.get(keyList.size() - 1), untilEntry);
 
         for (Map.Entry<Long, ArrayList<BookieSocketAddress>> e : ensembles.entrySet()) {
             int quorum = md.getAckQuorumSize();
             long startEntryId = e.getKey();
             long endEntryId = ranges.get(startEntryId);
-            long expectedSuccess = quorum*(endEntryId-startEntryId);
-            int numRequests = e.getValue().size()*((int)(endEntryId-startEntryId));
+            long expectedSuccess = quorum * (endEntryId - startEntryId);
+            int numRequests = e.getValue().size() * ((int) (endEntryId - startEntryId));
 
             ReplicationVerificationCallback cb = new ReplicationVerificationCallback(numRequests);
             for (long i = startEntryId; i < endEntryId; i++) {
@@ -615,7 +617,7 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Test recoverying the closed ledgers when the failed bookie server is in the last ensemble
+     * Test recoverying the closed ledgers when the failed bookie server is in the last ensemble.
      */
     @Test
     public void testBookieRecoveryOnClosedLedgers() throws Exception {
@@ -813,10 +815,10 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         assertFalse("Dupes exist in ensembles", findDupesInEnsembles(lhs));
 
         // Write some more entries to ensure fencing hasn't broken stuff
-        writeEntriestoLedgers(numMsgs, numMsgs*2, lhs);
+        writeEntriestoLedgers(numMsgs, numMsgs * 2, lhs);
 
         for (LedgerHandle lh : lhs) {
-            assertTrue("Not fully replicated", verifyFullyReplicated(lh, numMsgs*3));
+            assertTrue("Not fully replicated", verifyFullyReplicated(lh, numMsgs * 3));
             lh.close();
         }
     }

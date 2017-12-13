@@ -26,8 +26,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.bookkeeper.conf.AbstractConfiguration;
 
+import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.AsyncCallback.StringCallback;
@@ -36,8 +36,8 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.Code;
 import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +50,7 @@ public class ZkUtils {
     /**
      * Asynchronously create zookeeper path recursively and optimistically.
      *
-     * @see #createFullPathOptimistic(ZooKeeper,String,byte[],List<ACL>,CreateMode)
+     * @see #createFullPathOptimistic(ZooKeeper, String, byte[], List, CreateMode)
      *
      * @param zk
      *          Zookeeper client
@@ -113,7 +113,7 @@ public class ZkUtils {
      * it fails to delete the leafnode then it will callback with the received
      * error code, but it fails to delete the parent node for whatsoever reason
      * it stops proceeding further and it will callback with ok error code.
-     * 
+     *
      * @param zk
      *            Zookeeper client
      * @param originalPath
@@ -145,7 +145,7 @@ public class ZkUtils {
             }
         }, leafNodePath);
     }
-    
+
     /**
      * Create zookeeper path recursively and optimistically. This method can throw
      * any of the KeeperExceptions which can be thrown by ZooKeeper#create.
@@ -204,7 +204,7 @@ public class ZkUtils {
             throw KeeperException.create(Code.get(rc.get()));
         }
     }
-    
+
     private static class GetChildrenCtx {
         int rc;
         boolean done = false;
@@ -212,7 +212,7 @@ public class ZkUtils {
     }
 
     /**
-     * Sync get all children under single zk node
+     * Sync get all children under single zk node.
      *
      * @param zk
      *          zookeeper client
@@ -252,7 +252,7 @@ public class ZkUtils {
     }
 
     /**
-     * Async get direct children under single node
+     * Async get direct children under single node.
      *
      * @param zk
      *          zookeeper client
@@ -291,12 +291,12 @@ public class ZkUtils {
     }
 
     /**
-     * Compute ZooKeeper ACLs using actual configuration
+     * Compute ZooKeeper ACLs using actual configuration.
      *
      * @param conf Bookie or BookKeeper configuration
      */
     public static List<ACL> getACLs(AbstractConfiguration conf) {
-        return conf.isZkEnableSecurity() ? ZooDefs.Ids.CREATOR_ALL_ACL: ZooDefs.Ids.OPEN_ACL_UNSAFE;
+        return conf.isZkEnableSecurity() ? ZooDefs.Ids.CREATOR_ALL_ACL : ZooDefs.Ids.OPEN_ACL_UNSAFE;
     }
 
 }

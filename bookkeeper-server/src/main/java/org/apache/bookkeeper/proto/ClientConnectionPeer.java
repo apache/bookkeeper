@@ -21,7 +21,7 @@
 package org.apache.bookkeeper.proto;
 
 /**
- * Represents the connection to a Bookie, from the client side
+ * Represents the connection to a Bookie, from the client side.
  */
 public interface ClientConnectionPeer extends ConnectionPeer {
 

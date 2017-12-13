@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.client;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,11 +18,13 @@ package org.apache.bookkeeper.client;
  * under the License.
  *
  */
+package org.apache.bookkeeper.client;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -35,11 +35,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This unit test tests ledger fencing;
+ * This unit test tests ledger fencing.
  *
  */
 public class TestReadTimeout extends BookKeeperClusterTestCase {
-    private final static Logger LOG = LoggerFactory.getLogger(TestReadTimeout.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TestReadTimeout.class);
 
     DigestType digestType;
 
@@ -64,8 +64,7 @@ public class TestReadTimeout extends BookKeeperClusterTestCase {
         Set<BookieSocketAddress> beforeSet = new HashSet<BookieSocketAddress>();
         beforeSet.addAll(writelh.getLedgerMetadata().getEnsemble(numEntries));
 
-        final BookieSocketAddress bookieToSleep
-            = writelh.getLedgerMetadata().getEnsemble(numEntries).get(0);
+        final BookieSocketAddress bookieToSleep = writelh.getLedgerMetadata().getEnsemble(numEntries).get(0);
         int sleeptime = baseClientConf.getReadTimeout() * 3;
         CountDownLatch latch = sleepBookie(bookieToSleep, sleeptime);
         latch.await();

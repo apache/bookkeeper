@@ -17,6 +17,17 @@
 */
 package org.apache.bookkeeper.util;
 
+import io.netty.buffer.AbstractReferenceCountedByteBuf;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.Unpooled;
+import io.netty.util.Recycler;
+import io.netty.util.Recycler.Handle;
+import io.netty.util.ResourceLeakDetector;
+import io.netty.util.ResourceLeakDetectorFactory;
+import io.netty.util.ResourceLeakTracker;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -29,17 +40,6 @@ import java.nio.channels.ScatteringByteChannel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import io.netty.buffer.AbstractReferenceCountedByteBuf;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.buffer.Unpooled;
-import io.netty.util.Recycler;
-import io.netty.util.Recycler.Handle;
-import io.netty.util.ResourceLeakDetector;
-import io.netty.util.ResourceLeakDetectorFactory;
-import io.netty.util.ResourceLeakTracker;
 
 /**
  * ByteBuf that holds 2 buffers. Similar to {@see CompositeByteBuf} but doesn't allocate list to hold them.
@@ -118,11 +118,6 @@ public final class DoubleByteBuf extends AbstractReferenceCountedByteBuf {
     @Override
     public int capacity() {
         return b1.capacity() + b2.capacity();
-    }
-
-    @Override
-    public int readableBytes() {
-        return b1.readableBytes() + b2.readableBytes();
     }
 
     @Override
@@ -418,23 +413,23 @@ public final class DoubleByteBuf extends AbstractReferenceCountedByteBuf {
     private static final Constructor<ByteBuf> advancedLeakAwareByteBufConstructor;
 
     static {
-        Constructor<ByteBuf> _simpleLeakAwareByteBufConstructor = null;
-        Constructor<ByteBuf> _advancedLeakAwareByteBufConstructor = null;
+        Constructor<ByteBuf> tmpSimpleLeakAwareByteBufConstructor = null;
+        Constructor<ByteBuf> tmpAdvancedLeakAwareByteBufConstructor = null;
         try {
             Class<?> simpleLeakAwareByteBufClass = Class.forName("io.netty.buffer.SimpleLeakAwareByteBuf");
-            _simpleLeakAwareByteBufConstructor = (Constructor<ByteBuf>) simpleLeakAwareByteBufClass
+            tmpSimpleLeakAwareByteBufConstructor = (Constructor<ByteBuf>) simpleLeakAwareByteBufClass
                     .getDeclaredConstructor(ByteBuf.class, ResourceLeakTracker.class);
-            _simpleLeakAwareByteBufConstructor.setAccessible(true);
+            tmpSimpleLeakAwareByteBufConstructor.setAccessible(true);
 
             Class<?> advancedLeakAwareByteBufClass = Class.forName("io.netty.buffer.AdvancedLeakAwareByteBuf");
-            _advancedLeakAwareByteBufConstructor = (Constructor<ByteBuf>) advancedLeakAwareByteBufClass
+            tmpAdvancedLeakAwareByteBufConstructor = (Constructor<ByteBuf>) advancedLeakAwareByteBufClass
                     .getDeclaredConstructor(ByteBuf.class, ResourceLeakTracker.class);
-            _advancedLeakAwareByteBufConstructor.setAccessible(true);
+            tmpAdvancedLeakAwareByteBufConstructor.setAccessible(true);
         } catch (Throwable t) {
             log.error("Failed to use reflection to enable leak detection", t);
         } finally {
-            simpleLeakAwareByteBufConstructor = _simpleLeakAwareByteBufConstructor;
-            advancedLeakAwareByteBufConstructor = _advancedLeakAwareByteBufConstructor;
+            simpleLeakAwareByteBufConstructor = tmpSimpleLeakAwareByteBufConstructor;
+            advancedLeakAwareByteBufConstructor = tmpAdvancedLeakAwareByteBufConstructor;
         }
     }
 

@@ -22,6 +22,7 @@
 package org.apache.bookkeeper.bookie;
 
 import java.io.IOException;
+import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 
 /**
  * Interface plugged into caching to receive callback notifications.
@@ -30,5 +31,5 @@ public interface CacheCallback {
     /**
      * Process notification that cache size limit reached.
      */
-    void onSizeLimitReached() throws IOException;
+    void onSizeLimitReached(Checkpoint cp) throws IOException;
 }

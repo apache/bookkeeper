@@ -40,6 +40,11 @@
       <version>${project.parent.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.rocksdb</groupId>
+      <artifactId>rocksdbjni</artifactId>
+      <version>${rocksdb.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
       <version>${slf4j.version}</version>
@@ -365,7 +370,7 @@
         </dependencies>
         <configuration>
           <configLocation>bookkeeper/checkstyle.xml</configLocation>
-          <suppressionsLocation>bookkeeper/server-suppressions.xml</suppressionsLocation>
+          <suppressionsLocation>bookkeeper/suppressions.xml</suppressionsLocation>
           <consoleOutput>true</consoleOutput>
           <failOnViolation>true</failOnViolation>
           <includeResources>false</includeResources>

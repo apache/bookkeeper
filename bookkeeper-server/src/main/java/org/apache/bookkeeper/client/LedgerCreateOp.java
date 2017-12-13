@@ -49,7 +49,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Encapsulates asynchronous ledger create operation
+ * Encapsulates asynchronous ledger create operation.
  *
  */
 class LedgerCreateOp implements GenericCallback<Void> {
@@ -71,7 +71,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
     boolean generateLedgerId = true;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param bk
      *       BookKeeper object
@@ -115,7 +115,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
     }
 
     /**
-     * Initiates the operation
+     * Initiates the operation.
      */
     public void initiate() {
         // allocate ensemble first
@@ -231,8 +231,8 @@ class LedgerCreateOp implements GenericCallback<Void> {
         private int builderWriteQuorumSize = 2;
         private byte[] builderPassword;
         private EnumSet<WriteFlag> builderWriteFlags = EnumSet.noneOf(WriteFlag.class);
-        private org.apache.bookkeeper.client.api.DigestType builderDigestType
-            = org.apache.bookkeeper.client.api.DigestType.CRC32;
+        private org.apache.bookkeeper.client.api.DigestType builderDigestType =
+            org.apache.bookkeeper.client.api.DigestType.CRC32;
         private Map<String, byte[]> builderCustomMetadata = Collections.emptyMap();
 
         CreateBuilderImpl(BookKeeper bk) {
@@ -298,7 +298,8 @@ class LedgerCreateOp implements GenericCallback<Void> {
             }
 
             if (builderAckQuorumSize > builderWriteQuorumSize) {
-                LOG.error("invalid ackQuorumSize {} > writeQuorumSize {}", builderAckQuorumSize, builderWriteQuorumSize);
+                LOG.error("invalid ackQuorumSize {} > writeQuorumSize {}", builderAckQuorumSize,
+                        builderWriteQuorumSize);
                 return false;
             }
 
@@ -383,7 +384,8 @@ class LedgerCreateOp implements GenericCallback<Void> {
                 return false;
             }
             if (builderLedgerId != null && builderLedgerId < 0) {
-                LOG.error("invalid ledgerId {} < 0. Do not set en explicit value if you want automatic generation", builderLedgerId);
+                LOG.error("invalid ledgerId {} < 0. Do not set en explicit value if you want automatic generation",
+                        builderLedgerId);
                 return false;
             }
             return true;

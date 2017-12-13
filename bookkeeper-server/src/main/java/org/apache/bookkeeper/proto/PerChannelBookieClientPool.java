@@ -41,9 +41,15 @@ interface PerChannelBookieClientPool {
     void obtain(GenericCallback<PerChannelBookieClient> callback, long key);
 
     /**
-     * record any read/write error on {@link PerChannelBookieClientPool}
+     * record any read/write error on {@link PerChannelBookieClientPool}.
      */
     void recordError();
+
+    /**
+     * Check if any ops on any channel needs to be timed out.
+     * This is called on all channels, even if the channel is not yet connected.
+     */
+    void checkTimeoutOnPendingOperations();
 
     /**
      * Disconnect the connections in the pool.

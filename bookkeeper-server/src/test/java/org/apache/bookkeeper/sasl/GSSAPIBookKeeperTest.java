@@ -1,14 +1,3 @@
-package org.apache.bookkeeper.sasl;
-
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.util.Arrays;
-import org.apache.bookkeeper.client.*;
-import java.util.Enumeration;
-import java.util.Properties;
-
 /*
 *
 * Licensed to the Apache Software Foundation (ASF) under one
@@ -28,13 +17,31 @@ import java.util.Properties;
 * specific language governing permissions and limitations
 * under the License.
 *
- */
+*/
+package org.apache.bookkeeper.sasl;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.security.auth.login.Configuration;
-import org.apache.bookkeeper.client.BKException.BKUnauthorizedAccessException;
 
-import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BKException.BKUnauthorizedAccessException;
+import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.LedgerEntry;
+import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -42,16 +49,16 @@ import org.apache.hadoop.minikdc.MiniKdc;
 import org.apache.zookeeper.KeeperException;
 import org.junit.After;
 import org.junit.AfterClass;
-
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
-
+/**
+ * GSSAPI tests.
+ */
 public class GSSAPIBookKeeperTest extends BookKeeperClusterTestCase {
 
     static final Logger LOG = LoggerFactory.getLogger(GSSAPIBookKeeperTest.class);
@@ -90,8 +97,8 @@ public class GSSAPIBookKeeperTest extends BookKeeperClusterTestCase {
         File keytabServer = new File(kerberosWorkDir.getRoot(), "bookkeeperserver.keytab");
         kdc.createPrincipal(keytabServer, principalServerNoRealm);
 
-        File jaas_file = new File(kerberosWorkDir.getRoot(), "jaas.conf");
-        try (FileWriter writer = new FileWriter(jaas_file)) {
+        File jaasFile = new File(kerberosWorkDir.getRoot(), "jaas.conf");
+        try (FileWriter writer = new FileWriter(jaasFile)) {
             writer.write("\n"
                 + "Bookie {\n"
                 + "  com.sun.security.auth.module.Krb5LoginModule required debug=true\n"
@@ -130,7 +137,7 @@ public class GSSAPIBookKeeperTest extends BookKeeperClusterTestCase {
 
         }
 
-        System.setProperty("java.security.auth.login.config", jaas_file.getAbsolutePath());
+        System.setProperty("java.security.auth.login.config", jaasFile.getAbsolutePath());
         System.setProperty("java.security.krb5.conf", krb5file.getAbsolutePath());
         javax.security.auth.login.Configuration.getConfiguration().refresh();
 

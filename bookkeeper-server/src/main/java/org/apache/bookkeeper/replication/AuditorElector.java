@@ -20,43 +20,42 @@
  */
 package org.apache.bookkeeper.replication;
 
+import static com.google.common.base.Charsets.UTF_8;
+import static org.apache.bookkeeper.replication.ReplicationStats.ELECTION_ATTEMPTS;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.protobuf.TextFormat;
+
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.io.Serializable;
-import java.io.IOException;
-
-import org.apache.bookkeeper.proto.DataFormats.AuditorVoteFormat;
-import com.google.common.annotations.VisibleForTesting;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.DataFormats.AuditorVoteFormat;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
+import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
-import com.google.protobuf.TextFormat;
-import static com.google.common.base.Charsets.UTF_8;
-
+import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.bookkeeper.replication.ReplicationStats.ELECTION_ATTEMPTS;
-import org.apache.bookkeeper.util.ZkUtils;
-import org.apache.zookeeper.data.ACL;
 
 /**
  * Performing auditor election using Apache ZooKeeper. Using ZooKeeper as a
@@ -97,7 +96,7 @@ public class AuditorElector {
 
 
     /**
-     * AuditorElector for performing the auditor election
+     * AuditorElector for performing the auditor election.
      *
      * @param bookieId
      *            - bookie identifier, comprises HostAddress:Port
@@ -114,7 +113,7 @@ public class AuditorElector {
     }
 
     /**
-     * AuditorElector for performing the auditor election
+     * AuditorElector for performing the auditor election.
      *
      * @param bookieId
      *            - bookie identifier, comprises HostAddress:Port
@@ -141,7 +140,7 @@ public class AuditorElector {
         executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
                 @Override
                 public Thread newThread(Runnable r) {
-                    return new Thread(r, "AuditorElector-"+bookieId);
+                    return new Thread(r, "AuditorElector-" + bookieId);
                 }
             });
     }
@@ -310,7 +309,7 @@ public class AuditorElector {
     }
 
     /**
-     * Query zookeeper for the currently elected auditor
+     * Query zookeeper for the currently elected auditor.
      * @return the bookie id of the current auditor
      */
     public static BookieSocketAddress getCurrentAuditor(ServerConfiguration conf, ZooKeeper zk)
@@ -335,7 +334,7 @@ public class AuditorElector {
     }
 
     /**
-     * Shutting down AuditorElector
+     * Shutting down AuditorElector.
      */
     public void shutdown() throws InterruptedException {
         synchronized (this) {

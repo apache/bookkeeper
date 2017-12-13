@@ -23,7 +23,9 @@ package org.apache.bookkeeper.bookie;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -39,17 +41,20 @@ import org.apache.bookkeeper.client.ClientUtil;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
-import org.apache.bookkeeper.test.PortManager;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.test.PortManager;
 import org.apache.bookkeeper.util.IOUtils;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Test the protocol upgrade procedure.
+ */
 public class UpgradeTest extends BookKeeperClusterTestCase {
-    private final static Logger LOG = LoggerFactory.getLogger(FileInfo.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FileInfo.class);
 
-    final static int bookiePort = PortManager.nextFreePort();
+    private static final int bookiePort = PortManager.nextFreePort();
 
     public UpgradeTest() {
         super(0);
@@ -68,11 +73,11 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
         fi.close(true);
 
         long logId = 0;
-        ByteBuffer LOGFILE_HEADER = ByteBuffer.allocate(1024);
-        LOGFILE_HEADER.put("BKLO".getBytes());
+        ByteBuffer logfileHeader = ByteBuffer.allocate(1024);
+        logfileHeader.put("BKLO".getBytes());
         FileChannel logfile = new RandomAccessFile(
-                new File(dir, Long.toHexString(logId)+".log"), "rw").getChannel();
-        logfile.write((ByteBuffer) LOGFILE_HEADER.clear());
+                new File(dir, Long.toHexString(logId) + ".log"), "rw").getChannel();
+        logfile.write((ByteBuffer) logfileHeader.clear());
         logfile.close();
     }
 
@@ -85,19 +90,19 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
 
         long ledgerId = 1;
         byte[] data = new byte[1024];
-        Arrays.fill(data, (byte)'X');
+        Arrays.fill(data, (byte) 'X');
         long lastConfirmed = LedgerHandle.INVALID_ENTRY_ID;
 
         for (int i = 1; i <= numEntries; i++) {
             ByteBuf packet = ClientUtil.generatePacket(ledgerId, i, lastConfirmed,
-                                                          i*data.length, data);
+                                                          i * data.length, data);
             lastConfirmed = i;
             ByteBuffer lenBuff = ByteBuffer.allocate(4);
             lenBuff.putInt(packet.readableBytes());
             lenBuff.flip();
 
-            bc.write(lenBuff);
-            bc.write(packet.nioBuffer());
+            bc.write(Unpooled.wrappedBuffer(lenBuff));
+            bc.write(packet);
             packet.release();
         }
         bc.flush(true);
@@ -110,7 +115,7 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
         writeJournal(d, 100, "foobar".getBytes()).close();
         return d;
     }
-              
+
     static File newV1LedgerDirectory() throws Exception {
         File d = IOUtils.createTempDir("bookie", "tmpdir");
         writeLedgerDir(d, "foobar".getBytes());
@@ -146,9 +151,9 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
     }
 
     private static void testUpgradeProceedure(String zkServers, String journalDir, String ledgerDir) throws Exception {
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(zkServers)
-            .setJournalDirName(journalDir)
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setZkServers(zkServers);
+        conf.setJournalDirName(journalDir)
             .setLedgerDirNames(new String[] { ledgerDir })
             .setBookiePort(bookiePort);
         Bookie b = null;
@@ -210,11 +215,11 @@ public class UpgradeTest extends BookKeeperClusterTestCase {
         testUpgradeProceedure(zkUtil.getZooKeeperConnectString(), journalDir.getPath(), ledgerDir.getPath());
 
         // Upgrade again
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString())
-            .setJournalDirName(journalDir.getPath())
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
-            .setBookiePort(bookiePort);
+            .setBookiePort(bookiePort)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
         FileSystemUpgrade.upgrade(conf); // should work fine with current directory
         Bookie b = new Bookie(conf);
         b.start();

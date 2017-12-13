@@ -23,6 +23,10 @@ import static com.google.common.base.Charsets.UTF_8;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.AbstractFuture;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -52,6 +56,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+
 import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
@@ -101,6 +106,7 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 /**
  * Bookie Shell is to provide utilities for users to administer a bookkeeper cluster.
@@ -1234,9 +1240,9 @@ public class BookieShell implements Tool {
                 printUsage();
                 return 1;
             }
-            ClientConfiguration clientconf = new ClientConfiguration(bkConf)
-                .setZkServers(bkConf.getZkServers());
-            BookKeeperAdmin bka = new BookKeeperAdmin(clientconf);
+            ClientConfiguration clientConf = new ClientConfiguration(bkConf);
+            clientConf.setZkServers(bkConf.getZkServers());
+            BookKeeperAdmin bka = new BookKeeperAdmin(clientConf);
 
             int count = 0;
             Collection<BookieSocketAddress> bookies = new ArrayList<BookieSocketAddress>();
@@ -1874,7 +1880,7 @@ public class BookieShell implements Tool {
             };
             try {
                 updateLedgerOp.updateBookieIdInLedgers(oldBookieId, newBookieId, rate, limit, progressable);
-            } catch (BKException | IOException e) {
+            } catch (IOException e) {
                 LOG.error("Failed to update ledger metadata", e);
                 return -1;
             }
@@ -2449,7 +2455,7 @@ public class BookieShell implements Tool {
                 return true;
             }
             @Override
-            public void process(long ledgerId, long startPos, ByteBuffer entry) {
+            public void process(long ledgerId, long startPos, ByteBuf entry) {
                 formatEntry(startPos, entry, printMsg);
             }
         });
@@ -2476,10 +2482,9 @@ public class BookieShell implements Tool {
             }
 
             @Override
-            public void process(long ledgerId, long startPos, ByteBuffer entry) {
-                long entrysLedgerId = entry.getLong();
-                long entrysEntryId = entry.getLong();
-                entry.rewind();
+            public void process(long ledgerId, long startPos, ByteBuf entry) {
+                long entrysLedgerId = entry.getLong(entry.readerIndex());
+                long entrysEntryId = entry.getLong(entry.readerIndex() + 8);
                 if ((ledgerId == entrysLedgerId) && ((entrysEntryId == entryId)) || (entryId == -1)) {
                     entryFound.setValue(true);
                     formatEntry(startPos, entry, printMsg);
@@ -2515,12 +2520,12 @@ public class BookieShell implements Tool {
             }
 
             @Override
-            public void process(long ledgerId, long entryStartPos, ByteBuffer entry) {
+            public void process(long ledgerId, long entryStartPos, ByteBuf entry) {
                 if (!stopScanning.booleanValue()) {
                     if ((rangeEndPos != -1) && (entryStartPos > rangeEndPos)) {
                         stopScanning.setValue(true);
                     } else {
-                        int entrySize = entry.limit();
+                        int entrySize = entry.readableBytes();
                         /**
                          * entrySize of an entry (inclusive of payload and
                          * header) value is stored as int value in log file, but
@@ -2562,7 +2567,7 @@ public class BookieShell implements Tool {
                     System.out.println("Journal Version : " + journalVersion);
                     printJournalVersion = true;
                 }
-                formatEntry(offset, entry, printMsg);
+                formatEntry(offset, Unpooled.wrappedBuffer(entry), printMsg);
             }
         });
     }
@@ -2608,17 +2613,17 @@ public class BookieShell implements Tool {
      * @param printMsg
      *          Whether printing the message body
      */
-    private void formatEntry(long pos, ByteBuffer recBuff, boolean printMsg) {
-        long ledgerId = recBuff.getLong();
-        long entryId = recBuff.getLong();
-        int entrySize = recBuff.limit();
+    private void formatEntry(long pos, ByteBuf recBuff, boolean printMsg) {
+        int entrySize = recBuff.readableBytes();
+        long ledgerId = recBuff.readLong();
+        long entryId = recBuff.readLong();
 
         System.out.println("--------- Lid=" + ledgerId + ", Eid=" + entryId
                          + ", ByteOffset=" + pos + ", EntrySize=" + entrySize + " ---------");
         if (entryId == Bookie.METAENTRY_ID_LEDGER_KEY) {
-            int masterKeyLen = recBuff.getInt();
+            int masterKeyLen = recBuff.readInt();
             byte[] masterKey = new byte[masterKeyLen];
-            recBuff.get(masterKey);
+            recBuff.readBytes(masterKey);
             System.out.println("Type:           META");
             System.out.println("MasterKey:      " + bytes2Hex(masterKey));
             System.out.println();
@@ -2631,7 +2636,7 @@ public class BookieShell implements Tool {
             return;
         }
         // process a data entry
-        long lastAddConfirmed = recBuff.getLong();
+        long lastAddConfirmed = recBuff.readLong();
         System.out.println("Type:           DATA");
         System.out.println("LastConfirmed:  " + lastAddConfirmed);
         if (!printMsg) {
@@ -2639,12 +2644,12 @@ public class BookieShell implements Tool {
             return;
         }
         // skip digest checking
-        recBuff.position(32 + 8);
+        recBuff.skipBytes(8);
         System.out.println("Data:");
         System.out.println();
         try {
-            byte[] ret = new byte[recBuff.remaining()];
-            recBuff.get(ret);
+            byte[] ret = new byte[recBuff.readableBytes()];
+            recBuff.readBytes(ret);
             formatter.formatEntry(ret);
         } catch (Exception e) {
             System.out.println("N/A. Corrupted.");

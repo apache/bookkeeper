@@ -18,9 +18,11 @@
  */
 package org.apache.bookkeeper.server.http.service;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
+
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.HttpServer;
@@ -46,7 +48,7 @@ public class DecommissionService implements HttpEndpointService {
 
 
     public DecommissionService(ServerConfiguration conf, BookKeeperAdmin bka, ExecutorService executor) {
-        Preconditions.checkNotNull(conf);
+        checkNotNull(conf);
         this.conf = conf;
         this.bka = bka;
         this.executor = executor;

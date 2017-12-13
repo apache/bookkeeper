@@ -18,12 +18,15 @@
  */
 package org.apache.bookkeeper.server.http.service;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.bookkeeper.bookie.Journal;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LogMark;
@@ -41,9 +44,9 @@ import org.slf4j.LoggerFactory;
  * HttpEndpointService that handle Bookkeeper get last log mark related http request.
  * The GET method will get the last log position of each journal.
  *
- * output would be like this:
+ * <p>output would be like this:
  *  {
- *    "<Journal_id>" : "<Pos>",
+ *    "&lt;Journal_id&gt;" : "&lt;Pos&gt;",
  *    ...
  *  }
  */
@@ -54,7 +57,7 @@ public class GetLastLogMarkService implements HttpEndpointService {
     protected ServerConfiguration conf;
 
     public GetLastLogMarkService(ServerConfiguration conf) {
-        Preconditions.checkNotNull(conf);
+        checkNotNull(conf);
         this.conf = conf;
     }
 
@@ -67,7 +70,7 @@ public class GetLastLogMarkService implements HttpEndpointService {
                 /**
                  * output:
                  *  {
-                 *    "<Journal_id>" : "<Pos>",
+                 *    "&lt;Journal_id&gt;" : "&lt;Pos&gt;",
                  *    ...
                  *  }
                  */

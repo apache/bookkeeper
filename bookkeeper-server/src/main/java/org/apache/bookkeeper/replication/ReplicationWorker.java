@@ -19,25 +19,29 @@
  */
 package org.apache.bookkeeper.replication;
 
+import static org.apache.bookkeeper.replication.ReplicationStats.BK_CLIENT_SCOPE;
+import static org.apache.bookkeeper.replication.ReplicationStats.NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED;
+import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATE_EXCEPTION;
+import static org.apache.bookkeeper.replication.ReplicationStats.REREPLICATE_OP;
+
 import com.google.common.base.Stopwatch;
+
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedMap;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.SortedMap;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.bookkeeper.bookie.BookieThread;
 import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.client.BKException.BKBookieHandleNotAvailableException;
-import org.apache.bookkeeper.client.BKException.BKLedgerRecoveryException;
 import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
-import org.apache.bookkeeper.client.BKException.BKReadException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.LedgerChecker;
@@ -60,11 +64,6 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.bookkeeper.replication.ReplicationStats.BK_CLIENT_SCOPE;
-import static org.apache.bookkeeper.replication.ReplicationStats.NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED;
-import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATE_EXCEPTION;
-import static org.apache.bookkeeper.replication.ReplicationStats.REREPLICATE_OP;
 
 /**
  * ReplicationWorker will take the fragments one by one from
@@ -89,7 +88,7 @@ public class ReplicationWorker implements Runnable {
     private final StatsLogger statsLogger;
     private final OpStatsLogger rereplicateOpStats;
     private final Counter numLedgersReplicated;
-    private final Map<String,Counter> exceptionCounters;
+    private final Map<String, Counter> exceptionCounters;
 
     /**
      * Replication worker for replicating the ledger fragments from
@@ -154,7 +153,9 @@ public class ReplicationWorker implements Runnable {
         this.exceptionCounters = new HashMap<String, Counter>();
     }
 
-    /** Start the replication worker */
+    /**
+     * Start the replication worker.
+     */
     public void start() {
         this.workerThread.start();
     }
@@ -192,7 +193,7 @@ public class ReplicationWorker implements Runnable {
 
     /**
      * Replicates the under replicated fragments from failed bookie ledger to
-     * targetBookie
+     * targetBookie.
      */
     private void rereplicate() throws InterruptedException, BKException,
             UnavailableException {
@@ -298,18 +299,18 @@ public class ReplicationWorker implements Runnable {
      * taken. This is fine, until enough bookies fail to cause a quorum to become
      * unavailable, by which time the ledger is unrecoverable.
      *
-     * For example, if in a E3Q2, only 1 entry is written and the last bookie
+     * <p>For example, if in a E3Q2, only 1 entry is written and the last bookie
      * in the ensemble fails, nothing has been written to it, so nothing needs to be
      * recovered. But if the second to last bookie fails, we've now lost quorum for
      * the second entry, so it's impossible to see if the second has been written or
      * not.
      *
-     * To avoid this situation, we need to check if bookies in the final open ensemble
+     * <p>To avoid this situation, we need to check if bookies in the final open ensemble
      * are unavailable, and take action if so. The action to take is to close the ledger,
      * after a grace period as the writting client may replace the faulty bookie on its
      * own.
      *
-     * Missing bookies in closed ledgers are fine, as we know the last confirmed add, so
+     * <p>Missing bookies in closed ledgers are fine, as we know the last confirmed add, so
      * we can tell which entries are supposed to exist and rereplicate them if necessary.
      */
     private boolean isLastSegmentOpenAndMissingBookies(LedgerHandle lh) throws BKException {
@@ -318,8 +319,7 @@ public class ReplicationWorker implements Runnable {
             return false;
         }
 
-        SortedMap<Long, ArrayList<BookieSocketAddress>> ensembles
-            = admin.getLedgerMetadata(lh).getEnsembles();
+        SortedMap<Long, ArrayList<BookieSocketAddress>> ensembles = admin.getLedgerMetadata(lh).getEnsembles();
         ArrayList<BookieSocketAddress> finalEnsemble = ensembles.get(ensembles.lastKey());
         Collection<BookieSocketAddress> available = admin.getAvailableBookies();
         for (BookieSocketAddress b : finalEnsemble) {
@@ -330,7 +330,9 @@ public class ReplicationWorker implements Runnable {
         return false;
     }
 
-    /** Gets the under replicated fragments */
+    /**
+     * Gets the under replicated fragments.
+     */
     private Set<LedgerFragment> getUnderreplicatedFragments(LedgerHandle lh)
             throws InterruptedException {
         CheckerCallback checkerCb = new CheckerCallback();
@@ -342,7 +344,7 @@ public class ReplicationWorker implements Runnable {
     /**
      * Schedules a timer task for releasing the lock which will be scheduled
      * after open ledger fragment replication time. Ledger will be fenced if it
-     * is still in open state when timer task fired
+     * is still in open state when timer task fired.
      */
     private void deferLedgerLockRelease(final long ledgerId) {
         long gracePeriod = this.openLedgerRereplicationGracePeriod;
@@ -405,7 +407,7 @@ public class ReplicationWorker implements Runnable {
     }
 
     /**
-     * Stop the replication worker service
+     * Stop the replication worker service.
      */
     public void shutdown() {
         LOG.info("Shutting down replication worker");
@@ -443,13 +445,15 @@ public class ReplicationWorker implements Runnable {
     }
 
     /**
-     * Gives the running status of ReplicationWorker
+     * Gives the running status of ReplicationWorker.
      */
     boolean isRunning() {
         return workerRunning && workerThread.isAlive();
     }
 
-    /** Ledger checker call back */
+    /**
+     * Ledger checker call back.
+     */
     private static class CheckerCallback implements
             GenericCallback<Set<LedgerFragment>> {
         private Set<LedgerFragment> result = null;
@@ -463,7 +467,7 @@ public class ReplicationWorker implements Runnable {
 
         /**
          * Wait until operation complete call back comes and return the ledger
-         * fragments set
+         * fragments set.
          */
         Set<LedgerFragment> waitAndGetResult() throws InterruptedException {
             latch.await();

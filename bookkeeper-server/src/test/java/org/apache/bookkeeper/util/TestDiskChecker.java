@@ -33,7 +33,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * Test to verify {@link DiskChecker}
+ * Test to verify {@link DiskChecker}.
  *
  */
 public class TestDiskChecker {
@@ -71,7 +71,7 @@ public class TestDiskChecker {
     }
 
     /**
-     * Check the disk full
+     * Check the disk full.
      */
     @Test(expected = DiskOutOfSpaceException.class)
     public void testCheckDiskFull() throws IOException {
@@ -98,7 +98,7 @@ public class TestDiskChecker {
 
     /**
      * Check disk full on non exist file. in this case it should check for
-     * parent file
+     * parent file.
      */
     @Test(expected = DiskOutOfSpaceException.class)
     public void testCheckDiskFullOnNonExistFile() throws IOException {
@@ -112,7 +112,7 @@ public class TestDiskChecker {
     }
 
     /**
-     * Check disk error for file
+     * Check disk error for file.
      */
     @Test(expected = DiskErrorException.class)
     public void testCheckDiskErrorForFile() throws Exception {

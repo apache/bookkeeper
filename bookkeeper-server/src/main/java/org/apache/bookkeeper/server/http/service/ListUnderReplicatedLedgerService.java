@@ -18,12 +18,15 @@
  */
 package org.apache.bookkeeper.server.http.service;
 
-import com.google.common.base.Preconditions;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.collect.Lists;
+
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
+
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
@@ -40,7 +43,7 @@ import org.slf4j.LoggerFactory;
 /**
  * HttpEndpointService that handle Bookkeeper list under replicated ledger related http request.
  *
- * The GET method will list all ledger_ids of under replicated ledger.
+ * <p>The GET method will list all ledger_ids of under replicated ledger.
  * User can filer wanted ledger by set parameter "missingreplica" and "excludingmissingreplica"
  */
 public class ListUnderReplicatedLedgerService implements HttpEndpointService {
@@ -51,7 +54,7 @@ public class ListUnderReplicatedLedgerService implements HttpEndpointService {
     protected ZooKeeper zk;
 
     public ListUnderReplicatedLedgerService(ServerConfiguration conf, ZooKeeper zk) {
-        Preconditions.checkNotNull(conf);
+        checkNotNull(conf);
         this.conf = conf;
         this.zk = zk;
     }

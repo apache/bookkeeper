@@ -15,12 +15,15 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
 import javax.security.auth.login.Configuration;
+
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -32,12 +35,11 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 import org.junit.AfterClass;
-import static org.junit.Assert.assertEquals;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Test basic functions using secured ZooKeeper
+ * Test basic functions using secured ZooKeeper.
  */
 public class EnableZkSecurityBasicTest extends BookKeeperClusterTestCase {
 
@@ -52,8 +54,7 @@ public class EnableZkSecurityBasicTest extends BookKeeperClusterTestCase {
         System.setProperty("zookeeper.authProvider.1", "org.apache.zookeeper.server.auth.SASLAuthenticationProvider");
         File tmpJaasDir = new File("target").getAbsoluteFile();
         File tmpJaasFile = new File(tmpJaasDir, "jaas.conf");
-        String jassFileContent
-            = "Server {\n"
+        String jassFileContent = "Server {\n"
             + "       org.apache.zookeeper.server.auth.DigestLoginModule required\n"
             + "       user_foo=\"bar\";\n"
             + "};\n"
@@ -79,9 +80,9 @@ public class EnableZkSecurityBasicTest extends BookKeeperClusterTestCase {
     public void testCreateLedgerAddEntryOnSecureZooKeepeer() throws Exception {
         startNewBookie();
 
-        ClientConfiguration conf = new ClientConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString())
-            .setZkTimeout(20000);
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setZkServers(zkUtil.getZooKeeperConnectString());
+        conf.setZkTimeout(20000);
 
         conf.setZkEnableSecurity(true);
 
@@ -118,7 +119,8 @@ public class EnableZkSecurityBasicTest extends BookKeeperClusterTestCase {
                 assertEquals(31, acls.get(0).getPerms());
                 assertEquals(31, acls.get(0).getPerms());
                 assertEquals("unexpected ACLS on " + fullPath + ": " + acls.get(0), "foo", acls.get(0).getId().getId());
-                assertEquals("unexpected ACLS on " + fullPath + ": " + acls.get(0), "sasl", acls.get(0).getId().getScheme());
+                assertEquals("unexpected ACLS on " + fullPath + ": " + acls.get(0), "sasl",
+                        acls.get(0).getId().getScheme());
             }
         }
     }

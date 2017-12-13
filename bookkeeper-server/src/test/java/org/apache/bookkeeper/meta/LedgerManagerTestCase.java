@@ -32,6 +32,7 @@ import java.util.Observer;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
+import org.apache.bookkeeper.bookie.Checkpointer;
 import org.apache.bookkeeper.bookie.CompactableLedgerStorage;
 import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.EntryLogger;
@@ -47,7 +48,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 /**
- * Test case to run over serveral ledger managers
+ * Test case to run over serveral ledger managers.
  */
 @RunWith(Parameterized.class)
 public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
@@ -109,12 +110,20 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
         super.tearDown();
     }
 
+    /**
+     * Mocked ledger storage.
+     */
     public class MockLedgerStorage implements CompactableLedgerStorage {
 
         @Override
-        public void initialize(ServerConfiguration conf, LedgerManager ledgerManager,
-                LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
-                CheckpointSource checkpointSource, StatsLogger statsLogger) throws IOException {
+        public void initialize(
+            ServerConfiguration conf,
+            LedgerManager ledgerManager,
+            LedgerDirsManager ledgerDirsManager,
+            LedgerDirsManager indexDirsManager,
+            CheckpointSource checkpointSource,
+            Checkpointer checkpointer,
+            StatsLogger statsLogger) throws IOException {
         }
 
         @Override
@@ -169,8 +178,7 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public Checkpoint checkpoint(Checkpoint checkpoint) throws IOException {
-            return null;
+        public void checkpoint(Checkpoint checkpoint) throws IOException {
         }
 
         @Override
@@ -205,7 +213,8 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public Observable waitForLastAddConfirmedUpdate(long ledgerId, long previoisLAC, Observer observer) throws IOException {
+        public Observable waitForLastAddConfirmedUpdate(long ledgerId, long previoisLAC, Observer observer)
+                throws IOException {
             return null;
         }
 

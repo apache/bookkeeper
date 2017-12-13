@@ -20,25 +20,25 @@
  */
 package org.apache.bookkeeper.proto;
 
+import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.bookie.BookieException;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.WriteLacRequest;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.WriteLacResponse;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
+import org.apache.bookkeeper.proto.BookkeeperProtocol.WriteLacRequest;
+import org.apache.bookkeeper.proto.BookkeeperProtocol.WriteLacResponse;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-
 class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
-    private final static Logger logger = LoggerFactory.getLogger(WriteLacProcessorV3.class);
+    private static final Logger logger = LoggerFactory.getLogger(WriteLacProcessorV3.class);
 
     public WriteLacProcessorV3(Request request, Channel channel,
                              BookieRequestProcessor requestProcessor) {
@@ -90,9 +90,11 @@ class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
         // If everything is okay, we return null so that the calling function
         // dosn't return a response back to the caller.
         if (status.equals(StatusCode.EOK)) {
-            requestProcessor.writeLacStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
+            requestProcessor.writeLacStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
+                    TimeUnit.NANOSECONDS);
         } else {
-            requestProcessor.writeLacStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
+            requestProcessor.writeLacStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
+                    TimeUnit.NANOSECONDS);
         }
         writeLacResponse.setStatus(status);
         return writeLacResponse.build();

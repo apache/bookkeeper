@@ -25,6 +25,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -38,9 +41,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap.LongLongFunction;
 import org.junit.Test;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-
+/**
+ * Test the ConcurrentLongLongHashMap class.
+ */
 public class ConcurrentLongLongHashMapTest {
 
     @Test
@@ -169,7 +172,7 @@ public class ConcurrentLongLongHashMapTest {
         ExecutorService executor = Executors.newCachedThreadPool();
 
         final int nThreads = 16;
-        final int N = 100_000;
+        final int n = 100_000;
         long value = 55;
 
         List<Future<?>> futures = new ArrayList<>();
@@ -179,7 +182,7 @@ public class ConcurrentLongLongHashMapTest {
             futures.add(executor.submit(() -> {
                 Random random = new Random();
 
-                for (int j = 0; j < N; j++) {
+                for (int j = 0; j < n; j++) {
                     long key = Math.abs(random.nextLong());
                     // Ensure keys are uniques
                     key -= key % (threadIdx + 1);
@@ -193,7 +196,7 @@ public class ConcurrentLongLongHashMapTest {
             future.get();
         }
 
-        assertEquals(map.size(), N * nThreads);
+        assertEquals(map.size(), n * nThreads);
 
         executor.shutdown();
     }
@@ -204,7 +207,7 @@ public class ConcurrentLongLongHashMapTest {
         ExecutorService executor = Executors.newCachedThreadPool();
 
         final int nThreads = 16;
-        final int N = 100_000;
+        final int n = 100_000;
         final long value = 55;
 
         List<Future<?>> futures = new ArrayList<>();
@@ -214,7 +217,7 @@ public class ConcurrentLongLongHashMapTest {
             futures.add(executor.submit(() -> {
                 Random random = new Random();
 
-                for (int j = 0; j < N; j++) {
+                for (int j = 0; j < n; j++) {
                     long key = Math.abs(random.nextLong());
                     // Ensure keys are uniques
                     key -= key % (threadIdx + 1);
@@ -228,7 +231,7 @@ public class ConcurrentLongLongHashMapTest {
             future.get();
         }
 
-        assertEquals(map.size(), N * nThreads);
+        assertEquals(map.size(), n * nThreads);
 
         executor.shutdown();
     }
@@ -278,15 +281,15 @@ public class ConcurrentLongLongHashMapTest {
 
     @Test
     public void testHashConflictWithDeletion() {
-        final int Buckets = 16;
-        ConcurrentLongLongHashMap map = new ConcurrentLongLongHashMap(Buckets, 1);
+        final int buckets = 16;
+        ConcurrentLongLongHashMap map = new ConcurrentLongLongHashMap(buckets, 1);
 
         // Pick 2 keys that fall into the same bucket
         long key1 = 1;
         long key2 = 27;
 
-        int bucket1 = ConcurrentLongLongHashMap.signSafeMod(ConcurrentLongLongHashMap.hash(key1), Buckets);
-        int bucket2 = ConcurrentLongLongHashMap.signSafeMod(ConcurrentLongLongHashMap.hash(key2), Buckets);
+        int bucket1 = ConcurrentLongLongHashMap.signSafeMod(ConcurrentLongLongHashMap.hash(key1), buckets);
+        int bucket2 = ConcurrentLongLongHashMap.signSafeMod(ConcurrentLongLongHashMap.hash(key2), buckets);
         assertEquals(bucket1, bucket2);
 
         final long value1 = 1;

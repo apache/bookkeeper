@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -27,8 +29,6 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.junit.Assert;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieShell;
@@ -42,9 +42,12 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Test an update command on a ledger.
+ */
 public class UpdateLedgerCmdTest extends BookKeeperClusterTestCase {
 
-    private final static Logger LOG = LoggerFactory.getLogger(UpdateLedgerCmdTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(UpdateLedgerCmdTest.class);
     private DigestType digestType = DigestType.CRC32;
     private static final String PASSWORD = "testPasswd";
 
@@ -55,7 +58,7 @@ public class UpdateLedgerCmdTest extends BookKeeperClusterTestCase {
     }
 
     /**
-     * updateledgers to hostname
+     * updateledgers to hostname.
      */
     @Test
     public void testUpdateLedgersToHostname() throws Exception {
@@ -78,7 +81,7 @@ public class UpdateLedgerCmdTest extends BookKeeperClusterTestCase {
         updateLedgerCmd(argv, 0, conf);
 
         int updatedLedgersCount = getUpdatedLedgersCount(bk, ledgers, toBookieAddr);
-        Assert.assertEquals("Failed to update the ledger metadata to use bookie host name", 40, updatedLedgersCount);
+        assertEquals("Failed to update the ledger metadata to use bookie host name", 40, updatedLedgersCount);
     }
 
     private void updateLedgerCmd(String[] argv, int exitCode, ServerConfiguration conf) throws KeeperException,
@@ -87,7 +90,7 @@ public class UpdateLedgerCmdTest extends BookKeeperClusterTestCase {
         BookieShell bkShell = new BookieShell();
         bkShell.setConf(conf);
 
-        Assert.assertEquals("Failed to return exit code!", exitCode, bkShell.run(argv));
+        assertEquals("Failed to return exit code!", exitCode, bkShell.run(argv));
     }
 
     private int getUpdatedLedgersCount(BookKeeper bk, List<LedgerHandle> ledgers, BookieSocketAddress toBookieAddr)

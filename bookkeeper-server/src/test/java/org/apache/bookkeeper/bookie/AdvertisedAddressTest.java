@@ -36,6 +36,9 @@ import org.apache.bookkeeper.test.PortManager;
 import org.apache.bookkeeper.util.IOUtils;
 import org.junit.Test;
 
+/**
+ * Tests for when the setAdvertisedAddress is specified.
+ */
 public class AdvertisedAddressTest extends BookKeeperClusterTestCase {
     final int bookiePort = PortManager.nextFreePort();
 
@@ -57,9 +60,11 @@ public class AdvertisedAddressTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testSetAdvertisedAddress() throws Exception {
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-                .setZkServers(zkUtil.getZooKeeperConnectString()).setJournalDirName(newDirectory(false))
-                .setLedgerDirNames(new String[] { newDirectory(false) }).setBookiePort(bookiePort);
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(newDirectory(false))
+            .setLedgerDirNames(new String[] { newDirectory(false) })
+            .setBookiePort(bookiePort)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
 
         conf.setAdvertisedAddress("10.0.0.1");
         assertEquals("10.0.0.1", conf.getAdvertisedAddress());
@@ -82,7 +87,7 @@ public class AdvertisedAddressTest extends BookKeeperClusterTestCase {
     }
 
     /**
-     * When advertised address is specified, it should override the use
+     * When advertised address is specified, it should override the use.
      */
     @Test
     public void testBothUseHostnameAndAdvertisedAddress() throws Exception {

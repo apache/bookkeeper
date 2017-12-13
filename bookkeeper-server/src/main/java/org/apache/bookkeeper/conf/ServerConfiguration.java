@@ -17,11 +17,9 @@
  */
 package org.apache.bookkeeper.conf;
 
-import java.io.File;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
 import com.google.common.annotations.Beta;
+import java.io.File;
+import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.SortedLedgerStorage;
@@ -32,168 +30,165 @@ import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.lang.StringUtils;
 
 /**
  * Configuration manages server-side settings.
  */
 public class ServerConfiguration extends AbstractConfiguration {
     // Entry Log Parameters
-    protected final static String ENTRY_LOG_SIZE_LIMIT = "logSizeLimit";
-    protected final static String ENTRY_LOG_FILE_PREALLOCATION_ENABLED = "entryLogFilePreallocationEnabled";
-    protected final static String MINOR_COMPACTION_INTERVAL = "minorCompactionInterval";
-    protected final static String MINOR_COMPACTION_THRESHOLD = "minorCompactionThreshold";
-    protected final static String MAJOR_COMPACTION_INTERVAL = "majorCompactionInterval";
-    protected final static String MAJOR_COMPACTION_THRESHOLD = "majorCompactionThreshold";
-    protected final static String IS_THROTTLE_BY_BYTES = "isThrottleByBytes";
-    protected final static String COMPACTION_MAX_OUTSTANDING_REQUESTS
-        = "compactionMaxOutstandingRequests";
-    protected final static String COMPACTION_RATE = "compactionRate";
-    protected final static String COMPACTION_RATE_BY_ENTRIES = "compactionRateByEntries";
-    protected final static String COMPACTION_RATE_BY_BYTES = "compactionRateByBytes";
+    protected static final String ENTRY_LOG_SIZE_LIMIT = "logSizeLimit";
+    protected static final String ENTRY_LOG_FILE_PREALLOCATION_ENABLED = "entryLogFilePreallocationEnabled";
+    protected static final String MINOR_COMPACTION_INTERVAL = "minorCompactionInterval";
+    protected static final String MINOR_COMPACTION_THRESHOLD = "minorCompactionThreshold";
+    protected static final String MAJOR_COMPACTION_INTERVAL = "majorCompactionInterval";
+    protected static final String MAJOR_COMPACTION_THRESHOLD = "majorCompactionThreshold";
+    protected static final String IS_THROTTLE_BY_BYTES = "isThrottleByBytes";
+    protected static final String COMPACTION_MAX_OUTSTANDING_REQUESTS = "compactionMaxOutstandingRequests";
+    protected static final String COMPACTION_RATE = "compactionRate";
+    protected static final String COMPACTION_RATE_BY_ENTRIES = "compactionRateByEntries";
+    protected static final String COMPACTION_RATE_BY_BYTES = "compactionRateByBytes";
 
     // Gc Parameters
-    protected final static String GC_WAIT_TIME = "gcWaitTime";
-    protected final static String IS_FORCE_GC_ALLOW_WHEN_NO_SPACE = "isForceGCAllowWhenNoSpace";
-    protected final static String GC_OVERREPLICATED_LEDGER_WAIT_TIME = "gcOverreplicatedLedgerWaitTime";
-    protected final static String USE_TRANSACTIONAL_COMPACTION = "useTransactionalCompaction";
+    protected static final String GC_WAIT_TIME = "gcWaitTime";
+    protected static final String IS_FORCE_GC_ALLOW_WHEN_NO_SPACE = "isForceGCAllowWhenNoSpace";
+    protected static final String GC_OVERREPLICATED_LEDGER_WAIT_TIME = "gcOverreplicatedLedgerWaitTime";
+    protected static final String USE_TRANSACTIONAL_COMPACTION = "useTransactionalCompaction";
     // Sync Parameters
-    protected final static String FLUSH_INTERVAL = "flushInterval";
-    protected final static String FLUSH_ENTRYLOG_INTERVAL_BYTES = "flushEntrylogBytes";
+    protected static final String FLUSH_INTERVAL = "flushInterval";
+    protected static final String FLUSH_ENTRYLOG_INTERVAL_BYTES = "flushEntrylogBytes";
     // Bookie death watch interval
-    protected final static String DEATH_WATCH_INTERVAL = "bookieDeathWatchInterval";
+    protected static final String DEATH_WATCH_INTERVAL = "bookieDeathWatchInterval";
     // Ledger Cache Parameters
-    protected final static String OPEN_FILE_LIMIT = "openFileLimit";
-    protected final static String PAGE_LIMIT = "pageLimit";
-    protected final static String PAGE_SIZE = "pageSize";
-    protected final static String FILEINFO_CACHE_INITIAL_CAPACITY = "fileInfoCacheInitialCapacity";
-    protected final static String FILEINFO_MAX_IDLE_TIME = "fileInfoMaxIdleTime";
+    protected static final String OPEN_FILE_LIMIT = "openFileLimit";
+    protected static final String PAGE_LIMIT = "pageLimit";
+    protected static final String PAGE_SIZE = "pageSize";
+    protected static final String FILEINFO_CACHE_INITIAL_CAPACITY = "fileInfoCacheInitialCapacity";
+    protected static final String FILEINFO_MAX_IDLE_TIME = "fileInfoMaxIdleTime";
     // Journal Parameters
-    protected final static String MAX_JOURNAL_SIZE = "journalMaxSizeMB";
-    protected final static String MAX_BACKUP_JOURNALS = "journalMaxBackups";
-    protected final static String JOURNAL_SYNC_DATA = "journalSyncData";
-    protected final static String JOURNAL_ADAPTIVE_GROUP_WRITES = "journalAdaptiveGroupWrites";
-    protected final static String JOURNAL_MAX_GROUP_WAIT_MSEC = "journalMaxGroupWaitMSec";
-    protected final static String JOURNAL_BUFFERED_WRITES_THRESHOLD = "journalBufferedWritesThreshold";
-    protected final static String JOURNAL_BUFFERED_ENTRIES_THRESHOLD = "journalBufferedEntriesThreshold";
-    protected final static String JOURNAL_FLUSH_WHEN_QUEUE_EMPTY = "journalFlushWhenQueueEmpty";
-    protected final static String JOURNAL_REMOVE_FROM_PAGE_CACHE = "journalRemoveFromPageCache";
-    protected final static String JOURNAL_PRE_ALLOC_SIZE = "journalPreAllocSizeMB";
-    protected final static String JOURNAL_WRITE_BUFFER_SIZE = "journalWriteBufferSizeKB";
-    protected final static String JOURNAL_ALIGNMENT_SIZE = "journalAlignmentSize";
-    protected final static String NUM_JOURNAL_CALLBACK_THREADS = "numJournalCallbackThreads";
-    protected final static String JOURNAL_FORMAT_VERSION_TO_WRITE = "journalFormatVersionToWrite";
+    protected static final String MAX_JOURNAL_SIZE = "journalMaxSizeMB";
+    protected static final String MAX_BACKUP_JOURNALS = "journalMaxBackups";
+    protected static final String JOURNAL_SYNC_DATA = "journalSyncData";
+    protected static final String JOURNAL_ADAPTIVE_GROUP_WRITES = "journalAdaptiveGroupWrites";
+    protected static final String JOURNAL_MAX_GROUP_WAIT_MSEC = "journalMaxGroupWaitMSec";
+    protected static final String JOURNAL_BUFFERED_WRITES_THRESHOLD = "journalBufferedWritesThreshold";
+    protected static final String JOURNAL_BUFFERED_ENTRIES_THRESHOLD = "journalBufferedEntriesThreshold";
+    protected static final String JOURNAL_FLUSH_WHEN_QUEUE_EMPTY = "journalFlushWhenQueueEmpty";
+    protected static final String JOURNAL_REMOVE_FROM_PAGE_CACHE = "journalRemoveFromPageCache";
+    protected static final String JOURNAL_PRE_ALLOC_SIZE = "journalPreAllocSizeMB";
+    protected static final String JOURNAL_WRITE_BUFFER_SIZE = "journalWriteBufferSizeKB";
+    protected static final String JOURNAL_ALIGNMENT_SIZE = "journalAlignmentSize";
+    protected static final String NUM_JOURNAL_CALLBACK_THREADS = "numJournalCallbackThreads";
+    protected static final String JOURNAL_FORMAT_VERSION_TO_WRITE = "journalFormatVersionToWrite";
     // Bookie Parameters
-    protected final static String BOOKIE_PORT = "bookiePort";
-    protected final static String LISTENING_INTERFACE = "listeningInterface";
-    protected final static String ALLOW_LOOPBACK = "allowLoopback";
-    protected final static String ADVERTISED_ADDRESS = "advertisedAddress";
-    protected final static String ALLOW_EPHEMERAL_PORTS = "allowEphemeralPorts";
+    protected static final String BOOKIE_PORT = "bookiePort";
+    protected static final String LISTENING_INTERFACE = "listeningInterface";
+    protected static final String ALLOW_LOOPBACK = "allowLoopback";
+    protected static final String ADVERTISED_ADDRESS = "advertisedAddress";
+    protected static final String ALLOW_EPHEMERAL_PORTS = "allowEphemeralPorts";
 
-    protected final static String JOURNAL_DIR = "journalDirectory";
-    protected final static String JOURNAL_DIRS = "journalDirectories";
-    protected final static String LEDGER_DIRS = "ledgerDirectories";
-    protected final static String INDEX_DIRS = "indexDirectories";
-    protected final static String ALLOW_STORAGE_EXPANSION = "allowStorageExpansion";
+    protected static final String JOURNAL_DIR = "journalDirectory";
+    protected static final String JOURNAL_DIRS = "journalDirectories";
+    protected static final String LEDGER_DIRS = "ledgerDirectories";
+    protected static final String INDEX_DIRS = "indexDirectories";
+    protected static final String ALLOW_STORAGE_EXPANSION = "allowStorageExpansion";
     // NIO Parameters
-    protected final static String SERVER_TCP_NODELAY = "serverTcpNoDelay";
-    protected final static String SERVER_SOCK_KEEPALIVE = "serverSockKeepalive";
-    protected final static String SERVER_SOCK_LINGER = "serverTcpLinger";
+    protected static final String SERVER_TCP_NODELAY = "serverTcpNoDelay";
+    protected static final String SERVER_SOCK_KEEPALIVE = "serverSockKeepalive";
+    protected static final String SERVER_SOCK_LINGER = "serverTcpLinger";
 
     // Zookeeper Parameters
-    protected final static String ZK_TIMEOUT = "zkTimeout";
-    protected final static String ZK_SERVERS = "zkServers";
-    protected final static String ZK_RETRY_BACKOFF_START_MS = "zkRetryBackoffStartMs";
-    protected final static String ZK_RETRY_BACKOFF_MAX_MS = "zkRetryBackoffMaxMs";
-    protected final static String OPEN_LEDGER_REREPLICATION_GRACE_PERIOD = "openLedgerRereplicationGracePeriod";
+    protected static final String ZK_RETRY_BACKOFF_START_MS = "zkRetryBackoffStartMs";
+    protected static final String ZK_RETRY_BACKOFF_MAX_MS = "zkRetryBackoffMaxMs";
+    protected static final String OPEN_LEDGER_REREPLICATION_GRACE_PERIOD = "openLedgerRereplicationGracePeriod";
     //ReadOnly mode support on all disk full
-    protected final static String READ_ONLY_MODE_ENABLED = "readOnlyModeEnabled";
+    protected static final String READ_ONLY_MODE_ENABLED = "readOnlyModeEnabled";
     //Whether the bookie is force started in ReadOnly mode
-    protected final static String FORCE_READ_ONLY_BOOKIE = "forceReadOnlyBookie";
+    protected static final String FORCE_READ_ONLY_BOOKIE = "forceReadOnlyBookie";
     //Whether to persist the bookie status
-    protected final static String PERSIST_BOOKIE_STATUS_ENABLED = "persistBookieStatusEnabled";
+    protected static final String PERSIST_BOOKIE_STATUS_ENABLED = "persistBookieStatusEnabled";
     //Disk utilization
-    protected final static String DISK_USAGE_THRESHOLD = "diskUsageThreshold";
-    protected final static String DISK_USAGE_WARN_THRESHOLD = "diskUsageWarnThreshold";
-    protected final static String DISK_USAGE_LWM_THRESHOLD = "diskUsageLwmThreshold";
-    protected final static String DISK_CHECK_INTERVAL = "diskCheckInterval";
+    protected static final String DISK_USAGE_THRESHOLD = "diskUsageThreshold";
+    protected static final String DISK_USAGE_WARN_THRESHOLD = "diskUsageWarnThreshold";
+    protected static final String DISK_USAGE_LWM_THRESHOLD = "diskUsageLwmThreshold";
+    protected static final String DISK_CHECK_INTERVAL = "diskCheckInterval";
 
     // Replication parameters
-    protected final static String AUDITOR_PERIODIC_CHECK_INTERVAL = "auditorPeriodicCheckInterval";
-    protected final static String AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL = "auditorPeriodicBookieCheckInterval";
-    protected final static String AUTO_RECOVERY_DAEMON_ENABLED = "autoRecoveryDaemonEnabled";
-    protected final static String LOST_BOOKIE_RECOVERY_DELAY = "lostBookieRecoveryDelay";
-    protected final static String RW_REREPLICATE_BACKOFF_MS = "rwRereplicateBackoffMs";
+    protected static final String AUDITOR_PERIODIC_CHECK_INTERVAL = "auditorPeriodicCheckInterval";
+    protected static final String AUDITOR_PERIODIC_BOOKIE_CHECK_INTERVAL = "auditorPeriodicBookieCheckInterval";
+    protected static final String AUTO_RECOVERY_DAEMON_ENABLED = "autoRecoveryDaemonEnabled";
+    protected static final String LOST_BOOKIE_RECOVERY_DELAY = "lostBookieRecoveryDelay";
+    protected static final String RW_REREPLICATE_BACKOFF_MS = "rwRereplicateBackoffMs";
 
     // Worker Thread parameters.
-    protected final static String NUM_ADD_WORKER_THREADS = "numAddWorkerThreads";
-    protected final static String NUM_READ_WORKER_THREADS = "numReadWorkerThreads";
-    protected final static String MAX_PENDING_READ_REQUESTS_PER_THREAD = "maxPendingReadRequestsPerThread";
-    protected final static String MAX_PENDING_ADD_REQUESTS_PER_THREAD = "maxPendingAddRequestsPerThread";
-    protected final static String NUM_LONG_POLL_WORKER_THREADS = "numLongPollWorkerThreads";
+    protected static final String NUM_ADD_WORKER_THREADS = "numAddWorkerThreads";
+    protected static final String NUM_READ_WORKER_THREADS = "numReadWorkerThreads";
+    protected static final String MAX_PENDING_READ_REQUESTS_PER_THREAD = "maxPendingReadRequestsPerThread";
+    protected static final String MAX_PENDING_ADD_REQUESTS_PER_THREAD = "maxPendingAddRequestsPerThread";
+    protected static final String NUM_LONG_POLL_WORKER_THREADS = "numLongPollWorkerThreads";
 
     // Long poll parameters
-    protected final static String REQUEST_TIMER_TICK_DURATION_MILLISEC = "requestTimerTickDurationMs";
-    protected final static String REQUEST_TIMER_NO_OF_TICKS = "requestTimerNumTicks";
+    protected static final String REQUEST_TIMER_TICK_DURATION_MILLISEC = "requestTimerTickDurationMs";
+    protected static final String REQUEST_TIMER_NO_OF_TICKS = "requestTimerNumTicks";
 
-    protected final static String READ_BUFFER_SIZE = "readBufferSizeBytes";
-    protected final static String WRITE_BUFFER_SIZE = "writeBufferSizeBytes";
+    protected static final String READ_BUFFER_SIZE = "readBufferSizeBytes";
+    protected static final String WRITE_BUFFER_SIZE = "writeBufferSizeBytes";
     // Whether the bookie should use its hostname or ipaddress for the
     // registration.
-    protected final static String USE_HOST_NAME_AS_BOOKIE_ID = "useHostNameAsBookieID";
-    protected final static String ENABLE_LOCAL_TRANSPORT = "enableLocalTransport";
-    protected final static String DISABLE_SERVER_SOCKET_BIND = "disableServerSocketBind";
+    protected static final String USE_HOST_NAME_AS_BOOKIE_ID = "useHostNameAsBookieID";
+    protected static final String ENABLE_LOCAL_TRANSPORT = "enableLocalTransport";
+    protected static final String DISABLE_SERVER_SOCKET_BIND = "disableServerSocketBind";
 
-    protected final static String SORTED_LEDGER_STORAGE_ENABLED = "sortedLedgerStorageEnabled";
-    protected final static String SKIP_LIST_SIZE_LIMIT = "skipListSizeLimit";
-    protected final static String SKIP_LIST_CHUNK_SIZE_ENTRY = "skipListArenaChunkSize";
-    protected final static String SKIP_LIST_MAX_ALLOC_ENTRY = "skipListArenaMaxAllocSize";
+    protected static final String SORTED_LEDGER_STORAGE_ENABLED = "sortedLedgerStorageEnabled";
+    protected static final String SKIP_LIST_SIZE_LIMIT = "skipListSizeLimit";
+    protected static final String SKIP_LIST_CHUNK_SIZE_ENTRY = "skipListArenaChunkSize";
+    protected static final String SKIP_LIST_MAX_ALLOC_ENTRY = "skipListArenaMaxAllocSize";
 
     // Statistics Parameters
-    protected final static String ENABLE_STATISTICS = "enableStatistics";
-    protected final static String STATS_PROVIDER_CLASS = "statsProviderClass";
+    protected static final String ENABLE_STATISTICS = "enableStatistics";
+    protected static final String STATS_PROVIDER_CLASS = "statsProviderClass";
 
-    protected final static String LEDGER_STORAGE_CLASS = "ledgerStorageClass";
+    protected static final String LEDGER_STORAGE_CLASS = "ledgerStorageClass";
 
     // Rx adaptive ByteBuf allocator parameters
-    protected final static String BYTEBUF_ALLOCATOR_SIZE_INITIAL = "byteBufAllocatorSizeInitial";
-    protected final static String BYTEBUF_ALLOCATOR_SIZE_MIN = "byteBufAllocatorSizeMin";
-    protected final static String BYTEBUF_ALLOCATOR_SIZE_MAX = "byteBufAllocatorSizeMax";
+    protected static final String BYTEBUF_ALLOCATOR_SIZE_INITIAL = "byteBufAllocatorSizeInitial";
+    protected static final String BYTEBUF_ALLOCATOR_SIZE_MIN = "byteBufAllocatorSizeMin";
+    protected static final String BYTEBUF_ALLOCATOR_SIZE_MAX = "byteBufAllocatorSizeMax";
 
     // Bookie auth provider factory class name
-    protected final static String BOOKIE_AUTH_PROVIDER_FACTORY_CLASS = "bookieAuthProviderFactoryClass";
+    protected static final String BOOKIE_AUTH_PROVIDER_FACTORY_CLASS = "bookieAuthProviderFactoryClass";
 
-    protected final static String MIN_USABLESIZE_FOR_INDEXFILE_CREATION = "minUsableSizeForIndexFileCreation";
+    protected static final String MIN_USABLESIZE_FOR_INDEXFILE_CREATION = "minUsableSizeForIndexFileCreation";
 
-    protected final static String ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION = "allowMultipleDirsUnderSameDiskPartition";
+    protected static final String ALLOW_MULTIPLEDIRS_UNDER_SAME_DISKPARTITION =
+        "allowMultipleDirsUnderSameDiskPartition";
 
     // Http Server parameters
-    protected final static String HTTP_SERVER_ENABLED = "httpServerEnabled";
-    protected final static String HTTP_SERVER_PORT = "httpServerPort";
+    protected static final String HTTP_SERVER_ENABLED = "httpServerEnabled";
+    protected static final String HTTP_SERVER_PORT = "httpServerPort";
 
     // TLS parameters
-    protected final static String TLS_KEYSTORE_TYPE = "tlsKeyStoreType";
-    protected final static String TLS_KEYSTORE = "tlsKeyStore";
-    protected final static String TLS_KEYSTORE_PASSWORD_PATH = "tlsKeyStorePasswordPath";
-    protected final static String TLS_TRUSTSTORE_TYPE = "tlsTrustStoreType";
-    protected final static String TLS_TRUSTSTORE = "tlsTrustStore";
-    protected final static String TLS_TRUSTSTORE_PASSWORD_PATH = "tlsTrustStorePasswordPath";
+    protected static final String TLS_KEYSTORE_TYPE = "tlsKeyStoreType";
+    protected static final String TLS_KEYSTORE = "tlsKeyStore";
+    protected static final String TLS_KEYSTORE_PASSWORD_PATH = "tlsKeyStorePasswordPath";
+    protected static final String TLS_TRUSTSTORE_TYPE = "tlsTrustStoreType";
+    protected static final String TLS_TRUSTSTORE = "tlsTrustStore";
+    protected static final String TLS_TRUSTSTORE_PASSWORD_PATH = "tlsTrustStorePasswordPath";
 
     // Lifecycle Components
-    protected final static String EXTRA_SERVER_COMPONENTS = "extraServerComponents";
+    protected static final String EXTRA_SERVER_COMPONENTS = "extraServerComponents";
 
     // Registration
-    protected final static String REGISTRATION_MANAGER_CLASS = "registrationManagerClass";
+    protected static final String REGISTRATION_MANAGER_CLASS = "registrationManagerClass";
 
     /**
-     * Construct a default configuration object
+     * Construct a default configuration object.
      */
     public ServerConfiguration() {
         super();
     }
 
     /**
-     * Construct a configuration based on other configuration
+     * Construct a configuration based on other configuration.
      *
      * @param conf
      *          Other configuration
@@ -204,7 +199,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get entry logger size limitation
+     * Get entry logger size limitation.
      *
      * @return entry logger size limitation
      */
@@ -213,7 +208,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set entry logger size limitation
+     * Set entry logger size limitation.
      *
      * @param logSizeLimit
      *          new log size limitation
@@ -257,7 +252,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set garbage collection wait time
+     * Set garbage collection wait time.
      *
      * @param gcWaitTime
      *          gc wait time
@@ -269,8 +264,8 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get wait time in millis for garbage collection of overreplicated ledgers
-     * 
+     * Get wait time in millis for garbage collection of overreplicated ledgers.
+     *
      * @return gc wait time
      */
     public long getGcOverreplicatedLedgerWaitTimeMillis() {
@@ -279,14 +274,14 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Set wait time for garbage collection of overreplicated ledgers. Default: 1 day
-     * 
-     * A ledger can be overreplicated under the following circumstances:
+     *
+     * <p>A ledger can be overreplicated under the following circumstances:
      * 1. The ledger with few entries has bk1 and bk2 as its ensemble.
      * 2. bk1 crashes.
      * 3. bk3 replicates the ledger from bk2 and updates the ensemble to bk2 and bk3.
      * 4. bk1 comes back up.
      * 5. Now there are 3 copies of the ledger.
-     *  
+     *
      * @param gcWaitTime
      * @return server configuration
      */
@@ -318,7 +313,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * Get flush interval. Default value is 10 second. It isn't useful to decrease
      * this value, since ledger storage only checkpoints when an entry logger file
      * is rolled.
-     * 
+     *
      * @return flush interval
      */
     public int getFlushInterval() {
@@ -326,7 +321,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set flush interval
+     * Set flush interval.
      *
      * @param flushInterval
      *          Flush Interval
@@ -339,13 +334,13 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Set entry log flush interval in bytes.
-     * 
-     * Default is 0. 0 or less disables this feature and effectively flush
+     *
+     * <p>Default is 0. 0 or less disables this feature and effectively flush
      * happens on log rotation.
      *
-     * Flushing in smaller chunks but more frequently reduces spikes in disk
+     * <p>Flushing in smaller chunks but more frequently reduces spikes in disk
      * I/O. Flushing too frequently may also affect performance negatively.
-     * 
+     *
      * @return Entry log flush interval in bytes
      */
     public long getFlushIntervalInBytes() {
@@ -353,7 +348,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set entry log flush interval in bytes
+     * Set entry log flush interval in bytes.
      *
      * @param flushInterval in bytes
      * @return server configuration
@@ -362,10 +357,10 @@ public class ServerConfiguration extends AbstractConfiguration {
         this.setProperty(FLUSH_ENTRYLOG_INTERVAL_BYTES, Long.toString(flushInterval));
         return this;
     }
-    
-    
+
+
     /**
-     * Get bookie death watch interval
+     * Get bookie death watch interval.
      *
      * @return watch interval
      */
@@ -395,7 +390,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get limitation number of index pages in ledger cache
+     * Get limitation number of index pages in ledger cache.
      *
      * @return max number of index pages in ledger cache
      */
@@ -416,7 +411,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get page size
+     * Get page size.
      *
      * @return page size in ledger cache
      */
@@ -425,7 +420,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set page size
+     * Set page size.
      *
      * @see #getPageSize()
      *
@@ -489,7 +484,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Max journal file size
+     * Max journal file size.
      *
      * @return max journal file size
      */
@@ -498,7 +493,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set new max journal file size
+     * Set new max journal file size.
      *
      * @param maxJournalSize
      *          new max journal file size
@@ -510,7 +505,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * How much space should we pre-allocate at a time in the journal
+     * How much space should we pre-allocate at a time in the journal.
      *
      * @return journal pre-allocation size in MB
      */
@@ -519,7 +514,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Size of the write buffers used for the journal
+     * Size of the write buffers used for the journal.
      *
      * @return journal write buffer size in KB
      */
@@ -528,7 +523,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Max number of older journal files kept
+     * Max number of older journal files kept.
      *
      * @return max number of older journal files to kept
      */
@@ -537,7 +532,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set max number of older journal files to kept
+     * Set max number of older journal files to kept.
      *
      * @param maxBackupJournals
      *          Max number of older journal files
@@ -592,7 +587,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get bookie port that bookie server listen on
+     * Get bookie port that bookie server listen on.
      *
      * @return bookie port
      */
@@ -601,7 +596,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set new bookie port that bookie server listen on
+     * Set new bookie port that bookie server listen on.
      *
      * @param port
      *          Port to listen on
@@ -639,10 +634,10 @@ public class ServerConfiguration extends AbstractConfiguration {
      * Is the bookie allowed to use a loopback interface as its primary
      * interface(i.e. the interface it uses to establish its identity)?
      *
-     * By default, loopback interfaces are not allowed as the primary
+     * <p>By default, loopback interfaces are not allowed as the primary
      * interface.
      *
-     * Using a loopback interface as the primary interface usually indicates
+     * <p>Using a loopback interface as the primary interface usually indicates
      * a configuration error. For example, its fairly common in some VPS setups
      * to not configure a hostname, or to have the hostname resolve to
      * 127.0.0.1. If this is the case, then all bookies in the cluster will
@@ -673,7 +668,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     /**
      * Get the configured advertised address for the bookie.
      *
-     * If present, this setting will take precedence over the
+     * <p>If present, this setting will take precedence over the
      * {@link #setListeningInterface(String)} and
      * {@link #setUseHostNameAsBookieID(boolean)}.
      *
@@ -687,13 +682,13 @@ public class ServerConfiguration extends AbstractConfiguration {
     /**
      * Configure the bookie to advertise a specific address.
      *
-     * By default, a bookie will advertise either its own IP or hostname,
+     * <p>By default, a bookie will advertise either its own IP or hostname,
      * depending on the {@link getUseHostNameAsBookieID()} setting.
      *
-     * When the advertised is set to a non-empty string, the bookie will
+     * <p>When the advertised is set to a non-empty string, the bookie will
      * register and advertise using this address.
      *
-     * If present, this setting will take precedence over the
+     * <p>If present, this setting will take precedence over the
      * {@link #setListeningInterface(String)} and
      * {@link #setUseHostNameAsBookieID(boolean)}.
      *
@@ -755,7 +750,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get dir names to store journal files
+     * Get dir names to store journal files.
      *
      * @return journal dir name
      */
@@ -768,7 +763,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get dir name to store journal files
+     * Get dir name to store journal files.
      *
      * @return journal dir name
      */
@@ -778,7 +773,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get dir name to store journal files
+     * Get dir name to store journal files.
      *
      * @return journal dir name
      */
@@ -788,7 +783,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
 
     /**
-     * Set dir name to store journal files
+     * Set dir name to store journal files.
      *
      * @param journalDir
      *          Dir to store journal files
@@ -800,7 +795,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set dir names to store journal files
+     * Set dir names to store journal files.
      *
      * @param journalDirs
      *          Dir to store journal files
@@ -812,21 +807,21 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get dirs to store journal files
+     * Get dirs to store journal files.
      *
      * @return journal dirs, if no journal dir provided return null
      */
     public File[] getJournalDirs() {
         String[] journalDirNames = getJournalDirNames();
         File[] journalDirs = new File[journalDirNames.length];
-        for(int i=0 ;i<journalDirNames.length; i++) {
+        for (int i = 0; i < journalDirNames.length; i++) {
             journalDirs[i] = new File(journalDirNames[i]);
         }
         return journalDirs;
     }
 
     /**
-     * Get dir names to store ledger data
+     * Get dir names to store ledger data.
      *
      * @return ledger dir names, if not provided return null
      */
@@ -835,7 +830,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get dir names to store ledger data
+     * Get dir names to store ledger data.
      *
      * @return ledger dir names, if not provided return null
      */
@@ -848,7 +843,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set dir names to store ledger data
+     * Set dir names to store ledger data.
      *
      * @param ledgerDirs
      *          Dir names to store ledger data
@@ -863,7 +858,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get dirs that stores ledger data
+     * Get dirs that stores ledger data.
      *
      * @return ledger dirs
      */
@@ -912,7 +907,7 @@ public class ServerConfiguration extends AbstractConfiguration {
             return null;
         }
         File[] idxDirs = new File[idxDirNames.length];
-        for (int i=0; i<idxDirNames.length; i++) {
+        for (int i = 0; i < idxDirNames.length; i++) {
             idxDirs[i] = new File(idxDirNames[i]);
         }
         return idxDirs;
@@ -928,7 +923,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set socket nodelay setting
+     * Set socket nodelay setting.
      *
      * @param noDelay
      *          NoDelay setting
@@ -950,10 +945,10 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Set socket linger timeout on close.
-     * 
-     * When enabled, a close or shutdown will not return until all queued messages for the socket have been successfully
-     * sent or the linger timeout has been reached. Otherwise, the call returns immediately and the closing is done in
-     * the background.
+     *
+     * <p>When enabled, a close or shutdown will not return until all queued messages for the socket have been
+     * successfully sent or the linger timeout has been reached. Otherwise, the call returns immediately and the
+     * closing is done in the background.
      *
      * @param linger
      *            NoDelay setting
@@ -965,8 +960,8 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * get socket keepalive
-     * 
+     * Get socket keepalive.
+     *
      * @return socket keepalive setting
      */
     public boolean getServerSockKeepalive() {
@@ -975,60 +970,15 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Set socket keepalive setting.
-     * 
-     * This setting is used to send keep-alive messages on connection-oriented sockets.
-     * 
+     *
+     * <p>This setting is used to send keep-alive messages on connection-oriented sockets.
+     *
      * @param keepalive
      *            KeepAlive setting
      * @return server configuration
      */
     public ServerConfiguration setServerSockKeepalive(boolean keepalive) {
         setProperty(SERVER_SOCK_KEEPALIVE, Boolean.toString(keepalive));
-        return this;
-    }
-
-    /**
-     * Get zookeeper servers to connect
-     *
-     * @return zookeeper servers
-     */
-    public String getZkServers() {
-        List servers = getList(ZK_SERVERS, null);
-        if (null == servers || 0 == servers.size()) {
-            return null;
-        }
-        return StringUtils.join(servers, ",");
-    }
-
-    /**
-     * Set zookeeper servers to connect
-     *
-     * @param zkServers
-     *          ZooKeeper servers to connect
-     */
-    public ServerConfiguration setZkServers(String zkServers) {
-        setProperty(ZK_SERVERS, zkServers);
-        return this;
-    }
-
-    /**
-     * Get zookeeper timeout
-     *
-     * @return zookeeper server timeout
-     */
-    public int getZkTimeout() {
-        return getInt(ZK_TIMEOUT, 10000);
-    }
-
-    /**
-     * Set zookeeper timeout
-     *
-     * @param zkTimeout
-     *          ZooKeeper server timeout
-     * @return server configuration
-     */
-    public ServerConfiguration setZkTimeout(int zkTimeout) {
-        setProperty(ZK_TIMEOUT, Integer.toString(zkTimeout));
         return this;
     }
 
@@ -1075,7 +1025,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Is statistics enabled
+     * Is statistics enabled.
      *
      * @return is statistics enabled
      */
@@ -1084,7 +1034,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Turn on/off statistics
+     * Turn on/off statistics.
      *
      * @param enabled
      *          Whether statistics enabled or not.
@@ -1098,10 +1048,10 @@ public class ServerConfiguration extends AbstractConfiguration {
     /**
      * Get threshold of minor compaction.
      *
-     * For those entry log files whose remaining size percentage reaches below
+     * <p>For those entry log files whose remaining size percentage reaches below
      * this threshold  will be compacted in a minor compaction.
      *
-     * If it is set to less than zero, the minor compaction is disabled.
+     * <p>If it is set to less than zero, the minor compaction is disabled.
      *
      * @return threshold of minor compaction
      */
@@ -1110,7 +1060,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set threshold of minor compaction
+     * Set threshold of minor compaction.
      *
      * @see #getMinorCompactionThreshold()
      *
@@ -1126,10 +1076,10 @@ public class ServerConfiguration extends AbstractConfiguration {
     /**
      * Get threshold of major compaction.
      *
-     * For those entry log files whose remaining size percentage reaches below
+     * <p>For those entry log files whose remaining size percentage reaches below
      * this threshold  will be compacted in a major compaction.
      *
-     * If it is set to less than zero, the major compaction is disabled.
+     * <p>If it is set to less than zero, the major compaction is disabled.
      *
      * @return threshold of major compaction
      */
@@ -1154,7 +1104,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     /**
      * Get interval to run minor compaction, in seconds.
      *
-     * If it is set to less than zero, the minor compaction is disabled.
+     * <p>If it is set to less than zero, the minor compaction is disabled.
      *
      * @return threshold of minor compaction
      */
@@ -1163,7 +1113,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set interval to run minor compaction
+     * Set interval to run minor compaction.
      *
      * @see #getMinorCompactionInterval()
      *
@@ -1179,7 +1129,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     /**
      * Get interval to run major compaction, in seconds.
      *
-     * If it is set to less than zero, the major compaction is disabled.
+     * <p>If it is set to less than zero, the major compaction is disabled.
      *
      * @return high water mark
      */
@@ -1204,7 +1154,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     /**
      * Get whether force compaction is allowed when disk full or almost full.
      *
-     * Force GC may get some space back, but may also fill up disk space more
+     * <p>Force GC may get some space back, but may also fill up disk space more
      * quickly. This is because new log files are created before GC, while old
      * garbage log files deleted after GC.
      *
@@ -1232,7 +1182,7 @@ public class ServerConfiguration extends AbstractConfiguration {
      * fencing and rereplicating a ledger fragment which is still being written
      * to, on bookie failure.
      *
-     * The grace period allows the writer to detect the bookie failure, and and
+     * <p>The grace period allows the writer to detect the bookie failure, and and
      * start writing to another ledger fragment. If the writer writes nothing
      * during the grace period, the rereplication worker assumes that it has
      * crashed and therefore fences the ledger, preventing any further writes to
@@ -1259,7 +1209,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Get the number of bytes we should use as capacity for
-     * org.apache.bookkeeper.bookie.BufferedReadChannel
+     * org.apache.bookkeeper.bookie.BufferedReadChannel.
      * Default is 512 bytes
      * @return read buffer size
      */
@@ -1269,7 +1219,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Set the number of bytes we should use as capacity for
-     * org.apache.bookkeeper.bookie.BufferedReadChannel
+     * org.apache.bookkeeper.bookie.BufferedReadChannel.
      *
      * @param readBufferSize
      *          Read Buffer Size
@@ -1302,7 +1252,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set the number of threads that should handle long poll requests
+     * Set the number of threads that should handle long poll requests.
      *
      * @param numThreads
      *          number of threads to handle long poll requests.
@@ -1339,9 +1289,9 @@ public class ServerConfiguration extends AbstractConfiguration {
     public int getNumReadWorkerThreads() {
         return getInt(NUM_READ_WORKER_THREADS, 8);
     }
-    
+
     /**
-     * Set the tick duration in milliseconds
+     * Set the tick duration in milliseconds.
      *
      * @param tickDuration
      *          tick duration in milliseconds.
@@ -1353,8 +1303,8 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set the max number of pending read requests for each read worker thread. After the quota is reached, new requests
-     * will be failed immediately
+     * Set the max number of pending read requests for each read worker thread. After the quota is reached,
+     * new requests will be failed immediately.
      *
      * @param maxPendingReadRequestsPerThread
      * @return server configuration
@@ -1366,7 +1316,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * If read workers threads are enabled, limit the number of pending requests, to avoid the executor queue to grow
-     * indefinitely (default: 10000 entries)
+     * indefinitely (default: 10000 entries).
      */
     public int getMaxPendingReadRequestPerThread() {
         return getInt(MAX_PENDING_READ_REQUESTS_PER_THREAD, 10000);
@@ -1374,7 +1324,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Set the max number of pending add requests for each add worker thread. After the quota is reached, new requests
-     * will be failed immediately
+     * will be failed immediately.
      *
      * @param maxPendingAddRequestsPerThread
      * @return server configuration
@@ -1386,7 +1336,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * If add workers threads are enabled, limit the number of pending requests, to avoid the executor queue to grow
-     * indefinitely (default: 10000 entries)
+     * indefinitely (default: 10000 entries).
      */
     public int getMaxPendingAddRequestPerThread() {
         return getInt(MAX_PENDING_ADD_REQUESTS_PER_THREAD, 10000);
@@ -1466,7 +1416,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set sorted-ledger storage enabled or not
+     * Set sorted-ledger storage enabled or not.
      *
      * @deprecated Use {@link #setLedgerStorageClass(String)} to configure the implementation class
      * @param enabled
@@ -1477,7 +1427,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Check if sorted-ledger storage enabled (default true)
+     * Check if sorted-ledger storage enabled (default true).
      *
      * @return true if sorted ledger storage is enabled, false otherwise
      */
@@ -1486,7 +1436,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get skip list data size limitation (default 64MB)
+     * Get skip list data size limitation (default 64MB).
      *
      * @return skip list data size limitation
      */
@@ -1507,7 +1457,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Get the number of bytes we should use as chunk allocation for
-     * org.apache.bookkeeper.bookie.SkipListArena
+     * org.apache.bookkeeper.bookie.SkipListArena.
      * Default is 4 MB
      * @return the number of bytes to use for each chunk in the skiplist arena
      */
@@ -1517,7 +1467,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Set the number of bytes we used as chunk allocation for
-     * org.apache.bookkeeper.bookie.SkipListArena
+     * org.apache.bookkeeper.bookie.SkipListArena.
      *
      * @param size chunk size.
      * @return server configuration object.
@@ -1538,9 +1488,9 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Should the data be fsynced on journal before acknowledgment
+     * Should the data be fsynced on journal before acknowledgment.
      *
-     * Default is true
+     * <p>Default is true
      *
      * @return
      */
@@ -1550,13 +1500,13 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Enable or disable journal syncs.
-     * <p>
-     * By default, data sync is enabled to guarantee durability of writes.
-     * <p>
-     * Beware: while disabling data sync in the Bookie journal might improve the bookie write performance, it will also
-     * introduce the possibility of data loss. With no sync, the journal entries are written in the OS page cache but
-     * not flushed to disk. In case of power failure, the affected bookie might lose the unflushed data. If the ledger
-     * is replicated to multiple bookies, the chances of data loss are reduced though still present.
+     *
+     * <p>By default, data sync is enabled to guarantee durability of writes.
+     *
+     * <p>Beware: while disabling data sync in the Bookie journal might improve the bookie write performance, it will
+     * also introduce the possibility of data loss. With no sync, the journal entries are written in the OS page cache
+     * but not flushed to disk. In case of power failure, the affected bookie might lose the unflushed data. If the
+     * ledger is replicated to multiple bookies, the chances of data loss are reduced though still present.
      *
      * @param syncData
      *            whether to sync data on disk before acknowledgement
@@ -1568,7 +1518,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Should we group journal force writes
+     * Should we group journal force writes.
      *
      * @return group journal force writes
      */
@@ -1577,7 +1527,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Enable/disable group journal force writes
+     * Enable/disable group journal force writes.
      *
      * @param enabled flag to enable/disable group journal force writes
      */
@@ -1596,7 +1546,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Sets the maximum latency to impose on a journal write to achieve grouping
+     * Sets the maximum latency to impose on a journal write to achieve grouping.
      *
      * @param journalMaxGroupWaitMSec
      *          maximum time to wait in milliseconds.
@@ -1608,7 +1558,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Maximum bytes to buffer to impose on a journal write to achieve grouping
+     * Maximum bytes to buffer to impose on a journal write to achieve grouping.
      *
      * @return max bytes to buffer
      */
@@ -1642,7 +1592,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set if we should flush the journal when queue is empty
+     * Set if we should flush the journal when queue is empty.
      */
     public ServerConfiguration setJournalFlushWhenQueueEmpty(boolean enabled) {
         setProperty(JOURNAL_FLUSH_WHEN_QUEUE_EMPTY, enabled);
@@ -1650,7 +1600,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Should we flush the journal when queue is empty
+     * Should we flush the journal when queue is empty.
      *
      * @return flush when queue is empty
      */
@@ -1704,7 +1654,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Whether to persist the bookie status so that when bookie server restarts,
-     * it will continue using the previous status
+     * it will continue using the previous status.
      *
      * @param enabled
      *            - true if persist the bookie status. Otherwise false.
@@ -1747,14 +1697,13 @@ public class ServerConfiguration extends AbstractConfiguration {
         return getFloat(DISK_USAGE_THRESHOLD, 0.95f);
     }
 
-    
     /**
-     * Set the disk free space low water mark threshold. 
+     * Set the disk free space low water mark threshold.
      * Disk is considered full when usage threshold is exceeded.
      * Disk returns back to non-full state when usage is below low water mark threshold.
-     * This prevents it from going back and forth between these states frequently 
-     * when concurrent writes and compaction are happening. This also prevent bookie from 
-     * switching frequently between read-only and read-writes states in the same cases.  
+     * This prevents it from going back and forth between these states frequently
+     * when concurrent writes and compaction are happening. This also prevent bookie from
+     * switching frequently between read-only and read-writes states in the same cases.
      *
      * @param threshold threshold to declare a disk full
      *
@@ -1766,7 +1715,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Returns disk free space low water mark threshold. By default it is the 
+     * Returns disk free space low water mark threshold. By default it is the
      * same as usage threshold (for backwards-compatibility).
      *
      * @return the percentage below which a disk will NOT be considered full
@@ -1775,9 +1724,8 @@ public class ServerConfiguration extends AbstractConfiguration {
         return getFloat(DISK_USAGE_LWM_THRESHOLD, getDiskUsageThreshold());
     }
 
-    
     /**
-     * Set the disk checker interval to monitor ledger disk space
+     * Set the disk checker interval to monitor ledger disk space.
      *
      * @param interval interval between disk checks for space.
      *
@@ -1789,7 +1737,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get the disk checker interval
+     * Get the disk checker interval.
      *
      * @return int
      */
@@ -1842,7 +1790,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Sets that whether the auto-recovery service can start along with Bookie
-     * server itself or not
+     * server itself or not.
      *
      * @param enabled
      *            - true if need to start auto-recovery service. Otherwise
@@ -1855,7 +1803,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get whether the Bookie itself can start auto-recovery service also or not
+     * Get whether the Bookie itself can start auto-recovery service also or not.
      *
      * @return true - if Bookie should start auto-recovery service along with
      *         it. false otherwise.
@@ -1899,7 +1847,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Sets that whether force start a bookie in readonly mode
+     * Sets that whether force start a bookie in readonly mode.
      *
      * @param enabled
      *            - true if need to start a bookie in read only mode. Otherwise
@@ -1912,7 +1860,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get whether the Bookie is force started in read only mode or not
+     * Get whether the Bookie is force started in read only mode or not.
      *
      * @return true - if need to start a bookie in read only mode. Otherwise
      *         false.
@@ -1922,7 +1870,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get whether use bytes to throttle garbage collector compaction or not
+     * Get whether use bytes to throttle garbage collector compaction or not.
      *
      * @return true  - use Bytes,
      *         false - use Entries.
@@ -1932,7 +1880,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set whether use bytes to throttle garbage collector compaction or not
+     * Set whether use bytes to throttle garbage collector compaction or not.
      *
      * @param byBytes true to use by bytes; false to use by entries
      *
@@ -1956,13 +1904,13 @@ public class ServerConfiguration extends AbstractConfiguration {
     /**
      * Set the maximum number of entries which can be compacted without flushing.
      *
-     * When compacting, the entries are written to the entrylog and the new offsets
+     * <p>When compacting, the entries are written to the entrylog and the new offsets
      * are cached in memory. Once the entrylog is flushed the index is updated with
      * the new offsets. This parameter controls the number of entries added to the
      * entrylog before a flush is forced. A higher value for this parameter means
      * more memory will be used for offsets. Each offset consists of 3 longs.
      *
-     * This parameter should _not_ be modified unless you know what you're doing.
+     * <p>This parameter should _not_ be modified unless you know what you're doing.
      * The default is 100,000.
      *
      * @param maxOutstandingRequests number of entries to compact before flushing
@@ -2040,7 +1988,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Should we remove pages from page cache after force write
+     * Should we remove pages from page cache after force write.
      *
      * @return remove pages from cache
      */
@@ -2062,7 +2010,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /*
-     * Get the {@link LedgerStorage} implementation class name
+     * Get the {@link LedgerStorage} implementation class name.
      *
      * @return the class name
      */
@@ -2084,7 +2032,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set the {@link LedgerStorage} implementation class name
+     * Set the {@link LedgerStorage} implementation class name.
      *
      * @param ledgerStorageClass the class name
      * @return ServerConfiguration
@@ -2108,7 +2056,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Configure the bookie to use its hostname to register with the
-     * co-ordination service(eg: zookeeper) and in ledger metadata
+     * co-ordination service(eg: zookeeper) and in ledger metadata.
      *
      * @see #getUseHostNameAsBookieID
      * @param useHostName
@@ -2130,7 +2078,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Configure the bookie to listen for BookKeeper clients executed on the local JVM
+     * Configure the bookie to listen for BookKeeper clients executed on the local JVM.
      *
      * @see #isEnableLocalTransport
      * @param enableLocalTransport
@@ -2153,7 +2101,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Configure the bookie to disable bind on network interfaces,
-     * this bookie will be available only to BookKeeper clients executed on the local JVM
+     * this bookie will be available only to BookKeeper clients executed on the local JVM.
      *
      * @see #isDisableServerSocketBind
      * @param disableServerSocketBind
@@ -2175,7 +2123,7 @@ public class ServerConfiguration extends AbstractConfiguration {
         throws ConfigurationException {
         return ReflectionUtils.getClass(this, STATS_PROVIDER_CLASS,
                                         NullStatsProvider.class, StatsProvider.class,
-                                        defaultLoader);
+                                        DEFAULT_LOADER);
     }
 
     /**
@@ -2214,8 +2162,8 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get Recv ByteBuf allocator initial buf size
-     * 
+     * Get Recv ByteBuf allocator initial buf size.
+     *
      * @return initial byteBuf size
      */
     public int getRecvByteBufAllocatorSizeInitial() {
@@ -2223,8 +2171,8 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set Recv ByteBuf allocator initial buf size
-     * 
+     * Set Recv ByteBuf allocator initial buf size.
+     *
      * @param size
      *            buffer size
      */
@@ -2233,8 +2181,8 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get Recv ByteBuf allocator min buf size
-     * 
+     * Get Recv ByteBuf allocator min buf size.
+     *
      * @return min byteBuf size
      */
     public int getRecvByteBufAllocatorSizeMin() {
@@ -2242,8 +2190,8 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set Recv ByteBuf allocator min buf size
-     * 
+     * Set Recv ByteBuf allocator min buf size.
+     *
      * @param size
      *            buffer size
      */
@@ -2252,8 +2200,8 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get Recv ByteBuf allocator max buf size
-     * 
+     * Get Recv ByteBuf allocator max buf size.
+     *
      * @return max byteBuf size
      */
     public int getRecvByteBufAllocatorSizeMax() {
@@ -2261,8 +2209,8 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set Recv ByteBuf allocator max buf size
-     * 
+     * Set Recv ByteBuf allocator max buf size.
+     *
      * @param size
      *            buffer size
      */
@@ -2270,13 +2218,12 @@ public class ServerConfiguration extends AbstractConfiguration {
         setProperty(BYTEBUF_ALLOCATOR_SIZE_MAX, size);
     }
 
-    /*
+    /**
      * Set the bookie authentication provider factory class name.
-     * If this is not set, no authentication will be used
+     * If this is not set, no authentication will be used.
      *
      * @param factoryClass
      *          the bookie authentication provider factory class name
-     * @return void
      */
     public void setBookieAuthProviderFactoryClass(String factoryClass) {
         setProperty(BOOKIE_AUTH_PROVIDER_FACTORY_CLASS, factoryClass);
@@ -2312,7 +2259,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Set the keystore type for client.
-     * 
+     *
      * @return
      */
     public ServerConfiguration setTLSKeyStoreType(String arg) {
@@ -2340,9 +2287,8 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Gets the minimum safe Usable size to be available in index directory for Bookie to create Index File while replaying
      * Get the path to file containing keystore password if the client keystore is password protected. Default is null.
-     * 
+     *
      * @return
      */
     public String getTLSKeyStorePasswordPath() {
@@ -2351,7 +2297,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Set the path to file containing keystore password, if the client keystore is password protected.
-     * 
+     *
      * @return
      */
     public ServerConfiguration setTLSKeyStorePasswordPath(String arg) {
@@ -2361,7 +2307,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Get the keystore type for client. Default is JKS.
-     * 
+     *
      * @return
      */
     public String getTLSKeyStoreType() {
@@ -2370,7 +2316,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Set the truststore type for client.
-     * 
+     *
      * @return
      */
     public ServerConfiguration setTLSTrustStoreType(String arg) {
@@ -2380,7 +2326,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Get the truststore path for the client.
-     * 
+     *
      * @return
      */
     public String getTLSTrustStore() {
@@ -2389,7 +2335,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Set the truststore path for the client.
-     * 
+     *
      * @return
      */
     public ServerConfiguration setTLSTrustStore(String arg) {
@@ -2400,7 +2346,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     /**
      * Get the path to file containing truststore password if the client truststore is password protected. Default is
      * null.
-     * 
+     *
      * @return
      */
     public String getTLSTrustStorePasswordPath() {
@@ -2409,7 +2355,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Set the path to file containing truststore password, if the client truststore is password protected.
-     * 
+     *
      * @return
      */
     public ServerConfiguration setTLSTrustStorePasswordPath(String arg) {
@@ -2418,9 +2364,9 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Gets the minimum safe Usable size to be available in index directory for Bookie to create Index File while replaying 
-     * journal at the time of Bookie Start in Readonly Mode (in bytes)
-     * 
+     * Gets the minimum safe Usable size to be available in index directory for Bookie to create Index File while
+     * replaying journal at the time of Bookie Start in Readonly Mode (in bytes).
+     *
      * @return
      */
     public long getMinUsableSizeForIndexFileCreation() {
@@ -2428,9 +2374,9 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Sets the minimum safe Usable size to be available in index directory for Bookie to create Index File while replaying 
-     * journal at the time of Bookie Start in Readonly Mode (in bytes)
-     * 
+     * Sets the minimum safe Usable size to be available in index directory for Bookie to create Index File while
+     * replaying journal at the time of Bookie Start in Readonly Mode (in bytes).
+     *
      * @param minUsableSizeForIndexFileCreation
      * @return
      */
@@ -2441,7 +2387,7 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * returns whether it is allowed to have multiple ledger/index/journal
-     * Directories in the same filesystem diskpartition
+     * Directories in the same filesystem diskpartition.
      *
      * @return
      */
@@ -2451,10 +2397,10 @@ public class ServerConfiguration extends AbstractConfiguration {
 
     /**
      * Configure the Bookie to allow/disallow multiple ledger/index/journal
-     * directories in the same filesystem diskpartition
+     * directories in the same filesystem diskpartition.
      *
      * @param allow
-     * 
+     *
      * @return server configuration object.
      */
     public ServerConfiguration setAllowMultipleDirsUnderSameDiskPartition(boolean allow) {
@@ -2463,7 +2409,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get whether to start the http server or not
+     * Get whether to start the http server or not.
      *
      * @return true - if http server should start
      */
@@ -2472,7 +2418,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set whether to start the http server or not
+     * Set whether to start the http server or not.
      *
      * @param enabled
      *            - true if we should start http server
@@ -2484,7 +2430,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Get the http server port
+     * Get the http server port.
      *
      * @return http server port
      */
@@ -2493,7 +2439,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set Http server port listening on
+     * Set Http server port listening on.
      *
      * @param port
      *          Port to listen on
@@ -2529,7 +2475,7 @@ public class ServerConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Set registration manager class
+     * Set registration manager class.
      *
      * @param regManagerClass
      *            ManagerClass
@@ -2548,7 +2494,7 @@ public class ServerConfiguration extends AbstractConfiguration {
             throws ConfigurationException {
         return ReflectionUtils.getClass(this, REGISTRATION_MANAGER_CLASS,
                 ZKRegistrationManager.class, RegistrationManager.class,
-                defaultLoader);
+                DEFAULT_LOADER);
     }
 
 }

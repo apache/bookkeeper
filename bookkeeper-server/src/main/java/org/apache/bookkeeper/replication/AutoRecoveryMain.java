@@ -20,21 +20,26 @@
  */
 package org.apache.bookkeeper.replication;
 
+import static org.apache.bookkeeper.replication.ReplicationStats.AUDITOR_SCOPE;
+import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_WORKER_SCOPE;
+
 import com.google.common.annotations.VisibleForTesting;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashSet;
 import java.util.Set;
+
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieCriticalThread;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.server.http.BKHttpServiceProvider;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.HttpServerLoader;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
+import org.apache.bookkeeper.server.http.BKHttpServiceProvider;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
@@ -51,11 +56,8 @@ import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.bookkeeper.replication.ReplicationStats.AUDITOR_SCOPE;
-import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_WORKER_SCOPE;
-
 /**
- * Class to start/stop the AutoRecovery daemons Auditor and ReplicationWorker
+ * Class to start/stop the AutoRecovery daemons Auditor and ReplicationWorker.
  */
 public class AutoRecoveryMain {
     private static final Logger LOG = LoggerFactory
@@ -107,8 +109,8 @@ public class AutoRecoveryMain {
         deathWatcher = new AutoRecoveryDeathWatcher(this);
     }
 
-    public AutoRecoveryMain(ServerConfiguration conf, ZooKeeper zk) throws IOException, InterruptedException, KeeperException,
-            UnavailableException, CompatibilityException {
+    public AutoRecoveryMain(ServerConfiguration conf, ZooKeeper zk) throws IOException, InterruptedException,
+           KeeperException, UnavailableException, CompatibilityException {
         this.conf = conf;
         this.zk = zk;
         auditorElector = new AuditorElector(Bookie.getBookieAddress(conf).toString(), conf, zk);

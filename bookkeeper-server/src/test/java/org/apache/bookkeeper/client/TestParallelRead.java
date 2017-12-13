@@ -42,11 +42,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Unit tests for parallel reading
+ * Unit tests for parallel reading.
  */
 public class TestParallelRead extends BookKeeperClusterTestCase {
 
-    static Logger LOG = LoggerFactory.getLogger(TestParallelRead.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TestParallelRead.class);
 
     final DigestType digestType;
     final byte[] passwd = "parallel-read".getBytes();

@@ -101,6 +101,7 @@
     <commons-configuration.version>1.10</commons-configuration.version>
     <commons-lang3.version>3.3.2</commons-lang3.version>
     <google.code.version>3.0.2</google.code.version>
+    <google.errorprone.version>2.1.2</google.errorprone.version>
     <guava.version>20.0</guava.version>
     <hamcrest.version>1.3</hamcrest.version>
     <jmh.version>1.19</jmh.version>
@@ -113,7 +114,7 @@
     <netty-boringssl.version>2.0.3.Final</netty-boringssl.version>
     <slf4j.version>1.7.25</slf4j.version>
     <zookeeper.version>3.5.3-beta</zookeeper.version>
-    <findbugs-jsr305.version>3.0.0</findbugs-jsr305.version>
+    <rocksdb.version>5.8.6</rocksdb.version>
     <!-- plugin dependencies -->
     <findbugs-maven-plugin.version>3.0.5</findbugs-maven-plugin.version>
     <puppycrawl.checkstyle.version>6.19</puppycrawl.checkstyle.version>
@@ -284,16 +285,6 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <version>${maven-assembly-plugin.version}</version>
-        <configuration>
-	  <tarLongFileMode>gnu</tarLongFileMode>
-          <descriptors>
-            <descriptor>src/assemble/src.xml</descriptor>
-          </descriptors>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.rat</groupId>

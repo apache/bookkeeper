@@ -29,18 +29,20 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.util.StringUtils;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.AsyncCallback.VoidCallback;
 import org.apache.zookeeper.KeeperException.Code;
+import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * An abstract class for managing hierarchical ledgers.
+ */
 public abstract class AbstractHierarchicalLedgerManager extends AbstractZkLedgerManager {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(AbstractHierarchicalLedgerManager.class);
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param conf
      *          Configuration object
@@ -50,9 +52,9 @@ public abstract class AbstractHierarchicalLedgerManager extends AbstractZkLedger
     public AbstractHierarchicalLedgerManager(AbstractConfiguration conf, ZooKeeper zk) {
         super(conf, zk);
     }
-    
+
     /**
-     * Process hash nodes in a given path
+     * Process hash nodes in a given path.
      */
     void asyncProcessLevelNodes(
         final String path, final Processor<String> processor,
@@ -88,7 +90,7 @@ public abstract class AbstractHierarchicalLedgerManager extends AbstractZkLedger
             }
         }, null);
     }
-    
+
     /**
      * Process list one by one in asynchronize way. Process will be stopped immediately
      * when error occurred.
@@ -98,7 +100,7 @@ public abstract class AbstractHierarchicalLedgerManager extends AbstractZkLedger
         ScheduledExecutorService scheduler;
 
         /**
-         * Constructor
+         * Constructor.
          *
          * @param scheduler
          *          Executor used to prevent long stack chains
@@ -108,7 +110,7 @@ public abstract class AbstractHierarchicalLedgerManager extends AbstractZkLedger
         }
 
         /**
-         * Process list of items
+         * Process list of items.
          *
          * @param data
          *          List of data to process
@@ -150,7 +152,7 @@ public abstract class AbstractHierarchicalLedgerManager extends AbstractZkLedger
                     final AsyncCallback.VoidCallback stub = this;
                     scheduler.submit(new Runnable() {
                         @Override
-                        public final void run() {
+                        public void run() {
                             processor.process(dataToProcess, stub);
                         }
                     });
@@ -160,12 +162,12 @@ public abstract class AbstractHierarchicalLedgerManager extends AbstractZkLedger
             processor.process(firstElement, stubCallback);
         }
     }
-    
+
     // get ledger from all level nodes
     long getLedgerId(String...levelNodes) throws IOException {
         return StringUtils.stringToHierarchicalLedgerId(levelNodes);
     }
-    
+
     /**
      * Get all ledger ids in the given zk path.
      *
@@ -189,8 +191,9 @@ public abstract class AbstractHierarchicalLedgerManager extends AbstractZkLedger
         char ch;
         for (int i = ledgerRootPath.length() + 1; i < path.length(); i++) {
             ch = path.charAt(i);
-            if (ch < '0' || ch > '9')
+            if (ch < '0' || ch > '9') {
                 continue;
+            }
             ledgerIdPrefix = ledgerIdPrefix * 10 + (ch - '0');
         }
 
@@ -201,8 +204,9 @@ public abstract class AbstractHierarchicalLedgerManager extends AbstractZkLedger
             long ledgerId = ledgerIdPrefix;
             for (int i = 0; i < ledgerNode.length(); i++) {
                 ch = ledgerNode.charAt(i);
-                if (ch < '0' || ch > '9')
+                if (ch < '0' || ch > '9') {
                     continue;
+                }
                 ledgerId = ledgerId * 10 + (ch - '0');
             }
             zkActiveLedgers.add(ledgerId);

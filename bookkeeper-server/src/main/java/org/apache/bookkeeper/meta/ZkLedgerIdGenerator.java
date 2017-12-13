@@ -73,7 +73,8 @@ public class ZkLedgerIdGenerator implements LedgerIdGenerator {
         generateLedgerIdImpl(cb, zk, ledgerPrefix, zkAcls);
     }
 
-    public static void generateLedgerIdImpl(final GenericCallback<Long> cb, ZooKeeper zk, String ledgerPrefix, List<ACL> zkAcls) {
+    public static void generateLedgerIdImpl(final GenericCallback<Long> cb, ZooKeeper zk, String ledgerPrefix,
+            List<ACL> zkAcls) {
         ZkUtils.asyncCreateFullPathOptimistic(zk, ledgerPrefix, new byte[0], zkAcls,
                 CreateMode.EPHEMERAL_SEQUENTIAL,
                 new StringCallback() {
@@ -92,10 +93,9 @@ public class ZkLedgerIdGenerator implements LedgerIdGenerator {
                         long ledgerId;
                         try {
                             ledgerId = getLedgerIdFromGenPath(idPathName, ledgerPrefix);
-                            if(ledgerId < 0 || ledgerId >= Integer.MAX_VALUE) {
+                            if (ledgerId < 0 || ledgerId >= Integer.MAX_VALUE) {
                                 cb.operationComplete(BKException.Code.LedgerIdOverflowException, null);
-                            }
-                            else {
+                            } else {
                                 cb.operationComplete(BKException.Code.OK, ledgerId);
                             }
                         } catch (IOException e) {

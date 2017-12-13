@@ -51,7 +51,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * This is the helper class for replicating the fragments from one bookie to
- * another
+ * another.
  */
 public class LedgerFragmentReplicator {
 
@@ -76,7 +76,7 @@ public class LedgerFragmentReplicator {
         this(bkc, NullStatsLogger.INSTANCE);
     }
 
-    private final static Logger LOG = LoggerFactory
+    private static final Logger LOG = LoggerFactory
             .getLogger(LedgerFragmentReplicator.class);
 
     private void replicateFragmentInternal(final LedgerHandle lh,
@@ -141,7 +141,7 @@ public class LedgerFragmentReplicator {
      * then it re-replicates that batched entry fragments one by one. After
      * re-replication of all batched entry fragments, it will update the
      * ensemble info with new Bookie once
-     * 
+     *
      * @param lh
      *            LedgerHandle for the ledger
      * @param lf
@@ -165,7 +165,9 @@ public class LedgerFragmentReplicator {
                 ledgerFragmentMcb, targetBookieAddresses);
     }
 
-    /** Replicate the batched entry fragments one after other */
+    /**
+     * Replicate the batched entry fragments one after other.
+     */
     private void replicateNextBatch(final LedgerHandle lh,
             final Iterator<LedgerFragment> fragments,
             final AsyncCallback.VoidCallback ledgerFragmentMcb,
@@ -200,7 +202,7 @@ public class LedgerFragmentReplicator {
     /**
      * Split the full fragment into batched entry fragments by keeping
      * rereplicationEntryBatchSize of entries in each one and can treat them as
-     * sub fragments
+     * sub fragments.
      */
     static Set<LedgerFragment> splitIntoSubFragments(LedgerHandle lh,
             LedgerFragment ledgerFragment, long rereplicationEntryBatchSize) {
@@ -281,8 +283,7 @@ public class LedgerFragmentReplicator {
                         LOG.debug("Success writing ledger id {}, entry id {} to a new bookie {}!",
                                   new Object[] { ledgerId, entryId, addr });
                     }
-                    if (numCompleted.incrementAndGet() == newBookies.size() &&
-                        completed.compareAndSet(false, true)) {
+                    if (numCompleted.incrementAndGet() == newBookies.size() && completed.compareAndSet(false, true)) {
                         ledgerFragmentEntryMcb.processResult(rc, null, null);
                     }
                 }
@@ -359,7 +360,9 @@ public class LedgerFragmentReplicator {
         }
     }
 
-    /** Updates the ensemble with newBookie and notify the ensembleUpdatedCb */
+    /**
+     * Updates the ensemble with newBookie and notify the ensembleUpdatedCb.
+     */
     private static void updateEnsembleInfo(
             AsyncCallback.VoidCallback ensembleUpdatedCb, long fragmentStartId,
             LedgerHandle lh, Map<BookieSocketAddress, BookieSocketAddress> oldBookie2NewBookie) {

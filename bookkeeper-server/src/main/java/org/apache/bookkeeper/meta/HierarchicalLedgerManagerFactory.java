@@ -23,17 +23,19 @@ import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.data.ACL;
 
 /**
- * Legacy Hierarchical Ledger Manager Factory
+ * Legacy Hierarchical Ledger Manager Factory.
  */
 public class HierarchicalLedgerManagerFactory extends LegacyHierarchicalLedgerManagerFactory {
 
     public static final String NAME = "hierarchical";
-    
+
     @Override
     public LedgerIdGenerator newLedgerIdGenerator() {
         List<ACL> zkAcls = ZkUtils.getACLs(conf);
-        ZkLedgerIdGenerator subIdGenerator = new ZkLedgerIdGenerator(zk, conf.getZkLedgersRootPath(), LegacyHierarchicalLedgerManager.IDGEN_ZNODE, zkAcls);
-        return new LongZkLedgerIdGenerator(zk, conf.getZkLedgersRootPath(), LongHierarchicalLedgerManager.IDGEN_ZNODE, subIdGenerator, zkAcls);
+        ZkLedgerIdGenerator subIdGenerator = new ZkLedgerIdGenerator(zk, conf.getZkLedgersRootPath(),
+                LegacyHierarchicalLedgerManager.IDGEN_ZNODE, zkAcls);
+        return new LongZkLedgerIdGenerator(zk, conf.getZkLedgersRootPath(), LongHierarchicalLedgerManager.IDGEN_ZNODE,
+                subIdGenerator, zkAcls);
     }
-    
+
 }

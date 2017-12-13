@@ -39,24 +39,22 @@ import org.slf4j.LoggerFactory;
 /**
  * LongHierarchical Ledger Manager which manages ledger meta in zookeeper using 5-level hierarchical znodes.
  *
- * <p>
- * LongHierarchicalLedgerManager splits the generated id into 5 parts (3-4-4-4-4):
+ * <p>LongHierarchicalLedgerManager splits the generated id into 5 parts (3-4-4-4-4):
  *
  * <pre>
  * &lt;level0 (3 digits)&gt;&lt;level1 (4 digits)&gt;&lt;level2 (4 digits)&gt;&lt;level3 (4 digits)&gt;
  * &lt;level4 (4 digits)&gt;
  * </pre>
  *
- * These 5 parts are used to form the actual ledger node path used to store ledger metadata:
+ * <p>These 5 parts are used to form the actual ledger node path used to store ledger metadata:
  *
  * <pre>
  * (ledgersRootPath) / level0 / level1 / level2 / level3 / L(level4)
  * </pre>
  *
- * E.g Ledger 0000000000000000001 is split into 5 parts <i>000</i>, <i>0000</i>, <i>0000</i>, <i>0000</i>, <i>0001</i>,
- * which is stored in <i>(ledgersRootPath)/000/0000/0000/0000/L0001</i>. So each znode could have at most 10000 ledgers,
- * which avoids errors during garbage collection due to lists of children that are too long.
- *
+ * <p>E.g Ledger 0000000000000000001 is split into 5 parts <i>000</i>, <i>0000</i>, <i>0000</i>, <i>0000</i>,
+ * <i>0001</i>, which is stored in <i>(ledgersRootPath)/000/0000/0000/0000/L0001</i>. So each znode could have at most
+ * 10000 ledgers, which avoids errors during garbage collection due to lists of children that are too long.
  */
 class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
 
@@ -68,7 +66,7 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
 
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param conf
      *            Configuration object
@@ -87,7 +85,7 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
         String hierarchicalPath = pathName.substring(ledgerRootPath.length() + 1);
         return StringUtils.stringToLongHierarchicalLedgerId(hierarchicalPath);
     }
-    
+
     @Override
     public String getLedgerPath(long ledgerId) {
         return ledgerRootPath + StringUtils.getLongHierarchicalLedgerPath(ledgerId);
@@ -98,7 +96,7 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
     //
 
     /**
-     * Get the smallest cache id in a specified node /level0/level1/level2/level3
+     * Get the smallest cache id in a specified node /level0/level1/level2/level3.
      *
      * @param level0
      *            1st level node name
@@ -116,7 +114,7 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
     }
 
     /**
-     * Get the largest cache id in a specified node /level0/level1/level2/level3
+     * Get the largest cache id in a specified node /level0/level1/level2/level3.
      *
      * @param level0
      *            1st level node name
@@ -148,7 +146,7 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
         // hierarchical paths (2-4-4)
         return LegacyHierarchicalLedgerManager.isSpecialZnode(znode) || znode.length() < 3;
     }
-    
+
     private class RecursiveProcessor implements Processor<String> {
         private final int level;
         private final String path;
@@ -191,7 +189,7 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
     }
 
     /**
-     * Iterator through each metadata bucket with hierarchical mode
+     * Iterator through each metadata bucket with hierarchical mode.
      */
     private class LongHierarchicalLedgerRangeIterator implements LedgerRangeIterator {
         private List<Iterator<String>> levelNodesIter;
@@ -206,7 +204,8 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
             curLevelNodes = new ArrayList<String>(Collections.nCopies(4, (String) null));
         }
 
-        synchronized private void initialize(String path, int level) throws KeeperException, InterruptedException, IOException {
+        private synchronized void initialize(String path, int level) throws KeeperException, InterruptedException,
+                IOException {
             List<String> levelNodes = zk.getChildren(path, null);
             Collections.sort(levelNodes);
             if (level == 0) {
@@ -245,12 +244,12 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
         }
 
         private void clearHigherLevels(int level) {
-            for(int i = level+1; i < 4; i++) {
+            for (int i = level + 1; i < 4; i++) {
                 curLevelNodes.set(i, null);
             }
         }
 
-        synchronized private boolean moveToNext(int level) throws KeeperException, InterruptedException {
+        private synchronized boolean moveToNext(int level) throws KeeperException, InterruptedException {
             Iterator<String> curLevelNodesIter = levelNodesIter.get(level);
             boolean movedToNextNode = false;
             if (level == 0) {
@@ -293,7 +292,7 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
             return movedToNextNode;
         }
 
-        synchronized private void preload() throws IOException, KeeperException, InterruptedException {
+        private synchronized void preload() throws IOException, KeeperException, InterruptedException {
             if (!iteratorDone && !initialized) {
                 initialize(ledgerRootPath, 0);
             }
@@ -308,7 +307,7 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
         }
 
         @Override
-        synchronized public boolean hasNext() throws IOException {
+        public synchronized boolean hasNext() throws IOException {
             try {
                 preload();
             } catch (KeeperException ke) {
@@ -321,7 +320,7 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
         }
 
         @Override
-        synchronized public LedgerRange next() throws IOException {
+        public synchronized LedgerRange next() throws IOException {
             if (!hasNext()) {
                 throw new NoSuchElementException();
             }

@@ -1,5 +1,3 @@
-package org.apache.bookkeeper.client;
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,6 +18,11 @@ package org.apache.bookkeeper.client;
  * under the License.
  *
  */
+package org.apache.bookkeeper.client;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
@@ -32,14 +35,12 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
-
 /**
- * This unit test tests ledger fencing;
+ * This unit test tests ledger fencing.
  *
  */
 public class TestFencing extends BookKeeperClusterTestCase {
-    private final static Logger LOG = LoggerFactory.getLogger(TestFencing.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TestFencing.class);
 
     private final DigestType digestType;
 
@@ -114,7 +115,7 @@ public class TestFencing extends BookKeeperClusterTestCase {
             BookKeeper bk = null;
             try {
                 barrier.await();
-                while(true) {
+                while (true) {
                     try {
                         bk = new BookKeeper(new ClientConfiguration(baseClientConf), bkc.getZkHandle());
 
@@ -180,7 +181,7 @@ public class TestFencing extends BookKeeperClusterTestCase {
         writethread.start();
 
 
-        CyclicBarrier barrier = new CyclicBarrier(numRecovery+1);
+        CyclicBarrier barrier = new CyclicBarrier(numRecovery + 1);
         LedgerOpenThread threads[] = new LedgerOpenThread[numRecovery];
         for (int i = 0; i < numRecovery; i++) {
             threads[i] = new LedgerOpenThread(i, digestType, writelh.getId(), barrier);
@@ -201,7 +202,7 @@ public class TestFencing extends BookKeeperClusterTestCase {
 
     /**
      * Test that opening a ledger in norecovery mode
-     * doesn't fence off a ledger
+     * doesn't fence off a ledger.
      */
     @Test
     public void testNoRecoveryOpen() throws Exception {
@@ -229,7 +230,7 @@ public class TestFencing extends BookKeeperClusterTestCase {
         // should not have triggered recovery and fencing
         writelh.addEntry(tmp.getBytes());
         try {
-            readlh.readEntries(numReadable+1, numReadable+1);
+            readlh.readEntries(numReadable + 1, numReadable + 1);
             fail("Shouldn't have been able to read this far");
         } catch (BKException.BKReadException e) {
             // all is good
@@ -265,8 +266,7 @@ public class TestFencing extends BookKeeperClusterTestCase {
             writelh.addEntry(tmp.getBytes());
         }
 
-        BookieSocketAddress bookieToKill
-            = writelh.getLedgerMetadata().getEnsemble(numEntries).get(0);
+        BookieSocketAddress bookieToKill = writelh.getLedgerMetadata().getEnsemble(numEntries).get(0);
         killBookie(bookieToKill);
 
         // write entries to change ensemble
@@ -318,8 +318,7 @@ public class TestFencing extends BookKeeperClusterTestCase {
         LedgerHandle readlh = bkc.openLedger(writelh.getId(),
                                              digestType, "testPasswd".getBytes());
         // should be fenced by now
-        BookieSocketAddress bookieToKill
-            = writelh.getLedgerMetadata().getEnsemble(numEntries).get(0);
+        BookieSocketAddress bookieToKill = writelh.getLedgerMetadata().getEnsemble(numEntries).get(0);
         killBookie(bookieToKill);
         admin.recoverBookieData(bookieToKill);
 
@@ -336,7 +335,7 @@ public class TestFencing extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Test that fencing doesn't work with a bad password
+     * Test that fencing doesn't work with a bad password.
      */
     @Test
     public void testFencingBadPassword() throws Exception {

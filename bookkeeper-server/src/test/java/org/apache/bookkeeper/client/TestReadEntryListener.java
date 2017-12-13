@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
  */
 public class TestReadEntryListener extends BookKeeperClusterTestCase {
 
-    static Logger LOG = LoggerFactory.getLogger(TestReadEntryListener.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TestReadEntryListener.class);
 
     final DigestType digestType;
     final byte[] passwd = "read-entry-listener".getBytes();

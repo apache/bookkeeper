@@ -24,10 +24,14 @@ import java.util.List;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 
-/** Utility class for replication tests */
+/**
+ * Utility class for replication tests.
+ */
 public class ReplicationTestUtil {
 
-    /** Checks whether ledger is in under-replication */
+    /**
+     * Checks whether ledger is in under-replication.
+     */
     static boolean isLedgerInUnderReplication(ZooKeeper zkc, long id,
             String basePath) throws KeeperException, InterruptedException {
         List<String> children;

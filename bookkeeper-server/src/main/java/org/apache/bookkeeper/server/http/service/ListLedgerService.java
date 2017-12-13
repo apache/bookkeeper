@@ -19,8 +19,8 @@
 package org.apache.bookkeeper.server.http.service;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.AbstractFuture;
@@ -45,7 +45,7 @@ import org.slf4j.LoggerFactory;
 /**
  * HttpEndpointService that handle Bookkeeper list ledger related http request.
  *
- * The GET method will list all ledger_ids in this bookkeeper cluster.
+ * <p>The GET method will list all ledger_ids in this bookkeeper cluster.
  * User can choose print metadata of each ledger or not by set parameter "print_metadata"
  */
 public class ListLedgerService implements HttpEndpointService {
@@ -56,7 +56,7 @@ public class ListLedgerService implements HttpEndpointService {
     protected ZooKeeper zk;
 
     public ListLedgerService(ServerConfiguration conf, ZooKeeper zk) {
-        Preconditions.checkNotNull(conf);
+        checkNotNull(conf);
         this.conf = conf;
         this.zk = zk;
     }
@@ -64,6 +64,9 @@ public class ListLedgerService implements HttpEndpointService {
     // Number of LedgerMetadata contains in each page
     static final int LIST_LEDGER_BATCH_SIZE = 100;
 
+    /**
+     * Callback for reading ledger metadata.
+     */
     public static class ReadLedgerMetadataCallback extends AbstractFuture<LedgerMetadata>
       implements BookkeeperInternalCallbacks.GenericCallback<LedgerMetadata> {
         final long ledgerId;
@@ -84,7 +87,8 @@ public class ListLedgerService implements HttpEndpointService {
             }
         }
     }
-    static void keepLedgerMetadata(ReadLedgerMetadataCallback cb, LinkedHashMap<String, String> output) throws Exception {
+    static void keepLedgerMetadata(ReadLedgerMetadataCallback cb, LinkedHashMap<String, String> output)
+            throws Exception {
         LedgerMetadata md = cb.get();
         output.put(Long.valueOf(cb.getLedgerId()).toString(), new String(md.serialize(), UTF_8));
     }
@@ -97,14 +101,13 @@ public class ListLedgerService implements HttpEndpointService {
         if (HttpServer.Method.GET == request.getMethod()) {
             Map<String, String> params = request.getParams();
             // default not print metadata
-            boolean printMeta = (params != null) &&
-              params.containsKey("print_metadata") &&
-              params.get("print_metadata").equals("true");
+            boolean printMeta = (params != null)
+              && params.containsKey("print_metadata")
+              && params.get("print_metadata").equals("true");
 
             // Page index should start from 1;
-            int pageIndex = (printMeta && params.containsKey("page")) ?
-              Integer.parseInt(params.get("page")) :
-              -1;
+            int pageIndex = (printMeta && params.containsKey("page"))
+                ? Integer.parseInt(params.get("page")) : -1;
 
             LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(conf, zk);
             LedgerManager manager = mFactory.newLedgerManager();
@@ -121,7 +124,7 @@ public class ListLedgerService implements HttpEndpointService {
                 // start and end ledger index for wanted page.
                 int startLedgerIndex = 0;
                 int endLedgerIndex = 0;
-                if(pageIndex > 0) {
+                if (pageIndex > 0) {
                     startLedgerIndex = (pageIndex - 1) * LIST_LEDGER_BATCH_SIZE;
                     endLedgerIndex = startLedgerIndex + LIST_LEDGER_BATCH_SIZE - 1;
                 }
@@ -130,9 +133,9 @@ public class ListLedgerService implements HttpEndpointService {
                 while (iter.hasNext()) {
                     LedgerManager.LedgerRange r = iter.next();
                     for (Long lid : r.getLedgers()) {
-                        ledgerIndex ++;
-                        if (endLedgerIndex == 0 ||       // no actual page parameter provided
-                          (ledgerIndex >= startLedgerIndex && ledgerIndex <= endLedgerIndex)) {
+                        ledgerIndex++;
+                        if (endLedgerIndex == 0       // no actual page parameter provided
+                                || (ledgerIndex >= startLedgerIndex && ledgerIndex <= endLedgerIndex)) {
                             ReadLedgerMetadataCallback cb = new ReadLedgerMetadataCallback(lid);
                             manager.readLedgerMetadata(lid, cb);
                             futures.add(cb);

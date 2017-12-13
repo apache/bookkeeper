@@ -39,7 +39,7 @@ public interface LedgerEntries
      * Get an iterator over all the ledger entries contained in the
      * LedgerEntries object.
      *
-     * Calling this method does not modify the reference count of the ByteBuf in the returned LedgerEntry objects.
+     * <p>Calling this method does not modify the reference count of the ByteBuf in the returned LedgerEntry objects.
      * The caller who calls {@link #iterator()} should make sure that they do not call ByteBuf.release() on the
      * LedgerEntry objects to avoid a double free.
      * All reference counts will be decremented when the containing LedgerEntries object is closed via {@link #close()}.

@@ -29,10 +29,10 @@ import org.apache.bookkeeper.proto.LocalBookiesRegistry;
 import org.junit.Test;
 
 /**
- * Test the correctness and the availability outside of its package of LocalBookiesRegistryTest
+ * Test the correctness and the availability outside of its package of LocalBookiesRegistryTest.
  */
 public class LocalBookiesRegistryTest extends BookKeeperClusterTestCase {
-    
+
     public LocalBookiesRegistryTest() {
         super(3);
         baseConf.setDisableServerSocketBind(true);
@@ -41,7 +41,7 @@ public class LocalBookiesRegistryTest extends BookKeeperClusterTestCase {
 
     @Test
     public void testAccessibleLocalBookiesRegistry() throws Exception {
-        assertEquals(3,bs.size());
+        assertEquals(3, bs.size());
         for (BookieServer bk : bs) {
             assertTrue(LocalBookiesRegistry.isLocalBookie(bk.getLocalAddress()));
         }

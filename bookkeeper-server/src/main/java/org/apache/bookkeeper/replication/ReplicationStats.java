@@ -20,31 +20,34 @@
  */
 package org.apache.bookkeeper.replication;
 
+/**
+ * Replication statistics.
+ */
 public interface ReplicationStats {
 
-    public final static String REPLICATION_SCOPE = "replication";
+    String REPLICATION_SCOPE = "replication";
 
-    public final static String AUDITOR_SCOPE = "auditor";
-    public final static String ELECTION_ATTEMPTS = "election_attempts";
-    public final static String NUM_UNDER_REPLICATED_LEDGERS = "NUM_UNDER_REPLICATED_LEDGERS";
-    public final static String URL_PUBLISH_TIME_FOR_LOST_BOOKIE = "URL_PUBLISH_TIME_FOR_LOST_BOOKIE";
-    public final static String BOOKIE_TO_LEDGERS_MAP_CREATION_TIME = "BOOKIE_TO_LEDGERS_MAP_CREATION_TIME";
-    public final static String CHECK_ALL_LEDGERS_TIME = "CHECK_ALL_LEDGERS_TIME";
-    public final static String NUM_FRAGMENTS_PER_LEDGER = "NUM_FRAGMENTS_PER_LEDGER";
-    public final static String NUM_BOOKIES_PER_LEDGER = "NUM_BOOKIES_PER_LEDGER";
-    public final static String NUM_LEDGERS_CHECKED = "NUM_LEDGERS_CHECKED";
-    public final static String NUM_BOOKIE_AUDITS_DELAYED = "NUM_BOOKIE_AUDITS_DELAYED";
-    public final static String NUM_DELAYED_BOOKIE_AUDITS_DELAYES_CANCELLED = "NUM_DELAYED_BOOKIE_AUDITS_CANCELLED";
+    String AUDITOR_SCOPE = "auditor";
+    String ELECTION_ATTEMPTS = "election_attempts";
+    String NUM_UNDER_REPLICATED_LEDGERS = "NUM_UNDER_REPLICATED_LEDGERS";
+    String URL_PUBLISH_TIME_FOR_LOST_BOOKIE = "URL_PUBLISH_TIME_FOR_LOST_BOOKIE";
+    String BOOKIE_TO_LEDGERS_MAP_CREATION_TIME = "BOOKIE_TO_LEDGERS_MAP_CREATION_TIME";
+    String CHECK_ALL_LEDGERS_TIME = "CHECK_ALL_LEDGERS_TIME";
+    String NUM_FRAGMENTS_PER_LEDGER = "NUM_FRAGMENTS_PER_LEDGER";
+    String NUM_BOOKIES_PER_LEDGER = "NUM_BOOKIES_PER_LEDGER";
+    String NUM_LEDGERS_CHECKED = "NUM_LEDGERS_CHECKED";
+    String NUM_BOOKIE_AUDITS_DELAYED = "NUM_BOOKIE_AUDITS_DELAYED";
+    String NUM_DELAYED_BOOKIE_AUDITS_DELAYES_CANCELLED = "NUM_DELAYED_BOOKIE_AUDITS_CANCELLED";
 
-    public final static String REPLICATION_WORKER_SCOPE = "replication_worker";
-    public final static String REREPLICATE_OP = "rereplicate";
-    public final static String NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED = "NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED";
-    public final static String NUM_ENTRIES_READ = "NUM_ENTRIES_READ";
-    public final static String NUM_BYTES_READ = "NUM_BYTES_READ";
-    public final static String NUM_ENTRIES_WRITTEN = "NUM_ENTRIES_WRITTEN";
-    public final static String NUM_BYTES_WRITTEN = "NUM_BYTES_WRITTEN";
-    public final static String REPLICATE_EXCEPTION = "exceptions";
+    String REPLICATION_WORKER_SCOPE = "replication_worker";
+    String REREPLICATE_OP = "rereplicate";
+    String NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED = "NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED";
+    String NUM_ENTRIES_READ = "NUM_ENTRIES_READ";
+    String NUM_BYTES_READ = "NUM_BYTES_READ";
+    String NUM_ENTRIES_WRITTEN = "NUM_ENTRIES_WRITTEN";
+    String NUM_BYTES_WRITTEN = "NUM_BYTES_WRITTEN";
+    String REPLICATE_EXCEPTION = "exceptions";
 
-    public final static String BK_CLIENT_SCOPE = "bk_client";
+    String BK_CLIENT_SCOPE = "bk_client";
 
 }

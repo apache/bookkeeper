@@ -20,15 +20,18 @@ package org.apache.bookkeeper.client;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
+/**
+ * Test read last confirmed long by polling.
+ */
 public class TestReadLastConfirmedLongPoll extends BookKeeperClusterTestCase {
     final DigestType digestType;
 
@@ -70,9 +73,10 @@ public class TestReadLastConfirmedLongPoll extends BookKeeperClusterTestCase {
         // try read last confirmed again
         success.set(false);
         numCallbacks.set(0);
-        long entryId = readLh.getLastAddConfirmed()+1;
+        long entryId = readLh.getLastAddConfirmed() + 1;
         final CountDownLatch secondReadComplete = new CountDownLatch(1);
-        readLh.asyncReadLastConfirmedAndEntry(entryId++, 1000, true, new AsyncCallback.ReadLastConfirmedAndEntryCallback() {
+        readLh.asyncReadLastConfirmedAndEntry(entryId++, 1000, true,
+                new AsyncCallback.ReadLastConfirmedAndEntryCallback() {
             @Override
             public void readLastConfirmedAndEntryComplete(int rc, long lastConfirmed, LedgerEntry entry, Object ctx) {
                 numCallbacks.incrementAndGet();
@@ -93,7 +97,8 @@ public class TestReadLastConfirmedLongPoll extends BookKeeperClusterTestCase {
         success.set(false);
         numCallbacks.set(0);
         final CountDownLatch thirdReadComplete = new CountDownLatch(1);
-        readLh.asyncReadLastConfirmedAndEntry(entryId++, 1000, false, new AsyncCallback.ReadLastConfirmedAndEntryCallback() {
+        readLh.asyncReadLastConfirmedAndEntry(entryId++, 1000, false,
+                new AsyncCallback.ReadLastConfirmedAndEntryCallback() {
             @Override
             public void readLastConfirmedAndEntryComplete(int rc, long lastConfirmed, LedgerEntry entry, Object ctx) {
                 numCallbacks.incrementAndGet();

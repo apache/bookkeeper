@@ -20,21 +20,25 @@
  */
 package org.apache.bookkeeper.test;
 
+import com.google.common.util.concurrent.AbstractFuture;
+
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import com.google.common.util.concurrent.AbstractFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Callbacks implemented with SettableFuture, to be used in tests
+ * Callbacks implemented with SettableFuture, to be used in tests.
  */
 public class TestCallbacks {
 
     private static final Logger logger = LoggerFactory.getLogger(TestCallbacks.class);
 
+    /**
+     * Generic callback future.
+     */
     public static class GenericCallbackFuture<T>
         extends AbstractFuture<T> implements GenericCallback<T> {
         @Override
@@ -47,6 +51,9 @@ public class TestCallbacks {
         }
     }
 
+    /**
+     * Add callback future implementation.
+     */
     public static class AddCallbackFuture
         extends AbstractFuture<Long> implements AddCallback {
 

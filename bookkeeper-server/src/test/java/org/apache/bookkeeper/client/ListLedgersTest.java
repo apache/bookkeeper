@@ -16,13 +16,20 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.util.Iterator;
+
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.junit.Assert;
 import org.junit.Test;
 
+/**
+ * Test ListLedgers.
+ */
 public class ListLedgersTest extends BookKeeperClusterTestCase {
 
     private final DigestType digestType;
@@ -37,11 +44,11 @@ public class ListLedgersTest extends BookKeeperClusterTestCase {
     throws Exception {
         int numOfLedgers = 10;
 
-        ClientConfiguration conf = new ClientConfiguration()
-        .setZkServers(zkUtil.getZooKeeperConnectString());
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setZkServers(zkUtil.getZooKeeperConnectString());
 
         BookKeeper bkc = new BookKeeper(conf);
-        for (int i = 0; i < numOfLedgers ; i++) {
+        for (int i = 0; i < numOfLedgers; i++) {
             bkc.createLedger(digestType, "testPasswd".
                     getBytes()).close();
         }
@@ -55,21 +62,21 @@ public class ListLedgersTest extends BookKeeperClusterTestCase {
             counter++;
         }
 
-        Assert.assertTrue("Wrong number of ledgers: " + numOfLedgers,
+        assertTrue("Wrong number of ledgers: " + numOfLedgers,
                 counter == numOfLedgers);
     }
 
     @Test
     public void testEmptyList()
     throws Exception {
-        ClientConfiguration conf = new ClientConfiguration()
-        .setZkServers(zkUtil.getZooKeeperConnectString());
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setZkServers(zkUtil.getZooKeeperConnectString());
 
         BookKeeperAdmin admin = new BookKeeperAdmin(zkUtil.
                 getZooKeeperConnectString());
         Iterable<Long> iterable = admin.listLedgers();
 
-        Assert.assertFalse("There should be no ledger", iterable.iterator().hasNext());
+        assertFalse("There should be no ledger", iterable.iterator().hasNext());
     }
 
     @Test
@@ -77,11 +84,11 @@ public class ListLedgersTest extends BookKeeperClusterTestCase {
     throws Exception {
         int numOfLedgers = 1;
 
-        ClientConfiguration conf = new ClientConfiguration()
-        .setZkServers(zkUtil.getZooKeeperConnectString());
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setZkServers(zkUtil.getZooKeeperConnectString());
 
         BookKeeper bkc = new BookKeeper(conf);
-        for (int i = 0; i < numOfLedgers ; i++) {
+        for (int i = 0; i < numOfLedgers; i++) {
             bkc.createLedger(digestType, "testPasswd".
                     getBytes()).close();
         }
@@ -90,17 +97,15 @@ public class ListLedgersTest extends BookKeeperClusterTestCase {
                 getZooKeeperConnectString());
         Iterator<Long> iterator = admin.listLedgers().iterator();
         iterator.next();
-        try{
+        try {
             iterator.remove();
         } catch (UnsupportedOperationException e) {
             // This exception is expected
             return;
         }
 
-        Assert.fail("Remove is not supported, we shouln't have reached this point");
+        fail("Remove is not supported, we shouln't have reached this point");
 
     }
-    
 
-    
 }

@@ -118,8 +118,8 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         this.lastEntryId = LedgerHandle.INVALID_ENTRY_ID;
         this.metadataFormatVersion = CURRENT_METADATA_FORMAT_VERSION;
 
-        this.digestType = digestType.equals(BookKeeper.DigestType.MAC) ?
-            LedgerMetadataFormat.DigestType.HMAC : LedgerMetadataFormat.DigestType.CRC32;
+        this.digestType = digestType.equals(BookKeeper.DigestType.MAC)
+            ? LedgerMetadataFormat.DigestType.HMAC : LedgerMetadataFormat.DigestType.CRC32;
         this.password = Arrays.copyOf(password, password.length);
         this.hasPassword = true;
         if (customMetadata != null) {
@@ -297,7 +297,7 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
 
     /**
      * the entry id greater than the given entry-id at which the next ensemble change takes
-     * place
+     * place.
      *
      * @param entryId
      * @return the entry id of the next ensemble change (-1 if no further ensemble changes)
@@ -336,8 +336,9 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         }
 
         if (customMetadata != null) {
-            LedgerMetadataFormat.cMetadataMapEntry.Builder cMetadataBuilder = LedgerMetadataFormat.cMetadataMapEntry.newBuilder();
-            for (Map.Entry<String,byte[]> entry : customMetadata.entrySet()) {
+            LedgerMetadataFormat.cMetadataMapEntry.Builder cMetadataBuilder =
+                LedgerMetadataFormat.cMetadataMapEntry.newBuilder();
+            for (Map.Entry<String, byte[]> entry : customMetadata.entrySet()) {
                 cMetadataBuilder.setKey(entry.getKey()).setValue(ByteString.copyFrom(entry.getValue()));
                 builder.addCustomMetadata(cMetadataBuilder.build());
             }
@@ -355,7 +356,7 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
     }
 
     /**
-     * Generates a byte array of this object
+     * Generates a byte array of this object.
      *
      * @return the metadata serialized into a byte array
      */
@@ -400,7 +401,7 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
     }
 
     /**
-     * Parses a given byte array and transforms into a LedgerConfig object
+     * Parses a given byte array and transforms into a LedgerConfig object.
      *
      * @param bytes
      *            byte array to parse
@@ -572,15 +573,16 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
     }
 
     /**
-     * Routine to compare two Map<String, byte[]>; Since the values in the map are byte[], we can't use Map.equals
+     * Routine to compare two {@code Map<String, byte[]>}; Since the values in the map are {@code byte[]}, we can't use
+     * {@code Map.equals}.
      * @param first
      *          The first map
      * @param second
      *          The second map to compare with
-     * @return true if the 2 maps contain the exact set of <K,V> pairs.
+     * @return true if the 2 maps contain the exact set of {@code <K,V>} pairs.
      */
     public static boolean areByteArrayValMapsEqual(Map<String, byte[]> first, Map<String, byte[]> second) {
-        if(first == null && second == null) {
+        if (first == null && second == null) {
             return true;
         }
 
@@ -615,15 +617,15 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
          *  opened the ledger, can't resolve this conflict.
          */
 
-        if (metadataFormatVersion != newMeta.metadataFormatVersion ||
-            ensembleSize != newMeta.ensembleSize ||
-            writeQuorumSize != newMeta.writeQuorumSize ||
-            ackQuorumSize != newMeta.ackQuorumSize ||
-            length != newMeta.length ||
-            state != newMeta.state ||
-            !digestType.equals(newMeta.digestType) ||
-            !Arrays.equals(password, newMeta.password) ||
-            !LedgerMetadata.areByteArrayValMapsEqual(customMetadata, newMeta.customMetadata)) {
+        if (metadataFormatVersion != newMeta.metadataFormatVersion
+            || ensembleSize != newMeta.ensembleSize
+            || writeQuorumSize != newMeta.writeQuorumSize
+            || ackQuorumSize != newMeta.ackQuorumSize
+            || length != newMeta.length
+            || state != newMeta.state
+            || !digestType.equals(newMeta.digestType)
+            || !Arrays.equals(password, newMeta.password)
+            || !LedgerMetadata.areByteArrayValMapsEqual(customMetadata, newMeta.customMetadata)) {
             return true;
         }
 
@@ -651,7 +653,7 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
             // using recovery tool.
             Iterator<Long> keyIter = ensembles.keySet().iterator();
             Iterator<Long> newMetaKeyIter = newMeta.ensembles.keySet().iterator();
-            for (int i=0; i<newMeta.ensembles.size(); i++) {
+            for (int i = 0; i < newMeta.ensembles.size(); i++) {
                 Long curKey = keyIter.next();
                 Long newMetaKey = newMetaKeyIter.next();
                 if (!curKey.equals(newMetaKey)) {

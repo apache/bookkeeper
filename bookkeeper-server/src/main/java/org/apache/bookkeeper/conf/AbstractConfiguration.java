@@ -21,6 +21,7 @@ import static org.apache.bookkeeper.conf.ClientConfiguration.CLIENT_AUTH_PROVIDE
 
 import java.net.URL;
 import java.util.Iterator;
+import java.util.List;
 import javax.net.ssl.SSLEngine;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
@@ -29,72 +30,76 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Abstract configuration.
  */
 public abstract class AbstractConfiguration extends CompositeConfiguration {
 
-    public static final String READ_SYSTEM_PROPERTIES_PROPERTY
-                            = "org.apache.bookkeeper.conf.readsystemproperties";
-    /**
-     * Enable the use of System Properties, which was the default behaviour till 4.4.0
-     */
-    private static final boolean READ_SYSTEM_PROPERTIES
-                                    = Boolean.getBoolean(READ_SYSTEM_PROPERTIES_PROPERTY);
+    public static final String READ_SYSTEM_PROPERTIES_PROPERTY = "org.apache.bookkeeper.conf.readsystemproperties";
 
-    protected static final ClassLoader defaultLoader;
+    /**
+     * Enable the use of System Properties, which was the default behaviour till 4.4.0.
+     */
+    private static final boolean READ_SYSTEM_PROPERTIES = Boolean.getBoolean(READ_SYSTEM_PROPERTIES_PROPERTY);
+
+    protected static final ClassLoader DEFAULT_LOADER;
     static {
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
         if (null == loader) {
             loader = AbstractConfiguration.class.getClassLoader();
         }
-        defaultLoader = loader;
+        DEFAULT_LOADER = loader;
     }
 
+    // Zookeeper Parameters
+    protected static final String ZK_TIMEOUT = "zkTimeout";
+    protected static final String ZK_SERVERS = "zkServers";
+
     // Ledger Manager
-    protected final static String LEDGER_MANAGER_TYPE = "ledgerManagerType";
-    protected final static String LEDGER_MANAGER_FACTORY_CLASS = "ledgerManagerFactoryClass";
-    protected final static String ZK_LEDGERS_ROOT_PATH = "zkLedgersRootPath";
-    protected final static String ZK_REQUEST_RATE_LIMIT = "zkRequestRateLimit";
-    protected final static String AVAILABLE_NODE = "available";
-    protected final static String REREPLICATION_ENTRY_BATCH_SIZE = "rereplicationEntryBatchSize";
+    protected static final String LEDGER_MANAGER_TYPE = "ledgerManagerType";
+    protected static final String LEDGER_MANAGER_FACTORY_CLASS = "ledgerManagerFactoryClass";
+    protected static final String ZK_LEDGERS_ROOT_PATH = "zkLedgersRootPath";
+    protected static final String ZK_REQUEST_RATE_LIMIT = "zkRequestRateLimit";
+    protected static final String AVAILABLE_NODE = "available";
+    protected static final String REREPLICATION_ENTRY_BATCH_SIZE = "rereplicationEntryBatchSize";
 
     // Metastore settings, only being used when LEDGER_MANAGER_FACTORY_CLASS is MSLedgerManagerFactory
-    protected final static String METASTORE_IMPL_CLASS = "metastoreImplClass";
-    protected final static String METASTORE_MAX_ENTRIES_PER_SCAN = "metastoreMaxEntriesPerScan";
+    protected static final String METASTORE_IMPL_CLASS = "metastoreImplClass";
+    protected static final String METASTORE_MAX_ENTRIES_PER_SCAN = "metastoreMaxEntriesPerScan";
 
     // Common TLS configuration
     // TLS Provider (JDK or OpenSSL)
-    protected final static String TLS_PROVIDER = "tlsProvider";
+    protected static final String TLS_PROVIDER = "tlsProvider";
 
     // TLS provider factory class name
-    protected final static String TLS_PROVIDER_FACTORY_CLASS = "tlsProviderFactoryClass";
+    protected static final String TLS_PROVIDER_FACTORY_CLASS = "tlsProviderFactoryClass";
 
     // Enable authentication of the other connection end point (mutual authentication)
-    protected final static String TLS_CLIENT_AUTHENTICATION = "tlsClientAuthentication";
+    protected static final String TLS_CLIENT_AUTHENTICATION = "tlsClientAuthentication";
 
     /**
      * This list will be passed to {@link SSLEngine#setEnabledCipherSuites(java.lang.String[]) }.
      * Please refer to official JDK JavaDocs
     */
-    protected final static String TLS_ENABLED_CIPHER_SUITES = "tlsEnabledCipherSuites";
+    protected static final String TLS_ENABLED_CIPHER_SUITES = "tlsEnabledCipherSuites";
 
     /**
      * This list will be passed to {@link SSLEngine#setEnabledProtocols(java.lang.String[]) }.
      * Please refer to official JDK JavaDocs
     */
-    protected final static String TLS_ENABLED_PROTOCOLS = "tlsEnabledProtocols";
+    protected static final String TLS_ENABLED_PROTOCOLS = "tlsEnabledProtocols";
 
     //Netty configuration
-    protected final static String NETTY_MAX_FRAME_SIZE = "nettyMaxFrameSizeBytes";
-    protected final static int DEFAULT_NETTY_MAX_FRAME_SIZE = 5 * 1024 * 1024; // 5MB
+    protected static final String NETTY_MAX_FRAME_SIZE = "nettyMaxFrameSizeBytes";
+    protected static final int DEFAULT_NETTY_MAX_FRAME_SIZE = 5 * 1024 * 1024; // 5MB
 
     // Zookeeper ACL settings
-    protected final static String ZK_ENABLE_SECURITY = "zkEnableSecurity";
+    protected static final String ZK_ENABLE_SECURITY = "zkEnableSecurity";
 
     // Kluge for compatibility testing. Never set this outside tests.
-    public final static String LEDGER_MANAGER_FACTORY_DISABLE_CLASS_CHECK = "ledgerManagerFactoryDisableClassCheck";
+    public static final String LEDGER_MANAGER_FACTORY_DISABLE_CLASS_CHECK = "ledgerManagerFactoryDisableClassCheck";
 
     protected AbstractConfiguration() {
         super();
@@ -121,7 +126,7 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     }
 
     /**
-     * You can load configuration from other configuration
+     * You can load configuration from other configuration.
      *
      * @param baseConf
      *          Other Configuration
@@ -135,6 +140,51 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     }
 
     /**
+     * Get zookeeper servers to connect.
+     *
+     * @return zookeeper servers
+     */
+    public String getZkServers() {
+        List servers = getList(ZK_SERVERS, null);
+        if (null == servers || 0 == servers.size()) {
+            return null;
+        }
+        return StringUtils.join(servers, ",");
+    }
+
+    /**
+     * Set zookeeper servers to connect.
+     *
+     * @param zkServers
+     *          ZooKeeper servers to connect
+     */
+    public AbstractConfiguration setZkServers(String zkServers) {
+        setProperty(ZK_SERVERS, zkServers);
+        return this;
+    }
+
+    /**
+     * Get zookeeper timeout.
+     *
+     * @return zookeeper server timeout
+     */
+    public int getZkTimeout() {
+        return getInt(ZK_TIMEOUT, 10000);
+    }
+
+    /**
+     * Set zookeeper timeout.
+     *
+     * @param zkTimeout
+     *          ZooKeeper server timeout
+     * @return server configuration
+     */
+    public AbstractConfiguration setZkTimeout(int zkTimeout) {
+        setProperty(ZK_TIMEOUT, Integer.toString(zkTimeout));
+        return this;
+    }
+
+    /**
      * Set Ledger Manager Type.
      *
      * @param lmType
@@ -143,7 +193,7 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      */
     @Deprecated
     public void setLedgerManagerType(String lmType) {
-        setProperty(LEDGER_MANAGER_TYPE, lmType); 
+        setProperty(LEDGER_MANAGER_TYPE, lmType);
     }
 
     /**
@@ -187,7 +237,7 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
         throws ConfigurationException {
         return ReflectionUtils.getClass(this, LEDGER_MANAGER_FACTORY_CLASS,
                                         null, LedgerManagerFactory.class,
-                                        defaultLoader);
+                                        DEFAULT_LOADER);
     }
 
     /**
@@ -228,7 +278,7 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     }
 
     /**
-     * Are z-node created with strict ACLs
+     * Are z-node created with strict ACLs.
      *
      * @return usage of secure ZooKeeper ACLs
      */
@@ -237,7 +287,7 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     }
 
     /**
-     * Set the usage of ACLs of new z-nodes
+     * Set the usage of ACLs of new z-nodes.
      *
      * @param zkEnableSecurity
      */
@@ -246,7 +296,7 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     }
 
     /**
-     * Get the node under which available bookies are stored
+     * Get the node under which available bookies are stored.
      *
      * @return Node under which available bookies are stored.
      */
@@ -266,7 +316,7 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     }
 
     /**
-     * Get the re-replication entry batch size
+     * Get the re-replication entry batch size.
      */
     public long getRereplicationEntryBatchSize() {
         return getLong(REREPLICATION_ENTRY_BATCH_SIZE, 10);
@@ -318,7 +368,7 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
         if (null == getProperty(configProperty)) {
             return defaultValue;
         } else {
-            return (Feature)getProperty(configProperty);
+            return (Feature) getProperty(configProperty);
         }
     }
 
@@ -391,8 +441,8 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     }
 
     /**
-     * Get TLS Provider (JDK or OpenSSL)
-     * 
+     * Get TLS Provider (JDK or OpenSSL).
+     *
      * @return the TLS provider to use in creating TLS Context
      */
     public String getTLSProvider() {
@@ -400,8 +450,8 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     }
 
     /**
-     * Set TLS Provider (JDK or OpenSSL)
-     * 
+     * Set TLS Provider (JDK or OpenSSL).
+     *
      * @param provider
      *            TLS Provider type
      * @return Client Configuration
@@ -412,8 +462,8 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     }
 
     /**
-     * Whether the client will send an TLS certificate on TLS-handshake
-     * 
+     * Whether the client will send an TLS certificate on TLS-handshake.
+     *
      * @see #setTLSAuthentication(boolean)
      * @return whether TLS is enabled on the bookie or not.
      */
@@ -422,8 +472,8 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     }
 
     /**
-     * Specify whether the client will send an TLS certificate on TLS-handshake
-     * 
+     * Specify whether the client will send an TLS certificate on TLS-handshake.
+     *
      * @param enabled
      *            Whether to send a certificate or not
      * @return client configuration
@@ -448,7 +498,7 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     }
 
     /**
-     * Get the list of enabled TLS cipher suites
+     * Get the list of enabled TLS cipher suites.
      *
      * @return this list of enabled TLS cipher suites
      *
@@ -473,7 +523,7 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     }
 
     /**
-     * Get the list of enabled TLS protocols
+     * Get the list of enabled TLS protocols.
      *
      * @return the list of enabled TLS protocols.
      *

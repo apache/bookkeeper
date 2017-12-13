@@ -20,13 +20,11 @@
  */
 package org.apache.bookkeeper.proto;
 
-import com.google.protobuf.ByteString;
-import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
+import com.google.protobuf.ByteString;
 import com.google.protobuf.ExtensionRegistry;
 
 import io.netty.channel.Channel;
@@ -34,21 +32,30 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 
-import org.apache.bookkeeper.auth.ClientAuthProvider;
-import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.util.OrderedSafeExecutor;
-import org.apache.bookkeeper.auth.TestAuth;
-import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
-
-import org.apache.bookkeeper.proto.BookieProtocol.*;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage;
-
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CountDownLatch;
 
-import static org.junit.Assert.*;
+import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
+import org.apache.bookkeeper.auth.ClientAuthProvider;
+import org.apache.bookkeeper.auth.TestAuth;
+import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.BookieProtocol.AuthRequest;
+import org.apache.bookkeeper.proto.BookieProtocol.AuthResponse;
+import org.apache.bookkeeper.proto.BookieProtocol.ReadRequest;
+import org.apache.bookkeeper.proto.BookieProtocol.Request;
+import org.apache.bookkeeper.proto.BookieProtocol.Response;
+import org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.util.OrderedSafeExecutor;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+/**
+ * Test backward compatibility.
+ */
 public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
     static final Logger LOG = LoggerFactory.getLogger(TestBackwardCompatCMS42.class);
 
@@ -106,11 +113,11 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
         CompatClient42 client = newCompatClient(bookie1.getLocalAddress());
 
         Request request = new AuthRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION, authMessage);
-        for (int i = 0; i < 3 ; i++) {
+        for (int i = 0; i < 3; i++) {
             client.sendRequest(request);
             Response response = client.takeResponse();
             assertTrue("Should be auth response", response instanceof AuthResponse);
-            AuthResponse authResponse = (AuthResponse)response;
+            AuthResponse authResponse = (AuthResponse) response;
             assertEquals("Should have succeeded",
                          response.getErrorCode(), BookieProtocol.EOK);
             byte[] type = authResponse.getAuthMessage()
@@ -139,11 +146,11 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
         CompatClient42 client = newCompatClient(bookie1.getLocalAddress());
 
         Request request = new AuthRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION, authMessage);
-        for (int i = 0; i < 3 ; i++) {
+        for (int i = 0; i < 3; i++) {
             client.sendRequest(request);
             Response response = client.takeResponse();
             assertTrue("Should be auth response", response instanceof AuthResponse);
-            AuthResponse authResponse = (AuthResponse)response;
+            AuthResponse authResponse = (AuthResponse) response;
             assertEquals("Should have succeeded",
                          response.getErrorCode(), BookieProtocol.EOK);
             byte[] type = authResponse.getAuthMessage()
@@ -159,7 +166,7 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
         }
 
         client.sendRequest(new ReadRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION,
-                                           1L, 1L, (short)0));
+                                           1L, 1L, (short) 0));
         Response response = client.takeResponse();
         assertEquals("Should have failed",
                      response.getErrorCode(), BookieProtocol.EUA);

@@ -20,12 +20,17 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Random;
+
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -36,8 +41,6 @@ import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
-
 /**
  * Verify reads from ledgers with different digest types.
  * This can happen as result of clients using different settings
@@ -47,7 +50,7 @@ import static org.junit.Assert.*;
 public class BookieWriteLedgersWithDifferentDigestsTest extends
     BookKeeperClusterTestCase implements AddCallback {
 
-    private final static Logger LOG = LoggerFactory
+    private static final Logger LOG = LoggerFactory
             .getLogger(BookieWriteLedgersWithDifferentDigestsTest.class);
 
     byte[] ledgerPassword = "aaa".getBytes();
@@ -98,10 +101,10 @@ public class BookieWriteLedgersWithDifferentDigestsTest extends
 
     @Test
     public void testLedgersWithDifferentDigestTypesNoAutodetection() throws Exception {
-    	bkc.conf.setEnableDigestTypeAutodetection(false);
+        bkc.conf.setEnableDigestTypeAutodetection(false);
         // Create ledgers
         lh = bkc.createLedgerAdv(3, 2, 2, DigestType.MAC, ledgerPassword);
-        
+
         final long id = lh.ledgerId;
 
         LOG.info("Ledger ID-1: " + lh.getId());
@@ -120,22 +123,22 @@ public class BookieWriteLedgersWithDifferentDigestsTest extends
         // Reads here work ok because ledger uses digest type set during create
         readEntries(lh, entries1);
         lh.close();
-        
+
         try {
-	        bkc.openLedgerNoRecovery(id, DigestType.CRC32, ledgerPassword).close();
-	        fail("digest mismatch error is expected");
+            bkc.openLedgerNoRecovery(id, DigestType.CRC32, ledgerPassword).close();
+            fail("digest mismatch error is expected");
         } catch (BKException bke) {
-        	// expected
+            // expected
         }
     }
 
     @Test
     public void testLedgersWithDifferentDigestTypesWithAutodetection() throws Exception {
-    	bkc.conf.setEnableDigestTypeAutodetection(true);
+        bkc.conf.setEnableDigestTypeAutodetection(true);
         // Create ledgers
         lh = bkc.createLedgerAdv(3, 2, 2, DigestType.MAC, ledgerPassword);
         lh2 = bkc.createLedgerAdv(3, 2, 2, DigestType.CRC32, ledgerPassword);
-        
+
         final long id = lh.ledgerId;
         final long id2 = lh2.ledgerId;
 
@@ -162,7 +165,7 @@ public class BookieWriteLedgersWithDifferentDigestsTest extends
         readEntries(lh2, entries2);
         lh.close();
         lh2.close();
-        
+
         // open here would fail if provided digest type is used
         // it passes because ledger just uses digest type from its metadata/autodetects it
         lh = bkc.openLedgerNoRecovery(id, DigestType.CRC32, ledgerPassword);
@@ -172,15 +175,15 @@ public class BookieWriteLedgersWithDifferentDigestsTest extends
         lh.close();
         lh2.close();
     }
-    
-	private void waitForEntriesAddition(SyncObj syncObj, int numEntriesToWrite) throws InterruptedException {
-		synchronized (syncObj) {
+
+    private void waitForEntriesAddition(SyncObj syncObj, int numEntriesToWrite) throws InterruptedException {
+        synchronized (syncObj) {
             while (syncObj.counter < numEntriesToWrite) {
                 syncObj.wait();
             }
             assertEquals(BKException.Code.OK, syncObj.rc);
         }
-	}
+    }
 
     private void readEntries(LedgerHandle lh, ArrayList<byte[]> entries) throws InterruptedException, BKException {
         ls = lh.readEntries(0, numEntriesToWrite - 1);

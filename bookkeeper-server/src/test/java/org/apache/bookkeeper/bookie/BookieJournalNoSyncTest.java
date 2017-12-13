@@ -20,15 +20,19 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.junit.Assert.assertEquals;
+
 import java.util.Enumeration;
 
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.junit.Assert;
 import org.junit.Test;
 
+/**
+ * Test the bookie journal without sync.
+ */
 public class BookieJournalNoSyncTest extends BookKeeperClusterTestCase {
 
     public BookieJournalNoSyncTest() {
@@ -41,11 +45,11 @@ public class BookieJournalNoSyncTest extends BookKeeperClusterTestCase {
     public void testWriteToJournal() throws Exception {
         LedgerHandle lh = bkc.createLedger(1, 1, DigestType.CRC32, new byte[0]);
 
-        int N = 10;
+        int n = 10;
 
         long ledgerId = lh.getId();
 
-        for (int i = 0; i < N; i++) {
+        for (int i = 0; i < n; i++) {
             lh.addEntry(("entry-" + i).getBytes());
         }
 
@@ -53,10 +57,10 @@ public class BookieJournalNoSyncTest extends BookKeeperClusterTestCase {
 
         LedgerHandle readLh = bkc.openLedger(ledgerId, DigestType.CRC32, new byte[0]);
 
-        Enumeration<LedgerEntry> entries = readLh.readEntries(0, N - 1);
-        for (int i = 0; i < N; i++) {
+        Enumeration<LedgerEntry> entries = readLh.readEntries(0, n - 1);
+        for (int i = 0; i < n; i++) {
             LedgerEntry entry = entries.nextElement();
-            Assert.assertEquals("entry-" + i, new String(entry.getEntry()));
+            assertEquals("entry-" + i, new String(entry.getEntry()));
         }
     }
 

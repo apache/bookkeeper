@@ -17,6 +17,11 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
+
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -24,15 +29,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.Test;
 
+/**
+ * Testing a generic ensemble placement policy.
+ */
 public class GenericEnsemblePlacementPolicyTest extends BookKeeperClusterTestCase {
 
     private BookKeeper.DigestType digestType = BookKeeper.DigestType.CRC32;
@@ -47,6 +52,9 @@ public class GenericEnsemblePlacementPolicyTest extends BookKeeperClusterTestCas
         baseClientConf.setEnsemblePlacementPolicy(CustomEnsemblePlacementPolicy.class);
     }
 
+    /**
+     * A custom ensemble placement policy.
+     */
     public static final class CustomEnsemblePlacementPolicy extends DefaultEnsemblePlacementPolicy {
 
         @Override
@@ -69,7 +77,6 @@ public class GenericEnsemblePlacementPolicyTest extends BookKeeperClusterTestCas
             customMetadataOnNewEnsembleStack.add(customMetadata);
             return super.newEnsemble(ensembleSize, quorumSize, ackQuorumSize, customMetadata, excludeBookies);
         }
-        
     }
 
     @Before

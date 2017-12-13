@@ -27,11 +27,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Formatter to format an entry
+ * Formatter to format an entry.
  */
 public abstract class EntryFormatter {
 
-    private final static Logger LOG = LoggerFactory.getLogger(EntryFormatter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(EntryFormatter.class);
 
     protected Configuration conf;
 
@@ -40,7 +40,7 @@ public abstract class EntryFormatter {
     }
 
     /**
-     * Format an entry into a readable format
+     * Format an entry into a readable format.
      *
      * @param data
      *          Data Payload
@@ -48,14 +48,14 @@ public abstract class EntryFormatter {
     public abstract void formatEntry(byte[] data);
 
     /**
-     * Format an entry from a string into a readable format
+     * Format an entry from a string into a readable format.
      *
      * @param input
      *          Input Stream
      */
     public abstract void formatEntry(java.io.InputStream input);
 
-    public final static EntryFormatter STRING_FORMATTER = new StringEntryFormatter();
+    public static final EntryFormatter STRING_FORMATTER = new StringEntryFormatter();
 
     public static EntryFormatter newEntryFormatter(Configuration conf, String clsProperty) {
         String cls = conf.getString(clsProperty, StringEntryFormatter.class.getName());

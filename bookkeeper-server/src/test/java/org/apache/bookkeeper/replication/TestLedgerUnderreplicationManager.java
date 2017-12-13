@@ -26,6 +26,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.google.protobuf.TextFormat;
+
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -66,10 +68,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.protobuf.TextFormat;
-
 /**
- * Test the zookeeper implementation of the ledger replication manager
+ * Test the zookeeper implementation of the ledger replication manager.
  */
 public class TestLedgerUnderreplicationManager {
     static final Logger LOG = LoggerFactory.getLogger(TestLedgerUnderreplicationManager.class);
@@ -92,7 +92,8 @@ public class TestLedgerUnderreplicationManager {
         zkUtil = new ZooKeeperUtil();
         zkUtil.startServer();
 
-        conf = TestBKConfiguration.newServerConfiguration().setZkServers(zkUtil.getZooKeeperConnectString());
+        conf = TestBKConfiguration.newServerConfiguration();
+        conf.setZkServers(zkUtil.getZooKeeperConnectString());
 
         executor = Executors.newCachedThreadPool();
 
@@ -399,7 +400,7 @@ public class TestLedgerUnderreplicationManager {
 
     /**
      * Test that multiple LedgerUnderreplicationManagers should be able to take
-     * lock and release for same ledger
+     * lock and release for same ledger.
      */
     @Test
     public void testMultipleManagersShouldBeAbleToTakeAndReleaseLock()
@@ -448,11 +449,11 @@ public class TestLedgerUnderreplicationManager {
     /**
      * Test verifies failures of bookies which are resembling each other.
      *
-     * BK servers named like*********************************************
+     * <p>BK servers named like*********************************************
      * 1.cluster.com, 2.cluster.com, 11.cluster.com, 12.cluster.com
      * *******************************************************************
      *
-     * BKserver IP:HOST like*********************************************
+     * <p>BKserver IP:HOST like*********************************************
      * localhost:3181, localhost:318, localhost:31812
      * *******************************************************************
      */
@@ -555,7 +556,7 @@ public class TestLedgerUnderreplicationManager {
                     LOG.debug("Recieved node creation event for the zNodePath:"
                             + event.getPath());
                 }
-                
+
             }});
         // getLedgerToRereplicate is waiting until enable rereplication
         Thread thread1 = new Thread() {
@@ -596,7 +597,7 @@ public class TestLedgerUnderreplicationManager {
 
     /**
      * Test that the hierarchy gets cleaned up as ledgers
-     * are marked as fully replicated
+     * are marked as fully replicated.
      */
     @Test
     public void testHierarchyCleanup() throws Exception {
@@ -638,7 +639,7 @@ public class TestLedgerUnderreplicationManager {
 
     /**
      * Test that as the hierarchy gets cleaned up, it doesn't interfere
-     * with the marking of other ledgers as underreplicated
+     * with the marking of other ledgers as underreplicated.
      */
     @Test
     public void testHierarchyCleanupInterference() throws Exception {

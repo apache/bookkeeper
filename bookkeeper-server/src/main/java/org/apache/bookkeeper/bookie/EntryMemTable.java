@@ -248,7 +248,7 @@ public class EntryMemTable {
                         ledger = kv.getLedgerId();
                         if (ledgerGC != ledger) {
                             try {
-                                flusher.process(ledger, kv.getEntryId(), kv.getValueAsByteBuffer().nioBuffer());
+                                flusher.process(ledger, kv.getEntryId(), kv.getValueAsByteBuffer());
                             } catch (NoLedgerException exception) {
                                 ledgerGC = ledger;
                             }
@@ -309,7 +309,7 @@ public class EntryMemTable {
             if (isSizeLimitReached() || (!previousFlushSucceeded.get())) {
                 Checkpoint cp = snapshot();
                 if ((null != cp) || (!previousFlushSucceeded.get())) {
-                    cb.onSizeLimitReached();
+                    cb.onSizeLimitReached(cp);
                 } else {
                     throttleWriters();
                 }

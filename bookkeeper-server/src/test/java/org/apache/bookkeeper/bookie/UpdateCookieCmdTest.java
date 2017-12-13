@@ -40,11 +40,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This tests 'updatecookie' shell command
+ * This tests 'updatecookie' shell command.
  */
 public class UpdateCookieCmdTest extends BookKeeperClusterTestCase {
 
-    private final static Logger LOG = LoggerFactory.getLogger(UpdateCookieCmdTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(UpdateCookieCmdTest.class);
 
     RegistrationManager rm;
 
@@ -64,13 +64,13 @@ public class UpdateCookieCmdTest extends BookKeeperClusterTestCase {
     @Override
     public void tearDown() throws Exception {
         super.tearDown();
-        if(rm != null) {
+        if (rm != null) {
             rm.close();
         }
     }
 
     /**
-     * updatecookie to hostname
+     * updatecookie to hostname.
      */
     @Test
     public void testUpdateCookieIpAddressToHostname() throws Exception {
@@ -78,7 +78,7 @@ public class UpdateCookieCmdTest extends BookKeeperClusterTestCase {
     }
 
     /**
-     * updatecookie to ipaddress
+     * updatecookie to ipaddress.
      */
     @Test
     public void testUpdateCookieHostnameToIpAddress() throws Exception {
@@ -93,7 +93,7 @@ public class UpdateCookieCmdTest extends BookKeeperClusterTestCase {
     }
 
     /**
-     * updatecookie to invalid bookie id
+     * updatecookie to invalid bookie id.
      */
     @Test
     public void testUpdateCookieWithInvalidOption() throws Exception {
@@ -153,7 +153,7 @@ public class UpdateCookieCmdTest extends BookKeeperClusterTestCase {
     }
 
     /**
-     * updatecookie to hostname
+     * updatecookie to hostname.
      */
     @Test
     public void testDuplicateUpdateCookieIpAddress() throws Exception {

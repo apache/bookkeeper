@@ -46,7 +46,7 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
     private final String ledgerPrefix;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param conf
      *          Configuration object
@@ -87,9 +87,9 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
         asyncProcessLedgersInSingleNode(ledgerRootPath, processor, finalCb, ctx, successRc, failureRc);
     }
 
-    
     protected static boolean isSpecialZnode(String znode) {
-        return znode.startsWith(ZkLedgerIdGenerator.LEDGER_ID_GEN_PREFIX) || AbstractZkLedgerManager.isSpecialZnode(znode);
+        return znode.startsWith(ZkLedgerIdGenerator.LEDGER_ID_GEN_PREFIX)
+            || AbstractZkLedgerManager.isSpecialZnode(znode);
     }
 
     @Override
@@ -99,7 +99,7 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
             boolean nextCalled = false;
             LedgerRange nextRange = null;
 
-            synchronized private void preload() throws IOException {
+            private synchronized void preload() throws IOException {
                 if (nextRange != null) {
                     return;
                 }
@@ -116,13 +116,13 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
             }
 
             @Override
-            synchronized public boolean hasNext() throws IOException {
+            public synchronized boolean hasNext() throws IOException {
                 preload();
                 return nextRange != null && nextRange.size() > 0 && !nextCalled;
             }
 
             @Override
-            synchronized public LedgerRange next() throws IOException {
+            public synchronized LedgerRange next() throws IOException {
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }

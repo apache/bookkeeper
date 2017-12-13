@@ -27,7 +27,7 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 
 /**
- * General Class Reflection Utils
+ * General Class Reflection Utils.
  */
 public class ReflectionUtils {
 
@@ -42,8 +42,8 @@ public class ReflectionUtils {
      * @param xface class interface
      * @return the class object associated with the class or interface with the given string name.
      */
-    public static <U> Class<? extends U> forName(String className,
-                                                 Class<U> xface) {
+    public static <T> Class<? extends T> forName(String className,
+                                                 Class<T> xface) {
 
         // Construct the class
         Class<?> theCls;
@@ -91,9 +91,9 @@ public class ReflectionUtils {
      * Get the value of the <code>name</code> property as a <code>Class</code> implementing
      * the interface specified by <code>xface</code>.
      *
-     * If no such property is specified, then <code>defaultValue</code> is returned.
+     * <p>If no such property is specified, then <code>defaultValue</code> is returned.
      *
-     * An exception is thrown if the returned class does not implement the named interface.
+     * <p>An exception is thrown if the returned class does not implement the named interface.
      *
      * @param conf
      *          Configuration Object.
@@ -108,9 +108,9 @@ public class ReflectionUtils {
      * @return property value as a <code>Class</code>, or <code>defaultValue</code>.
      * @throws ConfigurationException
      */
-    public static <U> Class<? extends U> getClass(Configuration conf,
-                                                  String name, Class<? extends U> defaultValue,
-                                                  Class<U> xface, ClassLoader classLoader)
+    public static <T> Class<? extends T> getClass(Configuration conf,
+                                                  String name, Class<? extends T> defaultValue,
+                                                  Class<T> xface, ClassLoader classLoader)
         throws ConfigurationException {
         try {
             Class<?> theCls = getClass(conf, name, defaultValue, classLoader);

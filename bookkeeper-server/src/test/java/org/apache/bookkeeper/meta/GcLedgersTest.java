@@ -29,7 +29,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import io.netty.buffer.ByteBuf;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -48,10 +47,10 @@ import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
+import org.apache.bookkeeper.bookie.Checkpointer;
 import org.apache.bookkeeper.bookie.CompactableLedgerStorage;
 import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.EntryLogger;
@@ -72,7 +71,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Test garbage collection ledgers in ledger manager
+ * Test garbage collection ledgers in ledger manager.
  */
 public class GcLedgersTest extends LedgerManagerTestCase {
     static final Logger LOG = LoggerFactory.getLogger(GcLedgersTest.class);
@@ -82,11 +81,11 @@ public class GcLedgersTest extends LedgerManagerTestCase {
     }
 
     /**
-     * Create ledgers
+     * Create ledgers.
      */
     private void createLedgers(int numLedgers, final Set<Long> createdLedgers) throws IOException {
         final AtomicInteger expected = new AtomicInteger(numLedgers);
-        for (int i=0; i<numLedgers; i++) {
+        for (int i = 0; i < numLedgers; i++) {
             getLedgerIdGenerator().generateLedgerId(new GenericCallback<Long>() {
                 @Override
                 public void operationComplete(int rc, final Long ledgerId) {
@@ -160,7 +159,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         tmpList.addAll(createdLedgers);
         Collections.shuffle(tmpList, r);
         // random remove several ledgers
-        for (int i=0; i<numRemovedLedgers; i++) {
+        for (int i = 0; i < numRemovedLedgers; i++) {
             long ledgerId = tmpList.get(i);
             synchronized (removedLedgers) {
                 getLedgerManager().removeLedgerMetadata(ledgerId, Version.ANY,
@@ -269,13 +268,13 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         removeLedger(last);
         garbageCollector.gc(cleaner);
         assertNotNull("Should have cleaned something", cleaned.peek());
-        assertEquals("Should have cleaned last ledger" + last, (long)last, (long)cleaned.poll());
+        assertEquals("Should have cleaned last ledger" + last, (long) last, (long) cleaned.poll());
 
         long first = createdLedgers.first();
         removeLedger(first);
         garbageCollector.gc(cleaner);
         assertNotNull("Should have cleaned something", cleaned.peek());
-        assertEquals("Should have cleaned first ledger" + first, (long)first, (long)cleaned.poll());
+        assertEquals("Should have cleaned first ledger" + first, (long) first, (long) cleaned.poll());
     }
 
     @Test
@@ -320,9 +319,14 @@ public class GcLedgersTest extends LedgerManagerTestCase {
     class MockLedgerStorage implements CompactableLedgerStorage {
 
         @Override
-        public void initialize(ServerConfiguration conf, LedgerManager ledgerManager,
-                LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
-                CheckpointSource checkpointSource, StatsLogger statsLogger) throws IOException {
+        public void initialize(
+            ServerConfiguration conf,
+            LedgerManager ledgerManager,
+            LedgerDirsManager ledgerDirsManager,
+            LedgerDirsManager indexDirsManager,
+            CheckpointSource checkpointSource,
+            Checkpointer checkpointer,
+            StatsLogger statsLogger) throws IOException {
         }
 
         @Override
@@ -386,8 +390,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         }
 
         @Override
-        public Checkpoint checkpoint(Checkpoint checkpoint) throws IOException {
-            return null;
+        public void checkpoint(Checkpoint checkpoint) throws IOException {
         }
 
         @Override
@@ -422,7 +425,8 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         }
 
         @Override
-        public Observable waitForLastAddConfirmedUpdate(long ledgerId, long previoisLAC, Observer observer) throws IOException {
+        public Observable waitForLastAddConfirmedUpdate(long ledgerId, long previoisLAC, Observer observer)
+                throws IOException {
             return null;
         }
     }
