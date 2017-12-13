@@ -25,21 +25,17 @@ import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.bookie.TransactionalEntryLogCompactor.COMPACTING_SUFFIX;
 import static org.apache.bookkeeper.util.BookKeeperConstants.MAX_LOG_SIZE_LIMIT;
 
+import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.google.common.cache.RemovalListener;
-import com.google.common.cache.RemovalListeners;
-import com.google.common.cache.RemovalNotification;
-import com.google.common.collect.MapMaker;
 import com.google.common.collect.Sets;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
+import io.netty.util.AbstractReferenceCounted;
+import io.netty.util.ReferenceCounted;
 import io.netty.util.concurrent.FastThreadLocal;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -59,9 +55,10 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -69,7 +66,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.IOUtils;
@@ -206,6 +202,7 @@ public class EntryLogger {
     private final boolean doRegularFlushes;
     private long bytesWrittenSinceLastFlush = 0;
     private final int maxSaneEntrySize;
+    private final int expireReadChannelCacheInHour = 1;
 
     final ServerConfiguration conf;
     /**
@@ -335,79 +332,99 @@ public class EntryLogger {
      * A thread-local variable that wraps a mapping of log ids to bufferedchannels
      * These channels should be used only for reading. logChannel is the one
      * that is used for writes.
+     * We use this Guava cache to store the BufferedReadChannel.
+     * When the BufferedReadChannel is removed, the underlying fileChannel's refCnt decrease 1,
+     * temporally use 1h to relax replace after reading.
      */
-    private final ThreadLocal<Map<Long, BufferedReadChannel>> logid2Channel =
-            new ThreadLocal<Map<Long, BufferedReadChannel>>() {
+    private final ThreadLocal<Cache<Long, BufferedReadChannel>> logid2Channel =
+            new ThreadLocal<Cache<Long, BufferedReadChannel>>() {
         @Override
-        public Map<Long, BufferedReadChannel> initialValue() {
+        public Cache<Long, BufferedReadChannel> initialValue() {
             // Since this is thread local there only one modifier
             // We dont really need the concurrency, but we need to use
             // the weak values. Therefore using the concurrency level of 1
-            return new MapMaker().concurrencyLevel(1)
-                .weakValues()
-                .makeMap();
+            return CacheBuilder.newBuilder().concurrencyLevel(1)
+                    .expireAfterAccess(expireReadChannelCacheInHour, TimeUnit.HOURS)
+                    //decrease the refCnt
+                    .removalListener(removal -> logid2FileChannel.get(removal.getKey()).release())
+                    .build(readChannelLoader);
         }
     };
 
-    private final  CacheLoader<Long, FileChannel> loader = new CacheLoader<Long, FileChannel> () {
-        public FileChannel load(Long entryLogId) throws Exception {
+    private final  CacheLoader<Long, BufferedReadChannel> readChannelLoader =
+            new CacheLoader<Long, BufferedReadChannel> () {
+        public BufferedReadChannel load(Long entryLogId) throws Exception {
 
-            File file = findFile(entryLogId);
-            // get channel is used to open an existing entry log file
-            // it would be better to open using read mode
-            return new RandomAccessFile(file, "r").getChannel();
+            return getChannelForLogId(entryLogId);
+
         }
     };
-    // close the file channel, when it was removed from cache
-    private final RemovalListener<Long, FileChannel> removalListener = new RemovalListener<Long, FileChannel>() {
-        public void onRemoval(RemovalNotification<Long, FileChannel> removal) {
-            FileChannel fc = removal.getValue();
-            if (null != fc) {
-                try {
-                    fc.close();
-                } catch (IOException e) {
-                    LOG.warn("Exception while closing channel for log file: {}", removal.getKey());
-                } finally {
-                    IOUtils.close(LOG, fc);
-                }
+
+
+    private static class ReferenceCountedFileChannel extends AbstractReferenceCounted {
+        private final FileChannel fc;
+
+        public ReferenceCountedFileChannel(FileChannel fileChannel) {
+            this.fc = fileChannel;
+        }
+
+
+        @Override
+        public ReferenceCounted touch(Object hint) {
+            return this;
+        }
+
+        // when the refCnt decreased to
+        @Override
+        protected void deallocate() {
+            try {
+                fc.close();
+            } catch (IOException e) {
+                LOG.warn("Exception occurred in ReferenceCountedFileChannel"
+                        + " while closing channel for log file: {}", fc);
+            } finally {
+                IOUtils.close(LOG, fc);
             }
         }
-    };
 
-    private final ExecutorService removeExecutor = Executors.newSingleThreadExecutor();
+    }
+
 
     /**
      * Each thread local buffered read channel can share the same file handle because reads are not relative
-     * and don't cause a change in the channel's position. We use this Guava cache to store the file channels. Each
-     * file channel is mapped to a log id which represents an open log file. When the file channel is removed/idle,
-     * it will be closed. temporally use 1h to relax replace after reading.
+     * and don't cause a change in the channel's position.
+     * Each file channel is mapped to a log id which represents an open log file.
+     * when ReferenceCountedFileChannel's refCnt decrease to 0, close the fileChannel.
      */
-    private LoadingCache<Long, FileChannel> logid2FileChannel =  CacheBuilder.newBuilder()
-                .expireAfterAccess(1, TimeUnit.HOURS)
-                .removalListener(RemovalListeners.asynchronous(removalListener, removeExecutor))
-                .build(loader);
+    private ConcurrentMap<Long, ReferenceCountedFileChannel>
+            logid2FileChannel = new ConcurrentHashMap<>();
+
 
     /**
      * Put the logId, bc pair in the map responsible for the current thread.
      * @param logId
      * @param bc
      */
-    public BufferedReadChannel putInReadChannels(long logId, BufferedReadChannel bc) {
-        Map<Long, BufferedReadChannel> threadMap = logid2Channel.get();
-        return threadMap.put(logId, bc);
+    public void putInReadChannels(long logId, BufferedReadChannel bc) {
+        Cache<Long, BufferedReadChannel> threadCahe = logid2Channel.get();
+        threadCahe.put(logId, bc);
     }
 
     /**
      * Remove all entries for this log file in each thread's cache.
-     * the guava cache will close the fileChannel automatically.
      * @param logId
      */
     public void removeFromChannelsAndClose(long logId) {
-        logid2FileChannel.invalidate(logId);
+        //remove the fileChannel from logId2Channel
+        Cache<Long, BufferedReadChannel> threadCahe = logid2Channel.get();
+        threadCahe.invalidate(logId);
+
+        //remove the fileChannel from logId2FileChannel
+        logid2FileChannel.remove(logId);
     }
 
     public BufferedReadChannel getFromChannels(long logId) {
-        return logid2Channel.get().get(logId);
+        return logid2Channel.get().getIfPresent(logId);
     }
 
     /**
@@ -1124,21 +1141,20 @@ public class EntryLogger {
         }
     }
 
+
     private BufferedReadChannel getChannelForLogId(long entryLogId) throws IOException {
         BufferedReadChannel brc = getFromChannels(entryLogId);
         if (brc != null) {
+            // increment the refCnt
+            logid2FileChannel.get(entryLogId).retain();
             return brc;
         }
 
-        // logid2FileChannel cache will load fileChannel automatically
-        FileChannel fc = null;
-        try {
-            fc = logid2FileChannel.get(entryLogId);
-        } catch (ExecutionException e){
-            LOG.error("ExecutionException found in get fileChannel for log {} in logid2FileChannel cache", entryLogId);
-            // throw exception to avoid pass null to BufferedReadChannel
-            throw new IOException(e);
-        }
+        File file = findFile(entryLogId);
+        // get channel is used to open an existing entry log file
+        // it would be better to open using read mode
+        FileChannel fc = new RandomAccessFile(file, "r").getChannel();
+        logid2FileChannel.put(entryLogId, new ReferenceCountedFileChannel(fc));
 
         // We set the position of the write buffer of this buffered channel to Long.MAX_VALUE
         // so that there are no overlaps with the write buffer while reading
@@ -1395,8 +1411,10 @@ public class EntryLogger {
         LOG.info("Stopping EntryLogger");
         try {
             flush();
-            //invalidateAll and close corresponding fileChannel
-            logid2FileChannel.invalidateAll();
+            //close corresponding fileChannel
+            for (ReferenceCountedFileChannel rfc : logid2FileChannel.values()) {
+                rfc.deallocate();
+            }
             // close current writing log file
             closeFileChannel(logChannel);
             synchronized (compactionLogLock) {
@@ -1408,9 +1426,8 @@ public class EntryLogger {
             // we have no idea how to avoid io exception during shutting down, so just ignore it
             LOG.error("Error flush entry log during shutting down, which may cause entry log corrupted.", ie);
         } finally {
-            removeExecutor.shutdown();
-            for (FileChannel fc : logid2FileChannel.asMap().values()) {
-                IOUtils.close(LOG, fc);
+            for (ReferenceCountedFileChannel rfc : logid2FileChannel.values()) {
+                IOUtils.close(LOG, rfc.fc);
             }
             forceCloseFileChannel(logChannel);
             synchronized (compactionLogLock) {
