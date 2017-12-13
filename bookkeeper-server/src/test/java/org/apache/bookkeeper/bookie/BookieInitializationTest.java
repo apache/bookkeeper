@@ -462,8 +462,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                 .setDiskUsageWarnThreshold(0.0f);
         conf.setZkServers(zkUtil.getZooKeeperConnectString())
             .setZkTimeout(5000);
-        
-        // if isForceGCAllowWhenNoSpace or readOnlyModeEnabled is not set and Bookie is 
+
+        // if isForceGCAllowWhenNoSpace or readOnlyModeEnabled is not set and Bookie is
         // started when Disk is full, then it will fail to start with NoWritableLedgerDirException
 
         conf.setIsForceGCAllowWhenNoSpace(false)
@@ -510,7 +510,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                 .setDiskUsageWarnThreshold(0.0f);
         conf.setZkServers(zkUtil.getZooKeeperConnectString())
             .setZkTimeout(5000);
-        
+
         // if isForceGCAllowWhenNoSpace and readOnlyModeEnabled are set, then Bookie should
         // start with readonlymode when Disk is full (assuming there is no need for creation of index file
         // while replaying the journal)
