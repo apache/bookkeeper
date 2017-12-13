@@ -97,6 +97,21 @@
 <!--   -->
 </a>
 <h3>Uses of <a href="../../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a> in <a href="../../../../../org/apache/bookkeeper/conf/package-summary.html">org.apache.bookkeeper.conf</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing classes, and an explanation">
+<caption><span>Classes in <a href="../../../../../org/apache/bookkeeper/conf/package-summary.html">org.apache.bookkeeper.conf</a> with type parameters of type <a href="../../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Class and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&lt;T extends <a href="../../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a>&gt;</span></code>
+<div class="block">Abstract configuration.</div>
+</td>
+</tr>
+</tbody>
+</table>
 <table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing subclasses, and an explanation">
 <caption><span>Subclasses of <a href="../../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a> in <a href="../../../../../org/apache/bookkeeper/conf/package-summary.html">org.apache.bookkeeper.conf</a></span><span class="tabEnd">&nbsp;</span></caption>
 <tr>
@@ -114,69 +129,6 @@
 <td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></span></code>
 <div class="block">Configuration manages server-side settings.</div>
-</td>
-</tr>
-</tbody>
-</table>
-<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
-<caption><span>Methods in <a href="../../../../../org/apache/bookkeeper/conf/package-summary.html">org.apache.bookkeeper.conf</a> that return <a href="../../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colLast" scope="col">Method and Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></code></td>
-<td class="colLast"><span class="typeNameLabel">AbstractConfiguration.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setClientAuthProviderFactoryClass-java.lang.String-">setClientAuthProviderFactoryClass</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;factoryClass)</code>
-<div class="block">Set the client authentication provider factory class name.</div>
-</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></code></td>
-<td class="colLast"><span class="typeNameLabel">AbstractConfiguration.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setNettyMaxFrameSizeBytes-int-">setNettyMaxFrameSizeBytes</a></span>(int&nbsp;maxSize)</code>
-<div class="block">Set the max number of bytes a single message can be that is read by the bookie.</div>
-</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></code></td>
-<td class="colLast"><span class="typeNameLabel">AbstractConfiguration.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setTLSClientAuthentication-boolean-">setTLSClientAuthentication</a></span>(boolean&nbsp;enabled)</code>
-<div class="block">Specify whether the client will send an TLS certificate on TLS-handshake.</div>
-</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></code></td>
-<td class="colLast"><span class="typeNameLabel">AbstractConfiguration.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setTLSEnabledCipherSuites-java.lang.String-">setTLSEnabledCipherSuites</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;list)</code>
-<div class="block">Set the list of enabled TLS cipher suites.</div>
-</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></code></td>
-<td class="colLast"><span class="typeNameLabel">AbstractConfiguration.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setTLSEnabledProtocols-java.lang.String-">setTLSEnabledProtocols</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;list)</code>
-<div class="block">Set the list of enabled TLS protocols.</div>
-</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></code></td>
-<td class="colLast"><span class="typeNameLabel">AbstractConfiguration.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setTLSProvider-java.lang.String-">setTLSProvider</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;provider)</code>
-<div class="block">Set TLS Provider (JDK or OpenSSL).</div>
-</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></code></td>
-<td class="colLast"><span class="typeNameLabel">AbstractConfiguration.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setTLSProviderFactoryClass-java.lang.String-">setTLSProviderFactoryClass</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;factoryClass)</code>
-<div class="block">Set the client security provider factory class name.</div>
-</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></code></td>
-<td class="colLast"><span class="typeNameLabel">AbstractConfiguration.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setZkServers-java.lang.String-">setZkServers</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;zkServers)</code>
-<div class="block">Set zookeeper servers to connect.</div>
-</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></code></td>
-<td class="colLast"><span class="typeNameLabel">AbstractConfiguration.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/conf/AbstractConfiguration.html#setZkTimeout-int-">setZkTimeout</a></span>(int&nbsp;zkTimeout)</code>
-<div class="block">Set zookeeper timeout.</div>
 </td>
 </tr>
 </tbody>
