@@ -29,9 +29,7 @@ import static org.apache.bookkeeper.client.RoundRobinDistributionSchedule.writeS
 import static org.apache.bookkeeper.feature.SettableFeatureProvider.DISABLE_ALL;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
 import io.netty.util.HashedWheelTimer;
-
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,9 +38,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
 import junit.framework.TestCase;
-
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
@@ -75,6 +71,10 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
     static void updateMyRack(String rack) throws Exception {
         StaticDNSResolver.addNodeToRack(InetAddress.getLocalHost().getHostAddress(), rack);
         StaticDNSResolver.addNodeToRack(InetAddress.getLocalHost().getHostName(), rack);
+        BookieSocketAddress bookieAddress = new BookieSocketAddress(
+            InetAddress.getLocalHost().getHostAddress(), 0);
+        StaticDNSResolver.addNodeToRack(bookieAddress.getSocketAddress().getHostName(), rack);
+        StaticDNSResolver.addNodeToRack(bookieAddress.getSocketAddress().getAddress().getHostAddress(), rack);
         StaticDNSResolver.addNodeToRack("127.0.0.1", rack);
         StaticDNSResolver.addNodeToRack("localhost", rack);
     }
