@@ -99,11 +99,11 @@ public class CookieTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testCleanStart() throws Exception {
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString())
-            .setJournalDirName(newDirectory(false))
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(newDirectory(false))
             .setLedgerDirNames(new String[] { newDirectory(false) })
-            .setBookiePort(bookiePort);
+            .setBookiePort(bookiePort)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
         try {
             Bookie b = new Bookie(conf);
         } catch (Exception e) {
@@ -128,11 +128,11 @@ public class CookieTest extends BookKeeperClusterTestCase {
 
         String journalDir = newDirectory();
         String ledgerDir = newDirectory();
-        ServerConfiguration conf2 = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString())
-            .setJournalDirName(journalDir)
+        ServerConfiguration conf2 = TestBKConfiguration.newServerConfiguration();
+        conf2.setJournalDirName(journalDir)
             .setLedgerDirNames(new String[] { ledgerDir })
-            .setBookiePort(bookiePort);
+            .setBookiePort(bookiePort)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
         Cookie.Builder cookieBuilder2 = Cookie.generateCookie(conf2);
         Cookie c2 = cookieBuilder2.build();
         c2.writeToDirectory(new File(journalDir, "current"));
@@ -156,11 +156,11 @@ public class CookieTest extends BookKeeperClusterTestCase {
         String[] ledgerDirs = new String[] {
             newDirectory(), newDirectory(), newDirectory() };
         String journalDir = newDirectory();
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString())
-            .setJournalDirName(journalDir)
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir)
             .setLedgerDirNames(ledgerDirs)
-            .setBookiePort(bookiePort);
+            .setBookiePort(bookiePort)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
 
         Bookie b = new Bookie(conf); // should work fine
         b.start();
@@ -197,11 +197,11 @@ public class CookieTest extends BookKeeperClusterTestCase {
         String[] ledgerDirs = new String[] {
             newDirectory(), newDirectory(), newDirectory() };
         String journalDir = newDirectory();
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString())
-            .setJournalDirName(journalDir)
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir)
             .setLedgerDirNames(ledgerDirs)
-            .setBookiePort(bookiePort);
+            .setBookiePort(bookiePort)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
 
         Bookie b = new Bookie(conf); // should work fine
         b.start();
@@ -227,11 +227,11 @@ public class CookieTest extends BookKeeperClusterTestCase {
         String[] ledgerDirs = new String[] {
             newDirectory(), newDirectory(), newDirectory() };
         String journalDir = newDirectory();
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString())
-            .setJournalDirName(journalDir)
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir)
             .setLedgerDirNames(ledgerDirs)
-            .setBookiePort(bookiePort);
+            .setBookiePort(bookiePort)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
 
         Bookie b = new Bookie(conf); // should work fine
         b.start();
@@ -257,11 +257,11 @@ public class CookieTest extends BookKeeperClusterTestCase {
     public void testDirectoryAdded() throws Exception {
         String ledgerDir0 = newDirectory();
         String journalDir = newDirectory();
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString())
-            .setJournalDirName(journalDir)
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir)
             .setLedgerDirNames(new String[] { ledgerDir0 })
-            .setBookiePort(bookiePort);
+            .setBookiePort(bookiePort)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
 
         Bookie b = new Bookie(conf); // should work fine
         b.start();
@@ -290,13 +290,13 @@ public class CookieTest extends BookKeeperClusterTestCase {
         String ledgerDir0 = newDirectory();
         String indexDir0 = newDirectory();
         String journalDir = newDirectory();
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString())
-            .setJournalDirName(journalDir)
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir)
             .setLedgerDirNames(new String[] { ledgerDir0 })
             .setIndexDirName(new String[] { indexDir0 })
             .setBookiePort(bookiePort)
-            .setAllowStorageExpansion(true);
+            .setAllowStorageExpansion(true)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
 
         Bookie b = new Bookie(conf); // should work fine
         b.start();
@@ -373,13 +373,13 @@ public class CookieTest extends BookKeeperClusterTestCase {
         String ledgerDir0 = newDirectory();
         String indexDir0 = newDirectory();
         String journalDir = newDirectory();
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString())
-            .setJournalDirName(journalDir)
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir)
             .setLedgerDirNames(new String[] { ledgerDir0 })
             .setIndexDirName(new String[] { indexDir0 })
             .setBookiePort(bookiePort)
-            .setAllowStorageExpansion(true);
+            .setAllowStorageExpansion(true)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
 
         Bookie b = new Bookie(conf); // should work fine
         b.start();
@@ -427,11 +427,11 @@ public class CookieTest extends BookKeeperClusterTestCase {
     public void testDirectoryCleared() throws Exception {
         String ledgerDir0 = newDirectory();
         String journalDir = newDirectory();
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString())
-            .setJournalDirName(journalDir)
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir)
             .setLedgerDirNames(new String[] { ledgerDir0 , newDirectory() })
-            .setBookiePort(bookiePort);
+            .setBookiePort(bookiePort)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
 
         Bookie b = new Bookie(conf); // should work fine
         b.start();
@@ -452,11 +452,11 @@ public class CookieTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testBookiePortChanged() throws Exception {
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString())
-            .setJournalDirName(newDirectory())
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(newDirectory())
             .setLedgerDirNames(new String[] { newDirectory() , newDirectory() })
-            .setBookiePort(bookiePort);
+            .setBookiePort(bookiePort)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
         Bookie b = new Bookie(conf); // should work fine
         b.start();
         b.shutdown();
@@ -478,20 +478,20 @@ public class CookieTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testNewBookieStartingWithAnotherBookiesPort() throws Exception {
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString())
-            .setJournalDirName(newDirectory())
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(newDirectory())
             .setLedgerDirNames(new String[] { newDirectory() , newDirectory() })
-            .setBookiePort(bookiePort);
+            .setBookiePort(bookiePort)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
         Bookie b = new Bookie(conf); // should work fine
         b.start();
         b.shutdown();
 
-        conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString())
-            .setJournalDirName(newDirectory())
+        conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(newDirectory())
             .setLedgerDirNames(new String[] { newDirectory() , newDirectory() })
-            .setBookiePort(bookiePort);
+            .setBookiePort(bookiePort)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
         try {
             b = new Bookie(conf);
             fail("Shouldn't have been able to start");
@@ -505,18 +505,18 @@ public class CookieTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testVerifyCookieWithFormat() throws Exception {
-        ClientConfiguration adminConf = new ClientConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString());
+        ClientConfiguration adminConf = new ClientConfiguration();
+        adminConf.setZkServers(zkUtil.getZooKeeperConnectString());
 
         adminConf.setProperty("bookkeeper.format", true);
         // Format the BK Metadata and generate INSTANCEID
         BookKeeperAdmin.format(adminConf, false, true);
 
-        ServerConfiguration bookieConf = TestBKConfiguration.newServerConfiguration()
-                .setZkServers(zkUtil.getZooKeeperConnectString())
-                .setJournalDirName(newDirectory(false))
-                .setLedgerDirNames(new String[] { newDirectory(false) })
-                .setBookiePort(bookiePort);
+        ServerConfiguration bookieConf = TestBKConfiguration.newServerConfiguration();
+        bookieConf.setJournalDirName(newDirectory(false))
+            .setLedgerDirNames(new String[] { newDirectory(false) })
+            .setBookiePort(bookiePort)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
         // Bookie should start successfully for fresh env.
         new Bookie(bookieConf);
 
@@ -548,11 +548,11 @@ public class CookieTest extends BookKeeperClusterTestCase {
         File ledgerDir = newV2LedgerDirectory();
         tmpDirs.add(ledgerDir);
 
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString())
-            .setJournalDirName(journalDir.getPath())
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[] { ledgerDir.getPath() })
-            .setBookiePort(bookiePort);
+            .setBookiePort(bookiePort)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
         try {
             Bookie b = new Bookie(conf);
             fail("Shouldn't have been able to start");
@@ -573,11 +573,11 @@ public class CookieTest extends BookKeeperClusterTestCase {
         File ledgerDir = newV1LedgerDirectory();
         tmpDirs.add(ledgerDir);
 
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-            .setZkServers(zkUtil.getZooKeeperConnectString())
-            .setJournalDirName(journalDir.getPath())
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[]{ledgerDir.getPath()})
-            .setBookiePort(bookiePort);
+            .setBookiePort(bookiePort)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
         try {
             Bookie b = new Bookie(conf);
             fail("Shouldn't have been able to start");
@@ -596,10 +596,11 @@ public class CookieTest extends BookKeeperClusterTestCase {
         String[] ledgerDirs = new String[] { newDirectory(), newDirectory(),
                 newDirectory() };
         String journalDir = newDirectory();
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-                .setZkServers(zkUtil.getZooKeeperConnectString())
-                .setJournalDirName(journalDir).setLedgerDirNames(ledgerDirs)
-                .setBookiePort(bookiePort);
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir)
+            .setLedgerDirNames(ledgerDirs)
+            .setBookiePort(bookiePort)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
         Bookie b = new Bookie(conf); // should work fine
         b.start();
         b.shutdown();
@@ -621,10 +622,11 @@ public class CookieTest extends BookKeeperClusterTestCase {
         String[] ledgerDirs = new String[] { newDirectory(), newDirectory(),
                 newDirectory() };
         String journalDir = newDirectory();
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-                .setZkServers(zkUtil.getZooKeeperConnectString())
-                .setJournalDirName(journalDir).setLedgerDirNames(ledgerDirs)
-                .setBookiePort(bookiePort);
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir)
+            .setLedgerDirNames(ledgerDirs)
+            .setBookiePort(bookiePort)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
         conf.setUseHostNameAsBookieID(false);
         Bookie b = new Bookie(conf); // should work fine
         b.start();
@@ -648,10 +650,10 @@ public class CookieTest extends BookKeeperClusterTestCase {
         String[] ledgerDirs = new String[] { newDirectory(), newDirectory(),
                 newDirectory() };
         String journalDir = newDirectory();
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-                .setZkServers(zkUtil.getZooKeeperConnectString())
-                .setJournalDirName(journalDir).setLedgerDirNames(ledgerDirs)
-                .setBookiePort(bookiePort);
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir).setLedgerDirNames(ledgerDirs)
+            .setBookiePort(bookiePort)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
         conf.setUseHostNameAsBookieID(true);
         Bookie b = new Bookie(conf); // should work fine
         b.start();
@@ -677,11 +679,11 @@ public class CookieTest extends BookKeeperClusterTestCase {
         File ledgerDir = newV2LedgerDirectory();
         tmpDirs.add(ledgerDir);
 
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-                .setZkServers(zkUtil.getZooKeeperConnectString())
-                .setJournalDirName(journalDir.getPath())
-                .setLedgerDirNames(new String[] { ledgerDir.getPath() })
-                .setBookiePort(bookiePort);
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir.getPath())
+            .setLedgerDirNames(new String[] { ledgerDir.getPath() })
+            .setBookiePort(bookiePort)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
         try {
             conf.setUseHostNameAsBookieID(true);
             new Bookie(conf);
@@ -700,9 +702,11 @@ public class CookieTest extends BookKeeperClusterTestCase {
     public void testWriteToZooKeeper() throws Exception {
         String[] ledgerDirs = new String[] { newDirectory(), newDirectory(), newDirectory() };
         String journalDir = newDirectory();
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-                .setZkServers(zkUtil.getZooKeeperConnectString()).setJournalDirName(journalDir)
-                .setLedgerDirNames(ledgerDirs).setBookiePort(bookiePort);
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir)
+            .setLedgerDirNames(ledgerDirs)
+            .setBookiePort(bookiePort)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
         Bookie b = new Bookie(conf); // should work fine
         b.start();
         b.shutdown();
@@ -730,9 +734,11 @@ public class CookieTest extends BookKeeperClusterTestCase {
     public void testDeleteFromZooKeeper() throws Exception {
         String[] ledgerDirs = new String[] { newDirectory(), newDirectory(), newDirectory() };
         String journalDir = newDirectory();
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-                .setZkServers(zkUtil.getZooKeeperConnectString()).setJournalDirName(journalDir)
-                .setLedgerDirNames(ledgerDirs).setBookiePort(bookiePort);
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir)
+            .setLedgerDirNames(ledgerDirs)
+            .setBookiePort(bookiePort)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
         Bookie b = new Bookie(conf); // should work fine
         b.start();
         b.shutdown();

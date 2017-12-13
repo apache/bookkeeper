@@ -60,9 +60,11 @@ public class AdvertisedAddressTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testSetAdvertisedAddress() throws Exception {
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
-                .setZkServers(zkUtil.getZooKeeperConnectString()).setJournalDirName(newDirectory(false))
-                .setLedgerDirNames(new String[] { newDirectory(false) }).setBookiePort(bookiePort);
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(newDirectory(false))
+            .setLedgerDirNames(new String[] { newDirectory(false) })
+            .setBookiePort(bookiePort)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
 
         conf.setAdvertisedAddress("10.0.0.1");
         assertEquals("10.0.0.1", conf.getAdvertisedAddress());

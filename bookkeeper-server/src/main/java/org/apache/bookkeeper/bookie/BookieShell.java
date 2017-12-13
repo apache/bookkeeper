@@ -1240,9 +1240,9 @@ public class BookieShell implements Tool {
                 printUsage();
                 return 1;
             }
-            ClientConfiguration clientconf = new ClientConfiguration(bkConf)
-                .setZkServers(bkConf.getZkServers());
-            BookKeeperAdmin bka = new BookKeeperAdmin(clientconf);
+            ClientConfiguration clientConf = new ClientConfiguration(bkConf);
+            clientConf.setZkServers(bkConf.getZkServers());
+            BookKeeperAdmin bka = new BookKeeperAdmin(clientConf);
 
             int count = 0;
             Collection<BookieSocketAddress> bookies = new ArrayList<BookieSocketAddress>();
