@@ -37,7 +37,7 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then jdk_switcher use "$CUSTOM_JDK"; fi
 
 script:
-  - travis_retry mvn --batch-mode clean apache-rat:check compile findbugs:check
+  - travis_retry mvn --batch-mode clean apache-rat:check compile spotbugs:check
 # Disabled the tests here. Since tests are running much slower on Travis than on Jenkins
 #  - ./dev/ticktoc.sh "mvn --batch-mode clean package"
 

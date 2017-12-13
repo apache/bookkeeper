@@ -35,7 +35,8 @@ import org.apache.commons.lang.StringUtils;
 /**
  * Abstract configuration.
  */
-public abstract class AbstractConfiguration extends CompositeConfiguration {
+public abstract class AbstractConfiguration<T extends AbstractConfiguration>
+    extends CompositeConfiguration {
 
     public static final String READ_SYSTEM_PROPERTIES_PROPERTY = "org.apache.bookkeeper.conf.readsystemproperties";
 
@@ -158,9 +159,9 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      * @param zkServers
      *          ZooKeeper servers to connect
      */
-    public AbstractConfiguration setZkServers(String zkServers) {
+    public T setZkServers(String zkServers) {
         setProperty(ZK_SERVERS, zkServers);
-        return this;
+        return getThis();
     }
 
     /**
@@ -179,9 +180,9 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      *          ZooKeeper server timeout
      * @return server configuration
      */
-    public AbstractConfiguration setZkTimeout(int zkTimeout) {
+    public T setZkTimeout(int zkTimeout) {
         setProperty(ZK_TIMEOUT, Integer.toString(zkTimeout));
-        return this;
+        return getThis();
     }
 
     /**
@@ -380,10 +381,10 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      *          the client authentication provider factory class name
      * @return client configuration
      */
-    public AbstractConfiguration setClientAuthProviderFactoryClass(
+    public T setClientAuthProviderFactoryClass(
             String factoryClass) {
         setProperty(CLIENT_AUTH_PROVIDER_FACTORY_CLASS, factoryClass);
-        return this;
+        return getThis();
     }
 
     /**
@@ -414,9 +415,9 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      *          the max size in bytes
      * @return server configuration
      */
-    public AbstractConfiguration setNettyMaxFrameSizeBytes(int maxSize) {
+    public T setNettyMaxFrameSizeBytes(int maxSize) {
         setProperty(NETTY_MAX_FRAME_SIZE, String.valueOf(maxSize));
-        return this;
+        return getThis();
     }
 
     /**
@@ -435,9 +436,9 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      *            the client security provider factory class name
      * @return client configuration
      */
-    public AbstractConfiguration setTLSProviderFactoryClass(String factoryClass) {
+    public T setTLSProviderFactoryClass(String factoryClass) {
         setProperty(TLS_PROVIDER_FACTORY_CLASS, factoryClass);
-        return this;
+        return getThis();
     }
 
     /**
@@ -456,9 +457,9 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      *            TLS Provider type
      * @return Client Configuration
      */
-    public AbstractConfiguration setTLSProvider(String provider) {
+    public T setTLSProvider(String provider) {
         setProperty(TLS_PROVIDER, provider);
-        return this;
+        return getThis();
     }
 
     /**
@@ -478,9 +479,9 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      *            Whether to send a certificate or not
      * @return client configuration
      */
-    public AbstractConfiguration setTLSClientAuthentication(boolean enabled) {
+    public T setTLSClientAuthentication(boolean enabled) {
         setProperty(TLS_CLIENT_AUTHENTICATION, enabled);
-        return this;
+        return getThis();
     }
 
     /**
@@ -491,10 +492,10 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      *            comma separated list of enabled TLS cipher suites
      * @return current configuration
      */
-    public AbstractConfiguration setTLSEnabledCipherSuites(
+    public T setTLSEnabledCipherSuites(
             String list) {
         setProperty(TLS_ENABLED_CIPHER_SUITES, list);
-        return this;
+        return getThis();
     }
 
     /**
@@ -516,10 +517,10 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      *            comma separated list of enabled TLS cipher suites
      * @return current configuration
      */
-    public AbstractConfiguration setTLSEnabledProtocols(
+    public T setTLSEnabledProtocols(
             String list) {
         setProperty(TLS_ENABLED_PROTOCOLS, list);
-        return this;
+        return getThis();
     }
 
     /**
@@ -532,4 +533,10 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     public String getTLSEnabledProtocols() {
         return getString(TLS_ENABLED_PROTOCOLS, null);
     }
+
+
+    /**
+     * Trickery to allow inheritance with fluent style.
+     */
+    protected abstract T getThis();
 }
