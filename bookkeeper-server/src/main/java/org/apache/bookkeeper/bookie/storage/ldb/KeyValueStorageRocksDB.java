@@ -56,13 +56,13 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
 
     private final RocksDB db;
 
-    private final WriteOptions optionSync = new WriteOptions();
-    private final WriteOptions optionDontSync = new WriteOptions();
+    private final WriteOptions optionSync;
+    private final WriteOptions optionDontSync;
 
-    private final ReadOptions optionCache = new ReadOptions();
-    private final ReadOptions optionDontCache = new ReadOptions();
+    private final ReadOptions optionCache;
+    private final ReadOptions optionDontCache;
 
-    private final WriteBatch emptyBatch = new WriteBatch();
+    private final WriteBatch emptyBatch;
 
     private static final String ROCKSDB_LOG_LEVEL = "dbStorage_rocksDB_logLevel";
     private static final String ROCKSDB_WRITE_BUFFER_SIZE_MB = "dbStorage_rocksDB_writeBufferSizeMB";
@@ -85,6 +85,12 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
         } catch (Throwable t) {
             throw new IOException("Failed to load RocksDB JNI library", t);
         }
+
+        this.optionSync = new WriteOptions();
+        this.optionDontSync = new WriteOptions();
+        this.optionCache = new ReadOptions();
+        this.optionDontCache = new ReadOptions();
+        this.emptyBatch = new WriteBatch();
 
         try (Options options = new Options()) {
             options.setCreateIfMissing(true);
