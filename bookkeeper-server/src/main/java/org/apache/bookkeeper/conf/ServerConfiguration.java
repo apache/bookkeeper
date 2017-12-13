@@ -34,7 +34,7 @@ import org.apache.commons.configuration.ConfigurationException;
 /**
  * Configuration manages server-side settings.
  */
-public class ServerConfiguration extends AbstractConfiguration {
+public class ServerConfiguration extends AbstractConfiguration<ServerConfiguration> {
     // Entry Log Parameters
     protected static final String ENTRY_LOG_SIZE_LIMIT = "logSizeLimit";
     protected static final String ENTRY_LOG_FILE_PREALLOCATION_ENABLED = "entryLogFilePreallocationEnabled";
@@ -2497,4 +2497,8 @@ public class ServerConfiguration extends AbstractConfiguration {
                 DEFAULT_LOADER);
     }
 
+    @Override
+    protected ServerConfiguration getThis() {
+        return this;
+    }
 }
