@@ -941,6 +941,327 @@ Value <span class="o">=</span> 3, isLeader <span class="o">=</span> <span class=
 </code></pre>
 </div>
 
+<h2 id="new-api">New API</h2>
+
+<p>Since 4.6 BookKeeper provides a new client API which leverages Java8 <a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html">CompletableFuture</a> facility.
+<a href="../javadoc/org/apache/bookkeeper/client/api/WriteHandle">WriteHandle</a>, <a href="../javadoc/org/apache/bookkeeper/client/api/WriteAdvHandle">WriteAdvHandle</a>, <a href="../javadoc/org/apache/bookkeeper/client/api/ReadHandle">ReadHandle</a> are introduced for replacing the generic <a href="../javadoc/org/apache/bookkeeper/client/LedgerHandle">LedgerHandle</a>.</p>
+
+<blockquote>
+  <p>All the new API now is available in <code class="highlighter-rouge">org.apache.bookkeeper.client.api</code>. You should only use interfaces defined in this package.</p>
+</blockquote>
+
+<p><em>Beware</em> that this API in 4.6 is still experimental API and can be subject to changes in next minor releases.</p>
+
+<h3 id="create-a-new-client">Create a new client</h3>
+
+<p>In order to create a new <a href="../javadoc/org/apache/bookkeeper/client/api/BookKeeper"><code class="highlighter-rouge">BookKeeper</code></a> client object, you need to construct a <a href="../javadoc/org/apache/bookkeeper/conf/ClientConfiguration"><code class="highlighter-rouge">ClientConfiguration</code></a> object and set a <a href="#connection-string">connection string</a> first, and then use <a href="../javadoc/org/apache/bookkeeper/client/api/BookKeeperBuilder"><code class="highlighter-rouge">BookKeeperBuilder</code></a> to build the client.</p>
+
+<p>Here is an example building the bookkeeper client.</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="c1">// construct a client configuration instance</span>
+<span class="n">ClientConfiguration</span> <span class="n">conf</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ClientConfiguration</span><span class="o">();</span>
+<span class="n">conf</span><span class="o">.</span><span class="na">setZkServers</span><span class="o">(</span><span class="n">zkConnectionString</span><span class="o">);</span>
+<span class="n">conf</span><span class="o">.</span><span class="na">setZkLedgersRootPath</span><span class="o">(</span><span class="s">"/path/to/ledgers/root"</span><span class="o">);</span>
+
+<span class="c1">// build the bookkeeper client</span>
+<span class="n">BookKeeper</span> <span class="n">bk</span> <span class="o">=</span> <span class="n">BookKeeper</span><span class="o">.</span><span class="na">newBuilder</span><span class="o">(</span><span class="n">conf</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">statsLogger</span><span class="o">(...)</span>
+    <span class="o">...</span>
+    <span class="o">.</span><span class="na">build</span><span class="o">();</span>
+
+</code></pre>
+</div>
+
+<h3 id="create-ledgers">Create ledgers</h3>
+
+<p>the easiest way to create a <span class="pop" id="ledger-popover">ledger</span> using the java client is via the <a href="../javadoc/org/apache/bookkeeper/client/api/createbuilder"><code class="highlighter-rouge">createbuilder</code></a>. you must specify at least
+a <a href="../javadoc/org/apache/bookkeeper/client/api/digesttype"><code class="highlighter-rouge">digesttype</code></a> and a password.</p>
+
+<p>here’s an example:</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">BookKeeper</span> <span class="n">bk</span> <span class="o">=</span> <span class="o">...;</span>
+
+<span class="kt">byte</span><span class="o">[]</span> <span class="n">password</span> <span class="o">=</span> <span class="s">"some-password"</span><span class="o">.</span><span class="na">getBytes</span><span class="o">();</span>
+
+<span class="n">WriteHandle</span> <span class="n">wh</span> <span class="o">=</span> <span class="n">bk</span><span class="o">.</span><span class="na">newCreateLedgerOp</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">withDigestType</span><span class="o">(</span><span class="n">DigestType</span><span class="o">.</span><span class="na">CRC32</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">withPassword</span><span class="o">(</span><span class="n">password</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">withEnsembleSize</span><span class="o">(</span><span class="mi">3</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">withWriteQuorumSize</span><span class="o">(</span><span class="mi">3</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">withAckQuorumSize</span><span class="o">(</span><span class="mi">2</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">execute</span><span class="o">()</span>          <span class="c1">// execute the creation op</span>
+    <span class="o">.</span><span class="na">get</span><span class="o">();</span>             <span class="c1">// wait for the execution to complete</span>
+</code></pre>
+</div>
+
+<p>A <a href="../javadoc/org/apache/bookkeeper/client/api/WriteHandle"><code class="highlighter-rouge">WriteHandle</code></a> is returned for applications to write and read entries to and from the ledger.</p>
+
+<h3 id="write-flags">Write flags</h3>
+
+<p>You can specify behaviour of the writer by setting <a href="../javadoc/org/apache/bookkeeper/client/api/WriteFlag"><code class="highlighter-rouge">WriteFlags</code></a> at ledger creation type.
+These flags are applied only during write operations and are not recorded on metadata.</p>
+
+<p>Available write flags:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Flag</th>
+      <th style="text-align: left">Explanation</th>
+      <th style="text-align: left">Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left">DEFERRED_SYNC</td>
+      <td style="text-align: left">Writes are acknowledged early, without waiting for</td>
+      <td style="text-align: left"> </td>
+    </tr>
+    <tr>
+      <td style="text-align: left">guarantees of durability</td>
+      <td style="text-align: left">Data will be only written to the OS page cache, without forcing an fsync.</td>
+      <td style="text-align: left"> </td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">BookKeeper</span> <span class="n">bk</span> <span class="o">=</span> <span class="o">...;</span>
+
+<span class="kt">byte</span><span class="o">[]</span> <span class="n">password</span> <span class="o">=</span> <span class="s">"some-password"</span><span class="o">.</span><span class="na">getBytes</span><span class="o">();</span>
+
+<span class="n">WriteHandle</span> <span class="n">wh</span> <span class="o">=</span> <span class="n">bk</span><span class="o">.</span><span class="na">newCreateLedgerOp</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">withDigestType</span><span class="o">(</span><span class="n">DigestType</span><span class="o">.</span><span class="na">CRC32</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">withPassword</span><span class="o">(</span><span class="n">password</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">withEnsembleSize</span><span class="o">(</span><span class="mi">3</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">withWriteQuorumSize</span><span class="o">(</span><span class="mi">3</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">withAckQuorumSize</span><span class="o">(</span><span class="mi">2</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">withWriteFlags</span><span class="o">(</span><span class="n">DEFERRED_SYNC</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">execute</span><span class="o">()</span>          <span class="c1">// execute the creation op</span>
+    <span class="o">.</span><span class="na">get</span><span class="o">();</span>             <span class="c1">// wait for the execution to complete</span>
+</code></pre>
+</div>
+
+<h3 id="append-entries-to-ledgers">Append entries to ledgers</h3>
+
+<p>The <a href="../javadoc/org/apache/bookkeeper/client/api/WriteHandle"><code class="highlighter-rouge">WriteHandle</code></a> can be used for applications to append entries to the ledgers.</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">WriteHandle</span> <span class="n">wh</span> <span class="o">=</span> <span class="o">...;</span>
+
+<span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">Long</span><span class="o">&gt;</span> <span class="n">addFuture</span> <span class="o">=</span> <span class="n">wh</span><span class="o">.</span><span class="na">append</span><span class="o">(</span><span class="s">"Some entry data"</span><span class="o">.</span><span class="na">getBytes</span><span class="o">());</span>
+
+<span class="c1">// option 1: you can wait for add to complete synchronously</span>
+<span class="k">try</span> <span class="o">{</span>
+    <span class="kt">long</span> <span class="n">entryId</span> <span class="o">=</span> <span class="n">FutureUtils</span><span class="o">.</span><span class="na">result</span><span class="o">(</span><span class="n">addFuture</span><span class="o">.</span><span class="na">get</span><span class="o">());</span>
+<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">BKException</span> <span class="n">bke</span><span class="o">)</span> <span class="o">{</span>
+    <span class="c1">// error handling</span>
+<span class="o">}</span>
+
+<span class="c1">// option 2: you can process the result and exception asynchronously</span>
+<span class="n">addFuture</span>
+    <span class="o">.</span><span class="na">thenApply</span><span class="o">(</span><span class="n">entryId</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="c1">// process the result</span>
+    <span class="o">})</span>
+    <span class="o">.</span><span class="na">exceptionally</span><span class="o">(</span><span class="n">cause</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="c1">// handle the exception</span>
+    <span class="o">})</span>
+
+<span class="c1">// option 3: bookkeeper provides a twitter-future-like event listener for processing result and exception asynchronously</span>
+<span class="n">addFuture</span><span class="o">.</span><span class="na">whenComplete</span><span class="o">(</span><span class="k">new</span> <span class="n">FutureEventListener</span><span class="o">()</span> <span class="o">{</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onSuccess</span><span class="o">(</span><span class="kt">long</span> <span class="n">entryId</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">// process the result</span>
+    <span class="o">}</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onFailure</span><span class="o">(</span><span class="n">Throwable</span> <span class="n">cause</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">// handle the exception</span>
+    <span class="o">}</span>
+<span class="o">});</span>
+</code></pre>
+</div>
+
+<p>The append method supports three representations of a bytes array: the native java <code class="highlighter-rouge">byte[]</code>, java nio <code class="highlighter-rouge">ByteBuffer</code> and netty <code class="highlighter-rouge">ByteBuf</code>.
+It is recommended to use <code class="highlighter-rouge">ByteBuf</code> as it is more gc friendly.</p>
+
+<h3 id="open-ledgers">Open ledgers</h3>
+
+<p>You can open ledgers to read entries. Opening ledgers is done by <a href="../javadoc/org/apache/bookkeeper/client/api/openBuilder"><code class="highlighter-rouge">openBuilder</code></a>. You must specify the ledgerId and the password
+in order to open the ledgers.</p>
+
+<p>here’s an example:</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">BookKeeper</span> <span class="n">bk</span> <span class="o">=</span> <span class="o">...;</span>
+
+<span class="kt">long</span> <span class="n">ledgerId</span> <span class="o">=</span> <span class="o">...;</span>
+<span class="kt">byte</span><span class="o">[]</span> <span class="n">password</span> <span class="o">=</span> <span class="s">"some-password"</span><span class="o">.</span><span class="na">getBytes</span><span class="o">();</span>
+
+<span class="n">ReadHandle</span> <span class="n">rh</span> <span class="o">=</span> <span class="n">bk</span><span class="o">.</span><span class="na">newOpenLedgerOp</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">withLedgerId</span><span class="o">(</span><span class="n">ledgerId</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">withPassword</span><span class="o">(</span><span class="n">password</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">execute</span><span class="o">()</span>          <span class="c1">// execute the open op</span>
+    <span class="o">.</span><span class="na">get</span><span class="o">();</span>             <span class="c1">// wait for the execution to complete</span>
+</code></pre>
+</div>
+
+<p>A <a href="../javadoc/org/apache/bookkeeper/client/api/ReadHandle"><code class="highlighter-rouge">ReadHandle</code></a> is returned for applications to read entries to and from the ledger.</p>
+
+<h4 id="recovery-vs-norecovery">Recovery vs NoRecovery</h4>
+
+<p>By default, the <a href="../javadoc/org/apache/bookkeeper/client/api/openBuilder"><code class="highlighter-rouge">openBuilder</code></a> opens the ledger in a <code class="highlighter-rouge">NoRecovery</code> mode. You can open the ledger in <code class="highlighter-rouge">Recovery</code> mode by specifying
+<code class="highlighter-rouge">withRecovery(true)</code> in the open builder.</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">BookKeeper</span> <span class="n">bk</span> <span class="o">=</span> <span class="o">...;</span>
+
+<span class="kt">long</span> <span class="n">ledgerId</span> <span class="o">=</span> <span class="o">...;</span>
+<span class="kt">byte</span><span class="o">[]</span> <span class="n">password</span> <span class="o">=</span> <span class="s">"some-password"</span><span class="o">.</span><span class="na">getBytes</span><span class="o">();</span>
+
+<span class="n">ReadHandle</span> <span class="n">rh</span> <span class="o">=</span> <span class="n">bk</span><span class="o">.</span><span class="na">newOpenLedgerOp</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">withLedgerId</span><span class="o">(</span><span class="n">ledgerId</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">withPassword</span><span class="o">(</span><span class="n">password</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">withRecovery</span><span class="o">(</span><span class="kc">true</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">execute</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">get</span><span class="o">();</span>
+
+</code></pre>
+</div>
+
+<p><strong>What is the difference between “Recovery” and “NoRecovery”?</strong></p>
+
+<p>If you are opening a ledger in “Recovery” mode, it will basically fence and seal the ledger – no more entries are allowed
+to be appended to it. The writer which is currently appending entries to the ledger will fail with <a href="../javadoc/org/apache/bookkeeper/client/api/BKException.Code#LedgerFencedException"><code class="highlighter-rouge">LedgerFencedException</code></a>.</p>
+
+<p>In constrat, opening a ledger in “NoRecovery” mode, it will not fence and seal the ledger. “NoRecovery” mode is usually used by applications to tailing-read from a ledger.</p>
+
+<h3 id="read-entries-from-ledgers">Read entries from ledgers</h3>
+
+<p>The <a href="../javadoc/org/apache/bookkeeper/client/api/ReadHandle"><code class="highlighter-rouge">ReadHandle</code></a> returned from the open builder can be used for applications to read entries from the ledgers.</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">ReadHandle</span> <span class="n">rh</span> <span class="o">=</span> <span class="o">...;</span>
+
+<span class="kt">long</span> <span class="n">startEntryId</span> <span class="o">=</span> <span class="o">...;</span>
+<span class="kt">long</span> <span class="n">endEntryId</span> <span class="o">=</span> <span class="o">...;</span>
+<span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">LedgerEntries</span><span class="o">&gt;</span> <span class="n">readFuture</span> <span class="o">=</span> <span class="n">rh</span><span class="o">.</span><span class="na">read</span><span class="o">(</span><span class="n">startEntryId</span><span class="o">,</span> <span class="n">endEntryId</span><span class="o">);</span>
+
+<span class="c1">// option 1: you can wait for read to complete synchronously</span>
+<span class="k">try</span> <span class="o">{</span>
+    <span class="n">LedgerEntries</span> <span class="n">entries</span> <span class="o">=</span> <span class="n">FutureUtils</span><span class="o">.</span><span class="na">result</span><span class="o">(</span><span class="n">readFuture</span><span class="o">.</span><span class="na">get</span><span class="o">());</span>
+<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">BKException</span> <span class="n">bke</span><span class="o">)</span> <span class="o">{</span>
+    <span class="c1">// error handling</span>
+<span class="o">}</span>
+
+<span class="c1">// option 2: you can process the result and exception asynchronously</span>
+<span class="n">readFuture</span>
+    <span class="o">.</span><span class="na">thenApply</span><span class="o">(</span><span class="n">entries</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="c1">// process the result</span>
+    <span class="o">})</span>
+    <span class="o">.</span><span class="na">exceptionally</span><span class="o">(</span><span class="n">cause</span> <span class="o">-&gt;</span> <span class="o">{</span>
+        <span class="c1">// handle the exception</span>
+    <span class="o">})</span>
+
+<span class="c1">// option 3: bookkeeper provides a twitter-future-like event listener for processing result and exception asynchronously</span>
+<span class="n">readFuture</span><span class="o">.</span><span class="na">whenComplete</span><span class="o">(</span><span class="k">new</span> <span class="n">FutureEventListener</span><span class="o">&lt;&gt;()</span> <span class="o">{</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onSuccess</span><span class="o">(</span><span class="n">LedgerEntries</span> <span class="n">entries</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">// process the result</span>
+    <span class="o">}</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onFailure</span><span class="o">(</span><span class="n">Throwable</span> <span class="n">cause</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">// handle the exception</span>
+    <span class="o">}</span>
+<span class="o">});</span>
+</code></pre>
+</div>
+
+<p>Once you are done with processing the <a href="../javadoc/org/apache/bookkeeper/client/api/LedgerEntries"><code class="highlighter-rouge">LedgerEntries</code></a>, you can call <code class="highlighter-rouge">#close()</code> on the <code class="highlighter-rouge">LedgerEntries</code> instance to
+release the buffers held by it.</p>
+
+<p>Applications are allowed to read any entries between <code class="highlighter-rouge">0</code> and <a href="../javadoc/org/apache/bookkeeper/client/api/ReadHandle.html#getLastAddConfirmed"><code class="highlighter-rouge">LastAddConfirmed</code></a>. If the applications
+attempts to read entries beyond <code class="highlighter-rouge">LastAddConfirmed</code>, they will receive <a href="../javadoc/org/apache/bookkeeper/client/api/BKException.Code#IncorrectParameterException"><code class="highlighter-rouge">IncorrectParameterException</code></a>.</p>
+
+<h3 id="read-unconfirmed-entries-from-ledgers">Read unconfirmed entries from ledgers</h3>
+
+<p><code class="highlighter-rouge">readUnconfirmed</code> is provided the mechanism for applications to read entries beyond <code class="highlighter-rouge">LastAddConfirmed</code>. Applications should be aware of <code class="highlighter-rouge">readUnconfirmed</code> doesn’t provide any
+repeatable read consistency.</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">CompletableFuture</span><span class="o">&lt;</span><span class="n">LedgerEntries</span><span class="o">&gt;</span> <span class="n">readFuture</span> <span class="o">=</span> <span class="n">rh</span><span class="o">.</span><span class="na">readUnconfirmed</span><span class="o">(</span><span class="n">startEntryId</span><span class="o">,</span> <span class="n">endEntryId</span><span class="o">);</span>
+</code></pre>
+</div>
+
+<h3 id="tailing-reads">Tailing Reads</h3>
+
+<p>There are two methods for applications to achieve tailing reads: <code class="highlighter-rouge">Polling</code> and <code class="highlighter-rouge">Long-Polling</code>.</p>
+
+<h4 id="polling">Polling</h4>
+
+<p>You can do this in synchronous way:</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">ReadHandle</span> <span class="n">rh</span> <span class="o">=</span> <span class="o">...;</span>
+
+<span class="kt">long</span> <span class="n">startEntryId</span> <span class="o">=</span> <span class="mi">0L</span><span class="o">;</span>
+<span class="kt">long</span> <span class="n">nextEntryId</span> <span class="o">=</span> <span class="n">startEntryId</span><span class="o">;</span>
+<span class="kt">int</span> <span class="n">numEntriesPerBatch</span> <span class="o">=</span> <span class="mi">4</span><span class="o">;</span>
+<span class="k">while</span> <span class="o">(!</span><span class="n">rh</span><span class="o">.</span><span class="na">isClosed</span><span class="o">()</span> <span class="o">||</span> <span class="n">nextEntryId</span> <span class="o">&lt;=</span> <span class="n">rh</span><span class="o">.</span><span class="na">getLastAddConfirmed</span><span class="o">())</span> <span class="o">{</span>
+    <span class="kt">long</span> <span class="n">lac</span> <span class="o">=</span> <span class="n">rh</span><span class="o">.</span><span class="na">getLastAddConfirmed</span><span class="o">();</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">nextEntryId</span> <span class="o">&gt;</span> <span class="n">lac</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">// no more entries are added</span>
+        <span class="n">Thread</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="mi">1000</span><span class="o">);</span>
+
+        <span class="n">lac</span> <span class="o">=</span> <span class="n">rh</span><span class="o">.</span><span class="na">readLastAddConfirmed</span><span class="o">().</span><span class="na">get</span><span class="o">();</span>
+        <span class="k">continue</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="kt">long</span> <span class="n">endEntryId</span> <span class="o">=</span> <span class="n">Math</span><span class="o">.</span><span class="na">min</span><span class="o">(</span><span class="n">lac</span><span class="o">,</span> <span class="n">nextEntryId</span> <span class="o">+</span> <span class="n">numEntriesPerBatch</span> <span class="o">-</span> <span class="mi">1</span><span class="o">);</span>
+    <span class="n">LedgerEntries</span> <span class="n">entries</span> <span class="o">=</span> <span class="n">rh</span><span class="o">.</span><span class="na">read</span><span class="o">(</span><span class="n">nextEntryId</span><span class="o">,</span> <span class="n">endEntryId</span><span class="o">).</span><span class="na">get</span><span class="o">();</span>
+
+    <span class="c1">// process the entries</span>
+
+    <span class="n">nextEntryId</span> <span class="o">=</span> <span class="n">endEntryId</span> <span class="o">+</span> <span class="mi">1</span><span class="o">;</span>
+<span class="o">}</span>
+</code></pre>
+</div>
+
+<h4 id="long-polling">Long Polling</h4>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">ReadHandle</span> <span class="n">rh</span> <span class="o">=</span> <span class="o">...;</span>
+
+<span class="kt">long</span> <span class="n">startEntryId</span> <span class="o">=</span> <span class="mi">0L</span><span class="o">;</span>
+<span class="kt">long</span> <span class="n">nextEntryId</span> <span class="o">=</span> <span class="n">startEntryId</span><span class="o">;</span>
+<span class="kt">int</span> <span class="n">numEntriesPerBatch</span> <span class="o">=</span> <span class="mi">4</span><span class="o">;</span>
+<span class="k">while</span> <span class="o">(!</span><span class="n">rh</span><span class="o">.</span><span class="na">isClosed</span><span class="o">()</span> <span class="o">||</span> <span class="n">nextEntryId</span> <span class="o">&lt;=</span> <span class="n">rh</span><span class="o">.</span><span class="na">getLastAddConfirmed</span><span class="o">())</span> <span class="o">{</span>
+    <span class="kt">long</span> <span class="n">lac</span> <span class="o">=</span> <span class="n">rh</span><span class="o">.</span><span class="na">getLastAddConfirmed</span><span class="o">();</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">nextEntryId</span> <span class="o">&gt;</span> <span class="n">lac</span><span class="o">)</span> <span class="o">{</span>
+        <span class="c1">// no more entries are added</span>
+        <span class="k">try</span> <span class="o">(</span><span class="n">LastConfirmedAndEntry</span> <span class="n">lacAndEntry</span> <span class="o">=</span> <span class="n">rh</span><span class="o">.</span><span class="na">readLastAddConfirmedAndEntry</span><span class="o">(</span><span class="n">nextEntryId</span><span class="o">,</span> <span class="mi">1000</span><span class="o">,</span> <span class="kc">false</span><span class="o">).</span><span class="na">get</span><span class="o">())</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">lacAndEntry</span><span class="o">.</span><span class="na">hasEntry</span><span class="o">())</span> <span class="o">{</span>
+                <span class="c1">// process the entry</span>
+
+                <span class="o">++</span><span class="n">nextEntryId</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+        <span class="kt">long</span> <span class="n">endEntryId</span> <span class="o">=</span> <span class="n">Math</span><span class="o">.</span><span class="na">min</span><span class="o">(</span><span class="n">lac</span><span class="o">,</span> <span class="n">nextEntryId</span> <span class="o">+</span> <span class="n">numEntriesPerBatch</span> <span class="o">-</span> <span class="mi">1</span><span class="o">);</span>
+        <span class="n">LedgerEntries</span> <span class="n">entries</span> <span class="o">=</span> <span class="n">rh</span><span class="o">.</span><span class="na">read</span><span class="o">(</span><span class="n">nextEntryId</span><span class="o">,</span> <span class="n">endEntryId</span><span class="o">).</span><span class="na">get</span><span class="o">();</span>
+
+        <span class="c1">// process the entries</span>
+        <span class="n">nextEntryId</span> <span class="o">=</span> <span class="n">endEntryId</span> <span class="o">+</span> <span class="mi">1</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre>
+</div>
+
+<h3 id="delete-ledgers">Delete ledgers</h3>
+
+<p><span class="pop" id="ledger-popover">Ledgers</span> can be deleted by using <a href="../javadoc/org/apache/bookkeeper/client/api/DeleteBuilder"><code class="highlighter-rouge">DeleteBuilder</code></a>.</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="n">BookKeeper</span> <span class="n">bk</span> <span class="o">=</span> <span class="o">...;</span>
+<span class="kt">long</span> <span class="n">ledgerId</span> <span class="o">=</span> <span class="o">...;</span>
+
+<span class="n">bk</span><span class="o">.</span><span class="na">newDeleteLedgerOp</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">withLedgerId</span><span class="o">(</span><span class="n">ledgerId</span><span class="o">)</span>
+    <span class="o">.</span><span class="na">execute</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">get</span><span class="o">();</span>
+</code></pre>
+</div>
+
         </section>
 
         
@@ -975,6 +1296,19 @@ Value <span class="o">=</span> 3, isLeader <span class="o">=</span> <span class=
 <li class="toc-entry toc-h3"><a href="#leaders-and-followers-and-a-bit-of-background">Leaders and followers (and a bit of background)</a></li>
 <li class="toc-entry toc-h3"><a href="#why-not-just-use-zookeeper">Why not just use ZooKeeper?</a></li>
 <li class="toc-entry toc-h3"><a href="#electing-a-leader">Electing a leader</a></li>
+<li class="toc-entry toc-h2"><a href="#new-api">New API</a></li>
+<li class="toc-entry toc-h3"><a href="#create-a-new-client">Create a new client</a></li>
+<li class="toc-entry toc-h3"><a href="#create-ledgers">Create ledgers</a></li>
+<li class="toc-entry toc-h3"><a href="#write-flags">Write flags</a></li>
+<li class="toc-entry toc-h3"><a href="#append-entries-to-ledgers">Append entries to ledgers</a></li>
+<li class="toc-entry toc-h3"><a href="#open-ledgers">Open ledgers</a></li>
+<li class="toc-entry toc-h4"><a href="#recovery-vs-norecovery">Recovery vs NoRecovery</a></li>
+<li class="toc-entry toc-h3"><a href="#read-entries-from-ledgers">Read entries from ledgers</a></li>
+<li class="toc-entry toc-h3"><a href="#read-unconfirmed-entries-from-ledgers">Read unconfirmed entries from ledgers</a></li>
+<li class="toc-entry toc-h3"><a href="#tailing-reads">Tailing Reads</a></li>
+<li class="toc-entry toc-h4"><a href="#polling">Polling</a></li>
+<li class="toc-entry toc-h4"><a href="#long-polling">Long Polling</a></li>
+<li class="toc-entry toc-h3"><a href="#delete-ledgers">Delete ledgers</a></li>
 </ul>
 </div>
 

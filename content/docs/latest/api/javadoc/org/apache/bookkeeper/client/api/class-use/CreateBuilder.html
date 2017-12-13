@@ -149,6 +149,10 @@
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/bookkeeper/client/api/CreateBuilder.html" title="interface in org.apache.bookkeeper.client.api">CreateBuilder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">LedgerCreateOp.CreateBuilderImpl.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/LedgerCreateOp.CreateBuilderImpl.html#withWriteFlags-java.util.EnumSet-">withWriteFlags</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../../../org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;&nbsp;writeFlags)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/bookkeeper/client/api/CreateBuilder.html" title="interface in org.apache.bookkeeper.client.api">CreateBuilder</a></code></td>
 <td class="colLast"><span class="typeNameLabel">LedgerCreateOp.CreateBuilderImpl.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/LedgerCreateOp.CreateBuilderImpl.html#withWriteQuorumSize-int-">withWriteQuorumSize</a></span>(int&nbsp;writeQuorumSize)</code>&nbsp;</td>
 </tr>
 </tbody>
@@ -199,6 +203,18 @@
 <td class="colFirst"><code><a href="../../../../../../org/apache/bookkeeper/client/api/CreateBuilder.html" title="interface in org.apache.bookkeeper.client.api">CreateBuilder</a></code></td>
 <td class="colLast"><span class="typeNameLabel">CreateBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/CreateBuilder.html#withPassword-byte:A-">withPassword</a></span>(byte[]&nbsp;password)</code>
 <div class="block">Set a password for the ledger.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/bookkeeper/client/api/CreateBuilder.html" title="interface in org.apache.bookkeeper.client.api">CreateBuilder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">CreateBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/CreateBuilder.html#withWriteFlags-java.util.EnumSet-">withWriteFlags</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../../../org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;&nbsp;writeFlags)</code>
+<div class="block">Set write flags.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>default <a href="../../../../../../org/apache/bookkeeper/client/api/CreateBuilder.html" title="interface in org.apache.bookkeeper.client.api">CreateBuilder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">CreateBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/bookkeeper/client/api/CreateBuilder.html#withWriteFlags-org.apache.bookkeeper.client.api.WriteFlag...-">withWriteFlags</a></span>(<a href="../../../../../../org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>...&nbsp;writeFlags)</code>
+<div class="block">Set write flags.</div>
 </td>
 </tr>
 <tr class="altColor">

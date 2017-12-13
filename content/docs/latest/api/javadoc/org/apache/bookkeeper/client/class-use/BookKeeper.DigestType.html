@@ -327,7 +327,7 @@ the order they are declared.</div>
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerCreateOp.html#LedgerCreateOp-org.apache.bookkeeper.client.BookKeeper-int-int-int-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-org.apache.bookkeeper.client.AsyncCallback.CreateCallback-java.lang.Object-java.util.Map-">LedgerCreateOp</a></span>(<a href="../../../../../org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a>&nbsp;bk,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerCreateOp.html#LedgerCreateOp-org.apache.bookkeeper.client.BookKeeper-int-int-int-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-org.apache.bookkeeper.client.AsyncCallback.CreateCallback-java.lang.Object-java.util.Map-java.util.EnumSet-">LedgerCreateOp</a></span>(<a href="../../../../../org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a>&nbsp;bk,
               int&nbsp;ensembleSize,
               int&nbsp;writeQuorumSize,
               int&nbsp;ackQuorumSize,
@@ -335,23 +335,26 @@ the order they are declared.</div>
               byte[]&nbsp;passwd,
               <a href="../../../../../org/apache/bookkeeper/client/AsyncCallback.CreateCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.CreateCallback</a>&nbsp;cb,
               <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx,
-              <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata)</code>
+              <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
+              <a href="http://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../../org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;&nbsp;writeFlags)</code>
 <div class="block">Constructor.</div>
 </td>
 </tr>
 <tr class="rowColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html#LedgerHandle-org.apache.bookkeeper.client.BookKeeper-long-org.apache.bookkeeper.client.LedgerMetadata-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-">LedgerHandle</a></span>(<a href="../../../../../org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a>&nbsp;bk,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html#LedgerHandle-org.apache.bookkeeper.client.BookKeeper-long-org.apache.bookkeeper.client.LedgerMetadata-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-java.util.EnumSet-">LedgerHandle</a></span>(<a href="../../../../../org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a>&nbsp;bk,
             long&nbsp;ledgerId,
             <a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&nbsp;metadata,
             <a href="../../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
-            byte[]&nbsp;password)</code>&nbsp;</td>
+            byte[]&nbsp;password,
+            <a href="http://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../../org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;&nbsp;writeFlags)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerHandleAdv.html#LedgerHandleAdv-org.apache.bookkeeper.client.BookKeeper-long-org.apache.bookkeeper.client.LedgerMetadata-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-">LedgerHandleAdv</a></span>(<a href="../../../../../org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a>&nbsp;bk,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerHandleAdv.html#LedgerHandleAdv-org.apache.bookkeeper.client.BookKeeper-long-org.apache.bookkeeper.client.LedgerMetadata-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-java.util.EnumSet-">LedgerHandleAdv</a></span>(<a href="../../../../../org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a>&nbsp;bk,
                long&nbsp;ledgerId,
                <a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a>&nbsp;metadata,
                <a href="../../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
-               byte[]&nbsp;password)</code>&nbsp;</td>
+               byte[]&nbsp;password,
+               <a href="http://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../../org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;&nbsp;writeFlags)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/LedgerMetadata.html#LedgerMetadata-int-int-int-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-">LedgerMetadata</a></span>(int&nbsp;ensembleSize,

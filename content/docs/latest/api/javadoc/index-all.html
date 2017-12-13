@@ -3021,6 +3021,16 @@
 <dd>
 <div class="block">Get the number of bytes used as capacity for the write buffer.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/WriteFlag.html#getWriteFlags-int-">getWriteFlags(int)</a></span> - Static method in enum org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a></dt>
+<dd>
+<div class="block">Converts a set of flags from a binary representation.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#getWriteFlags--">getWriteFlags()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/WriteFlag.html#getWriteFlagsValue-java.util.EnumSet-">getWriteFlagsValue(EnumSet&lt;WriteFlag&gt;)</a></span> - Static method in enum org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a></dt>
+<dd>
+<div class="block">Converts a set of flags from a binary representation.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#getWriteLacOpLogger--">getWriteLacOpLogger()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/LedgerMetadata.html#getWriteQuorumSize--">getWriteQuorumSize()</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/LedgerMetadata.html" title="interface in org.apache.bookkeeper.client.api">LedgerMetadata</a></dt>
@@ -3601,7 +3611,7 @@
 <dd>
 <div class="block">Encapsulates asynchronous ledger create operation.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerCreateOp.html#LedgerCreateOp-org.apache.bookkeeper.client.BookKeeper-int-int-int-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-org.apache.bookkeeper.client.AsyncCallback.CreateCallback-java.lang.Object-java.util.Map-">LedgerCreateOp(BookKeeper, int, int, int, BookKeeper.DigestType, byte[], AsyncCallback.CreateCallback, Object, Map&lt;String, byte[]&gt;)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerCreateOp.html" title="class in org.apache.bookkeeper.client">LedgerCreateOp</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerCreateOp.html#LedgerCreateOp-org.apache.bookkeeper.client.BookKeeper-int-int-int-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-org.apache.bookkeeper.client.AsyncCallback.CreateCallback-java.lang.Object-java.util.Map-java.util.EnumSet-">LedgerCreateOp(BookKeeper, int, int, int, BookKeeper.DigestType, byte[], AsyncCallback.CreateCallback, Object, Map&lt;String, byte[]&gt;, EnumSet&lt;WriteFlag&gt;)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerCreateOp.html" title="class in org.apache.bookkeeper.client">LedgerCreateOp</a></dt>
 <dd>
 <div class="block">Constructor.</div>
 </dd>
@@ -3684,7 +3694,7 @@
 <div class="block">Ledger handle contains ledger metadata and is used to access the read and
  write operations to a ledger.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#LedgerHandle-org.apache.bookkeeper.client.BookKeeper-long-org.apache.bookkeeper.client.LedgerMetadata-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-">LedgerHandle(BookKeeper, long, LedgerMetadata, BookKeeper.DigestType, byte[])</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#LedgerHandle-org.apache.bookkeeper.client.BookKeeper-long-org.apache.bookkeeper.client.LedgerMetadata-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-java.util.EnumSet-">LedgerHandle(BookKeeper, long, LedgerMetadata, BookKeeper.DigestType, byte[], EnumSet&lt;WriteFlag&gt;)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/LedgerHandle.EnsembleInfo.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">LedgerHandle.EnsembleInfo</span></a> - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
 <dd>&nbsp;</dd>
@@ -3699,7 +3709,7 @@
 <div class="block">Ledger Advanced handle extends <a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client"><code>LedgerHandle</code></a> to provide API to add entries with
  user supplied entryIds.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandleAdv.html#LedgerHandleAdv-org.apache.bookkeeper.client.BookKeeper-long-org.apache.bookkeeper.client.LedgerMetadata-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-">LedgerHandleAdv(BookKeeper, long, LedgerMetadata, BookKeeper.DigestType, byte[])</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandleAdv.html" title="class in org.apache.bookkeeper.client">LedgerHandleAdv</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandleAdv.html#LedgerHandleAdv-org.apache.bookkeeper.client.BookKeeper-long-org.apache.bookkeeper.client.LedgerMetadata-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-java.util.EnumSet-">LedgerHandleAdv(BookKeeper, long, LedgerMetadata, BookKeeper.DigestType, byte[], EnumSet&lt;WriteFlag&gt;)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandleAdv.html" title="class in org.apache.bookkeeper.client">LedgerHandleAdv</a></dt>
 <dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/LedgerHandleAdv.PendingOpsComparator.html" title="class in org.apache.bookkeeper.client"><span class="typeNameLink">LedgerHandleAdv.PendingOpsComparator</span></a> - Class in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
 <dd>&nbsp;</dd>
@@ -6648,6 +6658,10 @@
 <dd>
 <div class="block">Returns the enum constant of this type with the specified name.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/WriteFlag.html#valueOf-java.lang.String-">valueOf(String)</a></span> - Static method in enum org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a></dt>
+<dd>
+<div class="block">Returns the enum constant of this type with the specified name.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookieInfoReader.State.html#valueOf-java.lang.String-">valueOf(String)</a></span> - Static method in enum org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookieInfoReader.State.html" title="enum in org.apache.bookkeeper.client">BookieInfoReader.State</a></dt>
 <dd>
 <div class="block">Returns the enum constant of this type with the specified name.</div>
@@ -6657,6 +6671,11 @@
 <div class="block">Returns the enum constant of this type with the specified name.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/DigestType.html#values--">values()</a></span> - Static method in enum org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/DigestType.html" title="enum in org.apache.bookkeeper.client.api">DigestType</a></dt>
+<dd>
+<div class="block">Returns an array containing the constants of this enum type, in
+the order they are declared.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/WriteFlag.html#values--">values()</a></span> - Static method in enum org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a></dt>
 <dd>
 <div class="block">Returns an array containing the constants of this enum type, in
 the order they are declared.</div>
@@ -6777,6 +6796,16 @@ the order they are declared.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerOpenOp.OpenBuilderImpl.html#withRecovery-boolean-">withRecovery(boolean)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerOpenOp.OpenBuilderImpl.html" title="class in org.apache.bookkeeper.client">LedgerOpenOp.OpenBuilderImpl</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/CreateBuilder.html#withWriteFlags-java.util.EnumSet-">withWriteFlags(EnumSet&lt;WriteFlag&gt;)</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/CreateBuilder.html" title="interface in org.apache.bookkeeper.client.api">CreateBuilder</a></dt>
+<dd>
+<div class="block">Set write flags.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/CreateBuilder.html#withWriteFlags-org.apache.bookkeeper.client.api.WriteFlag...-">withWriteFlags(WriteFlag...)</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/CreateBuilder.html" title="interface in org.apache.bookkeeper.client.api">CreateBuilder</a></dt>
+<dd>
+<div class="block">Set write flags.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerCreateOp.CreateBuilderImpl.html#withWriteFlags-java.util.EnumSet-">withWriteFlags(EnumSet&lt;WriteFlag&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerCreateOp.CreateBuilderImpl.html" title="class in org.apache.bookkeeper.client">LedgerCreateOp.CreateBuilderImpl</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/CreateBuilder.html#withWriteQuorumSize-int-">withWriteQuorumSize(int)</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/CreateBuilder.html" title="interface in org.apache.bookkeeper.client.api">CreateBuilder</a></dt>
 <dd>
 <div class="block">Set the number of bookies which receive every single entry.</div>
@@ -6817,6 +6846,14 @@ the order they are declared.</div>
 <dd>
 <div class="block">Write operations failed (bookie error).</div>
 </dd>
+<dt><a href="org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api"><span class="typeNameLink">WriteFlag</span></a> - Enum in <a href="org/apache/bookkeeper/client/api/package-summary.html">org.apache.bookkeeper.client.api</a></dt>
+<dd>
+<div class="block">Flags to specify the behaviour of writes.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerCreateOp.html#writeFlags">writeFlags</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerCreateOp.html" title="class in org.apache.bookkeeper.client">LedgerCreateOp</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#writeFlags">writeFlags</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
+<dd>&nbsp;</dd>
 <dt><a href="org/apache/bookkeeper/client/api/WriteHandle.html" title="interface in org.apache.bookkeeper.client.api"><span class="typeNameLink">WriteHandle</span></a> - Interface in <a href="org/apache/bookkeeper/client/api/package-summary.html">org.apache.bookkeeper.client.api</a></dt>
 <dd>
 <div class="block">Provide write access to a ledger.</div>

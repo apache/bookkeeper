@@ -206,6 +206,10 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallba
 <td class="colFirst"><code>(package private) long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerCreateOp.html#startTime">startTime</a></span></code>&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code>(package private) <a href="http://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerCreateOp.html#writeFlags">writeFlags</a></span></code>&nbsp;</td>
+</tr>
 </table>
 </li>
 </ul>
@@ -221,7 +225,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallba
 <th class="colOne" scope="col">Constructor and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerCreateOp.html#LedgerCreateOp-org.apache.bookkeeper.client.BookKeeper-int-int-int-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-org.apache.bookkeeper.client.AsyncCallback.CreateCallback-java.lang.Object-java.util.Map-">LedgerCreateOp</a></span>(<a href="../../../../org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a>&nbsp;bk,
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/LedgerCreateOp.html#LedgerCreateOp-org.apache.bookkeeper.client.BookKeeper-int-int-int-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-org.apache.bookkeeper.client.AsyncCallback.CreateCallback-java.lang.Object-java.util.Map-java.util.EnumSet-">LedgerCreateOp</a></span>(<a href="../../../../org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a>&nbsp;bk,
               int&nbsp;ensembleSize,
               int&nbsp;writeQuorumSize,
               int&nbsp;ackQuorumSize,
@@ -229,7 +233,8 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallba
               byte[]&nbsp;passwd,
               <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.CreateCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.CreateCallback</a>&nbsp;cb,
               <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx,
-              <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata)</code>
+              <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
+              <a href="http://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;&nbsp;writeFlags)</code>
 <div class="block">Constructor.</div>
 </td>
 </tr>
@@ -374,6 +379,15 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallba
 <pre>final&nbsp;<a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a> digestType</pre>
 </li>
 </ul>
+<a name="writeFlags">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>writeFlags</h4>
+<pre>final&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt; writeFlags</pre>
+</li>
+</ul>
 <a name="startTime">
 <!--   -->
 </a>
@@ -418,7 +432,7 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallba
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a name="LedgerCreateOp-org.apache.bookkeeper.client.BookKeeper-int-int-int-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-org.apache.bookkeeper.client.AsyncCallback.CreateCallback-java.lang.Object-java.util.Map-">
+<a name="LedgerCreateOp-org.apache.bookkeeper.client.BookKeeper-int-int-int-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-org.apache.bookkeeper.client.AsyncCallback.CreateCallback-java.lang.Object-java.util.Map-java.util.EnumSet-">
 <!--   -->
 </a>
 <ul class="blockListLast">
@@ -432,7 +446,8 @@ implements org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallba
                byte[]&nbsp;passwd,
                <a href="../../../../org/apache/bookkeeper/client/AsyncCallback.CreateCallback.html" title="interface in org.apache.bookkeeper.client">AsyncCallback.CreateCallback</a>&nbsp;cb,
                <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;ctx,
-               <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata)</pre>
+               <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
+               <a href="http://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;&nbsp;writeFlags)</pre>
 <div class="block">Constructor.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>

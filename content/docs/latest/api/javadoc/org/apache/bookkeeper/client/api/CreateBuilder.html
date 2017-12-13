@@ -18,8 +18,8 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6};
-var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"]};
+var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6,"i7":18,"i8":6};
+var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],16:["t5","Default Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
 var tableTab = "tableTab";
@@ -133,7 +133,7 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/OpBuilder.html"
 </a>
 <h3>Method Summary</h3>
 <table class="memberSummary" border="0" cellpadding="3" cellspacing="0" summary="Method Summary table, listing methods, and an explanation">
-<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t3" class="tableTab"><span><a href="javascript:show(4);">Abstract Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
+<caption><span id="t0" class="activeTableTab"><span>All Methods</span><span class="tabEnd">&nbsp;</span></span><span id="t2" class="tableTab"><span><a href="javascript:show(2);">Instance Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t3" class="tableTab"><span><a href="javascript:show(4);">Abstract Methods</a></span><span class="tabEnd">&nbsp;</span></span><span id="t5" class="tableTab"><span><a href="javascript:show(16);">Default Methods</a></span><span class="tabEnd">&nbsp;</span></span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
 <th class="colLast" scope="col">Method and Description</th>
@@ -175,6 +175,18 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/OpBuilder.html"
 </td>
 </tr>
 <tr id="i6" class="altColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/api/CreateBuilder.html" title="interface in org.apache.bookkeeper.client.api">CreateBuilder</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/CreateBuilder.html#withWriteFlags-java.util.EnumSet-">withWriteFlags</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../../org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;&nbsp;writeFlags)</code>
+<div class="block">Set write flags.</div>
+</td>
+</tr>
+<tr id="i7" class="rowColor">
+<td class="colFirst"><code>default <a href="../../../../../org/apache/bookkeeper/client/api/CreateBuilder.html" title="interface in org.apache.bookkeeper.client.api">CreateBuilder</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/CreateBuilder.html#withWriteFlags-org.apache.bookkeeper.client.api.WriteFlag...-">withWriteFlags</a></span>(<a href="../../../../../org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>...&nbsp;writeFlags)</code>
+<div class="block">Set write flags.</div>
+</td>
+</tr>
+<tr id="i8" class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/api/CreateBuilder.html" title="interface in org.apache.bookkeeper.client.api">CreateBuilder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/api/CreateBuilder.html#withWriteQuorumSize-int-">withWriteQuorumSize</a></span>(int&nbsp;writeQuorumSize)</code>
 <div class="block">Set the number of bookies which receive every single entry.</div>
@@ -296,6 +308,38 @@ extends <a href="../../../../../org/apache/bookkeeper/client/api/OpBuilder.html"
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>digestType</code> - the type of digest</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the builder itself</dd>
+</dl>
+</li>
+</ul>
+<a name="withWriteFlags-java.util.EnumSet-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>withWriteFlags</h4>
+<pre><a href="../../../../../org/apache/bookkeeper/client/api/CreateBuilder.html" title="interface in org.apache.bookkeeper.client.api">CreateBuilder</a>&nbsp;withWriteFlags(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../../org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>&gt;&nbsp;writeFlags)</pre>
+<div class="block">Set write flags. Write wlags specify the behaviour of writes</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>writeFlags</code> - the flags</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the builder itself</dd>
+</dl>
+</li>
+</ul>
+<a name="withWriteFlags-org.apache.bookkeeper.client.api.WriteFlag...-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>withWriteFlags</h4>
+<pre>default&nbsp;<a href="../../../../../org/apache/bookkeeper/client/api/CreateBuilder.html" title="interface in org.apache.bookkeeper.client.api">CreateBuilder</a>&nbsp;withWriteFlags(<a href="../../../../../org/apache/bookkeeper/client/api/WriteFlag.html" title="enum in org.apache.bookkeeper.client.api">WriteFlag</a>...&nbsp;writeFlags)</pre>
+<div class="block">Set write flags. Write wlags specify the behaviour of writes</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>writeFlags</code> - the flags</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>the builder itself</dd>
 </dl>
