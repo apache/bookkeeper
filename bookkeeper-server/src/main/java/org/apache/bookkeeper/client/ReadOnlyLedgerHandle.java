@@ -155,7 +155,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
                 this.metadata.getVersion().compare(newMetadata.getVersion());
         if (LOG.isDebugEnabled()) {
             LOG.debug("Try to update metadata from {} to {} : {}",
-                    new Object[] { this.metadata, newMetadata, occurred });
+                    this.metadata, newMetadata, occurred);
         }
         if (Version.Occurred.BEFORE == occurred) { // the metadata is updated
             try {

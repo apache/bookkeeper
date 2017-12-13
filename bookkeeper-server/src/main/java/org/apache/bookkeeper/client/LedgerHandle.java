@@ -592,14 +592,14 @@ public class LedgerHandle implements WriteHandle {
         // Little sanity check
         if (firstEntry < 0 || firstEntry > lastEntry) {
             LOG.error("IncorrectParameterException on ledgerId:{} firstEntry:{} lastEntry:{}",
-                    new Object[] { ledgerId, firstEntry, lastEntry });
+                    ledgerId, firstEntry, lastEntry);
             cb.readComplete(BKException.Code.IncorrectParameterException, this, null, ctx);
             return;
         }
 
         if (lastEntry > lastAddConfirmed) {
             LOG.error("ReadException on ledgerId:{} firstEntry:{} lastEntry:{}",
-                    new Object[] { ledgerId, firstEntry, lastEntry });
+                    ledgerId, firstEntry, lastEntry);
             cb.readComplete(BKException.Code.ReadException, this, null, ctx);
             return;
         }
@@ -638,7 +638,7 @@ public class LedgerHandle implements WriteHandle {
         // Little sanity check
         if (firstEntry < 0 || firstEntry > lastEntry) {
             LOG.error("IncorrectParameterException on ledgerId:{} firstEntry:{} lastEntry:{}",
-                    new Object[] { ledgerId, firstEntry, lastEntry });
+                    ledgerId, firstEntry, lastEntry);
             cb.readComplete(BKException.Code.IncorrectParameterException, this, null, ctx);
             return;
         }
@@ -659,13 +659,13 @@ public class LedgerHandle implements WriteHandle {
         // Little sanity check
         if (firstEntry < 0 || firstEntry > lastEntry) {
             LOG.error("IncorrectParameterException on ledgerId:{} firstEntry:{} lastEntry:{}",
-                    new Object[] { ledgerId, firstEntry, lastEntry });
+                    ledgerId, firstEntry, lastEntry);
             return FutureUtils.exception(new BKIncorrectParameterException());
         }
 
         if (lastEntry > lastAddConfirmed) {
             LOG.error("ReadException on ledgerId:{} firstEntry:{} lastEntry:{}",
-                    new Object[] { ledgerId, firstEntry, lastEntry });
+                    ledgerId, firstEntry, lastEntry);
             return FutureUtils.exception(new BKReadException());
         }
 
@@ -700,7 +700,7 @@ public class LedgerHandle implements WriteHandle {
         // Little sanity check
         if (firstEntry < 0 || firstEntry > lastEntry) {
             LOG.error("IncorrectParameterException on ledgerId:{} firstEntry:{} lastEntry:{}",
-                    new Object[] { ledgerId, firstEntry, lastEntry });
+                    ledgerId, firstEntry, lastEntry);
             return FutureUtils.exception(new BKIncorrectParameterException());
         }
 
@@ -1465,7 +1465,7 @@ public class LedgerHandle implements WriteHandle {
                 BookieSocketAddress addr = entry.getValue();
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("[EnsembleChange-L{}-{}] : replacing bookie: {} index: {}",
-                        new Object[]{getId(), ensembleChangeIdx, addr, idx});
+                            getId(), ensembleChangeIdx, addr, idx);
                 }
                 if (!newEnsemble.get(idx).equals(addr)) {
                     // ensemble has already changed, failure of this addr is immaterial
@@ -1498,8 +1498,8 @@ public class LedgerHandle implements WriteHandle {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("[EnsembleChange-L{}-{}] : changing ensemble from: {} to: {} starting at entry: {},"
                     + " failed bookies: {}, replaced bookies: {}",
-                      new Object[] { ledgerId, ensembleChangeIdx, metadata.currentEnsemble, newEnsemble,
-                              (getLastAddConfirmed() + 1), failedBookies, replacedBookies });
+                        ledgerId, ensembleChangeIdx, metadata.currentEnsemble, newEnsemble,
+                        (getLastAddConfirmed() + 1), failedBookies, replacedBookies);
             }
             metadata.addEnsemble(newEnsembleStartEntry, newEnsemble);
         }
@@ -1530,7 +1530,7 @@ public class LedgerHandle implements WriteHandle {
                 }
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("[EnsembleChange-L{}-{}] : writing new ensemble info = {}, block add completions = {}",
-                        new Object[]{getId(), curNumEnsembleChanges, ensembleInfo, curBlockAddCompletions});
+                            getId(), curNumEnsembleChanges, ensembleInfo, curBlockAddCompletions);
                 }
                 writeLedgerConfig(new ChangeEnsembleCb(ensembleInfo, curBlockAddCompletions, curNumEnsembleChanges));
             } catch (BKException.BKNotEnoughBookiesException e) {
@@ -1601,7 +1601,7 @@ public class LedgerHandle implements WriteHandle {
                 return;
             } else if (rc != BKException.Code.OK) {
                 LOG.error("[EnsembleChange-L{}-{}] : could not persist ledger metadata : info = {}, "
-                        + "closing ledger : {}.", new Object[] { getId(), ensembleChangeIdx, ensembleInfo, rc });
+                        + "closing ledger : {}.", getId(), ensembleChangeIdx, ensembleInfo, rc);
                 handleUnrecoverableErrorDuringAdd(rc);
                 return;
             }
@@ -1609,7 +1609,7 @@ public class LedgerHandle implements WriteHandle {
 
             if (LOG.isDebugEnabled()) {
                 LOG.info("[EnsembleChange-L{}-{}] : completed ensemble change, block add completion {} => {}",
-                    new Object[]{getId(), ensembleChangeIdx, curBlockAddCompletions, newBlockAddCompletions});
+                        getId(), ensembleChangeIdx, curBlockAddCompletions, newBlockAddCompletions);
             }
 
             // We've successfully changed an ensemble
@@ -1649,14 +1649,14 @@ public class LedgerHandle implements WriteHandle {
         public void safeOperationComplete(int newrc, LedgerMetadata newMeta) {
             if (newrc != BKException.Code.OK) {
                 LOG.error("[EnsembleChange-L{}-{}] : error re-reading metadata to address ensemble change conflicts,"
-                        + " code=", new Object[] { ledgerId, ensembleChangeIdx, newrc });
+                        + " code=", ledgerId, ensembleChangeIdx, newrc);
                 handleUnrecoverableErrorDuringAdd(rc);
             } else {
                 if (!resolveConflict(newMeta)) {
                     LOG.error("[EnsembleChange-L{}-{}] : could not resolve ledger metadata conflict"
                             + " while changing ensemble to: {}, local meta data is \n {} \n,"
                             + " zk meta data is \n {} \n, closing ledger",
-                            new Object[] { ledgerId, ensembleChangeIdx, ensembleInfo.newEnsemble, metadata, newMeta });
+                            ledgerId, ensembleChangeIdx, ensembleInfo.newEnsemble, metadata, newMeta);
                     handleUnrecoverableErrorDuringAdd(rc);
                 }
             }
@@ -1679,14 +1679,14 @@ public class LedgerHandle implements WriteHandle {
         private boolean resolveConflict(LedgerMetadata newMeta) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("[EnsembleChange-L{}-{}] : resolving conflicts - local metadata = \n {} \n,"
-                    + " zk metadata = \n {} \n", new Object[]{ledgerId, ensembleChangeIdx, metadata, newMeta});
+                    + " zk metadata = \n {} \n", ledgerId, ensembleChangeIdx, metadata, newMeta);
             }
             // make sure the ledger isn't closed by other ones.
             if (metadata.getState() != newMeta.getState()) {
                 if (LOG.isDebugEnabled()) {
                     LOG.info("[EnsembleChange-L{}-{}] : resolving conflicts but state changed,"
                             + " local metadata = \n {} \n, zk metadata = \n {} \n",
-                        new Object[]{ledgerId, ensembleChangeIdx, metadata, newMeta});
+                            ledgerId, ensembleChangeIdx, metadata, newMeta);
                 }
                 return false;
             }
@@ -1702,7 +1702,7 @@ public class LedgerHandle implements WriteHandle {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("[EnsembleChange-L{}-{}] : resolving conflicts but ensembles have {} differences,"
                             + " local metadata = \n {} \n, zk metadata = \n {} \n",
-                        new Object[]{ledgerId, ensembleChangeIdx, diff, metadata, newMeta});
+                            ledgerId, ensembleChangeIdx, diff, metadata, newMeta);
                 }
                 if (-1 == diff) {
                     // Case 1: metadata is changed by other ones (e.g. Recovery)
@@ -1733,7 +1733,7 @@ public class LedgerHandle implements WriteHandle {
                 unsetSuccessAndSendWriteRequest(ensembleInfo.replacedBookies);
                 if (LOG.isDebugEnabled()) {
                     LOG.info("[EnsembleChange-L{}-{}] : resolved conflicts, block add complectiosn {} => {}.",
-                        new Object[]{ledgerId, ensembleChangeIdx, curBlockAddCompletions, newBlockAddCompletions});
+                            ledgerId, ensembleChangeIdx, curBlockAddCompletions, newBlockAddCompletions);
                 }
             }
             return true;
@@ -1773,14 +1773,14 @@ public class LedgerHandle implements WriteHandle {
             if (metadata.isConflictWith(newMeta)) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("[EnsembleChange-L{}-{}] : metadata is conflicted, local metadata = \n {} \n,"
-                        + " zk metadata = \n {} \n", new Object[]{ledgerId, ensembleChangeIdx, metadata, newMeta});
+                        + " zk metadata = \n {} \n", ledgerId, ensembleChangeIdx, metadata, newMeta);
                 }
                 return false;
             }
             if (LOG.isDebugEnabled()) {
                 LOG.info("[EnsembleChange-L{}-{}] : resolved ledger metadata conflict and writing to zookeeper,"
                         + " local meta data is \n {} \n, zk meta data is \n {}.",
-                    new Object[]{ledgerId, ensembleChangeIdx, metadata, newMeta});
+                        ledgerId, ensembleChangeIdx, metadata, newMeta);
             }
             // update znode version
             metadata.setVersion(newMeta.getVersion());

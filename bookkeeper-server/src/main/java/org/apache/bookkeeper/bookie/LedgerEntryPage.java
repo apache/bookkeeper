@@ -187,14 +187,14 @@ public class LedgerEntryPage {
                     + " tried to get " + page.capacity() + " from position "
                     + getFirstEntryPosition() + " still need " + page.remaining(), sre);
         } catch (IllegalArgumentException iae) {
-            LOG.error("IllegalArgumentException when trying to read ledger {} from position {}"
-                , new Object[]{getLedger(), getFirstEntryPosition(), iae});
+            LOG.error("IllegalArgumentException when trying to read ledger {} from position {}",
+                    getLedger(), getFirstEntryPosition(), iae);
             throw iae;
         }
         // make sure we don't include partial index entry
         if (page.remaining() != 0) {
             LOG.info("Short page read of ledger {} : tried to read {} bytes from position {}, but only {} bytes read.",
-                     new Object[] { getLedger(), page.capacity(), getFirstEntryPosition(), page.position() });
+                    getLedger(), page.capacity(), getFirstEntryPosition(), page.position());
             if (page.position() % indexEntrySize != 0) {
                 int partialIndexEntryStart = page.position() - page.position() % indexEntrySize;
                 page.putLong(partialIndexEntryStart, 0L);

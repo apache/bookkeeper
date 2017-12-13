@@ -159,7 +159,7 @@ public class MultipleThreadReadTest extends BookKeeperClusterTestCase {
                             long curEid = eid++;
                             if (e.getEntryId() != curEid) {
                                 LOG.error("Expected entry id {} for ledger {} but {} found.",
-                                          new Object[] { curEid, lh.getId(), e.getEntryId() });
+                                        curEid, lh.getId(), e.getEntryId());
                                 success = false;
                                 break;
                             }
@@ -175,17 +175,17 @@ public class MultipleThreadReadTest extends BookKeeperClusterTestCase {
                             success = !list.hasMoreElements();
                             if (!success) {
                                 LOG.error("Found more entries returned on reading ({}-{}) from ledger {}.",
-                                          new Object[] { startEntryId, endEntryId, lh.getId() });
+                                        startEntryId, endEntryId, lh.getId());
                             }
                         }
                     } catch (InterruptedException ie) {
                         LOG.error("Interrupted on reading entries ({} - {}) from ledger {} : ",
-                                  new Object[] { startEntryId, endEntryId, lh.getId(), ie });
+                                startEntryId, endEntryId, lh.getId(), ie);
                         Thread.currentThread().interrupt();
                         success = false;
                     } catch (BKException bke) {
                         LOG.error("Failed on reading entries ({} - {}) from ledger {} : ",
-                                  new Object[] { startEntryId, endEntryId, lh.getId(), bke });
+                                startEntryId, endEntryId, lh.getId(), bke);
                         success = false;
                     }
                     resultHolder.set(success);
