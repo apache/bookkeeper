@@ -89,7 +89,6 @@ public class CreateNewLogTest {
         conf.setLedgerDirNames(ledgerDirs);
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
-        EntryLogger el = new EntryLogger(conf, ledgerDirsManager);
 
         // Extracted from createNewLog()
         String logFileName = Long.toHexString(1) + ".log";
@@ -98,6 +97,7 @@ public class CreateNewLogTest {
         File newLogFile = new File(dir, logFileName);
         newLogFile.createNewFile();
 
+        EntryLogger el = new EntryLogger(conf, ledgerDirsManager);
         // Calls createNewLog, and with the number of directories we
         // are using, if it picks one at random it will fail.
         el.createNewLog();
@@ -114,7 +114,6 @@ public class CreateNewLogTest {
         conf.setIsForceGCAllowWhenNoSpace(true);
         LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
-        EntryLogger el = new EntryLogger(conf, ledgerDirsManager);
 
         // Extracted from createNewLog()
         String logFileName = Long.toHexString(1) + ".log";
@@ -129,6 +128,7 @@ public class CreateNewLogTest {
             ledgerDirsManager.addToFilledDirs(tdir);
         }
 
+        EntryLogger el = new EntryLogger(conf, ledgerDirsManager);
         // Calls createNewLog, and with the number of directories we
         // are using, if it picks one at random it will fail.
         el.createNewLog();
