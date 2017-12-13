@@ -25,7 +25,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 /**
  * An interface to manage channel pooling for bookie client.
  */
-interface PerChannelBookieClientPool {
+public interface PerChannelBookieClientPool {
 
     /**
      * intialize the pool. the implementation should not be blocked.
@@ -67,4 +67,8 @@ interface PerChannelBookieClientPool {
      */
     void close(boolean wait);
 
+    /**
+     * Get the number of pending completion requests in the channel.
+     */
+    long getNumPendingCompletionRequests();
 }
