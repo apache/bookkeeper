@@ -78,9 +78,10 @@ public class BookieClientTest {
         // know via ZooKeeper which Bookies are available, okay, so pass in null
         // for the zkServers input parameter when constructing the BookieServer.
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
-        conf.setZkServers(null).setBookiePort(port)
+        conf.setBookiePort(port)
             .setJournalDirName(tmpDir.getPath())
-            .setLedgerDirNames(new String[] { tmpDir.getPath() });
+            .setLedgerDirNames(new String[] { tmpDir.getPath() })
+            .setZkServers(null);
         bs = new BookieServer(conf);
         bs.start();
         eventLoopGroup = new NioEventLoopGroup();

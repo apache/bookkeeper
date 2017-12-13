@@ -140,11 +140,11 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
         long freeDiskSpace = 1000000L;
         int multiple = 3;
 
-        ClientConfiguration conf = new ClientConfiguration()
-                .setZkServers(zkUtil.getZooKeeperConnectString())
-                .setDiskWeightBasedPlacementEnabled(true)
-                .setGetBookieInfoRetryIntervalSeconds(1, TimeUnit.SECONDS)
-                .setBookieMaxWeightMultipleForWeightBasedPlacement(multiple);
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setDiskWeightBasedPlacementEnabled(true)
+            .setGetBookieInfoRetryIntervalSeconds(1, TimeUnit.SECONDS)
+            .setBookieMaxWeightMultipleForWeightBasedPlacement(multiple)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
         final BookKeeperCheckInfoReader client = new BookKeeperCheckInfoReader(conf);
 
         for (int i = 0; i < numBookies; i++) {
@@ -190,11 +190,11 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
         long freeDiskSpace = 1000000L;
         int multiple = 3;
 
-        ClientConfiguration conf = new ClientConfiguration()
-                .setZkServers(zkUtil.getZooKeeperConnectString())
-                .setDiskWeightBasedPlacementEnabled(true)
-                .setGetBookieInfoRetryIntervalSeconds(1, TimeUnit.SECONDS)
-                .setBookieMaxWeightMultipleForWeightBasedPlacement(multiple);
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setDiskWeightBasedPlacementEnabled(true)
+            .setGetBookieInfoRetryIntervalSeconds(1, TimeUnit.SECONDS)
+            .setBookieMaxWeightMultipleForWeightBasedPlacement(multiple)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
         final BookKeeperCheckInfoReader client = new BookKeeperCheckInfoReader(conf);
 
         for (int i = 0; i < numBookies; i++) {
@@ -280,11 +280,11 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
         long freeDiskSpace = 1000000L;
         int multiple = 3;
 
-        ClientConfiguration conf = new ClientConfiguration()
-                .setZkServers(zkUtil.getZooKeeperConnectString())
-                .setDiskWeightBasedPlacementEnabled(true)
-                .setGetBookieInfoRetryIntervalSeconds(1, TimeUnit.SECONDS)
-                .setBookieMaxWeightMultipleForWeightBasedPlacement(multiple);
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setDiskWeightBasedPlacementEnabled(true)
+            .setGetBookieInfoRetryIntervalSeconds(1, TimeUnit.SECONDS)
+            .setBookieMaxWeightMultipleForWeightBasedPlacement(multiple)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
         final BookKeeperCheckInfoReader client = new BookKeeperCheckInfoReader(conf);
 
         for (int i = 0; i < numBookies; i++) {
@@ -361,11 +361,11 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
         long freeDiskSpace = 1000000L;
         int multiple = 3;
 
-        ClientConfiguration conf = new ClientConfiguration()
-                .setZkServers(zkUtil.getZooKeeperConnectString())
-                .setDiskWeightBasedPlacementEnabled(true)
-                .setGetBookieInfoRetryIntervalSeconds(1, TimeUnit.SECONDS)
-                .setBookieMaxWeightMultipleForWeightBasedPlacement(multiple);
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setDiskWeightBasedPlacementEnabled(true)
+            .setGetBookieInfoRetryIntervalSeconds(1, TimeUnit.SECONDS)
+            .setBookieMaxWeightMultipleForWeightBasedPlacement(multiple)
+            .setZkServers(zkUtil.getZooKeeperConnectString());
         final BookKeeperCheckInfoReader client = new BookKeeperCheckInfoReader(conf);
 
         for (int i = 0; i < numBookies; i++) {
@@ -436,12 +436,12 @@ public class BookKeeperDiskSpaceWeightedLedgerPlacementTest extends BookKeeperCl
         int multiple = 3;
 
         int updateIntervalSecs = 6;
-         ClientConfiguration conf = new ClientConfiguration()
-                .setZkServers(zkUtil.getZooKeeperConnectString())
-                .setDiskWeightBasedPlacementEnabled(true)
-                .setGetBookieInfoRetryIntervalSeconds(1, TimeUnit.SECONDS)
-                .setBookieMaxWeightMultipleForWeightBasedPlacement(multiple)
-                .setGetBookieInfoIntervalSeconds(updateIntervalSecs, TimeUnit.SECONDS);
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setZkServers(zkUtil.getZooKeeperConnectString());
+        conf.setDiskWeightBasedPlacementEnabled(true)
+            .setGetBookieInfoRetryIntervalSeconds(1, TimeUnit.SECONDS)
+            .setBookieMaxWeightMultipleForWeightBasedPlacement(multiple)
+            .setGetBookieInfoIntervalSeconds(updateIntervalSecs, TimeUnit.SECONDS);
         final BookKeeperCheckInfoReader client = new BookKeeperCheckInfoReader(conf);
 
         AtomicBoolean useHigherValue = new AtomicBoolean(false);
