@@ -25,8 +25,6 @@ import java.util.ArrayList;
  */
 public final class RecyclableArrayList<T> extends ArrayList<T> {
 
-    private static final long serialVersionUID = -5008878512804043985L;
-
     private static final int DEFAULT_INITIAL_CAPACITY = 8;
 
     /**
