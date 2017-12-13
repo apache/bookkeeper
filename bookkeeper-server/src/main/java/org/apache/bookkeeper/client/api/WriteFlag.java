@@ -24,7 +24,7 @@ import java.util.EnumSet;
 import lombok.Getter;
 
 /**
- * Flags to specify the behaviour of writes
+ * Flags to specify the behaviour of writes.
  */
 @Getter
 public enum WriteFlag {
@@ -42,7 +42,7 @@ public enum WriteFlag {
     }
 
     /**
-     * Converts a set of flags from a binary representation
+     * Converts a set of flags from a binary representation.
      *
      * @param flagValue the binary value
      * @return a set of flags
@@ -55,7 +55,7 @@ public enum WriteFlag {
     }
 
     /**
-     * Converts a set of flags from a binary representation
+     * Converts a set of flags from a binary representation.
      *
      * @param flags the flags
      * @return the binary representation

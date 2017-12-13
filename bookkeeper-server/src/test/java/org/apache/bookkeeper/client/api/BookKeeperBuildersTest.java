@@ -54,8 +54,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
     private static final Map<String, byte[]> customMetadata = new HashMap<>();
     private static final byte[] password = new byte[3];
     private static final byte[] entryData = new byte[32];
-    private static final EnumSet<WriteFlag> writeFlagsDeferredSync
-                            = EnumSet.of(DEFERRED_SYNC);
+    private static final EnumSet<WriteFlag> writeFlagsDeferredSync = EnumSet.of(DEFERRED_SYNC);
 
     @Test
     public void testCreateLedger() throws Exception {
