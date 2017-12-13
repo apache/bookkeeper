@@ -314,7 +314,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      */
     public BookKeeper(String servers) throws IOException, InterruptedException,
         BKException {
-        this((ClientConfiguration) (new ClientConfiguration().setZkServers(servers)));
+        this(new ClientConfiguration().setZkServers(servers));
     }
 
     /**
