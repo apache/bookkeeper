@@ -127,6 +127,11 @@
       <artifactId>jna</artifactId>
       <version>3.2.7</version>
     </dependency>
+    <dependency>
+      <groupId>io.reactivex.rxjava2</groupId>
+      <artifactId>rxjava</artifactId>
+      <version>${rxjava.version}</version>
+    </dependency>
     <!--
         Annoying dependency we need to include because
         zookeeper uses log4j and so we transatively do, but

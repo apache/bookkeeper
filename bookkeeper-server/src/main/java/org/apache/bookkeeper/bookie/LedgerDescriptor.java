@@ -27,8 +27,7 @@ import com.google.common.util.concurrent.SettableFuture;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.IOException;
-import java.util.Observable;
-import java.util.Observer;
+import org.apache.bookkeeper.common.util.Watcher;
 
 /**
  * Implements a ledger inside a bookie. In particular, it implements operations
@@ -78,7 +77,9 @@ public abstract class LedgerDescriptor {
     abstract ByteBuf readEntry(long entryId) throws IOException;
 
     abstract long getLastAddConfirmed() throws IOException;
-    abstract Observable waitForLastAddConfirmedUpdate(long previoisLAC, Observer observer) throws IOException;
+    abstract boolean waitForLastAddConfirmedUpdate(long previoisLAC,
+                                                   Watcher<LastAddConfirmedUpdateNotification> watcher)
+        throws IOException;
 
     abstract void setExplicitLac(ByteBuf entry) throws IOException;
 
