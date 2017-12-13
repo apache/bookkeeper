@@ -5,7 +5,7 @@ title: BookKeeper API
 BookKeeper offers a few APIs that applications can use to interact with it:
 
 * The [ledger API](../ledger-api) is a lower-level API that enables you to interact with {% pop ledgers %} directly
-* The [Ledger Advanced API)(../ledger-adv-api) is an advanced extension to [Ledger API](../ledger-api) to provide more flexibilities to applications.
+* The [Ledger Advanced API](../ledger-adv-api) is an advanced extension to [Ledger API](../ledger-api) to provide more flexibilities to applications.
 * The [DistributedLog API](../distributedlog-api) is a higher-level API that provides convenient abstractions.
 
 ## Trade-offs
