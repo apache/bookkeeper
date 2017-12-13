@@ -53,7 +53,7 @@ public class ReadCache implements Closeable {
     private final List<ConcurrentLongLongPairHashMap> cacheIndexes;
 
     private int currentSegmentIdx;
-    private AtomicInteger currentSegmentOffset = new AtomicInteger(0);
+    private final AtomicInteger currentSegmentOffset = new AtomicInteger(0);
 
     private final int segmentSize;
 
