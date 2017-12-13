@@ -82,11 +82,11 @@ public class TestDelayEnsembleChange extends BookKeeperClusterTestCase {
                 numSuccess.incrementAndGet();
             } else if (rc == BKException.Code.NoSuchEntryException
                     || rc == BKException.Code.NoSuchLedgerExistsException) {
-                logger.error("Missed entry({}, {}) from host {}.", new Object[] { ledgerId, entryId, ctx });
+                logger.error("Missed entry({}, {}) from host {}.", ledgerId, entryId, ctx);
                 numMissing.incrementAndGet();
             } else {
                 logger.error("Failed to get entry({}, {}) from host {} : {}",
-                             new Object[] { ledgerId, entryId, ctx, rc });
+                        ledgerId, entryId, ctx, rc);
                 numFailure.incrementAndGet();
             }
             latch.countDown();

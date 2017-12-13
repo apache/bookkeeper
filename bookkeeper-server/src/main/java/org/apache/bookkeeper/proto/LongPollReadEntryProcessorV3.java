@@ -109,7 +109,7 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Obser
                         requestProcessor.readLastEntryNoEntryErrorCounter.inc();
                         logger.info(
                                 "No entry found while piggyback reading entry {} from ledger {} : previous lac = {}",
-                                new Object[] { entryId, ledgerId, previousLAC });
+                                entryId, ledgerId, previousLAC);
                         // piggy back is best effort and this request can fail genuinely because of striping
                         // entries across the ensemble
                         return buildResponse(readResponseBuilder, StatusCode.EOK, startTimeSw);
@@ -119,7 +119,7 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Obser
                         if (logger.isDebugEnabled()) {
                             logger.debug("Found smaller lac when piggy back reading lac and entry from ledger {} :"
                                     + " previous lac = {}, known lac = {}",
-                                    new Object[]{ ledgerId, previousLAC, knownLAC });
+                                    ledgerId, previousLAC, knownLAC);
                         }
                     }
                     return buildResponse(readResponseBuilder, StatusCode.EOK, startTimeSw);
@@ -154,7 +154,7 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Obser
                 return buildErrorResponse(StatusCode.ENOLEDGER, startTimeSw);
             } catch (IOException ioe) {
                 logger.error("IOException while longpoll reading ledger {}, previous lac = {} : ",
-                        new Object[] { ledgerId, previousLAC, ioe });
+                        ledgerId, previousLAC, ioe);
                 return buildErrorResponse(StatusCode.EIO, startTimeSw);
             }
 

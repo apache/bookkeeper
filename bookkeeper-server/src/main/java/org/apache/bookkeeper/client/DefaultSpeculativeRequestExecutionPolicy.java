@@ -96,7 +96,7 @@ public class DefaultSpeculativeRequestExecutionPolicy implements SpeculativeRequ
 
                         public void onFailure(Throwable thrown) {
                             LOG.warn("Failed to issue speculative request for {}, speculativeReadTimeout = {} : ",
-                                new Object[] { requestExecutor, speculativeRequestTimeout, thrown });
+                                    requestExecutor, speculativeRequestTimeout, thrown);
                         }
                     });
                 }
@@ -104,7 +104,7 @@ public class DefaultSpeculativeRequestExecutionPolicy implements SpeculativeRequ
         } catch (RejectedExecutionException re) {
             if (!scheduler.isShutdown()) {
                 LOG.warn("Failed to schedule speculative request for {}, speculativeReadTimeout = {} : ",
-                        new Object[]{requestExecutor, speculativeRequestTimeout, re});
+                        requestExecutor, speculativeRequestTimeout, re);
             }
         }
     }

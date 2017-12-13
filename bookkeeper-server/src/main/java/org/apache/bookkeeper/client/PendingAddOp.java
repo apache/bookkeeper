@@ -288,12 +288,12 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
             return;
         case BKException.Code.LedgerFencedException:
             LOG.warn("Fencing exception on write: L{} E{} on {}",
-                     new Object[] { ledgerId, entryId, addr });
+                    ledgerId, entryId, addr);
             lh.handleUnrecoverableErrorDuringAdd(rc);
             return;
         case BKException.Code.UnauthorizedAccessException:
             LOG.warn("Unauthorized access exception on write: L{} E{} on {}",
-                     new Object[] { ledgerId, entryId, addr });
+                    ledgerId, entryId, addr);
             lh.handleUnrecoverableErrorDuringAdd(rc);
             return;
         default:
@@ -302,19 +302,19 @@ class PendingAddOp extends SafeRunnable implements WriteCallback {
                         || rc == BKException.Code.WriteOnReadOnlyBookieException) {
                     Map<Integer, BookieSocketAddress> failedBookies = ackSet.getFailedBookies();
                     LOG.warn("Failed to write entry ({}, {}) to bookies {}, handling failures.",
-                             new Object[] { ledgerId, entryId, failedBookies });
+                            ledgerId, entryId, failedBookies);
                     // we can't meet ack quorum requirement, trigger ensemble change.
                     lh.handleBookieFailure(failedBookies);
                 } else {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Failed to write entry ({}, {}) to bookie ({}, {}),"
                                   + " but it didn't break ack quorum, delaying ensemble change : {}",
-                                  new Object[] { ledgerId, entryId, bookieIndex, addr, BKException.getMessage(rc) });
+                                ledgerId, entryId, bookieIndex, addr, BKException.getMessage(rc));
                     }
                 }
             } else {
                 LOG.warn("Failed to write entry ({}, {}): {}",
-                         new Object[] { ledgerId, entryId, BKException.getMessage(rc) });
+                        ledgerId, entryId, BKException.getMessage(rc));
                 lh.handleBookieFailure(ImmutableMap.of(bookieIndex, addr));
             }
             return;

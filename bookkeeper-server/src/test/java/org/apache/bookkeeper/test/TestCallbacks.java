@@ -70,7 +70,7 @@ public class TestCallbacks {
         @Override
         public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
             logger.info("Add entry {} completed : entryId = {}, rc = {}",
-                    new Object[] { expectedEntryId, entryId, rc });
+                    expectedEntryId, entryId, rc);
             if (rc != BKException.Code.OK) {
                 setException(BKException.create(rc));
             } else {

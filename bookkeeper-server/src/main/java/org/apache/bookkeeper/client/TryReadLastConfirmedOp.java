@@ -62,7 +62,7 @@ class TryReadLastConfirmedOp implements ReadEntryCallback {
     public void readEntryComplete(int rc, long ledgerId, long entryId, ByteBuf buffer, Object ctx) {
         if (LOG.isTraceEnabled()) {
             LOG.trace("TryReadLastConfirmed received response for (lid={}, eid={}) : {}",
-                    new Object[] { ledgerId, entryId, rc });
+                    ledgerId, entryId, rc);
         }
 
         int bookieIndex = (Integer) ctx;
@@ -72,7 +72,7 @@ class TryReadLastConfirmedOp implements ReadEntryCallback {
                 RecoveryData recoveryData = lh.macManager.verifyDigestAndReturnLastConfirmed(buffer);
                 if (LOG.isTraceEnabled()) {
                     LOG.trace("Received lastAddConfirmed (lac={}, length={}) from bookie({}) for (lid={}).",
-                            new Object[] { recoveryData.lastAddConfirmed, recoveryData.length, bookieIndex, ledgerId });
+                            recoveryData.lastAddConfirmed, recoveryData.length, bookieIndex, ledgerId);
                 }
                 if (recoveryData.lastAddConfirmed > maxRecoveredData.lastAddConfirmed) {
                     maxRecoveredData = recoveryData;

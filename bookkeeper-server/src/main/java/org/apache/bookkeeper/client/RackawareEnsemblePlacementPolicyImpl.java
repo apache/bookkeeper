@@ -251,8 +251,8 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
         }
         localNode = bn;
         LOG.info("Initialize rackaware ensemble placement policy @ {} @ {} : {}.",
-            new Object[] { localNode, null == localNode ? "Unknown" : localNode.getNetworkLocation(),
-                dnsResolver.getClass().getName() });
+                localNode, null == localNode ? "Unknown" : localNode.getNetworkLocation(),
+                dnsResolver.getClass().getName());
 
         this.isWeighted = isWeighted;
         if (this.isWeighted) {

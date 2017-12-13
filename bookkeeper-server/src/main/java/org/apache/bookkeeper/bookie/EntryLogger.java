@@ -1177,7 +1177,7 @@ public class EntryLogger {
                 int rc = readFromLogChannel(entryLogId, bc, data, pos);
                 if (rc != entrySize) {
                     LOG.warn("Short read for ledger entry from entryLog {}@{} ({} != {})",
-                            new Object[] { entryLogId, pos, rc, entrySize });
+                            entryLogId, pos, rc, entrySize);
                     return;
                 }
                 // process the entry
@@ -1262,7 +1262,7 @@ public class EntryLogger {
 
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Recovering ledgers maps for log {} -- Found ledger: {} with size: {}",
-                                new Object[] { entryLogId, ledgerId, size });
+                                entryLogId, ledgerId, size);
                     }
                     meta.addLedgerSize(ledgerId, size);
                 }
