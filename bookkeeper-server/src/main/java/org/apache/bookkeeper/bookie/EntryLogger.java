@@ -419,8 +419,9 @@ public class EntryLogger {
         Cache<Long, BufferedReadChannel> threadCahe = logid2Channel.get();
         threadCahe.invalidate(logId);
 
-        //remove the fileChannel from logId2FileChannel
-        logid2FileChannel.remove(logId);
+        //remove the fileChannel from logId2FileChannel and close it
+        logid2FileChannel.remove(logId).deallocate();
+
     }
 
     public BufferedReadChannel getFromChannels(long logId) {
@@ -1415,6 +1416,8 @@ public class EntryLogger {
             for (ReferenceCountedFileChannel rfc : logid2FileChannel.values()) {
                 rfc.deallocate();
             }
+            // clear the mapping, so we don't need to go through the channels again in finally block in normal case.
+            logid2FileChannel.clear();
             // close current writing log file
             closeFileChannel(logChannel);
             synchronized (compactionLogLock) {
