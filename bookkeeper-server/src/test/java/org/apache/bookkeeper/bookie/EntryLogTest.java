@@ -27,14 +27,18 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.google.common.collect.Sets;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.util.DiskChecker;
@@ -45,7 +49,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 /**
  * Tests for EntryLog.
@@ -351,4 +354,34 @@ public class EntryLogTest {
 
     }
 
+    /**
+     * Test the getEntryLogsSet() method.
+     */
+    @Test(timeout = 60000)
+    public void testGetEntryLogsSet() throws Exception {
+        File tmpDir = createTempDir("bkTest", ".dir");
+        File curDir = Bookie.getCurrentDirectory(tmpDir);
+        Bookie.checkDirectoryStructure(curDir);
+
+        int gcWaitTime = 1000;
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setGcWaitTime(gcWaitTime);
+        conf.setLedgerDirNames(new String[] { tmpDir.toString() });
+        Bookie bookie = new Bookie(conf);
+
+        // create some entries
+        EntryLogger logger = ((InterleavedLedgerStorage) bookie.ledgerStorage).entryLogger;
+
+        assertEquals(Sets.newHashSet(0L), logger.getEntryLogsSet());
+
+        logger.rollLog();
+        logger.flushRotatedLogs();
+
+        assertEquals(Sets.newHashSet(0L, 1L), logger.getEntryLogsSet());
+
+        logger.rollLog();
+        logger.flushRotatedLogs();
+
+        assertEquals(Sets.newHashSet(0L, 1L, 2L), logger.getEntryLogsSet());
+    }
 }
