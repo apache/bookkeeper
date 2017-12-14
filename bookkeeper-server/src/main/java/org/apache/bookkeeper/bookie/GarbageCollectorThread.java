@@ -31,9 +31,9 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.THREAD_RUNTIME;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.util.concurrent.DefaultThreadFactory;
-
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +43,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.bookie.GarbageCollector.GarbageCleaner;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -56,6 +55,7 @@ import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 /**
  * This is the garbage collector thread that runs in the background to
@@ -81,9 +81,21 @@ public class GarbageCollectorThread extends SafeRunnable {
     long lastMinorCompactionTime;
 
     boolean enableMajorCompaction = false;
-    final double majorCompactionThreshold;
+    final double originalMajorCompactionThreshold;
+    double majorCompactionThreshold;
+    final double medianMajorCompactionThreshold;
+    final double highMajorCompactionThreshold;
     final long majorCompactionInterval;
     long lastMajorCompactionTime;
+    private final int startTimeToMedianMajor;
+    private final int endTimeToMedianMajor;
+    private final int startTimeToHighMajor;
+    private final int endTimeToHighMajor;
+    private final Calendar calendar;
+    // the time of day parameter: seconds
+    private int timeOfDay;
+    // the day of week parameter: 1 - 7
+    private int dayOfWeek;
 
     final boolean isForceGCAllowWhenNoSpace;
 
@@ -194,8 +206,14 @@ public class GarbageCollectorThread extends SafeRunnable {
         // compaction parameters
         minorCompactionThreshold = conf.getMinorCompactionThreshold();
         minorCompactionInterval = conf.getMinorCompactionInterval() * SECOND;
-        majorCompactionThreshold = conf.getMajorCompactionThreshold();
+        originalMajorCompactionThreshold = majorCompactionThreshold = conf.getMajorCompactionThreshold();
         majorCompactionInterval = conf.getMajorCompactionInterval() * SECOND;
+        medianMajorCompactionThreshold = conf.getMedianMajorCompactionThreshold();
+        highMajorCompactionThreshold = conf.getHighMajorCompactionThreshold();
+        startTimeToMedianMajor = conf.getStartTimeToMedianMajorCompaction();
+        endTimeToMedianMajor = conf.getEndTimeToMedianMajorCompaction();
+        startTimeToHighMajor = conf.getStartTimeToHighMajorCompaction();
+        endTimeToHighMajor = conf.getEndTimeToHighMajorCompaction();
         isForceGCAllowWhenNoSpace = conf.getIsForceGCAllowWhenNoSpace();
         if (conf.getUseTransactionalCompaction()) {
             this.compactor = new TransactionalEntryLogCompactor(this);
@@ -220,11 +238,43 @@ public class GarbageCollectorThread extends SafeRunnable {
                 throw new IOException("Invalid major compaction threshold "
                                     + majorCompactionThreshold);
             }
+            if (medianMajorCompactionThreshold > 1.0f) {
+                throw new IOException("Invalid median major compaction threshold "
+                        + medianMajorCompactionThreshold);
+            }
+            if (highMajorCompactionThreshold > 1.0f) {
+                throw new IOException("Invalid high major compaction threshold "
+                        + highMajorCompactionThreshold);
+            }
+            if (!(majorCompactionThreshold < medianMajorCompactionThreshold
+                    && medianMajorCompactionThreshold < highMajorCompactionThreshold)){
+                throw new IOException("Invalid major compaction settings : normal major ("
+                        + majorCompactionThreshold + "), median major (" + medianMajorCompactionThreshold
+                        + " ), high major ( " + highMajorCompactionThreshold + ")");
+            }
             if (majorCompactionInterval <= gcWaitTime) {
                 throw new IOException("Too short major compaction interval : "
                                     + majorCompactionInterval);
             }
             enableMajorCompaction = true;
+        }
+
+        // check median and high major compaction condition
+        if (startTimeToMedianMajor < 0 || startTimeToMedianMajor > 86400){
+            throw new IOException("Invalid start time to median major compaction  : "
+                    + startTimeToMedianMajor + "it should be [0, 86400) ");
+        }
+        if (endTimeToMedianMajor < 0 || endTimeToMedianMajor > 86400){
+            throw new IOException("Invalid end time to median major compaction  : "
+                    + endTimeToMedianMajor + "it should be [0, 86400) ");
+        }
+        if (startTimeToHighMajor < 1 || startTimeToHighMajor > 7){
+            throw new IOException("Invalid start time to high major compaction  : "
+                    + startTimeToHighMajor + "it should be [0, 7) ");
+        }
+        if (endTimeToHighMajor < 1 || endTimeToHighMajor > 7){
+            throw new IOException("Invalid end time to high major compaction  : "
+                    + endTimeToHighMajor + "it should be [0, 7) ");
         }
 
         if (enableMinorCompaction && enableMajorCompaction) {
@@ -243,6 +293,8 @@ public class GarbageCollectorThread extends SafeRunnable {
                + majorCompactionThreshold + ", interval=" + majorCompactionInterval);
 
         lastMinorCompactionTime = lastMajorCompactionTime = MathUtils.now();
+        calendar = Calendar.getInstance();
+
     }
 
     public void enableForceGC() {
@@ -311,19 +363,59 @@ public class GarbageCollectorThread extends SafeRunnable {
         scheduledFuture = gcExecutor.scheduleAtFixedRate(this, gcWaitTime, gcWaitTime, TimeUnit.MILLISECONDS);
     }
 
+
     @Override
     public void safeRun() {
         boolean force = forceGarbageCollection.get();
         boolean suspendMajor = suspendMajorCompaction.get();
         boolean suspendMinor = suspendMinorCompaction.get();
 
-        runWithFlags(force, suspendMajor, suspendMinor);
-
+        // change the threshold at the day of time
+        dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+        timeOfDay = calendar.get(Calendar.HOUR_OF_DAY) * 3600 + calendar.get(Calendar.MINUTE) * 60
+                + calendar.get(Calendar.SECOND);
+        //if the time hit the specified in conf, change the threshold
+        // now the time is on the specified low load zone(eg, night)
+        if (timeOfDay > startTimeToMedianMajor && timeOfDay < endTimeToMedianMajor){
+            activateMedianThreshold();
+            // now the time is on the specified very low load zone(eg, weekend & night)
+            if (dayOfWeek >= startTimeToHighMajor && dayOfWeek <= endTimeToHighMajor){
+                activateHighThreshold();
+            }
+            runWithFlags(force, suspendMajor, suspendMinor);
+            // restore to normal threshold
+            restoreThreshold();
+        } else {
+            // normal threshold
+            runWithFlags(force, suspendMajor, suspendMinor);
+        }
         if (force) {
             // only set force to false if it had been true when the garbage
             // collection cycle started
             forceGarbageCollection.set(false);
         }
+
+    }
+
+    /**
+     * increase the threshold when the system in low load status.
+     */
+    private void activateMedianThreshold(){
+        majorCompactionThreshold = medianMajorCompactionThreshold;
+    }
+    /**
+     * increase the threshold when the system in a very low load status.
+     */
+    private void activateHighThreshold(){
+        majorCompactionThreshold = highMajorCompactionThreshold;
+    }
+
+    /**
+     * restore the threshold to normal value.
+     */
+    private void restoreThreshold(){
+        majorCompactionThreshold = originalMajorCompactionThreshold;
+
     }
 
     public void runWithFlags(boolean force, boolean suspendMajor, boolean suspendMinor) {

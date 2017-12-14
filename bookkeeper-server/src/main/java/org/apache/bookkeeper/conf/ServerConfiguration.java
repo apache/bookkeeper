@@ -42,6 +42,12 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String MINOR_COMPACTION_THRESHOLD = "minorCompactionThreshold";
     protected static final String MAJOR_COMPACTION_INTERVAL = "majorCompactionInterval";
     protected static final String MAJOR_COMPACTION_THRESHOLD = "majorCompactionThreshold";
+    protected static final String MAJOR_MEDIAN_COMPACTION_THRESHOLD = "majorMedianCompactionThreshold";
+    protected static final String MAJOR_HIGH_COMPACTION_THRESHOLD = "majorHighCompactionThreshold";
+    private static final String START_TIME_TO_MEDIAN_COMPACTION = "startTimeToMedianMajorCompaction";
+    private static final String END_TIME_TO_MEDIAN_COMPACTION = "endTimeToMedianMajorCompaction";
+    private static final String START_TIME_TO_HIGH_COMPACTION = "startTimeToHighMajorCompaction";
+    private static final String END_TIME_TO_HIGH_COMPACTION = "endTimeToHighMajorCompaction";
     protected static final String IS_THROTTLE_BY_BYTES = "isThrottleByBytes";
     protected static final String COMPACTION_MAX_OUTSTANDING_REQUESTS = "compactionMaxOutstandingRequests";
     protected static final String COMPACTION_RATE = "compactionRate";
@@ -1100,7 +1106,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * @return threshold of major compaction
      */
     public double getMajorCompactionThreshold() {
-        return getDouble(MAJOR_COMPACTION_THRESHOLD, 0.8f);
+        return getDouble(MAJOR_COMPACTION_THRESHOLD, 0.6f);
     }
 
     /**
@@ -1114,6 +1120,153 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setMajorCompactionThreshold(double threshold) {
         setProperty(MAJOR_COMPACTION_THRESHOLD, threshold);
+        return this;
+    }
+
+    /**
+     * Get threshold of median major compaction.
+     *
+     * <p>same with the @see #getMajorCompactionThreshold()
+     * the high threshold is used when the system is on a low load status
+     *
+     * @return threshold of median major compaction
+     */
+    public double getMedianMajorCompactionThreshold() {
+        return getDouble(MAJOR_MEDIAN_COMPACTION_THRESHOLD, 0.7f);
+    }
+
+    /**
+     * Set threshold of median major compaction.
+     *
+     * @see #getMedianMajorCompactionThreshold()
+     *
+     * @param threshold
+     *          Threshold of median major compaction
+     * @return server configuration
+     */
+    public ServerConfiguration setMedianMajorCompactionThreshold(double threshold) {
+        setProperty(MAJOR_MEDIAN_COMPACTION_THRESHOLD, threshold);
+        return this;
+    }
+
+    /**
+     * Get threshold of high major compaction.
+     *
+     * <p>same with the @see #getMajorCompactionThreshold()
+     * the high threshold is used when the system is on a very low load status
+     *
+     * @return threshold of high major compaction
+     */
+    public double getHighMajorCompactionThreshold() {
+        return getDouble(MAJOR_HIGH_COMPACTION_THRESHOLD, 0.9f);
+    }
+
+    /**
+     * Set threshold of high major compaction.
+     *
+     * @see #getHighMajorCompactionThreshold()
+     *
+     * @param threshold
+     *          Threshold of major compaction
+     * @return server configuration
+     */
+    public ServerConfiguration setHighMajorCompactionThreshold(double threshold) {
+        setProperty(MAJOR_HIGH_COMPACTION_THRESHOLD, threshold);
+        return this;
+    }
+
+    /**
+     * Get start time of median major compaction.
+     *
+     *<p>now specify a time of the day to indicate the system is on a low load status
+     *
+     * @return start time, [0, 23]h
+     */
+    public int getStartTimeToMedianMajorCompaction() {
+        return getInt(START_TIME_TO_MEDIAN_COMPACTION, 0);
+    }
+
+    /**
+     * Set start time of median major compaction.
+     *
+     *
+     * @param time
+     *          start time to major compaction, seconds
+     * @return server configuration
+     */
+    public ServerConfiguration setStartTimeToMedianMajorCompaction(int time) {
+        setProperty(START_TIME_TO_MEDIAN_COMPACTION, time);
+        return this;
+    }
+    /**
+     * Get end time of median major compaction.
+     *
+     *<p>now specify a time of the day to indicate the system is on a low load status
+     *
+     * @return end time, [0, 23]h, default[0,4]h, [0,14400]s
+     */
+    public int getEndTimeToMedianMajorCompaction() {
+        return getInt(END_TIME_TO_MEDIAN_COMPACTION, 14400);
+    }
+
+    /**
+     * Set end time of median major compaction.
+     *
+     *
+     * @param time
+     *          end time of median major compaction, seconds
+     * @return server configuration
+     */
+    public ServerConfiguration setEndTimeToMedianMajorCompaction(int time) {
+        setProperty(END_TIME_TO_MEDIAN_COMPACTION, time);
+        return this;
+    }
+    /**
+     * Get day of week for high major compaction.
+     *
+     *<p>now specify a time of the specified day to indicate the system is on a very low load status
+     *  the high threshold is enable when the day of week and time of the day(for median major) are met both.
+     *
+     * @return day of week, [1, 7],indicates :sunday, monday,...
+     */
+    public int getStartTimeToHighMajorCompaction() {
+        return getInt(START_TIME_TO_HIGH_COMPACTION, 1);
+    }
+
+    /**
+     * Set start time of median major compaction.
+     *
+     *
+     * @param day
+     *          specified day, one of the condition to  high major compaction
+     * @return server configuration
+     */
+    public ServerConfiguration setStartTimeToHighMajorCompaction(int day) {
+        setProperty(START_TIME_TO_HIGH_COMPACTION, day);
+        return this;
+    }
+    /**
+     * Get day of week for high major compaction.
+     *
+     *<p>now specify a time of the specified day to indicate the system is on a very low load status
+     *  the high threshold is enable when the day of week and time of the day(for median major) are met both.
+     *
+     * @return day of week, [1, 7]
+     */
+    public int getEndTimeToHighMajorCompaction() {
+        return getInt(END_TIME_TO_HIGH_COMPACTION, 2);
+    }
+
+    /**
+     * Set start time of median major compaction.
+     *
+     *
+     * @param day
+     *          specified day, one of the condition to  high major compaction
+     * @return server configuration
+     */
+    public ServerConfiguration setEndTimeToHighMajorCompaction(int day) {
+        setProperty(END_TIME_TO_HIGH_COMPACTION, day);
         return this;
     }
 
