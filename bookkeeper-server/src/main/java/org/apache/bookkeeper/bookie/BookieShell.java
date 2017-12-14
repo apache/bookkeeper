@@ -1569,10 +1569,9 @@ public class BookieShell implements Tool {
                     return -1;
                 }
                 LOG.info("Auditor: {}/{}:{}",
-                         new Object[] {
-                             bookieId.getSocketAddress().getAddress().getCanonicalHostName(),
-                             bookieId.getSocketAddress().getAddress().getHostAddress(),
-                             bookieId.getSocketAddress().getPort() });
+                        bookieId.getSocketAddress().getAddress().getCanonicalHostName(),
+                        bookieId.getSocketAddress().getAddress().getHostAddress(),
+                        bookieId.getSocketAddress().getPort());
             } finally {
                 if (zk != null) {
                     zk.close();

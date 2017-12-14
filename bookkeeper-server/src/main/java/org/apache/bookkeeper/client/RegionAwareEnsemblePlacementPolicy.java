@@ -355,11 +355,11 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                                 regionsToAllocate--;
                                 LOG.info("Region {} allocating bookies with ensemble size {} "
                                         + "and write quorum size {} : {}",
-                                    new Object[]{region, newEnsembleSize, newWriteQuorumSize, allocated});
+                                        region, newEnsembleSize, newWriteQuorumSize, allocated);
                                 break;
                             } catch (BKException.BKNotEnoughBookiesException exc) {
                                 LOG.warn("Could not allocate {} bookies in region {}, try allocating {} bookies",
-                                         new Object[] {newEnsembleSize, region, (newEnsembleSize - 1) });
+                                        newEnsembleSize, region, (newEnsembleSize - 1));
                                 addToEnsembleSize--;
                             }
                         }
@@ -374,7 +374,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                     if (regionsReachedMaxAllocation.contains(region)) {
                         if (currentAllocation.getLeft() > 0) {
                             LOG.info("Allocating {} bookies in region {} : ensemble {} exclude {}",
-                                new Object[]{currentAllocation.getLeft(), region, excludeBookies, ensemble});
+                                    currentAllocation.getLeft(), region, excludeBookies, ensemble);
                             policyWithinRegion.newEnsemble(
                                     currentAllocation.getLeft(),
                                     currentAllocation.getRight(),
@@ -383,7 +383,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                                     ensemble,
                                     ensemble);
                             LOG.info("Allocated {} bookies in region {} : {}",
-                                new Object[]{currentAllocation.getLeft(), region, ensemble});
+                                    currentAllocation.getLeft(), region, ensemble);
                         }
                     }
                 }

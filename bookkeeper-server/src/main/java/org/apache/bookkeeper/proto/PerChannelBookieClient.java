@@ -1217,7 +1217,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                             return; // pendingOps should have been completed when other channel connected
                         } else {
                             LOG.error("TLS handshake failed with bookie: {}/{}, current state {} : ",
-                                    new Object[] { future.get(), addr, state, future.cause() });
+                                    future.get(), addr, state, future.cause());
                             rc = BKException.Code.SecurityException;
                             closeChannel(future.get());
                             channel = null;
@@ -1949,7 +1949,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     return; // pendingOps should have been completed when other channel connected
                 } else {
                     LOG.error("Could not connect to bookie: {}/{}, current state {} : ",
-                            new Object[] { future.channel(), addr, state, future.cause() });
+                            future.channel(), addr, state, future.cause());
                     rc = BKException.Code.BookieHandleNotAvailableException;
                     closeChannel(future.channel());
                     channel = null;

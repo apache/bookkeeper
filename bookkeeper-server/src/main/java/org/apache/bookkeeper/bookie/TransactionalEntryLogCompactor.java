@@ -181,7 +181,7 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
                         if (lid != ledgerId || entryId < -1) {
                             LOG.warn("Scanning expected ledgerId {}, but found invalid entry "
                                     + "with ledgerId {} entryId {} at offset {}",
-                                new Object[]{ledgerId, lid, entryId, offset});
+                                    ledgerId, lid, entryId, offset);
                             throw new IOException("Invalid entry found @ offset " + offset);
                         }
                         long newOffset = entryLogger.addEntryForCompaction(ledgerId, entry);
@@ -189,7 +189,7 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
 
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("Compact add entry : lid = {}, eid = {}, offset = {}",
-                                new Object[]{ledgerId, entryId, newOffset});
+                                    ledgerId, entryId, newOffset);
                         }
                     }
                 }
@@ -362,7 +362,7 @@ public class TransactionalEntryLogCompactor extends AbstractLogCompactor {
                     if (lid != ledgerId || entryId < -1) {
                         LOG.warn("Scanning expected ledgerId {}, but found invalid entry "
                                 + "with ledgerId {} entryId {} at offset {}",
-                            new Object[]{ledgerId, lid, entryId, offset});
+                                ledgerId, lid, entryId, offset);
                         throw new IOException("Invalid entry found @ offset " + offset);
                     }
                     long location = (compactedLogId << 32L) | (offset + 4);

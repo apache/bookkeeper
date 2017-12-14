@@ -211,7 +211,7 @@ public class Bookie extends BookieCriticalThread {
                                   BookieSocketAddress addr, Object ctx) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Finished writing entry {} @ ledger {} for {} : {}",
-                          new Object[] { entryId, ledgerId, addr, rc });
+                        entryId, ledgerId, addr, rc);
             }
         }
     }
@@ -1377,7 +1377,7 @@ public class Bookie extends BookieCriticalThread {
                                   BookieSocketAddress addr, Object ctx) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Finished writing entry {} @ ledger {} for {} : {}",
-                          new Object[] { entryId, ledgerId, addr, rc });
+                        entryId, ledgerId, addr, rc);
             }
 
             result.set(0 == rc);
