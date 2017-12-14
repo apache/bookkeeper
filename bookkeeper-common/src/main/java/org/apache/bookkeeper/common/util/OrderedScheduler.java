@@ -207,11 +207,8 @@ public class OrderedScheduler {
 
             final int idx = i;
             try {
-                threads[idx].submit(new SafeRunnable() {
-                    @Override
-                    public void safeRun() {
-                        threadIds[idx] = Thread.currentThread().getId();
-                    }
+                threads[idx].submit((SafeRunnable) () -> {
+                    threadIds[idx] = Thread.currentThread().getId();
                 }).get();
             } catch (InterruptedException e) {
                 throw new RuntimeException("Couldn't start thread " + i, e);

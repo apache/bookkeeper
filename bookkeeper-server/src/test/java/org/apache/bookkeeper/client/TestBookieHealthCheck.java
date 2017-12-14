@@ -22,7 +22,6 @@ package org.apache.bookkeeper.client;
 
 import java.util.concurrent.TimeUnit;
 
-import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Assert;
@@ -59,12 +58,8 @@ public class TestBookieHealthCheck extends BookKeeperClusterTestCase {
         sleepBookie(bookieToQuarantine, baseClientConf.getAddEntryTimeout() * 2).await();
 
         byte[] tempMsg = "temp-msg".getBytes();
-        lh.asyncAddEntry(tempMsg, new AddCallback() {
-
-            @Override
-            public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-                // no-op
-            }
+        lh.asyncAddEntry(tempMsg, (rc, lh12, entryId, ctx) -> {
+            // no-op
         }, null);
 
         // make sure the add entry timeouts
@@ -100,20 +95,18 @@ public class TestBookieHealthCheck extends BookKeeperClusterTestCase {
         BookieSocketAddress bookieToRestart = lh.getLedgerMetadata().getEnsemble(0).get(0);
 
         // we add entries on a separate thread so that we can restart a bookie on the current thread
-        Thread addEntryThread = new Thread() {
-            public void run() {
-                for (int i = 0; i < numEntries; i++) {
-                    byte[] msg = ("msg-" + i).getBytes();
-                    try {
-                        lh.addEntry(msg);
-                        // we add sufficient sleep to make sure all entries are not added before we restart the bookie
-                        Thread.sleep(100);
-                    } catch (Exception e) {
-                        LOG.error("Error sending msg");
-                    }
+        Thread addEntryThread = new Thread(() -> {
+            for (int i = 0; i < numEntries; i++) {
+                byte[] msg = ("msg-" + i).getBytes();
+                try {
+                    lh.addEntry(msg);
+                    // we add sufficient sleep to make sure all entries are not added before we restart the bookie
+                    Thread.sleep(100);
+                } catch (Exception e) {
+                    LOG.error("Error sending msg");
                 }
             }
-        };
+        });
         addEntryThread.start();
         restartBookie(bookieToRestart);
 

@@ -47,8 +47,6 @@ import org.apache.bookkeeper.replication.ReplicationException.CompatibilityExcep
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.data.Stat;
 import org.junit.Test;
@@ -611,19 +609,16 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
     private Stat watchUrLedgerNode(final String znode,
             final CountDownLatch latch) throws KeeperException,
             InterruptedException {
-        return zkc.exists(znode, new Watcher() {
-            @Override
-            public void process(WatchedEvent event) {
-                if (event.getType() == EventType.NodeDeleted) {
-                    LOG.info("Recieved Ledger rereplication completion event :"
-                            + event.getType());
-                    latch.countDown();
-                }
-                if (event.getType() == EventType.NodeCreated) {
-                    LOG.info("Recieved urLedger publishing event :"
-                            + event.getType());
-                    latch.countDown();
-                }
+        return zkc.exists(znode, event -> {
+            if (event.getType() == EventType.NodeDeleted) {
+                LOG.info("Recieved Ledger rereplication completion event :"
+                        + event.getType());
+                latch.countDown();
+            }
+            if (event.getType() == EventType.NodeCreated) {
+                LOG.info("Recieved urLedger publishing event :"
+                        + event.getType());
+                latch.countDown();
             }
         });
     }

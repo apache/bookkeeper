@@ -33,7 +33,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -137,12 +136,7 @@ public class AuditorElector {
                 + BookKeeperConstants.UNDER_REPLICATION_NODE;
         electionPath = basePath + '/' + ELECTION_ZNODE;
         createElectorPath();
-        executor = Executors.newSingleThreadExecutor(new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    return new Thread(r, "AuditorElector-" + bookieId);
-                }
-            });
+        executor = Executors.newSingleThreadExecutor(r -> new Thread(r, "AuditorElector-" + bookieId));
     }
 
     private void createMyVote() throws KeeperException, InterruptedException {
@@ -214,24 +208,22 @@ public class AuditorElector {
      * Run cleanup operations for the auditor elector.
      */
     private void submitShutdownTask() {
-        executor.submit(new Runnable() {
-                public void run() {
-                    if (!running.compareAndSet(true, false)) {
-                        return;
-                    }
-                    LOG.info("Shutting down AuditorElector");
-                    if (myVote != null) {
-                        try {
-                            zkc.delete(myVote, -1);
-                        } catch (InterruptedException ie) {
-                            LOG.warn("InterruptedException while deleting myVote: " + myVote,
-                                     ie);
-                        } catch (KeeperException ke) {
-                            LOG.error("Exception while deleting myVote:" + myVote, ke);
-                        }
-                    }
+        executor.submit(() -> {
+            if (!running.compareAndSet(true, false)) {
+                return;
+            }
+            LOG.info("Shutting down AuditorElector");
+            if (myVote != null) {
+                try {
+                    zkc.delete(myVote, -1);
+                } catch (InterruptedException ie) {
+                    LOG.warn("InterruptedException while deleting myVote: " + myVote,
+                             ie);
+                } catch (KeeperException ke) {
+                    LOG.error("Exception while deleting myVote:" + myVote, ke);
                 }
-            });
+            }
+        });
     }
 
     /**
@@ -242,64 +234,62 @@ public class AuditorElector {
     @VisibleForTesting
     void submitElectionTask() {
 
-        Runnable r = new Runnable() {
-                public void run() {
-                    if (!running.get()) {
-                        return;
-                    }
-                    try {
-                        // creating my vote in zk. Vote format is 'V_numeric'
-                        createMyVote();
-                        List<String> children = zkc.getChildren(getVotePath(""), false);
+        Runnable r = () -> {
+            if (!running.get()) {
+                return;
+            }
+            try {
+                // creating my vote in zk. Vote format is 'V_numeric'
+                createMyVote();
+                List<String> children = zkc.getChildren(getVotePath(""), false);
 
-                        if (0 >= children.size()) {
-                            throw new IllegalArgumentException(
-                                    "Atleast one bookie server should present to elect the Auditor!");
-                        }
-
-                        // sorting in ascending order of sequential number
-                        Collections.sort(children, new ElectionComparator());
-                        String voteNode = StringUtils.substringAfterLast(myVote,
-                                                                         PATH_SEPARATOR);
-
-                        // starting Auditing service
-                        if (children.get(AUDITOR_INDEX).equals(voteNode)) {
-                            // update the auditor bookie id in the election path. This is
-                            // done for debugging purpose
-                            AuditorVoteFormat.Builder builder = AuditorVoteFormat.newBuilder()
-                                .setBookieId(bookieId);
-
-                            zkc.setData(getVotePath(""),
-                                        TextFormat.printToString(builder.build()).getBytes(UTF_8), -1);
-                            auditor = new Auditor(bookieId, conf, zkc, statsLogger);
-                            auditor.start();
-                        } else {
-                            // If not an auditor, will be watching to my predecessor and
-                            // looking the previous node deletion.
-                            Watcher electionWatcher = new ElectionWatcher();
-                            int myIndex = children.indexOf(voteNode);
-                            int prevNodeIndex = myIndex - 1;
-                            if (null == zkc.exists(getVotePath(PATH_SEPARATOR)
-                                                   + children.get(prevNodeIndex), electionWatcher)) {
-                                // While adding, the previous znode doesn't exists.
-                                // Again going to election.
-                                submitElectionTask();
-                            }
-                            electionAttempts.inc();
-                        }
-                    } catch (KeeperException e) {
-                        LOG.error("Exception while performing auditor election", e);
-                        submitShutdownTask();
-                    } catch (InterruptedException e) {
-                        LOG.error("Interrupted while performing auditor election", e);
-                        Thread.currentThread().interrupt();
-                        submitShutdownTask();
-                    } catch (UnavailableException e) {
-                        LOG.error("Ledger underreplication manager unavailable during election", e);
-                        submitShutdownTask();
-                    }
+                if (0 >= children.size()) {
+                    throw new IllegalArgumentException(
+                            "Atleast one bookie server should present to elect the Auditor!");
                 }
-            };
+
+                // sorting in ascending order of sequential number
+                Collections.sort(children, new ElectionComparator());
+                String voteNode = StringUtils.substringAfterLast(myVote,
+                                                                 PATH_SEPARATOR);
+
+                // starting Auditing service
+                if (children.get(AUDITOR_INDEX).equals(voteNode)) {
+                    // update the auditor bookie id in the election path. This is
+                    // done for debugging purpose
+                    AuditorVoteFormat.Builder builder = AuditorVoteFormat.newBuilder()
+                        .setBookieId(bookieId);
+
+                    zkc.setData(getVotePath(""),
+                                TextFormat.printToString(builder.build()).getBytes(UTF_8), -1);
+                    auditor = new Auditor(bookieId, conf, zkc, statsLogger);
+                    auditor.start();
+                } else {
+                    // If not an auditor, will be watching to my predecessor and
+                    // looking the previous node deletion.
+                    Watcher electionWatcher = new ElectionWatcher();
+                    int myIndex = children.indexOf(voteNode);
+                    int prevNodeIndex = myIndex - 1;
+                    if (null == zkc.exists(getVotePath(PATH_SEPARATOR)
+                                           + children.get(prevNodeIndex), electionWatcher)) {
+                        // While adding, the previous znode doesn't exists.
+                        // Again going to election.
+                        submitElectionTask();
+                    }
+                    electionAttempts.inc();
+                }
+            } catch (KeeperException e) {
+                LOG.error("Exception while performing auditor election", e);
+                submitShutdownTask();
+            } catch (InterruptedException e) {
+                LOG.error("Interrupted while performing auditor election", e);
+                Thread.currentThread().interrupt();
+                submitShutdownTask();
+            } catch (UnavailableException e) {
+                LOG.error("Ledger underreplication manager unavailable during election", e);
+                submitShutdownTask();
+            }
+        };
         executor.submit(r);
     }
 

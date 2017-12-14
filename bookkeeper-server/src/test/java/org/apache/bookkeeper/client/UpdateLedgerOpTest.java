@@ -195,12 +195,9 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
         // this conflicts.
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
-        lh.asyncAddEntry("foobar".getBytes(), new AddCallback() {
-            @Override
-            public void addComplete(int rccb, LedgerHandle lh, long entryId, Object ctx) {
-                rc.compareAndSet(BKException.Code.OK, rccb);
-                latch.countDown();
-            }
+        lh.asyncAddEntry("foobar".getBytes(), (rccb, lh1, entryId, ctx) -> {
+            rc.compareAndSet(BKException.Code.OK, rccb);
+            latch.countDown();
         }, null);
         if (!latch.await(30, TimeUnit.SECONDS)) {
             throw new Exception("Entries took too long to add");
@@ -232,23 +229,19 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
         final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
         final LedgerHandle lh = createLedgerWithEntries(bk, 1);
         latch.countDown();
-        Thread th = new Thread() {
-            public void run() {
-                final AddCallback cb = new AddCallback() {
-                    public void addComplete(int rccb, LedgerHandle lh, long entryId, Object ctx) {
-                        rc.compareAndSet(BKException.Code.OK, rccb);
-                        if (entryId % 100 == 0) {
-                            LOG.info("Added entries till entryId:{}", entryId);
-                        }
-                        latch.countDown();
-                    }
-                };
-                for (int i = 1; i < numOfEntries; i++) {
-                    lh.asyncAddEntry(("foobar" + i).getBytes(), cb, null);
+        Thread th = new Thread(() -> {
+            final AddCallback cb = (rccb, lh1, entryId, ctx) -> {
+                rc.compareAndSet(BKException.Code.OK, rccb);
+                if (entryId % 100 == 0) {
+                    LOG.info("Added entries till entryId:{}", entryId);
                 }
-
+                latch.countDown();
+            };
+            for (int i = 1; i < numOfEntries; i++) {
+                lh.asyncAddEntry(("foobar" + i).getBytes(), cb, null);
             }
-        };
+
+        });
         th.start();
         ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsemble(0);
         BookieSocketAddress curBookieAddr = ensemble.get(0);
@@ -292,11 +285,9 @@ public class UpdateLedgerOpTest extends BookKeeperClusterTestCase {
         final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
         final CountDownLatch latch = new CountDownLatch(numOfEntries);
 
-        final AddCallback cb = new AddCallback() {
-            public void addComplete(int rccb, LedgerHandle lh, long entryId, Object ctx) {
-                rc.compareAndSet(BKException.Code.OK, rccb);
-                latch.countDown();
-            }
+        final AddCallback cb = (rccb, lh1, entryId, ctx) -> {
+            rc.compareAndSet(BKException.Code.OK, rccb);
+            latch.countDown();
         };
         for (int i = 0; i < numOfEntries; i++) {
             lh.asyncAddEntry(("foobar" + i).getBytes(), cb, null);

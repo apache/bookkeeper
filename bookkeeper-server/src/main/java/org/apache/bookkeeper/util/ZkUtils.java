@@ -30,8 +30,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.zookeeper.AsyncCallback;
-import org.apache.zookeeper.AsyncCallback.StringCallback;
-import org.apache.zookeeper.AsyncCallback.VoidCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.Code;
@@ -72,35 +70,28 @@ public class ZkUtils {
         final List<ACL> acl, final CreateMode createMode,
         final AsyncCallback.StringCallback callback, final Object ctx) {
 
-        zk.create(originalPath, data, acl, createMode, new StringCallback() {
-            @Override
-            public void processResult(int rc, String path, Object ctx, String name) {
+        zk.create(originalPath, data, acl, createMode, (rc, path, ctx12, name) -> {
 
-                if (rc != Code.NONODE.intValue()) {
-                    callback.processResult(rc, path, ctx, name);
-                    return;
-                }
-
-                // Since I got a nonode, it means that my parents don't exist
-                // create mode is persistent since ephemeral nodes can't be
-                // parents
-                String parent = new File(originalPath).getParent().replace("\\", "/");
-                asyncCreateFullPathOptimistic(zk, parent, new byte[0], acl,
-                        CreateMode.PERSISTENT, new StringCallback() {
-
-                            @Override
-                            public void processResult(int rc, String path, Object ctx, String name) {
-                                if (rc == Code.OK.intValue() || rc == Code.NODEEXISTS.intValue()) {
-                                    // succeeded in creating the parent, now
-                                    // create the original path
-                                    asyncCreateFullPathOptimistic(zk, originalPath, data,
-                                            acl, createMode, callback, ctx);
-                                } else {
-                                    callback.processResult(rc, path, ctx, name);
-                                }
-                            }
-                        }, ctx);
+            if (rc != Code.NONODE.intValue()) {
+                callback.processResult(rc, path, ctx12, name);
+                return;
             }
+
+            // Since I got a nonode, it means that my parents don't exist
+            // create mode is persistent since ephemeral nodes can't be
+            // parents
+            String parent = new File(originalPath).getParent().replace("\\", "/");
+            asyncCreateFullPathOptimistic(zk, parent, new byte[0], acl,
+                    CreateMode.PERSISTENT, (rc1, path1, ctx1, name1) -> {
+                        if (rc1 == Code.OK.intValue() || rc1 == Code.NODEEXISTS.intValue()) {
+                            // succeeded in creating the parent, now
+                            // create the original path
+                            asyncCreateFullPathOptimistic(zk, originalPath, data,
+                                    acl, createMode, callback, ctx1);
+                        } else {
+                            callback.processResult(rc1, path1, ctx1, name1);
+                        }
+                    }, ctx12);
         }, ctx);
     }
 
@@ -129,18 +120,15 @@ public class ZkUtils {
      */
     public static void asyncDeleteFullPathOptimistic(final ZooKeeper zk, final String originalPath,
             int znodeVersion, final AsyncCallback.VoidCallback callback, final String leafNodePath) {
-        zk.delete(originalPath, znodeVersion, new VoidCallback() {
-            @Override
-            public void processResult(int rc, String path, Object ctx) {
-                if (rc == Code.OK.intValue()) {
-                    String parent = new File(originalPath).getParent().replace("\\", "/");
-                    asyncDeleteFullPathOptimistic(zk, parent, znodeVersion, callback, leafNodePath);
+        zk.delete(originalPath, znodeVersion, (rc, path, ctx) -> {
+            if (rc == Code.OK.intValue()) {
+                String parent = new File(originalPath).getParent().replace("\\", "/");
+                asyncDeleteFullPathOptimistic(zk, parent, znodeVersion, callback, leafNodePath);
+            } else {
+                if (path.equals(leafNodePath)) {
+                    callback.processResult(rc, path, leafNodePath);
                 } else {
-                    if (path.equals(leafNodePath)) {
-                        callback.processResult(rc, path, leafNodePath);
-                    } else {
-                        callback.processResult(Code.OK.intValue(), path, leafNodePath);
-                    }
+                    callback.processResult(Code.OK.intValue(), path, leafNodePath);
                 }
             }
         }, leafNodePath);
@@ -174,14 +162,10 @@ public class ZkUtils {
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicInteger rc = new AtomicInteger(Code.OK.intValue());
         asyncCreateFullPathOptimistic(zkc, path, data, acl, createMode,
-                                      new StringCallback() {
-                                          @Override
-                                          public void processResult(int rc2, String path,
-                                                                    Object ctx, String name) {
-                                              rc.set(rc2);
-                                              latch.countDown();
-                                          }
-                                      }, null);
+                (rc2, path1, ctx, name) -> {
+                    rc.set(rc2);
+                    latch.countDown();
+                }, null);
         latch.await();
         if (rc.get() != Code.OK.intValue()) {
             throw KeeperException.create(Code.get(rc.get()));
@@ -192,12 +176,9 @@ public class ZkUtils {
             throws KeeperException, InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicInteger rc = new AtomicInteger(Code.OK.intValue());
-        asyncDeleteFullPathOptimistic(zkc, path, znodeVersion, new VoidCallback() {
-            @Override
-            public void processResult(int rc2, String path, Object ctx) {
-                rc.set(rc2);
-                latch.countDown();
-            }
+        asyncDeleteFullPathOptimistic(zkc, path, znodeVersion, (rc2, path1, ctx) -> {
+            rc.set(rc2);
+            latch.countDown();
         }, path);
         latch.await();
         if (rc.get() != Code.OK.intValue()) {
@@ -225,17 +206,14 @@ public class ZkUtils {
     public static List<String> getChildrenInSingleNode(final ZooKeeper zk, final String node)
             throws InterruptedException, IOException {
         final GetChildrenCtx ctx = new GetChildrenCtx();
-        getChildrenInSingleNode(zk, node, new GenericCallback<List<String>>() {
-            @Override
-            public void operationComplete(int rc, List<String> ledgers) {
-                synchronized (ctx) {
-                    if (Code.OK.intValue() == rc) {
-                        ctx.children = ledgers;
-                    }
-                    ctx.rc = rc;
-                    ctx.done = true;
-                    ctx.notifyAll();
+        getChildrenInSingleNode(zk, node, (rc, ledgers) -> {
+            synchronized (ctx) {
+                if (Code.OK.intValue() == rc) {
+                    ctx.children = ledgers;
                 }
+                ctx.rc = rc;
+                ctx.done = true;
+                ctx.notifyAll();
             }
         });
 
@@ -263,30 +241,24 @@ public class ZkUtils {
      */
     public static void getChildrenInSingleNode(final ZooKeeper zk, final String node,
             final GenericCallback<List<String>> cb) {
-        zk.sync(node, new AsyncCallback.VoidCallback() {
-            @Override
-            public void processResult(int rc, String path, Object ctx) {
-                if (rc != Code.OK.intValue()) {
-                    LOG.error("ZK error syncing nodes when getting children: ", KeeperException
-                            .create(KeeperException.Code.get(rc), path));
-                    cb.operationComplete(rc, null);
+        zk.sync(node, (rc, path, ctx) -> {
+            if (rc != Code.OK.intValue()) {
+                LOG.error("ZK error syncing nodes when getting children: ", KeeperException
+                        .create(Code.get(rc), path));
+                cb.operationComplete(rc, null);
+                return;
+            }
+            zk.getChildren(node, false, (rc1, path1, ctx1, nodes) -> {
+                if (rc1 != Code.OK.intValue()) {
+                    LOG.error("Error polling ZK for the available nodes: ", KeeperException
+                            .create(Code.get(rc1), path1));
+                    cb.operationComplete(rc1, null);
                     return;
                 }
-                zk.getChildren(node, false, new AsyncCallback.ChildrenCallback() {
-                    @Override
-                    public void processResult(int rc, String path, Object ctx, List<String> nodes) {
-                        if (rc != Code.OK.intValue()) {
-                            LOG.error("Error polling ZK for the available nodes: ", KeeperException
-                                    .create(KeeperException.Code.get(rc), path));
-                            cb.operationComplete(rc, null);
-                            return;
-                        }
 
-                        cb.operationComplete(rc, nodes);
+                cb.operationComplete(rc1, nodes);
 
-                    }
-                }, null);
-            }
+            }, null);
         }, null);
     }
 

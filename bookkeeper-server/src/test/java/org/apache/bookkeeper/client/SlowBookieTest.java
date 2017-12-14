@@ -25,7 +25,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -33,7 +32,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -77,12 +75,10 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
             sleepBookie(curEns.get(2), b1latch); // should cover all quorums
 
             final AtomicInteger i = new AtomicInteger(0xdeadbeef);
-            AsyncCallback.AddCallback cb = new AsyncCallback.AddCallback() {
-                    public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-                        i.set(rc);
-                        addEntrylatch.countDown();
-                    }
-                };
+            AsyncCallback.AddCallback cb = (rc, lh1, entryId, ctx) -> {
+                i.set(rc);
+                addEntrylatch.countDown();
+            };
             lh.asyncAddEntry(entry, cb, null);
 
             Thread.sleep(3000); // sleep 3 seconds to allow time to complete
@@ -110,18 +106,16 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         final AtomicBoolean finished = new AtomicBoolean(false);
         final AtomicBoolean failTest = new AtomicBoolean(false);
         final byte[] entry = "Test Entry".getBytes();
-        Thread t = new Thread() {
-                public void run() {
-                    try {
-                        while (!finished.get()) {
-                            lh.addEntry(entry);
-                        }
-                    } catch (Exception e) {
-                        LOG.error("Exception in add entry thread", e);
-                        failTest.set(true);
-                    }
+        Thread t = new Thread(() -> {
+            try {
+                while (!finished.get()) {
+                    lh.addEntry(entry);
                 }
-            };
+            } catch (Exception e) {
+                LOG.error("Exception in add entry thread", e);
+                failTest.set(true);
+            }
+        });
         t.start();
         final CountDownLatch b0latch = new CountDownLatch(1);
         startNewBookie();
@@ -139,15 +133,13 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         LedgerChecker lc = new LedgerChecker(bkc);
         final CountDownLatch checklatch = new CountDownLatch(1);
         final AtomicInteger numFragments = new AtomicInteger(-1);
-        lc.checkLedger(lh2, new GenericCallback<Set<LedgerFragment>>() {
-                public void operationComplete(int rc, Set<LedgerFragment> fragments) {
-                    LOG.debug("Checked ledgers returned {} {}", rc, fragments);
-                    if (rc == BKException.Code.OK) {
-                        numFragments.set(fragments.size());
-                    }
-                    checklatch.countDown();
-                }
-            });
+        lc.checkLedger(lh2, (rc, fragments) -> {
+            LOG.debug("Checked ledgers returned {} {}", rc, fragments);
+            if (rc == BKException.Code.OK) {
+                numFragments.set(fragments.size());
+            }
+            checklatch.countDown();
+        });
         checklatch.await();
         assertEquals("There should be no missing fragments", 0, numFragments.get());
     }
@@ -164,19 +156,17 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         final AtomicBoolean finished = new AtomicBoolean(false);
         final AtomicBoolean failTest = new AtomicBoolean(false);
         final byte[] entry = "Test Entry".getBytes();
-        Thread t = new Thread() {
-                public void run() {
-                    try {
-                        while (!finished.get()) {
-                            lh.addEntry(entry);
-                            Thread.sleep(1);
-                        }
-                    } catch (Exception e) {
-                        LOG.error("Exception in add entry thread", e);
-                        failTest.set(true);
-                    }
+        Thread t = new Thread(() -> {
+            try {
+                while (!finished.get()) {
+                    lh.addEntry(entry);
+                    Thread.sleep(1);
                 }
-            };
+            } catch (Exception e) {
+                LOG.error("Exception in add entry thread", e);
+                failTest.set(true);
+            }
+        });
         t.start();
         final CountDownLatch b0latch = new CountDownLatch(1);
         final CountDownLatch b1latch = new CountDownLatch(1);
@@ -201,15 +191,13 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
         LedgerChecker lc = new LedgerChecker(bkc);
         final CountDownLatch checklatch = new CountDownLatch(1);
         final AtomicInteger numFragments = new AtomicInteger(-1);
-        lc.checkLedger(lh2, new GenericCallback<Set<LedgerFragment>>() {
-                public void operationComplete(int rc, Set<LedgerFragment> fragments) {
-                    LOG.debug("Checked ledgers returned {} {}", rc, fragments);
-                    if (rc == BKException.Code.OK) {
-                        numFragments.set(fragments.size());
-                    }
-                    checklatch.countDown();
-                }
-            });
+        lc.checkLedger(lh2, (rc, fragments) -> {
+            LOG.debug("Checked ledgers returned {} {}", rc, fragments);
+            if (rc == BKException.Code.OK) {
+                numFragments.set(fragments.size());
+            }
+            checklatch.countDown();
+        });
         checklatch.await();
         assertEquals("There should be no missing fragments", 0, numFragments.get());
     }

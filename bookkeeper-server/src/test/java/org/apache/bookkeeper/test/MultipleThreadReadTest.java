@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperTestClient;
@@ -77,56 +76,47 @@ public class MultipleThreadReadTest extends BookKeeperClusterTestCase {
     }
 
     private Thread getWriterThread(final int tNo, final LedgerHandle lh, final AtomicBoolean resultHolder) {
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                final SyncObj tSync = new SyncObj();
-                for (int j = 0; j < entriesPerLedger; j++) {
-                    final byte[] entry = ("Entry-" + tNo + "-" + j).getBytes();
-                    lh.asyncAddEntry(entry, new AsyncCallback.AddCallback() {
-                        @Override
-                        public void addComplete(int rc, LedgerHandle ledgerHandle, long eid, Object o) {
-                            SyncObj syncObj = (SyncObj) o;
-                            synchronized (syncObj) {
-                                if (rc != BKException.Code.OK) {
-                                    LOG.error("Add entry {} failed : rc = {}", new String(entry, UTF_8), rc);
-                                    syncObj.failed = true;
-                                    syncObj.notify();
-                                } else {
-                                    syncObj.counter++;
-                                    syncObj.notify();
-                                }
-                            }
-                        }
-                    }, tSync);
-                }
-                synchronized (tSync) {
-                    while (!tSync.failed && tSync.counter < entriesPerLedger) {
-                        try {
-                            tSync.wait();
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
+        Thread t = new Thread(() -> {
+            final SyncObj tSync = new SyncObj();
+            for (int j = 0; j < entriesPerLedger; j++) {
+                final byte[] entry = ("Entry-" + tNo + "-" + j).getBytes();
+                lh.asyncAddEntry(entry, (rc, ledgerHandle, eid, o) -> {
+                    SyncObj syncObj = (SyncObj) o;
+                    synchronized (syncObj) {
+                        if (rc != BKException.Code.OK) {
+                            LOG.error("Add entry {} failed : rc = {}", new String(entry, UTF_8), rc);
+                            syncObj.failed = true;
+                            syncObj.notify();
+                        } else {
+                            syncObj.counter++;
+                            syncObj.notify();
                         }
                     }
-                    resultHolder.set(!tSync.failed);
+                }, tSync);
+            }
+            synchronized (tSync) {
+                while (!tSync.failed && tSync.counter < entriesPerLedger) {
+                    try {
+                        tSync.wait();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
                 }
-                // close this handle
-                try {
-                    lh.close();
-                } catch (InterruptedException ie) {
-                    LOG.error("Interrupted on closing ledger handle {} : ", lh.getId(), ie);
-                    Thread.currentThread().interrupt();
-                } catch (BKException bke) {
-                    LOG.error("Error on closing ledger handle {} : ", lh.getId(), bke);
-                }
+                resultHolder.set(!tSync.failed);
+            }
+            // close this handle
+            try {
+                lh.close();
+            } catch (InterruptedException ie) {
+                LOG.error("Interrupted on closing ledger handle {} : ", lh.getId(), ie);
+                Thread.currentThread().interrupt();
+            } catch (BKException bke) {
+                LOG.error("Error on closing ledger handle {} : ", lh.getId(), bke);
             }
         }, "WriteThread(Lid=" + lh.getId() + ")");
-        t.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-            @Override
-            public void uncaughtException(Thread thread, Throwable throwable) {
-                synchronized (mainSyncObj) {
-                    mainSyncObj.failed = true;
-                }
+        t.setUncaughtExceptionHandler((thread, throwable) -> {
+            synchronized (mainSyncObj) {
+                mainSyncObj.failed = true;
             }
         });
         return t;
@@ -134,75 +124,69 @@ public class MultipleThreadReadTest extends BookKeeperClusterTestCase {
 
     private Thread getReaderThread(final int tNo, final LedgerHandle lh, final int ledgerNumber,
                                    final AtomicBoolean resultHolder) {
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                //LedgerHandle lh = clientList.get(0).openLedger(ledgerIds.get(tNo % numLedgers),
-                //    digestType, ledgerPassword);
-                long startEntryId = 0;
-                long endEntryId;
-                long eid = 0;
-                while (startEntryId <= entriesPerLedger - 1) {
-                    endEntryId = Math.min(startEntryId + 10 - 1, entriesPerLedger - 1);
-                    final long numEntries = (endEntryId - startEntryId) + 1;
-                    boolean success = true;
-                    try {
-                        Enumeration<LedgerEntry> list = lh.readEntries(startEntryId, endEntryId);
-                        for (int j = 0; j < numEntries; j++) {
-                            LedgerEntry e;
-                            try {
-                                e = list.nextElement();
-                            } catch (NoSuchElementException exception) {
-                                success = false;
-                                break;
-                            }
-                            long curEid = eid++;
-                            if (e.getEntryId() != curEid) {
-                                LOG.error("Expected entry id {} for ledger {} but {} found.",
-                                        curEid, lh.getId(), e.getEntryId());
-                                success = false;
-                                break;
-                            }
-                            byte[] data = e.getEntry();
-                            if (!Arrays.equals(("Entry-" + ledgerNumber + "-" + e.getEntryId()).getBytes(), data)) {
-                                LOG.error("Expected entry data 'Entry-{}-{}' but {} found for ledger {}.",
-                                          ledgerNumber, e.getEntryId(), new String(data, UTF_8), lh.getId());
-                                success = false;
-                                break;
-                            }
+        Thread t = new Thread(() -> {
+            //LedgerHandle lh = clientList.get(0).openLedger(ledgerIds.get(tNo % numLedgers),
+            //    digestType, ledgerPassword);
+            long startEntryId = 0;
+            long endEntryId;
+            long eid = 0;
+            while (startEntryId <= entriesPerLedger - 1) {
+                endEntryId = Math.min(startEntryId + 10 - 1, entriesPerLedger - 1);
+                final long numEntries = (endEntryId - startEntryId) + 1;
+                boolean success = true;
+                try {
+                    Enumeration<LedgerEntry> list = lh.readEntries(startEntryId, endEntryId);
+                    for (int j = 0; j < numEntries; j++) {
+                        LedgerEntry e;
+                        try {
+                            e = list.nextElement();
+                        } catch (NoSuchElementException exception) {
+                            success = false;
+                            break;
                         }
-                        if (success) {
-                            success = !list.hasMoreElements();
-                            if (!success) {
-                                LOG.error("Found more entries returned on reading ({}-{}) from ledger {}.",
-                                        startEntryId, endEntryId, lh.getId());
-                            }
+                        long curEid = eid++;
+                        if (e.getEntryId() != curEid) {
+                            LOG.error("Expected entry id {} for ledger {} but {} found.",
+                                    curEid, lh.getId(), e.getEntryId());
+                            success = false;
+                            break;
                         }
-                    } catch (InterruptedException ie) {
-                        LOG.error("Interrupted on reading entries ({} - {}) from ledger {} : ",
-                                startEntryId, endEntryId, lh.getId(), ie);
-                        Thread.currentThread().interrupt();
-                        success = false;
-                    } catch (BKException bke) {
-                        LOG.error("Failed on reading entries ({} - {}) from ledger {} : ",
-                                startEntryId, endEntryId, lh.getId(), bke);
-                        success = false;
+                        byte[] data = e.getEntry();
+                        if (!Arrays.equals(("Entry-" + ledgerNumber + "-" + e.getEntryId()).getBytes(), data)) {
+                            LOG.error("Expected entry data 'Entry-{}-{}' but {} found for ledger {}.",
+                                      ledgerNumber, e.getEntryId(), new String(data, UTF_8), lh.getId());
+                            success = false;
+                            break;
+                        }
                     }
-                    resultHolder.set(success);
-                    if (!success) {
-                        break;
+                    if (success) {
+                        success = !list.hasMoreElements();
+                        if (!success) {
+                            LOG.error("Found more entries returned on reading ({}-{}) from ledger {}.",
+                                    startEntryId, endEntryId, lh.getId());
+                        }
                     }
-                    startEntryId = endEntryId + 1;
+                } catch (InterruptedException ie) {
+                    LOG.error("Interrupted on reading entries ({} - {}) from ledger {} : ",
+                            startEntryId, endEntryId, lh.getId(), ie);
+                    Thread.currentThread().interrupt();
+                    success = false;
+                } catch (BKException bke) {
+                    LOG.error("Failed on reading entries ({} - {}) from ledger {} : ",
+                            startEntryId, endEntryId, lh.getId(), bke);
+                    success = false;
                 }
+                resultHolder.set(success);
+                if (!success) {
+                    break;
+                }
+                startEntryId = endEntryId + 1;
             }
         }, "ReadThread(Tid =" + tNo  + ", Lid=" + lh.getId() + ")");
-        t.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-            @Override
-            public void uncaughtException(Thread thread, Throwable throwable) {
-                LOG.error("Uncaught exception in thread {} : ", thread.getName(), throwable);
-                synchronized (mainSyncObj) {
-                    mainSyncObj.failed = true;
-                }
+        t.setUncaughtExceptionHandler((thread, throwable) -> {
+            LOG.error("Uncaught exception in thread {} : ", thread.getName(), throwable);
+            synchronized (mainSyncObj) {
+                mainSyncObj.failed = true;
             }
         });
         return t;

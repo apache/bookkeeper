@@ -113,17 +113,14 @@ public class FileSystemUpgrade {
         if (!v2versionFile.exists()) {
             return 1;
         }
-        Scanner s = new Scanner(v2versionFile, UTF_8.name());
-        try {
+        try (Scanner s = new Scanner(v2versionFile, UTF_8.name())) {
             return s.nextInt();
         } catch (NoSuchElementException nse) {
-            LOG.error("Couldn't parse version file " + v2versionFile , nse);
+            LOG.error("Couldn't parse version file " + v2versionFile, nse);
             throw new IOException("Couldn't parse version file", nse);
         } catch (IllegalStateException ise) {
             LOG.error("Error reading file " + v2versionFile, ise);
             throw new IOException("Error reading version file", ise);
-        } finally {
-            s.close();
         }
     }
 
@@ -169,8 +166,7 @@ public class FileSystemUpgrade {
             throws BookieException.UpgradeException, InterruptedException {
         LOG.info("Upgrading...");
 
-        RegistrationManager rm = newRegistrationManager(conf);
-        try {
+        try (RegistrationManager rm = newRegistrationManager(conf)) {
             Map<File, File> deferredMoves = new HashMap<File, File>();
             Cookie.Builder cookieBuilder = Cookie.generateCookie(conf);
             Cookie c = cookieBuilder.build();
@@ -190,12 +186,8 @@ public class FileSystemUpgrade {
                     }
                     c.writeToDirectory(tmpDir);
 
-                    String[] files = d.list(new FilenameFilter() {
-                            public boolean accept(File dir, String name) {
-                                return bookieFilesFilter.accept(dir, name)
-                                    && !(new File(dir, name).isDirectory());
-                            }
-                        });
+                    String[] files = d.list((dir, name) ->
+                            bookieFilesFilter.accept(dir, name) && !(new File(dir, name).isDirectory()));
                     HardLink.createHardLinkMult(d, files, tmpDir);
 
                     linkIndexDirectories(d, tmpDir);
@@ -228,8 +220,6 @@ public class FileSystemUpgrade {
             }
         } catch (IOException ioe) {
             throw new BookieException.UpgradeException(ioe);
-        } finally {
-            rm.close();
         }
         LOG.info("Done");
     }
@@ -275,8 +265,7 @@ public class FileSystemUpgrade {
     public static void rollback(ServerConfiguration conf)
             throws BookieException.UpgradeException, InterruptedException {
         LOG.info("Rolling back upgrade...");
-        RegistrationManager rm = newRegistrationManager(conf);
-        try {
+        try (RegistrationManager rm = newRegistrationManager(conf)) {
             for (File d : getAllDirectories(conf)) {
                 LOG.info("Rolling back {}", d);
                 try {
@@ -303,8 +292,6 @@ public class FileSystemUpgrade {
                 LOG.error("Error deleting cookie from Registration Manager");
                 throw new BookieException.UpgradeException(ke);
             }
-        } finally {
-            rm.close();
         }
         LOG.info("Done");
     }

@@ -30,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
-import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncOpenCallback;
 import org.apache.bookkeeper.client.api.OpenBuilder;
@@ -194,19 +193,16 @@ class LedgerOpenOp implements GenericCallback<LedgerMetadata> {
                 }
             });
         } else {
-            lh.asyncReadLastConfirmed(new ReadLastConfirmedCallback() {
-                @Override
-                public void readLastConfirmedComplete(int rc,
-                        long lastConfirmed, Object ctx) {
-                    if (rc != BKException.Code.OK) {
-                        openComplete(bk.getReturnRc(BKException.Code.ReadException), null);
-                    } else {
+            lh.asyncReadLastConfirmed((rc1, lastConfirmed, ctx) -> {
+                if (rc1 != BKException.Code.OK) {
+                    openComplete(bk.getReturnRc(BKException.Code.ReadException), null);
+                } else {
+                    synchronized (lh) {
                         lh.lastAddConfirmed = lh.lastAddPushed = lastConfirmed;
-                        openComplete(BKException.Code.OK, lh);
                     }
+                    openComplete(BKException.Code.OK, lh);
                 }
             }, null);
-
         }
     }
 

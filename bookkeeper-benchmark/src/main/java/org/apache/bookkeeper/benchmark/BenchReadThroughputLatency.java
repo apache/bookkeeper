@@ -40,7 +40,6 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
-import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
@@ -54,20 +53,18 @@ public class BenchReadThroughputLatency {
 
     private static final Pattern LEDGER_PATTERN = Pattern.compile("L([0-9]+)$");
 
-    private static final Comparator<String> ZK_LEDGER_COMPARE = new Comparator<String>() {
-        public int compare(String o1, String o2) {
-            try {
-                Matcher m1 = LEDGER_PATTERN.matcher(o1);
-                Matcher m2 = LEDGER_PATTERN.matcher(o2);
-                if (m1.find() && m2.find()) {
-                    return Integer.parseInt(m1.group(1))
+    private static final Comparator<String> ZK_LEDGER_COMPARE = (o1, o2) -> {
+        try {
+            Matcher m1 = LEDGER_PATTERN.matcher(o1);
+            Matcher m2 = LEDGER_PATTERN.matcher(o2);
+            if (m1.find() && m2.find()) {
+                return Integer.parseInt(m1.group(1))
                         - Integer.parseInt(m2.group(1));
-                } else {
-                    return o1.compareTo(o2);
-                }
-            } catch (Throwable t) {
+            } else {
                 return o1.compareTo(o2);
             }
+        } catch (Throwable t) {
+            return o1.compareTo(o2);
         }
     };
 
@@ -192,70 +189,60 @@ public class BenchReadThroughputLatency {
         final ClientConfiguration conf = new ClientConfiguration();
         conf.setReadTimeout(sockTimeout).setZkServers(servers);
 
-
-        final ZooKeeper zk = new ZooKeeper(servers, 3000, new Watcher() {
-                public void process(WatchedEvent event) {
-                    if (event.getState() == Event.KeeperState.SyncConnected
-                            && event.getType() == Event.EventType.None) {
+        try (ZooKeeper zk = new ZooKeeper(servers, 3000, event -> {
+            if (event.getState() == Watcher.Event.KeeperState.SyncConnected
+                    && event.getType() == Watcher.Event.EventType.None) {
+                connectedLatch.countDown();
+            }
+        })) {
+            final Set<String> processedLedgers = new HashSet<String>();
+            zk.register(event -> {
+                try {
+                    if (event.getState() == Watcher.Event.KeeperState.SyncConnected
+                            && event.getType() == Watcher.Event.EventType.None) {
                         connectedLatch.countDown();
+                    } else if (event.getType() == Watcher.Event.EventType.NodeCreated
+                            && event.getPath().equals(nodepath)) {
+                        readLedger(conf, ledger.get(), passwd);
+                        shutdownLatch.countDown();
+                    } else if (event.getType() == Watcher.Event.EventType.NodeChildrenChanged) {
+                        if (numLedgers.get() < 0) {
+                            return;
+                        }
+                        List<String> children = zk.getChildren("/ledgers", true);
+                        List<String> ledgers = new ArrayList<String>();
+                        for (String child : children) {
+                            if (LEDGER_PATTERN.matcher(child).find()) {
+                                ledgers.add(child);
+                            }
+                        }
+                        for (String childLedger : ledgers) {
+                            synchronized (processedLedgers) {
+                                if (processedLedgers.contains(childLedger)) {
+                                    continue;
+                                }
+                                final Matcher m = LEDGER_PATTERN.matcher(childLedger);
+                                if (m.find()) {
+                                    int ledgersLeft = numLedgers.decrementAndGet();
+                                    final Long ledgerId = Long.valueOf(m.group(1));
+                                    processedLedgers.add(childLedger);
+                                    Thread t = new Thread(() -> readLedger(conf, ledgerId, passwd));
+                                    t.start();
+                                    if (ledgersLeft <= 0) {
+                                        shutdownLatch.countDown();
+                                    }
+                                } else {
+                                    LOG.error("Cant file ledger id in {}", childLedger);
+                                }
+                            }
+                        }
+                    } else {
+                        LOG.warn("Unknown event {}", event);
                     }
+                } catch (Exception e) {
+                    LOG.error("Exception in watcher", e);
                 }
             });
-        final Set<String> processedLedgers = new HashSet<String>();
-        try {
-            zk.register(new Watcher() {
-                    public void process(WatchedEvent event) {
-                        try {
-                            if (event.getState() == Event.KeeperState.SyncConnected
-                                && event.getType() == Event.EventType.None) {
-                                connectedLatch.countDown();
-                            } else if (event.getType() == Event.EventType.NodeCreated
-                                       && event.getPath().equals(nodepath)) {
-                                readLedger(conf, ledger.get(), passwd);
-                                shutdownLatch.countDown();
-                            } else if (event.getType() == Event.EventType.NodeChildrenChanged) {
-                                if (numLedgers.get() < 0) {
-                                    return;
-                                }
-                                List<String> children = zk.getChildren("/ledgers", true);
-                                List<String> ledgers = new ArrayList<String>();
-                                for (String child : children) {
-                                    if (LEDGER_PATTERN.matcher(child).find()) {
-                                        ledgers.add(child);
-                                    }
-                                }
-                                for (String ledger : ledgers) {
-                                    synchronized (processedLedgers) {
-                                        if (processedLedgers.contains(ledger)) {
-                                            continue;
-                                        }
-                                        final Matcher m = LEDGER_PATTERN.matcher(ledger);
-                                        if (m.find()) {
-                                            int ledgersLeft = numLedgers.decrementAndGet();
-                                            final Long ledgerId = Long.valueOf(m.group(1));
-                                            processedLedgers.add(ledger);
-                                            Thread t = new Thread() {
-                                                public void run() {
-                                                    readLedger(conf, ledgerId, passwd);
-                                                }
-                                            };
-                                            t.start();
-                                            if (ledgersLeft <= 0) {
-                                                shutdownLatch.countDown();
-                                            }
-                                        } else {
-                                            LOG.error("Cant file ledger id in {}", ledger);
-                                        }
-                                    }
-                                }
-                            } else {
-                                LOG.warn("Unknown event {}", event);
-                            }
-                        } catch (Exception e) {
-                            LOG.error("Exception in watcher", e);
-                        }
-                    }
-                });
             connectedLatch.await();
             if (ledger.get() != 0) {
                 if (zk.exists(nodepath, true) != null) {
@@ -269,8 +256,6 @@ public class BenchReadThroughputLatency {
             }
             shutdownLatch.await();
             LOG.info("Shutting down");
-        } finally {
-            zk.close();
         }
     }
 }

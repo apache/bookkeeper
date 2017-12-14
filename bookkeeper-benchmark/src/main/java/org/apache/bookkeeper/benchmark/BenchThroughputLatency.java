@@ -46,8 +46,6 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooDefs;
@@ -138,18 +136,16 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
 
         int sent = 0;
 
-        Thread reporter = new Thread() {
-                public void run() {
-                    try {
-                        while (true) {
-                            Thread.sleep(1000);
-                            LOG.info("ms: {} req: {}", System.currentTimeMillis(), completedRequests.getAndSet(0));
-                        }
-                    } catch (InterruptedException ie) {
-                        LOG.info("Caught interrupted exception, going away");
-                    }
+        Thread reporter = new Thread(() -> {
+            try {
+                while (true) {
+                    Thread.sleep(1000);
+                    LOG.info("ms: {} req: {}", System.currentTimeMillis(), completedRequests.getAndSet(0));
                 }
-            };
+            } catch (InterruptedException ie) {
+                LOG.info("Caught interrupted exception, going away");
+            }
+        });
         reporter.start();
         long beforeSend = System.nanoTime();
 
@@ -330,13 +326,11 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
 
         if (coordinationZnode != null) {
             final CountDownLatch connectLatch = new CountDownLatch(1);
-            zk = new ZooKeeper(servers, 15000, new Watcher() {
-                    @Override
-                    public void process(WatchedEvent event) {
-                        if (event.getState() == KeeperState.SyncConnected) {
-                            connectLatch.countDown();
-                        }
-                    }});
+            zk = new ZooKeeper(servers, 15000, event -> {
+                if (event.getState() == KeeperState.SyncConnected) {
+                    connectLatch.countDown();
+                }
+            });
             if (!connectLatch.await(10, TimeUnit.SECONDS)) {
                 LOG.error("Couldn't connect to zookeeper at " + servers);
                 zk.close();
@@ -345,13 +339,11 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
 
             final CountDownLatch latch = new CountDownLatch(1);
             LOG.info("Waiting for " + coordinationZnode);
-            if (zk.exists(coordinationZnode, new Watcher() {
-                @Override
-                public void process(WatchedEvent event) {
-                    if (event.getType() == EventType.NodeCreated) {
-                        latch.countDown();
-                    }
-                }}) != null) {
+            if (zk.exists(coordinationZnode, event -> {
+                        if (event.getType() == EventType.NodeCreated) {
+                            latch.countDown();
+                        }
+                    }) != null) {
                 latch.countDown();
             }
             latch.await();
@@ -430,13 +422,11 @@ public class BenchThroughputLatency implements AddCallback, Runnable {
         ZooKeeper zk = null;
         try {
             final String servers = conf.getZkServers();
-            zk = new ZooKeeper(servers, 15000, new Watcher() {
-                    @Override
-                    public void process(WatchedEvent event) {
-                        if (event.getState() == KeeperState.SyncConnected) {
-                            connectLatch.countDown();
-                        }
-                    }});
+            zk = new ZooKeeper(servers, 15000, event -> {
+                if (event.getState() == KeeperState.SyncConnected) {
+                    connectLatch.countDown();
+                }
+            });
             if (!connectLatch.await(10, TimeUnit.SECONDS)) {
                 LOG.error("Couldn't connect to zookeeper at " + servers);
                 throw new IOException("Couldn't connect to zookeeper " + servers);

@@ -387,23 +387,20 @@ public class BookieRequestProcessor implements RequestProcessor {
             response.setStatus(BookkeeperProtocol.StatusCode.EOK);
             BookkeeperProtocol.StartTLSResponse.Builder builder = BookkeeperProtocol.StartTLSResponse.newBuilder();
             response.setStartTLSResponse(builder.build());
-            sslHandler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
-                @Override
-                public void operationComplete(Future<Channel> future) throws Exception {
-                    // notify the AuthPlugin the completion of the handshake, even in case of failure
-                    AuthHandler.ServerSideHandler authHandler = c.pipeline()
-                            .get(AuthHandler.ServerSideHandler.class);
-                    authHandler.authProvider.onProtocolUpgrade();
-                    if (future.isSuccess()) {
-                        LOG.info("Session is protected by: {}", sslHandler.engine().getSession().getCipherSuite());
-                    } else {
-                        LOG.error("TLS Handshake failure: {}", future.cause());
-                        BookkeeperProtocol.Response.Builder errResponse = BookkeeperProtocol.Response.newBuilder()
-                                .setHeader(r.getHeader()).setStatus(BookkeeperProtocol.StatusCode.EIO);
-                        c.writeAndFlush(errResponse.build());
-                        if (statsEnabled) {
-                            bkStats.getOpStats(BKStats.STATS_UNKNOWN).incrementFailedOps();
-                        }
+            sslHandler.handshakeFuture().addListener((GenericFutureListener<Future<Channel>>) future -> {
+                // notify the AuthPlugin the completion of the handshake, even in case of failure
+                AuthHandler.ServerSideHandler authHandler = c.pipeline()
+                        .get(AuthHandler.ServerSideHandler.class);
+                authHandler.authProvider.onProtocolUpgrade();
+                if (future.isSuccess()) {
+                    LOG.info("Session is protected by: {}", sslHandler.engine().getSession().getCipherSuite());
+                } else {
+                    LOG.error("TLS Handshake failure: {}", future.cause());
+                    BookkeeperProtocol.Response.Builder errResponse = BookkeeperProtocol.Response.newBuilder()
+                            .setHeader(r.getHeader()).setStatus(BookkeeperProtocol.StatusCode.EIO);
+                    c.writeAndFlush(errResponse.build());
+                    if (statsEnabled) {
+                        bkStats.getOpStats(BKStats.STATS_UNKNOWN).incrementFailedOps();
                     }
                 }
             });

@@ -236,13 +236,10 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("Ledger metadata is changed for {} : {}.", ledgerId, result);
                         }
-                        scheduler.submit(new Runnable() {
-                            @Override
-                            public void run() {
-                                synchronized (listenerSet) {
-                                    for (LedgerMetadataListener listener : listenerSet) {
-                                        listener.onChanged(ledgerId, result);
-                                    }
+                        scheduler.submit(() -> {
+                            synchronized (listenerSet) {
+                                for (LedgerMetadataListener listener : listenerSet) {
+                                    listener.onChanged(ledgerId, result);
                                 }
                             }
                         });
@@ -359,24 +356,21 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
         @Override
         public void createLedgerMetadata(final long lid, final LedgerMetadata metadata,
                                          final GenericCallback<Void> ledgerCb) {
-            MetastoreCallback<Version> msCallback = new MetastoreCallback<Version>() {
-                @Override
-                public void complete(int rc, Version version, Object ctx) {
-                    if (MSException.Code.BadVersion.getCode() == rc) {
-                        ledgerCb.operationComplete(BKException.Code.MetadataVersionException, null);
-                        return;
-                    }
-                    if (MSException.Code.OK.getCode() != rc) {
-                        ledgerCb.operationComplete(BKException.Code.MetaStoreException, null);
-                        return;
-                    }
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Create ledger {} with version {} successfully.", lid, version);
-                    }
-                    // update version
-                    metadata.setVersion(version);
-                    ledgerCb.operationComplete(BKException.Code.OK, null);
+            MetastoreCallback<Version> msCallback = (rc, version, ctx) -> {
+                if (MSException.Code.BadVersion.getCode() == rc) {
+                    ledgerCb.operationComplete(BKException.Code.MetadataVersionException, null);
+                    return;
                 }
+                if (MSException.Code.OK.getCode() != rc) {
+                    ledgerCb.operationComplete(BKException.Code.MetaStoreException, null);
+                    return;
+                }
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Create ledger {} with version {} successfully.", lid, version);
+                }
+                // update version
+                metadata.setVersion(version);
+                ledgerCb.operationComplete(BKException.Code.OK, null);
             };
 
             ledgerTable.put(ledgerId2Key(lid), new Value().setField(META_FIELD, metadata.serialize()),
@@ -386,20 +380,17 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
         @Override
         public void removeLedgerMetadata(final long ledgerId, final Version version,
                                          final GenericCallback<Void> cb) {
-            MetastoreCallback<Void> msCallback = new MetastoreCallback<Void>() {
-                @Override
-                public void complete(int rc, Void value, Object ctx) {
-                    int bkRc;
-                    if (MSException.Code.NoKey.getCode() == rc) {
-                        LOG.warn("Ledger entry does not exist in meta table: ledgerId={}", ledgerId);
-                        bkRc = BKException.Code.NoSuchLedgerExistsException;
-                    } else if (MSException.Code.OK.getCode() == rc) {
-                        bkRc = BKException.Code.OK;
-                    } else {
-                        bkRc = BKException.Code.MetaStoreException;
-                    }
-                    cb.operationComplete(bkRc, (Void) null);
+            MetastoreCallback<Void> msCallback = (rc, value, ctx) -> {
+                int bkRc;
+                if (MSException.Code.NoKey.getCode() == rc) {
+                    LOG.warn("Ledger entry does not exist in meta table: ledgerId={}", ledgerId);
+                    bkRc = BKException.Code.NoSuchLedgerExistsException;
+                } else if (MSException.Code.OK.getCode() == rc) {
+                    bkRc = BKException.Code.OK;
+                } else {
+                    bkRc = BKException.Code.MetaStoreException;
                 }
+                cb.operationComplete(bkRc, (Void) null);
             };
             ledgerTable.remove(ledgerId2Key(ledgerId), version, msCallback, null);
         }
@@ -407,32 +398,29 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
         @Override
         public void readLedgerMetadata(final long ledgerId, final GenericCallback<LedgerMetadata> readCb) {
             final String key = ledgerId2Key(ledgerId);
-            MetastoreCallback<Versioned<Value>> msCallback = new MetastoreCallback<Versioned<Value>>() {
-                @Override
-                public void complete(int rc, Versioned<Value> value, Object ctx) {
-                    if (MSException.Code.NoKey.getCode() == rc) {
-                        LOG.error("No ledger metadata found for ledger " + ledgerId + " : ",
-                                MSException.create(MSException.Code.get(rc), "No key " + key + " found."));
-                        readCb.operationComplete(BKException.Code.NoSuchLedgerExistsException, null);
-                        return;
-                    }
-                    if (MSException.Code.OK.getCode() != rc) {
-                        LOG.error("Could not read metadata for ledger " + ledgerId + " : ",
-                                MSException.create(MSException.Code.get(rc), "Failed to get key " + key));
-                        readCb.operationComplete(BKException.Code.MetaStoreException, null);
-                        return;
-                    }
-                    LedgerMetadata metadata;
-                    try {
-                        metadata = LedgerMetadata.parseConfig(value.getValue().getField(META_FIELD),
-                                value.getVersion(), Optional.<Long>absent());
-                    } catch (IOException e) {
-                        LOG.error("Could not parse ledger metadata for ledger " + ledgerId + " : ", e);
-                        readCb.operationComplete(BKException.Code.MetaStoreException, null);
-                        return;
-                    }
-                    readCb.operationComplete(BKException.Code.OK, metadata);
+            MetastoreCallback<Versioned<Value>> msCallback = (rc, value, ctx) -> {
+                if (MSException.Code.NoKey.getCode() == rc) {
+                    LOG.error("No ledger metadata found for ledger " + ledgerId + " : ",
+                            MSException.create(MSException.Code.get(rc), "No key " + key + " found."));
+                    readCb.operationComplete(BKException.Code.NoSuchLedgerExistsException, null);
+                    return;
                 }
+                if (MSException.Code.OK.getCode() != rc) {
+                    LOG.error("Could not read metadata for ledger " + ledgerId + " : ",
+                            MSException.create(MSException.Code.get(rc), "Failed to get key " + key));
+                    readCb.operationComplete(BKException.Code.MetaStoreException, null);
+                    return;
+                }
+                LedgerMetadata metadata;
+                try {
+                    metadata = LedgerMetadata.parseConfig(value.getValue().getField(META_FIELD),
+                            value.getVersion(), Optional.<Long>absent());
+                } catch (IOException e) {
+                    LOG.error("Could not parse ledger metadata for ledger " + ledgerId + " : ", e);
+                    readCb.operationComplete(BKException.Code.MetaStoreException, null);
+                    return;
+                }
+                readCb.operationComplete(BKException.Code.OK, metadata);
             };
             ledgerTable.get(key, this, msCallback, ALL_FIELDS);
         }
@@ -447,27 +435,24 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
             }
 
             final String key = ledgerId2Key(ledgerId);
-            MetastoreCallback<Version> msCallback = new MetastoreCallback<Version>() {
-                @Override
-                public void complete(int rc, Version version, Object ctx) {
-                    int bkRc;
-                    if (MSException.Code.BadVersion.getCode() == rc) {
-                        LOG.info("Bad version provided to updat metadata for ledger {}", ledgerId);
-                        bkRc = BKException.Code.MetadataVersionException;
-                    } else if (MSException.Code.NoKey.getCode() == rc) {
-                        LOG.warn("Ledger {} doesn't exist when writing its ledger metadata.", ledgerId);
-                        bkRc = BKException.Code.NoSuchLedgerExistsException;
-                    } else if (MSException.Code.OK.getCode() == rc) {
-                        metadata.setVersion(version);
-                        bkRc = BKException.Code.OK;
-                    } else {
-                        LOG.warn("Conditional update ledger metadata failed: ",
-                                MSException.create(MSException.Code.get(rc), "Failed to put key " + key));
-                        bkRc = BKException.Code.MetaStoreException;
-                    }
-
-                    cb.operationComplete(bkRc, null);
+            MetastoreCallback<Version> msCallback = (rc, version, ctx) -> {
+                int bkRc;
+                if (MSException.Code.BadVersion.getCode() == rc) {
+                    LOG.info("Bad version provided to updat metadata for ledger {}", ledgerId);
+                    bkRc = BKException.Code.MetadataVersionException;
+                } else if (MSException.Code.NoKey.getCode() == rc) {
+                    LOG.warn("Ledger {} doesn't exist when writing its ledger metadata.", ledgerId);
+                    bkRc = BKException.Code.NoSuchLedgerExistsException;
+                } else if (MSException.Code.OK.getCode() == rc) {
+                    metadata.setVersion(version);
+                    bkRc = BKException.Code.OK;
+                } else {
+                    LOG.warn("Conditional update ledger metadata failed: ",
+                            MSException.create(MSException.Code.get(rc), "Failed to put key " + key));
+                    bkRc = BKException.Code.MetaStoreException;
                 }
+
+                cb.operationComplete(bkRc, null);
             };
             ledgerTable.put(key, data, metadata.getVersion(), msCallback, null);
         }
@@ -475,19 +460,16 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
         @Override
         public void asyncProcessLedgers(final Processor<Long> processor, final AsyncCallback.VoidCallback finalCb,
                 final Object context, final int successRc, final int failureRc) {
-            MetastoreCallback<MetastoreCursor> openCursorCb = new MetastoreCallback<MetastoreCursor>() {
-                @Override
-                public void complete(int rc, MetastoreCursor cursor, Object ctx) {
-                    if (MSException.Code.OK.getCode() != rc) {
-                        finalCb.processResult(failureRc, null, context);
-                        return;
-                    }
-                    if (!cursor.hasMoreEntries()) {
-                        finalCb.processResult(successRc, null, context);
-                        return;
-                    }
-                    asyncProcessLedgers(cursor, processor, finalCb, context, successRc, failureRc);
+            MetastoreCallback<MetastoreCursor> openCursorCb = (rc, cursor, ctx) -> {
+                if (MSException.Code.OK.getCode() != rc) {
+                    finalCb.processResult(failureRc, null, context);
+                    return;
                 }
+                if (!cursor.hasMoreEntries()) {
+                    finalCb.processResult(successRc, null, context);
+                    return;
+                }
+                asyncProcessLedgers(cursor, processor, finalCb, context, successRc, failureRc);
             };
             ledgerTable.openCursor(NON_FIELDS, openCursorCb, null);
         }
@@ -495,12 +477,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
         void asyncProcessLedgers(final MetastoreCursor cursor, final Processor<Long> processor,
                                  final AsyncCallback.VoidCallback finalCb, final Object context,
                                  final int successRc, final int failureRc) {
-            scheduler.submit(new Runnable() {
-                @Override
-                public void run() {
-                    doAsyncProcessLedgers(cursor, processor, finalCb, context, successRc, failureRc);
-                }
-            });
+            scheduler.submit(() -> doAsyncProcessLedgers(cursor, processor, finalCb, context, successRc, failureRc));
         }
 
         void doAsyncProcessLedgers(final MetastoreCursor cursor, final Processor<Long> processor,
@@ -511,49 +488,43 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
                 finalCb.processResult(successRc, null, context);
                 return;
             }
-            ReadEntriesCallback msCallback = new ReadEntriesCallback() {
-                @Override
-                public void complete(int rc, Iterator<MetastoreTableItem> entries, Object ctx) {
-                    if (MSException.Code.OK.getCode() != rc) {
+            ReadEntriesCallback msCallback = (rc, entries, ctx) -> {
+                if (MSException.Code.OK.getCode() != rc) {
+                    finalCb.processResult(failureRc, null, context);
+                    return;
+                }
+
+                SortedSet<Long> ledgers = new TreeSet<Long>();
+                while (entries.hasNext()) {
+                    MetastoreTableItem item = entries.next();
+                    try {
+                        ledgers.add(key2LedgerId(item.getKey()));
+                    } catch (NumberFormatException nfe) {
+                        LOG.warn("Found invalid ledger key {}", item.getKey());
+                    }
+                }
+
+                if (0 == ledgers.size()) {
+                    // process next batch of ledgers
+                    asyncProcessLedgers(cursor, processor, finalCb, context, successRc, failureRc);
+                    return;
+                }
+
+                final long startLedger = ledgers.first();
+                final long endLedger = ledgers.last();
+
+                AsyncSetProcessor<Long> setProcessor = new AsyncSetProcessor<Long>(scheduler);
+                // process set
+                setProcessor.process(ledgers, processor, (rc1, path, ctx1) -> {
+                    if (successRc != rc1) {
+                        LOG.error("Failed when processing range "
+                                + rangeToString(startLedger, true, endLedger, true));
                         finalCb.processResult(failureRc, null, context);
                         return;
                     }
-
-                    SortedSet<Long> ledgers = new TreeSet<Long>();
-                    while (entries.hasNext()) {
-                        MetastoreTableItem item = entries.next();
-                        try {
-                            ledgers.add(key2LedgerId(item.getKey()));
-                        } catch (NumberFormatException nfe) {
-                            LOG.warn("Found invalid ledger key {}", item.getKey());
-                        }
-                    }
-
-                    if (0 == ledgers.size()) {
-                        // process next batch of ledgers
-                        asyncProcessLedgers(cursor, processor, finalCb, context, successRc, failureRc);
-                        return;
-                    }
-
-                    final long startLedger = ledgers.first();
-                    final long endLedger = ledgers.last();
-
-                    AsyncSetProcessor<Long> setProcessor = new AsyncSetProcessor<Long>(scheduler);
-                    // process set
-                    setProcessor.process(ledgers, processor, new AsyncCallback.VoidCallback() {
-                        @Override
-                        public void processResult(int rc, String path, Object ctx) {
-                            if (successRc != rc) {
-                                LOG.error("Failed when processing range "
-                                        + rangeToString(startLedger, true, endLedger, true));
-                                finalCb.processResult(failureRc, null, context);
-                                return;
-                            }
-                            // process next batch of ledgers
-                            asyncProcessLedgers(cursor, processor, finalCb, context, successRc, failureRc);
-                        }
-                    }, context, successRc, failureRc);
-                }
+                    // process next batch of ledgers
+                    asyncProcessLedgers(cursor, processor, finalCb, context, successRc, failureRc);
+                }, context, successRc, failureRc);
             };
             cursor.asyncReadEntries(maxEntriesPerScan, msCallback, null);
         }
@@ -564,16 +535,13 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
             // last ledger id in previous range
 
             MSLedgerRangeIterator() {
-                MetastoreCallback<MetastoreCursor> openCursorCb = new MetastoreCallback<MetastoreCursor>() {
-                    @Override
-                    public void complete(int rc, MetastoreCursor newCursor, Object ctx) {
-                        if (MSException.Code.OK.getCode() != rc) {
-                            LOG.error("Error opening cursor for ledger range iterator {}", rc);
-                        } else {
-                            cursor = newCursor;
-                        }
-                        openCursorLatch.countDown();
+                MetastoreCallback<MetastoreCursor> openCursorCb = (rc, newCursor, ctx) -> {
+                    if (MSException.Code.OK.getCode() != rc) {
+                        LOG.error("Error opening cursor for ledger range iterator {}", rc);
+                    } else {
+                        cursor = newCursor;
                     }
+                    openCursorLatch.countDown();
                 };
                 ledgerTable.openCursor(NON_FIELDS, openCursorCb, null);
             }
@@ -684,12 +652,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
                     // process next element
                     final T dataToProcess = iter.next();
                     final AsyncCallback.VoidCallback stub = this;
-                    scheduler.submit(new Runnable() {
-                        @Override
-                        public void run() {
-                            processor.process(dataToProcess, stub);
-                        }
-                    });
+                    scheduler.submit(() -> processor.process(dataToProcess, stub));
                 }
             };
             T firstElement = iter.next();

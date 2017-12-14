@@ -45,8 +45,6 @@ import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.zookeeper.AsyncCallback;
-import org.apache.zookeeper.AsyncCallback.DataCallback;
-import org.apache.zookeeper.AsyncCallback.StatCallback;
 import org.apache.zookeeper.AsyncCallback.StringCallback;
 import org.apache.zookeeper.AsyncCallback.VoidCallback;
 import org.apache.zookeeper.CreateMode;
@@ -56,7 +54,6 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
-import org.apache.zookeeper.data.Stat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -109,13 +106,10 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Ledger metadata is changed for {} : {}.", ledgerId, result);
                     }
-                    scheduler.submit(new Runnable() {
-                        @Override
-                        public void run() {
-                            synchronized (listenerSet) {
-                                for (LedgerMetadataListener listener : listenerSet) {
-                                    listener.onChanged(ledgerId, result);
-                                }
+                    scheduler.submit(() -> {
+                        synchronized (listenerSet) {
+                            for (LedgerMetadataListener listener : listenerSet) {
+                                listener.onChanged(ledgerId, result);
                             }
                         }
                     });
@@ -226,21 +220,18 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
     public void createLedgerMetadata(final long ledgerId, final LedgerMetadata metadata,
             final GenericCallback<Void> ledgerCb) {
         String ledgerPath = getLedgerPath(ledgerId);
-        StringCallback scb = new StringCallback() {
-            @Override
-            public void processResult(int rc, String path, Object ctx, String name) {
-                if (rc == Code.OK.intValue()) {
-                    // update version
-                    metadata.setVersion(new LongVersion(0));
-                    ledgerCb.operationComplete(BKException.Code.OK, null);
-                } else if (rc == Code.NODEEXISTS.intValue()) {
-                    LOG.warn("Failed to create ledger metadata for {} which already exist", ledgerId);
-                    ledgerCb.operationComplete(BKException.Code.LedgerExistException, null);
-                } else {
-                    LOG.error("Could not create node for ledger {}", ledgerId,
-                            KeeperException.create(Code.get(rc), path));
-                    ledgerCb.operationComplete(BKException.Code.ZKException, null);
-                }
+        StringCallback scb = (rc, path, ctx, name) -> {
+            if (rc == Code.OK.intValue()) {
+                // update version
+                metadata.setVersion(new LongVersion(0));
+                ledgerCb.operationComplete(BKException.Code.OK, null);
+            } else if (rc == Code.NODEEXISTS.intValue()) {
+                LOG.warn("Failed to create ledger metadata for {} which already exist", ledgerId);
+                ledgerCb.operationComplete(BKException.Code.LedgerExistException, null);
+            } else {
+                LOG.error("Could not create node for ledger {}", ledgerId,
+                        KeeperException.create(Code.get(rc), path));
+                ledgerCb.operationComplete(BKException.Code.ZKException, null);
             }
         };
         List<ACL> zkAcls = ZkUtils.getACLs(conf);
@@ -277,34 +268,31 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
             }
         }
 
-        VoidCallback callbackForDelete = new VoidCallback() {
-            @Override
-            public void processResult(int rc, String path, Object ctx) {
-                int bkRc;
-                if (rc == KeeperException.Code.NONODE.intValue()) {
-                    LOG.warn("Ledger node does not exist in ZooKeeper: ledgerId={}", ledgerId);
-                    bkRc = BKException.Code.NoSuchLedgerExistsException;
-                } else if (rc == KeeperException.Code.OK.intValue()) {
-                    // removed listener on ledgerId
-                    Set<LedgerMetadataListener> listenerSet = listeners.remove(ledgerId);
-                    if (null != listenerSet) {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug(
-                                    "Remove registered ledger metadata listeners on ledger {} after ledger is deleted.",
-                                    ledgerId, listenerSet);
-                        }
-                    } else {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("No ledger metadata listeners to remove from ledger {} when it's being deleted.",
-                                    ledgerId);
-                        }
+        VoidCallback callbackForDelete = (rc, path, ctx) -> {
+            int bkRc;
+            if (rc == Code.NONODE.intValue()) {
+                LOG.warn("Ledger node does not exist in ZooKeeper: ledgerId={}", ledgerId);
+                bkRc = BKException.Code.NoSuchLedgerExistsException;
+            } else if (rc == Code.OK.intValue()) {
+                // removed listener on ledgerId
+                Set<LedgerMetadataListener> listenerSet = listeners.remove(ledgerId);
+                if (null != listenerSet) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug(
+                                "Remove registered ledger metadata listeners on ledger {} after ledger is deleted.",
+                                ledgerId, listenerSet);
                     }
-                    bkRc = BKException.Code.OK;
                 } else {
-                    bkRc = BKException.Code.ZKException;
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("No ledger metadata listeners to remove from ledger {} when it's being deleted.",
+                                ledgerId);
+                    }
                 }
-                cb.operationComplete(bkRc, (Void) null);
+                bkRc = BKException.Code.OK;
+            } else {
+                bkRc = BKException.Code.ZKException;
             }
+            cb.operationComplete(bkRc, (Void) null);
         };
         String ledgerZnodePath = getLedgerPath(ledgerId);
         if (this instanceof HierarchicalLedgerManager || this instanceof LongHierarchicalLedgerManager) {
@@ -364,39 +352,36 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
 
     protected void readLedgerMetadata(final long ledgerId, final GenericCallback<LedgerMetadata> readCb,
                                       Watcher watcher) {
-        zk.getData(getLedgerPath(ledgerId), watcher, new DataCallback() {
-            @Override
-            public void processResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
-                if (rc == KeeperException.Code.NONODE.intValue()) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("No such ledger: " + ledgerId,
-                                  KeeperException.create(KeeperException.Code.get(rc), path));
-                    }
-                    readCb.operationComplete(BKException.Code.NoSuchLedgerExistsException, null);
-                    return;
+        zk.getData(getLedgerPath(ledgerId), watcher, (rc, path, ctx, data, stat) -> {
+            if (rc == Code.NONODE.intValue()) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("No such ledger: " + ledgerId,
+                              KeeperException.create(Code.get(rc), path));
                 }
-                if (rc != KeeperException.Code.OK.intValue()) {
-                    LOG.error("Could not read metadata for ledger: " + ledgerId,
-                              KeeperException.create(KeeperException.Code.get(rc), path));
-                    readCb.operationComplete(BKException.Code.ZKException, null);
-                    return;
-                }
-                if (stat == null) {
-                    LOG.error("Could not parse ledger metadata for ledger: {}. Stat object is null", ledgerId);
-                    readCb.operationComplete(BKException.Code.ZKException, null);
-                    return;
-                }
-                LedgerMetadata metadata;
-                try {
-                    metadata = LedgerMetadata.parseConfig(data, new LongVersion(stat.getVersion()),
-                            Optional.of(stat.getCtime()));
-                } catch (IOException e) {
-                    LOG.error("Could not parse ledger metadata for ledger: " + ledgerId, e);
-                    readCb.operationComplete(BKException.Code.ZKException, null);
-                    return;
-                }
-                readCb.operationComplete(BKException.Code.OK, metadata);
+                readCb.operationComplete(BKException.Code.NoSuchLedgerExistsException, null);
+                return;
             }
+            if (rc != Code.OK.intValue()) {
+                LOG.error("Could not read metadata for ledger: " + ledgerId,
+                          KeeperException.create(Code.get(rc), path));
+                readCb.operationComplete(BKException.Code.ZKException, null);
+                return;
+            }
+            if (stat == null) {
+                LOG.error("Could not parse ledger metadata for ledger: {}. Stat object is null", ledgerId);
+                readCb.operationComplete(BKException.Code.ZKException, null);
+                return;
+            }
+            LedgerMetadata metadata;
+            try {
+                metadata = LedgerMetadata.parseConfig(data, new LongVersion(stat.getVersion()),
+                        Optional.of(stat.getCtime()));
+            } catch (IOException e) {
+                LOG.error("Could not parse ledger metadata for ledger: " + ledgerId, e);
+                readCb.operationComplete(BKException.Code.ZKException, null);
+                return;
+            }
+            readCb.operationComplete(BKException.Code.OK, metadata);
         }, null);
     }
 
@@ -410,22 +395,19 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
         }
         final LongVersion zv = (LongVersion) v;
         zk.setData(getLedgerPath(ledgerId),
-                   metadata.serialize(), (int) zv.getLongVersion(),
-                   new StatCallback() {
-            @Override
-            public void processResult(int rc, String path, Object ctx, Stat stat) {
-                if (KeeperException.Code.BADVERSION.intValue() == rc) {
-                    cb.operationComplete(BKException.Code.MetadataVersionException, null);
-                } else if (KeeperException.Code.OK.intValue() == rc) {
-                    // update metadata version
-                    metadata.setVersion(zv.setLongVersion(stat.getVersion()));
-                    cb.operationComplete(BKException.Code.OK, null);
-                } else {
-                    LOG.warn("Conditional update ledger metadata failed: {}", KeeperException.Code.get(rc));
-                    cb.operationComplete(BKException.Code.ZKException, null);
-                }
-            }
-        }, null);
+                metadata.serialize(), (int) zv.getLongVersion(),
+                (rc, path, ctx, stat) -> {
+                    if (Code.BADVERSION.intValue() == rc) {
+                        cb.operationComplete(BKException.Code.MetadataVersionException, null);
+                    } else if (Code.OK.intValue() == rc) {
+                        // update metadata version
+                        metadata.setVersion(zv.setLongVersion(stat.getVersion()));
+                        cb.operationComplete(BKException.Code.OK, null);
+                    } else {
+                        LOG.warn("Conditional update ledger metadata failed: {}", Code.get(rc));
+                        cb.operationComplete(BKException.Code.ZKException, null);
+                    }
+                }, null);
     }
 
     /**
@@ -458,31 +440,28 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
             final String path, final Processor<Long> processor,
             final AsyncCallback.VoidCallback finalCb, final Object ctx,
             final int successRc, final int failureRc) {
-        ZkUtils.getChildrenInSingleNode(zk, path, new GenericCallback<List<String>>() {
-            @Override
-            public void operationComplete(int rc, List<String> ledgerNodes) {
-                if (Code.OK.intValue() != rc) {
-                    finalCb.processResult(failureRc, null, ctx);
-                    return;
-                }
+        ZkUtils.getChildrenInSingleNode(zk, path, (rc, ledgerNodes) -> {
+            if (Code.OK.intValue() != rc) {
+                finalCb.processResult(failureRc, null, ctx);
+                return;
+            }
 
-                Set<Long> zkActiveLedgers = ledgerListToSet(ledgerNodes, path);
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Processing ledgers: {}", zkActiveLedgers);
-                }
+            Set<Long> zkActiveLedgers = ledgerListToSet(ledgerNodes, path);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Processing ledgers: {}", zkActiveLedgers);
+            }
 
-                // no ledgers found, return directly
-                if (zkActiveLedgers.size() == 0) {
-                    finalCb.processResult(successRc, null, ctx);
-                    return;
-                }
+            // no ledgers found, return directly
+            if (zkActiveLedgers.size() == 0) {
+                finalCb.processResult(successRc, null, ctx);
+                return;
+            }
 
-                MultiCallback mcb = new MultiCallback(zkActiveLedgers.size(), finalCb, ctx,
-                                                      successRc, failureRc);
-                // start loop over all ledgers
-                for (Long ledger : zkActiveLedgers) {
-                    processor.process(ledger, mcb);
-                }
+            MultiCallback mcb = new MultiCallback(zkActiveLedgers.size(), finalCb, ctx,
+                                                  successRc, failureRc);
+            // start loop over all ledgers
+            for (Long ledger : zkActiveLedgers) {
+                processor.process(ledger, mcb);
             }
         });
     }

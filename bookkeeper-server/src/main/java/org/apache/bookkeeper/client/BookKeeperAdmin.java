@@ -454,16 +454,13 @@ public class BookKeeperAdmin implements AutoCloseable {
         final SyncObject sync = new SyncObject();
         final AtomicReference<SortedMap<Long, LedgerMetadata>> resultHolder =
                 new AtomicReference<SortedMap<Long, LedgerMetadata>>(null);
-        asyncGetLedgersContainBookies(bookies, new GenericCallback<SortedMap<Long, LedgerMetadata>>() {
-            @Override
-            public void operationComplete(int rc, SortedMap<Long, LedgerMetadata> result) {
-                LOG.info("GetLedgersContainBookies completed with rc : {}", rc);
-                synchronized (sync) {
-                    sync.rc = rc;
-                    sync.value = true;
-                    resultHolder.set(result);
-                    sync.notify();
-                }
+        asyncGetLedgersContainBookies(bookies, (rc, result) -> {
+            LOG.info("GetLedgersContainBookies completed with rc : {}", rc);
+            synchronized (sync) {
+                sync.rc = rc;
+                sync.value = true;
+                resultHolder.set(result);
+                sync.notify();
             }
         });
         synchronized (sync) {
@@ -480,36 +477,28 @@ public class BookKeeperAdmin implements AutoCloseable {
     public void asyncGetLedgersContainBookies(final Set<BookieSocketAddress> bookies,
                                               final GenericCallback<SortedMap<Long, LedgerMetadata>> callback) {
         final SortedMap<Long, LedgerMetadata> ledgers = new ConcurrentSkipListMap<Long, LedgerMetadata>();
-        bkc.getLedgerManager().asyncProcessLedgers(new Processor<Long>() {
-            @Override
-            public void process(final Long lid, final AsyncCallback.VoidCallback cb) {
-                bkc.getLedgerManager().readLedgerMetadata(lid, new GenericCallback<LedgerMetadata>() {
-                    @Override
-                    public void operationComplete(int rc, LedgerMetadata metadata) {
-                        if (BKException.Code.NoSuchLedgerExistsException == rc) {
-                            // the ledger was deleted during this iteration.
+        bkc.getLedgerManager().asyncProcessLedgers(
+                (lid, cb) ->
+                        bkc.getLedgerManager().readLedgerMetadata(lid, (rc, metadata) -> {
+                            if (BKException.Code.NoSuchLedgerExistsException == rc) {
+                                // the ledger was deleted during this iteration.
+                                cb.processResult(BKException.Code.OK, null, null);
+                                return;
+                            } else if (BKException.Code.OK != rc) {
+                                cb.processResult(rc, null, null);
+                                return;
+                            }
+                            Set<BookieSocketAddress> bookiesInLedger = metadata.getBookiesInThisLedger();
+                            Sets.SetView<BookieSocketAddress> intersection =
+                                    Sets.intersection(bookiesInLedger, bookies);
+                            if (!intersection.isEmpty()) {
+                                ledgers.put(lid, metadata);
+                            }
                             cb.processResult(BKException.Code.OK, null, null);
-                            return;
-                        } else if (BKException.Code.OK != rc) {
-                            cb.processResult(rc, null, null);
-                            return;
-                        }
-                        Set<BookieSocketAddress> bookiesInLedger = metadata.getBookiesInThisLedger();
-                        Sets.SetView<BookieSocketAddress> intersection =
-                                Sets.intersection(bookiesInLedger, bookies);
-                        if (!intersection.isEmpty()) {
-                            ledgers.put(lid, metadata);
-                        }
-                        cb.processResult(BKException.Code.OK, null, null);
-                    }
-                });
-            }
-        }, new AsyncCallback.VoidCallback() {
-            @Override
-            public void processResult(int rc, String path, Object ctx) {
-                callback.operationComplete(rc, ledgers);
-            }
-        }, null, BKException.Code.OK, BKException.Code.MetaStoreException);
+                        }),
+                (rc, path, ctx) ->
+                        callback.operationComplete(rc, ledgers),
+                null, BKException.Code.OK, BKException.Code.MetaStoreException);
     }
 
     /**
@@ -542,16 +531,13 @@ public class BookKeeperAdmin implements AutoCloseable {
             throws InterruptedException, BKException {
         SyncObject sync = new SyncObject();
         // Call the async method to recover bookie data.
-        asyncRecoverBookieData(bookiesSrc, dryrun, skipOpenLedgers, new RecoverCallback() {
-            @Override
-            public void recoverComplete(int rc, Object ctx) {
-                LOG.info("Recover bookie operation completed with rc: " + rc);
-                SyncObject syncObj = (SyncObject) ctx;
-                synchronized (syncObj) {
-                    syncObj.rc = rc;
-                    syncObj.value = true;
-                    syncObj.notify();
-                }
+        asyncRecoverBookieData(bookiesSrc, dryrun, skipOpenLedgers, (rc, ctx) -> {
+            LOG.info("Recover bookie operation completed with rc: " + rc);
+            SyncObject syncObj = (SyncObject) ctx;
+            synchronized (syncObj) {
+                syncObj.rc = rc;
+                syncObj.value = true;
+                syncObj.notify();
             }
         }, sync);
 
@@ -690,12 +676,8 @@ public class BookKeeperAdmin implements AutoCloseable {
             }
         }
 
-        Processor<Long> ledgerProcessor = new Processor<Long>() {
-            @Override
-            public void process(Long ledgerId, AsyncCallback.VoidCallback iterCallback) {
+        Processor<Long> ledgerProcessor = (ledgerId, iterCallback) ->
                 recoverLedger(bookiesSrc, ledgerId, dryrun, skipOpenLedgers, iterCallback);
-            }
-        };
         bkc.getLedgerManager().asyncProcessLedgers(
                 ledgerProcessor, new RecoverCallbackWrapper(cb),
                 context, BKException.Code.OK, BKException.Code.LedgerRecoveryException);
@@ -724,83 +706,75 @@ public class BookKeeperAdmin implements AutoCloseable {
             LOG.debug("Recovering ledger : {}", lId);
         }
 
-        asyncOpenLedgerNoRecovery(lId, new OpenCallback() {
-            @Override
-            public void openComplete(int rc, final LedgerHandle lh, Object ctx) {
-                if (rc != BKException.Code.OK) {
-                    LOG.error("BK error opening ledger: " + lId, BKException.create(rc));
-                    finalLedgerIterCb.processResult(rc, null, null);
-                    return;
-                }
+        asyncOpenLedgerNoRecovery(lId, (rc, lh, ctx) -> {
+            if (rc != BKException.Code.OK) {
+                LOG.error("BK error opening ledger: " + lId, BKException.create(rc));
+                finalLedgerIterCb.processResult(rc, null, null);
+                return;
+            }
 
-                LedgerMetadata lm = lh.getLedgerMetadata();
-                if (skipOpenLedgers && !lm.isClosed() && !lm.isInRecovery()) {
-                    LOG.info("Skip recovering open ledger {}.", lId);
-                    try {
-                        lh.close();
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                    } catch (BKException bke) {
-                        LOG.warn("Error on closing ledger handle for {}.", lId);
-                    }
-                    finalLedgerIterCb.processResult(BKException.Code.OK, null, null);
-                    return;
+            LedgerMetadata lm = lh.getLedgerMetadata();
+            if (skipOpenLedgers && !lm.isClosed() && !lm.isInRecovery()) {
+                LOG.info("Skip recovering open ledger {}.", lId);
+                try {
+                    lh.close();
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                } catch (BKException bke) {
+                    LOG.warn("Error on closing ledger handle for {}.", lId);
                 }
+                finalLedgerIterCb.processResult(BKException.Code.OK, null, null);
+                return;
+            }
 
-                final boolean fenceRequired = !lm.isClosed() && containBookiesInLastEnsemble(lm, bookiesSrc);
-                // the original write has not removed faulty bookie from
-                // current ledger ensemble. to avoid data loss issue in
-                // the case of concurrent updates to the ensemble composition,
-                // the recovery tool should first close the ledger
-                if (!dryrun && fenceRequired) {
-                    // close opened non recovery ledger handle
-                    try {
-                        lh.close();
-                    } catch (Exception ie) {
-                        LOG.warn("Error closing non recovery ledger handle for ledger " + lId, ie);
-                    }
-                    asyncOpenLedger(lId, new OpenCallback() {
-                        @Override
-                        public void openComplete(int newrc, final LedgerHandle newlh, Object newctx) {
-                            if (newrc != BKException.Code.OK) {
-                                LOG.error("BK error close ledger: " + lId, BKException.create(newrc));
-                                finalLedgerIterCb.processResult(newrc, null, null);
-                                return;
-                            }
-                            bkc.mainWorkerPool.submit(() -> {
-                                // do recovery
-                                recoverLedger(bookiesSrc, lId, dryrun, skipOpenLedgers, finalLedgerIterCb);
-                            });
-                        }
-                    }, null);
-                    return;
+            final boolean fenceRequired = !lm.isClosed() && containBookiesInLastEnsemble(lm, bookiesSrc);
+            // the original write has not removed faulty bookie from
+            // current ledger ensemble. to avoid data loss issue in
+            // the case of concurrent updates to the ensemble composition,
+            // the recovery tool should first close the ledger
+            if (!dryrun && fenceRequired) {
+                // close opened non recovery ledger handle
+                try {
+                    lh.close();
+                } catch (Exception ie) {
+                    LOG.warn("Error closing non recovery ledger handle for ledger " + lId, ie);
                 }
-
-                final AsyncCallback.VoidCallback ledgerIterCb = new AsyncCallback.VoidCallback() {
-                    @Override
-                    public void processResult(int rc, String path, Object ctx) {
-                        if (BKException.Code.OK != rc) {
-                            LOG.error("Failed to recover ledger {} : {}", lId, rc);
-                        } else {
-                            LOG.info("Recovered ledger {}.", lId);
-                        }
-                        try {
-                            lh.close();
-                        } catch (InterruptedException ie) {
-                            Thread.currentThread().interrupt();
-                        } catch (BKException bke) {
-                            LOG.warn("Error on cloing ledger handle for {}.", lId);
-                        }
-                        finalLedgerIterCb.processResult(rc, path, ctx);
+                asyncOpenLedger(lId, (newrc, newlh, newctx) -> {
+                    if (newrc != BKException.Code.OK) {
+                        LOG.error("BK error close ledger: " + lId, BKException.create(newrc));
+                        finalLedgerIterCb.processResult(newrc, null, null);
+                        return;
                     }
-                };
+                    bkc.mainWorkerPool.submit(() -> {
+                        // do recovery
+                        recoverLedger(bookiesSrc, lId, dryrun, skipOpenLedgers, finalLedgerIterCb);
+                    });
+                }, null);
+                return;
+            }
+
+            final AsyncCallback.VoidCallback ledgerIterCb = (rc1, path, ctx1) -> {
+                if (BKException.Code.OK != rc1) {
+                    LOG.error("Failed to recover ledger {} : {}", lId, rc1);
+                } else {
+                    LOG.info("Recovered ledger {}.", lId);
+                }
+                try {
+                    lh.close();
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                } catch (BKException bke) {
+                    LOG.warn("Error on cloing ledger handle for {}.", lId);
+                }
+                finalLedgerIterCb.processResult(rc1, path, ctx1);
+            };
 
                 /*
                  * This List stores the ledger fragments to recover indexed by
                  * the start entry ID for the range. The ensembles TreeMap is
                  * keyed off this.
                  */
-                final List<Long> ledgerFragmentsToRecover = new LinkedList<Long>();
+            final List<Long> ledgerFragmentsToRecover = new LinkedList<Long>();
                 /*
                  * This Map will store the start and end entry ID values for
                  * each of the ledger fragment ranges. The only exception is the
@@ -809,99 +783,98 @@ public class BookKeeperAdmin implements AutoCloseable {
                  * ensemble should not contain the dead bookie we are trying to
                  * recover.
                  */
-                Map<Long, Long> ledgerFragmentsRange = new HashMap<Long, Long>();
-                Long curEntryId = null;
-                for (Map.Entry<Long, ArrayList<BookieSocketAddress>> entry : lh.getLedgerMetadata().getEnsembles()
-                         .entrySet()) {
-                    if (curEntryId != null) {
-                        ledgerFragmentsRange.put(curEntryId, entry.getKey() - 1);
-                    }
-                    curEntryId = entry.getKey();
-                    if (containBookies(entry.getValue(), bookiesSrc)) {
+            Map<Long, Long> ledgerFragmentsRange = new HashMap<Long, Long>();
+            Long curEntryId = null;
+            for (Entry<Long, ArrayList<BookieSocketAddress>> entry : lh.getLedgerMetadata().getEnsembles()
+                    .entrySet()) {
+                if (curEntryId != null) {
+                    ledgerFragmentsRange.put(curEntryId, entry.getKey() - 1);
+                }
+                curEntryId = entry.getKey();
+                if (containBookies(entry.getValue(), bookiesSrc)) {
                         /*
                          * Current ledger fragment has entries stored on the
                          * dead bookie so we'll need to recover them.
                          */
-                        ledgerFragmentsToRecover.add(entry.getKey());
-                    }
+                    ledgerFragmentsToRecover.add(entry.getKey());
                 }
-                // add last ensemble otherwise if the failed bookie existed in
-                // the last ensemble of a closed ledger. the entries belonged to
-                // last ensemble would not be replicated.
-                if (curEntryId != null) {
-                    ledgerFragmentsRange.put(curEntryId, lh.getLastAddConfirmed());
-                }
+            }
+            // add last ensemble otherwise if the failed bookie existed in
+            // the last ensemble of a closed ledger. the entries belonged to
+            // last ensemble would not be replicated.
+            if (curEntryId != null) {
+                ledgerFragmentsRange.put(curEntryId, lh.getLastAddConfirmed());
+            }
                 /*
                  * See if this current ledger contains any ledger fragment that
                  * needs to be re-replicated. If not, then just invoke the
                  * multiCallback and return.
                  */
-                if (ledgerFragmentsToRecover.size() == 0) {
-                    ledgerIterCb.processResult(BKException.Code.OK, null, null);
-                    return;
-                }
+            if (ledgerFragmentsToRecover.size() == 0) {
+                ledgerIterCb.processResult(BKException.Code.OK, null, null);
+                return;
+            }
 
-                if (dryrun) {
-                    VERBOSE.info("Recovered ledger {} : {}", lId, (fenceRequired ? "[fence required]" : ""));
-                }
+            if (dryrun) {
+                VERBOSE.info("Recovered ledger {} : {}", lId, (fenceRequired ? "[fence required]" : ""));
+            }
 
                 /*
                  * Multicallback for ledger. Once all fragments for the ledger have been recovered
                  * trigger the ledgerIterCb
                  */
-                MultiCallback ledgerFragmentsMcb = new MultiCallback(ledgerFragmentsToRecover.size(), ledgerIterCb,
-                        null, BKException.Code.OK, BKException.Code.LedgerRecoveryException);
+            MultiCallback ledgerFragmentsMcb = new MultiCallback(ledgerFragmentsToRecover.size(), ledgerIterCb,
+                    null, BKException.Code.OK, BKException.Code.LedgerRecoveryException);
                 /*
                  * Now recover all of the necessary ledger fragments
                  * asynchronously using a MultiCallback for every fragment.
                  */
-                for (final Long startEntryId : ledgerFragmentsToRecover) {
-                    Long endEntryId = ledgerFragmentsRange.get(startEntryId);
-                    ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsembles().get(startEntryId);
-                    // Get bookies to replace
-                    Map<Integer, BookieSocketAddress> targetBookieAddresses;
-                    try {
-                        targetBookieAddresses = getReplacementBookies(lh, ensemble, bookiesSrc);
-                    } catch (BKException.BKNotEnoughBookiesException e) {
-                        if (!dryrun) {
-                            ledgerFragmentsMcb.processResult(BKException.Code.NotEnoughBookiesException, null, null);
-                        } else {
-                            VERBOSE.info("  Fragment [{} - {}] : {}", startEntryId, endEntryId,
-                                BKException.getMessage(BKException.Code.NotEnoughBookiesException));
-                        }
-                        continue;
-                    }
-
-                    if (dryrun) {
-                        ArrayList<BookieSocketAddress> newEnsemble =
-                                replaceBookiesInEnsemble(ensemble, targetBookieAddresses);
-                        VERBOSE.info("  Fragment [{} - {}] : ", startEntryId, endEntryId);
-                        VERBOSE.info("    old ensemble : {}", formatEnsemble(ensemble, bookiesSrc, '*'));
-                        VERBOSE.info("    new ensemble : {}", formatEnsemble(newEnsemble, bookiesSrc, '*'));
+            for (final Long startEntryId : ledgerFragmentsToRecover) {
+                Long endEntryId = ledgerFragmentsRange.get(startEntryId);
+                ArrayList<BookieSocketAddress> ensemble = lh.getLedgerMetadata().getEnsembles().get(startEntryId);
+                // Get bookies to replace
+                Map<Integer, BookieSocketAddress> targetBookieAddresses;
+                try {
+                    targetBookieAddresses = getReplacementBookies(lh, ensemble, bookiesSrc);
+                } catch (BKException.BKNotEnoughBookiesException e) {
+                    if (!dryrun) {
+                        ledgerFragmentsMcb.processResult(BKException.Code.NotEnoughBookiesException, null, null);
                     } else {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("Replicating fragment from [{}, {}] of ledger {} to {}",
-                                startEntryId, endEntryId, lh.getId(), targetBookieAddresses);
-                        }
-                        try {
-                            LedgerFragmentReplicator.SingleFragmentCallback cb =
-                                new LedgerFragmentReplicator.SingleFragmentCallback(ledgerFragmentsMcb, lh,
-                                        startEntryId, getReplacementBookiesMap(ensemble, targetBookieAddresses));
-                            LedgerFragment ledgerFragment = new LedgerFragment(lh,
-                                startEntryId, endEntryId, targetBookieAddresses.keySet());
-                            asyncRecoverLedgerFragment(lh, ledgerFragment, cb,
-                                Sets.newHashSet(targetBookieAddresses.values()));
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            return;
-                        }
+                        VERBOSE.info("  Fragment [{} - {}] : {}", startEntryId, endEntryId,
+                                BKException.getMessage(BKException.Code.NotEnoughBookiesException));
                     }
+                    continue;
                 }
+
                 if (dryrun) {
-                    ledgerIterCb.processResult(BKException.Code.OK, null, null);
+                    ArrayList<BookieSocketAddress> newEnsemble =
+                            replaceBookiesInEnsemble(ensemble, targetBookieAddresses);
+                    VERBOSE.info("  Fragment [{} - {}] : ", startEntryId, endEntryId);
+                    VERBOSE.info("    old ensemble : {}", formatEnsemble(ensemble, bookiesSrc, '*'));
+                    VERBOSE.info("    new ensemble : {}", formatEnsemble(newEnsemble, bookiesSrc, '*'));
+                } else {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Replicating fragment from [{}, {}] of ledger {} to {}",
+                                startEntryId, endEntryId, lh.getId(), targetBookieAddresses);
+                    }
+                    try {
+                        SingleFragmentCallback cb =
+                                new SingleFragmentCallback(ledgerFragmentsMcb, lh,
+                                        startEntryId, getReplacementBookiesMap(ensemble, targetBookieAddresses));
+                        LedgerFragment ledgerFragment = new LedgerFragment(lh,
+                                startEntryId, endEntryId, targetBookieAddresses.keySet());
+                        asyncRecoverLedgerFragment(lh, ledgerFragment, cb,
+                                Sets.newHashSet(targetBookieAddresses.values()));
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
                 }
             }
-            }, null);
+            if (dryrun) {
+                ledgerIterCb.processResult(BKException.Code.OK, null, null);
+            }
+        }, null);
     }
 
     static String formatEnsemble(ArrayList<BookieSocketAddress> ensemble, Set<BookieSocketAddress> bookiesSrc,
@@ -1256,48 +1229,43 @@ public class BookKeeperAdmin implements AutoCloseable {
     public Iterable<Long> listLedgers()
     throws IOException {
         final LedgerRangeIterator iterator = bkc.getLedgerManager().getLedgerRanges();
-        return new Iterable<Long>() {
-            public Iterator<Long> iterator() {
-                return new Iterator<Long>() {
-                    Iterator<Long> currentRange = null;
+        return () -> new Iterator<Long>() {
+            Iterator<Long> currentRange = null;
 
-                    @Override
-                    public boolean hasNext() {
-                        try {
-                            if (iterator.hasNext()) {
-                                return true;
-                            } else if (currentRange != null) {
-                                if (currentRange.hasNext()) {
-                                    return true;
-                                }
-                            }
-                        } catch (IOException e) {
-                            LOG.error("Error while checking if there is a next element", e);
+            @Override
+            public boolean hasNext() {
+                try {
+                    if (iterator.hasNext()) {
+                        return true;
+                    } else if (currentRange != null) {
+                        if (currentRange.hasNext()) {
+                            return true;
                         }
-
-                        return false;
                     }
+                } catch (IOException e) {
+                    LOG.error("Error while checking if there is a next element", e);
+                }
 
-                    @Override
-                    public Long next() throws NoSuchElementException {
-                        try {
-                            if ((currentRange == null) || (!currentRange.hasNext())) {
-                                currentRange = iterator.next().getLedgers().iterator();
-                            }
-                        } catch (IOException e) {
-                            LOG.error("Error while reading the next element", e);
-                            throw new NoSuchElementException(e.getMessage());
-                        }
+                return false;
+            }
 
-                        return currentRange.next();
+            @Override
+            public Long next() throws NoSuchElementException {
+                try {
+                    if ((currentRange == null) || (!currentRange.hasNext())) {
+                        currentRange = iterator.next().getLedgers().iterator();
                     }
+                } catch (IOException e) {
+                    LOG.error("Error while reading the next element", e);
+                    throw new NoSuchElementException(e.getMessage());
+                }
 
-                    @Override
-                    public void remove()
-                    throws UnsupportedOperationException {
-                        throw new UnsupportedOperationException();
-                    }
-                };
+                return currentRange.next();
+            }
+
+            @Override
+            public void remove() throws UnsupportedOperationException {
+                throw new UnsupportedOperationException();
             }
         };
     }

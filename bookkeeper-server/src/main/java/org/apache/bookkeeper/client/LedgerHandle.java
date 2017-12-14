@@ -1041,17 +1041,14 @@ public class LedgerHandle implements WriteHandle {
             cb.readLastConfirmedComplete(BKException.Code.OK, lastEntryId, ctx);
             return;
         }
-        ReadLastConfirmedOp.LastConfirmedDataCallback innercb = new ReadLastConfirmedOp.LastConfirmedDataCallback() {
-                @Override
-                public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {
-                    if (rc == BKException.Code.OK) {
-                        updateLastConfirmed(data.lastAddConfirmed, data.length);
-                        cb.readLastConfirmedComplete(rc, data.lastAddConfirmed, ctx);
-                    } else {
-                        cb.readLastConfirmedComplete(rc, INVALID_ENTRY_ID, ctx);
-                    }
-                }
-            };
+        ReadLastConfirmedOp.LastConfirmedDataCallback innercb = (rc, data) -> {
+            if (rc == BKException.Code.OK) {
+                updateLastConfirmed(data.lastAddConfirmed, data.length);
+                cb.readLastConfirmedComplete(rc, data.lastAddConfirmed, ctx);
+            } else {
+                cb.readLastConfirmedComplete(rc, INVALID_ENTRY_ID, ctx);
+            }
+        };
         new ReadLastConfirmedOp(this, innercb).initiate();
     }
 
@@ -1172,18 +1169,15 @@ public class LedgerHandle implements WriteHandle {
             lac = getLastAddConfirmed();
         }
         if (entryId <= lac) {
-            asyncReadEntries(entryId, entryId, new ReadCallback() {
-                @Override
-                public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
-                    if (BKException.Code.OK == rc) {
-                        if (seq.hasMoreElements()) {
-                            cb.readLastConfirmedAndEntryComplete(rc, getLastAddConfirmed(), seq.nextElement(), ctx);
-                        } else {
-                            cb.readLastConfirmedAndEntryComplete(rc, getLastAddConfirmed(), null, ctx);
-                        }
+            asyncReadEntries(entryId, entryId, (rc, lh, seq, ctx1) -> {
+                if (BKException.Code.OK == rc) {
+                    if (seq.hasMoreElements()) {
+                        cb.readLastConfirmedAndEntryComplete(rc, getLastAddConfirmed(), seq.nextElement(), ctx1);
                     } else {
-                        cb.readLastConfirmedAndEntryComplete(rc, INVALID_ENTRY_ID, null, ctx);
+                        cb.readLastConfirmedAndEntryComplete(rc, getLastAddConfirmed(), null, ctx1);
                     }
+                } else {
+                    cb.readLastConfirmedAndEntryComplete(rc, INVALID_ENTRY_ID, null, ctx1);
                 }
             }, ctx);
             return;
@@ -1337,17 +1331,13 @@ public class LedgerHandle implements WriteHandle {
             return;
         }
 
-        PendingReadLacOp.LacCallback innercb = new PendingReadLacOp.LacCallback() {
-
-            @Override
-            public void getLacComplete(int rc, long lac) {
-                if (rc == BKException.Code.OK) {
-                    // here we are trying to update lac only but not length
-                    updateLastConfirmed(lac, 0);
-                    cb.readLastConfirmedComplete(rc, lac, ctx);
-                } else {
-                    cb.readLastConfirmedComplete(rc, INVALID_ENTRY_ID, ctx);
-                }
+        PendingReadLacOp.LacCallback innercb = (rc, lac) -> {
+            if (rc == BKException.Code.OK) {
+                // here we are trying to update lac only but not length
+                updateLastConfirmed(lac, 0);
+                cb.readLastConfirmedComplete(rc, lac, ctx);
+            } else {
+                cb.readLastConfirmedComplete(rc, INVALID_ENTRY_ID, ctx);
             }
         };
         new PendingReadLacOp(this, innercb).initiate();

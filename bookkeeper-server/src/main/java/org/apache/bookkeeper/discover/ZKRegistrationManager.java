@@ -48,7 +48,6 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.apache.zookeeper.KeeperException.NodeExistsException;
-import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
@@ -182,14 +181,11 @@ public class ZKRegistrationManager implements RegistrationManager {
      */
     protected boolean checkRegNodeAndWaitExpired(String regPath) throws IOException {
         final CountDownLatch prevNodeLatch = new CountDownLatch(1);
-        Watcher zkPrevRegNodewatcher = new Watcher() {
-            @Override
-            public void process(WatchedEvent event) {
-                // Check for prev znode deletion. Connection expiration is
-                // not handling, since bookie has logic to shutdown.
-                if (EventType.NodeDeleted == event.getType()) {
-                    prevNodeLatch.countDown();
-                }
+        Watcher zkPrevRegNodewatcher = event -> {
+            // Check for prev znode deletion. Connection expiration is
+            // not handling, since bookie has logic to shutdown.
+            if (EventType.NodeDeleted == event.getType()) {
+                prevNodeLatch.countDown();
             }
         };
         try {

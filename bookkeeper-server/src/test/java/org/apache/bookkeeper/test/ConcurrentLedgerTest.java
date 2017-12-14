@@ -38,7 +38,6 @@ import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
-import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.junit.After;
 import org.junit.Before;
@@ -165,14 +164,10 @@ public class ConcurrentLedgerTest {
     private long doWrites(int ledgers, int size, int totalwrites)
             throws IOException, InterruptedException, BookieException {
         throttle = new Semaphore(10000);
-        WriteCallback cb = new WriteCallback() {
-            @Override
-            public void writeComplete(int rc, long ledgerId, long entryId,
-                    BookieSocketAddress addr, Object ctx) {
-                AtomicInteger counter = (AtomicInteger) ctx;
-                counter.getAndIncrement();
-                throttle.release();
-            }
+        WriteCallback cb = (rc, ledgerId, entryId, addr, ctx) -> {
+            AtomicInteger counter = (AtomicInteger) ctx;
+            counter.getAndIncrement();
+            throttle.release();
         };
         AtomicInteger counter = new AtomicInteger();
         long start = System.currentTimeMillis();

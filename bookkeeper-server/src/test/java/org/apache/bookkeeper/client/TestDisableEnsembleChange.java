@@ -93,20 +93,17 @@ public class TestDisableEnsembleChange extends BookKeeperClusterTestCase {
 
         final RateLimiter rateLimiter = RateLimiter.create(10);
 
-        Thread addThread = new Thread() {
-            @Override
-            public void run() {
-                try {
-                    while (!finished.get()) {
-                        rateLimiter.acquire();
-                        lh.addEntry(entry);
-                    }
-                } catch (Exception e) {
-                    logger.error("Exception on adding entry : ", e);
-                    failTest.set(true);
+        Thread addThread = new Thread(() -> {
+            try {
+                while (!finished.get()) {
+                    rateLimiter.acquire();
+                    lh.addEntry(entry);
                 }
+            } catch (Exception e) {
+                logger.error("Exception on adding entry : ", e);
+                failTest.set(true);
             }
-        };
+        });
         addThread.start();
         Thread.sleep(2000);
         killBookie(0);
@@ -135,20 +132,17 @@ public class TestDisableEnsembleChange extends BookKeeperClusterTestCase {
         finished.set(false);
         final CountDownLatch failLatch = new CountDownLatch(1);
 
-        addThread = new Thread() {
-            @Override
-            public void run() {
-                try {
-                    while (!finished.get()) {
-                        lh.addEntry(entry);
-                    }
-                } catch (Exception e) {
-                    logger.error("Exception on adding entry : ", e);
-                    failLatch.countDown();
-                    failTest.set(true);
+        addThread = new Thread(() -> {
+            try {
+                while (!finished.get()) {
+                    lh.addEntry(entry);
                 }
+            } catch (Exception e) {
+                logger.error("Exception on adding entry : ", e);
+                failLatch.countDown();
+                failTest.set(true);
             }
-        };
+        });
         addThread.start();
         failLatch.await(4000, TimeUnit.MILLISECONDS);
         finished.set(true);
@@ -194,14 +188,11 @@ public class TestDisableEnsembleChange extends BookKeeperClusterTestCase {
 
         final AtomicInteger res = new AtomicInteger(0xdeadbeef);
         final CountDownLatch addLatch = new CountDownLatch(1);
-        AsyncCallback.AddCallback cb = new AsyncCallback.AddCallback() {
-            @Override
-                public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-                    logger.info("Add entry {} completed : rc {}.", entryId, rc);
-                    res.set(rc);
-                    addLatch.countDown();
-                }
-        };
+        AsyncCallback.AddCallback cb = (rc, lh1, entryId, ctx) -> {
+                logger.info("Add entry {} completed : rc {}.", entryId, rc);
+                res.set(rc);
+                addLatch.countDown();
+            };
         lh.asyncAddEntry(entry, cb, null);
         assertFalse("Add entry operation should not complete.",
                 addLatch.await(1000, TimeUnit.MILLISECONDS));
@@ -250,14 +241,11 @@ public class TestDisableEnsembleChange extends BookKeeperClusterTestCase {
 
         final AtomicInteger res = new AtomicInteger(0xdeadbeef);
         final CountDownLatch addLatch = new CountDownLatch(1);
-        AsyncCallback.AddCallback cb = new AsyncCallback.AddCallback() {
-            @Override
-                public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-                    logger.info("Add entry {} completed : rc {}.", entryId, rc);
-                    res.set(rc);
-                    addLatch.countDown();
-                }
-        };
+        AsyncCallback.AddCallback cb = (rc, lh1, entryId, ctx) -> {
+                logger.info("Add entry {} completed : rc {}.", entryId, rc);
+                res.set(rc);
+                addLatch.countDown();
+            };
         lh.asyncAddEntry(entry, cb, null);
         assertFalse("Add entry operation should not complete.",
                 addLatch.await(1000, TimeUnit.MILLISECONDS));

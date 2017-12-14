@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.bookie.BookieException;
-import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AddRequest;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.AddResponse;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
@@ -68,38 +67,34 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
             return addResponse.build();
         }
 
-        BookkeeperInternalCallbacks.WriteCallback wcb = new BookkeeperInternalCallbacks.WriteCallback() {
-            @Override
-            public void writeComplete(int rc, long ledgerId, long entryId,
-                                      BookieSocketAddress addr, Object ctx) {
-                if (BookieProtocol.EOK == rc) {
-                    requestProcessor.addEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
-                            TimeUnit.NANOSECONDS);
-                } else {
-                    requestProcessor.addEntryStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
-                            TimeUnit.NANOSECONDS);
-                }
-
-                StatusCode status;
-                switch (rc) {
-                    case BookieProtocol.EOK:
-                        status = StatusCode.EOK;
-                        break;
-                    case BookieProtocol.EIO:
-                        status = StatusCode.EIO;
-                        break;
-                    default:
-                        status = StatusCode.EUA;
-                        break;
-                }
-                addResponse.setStatus(status);
-                Response.Builder response = Response.newBuilder()
-                        .setHeader(getHeader())
-                        .setStatus(addResponse.getStatus())
-                        .setAddResponse(addResponse);
-                Response resp = response.build();
-                sendResponse(status, resp, requestProcessor.addRequestStats);
+        BookkeeperInternalCallbacks.WriteCallback wcb = (rc, ledgerId1, entryId1, addr, ctx) -> {
+            if (BookieProtocol.EOK == rc) {
+                requestProcessor.addEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
+                        TimeUnit.NANOSECONDS);
+            } else {
+                requestProcessor.addEntryStats.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos),
+                        TimeUnit.NANOSECONDS);
             }
+
+            StatusCode status;
+            switch (rc) {
+                case BookieProtocol.EOK:
+                    status = StatusCode.EOK;
+                    break;
+                case BookieProtocol.EIO:
+                    status = StatusCode.EIO;
+                    break;
+                default:
+                    status = StatusCode.EUA;
+                    break;
+            }
+            addResponse.setStatus(status);
+            Response.Builder response = Response.newBuilder()
+                    .setHeader(getHeader())
+                    .setStatus(addResponse.getStatus())
+                    .setAddResponse(addResponse);
+            Response resp = response.build();
+            sendResponse(status, resp, requestProcessor.addRequestStats);
         };
         StatusCode status = null;
         byte[] masterKey = addRequest.getMasterKey().toByteArray();

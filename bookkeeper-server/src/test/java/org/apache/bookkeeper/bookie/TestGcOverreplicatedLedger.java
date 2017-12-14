@@ -34,7 +34,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.bookkeeper.bookie.GarbageCollector.GarbageCleaner;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -46,7 +45,6 @@ import org.apache.bookkeeper.meta.LedgerManagerTestCase;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.util.SnapshotMap;
 import org.apache.zookeeper.ZooDefs;
 import org.junit.Assert;
@@ -86,15 +84,11 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
 
         final AtomicReference<LedgerMetadata> newLedgerMetadata = new AtomicReference<>(null);
         final CountDownLatch latch = new CountDownLatch(1);
-        ledgerManager.readLedgerMetadata(lh.getId(), new GenericCallback<LedgerMetadata>() {
-
-            @Override
-            public void operationComplete(int rc, LedgerMetadata result) {
-                if (rc == BKException.Code.OK) {
-                    newLedgerMetadata.set(result);
-                }
-                latch.countDown();
+        ledgerManager.readLedgerMetadata(lh.getId(), (rc, result) -> {
+            if (rc == BKException.Code.OK) {
+                newLedgerMetadata.set(result);
             }
+            latch.countDown();
         });
         latch.await();
         if (newLedgerMetadata.get() == null) {
@@ -110,16 +104,12 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
         final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(ledgerManager, mockLedgerStorage,
                 bkConf);
         Thread.sleep(bkConf.getGcOverreplicatedLedgerWaitTimeMillis() + 1);
-        garbageCollector.gc(new GarbageCleaner() {
-
-            @Override
-            public void clean(long ledgerId) {
-                try {
-                    mockLedgerStorage.deleteLedger(ledgerId);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    return;
-                }
+        garbageCollector.gc(ledgerId -> {
+            try {
+                mockLedgerStorage.deleteLedger(ledgerId);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return;
             }
         });
 
@@ -133,15 +123,11 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
 
         final AtomicReference<LedgerMetadata> newLedgerMetadata = new AtomicReference<>(null);
         final CountDownLatch latch = new CountDownLatch(1);
-        ledgerManager.readLedgerMetadata(lh.getId(), new GenericCallback<LedgerMetadata>() {
-
-            @Override
-            public void operationComplete(int rc, LedgerMetadata result) {
-                if (rc == BKException.Code.OK) {
-                    newLedgerMetadata.set(result);
-                }
-                latch.countDown();
+        ledgerManager.readLedgerMetadata(lh.getId(), (rc, result) -> {
+            if (rc == BKException.Code.OK) {
+                newLedgerMetadata.set(result);
             }
+            latch.countDown();
         });
         latch.await();
         if (newLedgerMetadata.get() == null) {
@@ -161,16 +147,12 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
         final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(ledgerManager, mockLedgerStorage,
                 bkConf);
         Thread.sleep(bkConf.getGcOverreplicatedLedgerWaitTimeMillis() + 1);
-        garbageCollector.gc(new GarbageCleaner() {
-
-            @Override
-            public void clean(long ledgerId) {
-                try {
-                    mockLedgerStorage.deleteLedger(ledgerId);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    return;
-                }
+        garbageCollector.gc(ledgerId -> {
+            try {
+                mockLedgerStorage.deleteLedger(ledgerId);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return;
             }
         });
 
@@ -184,15 +166,11 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
 
         final AtomicReference<LedgerMetadata> newLedgerMetadata = new AtomicReference<>(null);
         final CountDownLatch latch = new CountDownLatch(1);
-        ledgerManager.readLedgerMetadata(lh.getId(), new GenericCallback<LedgerMetadata>() {
-
-            @Override
-            public void operationComplete(int rc, LedgerMetadata result) {
-                if (rc == BKException.Code.OK) {
-                    newLedgerMetadata.set(result);
-                }
-                latch.countDown();
+        ledgerManager.readLedgerMetadata(lh.getId(), (rc, result) -> {
+            if (rc == BKException.Code.OK) {
+                newLedgerMetadata.set(result);
             }
+            latch.countDown();
         });
         latch.await();
         if (newLedgerMetadata.get() == null) {
@@ -211,16 +189,12 @@ public class TestGcOverreplicatedLedger extends LedgerManagerTestCase {
         final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(ledgerManager, mockLedgerStorage,
                 bkConf);
         Thread.sleep(bkConf.getGcOverreplicatedLedgerWaitTimeMillis() + 1);
-        garbageCollector.gc(new GarbageCleaner() {
-
-            @Override
-            public void clean(long ledgerId) {
-                try {
-                    mockLedgerStorage.deleteLedger(ledgerId);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    return;
-                }
+        garbageCollector.gc(ledgerId -> {
+            try {
+                mockLedgerStorage.deleteLedger(ledgerId);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return;
             }
         });
 

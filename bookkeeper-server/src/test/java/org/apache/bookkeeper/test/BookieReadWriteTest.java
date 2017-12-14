@@ -548,12 +548,13 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
             final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
 
             for (int i = 0; i < numEntriesToWrite; i++) {
-                lh.asyncAddEntry(new byte[0], new AddCallback() {
-                        public void addComplete(int rccb, LedgerHandle lh, long entryId, Object ctx) {
+                lh.asyncAddEntry(
+                        new byte[0],
+                        (rccb, lh, entryId, ctx) -> {
                             rc.compareAndSet(BKException.Code.OK, rccb);
                             completeLatch.countDown();
-                        }
-                    }, null);
+                        },
+                        null);
             }
             completeLatch.await();
             if (rc.get() != BKException.Code.OK) {
@@ -608,18 +609,14 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
             // bkc.initMessageDigest("SHA1");
             LOG.info("Ledger ID 1: " + lh.getId() + ", Ledger ID 2: " + lh2.getId());
             for (int i = 0; i < numEntriesToWrite; i++) {
-                lh.asyncAddEntry(new byte[0], new AddCallback() {
-                        public void addComplete(int rc2, LedgerHandle lh, long entryId, Object ctx) {
-                            rc.compareAndSet(BKException.Code.OK, rc2);
-                            completeLatch.countDown();
-                        }
-                    }, null);
-                lh2.asyncAddEntry(new byte[0], new AddCallback() {
-                        public void addComplete(int rc2, LedgerHandle lh, long entryId, Object ctx) {
-                            rc.compareAndSet(BKException.Code.OK, rc2);
-                            completeLatch.countDown();
-                        }
-                    }, null);
+                lh.asyncAddEntry(new byte[0], (rc2, lh, entryId, ctx) -> {
+                    rc.compareAndSet(BKException.Code.OK, rc2);
+                    completeLatch.countDown();
+                }, null);
+                lh2.asyncAddEntry(new byte[0], (rc2, lh, entryId, ctx) -> {
+                    rc.compareAndSet(BKException.Code.OK, rc2);
+                    completeLatch.countDown();
+                }, null);
             }
             completeLatch.await();
             if (rc.get() != BKException.Code.OK) {
@@ -728,12 +725,10 @@ public class BookieReadWriteTest extends BookKeeperClusterTestCase
 
             entries.add(entry.array());
             entriesSize.add(entry.array().length);
-            lh.asyncAddEntry(entry.array(), new AddCallback() {
-                    public void addComplete(int rccb, LedgerHandle lh, long entryId, Object ctx) {
-                        rc.compareAndSet(BKException.Code.OK, rccb);
-                        completeLatch.countDown();
-                    }
-                }, null);
+            lh.asyncAddEntry(entry.array(), (rccb, lh1, entryId, ctx) -> {
+                rc.compareAndSet(BKException.Code.OK, rccb);
+                completeLatch.countDown();
+            }, null);
         }
         completeLatch.await();
         if (rc.get() != BKException.Code.OK) {

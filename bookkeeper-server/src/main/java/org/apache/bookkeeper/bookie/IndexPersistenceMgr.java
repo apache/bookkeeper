@@ -36,8 +36,6 @@ import io.netty.buffer.ByteBuf;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Observable;
@@ -619,12 +617,7 @@ public class IndexPersistenceMgr {
     void flushLedgerEntries(long l, List<LedgerEntryPage> entries) throws IOException {
         FileInfo fi = null;
         try {
-            Collections.sort(entries, new Comparator<LedgerEntryPage>() {
-                @Override
-                public int compare(LedgerEntryPage o1, LedgerEntryPage o2) {
-                    return (int) (o1.getFirstEntry() - o2.getFirstEntry());
-                }
-            });
+            entries.sort((o1, o2) -> (int) (o1.getFirstEntry() - o2.getFirstEntry()));
             int[] versions = new int[entries.size()];
             try {
                 fi = getFileInfo(l, null);

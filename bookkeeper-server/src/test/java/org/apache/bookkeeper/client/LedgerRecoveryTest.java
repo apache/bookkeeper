@@ -36,13 +36,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
-import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
@@ -284,19 +282,17 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
         final AtomicInteger returnCode = new AtomicInteger(0);
         final CountDownLatch openLatch = new CountDownLatch(1);
         bkc.asyncOpenLedger(lhbefore.getId(), digestType, "".getBytes(),
-                            new AsyncCallback.OpenCallback() {
-                                public void openComplete(int rc, LedgerHandle lh, Object ctx) {
-                                    returnCode.set(rc);
-                                    openLatch.countDown();
-                                    if (rc == BKException.Code.OK) {
-                                        try {
-                                            lh.close();
-                                        } catch (Exception e) {
-                                            LOG.error("Exception closing ledger handle", e);
-                                        }
-                                    }
-                                }
-                            }, null);
+                (rc, lh, ctx) -> {
+                    returnCode.set(rc);
+                    openLatch.countDown();
+                    if (rc == BKException.Code.OK) {
+                        try {
+                            lh.close();
+                        } catch (Exception e) {
+                            LOG.error("Exception closing ledger handle", e);
+                        }
+                    }
+                }, null);
         assertTrue("Open call should have completed", openLatch.await(5, TimeUnit.SECONDS));
         assertFalse("Open should not have succeeded", returnCode.get() == BKException.Code.OK);
 
@@ -375,19 +371,14 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
         final AtomicInteger numPendingAdds = new AtomicInteger(numEntries);
         final CountDownLatch addDone = new CountDownLatch(1);
         for (int i = 0; i < numEntries; i++) {
-            lh.asyncAddEntry("data".getBytes(), new AddCallback() {
-
-                @Override
-                public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-                    if (BKException.Code.OK != rc) {
-                        addDone.countDown();
-                        return;
-                    }
-                    if (numPendingAdds.decrementAndGet() == 0) {
-                        addDone.countDown();
-                    }
+            lh.asyncAddEntry("data".getBytes(), (rc, lh1, entryId, ctx) -> {
+                if (BKException.Code.OK != rc) {
+                    addDone.countDown();
+                    return;
                 }
-
+                if (numPendingAdds.decrementAndGet() == 0) {
+                    addDone.countDown();
+                }
             }, null);
         }
         addDone.await(10, TimeUnit.SECONDS);
@@ -457,16 +448,13 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
         final AtomicInteger numPendingAdds = new AtomicInteger(numEntries);
         final CountDownLatch addDone = new CountDownLatch(1);
         for (int i = 0; i < numEntries; i++) {
-            lh.asyncAddEntry(("" + i).getBytes(), new AddCallback() {
-                @Override
-                public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-                    if (BKException.Code.OK != rc) {
-                        addDone.countDown();
-                        return;
-                    }
-                    if (numPendingAdds.decrementAndGet() == 0) {
-                        addDone.countDown();
-                    }
+            lh.asyncAddEntry(("" + i).getBytes(), (rc, lh1, entryId, ctx) -> {
+                if (BKException.Code.OK != rc) {
+                    addDone.countDown();
+                    return;
+                }
+                if (numPendingAdds.decrementAndGet() == 0) {
+                    addDone.countDown();
                 }
             }, null);
         }
@@ -481,13 +469,10 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
         final CountDownLatch recoverLatch = new CountDownLatch(1);
         final AtomicBoolean success = new AtomicBoolean(false);
         LedgerRecoveryOp recoveryOp = new LedgerRecoveryOp(recoverLh,
-                new BookkeeperInternalCallbacks.GenericCallback<Void>() {
-            @Override
-            public void operationComplete(int rc, Void result) {
-                success.set(BKException.Code.OK == rc);
-                recoverLatch.countDown();
-            }
-        }).parallelRead(true).readBatchSize(newConf.getRecoveryReadBatchSize());
+                (rc, result) -> {
+                    success.set(BKException.Code.OK == rc);
+                    recoverLatch.countDown();
+                }).parallelRead(true).readBatchSize(newConf.getRecoveryReadBatchSize());
         recoveryOp.initiate();
         recoverLatch.await(10, TimeUnit.SECONDS);
         assertTrue(success.get());

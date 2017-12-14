@@ -24,12 +24,7 @@ import io.netty.buffer.ByteBuf;
 import java.util.zip.CRC32;
 
 class CRC32DigestManager extends DigestManager {
-    private final ThreadLocal<CRC32> crc = new ThreadLocal<CRC32>() {
-        @Override
-        protected CRC32 initialValue() {
-            return new CRC32();
-        }
-    };
+    private final ThreadLocal<CRC32> crc = ThreadLocal.withInitial(() -> new CRC32());
 
     public CRC32DigestManager(long ledgerId) {
         super(ledgerId);

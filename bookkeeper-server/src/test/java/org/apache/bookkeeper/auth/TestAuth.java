@@ -466,12 +466,10 @@ public class TestAuth extends BookKeeperClusterTestCase {
         @Override
         public BookieAuthProvider newProvider(BookieConnectionPeer addr,
                                               final AuthCallbacks.GenericCallback<Void> completeCb) {
-            return new BookieAuthProvider() {
-                public void process(AuthToken m, AuthCallbacks.GenericCallback<AuthToken> cb) {
-                    addr.setAuthorizedId(new BookKeeperPrincipal("test-principal"));
-                    cb.operationComplete(BKException.Code.OK, AuthToken.wrap(SUCCESS_RESPONSE));
-                    completeCb.operationComplete(BKException.Code.OK, null);
-                }
+            return (m, cb) -> {
+                addr.setAuthorizedId(new BookKeeperPrincipal("test-principal"));
+                cb.operationComplete(BKException.Code.OK, AuthToken.wrap(SUCCESS_RESPONSE));
+                completeCb.operationComplete(BKException.Code.OK, null);
             };
         }
     }
@@ -537,11 +535,7 @@ public class TestAuth extends BookKeeperClusterTestCase {
         @Override
         public BookieAuthProvider newProvider(BookieConnectionPeer addr,
                                               final AuthCallbacks.GenericCallback<Void> completeCb) {
-            return new BookieAuthProvider() {
-                public void process(AuthToken m, AuthCallbacks.GenericCallback<AuthToken> cb) {
-                    addr.disconnect();
-                }
-            };
+            return (m, cb) -> addr.disconnect();
         }
     }
 
@@ -562,13 +556,11 @@ public class TestAuth extends BookKeeperClusterTestCase {
         @Override
         public BookieAuthProvider newProvider(BookieConnectionPeer addr,
                                               final AuthCallbacks.GenericCallback<Void> completeCb) {
-            return new BookieAuthProvider() {
-                public void process(AuthToken m, AuthCallbacks.GenericCallback<AuthToken> cb) {
-                    addr.setAuthorizedId(new BookKeeperPrincipal("test-principal"));
-                    cb.operationComplete(BKException.Code.OK, AuthToken.wrap(FAILURE_RESPONSE));
-                    completeCb.operationComplete(
-                            BKException.Code.UnauthorizedAccessException, null);
-                }
+            return (m, cb) -> {
+                addr.setAuthorizedId(new BookKeeperPrincipal("test-principal"));
+                cb.operationComplete(BKException.Code.OK, AuthToken.wrap(FAILURE_RESPONSE));
+                completeCb.operationComplete(
+                        BKException.Code.UnauthorizedAccessException, null);
             };
         }
     }
@@ -675,15 +667,13 @@ public class TestAuth extends BookKeeperClusterTestCase {
         @Override
         public BookieAuthProvider newProvider(BookieConnectionPeer addr,
                                               final AuthCallbacks.GenericCallback<Void> completeCb) {
-            return new BookieAuthProvider() {
-                public void process(AuthToken m, AuthCallbacks.GenericCallback<AuthToken> cb) {
-                    if (numMessages.incrementAndGet() == 3) {
-                        addr.setAuthorizedId(new BookKeeperPrincipal("test-principal"));
-                        cb.operationComplete(BKException.Code.OK, AuthToken.wrap(SUCCESS_RESPONSE));
-                        completeCb.operationComplete(BKException.Code.OK, null);
-                    } else {
-                        cb.operationComplete(BKException.Code.OK, AuthToken.wrap(PAYLOAD_MESSAGE));
-                    }
+            return (m, cb) -> {
+                if (numMessages.incrementAndGet() == 3) {
+                    addr.setAuthorizedId(new BookKeeperPrincipal("test-principal"));
+                    cb.operationComplete(BKException.Code.OK, AuthToken.wrap(SUCCESS_RESPONSE));
+                    completeCb.operationComplete(BKException.Code.OK, null);
+                } else {
+                    cb.operationComplete(BKException.Code.OK, AuthToken.wrap(PAYLOAD_MESSAGE));
                 }
             };
         }
@@ -708,16 +698,14 @@ public class TestAuth extends BookKeeperClusterTestCase {
         @Override
         public BookieAuthProvider newProvider(BookieConnectionPeer addr,
                                               final AuthCallbacks.GenericCallback<Void> completeCb) {
-            return new BookieAuthProvider() {
-                public void process(AuthToken m, AuthCallbacks.GenericCallback<AuthToken> cb) {
-                    if (numMessages.incrementAndGet() == 3) {
-                        addr.setAuthorizedId(new BookKeeperPrincipal("test-principal"));
-                        cb.operationComplete(BKException.Code.OK, AuthToken.wrap(FAILURE_RESPONSE));
-                        completeCb.operationComplete(BKException.Code.UnauthorizedAccessException,
-                                                     null);
-                    } else {
-                        cb.operationComplete(BKException.Code.OK, AuthToken.wrap(PAYLOAD_MESSAGE));
-                    }
+            return (m, cb) -> {
+                if (numMessages.incrementAndGet() == 3) {
+                    addr.setAuthorizedId(new BookKeeperPrincipal("test-principal"));
+                    cb.operationComplete(BKException.Code.OK, AuthToken.wrap(FAILURE_RESPONSE));
+                    completeCb.operationComplete(BKException.Code.UnauthorizedAccessException,
+                                                 null);
+                } else {
+                    cb.operationComplete(BKException.Code.OK, AuthToken.wrap(PAYLOAD_MESSAGE));
                 }
             };
         }
@@ -742,14 +730,12 @@ public class TestAuth extends BookKeeperClusterTestCase {
         @Override
         public BookieAuthProvider newProvider(BookieConnectionPeer addr,
                                               final AuthCallbacks.GenericCallback<Void> completeCb) {
-            return new BookieAuthProvider() {
-                public void process(AuthToken m, AuthCallbacks.GenericCallback<AuthToken> cb) {
-                    if (numMessages.incrementAndGet() == 3) {
-                        throw new RuntimeException("Do bad things to the bookie");
-                    } else {
-                        addr.setAuthorizedId(new BookKeeperPrincipal("test-principal"));
-                        cb.operationComplete(BKException.Code.OK, AuthToken.wrap(PAYLOAD_MESSAGE));
-                    }
+            return (m, cb) -> {
+                if (numMessages.incrementAndGet() == 3) {
+                    throw new RuntimeException("Do bad things to the bookie");
+                } else {
+                    addr.setAuthorizedId(new BookKeeperPrincipal("test-principal"));
+                    cb.operationComplete(BKException.Code.OK, AuthToken.wrap(PAYLOAD_MESSAGE));
                 }
             };
         }
@@ -775,14 +761,12 @@ public class TestAuth extends BookKeeperClusterTestCase {
         @Override
         public BookieAuthProvider newProvider(BookieConnectionPeer addr,
                                               final AuthCallbacks.GenericCallback<Void> completeCb) {
-            return new BookieAuthProvider() {
-                public void process(AuthToken m, AuthCallbacks.GenericCallback<AuthToken> cb) {
-                    if (numMessages.incrementAndGet() != 3) {
-                        cb.operationComplete(BKException.Code.OK, AuthToken.wrap(PAYLOAD_MESSAGE));
-                        return;
-                    }
-                    crashType2bookieInstance.suspendProcessing();
+            return (m, cb) -> {
+                if (numMessages.incrementAndGet() != 3) {
+                    cb.operationComplete(BKException.Code.OK, AuthToken.wrap(PAYLOAD_MESSAGE));
+                    return;
                 }
+                crashType2bookieInstance.suspendProcessing();
             };
         }
     }
@@ -804,11 +788,9 @@ public class TestAuth extends BookKeeperClusterTestCase {
         @Override
         public BookieAuthProvider newProvider(BookieConnectionPeer addr,
                                               final AuthCallbacks.GenericCallback<Void> completeCb) {
-            return new BookieAuthProvider() {
-                public void process(AuthToken m, AuthCallbacks.GenericCallback<AuthToken> cb) {
-                    cb.operationComplete(BKException.Code.OK, AuthToken.wrap(FAILURE_RESPONSE));
-                    completeCb.operationComplete(BKException.Code.OK, null);
-                }
+            return (m, cb) -> {
+                cb.operationComplete(BKException.Code.OK, AuthToken.wrap(FAILURE_RESPONSE));
+                completeCb.operationComplete(BKException.Code.OK, null);
             };
         }
     }

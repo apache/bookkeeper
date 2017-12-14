@@ -89,29 +89,23 @@ public class TestLongZkLedgerIdGenerator extends TestCase {
 
         final AtomicInteger errCount = new AtomicInteger(0);
         final ConcurrentLinkedQueue<Long> ledgerIds = new ConcurrentLinkedQueue<Long>();
-        final GenericCallback<Long> cb = new GenericCallback<Long>() {
-            @Override
-            public void operationComplete(int rc, Long result) {
-                if (Code.OK.intValue() == rc) {
-                    ledgerIds.add(result);
-                } else {
-                    errCount.incrementAndGet();
-                }
-                countDownLatch.countDown();
+        final GenericCallback<Long> cb = (rc, result) -> {
+            if (Code.OK.intValue() == rc) {
+                ledgerIds.add(result);
+            } else {
+                errCount.incrementAndGet();
             }
+            countDownLatch.countDown();
         };
 
         long start = System.currentTimeMillis();
 
         for (int i = 0; i < nThread; i++) {
-            new Thread() {
-                @Override
-                public void run() {
-                    for (int j = 0; j < nLedgers; j++) {
-                        ledgerIdGenerator.generateLedgerId(cb);
-                    }
+            new Thread(() -> {
+                for (int j = 0; j < nLedgers; j++) {
+                    ledgerIdGenerator.generateLedgerId(cb);
                 }
-            }.start();
+            }).start();
         }
 
         // Go and create the long-id directory in zookeeper. This should cause the id generator to generate ids with the
@@ -121,14 +115,11 @@ public class TestLongZkLedgerIdGenerator extends TestCase {
         ledgerIdGenerator.invalidateLedgerIdGenPathStatus();
 
         for (int i = 0; i < nThread; i++) {
-            new Thread() {
-                @Override
-                public void run() {
-                    for (int j = 0; j < nLedgers; j++) {
-                        ledgerIdGenerator.generateLedgerId(cb);
-                    }
+            new Thread(() -> {
+                for (int j = 0; j < nLedgers; j++) {
+                    ledgerIdGenerator.generateLedgerId(cb);
                 }
-            }.start();
+            }).start();
         }
 
         assertTrue("Wait ledger id generation threads to stop timeout : ",

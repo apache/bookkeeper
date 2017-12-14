@@ -26,7 +26,6 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.zookeeper.AsyncCallback.StringCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs.Ids;
@@ -87,32 +86,28 @@ public class LongZkLedgerIdGenerator implements LedgerIdGenerator {
     private void generateLongLedgerIdLowBits(final String ledgerPrefix, long highBits, final GenericCallback<Long> cb)
             throws KeeperException, InterruptedException, IOException {
         String highPath = ledgerPrefix + formatHalfId((int) highBits);
-        ZkLedgerIdGenerator.generateLedgerIdImpl(new GenericCallback<Long>(){
-            @Override
-            public void operationComplete(int rc, Long result) {
-                if (rc == BKException.Code.OK) {
-                    assert((highBits & 0xFFFFFFFF00000000L) == 0);
-                    assert((result & 0xFFFFFFFF00000000L) == 0);
-                    cb.operationComplete(rc, (highBits << 32) | result);
-                } else if (rc == BKException.Code.LedgerIdOverflowException) {
-                    // Lower bits are full. Need to expand and create another HOB node.
-                    try {
-                        Long newHighBits = highBits + 1;
-                        createHOBPathAndGenerateId(ledgerPrefix, newHighBits.intValue(), cb);
-                    } catch (KeeperException e) {
-                        LOG.error("Failed to create long ledger ID path", e);
-                        cb.operationComplete(BKException.Code.ZKException, null);
-                    } catch (InterruptedException e) {
-                        LOG.error("Failed to create long ledger ID path", e);
-                        cb.operationComplete(BKException.Code.InterruptedException, null);
-                    } catch (IOException e) {
-                        LOG.error("Failed to create long ledger ID path", e);
-                        cb.operationComplete(BKException.Code.IllegalOpException, null);
-                    }
-
+        ZkLedgerIdGenerator.generateLedgerIdImpl((rc, result) -> {
+            if (rc == BKException.Code.OK) {
+                assert((highBits & 0xFFFFFFFF00000000L) == 0);
+                assert((result & 0xFFFFFFFF00000000L) == 0);
+                cb.operationComplete(rc, (highBits << 32) | result);
+            } else if (rc == BKException.Code.LedgerIdOverflowException) {
+                // Lower bits are full. Need to expand and create another HOB node.
+                try {
+                    Long newHighBits = highBits + 1;
+                    createHOBPathAndGenerateId(ledgerPrefix, newHighBits.intValue(), cb);
+                } catch (KeeperException e) {
+                    LOG.error("Failed to create long ledger ID path", e);
+                    cb.operationComplete(BKException.Code.ZKException, null);
+                } catch (InterruptedException e) {
+                    LOG.error("Failed to create long ledger ID path", e);
+                    cb.operationComplete(BKException.Code.InterruptedException, null);
+                } catch (IOException e) {
+                    LOG.error("Failed to create long ledger ID path", e);
+                    cb.operationComplete(BKException.Code.IllegalOpException, null);
                 }
-            }
 
+            }
         }, zk, ZkLedgerIdGenerator.createLedgerPrefix(highPath, null), zkAcls);
     }
 
@@ -226,25 +221,22 @@ public class LongZkLedgerIdGenerator implements LedgerIdGenerator {
 
     private void createLongLedgerIdPathAndGenerateLongLedgerId(final GenericCallback<Long> cb, String createPath) {
         ZkUtils.asyncCreateFullPathOptimistic(zk, ledgerIdGenPath, new byte[0], Ids.OPEN_ACL_UNSAFE,
-                CreateMode.PERSISTENT, new StringCallback() {
-                    @Override
-                    public void processResult(int rc, String path, Object ctx, String name) {
-                        try {
-                            setLedgerIdGenPathStatus(HighOrderLedgerIdGenPathStatus.PRESENT);
-                            generateLongLedgerId(cb);
-                        } catch (KeeperException e) {
-                            LOG.error("Failed to create long ledger ID path", e);
-                            setLedgerIdGenPathStatus(HighOrderLedgerIdGenPathStatus.UNKNOWN);
-                            cb.operationComplete(BKException.Code.ZKException, null);
-                        } catch (InterruptedException e) {
-                            LOG.error("Failed to create long ledger ID path", e);
-                            setLedgerIdGenPathStatus(HighOrderLedgerIdGenPathStatus.UNKNOWN);
-                            cb.operationComplete(BKException.Code.InterruptedException, null);
-                        } catch (IOException e) {
-                            LOG.error("Failed to create long ledger ID path", e);
-                            setLedgerIdGenPathStatus(HighOrderLedgerIdGenPathStatus.UNKNOWN);
-                            cb.operationComplete(BKException.Code.IllegalOpException, null);
-                        }
+                CreateMode.PERSISTENT, (rc, path, ctx, name) -> {
+                    try {
+                        setLedgerIdGenPathStatus(HighOrderLedgerIdGenPathStatus.PRESENT);
+                        generateLongLedgerId(cb);
+                    } catch (KeeperException e) {
+                        LOG.error("Failed to create long ledger ID path", e);
+                        setLedgerIdGenPathStatus(HighOrderLedgerIdGenPathStatus.UNKNOWN);
+                        cb.operationComplete(BKException.Code.ZKException, null);
+                    } catch (InterruptedException e) {
+                        LOG.error("Failed to create long ledger ID path", e);
+                        setLedgerIdGenPathStatus(HighOrderLedgerIdGenPathStatus.UNKNOWN);
+                        cb.operationComplete(BKException.Code.InterruptedException, null);
+                    } catch (IOException e) {
+                        LOG.error("Failed to create long ledger ID path", e);
+                        setLedgerIdGenPathStatus(HighOrderLedgerIdGenPathStatus.UNKNOWN);
+                        cb.operationComplete(BKException.Code.IllegalOpException, null);
                     }
                 }, null);
     }
@@ -292,19 +284,16 @@ public class LongZkLedgerIdGenerator implements LedgerIdGenerator {
         try {
             if (!ledgerIdGenPathPresent(zk)) {
                 // We've not moved onto 63-bit ledgers yet.
-                shortIdGen.generateLedgerId(new GenericCallback<Long>(){
-                        @Override
-                        public void operationComplete(int rc, Long result) {
-                            if (rc == BKException.Code.LedgerIdOverflowException) {
-                                // 31-bit IDs overflowed. Start using 63-bit ids.
-                                createLongLedgerIdPathAndGenerateLongLedgerId(cb, ledgerIdGenPath);
-                            } else {
-                                // 31-bit Generation worked OK, or had some other
-                                // error that we will pass on.
-                                cb.operationComplete(rc, result);
-                            }
-                        }
-                    });
+                shortIdGen.generateLedgerId((rc, result) -> {
+                    if (rc == BKException.Code.LedgerIdOverflowException) {
+                        // 31-bit IDs overflowed. Start using 63-bit ids.
+                        createLongLedgerIdPathAndGenerateLongLedgerId(cb, ledgerIdGenPath);
+                    } else {
+                        // 31-bit Generation worked OK, or had some other
+                        // error that we will pass on.
+                        cb.operationComplete(rc, result);
+                    }
+                });
             } else {
                 // We've already started generating 63-bit ledger IDs.
                 // Keep doing that.

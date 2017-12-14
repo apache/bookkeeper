@@ -53,12 +53,8 @@ class LegacyHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager 
     private static final String MAX_ID_SUFFIX = "9999";
     private static final String MIN_ID_SUFFIX = "0000";
 
-    private static final ThreadLocal<StringBuilder> threadLocalNodeBuilder = new ThreadLocal<StringBuilder>() {
-        @Override
-        protected StringBuilder initialValue() {
-            return new StringBuilder();
-        }
-    };
+    private static final ThreadLocal<StringBuilder> threadLocalNodeBuilder =
+            ThreadLocal.withInitial(() -> new StringBuilder());
 
     /**
      * Constructor.
@@ -121,28 +117,22 @@ class LegacyHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager 
                                     final AsyncCallback.VoidCallback finalCb, final Object context,
                                     final int successRc, final int failureRc) {
         // process 1st level nodes
-        asyncProcessLevelNodes(ledgerRootPath, new Processor<String>() {
-            @Override
-            public void process(final String l1Node, final AsyncCallback.VoidCallback cb1) {
-                if (isSpecialZnode(l1Node)) {
-                    cb1.processResult(successRc, null, context);
-                    return;
-                }
-                final String l1NodePath = ledgerRootPath + "/" + l1Node;
-                // process level1 path, after all children of level1 process
-                // it callback to continue processing next level1 node
-                asyncProcessLevelNodes(l1NodePath, new Processor<String>() {
-                    @Override
-                    public void process(String l2Node, AsyncCallback.VoidCallback cb2) {
-                        // process level1/level2 path
-                        String l2NodePath = ledgerRootPath + "/" + l1Node + "/" + l2Node;
-                        // process each ledger
-                        // after all ledger are processed, cb2 will be call to continue processing next level2 node
-                        asyncProcessLedgersInSingleNode(l2NodePath, processor, cb2,
-                                                        context, successRc, failureRc);
-                    }
-                }, cb1, context, successRc, failureRc);
+        asyncProcessLevelNodes(ledgerRootPath, (l1Node, cb1) -> {
+            if (isSpecialZnode(l1Node)) {
+                cb1.processResult(successRc, null, context);
+                return;
             }
+            final String l1NodePath = ledgerRootPath + "/" + l1Node;
+            // process level1 path, after all children of level1 process
+            // it callback to continue processing next level1 node
+            asyncProcessLevelNodes(l1NodePath, (l2Node, cb2) -> {
+                // process level1/level2 path
+                String l2NodePath = ledgerRootPath + "/" + l1Node + "/" + l2Node;
+                // process each ledger
+                // after all ledger are processed, cb2 will be call to continue processing next level2 node
+                asyncProcessLedgersInSingleNode(l2NodePath, processor, cb2,
+                        context, successRc, failureRc);
+            }, cb1, context, successRc, failureRc);
         }, finalCb, context, successRc, failureRc);
     }
 

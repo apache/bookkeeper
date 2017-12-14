@@ -36,8 +36,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
-import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BKException.BKBookieHandleNotAvailableException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -173,11 +171,9 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         final CountDownLatch counter = new CountDownLatch(1);
 
         // Try to write, we shoud get and error callback but not an exception
-        lh.asyncAddEntry("test".getBytes(), new AddCallback() {
-            public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-                result.set(rc);
-                counter.countDown();
-            }
+        lh.asyncAddEntry("test".getBytes(), (rc, lh1, entryId, ctx) -> {
+            result.set(rc);
+            counter.countDown();
         }, null);
 
         counter.await();
@@ -197,28 +193,23 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
             final BookKeeper client = new BookKeeper(conf);
             final CountDownLatch l = new CountDownLatch(1);
             final AtomicBoolean success = new AtomicBoolean(false);
-            Thread t = new Thread() {
-                    public void run() {
-                        try {
-                            LedgerHandle lh = client.createLedger(3, 3, digestType, "testPasswd".getBytes());
-                            startNewBookie();
-                            killBookie(0);
-                            lh.asyncAddEntry("test".getBytes(), new AddCallback() {
-                                    @Override
-                                    public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-                                        // noop, we don't care if this completes
-                                    }
-                                }, null);
-                            client.close();
-                            success.set(true);
-                            l.countDown();
-                        } catch (Exception e) {
-                            LOG.error("Error running test", e);
-                            success.set(false);
-                            l.countDown();
-                        }
-                    }
-                };
+            Thread t = new Thread(() -> {
+                try {
+                    LedgerHandle lh = client.createLedger(3, 3, digestType, "testPasswd".getBytes());
+                    startNewBookie();
+                    killBookie(0);
+                    lh.asyncAddEntry("test".getBytes(), (rc, lh1, entryId, ctx) -> {
+                        // noop, we don't care if this completes
+                    }, null);
+                    client.close();
+                    success.set(true);
+                    l.countDown();
+                } catch (Exception e) {
+                    LOG.error("Error running test", e);
+                    success.set(false);
+                    l.countDown();
+                }
+            });
             t.start();
             assertTrue("Close never completed", l.await(10, TimeUnit.SECONDS));
             assertTrue("Close was not successful", success.get());
@@ -270,13 +261,10 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         final CountDownLatch counter = new CountDownLatch(1);
         final AtomicInteger receivedResponses = new AtomicInteger(0);
         final AtomicInteger returnCode = new AtomicInteger();
-        lh.asyncReadEntries(0, numEntries - 1, new ReadCallback() {
-            @Override
-            public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
-                returnCode.set(rc);
-                receivedResponses.incrementAndGet();
-                counter.countDown();
-            }
+        lh.asyncReadEntries(0, numEntries - 1, (rc, lh1, seq, ctx) -> {
+            returnCode.set(rc);
+            receivedResponses.incrementAndGet();
+            counter.countDown();
         }, null);
 
         counter.await();
@@ -685,7 +673,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                 try (LedgerHandle lh2 = bkc.createLedger(digestType, "testPasswd".getBytes())) {
                     ledgerId = lh2.getId();
                     lh2.addEntry(data);
-                    try (LedgerHandle lh2_fence = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                    try (LedgerHandle lh2Fence = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
                     }
                     try {
                         lh2.addEntry(data);
@@ -842,14 +830,11 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         final int n = 10;
         final CountDownLatch latch = new CountDownLatch(n);
         for (int i = 0; i < n; i++) {
-            lh.asyncReadEntries(0, 0, new ReadCallback() {
-                public void readComplete(int rc, LedgerHandle lh,
-                                         Enumeration<LedgerEntry> seq, Object ctx) {
-                    if (rc == BKException.Code.OK) {
-                        latch.countDown();
-                    } else {
-                        fail("Read fail");
-                    }
+            lh.asyncReadEntries(0, 0, (rc, lh1, seq, ctx) -> {
+                if (rc == BKException.Code.OK) {
+                    latch.countDown();
+                } else {
+                    fail("Read fail");
                 }
             }, null);
         }
@@ -875,14 +860,11 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
         final int n = 10;
         final CountDownLatch latch = new CountDownLatch(n);
         for (int i = 0; i < n; i++) {
-            lh.asyncReadEntries(0, 0, new ReadCallback() {
-                public void readComplete(int rc, LedgerHandle lh,
-                                         Enumeration<LedgerEntry> seq, Object ctx) {
-                    if (rc == BKException.Code.OK) {
-                        latch.countDown();
-                    } else {
-                        fail("Read fail");
-                    }
+            lh.asyncReadEntries(0, 0, (rc, lh1, seq, ctx) -> {
+                if (rc == BKException.Code.OK) {
+                    latch.countDown();
+                } else {
+                    fail("Read fail");
                 }
             }, null);
         }

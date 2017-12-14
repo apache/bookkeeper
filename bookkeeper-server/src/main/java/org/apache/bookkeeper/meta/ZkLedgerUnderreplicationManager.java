@@ -52,7 +52,6 @@ import org.apache.bookkeeper.util.SubTreeCache;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
@@ -124,12 +123,7 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
 
         idExtractionPattern = Pattern.compile("urL(\\d+)$");
         this.zkc = zkc;
-        this.subTreeCache = new SubTreeCache(new SubTreeCache.TreeProvider() {
-            @Override
-            public List<String> getChildren(String path, Watcher watcher) throws InterruptedException, KeeperException {
-                return zkc.getChildren(path, watcher);
-            }
-        });
+        this.subTreeCache = new SubTreeCache((path, watcher) -> zkc.getChildren(path, watcher));
 
         checkLayout();
     }
@@ -511,15 +505,13 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         }
         while (true) {
             final CountDownLatch changedLatch = new CountDownLatch(1);
-            Watcher w = new Watcher() {
-                public void process(WatchedEvent e) {
-                    if (e.getType() == Watcher.Event.EventType.NodeChildrenChanged
-                            || e.getType() == Watcher.Event.EventType.NodeDeleted
-                            || e.getType() == Watcher.Event.EventType.NodeCreated
-                            || e.getState() == Watcher.Event.KeeperState.Expired
-                            || e.getState() == Watcher.Event.KeeperState.Disconnected) {
-                        changedLatch.countDown();
-                    }
+            Watcher w = e -> {
+                if (e.getType() == Watcher.Event.EventType.NodeChildrenChanged
+                        || e.getType() == Watcher.Event.EventType.NodeDeleted
+                        || e.getType() == Watcher.Event.EventType.NodeCreated
+                        || e.getState() == Watcher.Event.KeeperState.Expired
+                        || e.getState() == Watcher.Event.KeeperState.Disconnected) {
+                    changedLatch.countDown();
                 }
             };
             try (SubTreeCache.WatchGuard wg = subTreeCache.registerWatcherWithGuard(w)) {
@@ -669,11 +661,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         if (LOG.isDebugEnabled()) {
             LOG.debug("notifyLedgerReplicationEnabled()");
         }
-        Watcher w = new Watcher() {
-            public void process(WatchedEvent e) {
-                if (e.getType() == Watcher.Event.EventType.NodeDeleted) {
-                    cb.operationComplete(0, null);
-                }
+        Watcher w = e -> {
+            if (e.getType() == Watcher.Event.EventType.NodeDeleted) {
+                cb.operationComplete(0, null);
             }
         };
         try {
@@ -781,11 +771,9 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
     @Override
     public void notifyLostBookieRecoveryDelayChanged(GenericCallback<Void> cb) throws UnavailableException {
         LOG.debug("notifyLostBookieRecoveryDelayChanged()");
-        Watcher w = new Watcher() {
-            public void process(WatchedEvent e) {
-                if (e.getType() == Watcher.Event.EventType.NodeDataChanged) {
-                    cb.operationComplete(0, null);
-                }
+        Watcher w = e -> {
+            if (e.getType() == Watcher.Event.EventType.NodeDataChanged) {
+                cb.operationComplete(0, null);
             }
         };
         try {

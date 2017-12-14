@@ -85,13 +85,10 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         for (int i = 0; i < 1000; i++) {
             PerChannelBookieClient client = new PerChannelBookieClient(executor, eventLoopGroup, addr,
                     authProvider, extRegistry);
-            client.connectIfNeededAndDoOp(new GenericCallback<PerChannelBookieClient>() {
-                    @Override
-                    public void operationComplete(int rc, PerChannelBookieClient client) {
-                        // do nothing, we don't care about doing anything with the connection,
-                        // we just want to trigger it connecting.
-                    }
-                });
+            client.connectIfNeededAndDoOp((rc, client1) -> {
+                // do nothing, we don't care about doing anything with the connection,
+                // we just want to trigger it connecting.
+            });
             client.close();
         }
         eventLoopGroup.shutdownGracefully();
@@ -114,12 +111,9 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
      */
     @Test
     public void testConnectRace() throws Exception {
-        GenericCallback<PerChannelBookieClient> nullop = new GenericCallback<PerChannelBookieClient>() {
-            @Override
-            public void operationComplete(int rc, PerChannelBookieClient pcbc) {
-                // do nothing, we don't care about doing anything with the connection,
-                // we just want to trigger it connecting.
-            }
+        GenericCallback<PerChannelBookieClient> nullop = (rc, pcbc) -> {
+            // do nothing, we don't care about doing anything with the connection,
+            // we just want to trigger it connecting.
         };
         EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
         OrderedSafeExecutor executor = getOrderedSafeExecutor();
@@ -145,12 +139,9 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
      */
     @Test
     public void testDisconnectRace() throws Exception {
-        final GenericCallback<PerChannelBookieClient> nullop = new GenericCallback<PerChannelBookieClient>() {
-            @Override
-            public void operationComplete(int rc, PerChannelBookieClient client) {
-                // do nothing, we don't care about doing anything with the connection,
-                // we just want to trigger it connecting.
-            }
+        final GenericCallback<PerChannelBookieClient> nullop = (rc, client) -> {
+            // do nothing, we don't care about doing anything with the connection,
+            // we just want to trigger it connecting.
         };
         final int iterations = 100000;
         EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
@@ -162,56 +153,50 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         final AtomicBoolean shouldFail = new AtomicBoolean(false);
         final AtomicBoolean running = new AtomicBoolean(true);
         final CountDownLatch disconnectRunning = new CountDownLatch(1);
-        Thread connectThread = new Thread() {
-                public void run() {
-                    try {
-                        if (!disconnectRunning.await(10, TimeUnit.SECONDS)) {
-                            LOG.error("Disconnect thread never started");
-                            shouldFail.set(true);
-                        }
-                    } catch (InterruptedException ie) {
-                        LOG.error("Connect thread interrupted", ie);
-                        Thread.currentThread().interrupt();
+        Thread connectThread = new Thread(() -> {
+            try {
+                if (!disconnectRunning.await(10, TimeUnit.SECONDS)) {
+                    LOG.error("Disconnect thread never started");
+                    shouldFail.set(true);
+                }
+            } catch (InterruptedException ie) {
+                LOG.error("Connect thread interrupted", ie);
+                Thread.currentThread().interrupt();
+                running.set(false);
+            }
+            for (int i = 0; i < iterations && running.get(); i++) {
+                client.connectIfNeededAndDoOp(nullop);
+            }
+            running.set(false);
+        });
+        Thread disconnectThread = new Thread(() -> {
+            disconnectRunning.countDown();
+            while (running.get()) {
+                client.disconnect();
+            }
+        });
+        Thread checkThread = new Thread(() -> {
+            ConnectionState state;
+            Channel channel;
+            while (running.get()) {
+                synchronized (client) {
+                    state = client.state;
+                    channel = client.channel;
+
+                    if ((state == ConnectionState.CONNECTED
+                         && (channel == null
+                             || !channel.isActive()))
+                        || (state != ConnectionState.CONNECTED
+                            && channel != null
+                            && channel.isActive())) {
+                        LOG.error("State({}) and channel({}) inconsistent " + channel,
+                                  state, channel == null ? null : channel.isActive());
+                        shouldFail.set(true);
                         running.set(false);
                     }
-                    for (int i = 0; i < iterations && running.get(); i++) {
-                        client.connectIfNeededAndDoOp(nullop);
-                    }
-                    running.set(false);
                 }
-            };
-        Thread disconnectThread = new Thread() {
-                public void run() {
-                    disconnectRunning.countDown();
-                    while (running.get()) {
-                        client.disconnect();
-                    }
-                }
-            };
-        Thread checkThread = new Thread() {
-                public void run() {
-                    ConnectionState state;
-                    Channel channel;
-                    while (running.get()) {
-                        synchronized (client) {
-                            state = client.state;
-                            channel = client.channel;
-
-                            if ((state == ConnectionState.CONNECTED
-                                 && (channel == null
-                                     || !channel.isActive()))
-                                || (state != ConnectionState.CONNECTED
-                                    && channel != null
-                                    && channel.isActive())) {
-                                LOG.error("State({}) and channel({}) inconsistent " + channel,
-                                          state, channel == null ? null : channel.isActive());
-                                shouldFail.set(true);
-                                running.set(false);
-                            }
-                        }
-                    }
-                }
-            };
+            }
+        });
         connectThread.start();
         disconnectThread.start();
         checkThread.start();
@@ -255,29 +240,20 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         final PerChannelBookieClient client = new PerChannelBookieClient(executor, eventLoopGroup,
                 addr, authProvider, extRegistry);
         final CountDownLatch completion = new CountDownLatch(1);
-        final ReadEntryCallback cb = new ReadEntryCallback() {
-                @Override
-                public void readEntryComplete(int rc, long ledgerId, long entryId,
-                    ByteBuf buffer, Object ctx) {
-                    completion.countDown();
-                }
-            };
+        final ReadEntryCallback cb = (rc, ledgerId, entryId, buffer, ctx) -> completion.countDown();
 
-        client.connectIfNeededAndDoOp(new GenericCallback<PerChannelBookieClient>() {
-            @Override
-            public void operationComplete(final int rc, PerChannelBookieClient pcbc) {
-                if (rc != BKException.Code.OK) {
-                    executor.submitOrdered(1, new SafeRunnable() {
-                        @Override
-                        public void safeRun() {
-                            cb.readEntryComplete(rc, 1, 1, null, null);
-                        }
-                    });
-                    return;
-                }
-
-                client.readEntryAndFenceLedger(1, "00000111112222233333".getBytes(), 1, cb, null);
+        client.connectIfNeededAndDoOp((rc, pcbc) -> {
+            if (rc != BKException.Code.OK) {
+                executor.submitOrdered(1, new SafeRunnable() {
+                    @Override
+                    public void safeRun() {
+                        cb.readEntryComplete(rc, 1, 1, null, null);
+                    }
+                });
+                return;
             }
+
+            client.readEntryAndFenceLedger(1, "00000111112222233333".getBytes(), 1, cb, null);
         });
 
         Thread.sleep(1000);

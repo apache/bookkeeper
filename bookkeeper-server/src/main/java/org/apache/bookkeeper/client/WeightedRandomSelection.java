@@ -19,8 +19,6 @@
 package org.apache.bookkeeper.client;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,22 +58,14 @@ class WeightedRandomSelection<T> {
         // calculate the weighted probability later on
         Long totalWeight = 0L, min = Long.MAX_VALUE;
         List<WeightedObject> values = new ArrayList<WeightedObject>(map.values());
-        Collections.sort(values, new Comparator<WeightedObject>() {
-            public int compare(WeightedObject o1, WeightedObject o2) {
-                long diff = o1.getWeight() - o2.getWeight();
-                if (diff < 0L) {
-                    return -1;
-                } else if (diff > 0L) {
-                    return 1;
-                } else {
-                    return 0;
-                }
-            }
+        values.sort((o1, o2) -> {
+            long diff = o1.getWeight() - o2.getWeight();
+            return Long.compare(diff, 0L);
         });
-        for (int i = 0; i < values.size(); i++) {
-            totalWeight += values.get(i).getWeight();
-            if (values.get(i).getWeight() != 0 && min > values.get(i).getWeight()) {
-                min = values.get(i).getWeight();
+        for (WeightedObject value : values) {
+            totalWeight += value.getWeight();
+            if (value.getWeight() != 0 && min > value.getWeight()) {
+                min = value.getWeight();
             }
         }
 

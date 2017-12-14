@@ -35,7 +35,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -120,14 +119,11 @@ public class Auditor {
 
         initialize(conf, zkc);
 
-        executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactory() {
-                @Override
-                public Thread newThread(Runnable r) {
-                    Thread t = new Thread(r, "AuditorBookie-" + bookieIdentifier);
-                    t.setDaemon(true);
-                    return t;
-                }
-            });
+        executor = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "AuditorBookie-" + bookieIdentifier);
+            t.setDaemon(true);
+            return t;
+        });
     }
 
     private void initialize(ServerConfiguration conf, ZooKeeper zkc)
@@ -173,13 +169,11 @@ public class Auditor {
             if (executor.isShutdown()) {
                 return;
             }
-            executor.submit(new Runnable() {
-                    public void run() {
-                        synchronized (Auditor.this) {
-                            executor.shutdown();
-                        }
-                    }
-                });
+            executor.submit(() -> {
+                synchronized (Auditor.this) {
+                    executor.shutdown();
+                }
+            });
         }
     }
 
@@ -190,83 +184,78 @@ public class Auditor {
             f.setException(new BKAuditException("Auditor shutting down"));
             return f;
         }
-        return executor.submit(new Runnable() {
-                @SuppressWarnings("unchecked")
-                public void run() {
-                    try {
-                        waitIfLedgerReplicationDisabled();
-                        int lostBookieRecoveryDelay = Auditor.this.ledgerUnderreplicationManager
-                                .getLostBookieRecoveryDelay();
-                        List<String> availableBookies = getAvailableBookies();
+        return executor.submit(() -> {
+            try {
+                waitIfLedgerReplicationDisabled();
+                int lostBookieRecoveryDelay = Auditor.this.ledgerUnderreplicationManager
+                        .getLostBookieRecoveryDelay();
+                List<String> availableBookies = getAvailableBookies();
 
-                        // casting to String, as knownBookies and availableBookies
-                        // contains only String values
-                        // find new bookies(if any) and update the known bookie list
-                        Collection<String> newBookies = CollectionUtils.subtract(
-                                availableBookies, knownBookies);
-                        knownBookies.addAll(newBookies);
-                        if (!bookiesToBeAudited.isEmpty() && knownBookies.containsAll(bookiesToBeAudited)) {
-                            // the bookie, which went down earlier and had an audit scheduled for,
-                            // has come up. So let us stop tracking it and cancel the audit. Since
-                            // we allow delaying of audit when there is only one failed bookie,
-                            // bookiesToBeAudited should just have 1 element and hence containsAll
-                            // check should be ok
-                            if (auditTask != null && auditTask.cancel(false)) {
-                                auditTask = null;
-                                numDelayedBookieAuditsCancelled.inc();
-                            }
-                            bookiesToBeAudited.clear();
-                        }
-
-                        // find lost bookies(if any)
-                        bookiesToBeAudited.addAll(CollectionUtils.subtract(knownBookies, availableBookies));
-                        if (bookiesToBeAudited.size() == 0) {
-                            return;
-                        }
-
-                        knownBookies.removeAll(bookiesToBeAudited);
-                        if (lostBookieRecoveryDelay == 0) {
-                            startAudit(false);
-                            bookiesToBeAudited.clear();
-                            return;
-                        }
-                        if (bookiesToBeAudited.size() > 1) {
-                            // if more than one bookie is down, start the audit immediately;
-                            LOG.info("Multiple bookie failure; not delaying bookie audit. "
-                                    + "Bookies lost now: {}; All lost bookies: {}",
-                                    CollectionUtils.subtract(knownBookies, availableBookies),
-                                    bookiesToBeAudited);
-                            if (auditTask != null && auditTask.cancel(false)) {
-                                auditTask = null;
-                                numDelayedBookieAuditsCancelled.inc();
-                            }
-                            startAudit(false);
-                            bookiesToBeAudited.clear();
-                            return;
-                        }
-                        if (auditTask == null) {
-                            // if there is no scheduled audit, schedule one
-                            auditTask = executor.schedule(new Runnable() {
-                                public void run() {
-                                    startAudit(false);
-                                    auditTask = null;
-                                    bookiesToBeAudited.clear();
-                                }
-                            }, lostBookieRecoveryDelay, TimeUnit.SECONDS);
-                            numBookieAuditsDelayed.inc();
-                            LOG.info("Delaying bookie audit by {} secs for {}", lostBookieRecoveryDelay,
-                                    bookiesToBeAudited);
-                        }
-                    } catch (BKException bke) {
-                        LOG.error("Exception getting bookie list", bke);
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        LOG.error("Interrupted while watching available bookies ", ie);
-                    } catch (UnavailableException ue) {
-                        LOG.error("Exception while watching available bookies", ue);
+                // casting to String, as knownBookies and availableBookies
+                // contains only String values
+                // find new bookies(if any) and update the known bookie list
+                Collection<String> newBookies = CollectionUtils.subtract(
+                        availableBookies, knownBookies);
+                knownBookies.addAll(newBookies);
+                if (!bookiesToBeAudited.isEmpty() && knownBookies.containsAll(bookiesToBeAudited)) {
+                    // the bookie, which went down earlier and had an audit scheduled for,
+                    // has come up. So let us stop tracking it and cancel the audit. Since
+                    // we allow delaying of audit when there is only one failed bookie,
+                    // bookiesToBeAudited should just have 1 element and hence containsAll
+                    // check should be ok
+                    if (auditTask != null && auditTask.cancel(false)) {
+                        auditTask = null;
+                        numDelayedBookieAuditsCancelled.inc();
                     }
+                    bookiesToBeAudited.clear();
                 }
-            });
+
+                // find lost bookies(if any)
+                bookiesToBeAudited.addAll(CollectionUtils.subtract(knownBookies, availableBookies));
+                if (bookiesToBeAudited.size() == 0) {
+                    return;
+                }
+
+                knownBookies.removeAll(bookiesToBeAudited);
+                if (lostBookieRecoveryDelay == 0) {
+                    startAudit(false);
+                    bookiesToBeAudited.clear();
+                    return;
+                }
+                if (bookiesToBeAudited.size() > 1) {
+                    // if more than one bookie is down, start the audit immediately;
+                    LOG.info("Multiple bookie failure; not delaying bookie audit. "
+                            + "Bookies lost now: {}; All lost bookies: {}",
+                            CollectionUtils.subtract(knownBookies, availableBookies),
+                            bookiesToBeAudited);
+                    if (auditTask != null && auditTask.cancel(false)) {
+                        auditTask = null;
+                        numDelayedBookieAuditsCancelled.inc();
+                    }
+                    startAudit(false);
+                    bookiesToBeAudited.clear();
+                    return;
+                }
+                if (auditTask == null) {
+                    // if there is no scheduled audit, schedule one
+                    auditTask = executor.schedule(() -> {
+                        startAudit(false);
+                        auditTask = null;
+                        bookiesToBeAudited.clear();
+                    }, lostBookieRecoveryDelay, TimeUnit.SECONDS);
+                    numBookieAuditsDelayed.inc();
+                    LOG.info("Delaying bookie audit by {} secs for {}", lostBookieRecoveryDelay,
+                            bookiesToBeAudited);
+                }
+            } catch (BKException bke) {
+                LOG.error("Exception getting bookie list", bke);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                LOG.error("Interrupted while watching available bookies ", ie);
+            } catch (UnavailableException ue) {
+                LOG.error("Exception while watching available bookies", ue);
+            }
+        });
     }
 
     synchronized Future<?> submitLostBookieRecoveryDelayChangedEvent() {
@@ -305,12 +294,10 @@ public class Auditor {
                     } else if (auditTask != null) {
                         LOG.info("lostBookieRecoveryDelay has been set to {}, so rescheduling AuditTask accordingly",
                                 lostBookieRecoveryDelay);
-                        auditTask = executor.schedule(new Runnable() {
-                            public void run() {
-                                startAudit(false);
-                                auditTask = null;
-                                bookiesToBeAudited.clear();
-                            }
+                        auditTask = executor.schedule(() -> {
+                            startAudit(false);
+                            auditTask = null;
+                            bookiesToBeAudited.clear();
                         }, lostBookieRecoveryDelay, TimeUnit.SECONDS);
                         numBookieAuditsDelayed.inc();
                     }
@@ -342,35 +329,33 @@ public class Auditor {
             if (interval > 0) {
                 LOG.info("Auditor periodic ledger checking enabled"
                          + " 'auditorPeriodicCheckInterval' {} seconds", interval);
-                executor.scheduleAtFixedRate(new Runnable() {
-                        public void run() {
-                            try {
-                                if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
-                                    LOG.info("Ledger replication disabled, skipping");
-                                    return;
-                                }
-
-                                Stopwatch stopwatch = Stopwatch.createStarted();
-                                checkAllLedgers();
-                                checkAllLedgersTime.registerSuccessfulEvent(stopwatch.stop()
-                                                .elapsed(TimeUnit.MILLISECONDS),
-                                        TimeUnit.MILLISECONDS);
-                            } catch (KeeperException ke) {
-                                LOG.error("Exception while running periodic check", ke);
-                            } catch (InterruptedException ie) {
-                                Thread.currentThread().interrupt();
-                                LOG.error("Interrupted while running periodic check", ie);
-                            } catch (BKAuditException bkae) {
-                                LOG.error("Exception while running periodic check", bkae);
-                            } catch (BKException bke) {
-                                LOG.error("Exception running periodic check", bke);
-                            } catch (IOException ioe) {
-                                LOG.error("I/O exception running periodic check", ioe);
-                            } catch (ReplicationException.UnavailableException ue) {
-                                LOG.error("Underreplication manager unavailable running periodic check", ue);
-                            }
+                executor.scheduleAtFixedRate(() -> {
+                    try {
+                        if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
+                            LOG.info("Ledger replication disabled, skipping");
+                            return;
                         }
-                    }, interval, interval, TimeUnit.SECONDS);
+
+                        Stopwatch stopwatch = Stopwatch.createStarted();
+                        checkAllLedgers();
+                        checkAllLedgersTime.registerSuccessfulEvent(stopwatch.stop()
+                                        .elapsed(TimeUnit.MILLISECONDS),
+                                TimeUnit.MILLISECONDS);
+                    } catch (KeeperException ke) {
+                        LOG.error("Exception while running periodic check", ke);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        LOG.error("Interrupted while running periodic check", ie);
+                    } catch (BKAuditException bkae) {
+                        LOG.error("Exception while running periodic check", bkae);
+                    } catch (BKException bke) {
+                        LOG.error("Exception running periodic check", bke);
+                    } catch (IOException ioe) {
+                        LOG.error("I/O exception running periodic check", ioe);
+                    } catch (UnavailableException ue) {
+                        LOG.error("Underreplication manager unavailable running periodic check", ue);
+                    }
+                }, interval, interval, TimeUnit.SECONDS);
             } else {
                 LOG.info("Periodic checking disabled");
             }
@@ -617,71 +602,64 @@ public class Auditor {
             final AtomicInteger returnCode = new AtomicInteger(BKException.Code.OK);
             final CountDownLatch processDone = new CountDownLatch(1);
 
-            Processor<Long> checkLedgersProcessor = new Processor<Long>() {
-                @Override
-                public void process(final Long ledgerId,
-                                    final AsyncCallback.VoidCallback callback) {
-                    try {
-                        if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
-                            LOG.info("Ledger rereplication has been disabled, aborting periodic check");
-                            processDone.countDown();
-                            return;
-                        }
-                    } catch (ReplicationException.UnavailableException ue) {
-                        LOG.error("Underreplication manager unavailable running periodic check", ue);
+            Processor<Long> checkLedgersProcessor = (ledgerId, callback) -> {
+                try {
+                    if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
+                        LOG.info("Ledger rereplication has been disabled, aborting periodic check");
                         processDone.countDown();
                         return;
                     }
+                } catch (UnavailableException ue) {
+                    LOG.error("Underreplication manager unavailable running periodic check", ue);
+                    processDone.countDown();
+                    return;
+                }
 
-                    LedgerHandle lh = null;
-                    try {
-                        lh = admin.openLedgerNoRecovery(ledgerId);
-                        checker.checkLedger(lh, new ProcessLostFragmentsCb(lh, callback));
-                        // we collect the following stats to get a measure of the
-                        // distribution of a single ledger within the bk cluster
-                        // the higher the number of fragments/bookies, the more distributed it is
-                        numFragmentsPerLedger.registerSuccessfulValue(lh.getNumFragments());
-                        numBookiesPerLedger.registerSuccessfulValue(lh.getNumBookies());
-                        numLedgersChecked.inc();
-                    } catch (BKException.BKNoSuchLedgerExistsException bknsle) {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("Ledger was deleted before we could check it", bknsle);
-                        }
-                        callback.processResult(BKException.Code.OK,
-                                               null, null);
-                        return;
-                    } catch (BKException bke) {
-                        LOG.error("Couldn't open ledger " + ledgerId, bke);
-                        callback.processResult(BKException.Code.BookieHandleNotAvailableException,
-                                         null, null);
-                        return;
-                    } catch (InterruptedException ie) {
-                        LOG.error("Interrupted opening ledger", ie);
-                        Thread.currentThread().interrupt();
-                        callback.processResult(BKException.Code.InterruptedException, null, null);
-                        return;
-                    } finally {
-                        if (lh != null) {
-                            try {
-                                lh.close();
-                            } catch (BKException bke) {
-                                LOG.warn("Couldn't close ledger " + ledgerId, bke);
-                            } catch (InterruptedException ie) {
-                                LOG.warn("Interrupted closing ledger " + ledgerId, ie);
-                                Thread.currentThread().interrupt();
-                            }
+                LedgerHandle lh = null;
+                try {
+                    lh = admin.openLedgerNoRecovery(ledgerId);
+                    checker.checkLedger(lh, new ProcessLostFragmentsCb(lh, callback));
+                    // we collect the following stats to get a measure of the
+                    // distribution of a single ledger within the bk cluster
+                    // the higher the number of fragments/bookies, the more distributed it is
+                    numFragmentsPerLedger.registerSuccessfulValue(lh.getNumFragments());
+                    numBookiesPerLedger.registerSuccessfulValue(lh.getNumBookies());
+                    numLedgersChecked.inc();
+                } catch (BKException.BKNoSuchLedgerExistsException bknsle) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Ledger was deleted before we could check it", bknsle);
+                    }
+                    callback.processResult(BKException.Code.OK,
+                                           null, null);
+                    return;
+                } catch (BKException bke) {
+                    LOG.error("Couldn't open ledger " + ledgerId, bke);
+                    callback.processResult(BKException.Code.BookieHandleNotAvailableException,
+                                     null, null);
+                    return;
+                } catch (InterruptedException ie) {
+                    LOG.error("Interrupted opening ledger", ie);
+                    Thread.currentThread().interrupt();
+                    callback.processResult(BKException.Code.InterruptedException, null, null);
+                    return;
+                } finally {
+                    if (lh != null) {
+                        try {
+                            lh.close();
+                        } catch (BKException bke) {
+                            LOG.warn("Couldn't close ledger " + ledgerId, bke);
+                        } catch (InterruptedException ie) {
+                            LOG.warn("Interrupted closing ledger " + ledgerId, ie);
+                            Thread.currentThread().interrupt();
                         }
                     }
                 }
             };
 
             ledgerManager.asyncProcessLedgers(checkLedgersProcessor,
-                    new AsyncCallback.VoidCallback() {
-                        @Override
-                        public void processResult(int rc, String s, Object obj) {
-                            returnCode.set(rc);
-                            processDone.countDown();
-                        }
+                    (rc, s, obj) -> {
+                        returnCode.set(rc);
+                        processDone.countDown();
                     }, null, BKException.Code.OK, BKException.Code.ReadException);
             try {
                 processDone.await();

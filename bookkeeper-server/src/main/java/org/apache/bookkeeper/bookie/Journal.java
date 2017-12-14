@@ -212,15 +212,12 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             for (File dir: ledgerDirsManager.getAllLedgerDirs()) {
                 File file = new File(dir, "lastMark");
                 try {
-                    FileInputStream fis = new FileInputStream(file);
-                    try {
+                    try (FileInputStream fis = new FileInputStream(file)) {
                         int bytesRead = fis.read(buff);
                         if (bytesRead != 16) {
                             throw new IOException("Couldn't read enough bytes from lastMark."
                                                   + " Wanted " + 16 + ", got " + bytesRead);
                         }
-                    } finally {
-                        fis.close();
                     }
                     bb.clear();
                     mark.readLogMark(bb);
@@ -781,15 +778,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
      */
     public void replay(JournalScanner scanner) throws IOException {
         final LogMark markedLog = lastLogMark.getCurMark();
-        List<Long> logs = listJournalIds(journalDirectory, new JournalIdFilter() {
-            @Override
-            public boolean accept(long journalId) {
-                if (journalId < markedLog.getLogFileId()) {
-                    return false;
-                }
-                return true;
-            }
-        });
+        List<Long> logs = listJournalIds(journalDirectory, journalId ->
+                journalId >= markedLog.getLogFileId());
         // last log mark may be missed due to no sync up before
         // validate filtered log ids only when we have markedLogId
         if (markedLog.getLogFileId() > 0) {

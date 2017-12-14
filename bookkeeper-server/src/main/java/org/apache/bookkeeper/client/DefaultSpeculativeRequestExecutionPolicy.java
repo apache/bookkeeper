@@ -75,31 +75,28 @@ public class DefaultSpeculativeRequestExecutionPolicy implements SpeculativeRequ
                                          final SpeculativeRequestExecutor requestExecutor,
                                          final int speculativeRequestTimeout) {
         try {
-            scheduler.schedule(new Runnable() {
-                @Override
-                public void run() {
-                    ListenableFuture<Boolean> issueNextRequest = requestExecutor.issueSpeculativeRequest();
-                    Futures.addCallback(issueNextRequest, new FutureCallback<Boolean>() {
-                        // we want this handler to run immediately after we push the big red button!
-                        public void onSuccess(Boolean issueNextRequest) {
-                            if (issueNextRequest) {
-                                scheduleSpeculativeRead(scheduler, requestExecutor,
-                                        Math.min(maxSpeculativeRequestTimeout,
-                                        Math.round((float) speculativeRequestTimeout * backoffMultiplier)));
-                            } else {
-                                if (LOG.isTraceEnabled()) {
-                                    LOG.trace("Stopped issuing speculative requests for {}, "
+            scheduler.schedule(() -> {
+                ListenableFuture<Boolean> issueNextRequest = requestExecutor.issueSpeculativeRequest();
+                Futures.addCallback(issueNextRequest, new FutureCallback<Boolean>() {
+                    // we want this handler to run immediately after we push the big red button!
+                    public void onSuccess(Boolean issueNextRequest) {
+                        if (issueNextRequest) {
+                            scheduleSpeculativeRead(scheduler, requestExecutor,
+                                    Math.min(maxSpeculativeRequestTimeout,
+                                            Math.round((float) speculativeRequestTimeout * backoffMultiplier)));
+                        } else {
+                            if (LOG.isTraceEnabled()) {
+                                LOG.trace("Stopped issuing speculative requests for {}, "
                                         + "speculativeReadTimeout = {}", requestExecutor, speculativeRequestTimeout);
-                                }
                             }
                         }
+                    }
 
-                        public void onFailure(Throwable thrown) {
-                            LOG.warn("Failed to issue speculative request for {}, speculativeReadTimeout = {} : ",
-                                    requestExecutor, speculativeRequestTimeout, thrown);
-                        }
-                    });
-                }
+                    public void onFailure(Throwable thrown) {
+                        LOG.warn("Failed to issue speculative request for {}, speculativeReadTimeout = {} : ",
+                                requestExecutor, speculativeRequestTimeout, thrown);
+                    }
+                });
             }, speculativeRequestTimeout, TimeUnit.MILLISECONDS);
         } catch (RejectedExecutionException re) {
             if (!scheduler.isShutdown()) {

@@ -75,13 +75,11 @@ public class AuthProviderFactoryFactory {
         public BookieAuthProvider newProvider(BookieConnectionPeer addr,
                                               AuthCallbacks.GenericCallback<Void> completeCb) {
             completeCb.operationComplete(BKException.Code.OK, null);
-            return new BookieAuthProvider() {
-                public void process(AuthToken m, AuthCallbacks.GenericCallback<AuthToken> cb) {
-                    // any request of authentication for clients is going to be answered with a standard response
-                    // the client will d
-                    addr.setAuthorizedId(BookKeeperPrincipal.ANONYMOUS);
-                    cb.operationComplete(BKException.Code.OK, AuthToken.NULL);
-                }
+            return (m, cb) -> {
+                // any request of authentication for clients is going to be answered with a standard response
+                // the client will d
+                addr.setAuthorizedId(BookKeeperPrincipal.ANONYMOUS);
+                cb.operationComplete(BKException.Code.OK, AuthToken.NULL);
             };
         }
     }

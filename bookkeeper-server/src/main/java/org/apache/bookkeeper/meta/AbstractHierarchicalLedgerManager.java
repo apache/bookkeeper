@@ -60,34 +60,27 @@ public abstract class AbstractHierarchicalLedgerManager extends AbstractZkLedger
         final String path, final Processor<String> processor,
         final AsyncCallback.VoidCallback finalCb, final Object context,
         final int successRc, final int failureRc) {
-        zk.sync(path, new AsyncCallback.VoidCallback() {
-            @Override
-            public void processResult(int rc, String path, Object ctx) {
-                if (rc != Code.OK.intValue()) {
-                    LOG.error("Error syncing path " + path + " when getting its chidren: ",
-                              KeeperException.create(KeeperException.Code.get(rc), path));
+        zk.sync(path, (rc, path12, ctx) -> {
+            if (rc != Code.OK.intValue()) {
+                LOG.error("Error syncing path " + path12 + " when getting its chidren: ",
+                          KeeperException.create(Code.get(rc), path12));
+                finalCb.processResult(failureRc, null, context);
+                return;
+            }
+
+            zk.getChildren(path12, false, (rc1, path1, ctx1, levelNodes) -> {
+                if (rc1 != Code.OK.intValue()) {
+                    LOG.error("Error polling hash nodes of " + path1,
+                              KeeperException.create(Code.get(rc1), path1));
                     finalCb.processResult(failureRc, null, context);
                     return;
                 }
-
-                zk.getChildren(path, false, new AsyncCallback.ChildrenCallback() {
-                    @Override
-                    public void processResult(int rc, String path, Object ctx,
-                                              List<String> levelNodes) {
-                        if (rc != Code.OK.intValue()) {
-                            LOG.error("Error polling hash nodes of " + path,
-                                      KeeperException.create(KeeperException.Code.get(rc), path));
-                            finalCb.processResult(failureRc, null, context);
-                            return;
-                        }
-                        AsyncListProcessor<String> listProcessor =
-                                new AsyncListProcessor<String>(scheduler);
-                        // process its children
-                        listProcessor.process(levelNodes, processor, finalCb,
-                                              context, successRc, failureRc);
-                    }
-                }, null);
-            }
+                AsyncListProcessor<String> listProcessor =
+                        new AsyncListProcessor<String>(scheduler);
+                // process its children
+                listProcessor.process(levelNodes, processor, finalCb,
+                                      context, successRc, failureRc);
+            }, null);
         }, null);
     }
 
@@ -150,12 +143,7 @@ public abstract class AbstractHierarchicalLedgerManager extends AbstractZkLedger
                     }
                     final T dataToProcess = data.get(next);
                     final AsyncCallback.VoidCallback stub = this;
-                    scheduler.submit(new Runnable() {
-                        @Override
-                        public void run() {
-                            processor.process(dataToProcess, stub);
-                        }
-                    });
+                    scheduler.submit(() -> processor.process(dataToProcess, stub));
                 }
             };
             T firstElement = data.get(0);

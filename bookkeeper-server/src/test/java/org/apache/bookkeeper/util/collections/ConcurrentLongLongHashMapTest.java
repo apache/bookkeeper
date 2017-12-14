@@ -332,11 +332,7 @@ public class ConcurrentLongLongHashMapTest {
     public void testComputeIfAbsent() {
         ConcurrentLongLongHashMap map = new ConcurrentLongLongHashMap(16, 1);
         AtomicLong counter = new AtomicLong();
-        LongLongFunction provider = new LongLongFunction() {
-            public long apply(long key) {
-                return counter.getAndIncrement();
-            }
-        };
+        LongLongFunction provider = key -> counter.getAndIncrement();
 
         assertEquals(map.computeIfAbsent(0, provider), 0);
         assertEquals(map.get(0), 0);
@@ -447,12 +443,7 @@ public class ConcurrentLongLongHashMapTest {
         }
 
         try {
-            map.computeIfAbsent(-1, new LongLongFunction() {
-                @Override
-                public long apply(long key) {
-                    return 1;
-                }
-            });
+            map.computeIfAbsent(-1, key -> 1);
             fail("should have failed");
         } catch (IllegalArgumentException e) {
             // ok

@@ -166,18 +166,16 @@ public class TestFencing extends BookKeeperClusterTestCase {
 
         final String tmp = "BookKeeper is cool!";
         final CountDownLatch latch = new CountDownLatch(numRecovery);
-        Thread writethread = new Thread() {
-                public void run() {
-                    try {
-                        while (true) {
-                            writelh.addEntry(tmp.getBytes());
-                            latch.countDown();
-                        }
-                    } catch (Exception e) {
-                        LOG.info("Exception adding entry", e);
-                    }
+        Thread writethread = new Thread(() -> {
+            try {
+                while (true) {
+                    writelh.addEntry(tmp.getBytes());
+                    latch.countDown();
                 }
-            };
+            } catch (Exception e) {
+                LOG.info("Exception adding entry", e);
+            }
+        });
         writethread.start();
 
 

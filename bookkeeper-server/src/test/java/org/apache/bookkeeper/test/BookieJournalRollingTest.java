@@ -29,7 +29,6 @@ import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerEntry;
@@ -104,12 +103,10 @@ public class BookieJournalRollingTest extends BookKeeperClusterTestCase {
                 StringBuilder sb = new StringBuilder();
                 sb.append(lhs[j].getId()).append('-').append(i).append('-')
                   .append(msg);
-                lhs[j].asyncAddEntry(sb.toString().getBytes(), new AddCallback() {
-                        public void addComplete(int rc2, LedgerHandle lh, long entryId, Object ctx) {
-                            rc.compareAndSet(BKException.Code.OK, rc2);
-                            completeLatch.countDown();
-                        }
-                    }, null);
+                lhs[j].asyncAddEntry(sb.toString().getBytes(), (rc2, lh, entryId, ctx) -> {
+                    rc.compareAndSet(BKException.Code.OK, rc2);
+                    completeLatch.countDown();
+                }, null);
             }
         }
         completeLatch.await();

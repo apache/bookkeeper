@@ -24,7 +24,6 @@ import static org.apache.bookkeeper.client.LedgerHandle.INVALID_ENTRY_ID;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -33,7 +32,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -175,19 +173,15 @@ public class LedgerFragmentReplicator {
         if (fragments.hasNext()) {
             try {
                 replicateFragmentInternal(lh, fragments.next(),
-                        new AsyncCallback.VoidCallback() {
-                            @Override
-                            public void processResult(int rc, String v, Object ctx) {
-                                if (rc != BKException.Code.OK) {
-                                    ledgerFragmentMcb.processResult(rc, null,
-                                            null);
-                                } else {
-                                    replicateNextBatch(lh, fragments,
-                                            ledgerFragmentMcb,
-                                            targetBookieAddresses);
-                                }
+                        (rc, v, ctx) -> {
+                            if (rc != BKException.Code.OK) {
+                                ledgerFragmentMcb.processResult(rc, null,
+                                        null);
+                            } else {
+                                replicateNextBatch(lh, fragments,
+                                        ledgerFragmentMcb,
+                                        targetBookieAddresses);
                             }
-
                         }, targetBookieAddresses);
             } catch (InterruptedException e) {
                 ledgerFragmentMcb.processResult(
@@ -265,27 +259,24 @@ public class LedgerFragmentReplicator {
             final Set<BookieSocketAddress> newBookies) throws InterruptedException {
         final AtomicInteger numCompleted = new AtomicInteger(0);
         final AtomicBoolean completed = new AtomicBoolean(false);
-        final WriteCallback multiWriteCallback = new WriteCallback() {
-            @Override
-            public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
-                if (rc != BKException.Code.OK) {
-                    LOG.error("BK error writing entry for ledgerId: {}, entryId: {}, bookie: {}",
-                            ledgerId, entryId, addr, BKException.create(rc));
-                    if (completed.compareAndSet(false, true)) {
-                        ledgerFragmentEntryMcb.processResult(rc, null, null);
-                    }
-                } else {
-                    numEntriesWritten.inc();
-                    if (ctx instanceof Long) {
-                        numBytesWritten.registerSuccessfulValue((Long) ctx);
-                    }
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Success writing ledger id {}, entry id {} to a new bookie {}!",
-                                ledgerId, entryId, addr);
-                    }
-                    if (numCompleted.incrementAndGet() == newBookies.size() && completed.compareAndSet(false, true)) {
-                        ledgerFragmentEntryMcb.processResult(rc, null, null);
-                    }
+        final WriteCallback multiWriteCallback = (rc, ledgerId, entryId1, addr, ctx) -> {
+            if (rc != BKException.Code.OK) {
+                LOG.error("BK error writing entry for ledgerId: {}, entryId: {}, bookie: {}",
+                        ledgerId, entryId1, addr, BKException.create(rc));
+                if (completed.compareAndSet(false, true)) {
+                    ledgerFragmentEntryMcb.processResult(rc, null, null);
+                }
+            } else {
+                numEntriesWritten.inc();
+                if (ctx instanceof Long) {
+                    numBytesWritten.registerSuccessfulValue((Long) ctx);
+                }
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Success writing ledger id {}, entry id {} to a new bookie {}!",
+                            ledgerId, entryId1, addr);
+                }
+                if (numCompleted.incrementAndGet() == newBookies.size() && completed.compareAndSet(false, true)) {
+                    ledgerFragmentEntryMcb.processResult(rc, null, null);
                 }
             }
         };
@@ -294,36 +285,32 @@ public class LedgerFragmentReplicator {
          * read the entry from one of the other replicated bookies other than
          * the dead one.
          */
-        lh.asyncReadEntries(entryId, entryId, new ReadCallback() {
-            @Override
-            public void readComplete(int rc, LedgerHandle lh,
-                    Enumeration<LedgerEntry> seq, Object ctx) {
-                if (rc != BKException.Code.OK) {
-                    LOG.error("BK error reading ledger entry: " + entryId,
-                            BKException.create(rc));
-                    ledgerFragmentEntryMcb.processResult(rc, null, null);
-                    return;
-                }
-                /*
-                 * Now that we've read the ledger entry, write it to the new
-                 * bookie we've selected.
-                 */
-                LedgerEntry entry = seq.nextElement();
-                byte[] data = entry.getEntry();
-                final long dataLength = data.length;
-                numEntriesRead.inc();
-                numBytesRead.registerSuccessfulValue(dataLength);
-                ByteBuf toSend = lh.getDigestManager()
-                        .computeDigestAndPackageForSending(entryId,
-                                lh.getLastAddConfirmed(), entry.getLength(),
-                                Unpooled.wrappedBuffer(data, 0, data.length));
-                for (BookieSocketAddress newBookie : newBookies) {
-                    bkc.getBookieClient().addEntry(newBookie, lh.getId(),
-                            lh.getLedgerKey(), entryId, toSend.retainedSlice(),
-                            multiWriteCallback, dataLength, BookieProtocol.FLAG_RECOVERY_ADD);
-                }
-                toSend.release();
+        lh.asyncReadEntries(entryId, entryId, (rc, lh1, seq, ctx) -> {
+            if (rc != BKException.Code.OK) {
+                LOG.error("BK error reading ledger entry: " + entryId,
+                        BKException.create(rc));
+                ledgerFragmentEntryMcb.processResult(rc, null, null);
+                return;
             }
+                    /*
+                     * Now that we've read the ledger entry, write it to the new
+                     * bookie we've selected.
+                     */
+            LedgerEntry entry = seq.nextElement();
+            byte[] data = entry.getEntry();
+            final long dataLength = data.length;
+            numEntriesRead.inc();
+            numBytesRead.registerSuccessfulValue(dataLength);
+            ByteBuf toSend = lh1.getDigestManager()
+                    .computeDigestAndPackageForSending(entryId,
+                            lh1.getLastAddConfirmed(), entry.getLength(),
+                            Unpooled.wrappedBuffer(data, 0, data.length));
+            for (BookieSocketAddress newBookie : newBookies) {
+                bkc.getBookieClient().addEntry(newBookie, lh1.getId(),
+                        lh1.getLedgerKey(), entryId, toSend.retainedSlice(),
+                        multiWriteCallback, dataLength, BookieProtocol.FLAG_RECOVERY_ADD);
+            }
+            toSend.release();
         }, null);
     }
 

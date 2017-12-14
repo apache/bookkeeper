@@ -35,7 +35,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
-import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -79,12 +78,9 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
         final CountDownLatch latch = new CountDownLatch(1);
         stopBKCluster();
         final AtomicInteger i = new AtomicInteger(0xdeadbeef);
-        AsyncCallback.AddCallback cb = new AsyncCallback.AddCallback() {
-            @Override
-            public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-                i.set(rc);
-                latch.countDown();
-            }
+        AsyncCallback.AddCallback cb = (rc, lh1, entryId, ctx) -> {
+            i.set(rc);
+            latch.countDown();
         };
         lh.asyncAddEntry("Test Entry".getBytes(), cb, null);
         latch.await();
@@ -157,18 +153,15 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
 
         // tried to add entries
         for (int i = 0; i < numEntries; i++) {
-            lh.asyncAddEntry("data".getBytes(), new AddCallback() {
-                @Override
-                public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-                    if (BKException.Code.OK != rc) {
-                        failedLatch.countDown();
-                        deadIOLatch.countDown();
-                    }
-                    if (0 == entryId) {
-                        try {
-                            recoverDoneLatch.await();
-                        } catch (InterruptedException ie) {
-                        }
+            lh.asyncAddEntry("data".getBytes(), (rc, lh1, entryId, ctx) -> {
+                if (BKException.Code.OK != rc) {
+                    failedLatch.countDown();
+                    deadIOLatch.countDown();
+                }
+                if (0 == entryId) {
+                    try {
+                        recoverDoneLatch.await();
+                    } catch (InterruptedException ie) {
                     }
                 }
             }, null);

@@ -137,15 +137,12 @@ public class TestReadLastConfirmedAndEntry extends BookKeeperClusterTestCase {
         final CountDownLatch latch = new CountDownLatch(1);
 
         newLh.asyncReadLastConfirmedAndEntry(newLh.getLastAddConfirmed() + 1, 99999, false,
-                new AsyncCallback.ReadLastConfirmedAndEntryCallback() {
-            @Override
-            public void readLastConfirmedAndEntryComplete(int rc, long lastConfirmed, LedgerEntry entry, Object ctx) {
-                rcHolder.set(rc);
-                lacHolder.set(lastConfirmed);
-                entryHolder.set(entry);
-                latch.countDown();
-            }
-        }, null);
+                (rc, lastConfirmed, entry, ctx) -> {
+                    rcHolder.set(rc);
+                    lacHolder.set(lastConfirmed);
+                    entryHolder.set(entry);
+                    latch.countDown();
+                }, null);
 
         lh.addEntry("another test".getBytes(UTF_8));
 

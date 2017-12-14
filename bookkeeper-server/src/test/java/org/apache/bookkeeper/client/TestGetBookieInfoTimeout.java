@@ -33,11 +33,9 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
 import org.apache.bookkeeper.proto.BookkeeperProtocol;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -125,23 +123,19 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
             }
         }
         CallbackObj obj = new CallbackObj(flags);
-        bc.getBookieInfo(addr, flags, new GetBookieInfoCallback() {
-            @Override
-            public void getBookieInfoComplete(int rc, BookieInfo bInfo, Object ctx) {
-                CallbackObj obj = (CallbackObj) ctx;
-                obj.rc = rc;
-                if (rc == Code.OK) {
-                    if ((obj.requested & BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE) != 0) {
-                        obj.freeDiskSpace = bInfo.getFreeDiskSpace();
-                    }
-                    if ((obj.requested & BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE)
-                            != 0) {
-                        obj.totalDiskCapacity = bInfo.getTotalDiskSpace();
-                    }
+        bc.getBookieInfo(addr, flags, (rc, bInfo, ctx) -> {
+            CallbackObj obj1 = (CallbackObj) ctx;
+            obj1.rc = rc;
+            if (rc == Code.OK) {
+                if ((obj1.requested & BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE) != 0) {
+                    obj1.freeDiskSpace = bInfo.getFreeDiskSpace();
                 }
-                obj.latch.countDown();
+                if ((obj1.requested & BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE)
+                        != 0) {
+                    obj1.totalDiskCapacity = bInfo.getTotalDiskSpace();
+                }
             }
-
+            obj1.latch.countDown();
         }, obj);
         obj.latch.await();
         LOG.debug("Return code: " + obj.rc);
