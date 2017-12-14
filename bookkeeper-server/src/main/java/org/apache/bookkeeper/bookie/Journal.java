@@ -212,15 +212,12 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             for (File dir: ledgerDirsManager.getAllLedgerDirs()) {
                 File file = new File(dir, "lastMark");
                 try {
-                    FileInputStream fis = new FileInputStream(file);
-                    try {
+                    try (FileInputStream fis = new FileInputStream(file)) {
                         int bytesRead = fis.read(buff);
                         if (bytesRead != 16) {
                             throw new IOException("Couldn't read enough bytes from lastMark."
                                                   + " Wanted " + 16 + ", got " + bytesRead);
                         }
-                    } finally {
-                        fis.close();
                     }
                     bb.clear();
                     mark.readLogMark(bb);

@@ -69,14 +69,11 @@ public class TestBookieWatcher extends BookKeeperClusterTestCase {
     @Test
     public void testBookieWatcherSurviveWhenSessionExpired() throws Exception {
         final int timeout = 2000;
-        ZooKeeper zk = ZooKeeperClient.newBuilder()
+        try (ZooKeeper zk = ZooKeeperClient.newBuilder()
                 .connectString(zkUtil.getZooKeeperConnectString())
                 .sessionTimeoutMs(timeout)
-                .build();
-        try {
+                .build()) {
             runBookieWatcherWhenSessionExpired(zk, timeout, true);
-        } finally {
-            zk.close();
         }
     }
 
@@ -84,7 +81,7 @@ public class TestBookieWatcher extends BookKeeperClusterTestCase {
     public void testBookieWatcherDieWhenSessionExpired() throws Exception {
         final int timeout = 2000;
         final CountDownLatch connectLatch = new CountDownLatch(1);
-        ZooKeeper zk = new ZooKeeper(zkUtil.getZooKeeperConnectString(), timeout, new Watcher() {
+        try (ZooKeeper zk = new ZooKeeper(zkUtil.getZooKeeperConnectString(), timeout, new Watcher() {
             @Override
             public void process(WatchedEvent watchedEvent) {
                 if (EventType.None == watchedEvent.getType()
@@ -92,12 +89,9 @@ public class TestBookieWatcher extends BookKeeperClusterTestCase {
                     connectLatch.countDown();
                 }
             }
-        });
-        connectLatch.await();
-        try {
+        })) {
+            connectLatch.await();
             runBookieWatcherWhenSessionExpired(zk, timeout, false);
-        } finally {
-            zk.close();
         }
     }
 

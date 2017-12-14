@@ -526,10 +526,8 @@ public class TestMetaStore {
                              Order order, Set<String> fields,
                              Iterator<Map.Entry<String, Value>> expectedValues,
                              int numEntriesPerScan) throws Exception {
-        MetastoreCursor cursor = myTable.openCursor(firstKey, firstInclusive,
-                                                    lastKey, lastInclusive,
-                                                    order, fields);
-        try {
+        try (MetastoreCursor cursor =
+                     myTable.openCursor(firstKey, firstInclusive, lastKey, lastInclusive, order, fields)) {
             while (cursor.hasMoreEntries()) {
                 Iterator<MetastoreTableItem> iter = cursor.readEntries(numEntriesPerScan);
                 while (iter.hasNext()) {
@@ -541,8 +539,6 @@ public class TestMetaStore {
                 }
             }
             assertFalse(expectedValues.hasNext());
-        } finally {
-            cursor.close();
         }
     }
 
