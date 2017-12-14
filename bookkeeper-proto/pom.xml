@@ -45,6 +45,7 @@
             <!-- exclude generated file //-->
             <exclude>**/DataFormats.java</exclude>
             <exclude>**/BookkeeperProtocol.java</exclude>
+            <exclude>**/DbLedgerStorageDataFormats.java</exclude>
           </excludes>
         </configuration>
       </plugin>
