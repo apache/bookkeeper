@@ -357,7 +357,7 @@ public class EntryLogTest {
     /**
      * Test the getEntryLogsSet() method.
      */
-    @Test(timeout = 60000)
+    @Test
     public void testGetEntryLogsSet() throws Exception {
         File tmpDir = createTempDir("bkTest", ".dir");
         File curDir = Bookie.getCurrentDirectory(tmpDir);
@@ -372,16 +372,16 @@ public class EntryLogTest {
         // create some entries
         EntryLogger logger = ((InterleavedLedgerStorage) bookie.ledgerStorage).entryLogger;
 
-        assertEquals(Sets.newHashSet(0L), logger.getEntryLogsSet());
-
-        logger.rollLog();
-        logger.flushRotatedLogs();
-
         assertEquals(Sets.newHashSet(0L, 1L), logger.getEntryLogsSet());
 
         logger.rollLog();
         logger.flushRotatedLogs();
 
         assertEquals(Sets.newHashSet(0L, 1L, 2L), logger.getEntryLogsSet());
+
+        logger.rollLog();
+        logger.flushRotatedLogs();
+
+        assertEquals(Sets.newHashSet(0L, 1L, 2L, 3L), logger.getEntryLogsSet());
     }
 }
