@@ -56,19 +56,14 @@ class HierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
     public void asyncProcessLedgers(Processor<Long> processor, VoidCallback finalCb, Object context, int successRc,
             int failureRc) {
         // Process the old 31-bit id ledgers first.
-        legacyLM.asyncProcessLedgers(processor, new VoidCallback(){
-
-            @Override
-            public void processResult(int rc, String path, Object ctx) {
-                if (rc == failureRc) {
-                    // If it fails, return the failure code to the callback
-                    finalCb.processResult(rc, path, ctx);
-                } else {
-                    // If it succeeds, proceed with our own recursive ledger processing for the 63-bit id ledgers
-                    longLM.asyncProcessLedgers(processor, finalCb, context, successRc, failureRc);
-                }
+        legacyLM.asyncProcessLedgers(processor, (rc, path, ctx) -> {
+            if (rc == failureRc) {
+                // If it fails, return the failure code to the callback
+                finalCb.processResult(rc, path, ctx);
+            } else {
+                // If it succeeds, proceed with our own recursive ledger processing for the 63-bit id ledgers
+                longLM.asyncProcessLedgers(processor, finalCb, context, successRc, failureRc);
             }
-
         }, context, successRc, failureRc);
     }
 

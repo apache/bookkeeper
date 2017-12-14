@@ -27,7 +27,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
-import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -90,11 +89,9 @@ public class LedgerDeleteTest extends BookKeeperClusterTestCase {
         // Write all of the entries for all of the ledgers
         for (int i = 0; i < numMsgs; i++) {
             for (int j = 0; j < numLedgers; j++) {
-                lhs[j].asyncAddEntry(msg.getBytes(), new AddCallback() {
-                    public void addComplete(int rc2, LedgerHandle lh, long entryId, Object ctx) {
-                        rc.compareAndSet(BKException.Code.OK, rc2);
-                        completeLatch.countDown();
-                    }
+                lhs[j].asyncAddEntry(msg.getBytes(), (rc2, lh, entryId, ctx) -> {
+                    rc.compareAndSet(BKException.Code.OK, rc2);
+                    completeLatch.countDown();
                 }, null);
             }
         }

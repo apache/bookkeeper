@@ -25,7 +25,6 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -70,12 +69,7 @@ public class TestReadTimeout extends BookKeeperClusterTestCase {
         latch.await();
 
         writelh.asyncAddEntry(tmp.getBytes(),
-            new AddCallback() {
-                public void addComplete(int rc, LedgerHandle lh,
-                                        long entryId, Object ctx) {
-                    completed.set(true);
-                }
-            }, null);
+                (rc, lh, entryId, ctx) -> completed.set(true), null);
         Thread.sleep((baseClientConf.getReadTimeout() * 3) * 1000);
         Assert.assertTrue("Write request did not finish", completed.get());
 

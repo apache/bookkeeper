@@ -20,13 +20,10 @@ package org.apache.bookkeeper.client;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Enumeration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
-import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
@@ -67,22 +64,16 @@ public class TestMaxSizeWorkersQueue extends BookKeeperClusterTestCase {
 
         final AtomicInteger rcFirstReadOperation = new AtomicInteger();
 
-        lh.asyncReadEntries(0, 0, new ReadCallback() {
-            @Override
-            public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
-                rcFirstReadOperation.set(rc);
-                counter.countDown();
-            }
+        lh.asyncReadEntries(0, 0, (rc, lh12, seq, ctx) -> {
+            rcFirstReadOperation.set(rc);
+            counter.countDown();
         }, lh);
 
         final AtomicInteger rcSecondReadOperation = new AtomicInteger();
 
-        lh.asyncReadEntries(0, n - 1, new ReadCallback() {
-            @Override
-            public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> seq, Object ctx) {
-                rcSecondReadOperation.set(rc);
-                counter.countDown();
-            }
+        lh.asyncReadEntries(0, n - 1, (rc, lh1, seq, ctx) -> {
+            rcSecondReadOperation.set(rc);
+            counter.countDown();
         }, lh);
 
         counter.await();
@@ -106,15 +97,12 @@ public class TestMaxSizeWorkersQueue extends BookKeeperClusterTestCase {
 
         // Write few entries
         for (int i = 0; i < n; i++) {
-            lh.asyncAddEntry(content, new AddCallback() {
-                @Override
-                public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-                    if (rc == BKException.Code.NotEnoughBookiesException) {
-                        receivedTooManyRequestsException.set(true);
-                    }
-
-                    counter.countDown();
+            lh.asyncAddEntry(content, (rc, lh1, entryId, ctx) -> {
+                if (rc == BKException.Code.NotEnoughBookiesException) {
+                    receivedTooManyRequestsException.set(true);
                 }
+
+                counter.countDown();
             }, null);
         }
 

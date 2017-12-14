@@ -179,19 +179,11 @@ public class CleanupLedgerManager implements LedgerManager {
                 finalCb.processResult(failureRc, null, context);
                 return;
             }
-            final GenericCallback<Void> stub = new GenericCallback<Void>() {
-                @Override
-                public void operationComplete(int rc, Void result) {
-                    finalCb.processResult(failureRc, null, context);
-                }
-            };
+            final GenericCallback<Void> stub = (rc, result) -> finalCb.processResult(failureRc, null, context);
             addCallback(stub);
-            underlying.asyncProcessLedgers(processor, new AsyncCallback.VoidCallback() {
-                @Override
-                public void processResult(int rc, String path, Object ctx) {
-                    if (null != removeCallback(stub)) {
-                        finalCb.processResult(rc, path, ctx);
-                    }
+            underlying.asyncProcessLedgers(processor, (rc, path, ctx) -> {
+                if (null != removeCallback(stub)) {
+                    finalCb.processResult(rc, path, ctx);
                 }
             }, context, successRc, failureRc);
         } finally {

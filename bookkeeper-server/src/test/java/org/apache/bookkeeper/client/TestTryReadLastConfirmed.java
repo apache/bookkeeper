@@ -61,17 +61,14 @@ public class TestTryReadLastConfirmed extends BookKeeperClusterTestCase {
         final AtomicBoolean success = new AtomicBoolean(false);
         final AtomicInteger numCallbacks = new AtomicInteger(0);
         final CountDownLatch latch1 = new CountDownLatch(1);
-        readLh.asyncTryReadLastConfirmed(new AsyncCallback.ReadLastConfirmedCallback() {
-            @Override
-            public void readLastConfirmedComplete(int rc, long lastConfirmed, Object ctx) {
-                numCallbacks.incrementAndGet();
-                if (BKException.Code.OK == rc) {
-                    success.set(true);
-                } else {
-                    success.set(false);
-                }
-                latch1.countDown();
+        readLh.asyncTryReadLastConfirmed((rc, lastConfirmed, ctx) -> {
+            numCallbacks.incrementAndGet();
+            if (BKException.Code.OK == rc) {
+                success.set(true);
+            } else {
+                success.set(false);
             }
+            latch1.countDown();
         }, null);
         latch1.await();
         TimeUnit.SECONDS.sleep(2);
@@ -82,17 +79,14 @@ public class TestTryReadLastConfirmed extends BookKeeperClusterTestCase {
         success.set(false);
         numCallbacks.set(0);
         final CountDownLatch latch2 = new CountDownLatch(1);
-        readLh.asyncTryReadLastConfirmed(new AsyncCallback.ReadLastConfirmedCallback() {
-            @Override
-            public void readLastConfirmedComplete(int rc, long lastConfirmed, Object ctx) {
-                numCallbacks.incrementAndGet();
-                if (BKException.Code.OK == rc && lastConfirmed == (numEntries - 2)) {
-                    success.set(true);
-                } else {
-                    success.set(false);
-                }
-                latch2.countDown();
+        readLh.asyncTryReadLastConfirmed((rc, lastConfirmed, ctx) -> {
+            numCallbacks.incrementAndGet();
+            if (BKException.Code.OK == rc && lastConfirmed == (numEntries - 2)) {
+                success.set(true);
+            } else {
+                success.set(false);
             }
+            latch2.countDown();
         }, null);
         latch2.await();
         TimeUnit.SECONDS.sleep(2);
@@ -126,17 +120,14 @@ public class TestTryReadLastConfirmed extends BookKeeperClusterTestCase {
             final AtomicInteger numCallbacks = new AtomicInteger(0);
             final CountDownLatch latch = new CountDownLatch(1);
             final int entryId = i;
-            readLh.asyncTryReadLastConfirmed(new AsyncCallback.ReadLastConfirmedCallback() {
-                @Override
-                public void readLastConfirmedComplete(int rc, long lastConfirmed, Object ctx) {
-                    numCallbacks.incrementAndGet();
-                    if (BKException.Code.OK == rc) {
-                        success.set(lastConfirmed == (entryId - 1));
-                    } else {
-                        success.set(false);
-                    }
-                    latch.countDown();
+            readLh.asyncTryReadLastConfirmed((rc, lastConfirmed, ctx) -> {
+                numCallbacks.incrementAndGet();
+                if (BKException.Code.OK == rc) {
+                    success.set(lastConfirmed == (entryId - 1));
+                } else {
+                    success.set(false);
                 }
+                latch.countDown();
             }, null);
             latch.await();
             assertTrue(success.get());
@@ -169,18 +160,15 @@ public class TestTryReadLastConfirmed extends BookKeeperClusterTestCase {
         final AtomicBoolean success = new AtomicBoolean(false);
         final AtomicInteger numCallbacks = new AtomicInteger(0);
         final CountDownLatch latch = new CountDownLatch(1);
-        readLh.asyncTryReadLastConfirmed(new AsyncCallback.ReadLastConfirmedCallback() {
-            @Override
-            public void readLastConfirmedComplete(int rc, long lastConfirmed, Object ctx) {
-                logger.info("ReadLastConfirmedComplete : rc = {}, lac = {}.", rc, lastConfirmed);
-                numCallbacks.incrementAndGet();
-                if (BKException.Code.OK == rc) {
-                    success.set(lastConfirmed == LedgerHandle.INVALID_ENTRY_ID);
-                } else {
-                    success.set(false);
-                }
-                latch.countDown();
+        readLh.asyncTryReadLastConfirmed((rc, lastConfirmed, ctx) -> {
+            logger.info("ReadLastConfirmedComplete : rc = {}, lac = {}.", rc, lastConfirmed);
+            numCallbacks.incrementAndGet();
+            if (BKException.Code.OK == rc) {
+                success.set(lastConfirmed == LedgerHandle.INVALID_ENTRY_ID);
+            } else {
+                success.set(false);
             }
+            latch.countDown();
         }, null);
         latch.await();
         TimeUnit.SECONDS.sleep(2);

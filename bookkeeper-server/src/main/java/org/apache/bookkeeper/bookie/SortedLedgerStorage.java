@@ -200,28 +200,25 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
         //
         // The only exception for the size limitation is if a file grows to be more than hard limit 2GB,
         // we have to force rolling log, which it might cause slight performance effects
-        scheduler.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    LOG.info("Started flushing mem table.");
-                    long logIdBeforeFlush = entryLogger.getCurrentLogId();
-                    memTable.flush(SortedLedgerStorage.this);
-                    long logIdAfterFlush = entryLogger.getCurrentLogId();
-                    // in any case that an entry log reaches the limit, we roll the log and start checkpointing.
-                    // if a memory table is flushed spanning over two entry log files, we also roll log. this is
-                    // for performance consideration: since we don't wanna checkpoint a new log file that ledger
-                    // storage is writing to.
-                    if (entryLogger.reachEntryLogLimit(0) || logIdAfterFlush != logIdBeforeFlush) {
-                        LOG.info("Rolling entry logger since it reached size limitation");
-                        entryLogger.rollLog();
-                        checkpointer.startCheckpoint(cp);
-                    }
-                } catch (IOException e) {
-                    // TODO: if we failed to flush data, we should switch the bookie back to readonly mode
-                    //       or shutdown it. {@link https://github.com/apache/bookkeeper/issues/280}
-                    LOG.error("Exception thrown while flushing skip list cache.", e);
+        scheduler.execute(() -> {
+            try {
+                LOG.info("Started flushing mem table.");
+                long logIdBeforeFlush = entryLogger.getCurrentLogId();
+                memTable.flush(SortedLedgerStorage.this);
+                long logIdAfterFlush = entryLogger.getCurrentLogId();
+                // in any case that an entry log reaches the limit, we roll the log and start checkpointing.
+                // if a memory table is flushed spanning over two entry log files, we also roll log. this is
+                // for performance consideration: since we don't wanna checkpoint a new log file that ledger
+                // storage is writing to.
+                if (entryLogger.reachEntryLogLimit(0) || logIdAfterFlush != logIdBeforeFlush) {
+                    LOG.info("Rolling entry logger since it reached size limitation");
+                    entryLogger.rollLog();
+                    checkpointer.startCheckpoint(cp);
                 }
+            } catch (IOException e) {
+                // TODO: if we failed to flush data, we should switch the bookie back to readonly mode
+                //       or shutdown it. {@link https://github.com/apache/bookkeeper/issues/280}
+                LOG.error("Exception thrown while flushing skip list cache.", e);
             }
         });
     }

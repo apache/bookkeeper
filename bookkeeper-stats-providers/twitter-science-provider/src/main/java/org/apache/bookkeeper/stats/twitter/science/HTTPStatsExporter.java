@@ -55,12 +55,7 @@ public class HTTPStatsExporter {
         // Export JVM stats
         JvmStats.export();
         // Configure handlers
-        Supplier<Iterable<Stat<?>>> supplier = new Supplier<Iterable<Stat<?>>>() {
-            @Override
-            public Iterable<Stat<?>> get() {
-                return Stats.getVariables();
-            }
-        };
+        Supplier<Iterable<Stat<?>>> supplier = () -> Stats.getVariables();
 
         // Start jetty.
         ServletContextHandler context = new ServletContextHandler();

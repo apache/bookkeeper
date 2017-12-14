@@ -36,7 +36,6 @@ import io.netty.util.concurrent.FastThreadLocal;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -328,18 +327,14 @@ public class EntryLogger {
      * These channels should be used only for reading. logChannel is the one
      * that is used for writes.
      */
-    private final ThreadLocal<Map<Long, BufferedReadChannel>> logid2Channel =
-            new ThreadLocal<Map<Long, BufferedReadChannel>>() {
-        @Override
-        public Map<Long, BufferedReadChannel> initialValue() {
-            // Since this is thread local there only one modifier
-            // We dont really need the concurrency, but we need to use
-            // the weak values. Therefore using the concurrency level of 1
-            return new MapMaker().concurrencyLevel(1)
+    private final ThreadLocal<Map<Long, BufferedReadChannel>> logid2Channel = ThreadLocal.withInitial(() -> {
+        // Since this is thread local there only one modifier
+        // We don't really need the concurrency, but we need to use
+        // the weak values. Therefore using the concurrency level of 1
+        return new MapMaker().concurrencyLevel(1)
                 .weakValues()
                 .makeMap();
-        }
-    };
+    });
 
     /**
      * Each thread local buffered read channel can share the same file handle because reads are not relative
@@ -740,12 +735,7 @@ public class EntryLogger {
             return id;
         }
         // read failed, scan the ledger directories to find biggest log id
-        File[] logFiles = dir.listFiles(new FileFilter() {
-            @Override
-            public boolean accept(File file) {
-                return file.getName().endsWith(".log");
-            }
-        });
+        File[] logFiles = dir.listFiles(file -> file.getName().endsWith(".log"));
         List<Long> logs = new ArrayList<Long>();
         if (logFiles != null) {
             for (File lf : logFiles) {

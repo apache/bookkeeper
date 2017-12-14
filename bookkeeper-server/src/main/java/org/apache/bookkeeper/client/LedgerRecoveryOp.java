@@ -22,8 +22,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
-import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
-import org.apache.bookkeeper.client.DigestManager.RecoveryData;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener;
 import org.slf4j.Logger;
@@ -105,26 +103,23 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
     }
 
     public void initiate() {
-        ReadLastConfirmedOp rlcop = new ReadLastConfirmedOp(lh,
-                new ReadLastConfirmedOp.LastConfirmedDataCallback() {
-                    public void readLastConfirmedDataComplete(int rc, RecoveryData data) {
-                        if (rc == BKException.Code.OK) {
-                            synchronized (lh) {
-                                lh.lastAddPushed = lh.lastAddConfirmed = data.lastAddConfirmed;
-                                lh.length = data.length;
-                                startEntryToRead = endEntryToRead = lh.lastAddConfirmed;
-                            }
-                            // keep a copy of ledger metadata before proceeding
-                            // ledger recovery
-                            metadataForRecovery = new LedgerMetadata(lh.getLedgerMetadata());
-                            doRecoveryRead();
-                        } else if (rc == BKException.Code.UnauthorizedAccessException) {
-                            submitCallback(rc);
-                        } else {
-                            submitCallback(BKException.Code.ReadException);
-                        }
-                    }
-                });
+        ReadLastConfirmedOp rlcop = new ReadLastConfirmedOp(lh, (rc, data) -> {
+            if (rc == BKException.Code.OK) {
+                synchronized (lh) {
+                    lh.lastAddPushed = lh.lastAddConfirmed = data.lastAddConfirmed;
+                    lh.length = data.length;
+                    startEntryToRead = endEntryToRead = lh.lastAddConfirmed;
+                }
+                // keep a copy of ledger metadata before proceeding
+                // ledger recovery
+                metadataForRecovery = new LedgerMetadata(lh.getLedgerMetadata());
+                doRecoveryRead();
+            } else if (rc == BKException.Code.UnauthorizedAccessException) {
+                submitCallback(rc);
+            } else {
+                submitCallback(BKException.Code.ReadException);
+            }
+        });
 
         /**
          * Enable fencing on this op. When the read request reaches the bookies
@@ -159,18 +154,15 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
 
     private void closeAndCallback() {
         if (callbackDone.compareAndSet(false, true)) {
-            lh.asyncCloseInternal(new CloseCallback() {
-                @Override
-                public void closeComplete(int rc, LedgerHandle lh, Object ctx) {
-                    if (rc != BKException.Code.OK) {
-                        LOG.warn("Close ledger {} failed during recovery: ",
+            lh.asyncCloseInternal((rc, lh, ctx) -> {
+                if (rc != BKException.Code.OK) {
+                    LOG.warn("Close ledger {} failed during recovery: ",
                             LedgerRecoveryOp.this.lh.getId(), BKException.getMessage(rc));
-                        submitCallback(rc);
-                    } else {
-                        submitCallback(BKException.Code.OK);
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("After closing length is: {}", lh.getLength());
-                        }
+                    submitCallback(rc);
+                } else {
+                    submitCallback(BKException.Code.OK);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("After closing length is: {}", lh.getLength());
                     }
                 }
             }, null, BKException.Code.LedgerClosedException);

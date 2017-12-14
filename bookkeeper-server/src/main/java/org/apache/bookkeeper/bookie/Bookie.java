@@ -41,7 +41,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -56,7 +55,6 @@ import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -223,15 +221,12 @@ public class Bookie extends BookieCriticalThread {
                     BookKeeperConstants.VERSION_FILENAME);
 
             final AtomicBoolean oldDataExists = new AtomicBoolean(false);
-            parent.list(new FilenameFilter() {
-                    @Override
-                    public boolean accept(File dir, String name) {
-                        if (name.endsWith(".txn") || name.endsWith(".idx") || name.endsWith(".log")) {
-                            oldDataExists.set(true);
-                        }
-                        return true;
-                    }
-                });
+            parent.list((dir1, name) -> {
+                if (name.endsWith(".txn") || name.endsWith(".idx") || name.endsWith(".log")) {
+                    oldDataExists.set(true);
+                }
+                return true;
+            });
             if (preV3versionFile.exists() || oldDataExists.get()) {
                 String err = "Directory layout version is less than 3, upgrade needed";
                 LOG.error(err);
@@ -752,57 +747,54 @@ public class Bookie extends BookieCriticalThread {
 
     void readJournal() throws IOException, BookieException {
         long startTs = MathUtils.now();
-        JournalScanner scanner = new JournalScanner() {
-            @Override
-            public void process(int journalVersion, long offset, ByteBuffer recBuff) throws IOException {
-                long ledgerId = recBuff.getLong();
-                long entryId = recBuff.getLong();
-                try {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Replay journal - ledger id : {}, entry id : {}.", ledgerId, entryId);
-                    }
-                    if (entryId == METAENTRY_ID_LEDGER_KEY) {
-                        if (journalVersion >= JournalChannel.V3) {
-                            int masterKeyLen = recBuff.getInt();
-                            byte[] masterKey = new byte[masterKeyLen];
+        JournalScanner scanner = (journalVersion, offset, recBuff) -> {
+            long ledgerId = recBuff.getLong();
+            long entryId = recBuff.getLong();
+            try {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Replay journal - ledger id : {}, entry id : {}.", ledgerId, entryId);
+                }
+                if (entryId == METAENTRY_ID_LEDGER_KEY) {
+                    if (journalVersion >= JournalChannel.V3) {
+                        int masterKeyLen = recBuff.getInt();
+                        byte[] masterKey = new byte[masterKeyLen];
 
-                            recBuff.get(masterKey);
-                            masterKeyCache.put(ledgerId, masterKey);
-                        } else {
-                            throw new IOException("Invalid journal. Contains journalKey "
-                                    + " but layout version (" + journalVersion
-                                    + ") is too old to hold this");
-                        }
-                    } else if (entryId == METAENTRY_ID_FENCE_KEY) {
-                        if (journalVersion >= JournalChannel.V4) {
-                            byte[] key = masterKeyCache.get(ledgerId);
-                            if (key == null) {
-                                key = ledgerStorage.readMasterKey(ledgerId);
-                            }
-                            LedgerDescriptor handle = handles.getHandle(ledgerId, key);
-                            handle.setFenced();
-                        } else {
-                            throw new IOException("Invalid journal. Contains fenceKey "
-                                    + " but layout version (" + journalVersion
-                                    + ") is too old to hold this");
-                        }
+                        recBuff.get(masterKey);
+                        masterKeyCache.put(ledgerId, masterKey);
                     } else {
+                        throw new IOException("Invalid journal. Contains journalKey "
+                                + " but layout version (" + journalVersion
+                                + ") is too old to hold this");
+                    }
+                } else if (entryId == METAENTRY_ID_FENCE_KEY) {
+                    if (journalVersion >= JournalChannel.V4) {
                         byte[] key = masterKeyCache.get(ledgerId);
                         if (key == null) {
                             key = ledgerStorage.readMasterKey(ledgerId);
                         }
                         LedgerDescriptor handle = handles.getHandle(ledgerId, key);
+                        handle.setFenced();
+                    } else {
+                        throw new IOException("Invalid journal. Contains fenceKey "
+                                + " but layout version (" + journalVersion
+                                + ") is too old to hold this");
+                    }
+                } else {
+                    byte[] key = masterKeyCache.get(ledgerId);
+                    if (key == null) {
+                        key = ledgerStorage.readMasterKey(ledgerId);
+                    }
+                    LedgerDescriptor handle = handles.getHandle(ledgerId, key);
 
-                        recBuff.rewind();
-                        handle.addEntry(Unpooled.wrappedBuffer(recBuff));
-                    }
-                } catch (NoLedgerException nsle) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Skip replaying entries of ledger {} since it was deleted.", ledgerId);
-                    }
-                } catch (BookieException be) {
-                    throw new IOException(be);
+                    recBuff.rewind();
+                    handle.addEntry(Unpooled.wrappedBuffer(recBuff));
                 }
+            } catch (NoLedgerException nsle) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Skip replaying entries of ledger {} since it was deleted.", ledgerId);
+                }
+            } catch (BookieException be) {
+                throw new IOException(be);
             }
         };
 
@@ -955,21 +947,18 @@ public class Bookie extends BookieCriticalThread {
      * Register as an available bookie.
      */
     protected Future<Void> registerBookie(final boolean throwException) {
-        return stateService.submit(new Callable<Void>() {
-            @Override
-            public Void call() throws IOException {
-                try {
-                    doRegisterBookie();
-                } catch (IOException ioe) {
-                    if (throwException) {
-                        throw ioe;
-                    } else {
-                        LOG.error("Couldn't register bookie with zookeeper, shutting down : ", ioe);
-                        triggerBookieShutdown(ExitCode.ZK_REG_FAIL);
-                    }
+        return stateService.submit(() -> {
+            try {
+                doRegisterBookie();
+            } catch (IOException ioe) {
+                if (throwException) {
+                    throw ioe;
+                } else {
+                    LOG.error("Couldn't register bookie with zookeeper, shutting down : ", ioe);
+                    triggerBookieShutdown(ExitCode.ZK_REG_FAIL);
                 }
-                return (Void) null;
             }
+            return (Void) null;
         });
     }
 
@@ -999,12 +988,9 @@ public class Bookie extends BookieCriticalThread {
      * Transition the bookie from readOnly mode to writable.
      */
     private Future<Void> transitionToWritableMode() {
-        return stateService.submit(new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                doTransitionToWritableMode();
-                return null;
-            }
+        return stateService.submit(() -> {
+            doTransitionToWritableMode();
+            return null;
         });
     }
 
@@ -1048,12 +1034,9 @@ public class Bookie extends BookieCriticalThread {
      * Transition the bookie to readOnly mode.
      */
     private Future<Void> transitionToReadOnlyMode() {
-        return stateService.submit(new Callable<Void>() {
-            @Override
-            public Void call() {
-                doTransitionToReadOnlyMode();
-                return (Void) null;
-            }
+        return stateService.submit(() -> {
+            doTransitionToReadOnlyMode();
+            return null;
         });
     }
 

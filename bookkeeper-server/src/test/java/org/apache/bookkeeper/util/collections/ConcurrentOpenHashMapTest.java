@@ -39,7 +39,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiPredicate;
 import java.util.function.Function;
 
 import org.junit.Test;
@@ -344,12 +343,7 @@ public class ConcurrentOpenHashMapTest {
         Collections.sort(keys);
         assertEquals(keys, Lists.newArrayList(0, 1, 3, 6, 7));
 
-        int numOfItemsDeleted = map.removeIf(new BiPredicate<Integer, String>() {
-            @Override
-            public boolean test(Integer k, String v) {
-                return k < 5;
-            }
-        });
+        int numOfItemsDeleted = map.removeIf((k, v) -> k < 5);
         assertEquals(numOfItemsDeleted, 3);
         assertEquals(map.size(), keys.size() - numOfItemsDeleted);
         keys = map.keys();

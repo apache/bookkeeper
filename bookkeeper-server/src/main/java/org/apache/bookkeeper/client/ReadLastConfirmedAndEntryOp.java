@@ -24,7 +24,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -444,19 +443,16 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
      */
     @Override
     public ListenableFuture<Boolean> issueSpeculativeRequest() {
-        return lh.bk.getMainWorkerPool().submitOrdered(lh.getId(), new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                if (!requestComplete.get() && !request.isComplete()
-                        && (null != request.maybeSendSpeculativeRead(heardFromHostsBitSet))) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Send speculative ReadLAC {} for ledger {} (previousLAC: {}). Hosts heard are {}.",
-                                request, lh.getId(), lastAddConfirmed, heardFromHostsBitSet);
-                    }
-                    return true;
+        return lh.bk.getMainWorkerPool().submitOrdered(lh.getId(), () -> {
+            if (!requestComplete.get() && !request.isComplete()
+                    && (null != request.maybeSendSpeculativeRead(heardFromHostsBitSet))) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Send speculative ReadLAC {} for ledger {} (previousLAC: {}). Hosts heard are {}.",
+                            request, lh.getId(), lastAddConfirmed, heardFromHostsBitSet);
                 }
-                return false;
+                return true;
             }
+            return false;
         });
     }
 

@@ -141,17 +141,14 @@ public class TestSkipListArena {
     private Thread getAllocThread(final ConcurrentLinkedQueue<AllocBuffer> queue,
                                   final CountDownLatch latch,
                                   final SkipListArena arena) {
-        return new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Random rand = new Random();
-                for (int j = 0; j < 1000; j++) {
-                    int size = rand.nextInt(512);
-                    MemorySlice alloc = arena.allocateBytes(size);
-                    queue.add(new AllocBuffer(alloc, size));
-                }
-                latch.countDown();
+        return new Thread(() -> {
+            Random rand = new Random();
+            for (int j = 0; j < 1000; j++) {
+                int size = rand.nextInt(512);
+                MemorySlice alloc = arena.allocateBytes(size);
+                queue.add(new AllocBuffer(alloc, size));
             }
+            latch.countDown();
         });
     }
 

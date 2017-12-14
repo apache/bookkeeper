@@ -38,7 +38,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
-import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BKException.BKClientClosedException;
@@ -138,12 +137,9 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
         // using async, because this could trigger an assertion
         final AtomicInteger returnCode = new AtomicInteger(0);
         final CountDownLatch openLatch = new CountDownLatch(1);
-        CreateCallback cb = new CreateCallback() {
-            @Override
-            public void createComplete(int rc, LedgerHandle lh, Object ctx) {
-                returnCode.set(rc);
-                openLatch.countDown();
-            }
+        CreateCallback cb = (rc, lh, ctx) -> {
+            returnCode.set(rc);
+            openLatch.countDown();
         };
         bk.asyncCreateLedger(3, 2, digestType, PASSWORD.getBytes(), cb,
                              openLatch);
@@ -187,11 +183,9 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
         final AtomicInteger returnCode = new AtomicInteger(0);
         final CountDownLatch openLatch = new CountDownLatch(1);
-        AsyncCallback.OpenCallback cb = new AsyncCallback.OpenCallback() {
-            public void openComplete(int rc, LedgerHandle lh, Object ctx) {
-                returnCode.set(rc);
-                openLatch.countDown();
-            }
+        AsyncCallback.OpenCallback cb = (rc, lh1, ctx) -> {
+            returnCode.set(rc);
+            openLatch.countDown();
         };
         bk.asyncOpenLedger(lh.getId(), digestType, PASSWORD.getBytes(), cb,
                            openLatch);
@@ -224,11 +218,9 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
         // using async, because this could trigger an assertion
         final AtomicInteger returnCode = new AtomicInteger(0);
         final CountDownLatch openLatch = new CountDownLatch(1);
-        AsyncCallback.DeleteCallback cb = new AsyncCallback.DeleteCallback() {
-            public void deleteComplete(int rc, Object ctx) {
-                returnCode.set(rc);
-                openLatch.countDown();
-            }
+        AsyncCallback.DeleteCallback cb = (rc, ctx) -> {
+            returnCode.set(rc);
+            openLatch.countDown();
         };
         bk.asyncDeleteLedger(lh.getId(), cb, openLatch);
 
@@ -263,13 +255,10 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
         final CountDownLatch completeLatch = new CountDownLatch(1);
         final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
-        lh.asyncAddEntry("foobar".getBytes(), new AddCallback() {
-                public void addComplete(int rccb, LedgerHandle lh, long entryId,
-                                        Object ctx) {
-                    rc.set(rccb);
-                    completeLatch.countDown();
-                }
-            }, null);
+        lh.asyncAddEntry("foobar".getBytes(), (rccb, lh1, entryId, ctx) -> {
+            rc.set(rccb);
+            completeLatch.countDown();
+        }, null);
 
         LOG.info("Waiting to finish adding another entry asynchronously");
         assertTrue("Add entry to ledger call should have completed",
@@ -302,12 +291,10 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
         final CountDownLatch completeLatch = new CountDownLatch(1);
         final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
-        lh2.asyncClose(new CloseCallback() {
-                public void closeComplete(int rccb, LedgerHandle lh, Object ctx) {
-                    rc.set(rccb);
-                    completeLatch.countDown();
-                }
-            }, null);
+        lh2.asyncClose((rccb, lh1, ctx) -> {
+            rc.set(rccb);
+            completeLatch.countDown();
+        }, null);
 
         LOG.info("Waiting to finish adding another entry asynchronously");
         assertTrue("Close ledger call should have completed",
@@ -342,13 +329,9 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
         final CountDownLatch readLatch = new CountDownLatch(1);
         final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
-        ReadCallback cb = new ReadCallback() {
-            @Override
-            public void readComplete(int rccb, LedgerHandle lh,
-                    Enumeration<LedgerEntry> seq, Object ctx) {
-                rc.set(rccb);
-                readLatch.countDown();
-            }
+        ReadCallback cb = (rccb, lh1, seq, ctx) -> {
+            rc.set(rccb);
+            readLatch.countDown();
         };
         lh.asyncReadEntries(0, numOfEntries - 1, cb, readLatch);
 
@@ -380,14 +363,9 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
         final CountDownLatch readLatch = new CountDownLatch(1);
         final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
-        AsyncCallback.ReadLastConfirmedCallback cb = new AsyncCallback.ReadLastConfirmedCallback() {
-
-            @Override
-            public void readLastConfirmedComplete(int rccb, long lastConfirmed,
-                    Object ctx) {
-                rc.set(rccb);
-                readLatch.countDown();
-            }
+        AsyncCallback.ReadLastConfirmedCallback cb = (rccb, lastConfirmed, ctx) -> {
+            rc.set(rccb);
+            readLatch.countDown();
         };
         lh.asyncReadLastConfirmed(cb, readLatch);
 
@@ -423,13 +401,10 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
 
         final CountDownLatch postLatch = new CountDownLatch(1);
         final AtomicInteger postRc = new AtomicInteger(BKException.Code.OK);
-        lc.checkLedger(lh, new GenericCallback<Set<LedgerFragment>>() {
-                @Override
-                public void operationComplete(int rc, Set<LedgerFragment> result) {
-                    postRc.set(rc);
-                    postLatch.countDown();
-                }
-            });
+        lc.checkLedger(lh, (rc, result) -> {
+            postRc.set(rc);
+            postLatch.countDown();
+        });
         assertTrue("checkLedger should have finished", postLatch.await(30, TimeUnit.SECONDS));
         assertEquals("Should have client closed exception",
                      postRc.get(), BKException.Code.ClientClosedException);
@@ -591,13 +566,10 @@ public class BookKeeperCloseTest extends BookKeeperClusterTestCase {
         final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
         final CountDownLatch latch = new CountDownLatch(numOfEntries);
 
-        final AddCallback cb = new AddCallback() {
-                public void addComplete(int rccb, LedgerHandle lh, long entryId,
-                                        Object ctx) {
-                    rc.compareAndSet(BKException.Code.OK, rccb);
-                    latch.countDown();
-                }
-            };
+        final AddCallback cb = (rccb, lh1, entryId, ctx) -> {
+            rc.compareAndSet(BKException.Code.OK, rccb);
+            latch.countDown();
+        };
         for (int i = 0; i < numOfEntries; i++) {
             lh.asyncAddEntry("foobar".getBytes(), cb, null);
         }

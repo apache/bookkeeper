@@ -50,7 +50,6 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
@@ -88,14 +87,11 @@ public class AutoRecoveryMain {
         //       use Watcher, need to ensure the logic works correctly after recreating
         //       a new zookeeper client when session expired.
         //       for now just shutdown it.
-        watchers.add(new Watcher() {
-            @Override
-            public void process(WatchedEvent event) {
-                // Check for expired connection.
-                if (event.getState().equals(Watcher.Event.KeeperState.Expired)) {
-                    LOG.error("ZK client connection to the ZK server has expired!");
-                    shutdown(ExitCode.ZK_EXPIRED);
-                }
+        watchers.add(event -> {
+            // Check for expired connection.
+            if (event.getState().equals(Watcher.Event.KeeperState.Expired)) {
+                LOG.error("ZK client connection to the ZK server has expired!");
+                shutdown(ExitCode.ZK_EXPIRED);
             }
         });
         zk = ZooKeeperClient.newBuilder()
@@ -308,16 +304,13 @@ public class AutoRecoveryMain {
                 httpServer.initialize(serviceProvider);
                 httpServer.startServer(conf.getHttpServerPort());
             }
-            Runtime.getRuntime().addShutdownHook(new Thread() {
-                @Override
-                public void run() {
-                    autoRecoveryMain.shutdown();
-                    if (httpServer != null && httpServer.isRunning()) {
-                        httpServer.stopServer();
-                    }
-                    LOG.info("Shutdown AutoRecoveryMain successfully");
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                autoRecoveryMain.shutdown();
+                if (httpServer != null && httpServer.isRunning()) {
+                    httpServer.stopServer();
                 }
-            });
+                LOG.info("Shutdown AutoRecoveryMain successfully");
+            }));
             LOG.info("Register shutdown hook successfully");
             autoRecoveryMain.join();
             System.exit(autoRecoveryMain.getExitCode());

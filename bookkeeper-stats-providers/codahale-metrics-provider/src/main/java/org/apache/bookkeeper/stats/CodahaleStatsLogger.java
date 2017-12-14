@@ -76,13 +76,7 @@ public class CodahaleStatsLogger implements StatsLogger {
     public <T extends Number> void registerGauge(final String statName, final Gauge<T> gauge) {
         String metricName = name(basename, statName);
         metrics.remove(metricName);
-
-        metrics.register(metricName, new com.codahale.metrics.Gauge<T>() {
-                @Override
-                public T getValue() {
-                    return gauge.getSample();
-                }
-            });
+        metrics.register(metricName, (com.codahale.metrics.Gauge<T>) () -> gauge.getSample());
     }
 
     @Override

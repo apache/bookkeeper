@@ -23,7 +23,6 @@ import com.google.common.base.Stopwatch;
 import io.netty.channel.Channel;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
-import io.netty.util.TimerTask;
 
 import java.io.IOException;
 import java.util.Observable;
@@ -167,13 +166,10 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Obser
                     logger.trace("Waiting For LAC Update {}: Timeout {}", previousLAC, readRequest.getTimeOut());
                 }
                 synchronized (this) {
-                    expirationTimerTask = requestTimer.newTimeout(new TimerTask() {
-                        @Override
-                        public void run(Timeout timeout) throws Exception {
-                            // When the timeout expires just get whatever is the current
-                            // readLastConfirmed
-                            LongPollReadEntryProcessorV3.this.scheduleDeferredRead(observable, true);
-                        }
+                    expirationTimerTask = requestTimer.newTimeout(timeout -> {
+                        // When the timeout expires just get whatever is the current
+                        // readLastConfirmed
+                        LongPollReadEntryProcessorV3.this.scheduleDeferredRead(observable, true);
                     }, readRequest.getTimeOut(), TimeUnit.MILLISECONDS);
                 }
                 return null;

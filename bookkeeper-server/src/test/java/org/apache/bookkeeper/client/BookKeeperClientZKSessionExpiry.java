@@ -41,29 +41,26 @@ public class BookKeeperClientZKSessionExpiry extends BookKeeperClusterTestCase {
     @Test
     public void testSessionLossWhileWriting() throws Exception {
 
-        Thread expiryThread = new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        while (true) {
-                            Thread.sleep(5000);
-                            long sessionId = bkc.getZkHandle().getSessionId();
-                            byte[] sessionPasswd = bkc.getZkHandle().getSessionPasswd();
+        Thread expiryThread = new Thread(() -> {
+            try {
+                while (true) {
+                    Thread.sleep(5000);
+                    long sessionId = bkc.getZkHandle().getSessionId();
+                    byte[] sessionPasswd = bkc.getZkHandle().getSessionPasswd();
 
-                            try {
-                                ZooKeeperWatcherBase watcher = new ZooKeeperWatcherBase(10000);
-                                ZooKeeper zk = new ZooKeeper(zkUtil.getZooKeeperConnectString(), 10000,
-                                                             watcher, sessionId, sessionPasswd);
-                                zk.close();
-                            } catch (Exception e) {
-                                LOG.info("Error killing session", e);
-                            }
-                        }
-                    } catch (InterruptedException ie) {
-                        return;
+                    try {
+                        ZooKeeperWatcherBase watcher = new ZooKeeperWatcherBase(10000);
+                        ZooKeeper zk = new ZooKeeper(zkUtil.getZooKeeperConnectString(), 10000,
+                                                     watcher, sessionId, sessionPasswd);
+                        zk.close();
+                    } catch (Exception e) {
+                        LOG.info("Error killing session", e);
                     }
                 }
-            };
+            } catch (InterruptedException ie) {
+                return;
+            }
+        });
         expiryThread.start();
 
         for (int i = 0; i < 3; i++) {

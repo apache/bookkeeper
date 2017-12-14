@@ -28,7 +28,6 @@ import io.netty.buffer.ByteBuf;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -42,7 +41,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieAccessor;
 import org.apache.bookkeeper.bookie.IndexPersistenceMgr;
-import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -138,11 +136,7 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         File ledgerDir = bsConfs.get(0).getLedgerDirs()[0];
         ledgerDir = Bookie.getCurrentDirectory(ledgerDir);
         // corrupt of entryLogs
-        File[] entryLogs = ledgerDir.listFiles(new FilenameFilter() {
-                public boolean accept(File dir, String name) {
-                    return name.endsWith(".log");
-                }
-            });
+        File[] entryLogs = ledgerDir.listFiles((dir, name) -> name.endsWith(".log"));
         ByteBuffer junk = ByteBuffer.allocate(1024 * 1024);
         for (File f : entryLogs) {
             FileOutputStream out = new FileOutputStream(f);
@@ -229,14 +223,12 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
             LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "passwd".getBytes());
             lhs.add(lh);
             for (int j = 0; j < 2; j++) {
-                lh.asyncAddEntry("testdata".getBytes(), new AddCallback() {
-                        public void addComplete(int rc2, LedgerHandle lh, long entryId, Object ctx) {
-                            if (rc.compareAndSet(BKException.Code.OK, rc2)) {
-                                LOG.info("Failed to add entry : {}", BKException.getMessage(rc2));
-                            }
-                            completeLatch.countDown();
-                        }
-                    }, null);
+                lh.asyncAddEntry("testdata".getBytes(), (rc2, lh1, entryId, ctx) -> {
+                    if (rc.compareAndSet(BKException.Code.OK, rc2)) {
+                        LOG.info("Failed to add entry : {}", BKException.getMessage(rc2));
+                    }
+                    completeLatch.countDown();
+                }, null);
             }
         }
         completeLatch.await();
@@ -321,19 +313,17 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
                 bsConfs.get(0), zkc, NullStatsLogger.INSTANCE);
         final AtomicBoolean exceptionCaught = new AtomicBoolean(false);
         final CountDownLatch latch = new CountDownLatch(1);
-        Thread t = new Thread() {
-                public void run() {
-                    try {
-                        latch.countDown();
-                        for (int i = 0; i < numLedgers; i++) {
-                            auditor.checkAllLedgers();
-                        }
-                    } catch (Exception e) {
-                        LOG.error("Caught exception while checking all ledgers", e);
-                        exceptionCaught.set(true);
-                    }
+        Thread t = new Thread(() -> {
+            try {
+                latch.countDown();
+                for (int i = 0; i < numLedgers; i++) {
+                    auditor.checkAllLedgers();
                 }
-            };
+            } catch (Exception e) {
+                LOG.error("Caught exception while checking all ledgers", e);
+                exceptionCaught.set(true);
+            }
+        });
         t.start();
         latch.await();
         for (Long id : ids) {

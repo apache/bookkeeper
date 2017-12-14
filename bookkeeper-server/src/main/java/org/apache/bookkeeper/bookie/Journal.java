@@ -778,15 +778,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
      */
     public void replay(JournalScanner scanner) throws IOException {
         final LogMark markedLog = lastLogMark.getCurMark();
-        List<Long> logs = listJournalIds(journalDirectory, new JournalIdFilter() {
-            @Override
-            public boolean accept(long journalId) {
-                if (journalId < markedLog.getLogFileId()) {
-                    return false;
-                }
-                return true;
-            }
-        });
+        List<Long> logs = listJournalIds(journalDirectory, journalId ->
+                journalId >= markedLog.getLogFileId());
         // last log mark may be missed due to no sync up before
         // validate filtered log ids only when we have markedLogId
         if (markedLog.getLogFileId() > 0) {

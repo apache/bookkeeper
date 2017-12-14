@@ -63,16 +63,13 @@ class InMemoryMetastoreCursor implements MetastoreCursor {
 
     @Override
     public void asyncReadEntries(final int numEntries, final ReadEntriesCallback cb, final Object ctx) {
-        scheduler.submit(new Runnable() {
-            @Override
-            public void run() {
-                if (numEntries < 0) {
-                    cb.complete(Code.IllegalOp.getCode(), null, ctx);
-                    return;
-                }
-                Iterator<MetastoreTableItem> result = unsafeReadEntries(numEntries);
-                cb.complete(Code.OK.getCode(), result, ctx);
+        scheduler.submit(() -> {
+            if (numEntries < 0) {
+                cb.complete(Code.IllegalOp.getCode(), null, ctx);
+                return;
             }
+            Iterator<MetastoreTableItem> result = unsafeReadEntries(numEntries);
+            cb.complete(Code.OK.getCode(), result, ctx);
         });
     }
 

@@ -467,18 +467,13 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher {
                       final Object context) {
         final Runnable proc = new ZkRetryRunnable(operationRetryPolicy, rateLimiter, createStats) {
 
-            final MultiCallback multiCb = new MultiCallback() {
-
-                @Override
-                public void processResult(int rc, String path, Object ctx, List<OpResult> results) {
-                    ZooWorker worker = (ZooWorker) ctx;
-                    if (allowRetry(worker, rc)) {
-                        backOffAndRetry(that, worker.nextRetryWaitTime());
-                    } else {
-                        cb.processResult(rc, path, context, results);
-                    }
+            final MultiCallback multiCb = (rc, path, ctx, results) -> {
+                ZooWorker worker = (ZooWorker) ctx;
+                if (allowRetry(worker, rc)) {
+                    backOffAndRetry(that, worker.nextRetryWaitTime());
+                } else {
+                    cb.processResult(rc, path, context, results);
                 }
-
             };
 
             @Override
@@ -538,18 +533,13 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher {
     public void getACL(final String path, final Stat stat, final ACLCallback cb, final Object context) {
         final Runnable proc = new ZkRetryRunnable(operationRetryPolicy, rateLimiter, getACLStats) {
 
-            final ACLCallback aclCb = new ACLCallback() {
-
-                @Override
-                public void processResult(int rc, String path, Object ctx, List<ACL> acl, Stat stat) {
-                    ZooWorker worker = (ZooWorker) ctx;
-                    if (allowRetry(worker, rc)) {
-                        backOffAndRetry(that, worker.nextRetryWaitTime());
-                    } else {
-                        cb.processResult(rc, path, context, acl, stat);
-                    }
+            final ACLCallback aclCb = (rc, path1, ctx, acl, stat1) -> {
+                ZooWorker worker = (ZooWorker) ctx;
+                if (allowRetry(worker, rc)) {
+                    backOffAndRetry(that, worker.nextRetryWaitTime());
+                } else {
+                    cb.processResult(rc, path1, context, acl, stat1);
                 }
-
             };
 
             @Override
@@ -598,18 +588,13 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher {
             final StatCallback cb, final Object context) {
         final Runnable proc = new ZkRetryRunnable(operationRetryPolicy, rateLimiter, setACLStats) {
 
-            final StatCallback stCb = new StatCallback() {
-
-                @Override
-                public void processResult(int rc, String path, Object ctx, Stat stat) {
-                    ZooWorker worker = (ZooWorker) ctx;
-                    if (allowRetry(worker, rc)) {
-                        backOffAndRetry(that, worker.nextRetryWaitTime());
-                    } else {
-                        cb.processResult(rc, path, context, stat);
-                    }
+            final StatCallback stCb = (rc, path1, ctx, stat) -> {
+                ZooWorker worker = (ZooWorker) ctx;
+                if (allowRetry(worker, rc)) {
+                    backOffAndRetry(that, worker.nextRetryWaitTime());
+                } else {
+                    cb.processResult(rc, path1, context, stat);
                 }
-
             };
 
             @Override
@@ -635,18 +620,13 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher {
     public void sync(final String path, final VoidCallback cb, final Object context) {
         final Runnable proc = new ZkRetryRunnable(operationRetryPolicy, rateLimiter, syncStats) {
 
-            final VoidCallback vCb = new VoidCallback() {
-
-                @Override
-                public void processResult(int rc, String path, Object ctx) {
-                    ZooWorker worker = (ZooWorker) ctx;
-                    if (allowRetry(worker, rc)) {
-                        backOffAndRetry(that, worker.nextRetryWaitTime());
-                    } else {
-                        cb.processResult(rc, path, context);
-                    }
+            final VoidCallback vCb = (rc, path1, ctx) -> {
+                ZooWorker worker = (ZooWorker) ctx;
+                if (allowRetry(worker, rc)) {
+                    backOffAndRetry(that, worker.nextRetryWaitTime());
+                } else {
+                    cb.processResult(rc, path1, context);
                 }
-
             };
 
             @Override
@@ -716,18 +696,13 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher {
             final CreateMode createMode, final StringCallback cb, final Object context) {
         final Runnable proc = new ZkRetryRunnable(operationRetryPolicy, rateLimiter, createStats) {
 
-            final StringCallback createCb = new StringCallback() {
-
-                @Override
-                public void processResult(int rc, String path, Object ctx, String name) {
-                    ZooWorker worker = (ZooWorker) ctx;
-                    if (allowRetry(worker, rc)) {
-                        backOffAndRetry(that, worker.nextRetryWaitTime());
-                    } else {
-                        cb.processResult(rc, path, context, name);
-                    }
+            final StringCallback createCb = (rc, path1, ctx, name) -> {
+                ZooWorker worker = (ZooWorker) ctx;
+                if (allowRetry(worker, rc)) {
+                    backOffAndRetry(that, worker.nextRetryWaitTime());
+                } else {
+                    cb.processResult(rc, path1, context, name);
                 }
-
             };
 
             @Override
@@ -784,18 +759,13 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher {
                        final Object context) {
         final Runnable proc = new ZkRetryRunnable(operationRetryPolicy, rateLimiter, createStats) {
 
-            final Create2Callback createCb = new Create2Callback() {
-
-                @Override
-                public void processResult(int rc, String path, Object ctx, String name, Stat stat) {
-                    ZooWorker worker = (ZooWorker) ctx;
-                    if (allowRetry(worker, rc)) {
-                        backOffAndRetry(that, worker.nextRetryWaitTime());
-                    } else {
-                        cb.processResult(rc, path, context, name, stat);
-                    }
+            final Create2Callback createCb = (rc, path1, ctx, name, stat) -> {
+                ZooWorker worker = (ZooWorker) ctx;
+                if (allowRetry(worker, rc)) {
+                    backOffAndRetry(that, worker.nextRetryWaitTime());
+                } else {
+                    cb.processResult(rc, path1, context, name, stat);
                 }
-
             };
 
             @Override
@@ -844,18 +814,13 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher {
     public void delete(final String path, final int version, final VoidCallback cb, final Object context) {
         final Runnable proc = new ZkRetryRunnable(operationRetryPolicy, rateLimiter, deleteStats) {
 
-            final VoidCallback deleteCb = new VoidCallback() {
-
-                @Override
-                public void processResult(int rc, String path, Object ctx) {
-                    ZooWorker worker = (ZooWorker) ctx;
-                    if (allowRetry(worker, rc)) {
-                        backOffAndRetry(that, worker.nextRetryWaitTime());
-                    } else {
-                        cb.processResult(rc, path, context);
-                    }
+            final VoidCallback deleteCb = (rc, path1, ctx) -> {
+                ZooWorker worker = (ZooWorker) ctx;
+                if (allowRetry(worker, rc)) {
+                    backOffAndRetry(that, worker.nextRetryWaitTime());
+                } else {
+                    cb.processResult(rc, path1, context);
                 }
-
             };
 
             @Override
@@ -923,18 +888,13 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher {
     public void exists(final String path, final Watcher watcher, final StatCallback cb, final Object context) {
         final Runnable proc = new ZkRetryRunnable(operationRetryPolicy, rateLimiter, existsStats) {
 
-            final StatCallback stCb = new StatCallback() {
-
-                @Override
-                public void processResult(int rc, String path, Object ctx, Stat stat) {
-                    ZooWorker worker = (ZooWorker) ctx;
-                    if (allowRetry(worker, rc)) {
-                        backOffAndRetry(that, worker.nextRetryWaitTime());
-                    } else {
-                        cb.processResult(rc, path, context, stat);
-                    }
+            final StatCallback stCb = (rc, path1, ctx, stat) -> {
+                ZooWorker worker = (ZooWorker) ctx;
+                if (allowRetry(worker, rc)) {
+                    backOffAndRetry(that, worker.nextRetryWaitTime());
+                } else {
+                    cb.processResult(rc, path1, context, stat);
                 }
-
             };
 
             @Override
@@ -960,18 +920,13 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher {
     public void exists(final String path, final boolean watch, final StatCallback cb, final Object context) {
         final Runnable proc = new ZkRetryRunnable(operationRetryPolicy, rateLimiter, existsStats) {
 
-            final StatCallback stCb = new StatCallback() {
-
-                @Override
-                public void processResult(int rc, String path, Object ctx, Stat stat) {
-                    ZooWorker worker = (ZooWorker) ctx;
-                    if (allowRetry(worker, rc)) {
-                        backOffAndRetry(that, worker.nextRetryWaitTime());
-                    } else {
-                        cb.processResult(rc, path, context, stat);
-                    }
+            final StatCallback stCb = (rc, path1, ctx, stat) -> {
+                ZooWorker worker = (ZooWorker) ctx;
+                if (allowRetry(worker, rc)) {
+                    backOffAndRetry(that, worker.nextRetryWaitTime());
+                } else {
+                    cb.processResult(rc, path1, context, stat);
                 }
-
             };
 
             @Override
@@ -1041,18 +996,13 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher {
     public void getData(final String path, final Watcher watcher, final DataCallback cb, final Object context) {
         final Runnable proc = new ZkRetryRunnable(operationRetryPolicy, rateLimiter, getStats) {
 
-            final DataCallback dataCb = new DataCallback() {
-
-                @Override
-                public void processResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
-                    ZooWorker worker = (ZooWorker) ctx;
-                    if (allowRetry(worker, rc)) {
-                        backOffAndRetry(that, worker.nextRetryWaitTime());
-                    } else {
-                        cb.processResult(rc, path, context, data, stat);
-                    }
+            final DataCallback dataCb = (rc, path1, ctx, data, stat) -> {
+                ZooWorker worker = (ZooWorker) ctx;
+                if (allowRetry(worker, rc)) {
+                    backOffAndRetry(that, worker.nextRetryWaitTime());
+                } else {
+                    cb.processResult(rc, path1, context, data, stat);
                 }
-
             };
 
             @Override
@@ -1078,18 +1028,13 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher {
     public void getData(final String path, final boolean watch, final DataCallback cb, final Object context) {
         final Runnable proc = new ZkRetryRunnable(operationRetryPolicy, rateLimiter, getStats) {
 
-            final DataCallback dataCb = new DataCallback() {
-
-                @Override
-                public void processResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
-                    ZooWorker worker = (ZooWorker) ctx;
-                    if (allowRetry(worker, rc)) {
-                        backOffAndRetry(that, worker.nextRetryWaitTime());
-                    } else {
-                        cb.processResult(rc, path, context, data, stat);
-                    }
+            final DataCallback dataCb = (rc, path1, ctx, data, stat) -> {
+                ZooWorker worker = (ZooWorker) ctx;
+                if (allowRetry(worker, rc)) {
+                    backOffAndRetry(that, worker.nextRetryWaitTime());
+                } else {
+                    cb.processResult(rc, path1, context, data, stat);
                 }
-
             };
 
             @Override
@@ -1138,18 +1083,13 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher {
             final StatCallback cb, final Object context) {
         final Runnable proc = new ZkRetryRunnable(operationRetryPolicy, rateLimiter, setStats) {
 
-            final StatCallback stCb = new StatCallback() {
-
-                @Override
-                public void processResult(int rc, String path, Object ctx, Stat stat) {
-                    ZooWorker worker = (ZooWorker) ctx;
-                    if (allowRetry(worker, rc)) {
-                        backOffAndRetry(that, worker.nextRetryWaitTime());
-                    } else {
-                        cb.processResult(rc, path, context, stat);
-                    }
+            final StatCallback stCb = (rc, path1, ctx, stat) -> {
+                ZooWorker worker = (ZooWorker) ctx;
+                if (allowRetry(worker, rc)) {
+                    backOffAndRetry(that, worker.nextRetryWaitTime());
+                } else {
+                    cb.processResult(rc, path1, context, stat);
                 }
-
             };
 
             @Override
@@ -1220,19 +1160,13 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher {
             final Children2Callback cb, final Object context) {
         final Runnable proc = new ZkRetryRunnable(operationRetryPolicy, rateLimiter, getChildrenStats) {
 
-            final Children2Callback childCb = new Children2Callback() {
-
-                @Override
-                public void processResult(int rc, String path, Object ctx,
-                        List<String> children, Stat stat) {
-                    ZooWorker worker = (ZooWorker) ctx;
-                    if (allowRetry(worker, rc)) {
-                        backOffAndRetry(that, worker.nextRetryWaitTime());
-                    } else {
-                        cb.processResult(rc, path, context, children, stat);
-                    }
+            final Children2Callback childCb = (rc, path1, ctx, children, stat) -> {
+                ZooWorker worker = (ZooWorker) ctx;
+                if (allowRetry(worker, rc)) {
+                    backOffAndRetry(that, worker.nextRetryWaitTime());
+                } else {
+                    cb.processResult(rc, path1, context, children, stat);
                 }
-
             };
 
             @Override
@@ -1259,19 +1193,13 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher {
             final Object context) {
         final Runnable proc = new ZkRetryRunnable(operationRetryPolicy, rateLimiter, getChildrenStats) {
 
-            final Children2Callback childCb = new Children2Callback() {
-
-                @Override
-                public void processResult(int rc, String path, Object ctx,
-                        List<String> children, Stat stat) {
-                    ZooWorker worker = (ZooWorker) ctx;
-                    if (allowRetry(worker, rc)) {
-                        backOffAndRetry(that, worker.nextRetryWaitTime());
-                    } else {
-                        cb.processResult(rc, path, context, children, stat);
-                    }
+            final Children2Callback childCb = (rc, path1, ctx, children, stat) -> {
+                ZooWorker worker = (ZooWorker) ctx;
+                if (allowRetry(worker, rc)) {
+                    backOffAndRetry(that, worker.nextRetryWaitTime());
+                } else {
+                    cb.processResult(rc, path1, context, children, stat);
                 }
-
             };
 
             @Override
@@ -1343,19 +1271,13 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher {
             final ChildrenCallback cb, final Object context) {
         final Runnable proc = new ZkRetryRunnable(operationRetryPolicy, rateLimiter, getChildrenStats) {
 
-            final ChildrenCallback childCb = new ChildrenCallback() {
-
-                @Override
-                public void processResult(int rc, String path, Object ctx,
-                        List<String> children) {
-                    ZooWorker worker = (ZooWorker) ctx;
-                    if (allowRetry(worker, rc)) {
-                        backOffAndRetry(that, worker.nextRetryWaitTime());
-                    } else {
-                        cb.processResult(rc, path, context, children);
-                    }
+            final ChildrenCallback childCb = (rc, path1, ctx, children) -> {
+                ZooWorker worker = (ZooWorker) ctx;
+                if (allowRetry(worker, rc)) {
+                    backOffAndRetry(that, worker.nextRetryWaitTime());
+                } else {
+                    cb.processResult(rc, path1, context, children);
                 }
-
             };
 
             @Override
@@ -1382,19 +1304,13 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher {
             final ChildrenCallback cb, final Object context) {
         final Runnable proc = new ZkRetryRunnable(operationRetryPolicy, rateLimiter, getChildrenStats) {
 
-            final ChildrenCallback childCb = new ChildrenCallback() {
-
-                @Override
-                public void processResult(int rc, String path, Object ctx,
-                        List<String> children) {
-                    ZooWorker worker = (ZooWorker) ctx;
-                    if (allowRetry(worker, rc)) {
-                        backOffAndRetry(that, worker.nextRetryWaitTime());
-                    } else {
-                        cb.processResult(rc, path, context, children);
-                    }
+            final ChildrenCallback childCb = (rc, path1, ctx, children) -> {
+                ZooWorker worker = (ZooWorker) ctx;
+                if (allowRetry(worker, rc)) {
+                    backOffAndRetry(that, worker.nextRetryWaitTime());
+                } else {
+                    cb.processResult(rc, path1, context, children);
                 }
-
             };
 
             @Override

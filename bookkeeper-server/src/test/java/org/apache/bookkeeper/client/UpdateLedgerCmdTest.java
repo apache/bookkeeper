@@ -116,11 +116,9 @@ public class UpdateLedgerCmdTest extends BookKeeperClusterTestCase {
         final AtomicInteger rc = new AtomicInteger(BKException.Code.OK);
         final CountDownLatch latch = new CountDownLatch(numOfEntries);
 
-        final AddCallback cb = new AddCallback() {
-            public void addComplete(int rccb, LedgerHandle lh, long entryId, Object ctx) {
-                rc.compareAndSet(BKException.Code.OK, rccb);
-                latch.countDown();
-            }
+        final AddCallback cb = (rccb, lh1, entryId, ctx) -> {
+            rc.compareAndSet(BKException.Code.OK, rccb);
+            latch.countDown();
         };
         for (int i = 0; i < numOfEntries; i++) {
             lh.asyncAddEntry(("foobar" + i).getBytes(), cb, null);

@@ -32,12 +32,6 @@ import junit.framework.TestCase;
 
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.ZooKeeperUtil;
-import org.apache.zookeeper.AsyncCallback.Children2Callback;
-import org.apache.zookeeper.AsyncCallback.Create2Callback;
-import org.apache.zookeeper.AsyncCallback.DataCallback;
-import org.apache.zookeeper.AsyncCallback.StatCallback;
-import org.apache.zookeeper.AsyncCallback.StringCallback;
-import org.apache.zookeeper.AsyncCallback.VoidCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -82,16 +76,11 @@ public class TestZooKeeperClient extends TestCase {
             throws IOException, InterruptedException, KeeperException {
         final CountDownLatch latch = new CountDownLatch(1);
         ZooKeeper newZk = new ZooKeeper(zkUtil.getZooKeeperConnectString(), timeout,
-                new Watcher() {
-
-            @Override
-            public void process(WatchedEvent event) {
-                if (event.getType() == EventType.None && event.getState() == KeeperState.SyncConnected) {
-                    latch.countDown();
-                }
-            }
-
-        }, zk.getSessionId(), zk.getSessionPasswd());
+                event -> {
+                    if (event.getType() == EventType.None && event.getState() == KeeperState.SyncConnected) {
+                        latch.countDown();
+                    }
+                }, zk.getSessionId(), zk.getSessionPasswd());
         if (!latch.await(timeout, TimeUnit.MILLISECONDS)) {
             throw KeeperException.create(KeeperException.Code.CONNECTIONLOSS);
         }
@@ -131,15 +120,10 @@ public class TestZooKeeperClient extends TestCase {
     @Test
     public void testReconnectAfterExipred() throws Exception {
         final CountDownLatch expireLatch = new CountDownLatch(1);
-        Watcher testWatcher = new Watcher() {
-
-            @Override
-            public void process(WatchedEvent event) {
-                if (event.getType() == EventType.None && event.getState() == KeeperState.Expired) {
-                    expireLatch.countDown();
-                }
+        Watcher testWatcher = event -> {
+            if (event.getType() == EventType.None && event.getState() == KeeperState.Expired) {
+                expireLatch.countDown();
             }
-
         };
         final int timeout = 2000;
         ZooKeeperWatcherBase watcherManager =
@@ -276,16 +260,11 @@ public class TestZooKeeperClient extends TestCase {
         logger.info("Create znode " + path);
         final CountDownLatch createLatch = new CountDownLatch(1);
         client.create(path, data, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT,
-                new StringCallback() {
-
-            @Override
-            public void processResult(int rc, String path, Object ctx, String name) {
-                if (KeeperException.Code.OK.intValue() == rc) {
-                    createLatch.countDown();
-                }
-            }
-
-        }, null);
+                (rc, path17, ctx, name) -> {
+                    if (KeeperException.Code.OK.intValue() == rc) {
+                        createLatch.countDown();
+                    }
+                }, null);
         createLatch.await();
         logger.info("Created znode " + path);
 
@@ -293,46 +272,31 @@ public class TestZooKeeperClient extends TestCase {
         logger.info("Create znode " + path);
         final CountDownLatch create2Latch = new CountDownLatch(1);
         client.create(path, data, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT,
-                new Create2Callback() {
-
-            @Override
-            public void processResult(int rc, String path, Object ctx, String name, Stat stat) {
-                if (KeeperException.Code.NODEEXISTS.intValue() == rc) {
-                    create2Latch.countDown();
-                }
-            }
-
-        }, null);
+                (rc, path16, ctx, name, stat) -> {
+                    if (KeeperException.Code.NODEEXISTS.intValue() == rc) {
+                        create2Latch.countDown();
+                    }
+                }, null);
         create2Latch.await();
         logger.info("Created znode " + path);
 
         expireZooKeeperSession(client, timeout);
         logger.info("Exists znode " + path);
         final CountDownLatch existsLatch = new CountDownLatch(1);
-        client.exists(path, false, new StatCallback() {
-
-            @Override
-            public void processResult(int rc, String path, Object ctx, Stat stat) {
-                if (KeeperException.Code.OK.intValue() == rc) {
-                    existsLatch.countDown();
-                }
+        client.exists(path, false, (rc, path15, ctx, stat) -> {
+            if (KeeperException.Code.OK.intValue() == rc) {
+                existsLatch.countDown();
             }
-
         }, null);
         existsLatch.await();
 
         expireZooKeeperSession(client, timeout);
         final CountDownLatch getLatch = new CountDownLatch(1);
         logger.info("Get data from znode " + path);
-        client.getData(path, false, new DataCallback() {
-
-            @Override
-            public void processResult(int rc, String path, Object ctx, byte[] data, Stat stat) {
-                if (KeeperException.Code.OK.intValue() == rc) {
-                    getLatch.countDown();
-                }
+        client.getData(path, false, (rc, path14, ctx, data1, stat) -> {
+            if (KeeperException.Code.OK.intValue() == rc) {
+                getLatch.countDown();
             }
-
         }, null);
         getLatch.await();
 
@@ -340,32 +304,22 @@ public class TestZooKeeperClient extends TestCase {
         logger.info("Create children under znode " + path);
         final CountDownLatch createChildLatch = new CountDownLatch(1);
         client.create(path + "/children", data, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT,
-                new StringCallback() {
-
-            @Override
-            public void processResult(int rc, String path, Object ctx, String name) {
-                if (KeeperException.Code.OK.intValue() == rc) {
-                    createChildLatch.countDown();
-                }
-            }
-
-        }, null);
+                (rc, path13, ctx, name) -> {
+                    if (KeeperException.Code.OK.intValue() == rc) {
+                        createChildLatch.countDown();
+                    }
+                }, null);
         createChildLatch.await();
 
         expireZooKeeperSession(client, timeout);
         final CountDownLatch getChildLatch = new CountDownLatch(1);
         final AtomicReference<List<String>> children =
                 new AtomicReference<List<String>>();
-        client.getChildren(path, false, new Children2Callback() {
-
-            @Override
-            public void processResult(int rc, String path, Object ctx, List<String> childList, Stat stat) {
-                if (KeeperException.Code.OK.intValue() == rc) {
-                    children.set(childList);
-                    getChildLatch.countDown();
-                }
+        client.getChildren(path, false, (rc, path12, ctx, childList, stat) -> {
+            if (KeeperException.Code.OK.intValue() == rc) {
+                children.set(childList);
+                getChildLatch.countDown();
             }
-
         }, null);
         getChildLatch.await();
         Assert.assertNotNull(children.get());
@@ -375,15 +329,10 @@ public class TestZooKeeperClient extends TestCase {
 
         expireZooKeeperSession(client, timeout);
         final CountDownLatch deleteChildLatch = new CountDownLatch(1);
-        client.delete(path + "/children", -1, new VoidCallback() {
-
-            @Override
-            public void processResult(int rc, String path, Object ctx) {
-                if (KeeperException.Code.OK.intValue() == rc) {
-                    deleteChildLatch.countDown();
-                }
+        client.delete(path + "/children", -1, (rc, path1, ctx) -> {
+            if (KeeperException.Code.OK.intValue() == rc) {
+                deleteChildLatch.countDown();
             }
-
         }, null);
         deleteChildLatch.await();
         logger.info("Delete children from znode " + path);

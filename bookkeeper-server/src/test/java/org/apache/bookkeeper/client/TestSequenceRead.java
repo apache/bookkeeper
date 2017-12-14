@@ -30,7 +30,6 @@ import java.util.concurrent.CountDownLatch;
 
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -68,17 +67,14 @@ public class TestSequenceRead extends BookKeeperClusterTestCase {
         // update the ledger metadata with duplicated bookies
         final CountDownLatch latch = new CountDownLatch(1);
         bkc.getLedgerManager().writeLedgerMetadata(lh.getId(), lh.getLedgerMetadata(),
-                new BookkeeperInternalCallbacks.GenericCallback<Void>() {
-            @Override
-            public void operationComplete(int rc, Void result) {
-                if (BKException.Code.OK == rc) {
-                    latch.countDown();
-                } else {
-                    logger.error("Error on writing ledger metadata for ledger {} : ", lh.getId(),
-                            BKException.getMessage(rc));
-                }
-            }
-        });
+                (rc, result) -> {
+                    if (BKException.Code.OK == rc) {
+                        latch.countDown();
+                    } else {
+                        logger.error("Error on writing ledger metadata for ledger {} : ", lh.getId(),
+                                BKException.getMessage(rc));
+                    }
+                });
         latch.await();
         logger.info("Update ledger metadata with duplicated bookies for ledger {}.", lh.getId());
         return lh;

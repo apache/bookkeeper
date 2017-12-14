@@ -32,10 +32,8 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -58,8 +56,6 @@ import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.commons.lang.StringUtils;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.Watcher.Event.EventType;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.After;
@@ -141,16 +137,14 @@ public class TestLedgerUnderreplicationManager {
     }
 
     private Future<Long> getLedgerToReplicate(final LedgerUnderreplicationManager m) {
-        return executor.submit(new Callable<Long>() {
-                public Long call() {
-                    try {
-                        return m.getLedgerToRereplicate();
-                    } catch (Exception e) {
-                        LOG.error("Error getting ledger id", e);
-                        return -1L;
-                    }
-                }
-            });
+        return executor.submit(() -> {
+            try {
+                return m.getLedgerToRereplicate();
+            } catch (Exception e) {
+                LOG.error("Error getting ledger id", e);
+                return -1L;
+            }
+        });
     }
 
     /**
@@ -171,9 +165,8 @@ public class TestLedgerUnderreplicationManager {
 
         int count = 0;
         LedgerUnderreplicationManager m = lmf1.newLedgerUnderreplicationManager();
-        Iterator<Long> iter = ledgers.iterator();
-        while (iter.hasNext()) {
-            m.markLedgerUnderreplicated(iter.next(), missingReplica);
+        for (Long ledger : ledgers) {
+            m.markLedgerUnderreplicated(ledger, missingReplica);
             count++;
         }
 
@@ -415,19 +408,8 @@ public class TestLedgerUnderreplicationManager {
         final int iterationCount = 100;
         final CountDownLatch latch1 = new CountDownLatch(iterationCount);
         final CountDownLatch latch2 = new CountDownLatch(iterationCount);
-        Thread thread1 = new Thread() {
-            @Override
-            public void run() {
-                takeLedgerAndRelease(m1, latch1, iterationCount);
-            }
-        };
-
-        Thread thread2 = new Thread() {
-            @Override
-            public void run() {
-                takeLedgerAndRelease(m2, latch2, iterationCount);
-            }
-        };
+        Thread thread1 = new Thread(() -> takeLedgerAndRelease(m1, latch1, iterationCount));
+        Thread thread2 = new Thread(() -> takeLedgerAndRelease(m2, latch2, iterationCount));
         thread1.start();
         thread2.start();
 
@@ -548,32 +530,27 @@ public class TestLedgerUnderreplicationManager {
         final CountDownLatch znodeLatch = new CountDownLatch(2);
         String urledgerA = StringUtils.substringAfterLast(znodeA, "/");
         String urLockLedgerA = basePath + "/locks/" + urledgerA;
-        zkc1.exists(urLockLedgerA, new Watcher(){
-            @Override
-            public void process(WatchedEvent event) {
-                if (event.getType() == EventType.NodeCreated) {
-                    znodeLatch.countDown();
-                    LOG.debug("Recieved node creation event for the zNodePath:"
-                            + event.getPath());
-                }
-
-            }});
-        // getLedgerToRereplicate is waiting until enable rereplication
-        Thread thread1 = new Thread() {
-            @Override
-            public void run() {
-                try {
-                    Long lA = replicaMgr.getLedgerToRereplicate();
-                    assertEquals("Should be the ledger I just marked", lA,
-                            ledgerA);
-                    isLedgerReplicationDisabled = false;
-                    znodeLatch.countDown();
-                } catch (UnavailableException e) {
-                    LOG.debug("Unexpected exception while marking urLedger", e);
-                    isLedgerReplicationDisabled = false;
-                }
+        zkc1.exists(urLockLedgerA, event -> {
+            if (event.getType() == EventType.NodeCreated) {
+                znodeLatch.countDown();
+                LOG.debug("Recieved node creation event for the zNodePath:"
+                        + event.getPath());
             }
-        };
+
+        });
+        // getLedgerToRereplicate is waiting until enable rereplication
+        Thread thread1 = new Thread(() -> {
+            try {
+                Long lA = replicaMgr.getLedgerToRereplicate();
+                assertEquals("Should be the ledger I just marked", lA,
+                        ledgerA);
+                isLedgerReplicationDisabled = false;
+                znodeLatch.countDown();
+            } catch (UnavailableException e) {
+                LOG.debug("Unexpected exception while marking urLedger", e);
+                isLedgerReplicationDisabled = false;
+            }
+        });
         thread1.start();
 
         try {
@@ -650,37 +627,31 @@ public class TestLedgerUnderreplicationManager {
 
         final int iterations = 100;
         final AtomicBoolean threadFailed = new AtomicBoolean(false);
-        Thread markUnder = new Thread() {
-                public void run() {
-                    long l = 1;
-                    try {
-                        for (int i = 0; i < iterations; i++) {
-                            replicaMgr1.markLedgerUnderreplicated(l, "localhost:3181");
-                            l += 10000;
-                        }
-                    } catch (Exception e) {
-                        LOG.error("markUnder Thread failed with exception", e);
-                        threadFailed.set(true);
-                        return;
-                    }
+        Thread markUnder = new Thread(() -> {
+            long l = 1;
+            try {
+                for (int i = 0; i < iterations; i++) {
+                    replicaMgr1.markLedgerUnderreplicated(l, "localhost:3181");
+                    l += 10000;
                 }
-            };
+            } catch (Exception e) {
+                LOG.error("markUnder Thread failed with exception", e);
+                threadFailed.set(true);
+            }
+        });
         final AtomicInteger processed = new AtomicInteger(0);
-        Thread markRepl = new Thread() {
-                public void run() {
-                    try {
-                        for (int i = 0; i < iterations; i++) {
-                            long l = replicaMgr2.getLedgerToRereplicate();
-                            replicaMgr2.markLedgerReplicated(l);
-                            processed.incrementAndGet();
-                        }
-                    } catch (Exception e) {
-                        LOG.error("markRepl Thread failed with exception", e);
-                        threadFailed.set(true);
-                        return;
-                    }
+        Thread markRepl = new Thread(() -> {
+            try {
+                for (int i = 0; i < iterations; i++) {
+                    long l = replicaMgr2.getLedgerToRereplicate();
+                    replicaMgr2.markLedgerReplicated(l);
+                    processed.incrementAndGet();
                 }
-            };
+            } catch (Exception e) {
+                LOG.error("markRepl Thread failed with exception", e);
+                threadFailed.set(true);
+            }
+        });
         markRepl.setDaemon(true);
         markUnder.setDaemon(true);
 

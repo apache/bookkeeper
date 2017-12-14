@@ -63,7 +63,6 @@ import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRange;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.versioning.Version;
 import org.junit.Test;
@@ -86,36 +85,30 @@ public class GcLedgersTest extends LedgerManagerTestCase {
     private void createLedgers(int numLedgers, final Set<Long> createdLedgers) throws IOException {
         final AtomicInteger expected = new AtomicInteger(numLedgers);
         for (int i = 0; i < numLedgers; i++) {
-            getLedgerIdGenerator().generateLedgerId(new GenericCallback<Long>() {
-                @Override
-                public void operationComplete(int rc, final Long ledgerId) {
-                    if (BKException.Code.OK != rc) {
-                        synchronized (expected) {
-                            int num = expected.decrementAndGet();
-                            if (num == 0) {
-                                expected.notify();
-                            }
+            getLedgerIdGenerator().generateLedgerId((rc, ledgerId) -> {
+                if (BKException.Code.OK != rc) {
+                    synchronized (expected) {
+                        int num = expected.decrementAndGet();
+                        if (num == 0) {
+                            expected.notify();
                         }
-                        return;
                     }
-
-                    getLedgerManager().createLedgerMetadata(ledgerId,
-                            new LedgerMetadata(1, 1, 1, DigestType.MAC, "".getBytes()), new GenericCallback<Void>() {
-                                @Override
-                                public void operationComplete(int rc, Void result) {
-                                    if (rc == BKException.Code.OK) {
-                                        activeLedgers.put(ledgerId, true);
-                                        createdLedgers.add(ledgerId);
-                                    }
-                                    synchronized (expected) {
-                                        int num = expected.decrementAndGet();
-                                        if (num == 0) {
-                                            expected.notify();
-                                        }
-                                    }
-                                }
-                            });
+                    return;
                 }
+
+                getLedgerManager().createLedgerMetadata(ledgerId,
+                        new LedgerMetadata(1, 1, 1, DigestType.MAC, "".getBytes()), (rc1, result) -> {
+                            if (rc1 == BKException.Code.OK) {
+                                activeLedgers.put(ledgerId, true);
+                                createdLedgers.add(ledgerId);
+                            }
+                            synchronized (expected) {
+                                int num = expected.decrementAndGet();
+                                if (num == 0) {
+                                    expected.notify();
+                                }
+                            }
+                        });
             });
         }
         synchronized (expected) {
@@ -132,13 +125,10 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         final AtomicInteger rc = new AtomicInteger(0);
         final CountDownLatch latch = new CountDownLatch(1);
         getLedgerManager().removeLedgerMetadata(ledgerId, Version.ANY,
-                new GenericCallback<Void>() {
-                    @Override
-                    public void operationComplete(int rc2, Void result) {
-                        rc.set(rc2);
-                        latch.countDown();
-                    }
-                   });
+                (rc2, result) -> {
+                    rc.set(rc2);
+                    latch.countDown();
+                });
         assertTrue(latch.await(10, TimeUnit.SECONDS));
         assertEquals("Remove should have succeeded", 0, rc.get());
     }
@@ -163,14 +153,11 @@ public class GcLedgersTest extends LedgerManagerTestCase {
             long ledgerId = tmpList.get(i);
             synchronized (removedLedgers) {
                 getLedgerManager().removeLedgerMetadata(ledgerId, Version.ANY,
-                    new GenericCallback<Void>() {
-                        @Override
-                        public void operationComplete(int rc, Void result) {
+                        (rc, result) -> {
                             synchronized (removedLedgers) {
                                 removedLedgers.notify();
                             }
-                        }
-                   });
+                        });
                 removedLedgers.wait();
             }
             removedLedgers.add(ledgerId);
@@ -182,52 +169,46 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         final CompactableLedgerStorage mockLedgerStorage = new MockLedgerStorage();
         final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(getLedgerManager(),
                 mockLedgerStorage, baseConf);
-        Thread gcThread = new Thread() {
-            @Override
-            public void run() {
-                garbageCollector.gc(new GarbageCollector.GarbageCleaner() {
-                    boolean paused = false;
+        Thread gcThread = new Thread(() -> {
+            garbageCollector.gc(new GarbageCollector.GarbageCleaner() {
+                boolean paused = false;
 
-                    @Override
-                    public void clean(long ledgerId) {
-                        try {
-                            mockLedgerStorage.deleteLedger(ledgerId);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                            return;
-                        }
-
-                        if (!paused) {
-                            inGcProgress.countDown();
-                            try {
-                                createLatch.await();
-                            } catch (InterruptedException ie) {
-                            }
-                            paused = true;
-                        }
-                        LOG.info("Garbage Collected ledger {}", ledgerId);
+                @Override
+                public void clean(long ledgerId) {
+                    try {
+                        mockLedgerStorage.deleteLedger(ledgerId);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        return;
                     }
-                });
-                LOG.info("Gc Thread quits.");
-                endLatch.countDown();
-            }
-        };
 
-        Thread createThread = new Thread() {
-            @Override
-            public void run() {
-                try {
-                    inGcProgress.await();
-                    // create 10 more ledgers
-                    createLedgers(10, createdLedgers);
-                    LOG.info("Finished creating 10 more ledgers.");
-                    createLatch.countDown();
-                } catch (Exception e) {
+                    if (!paused) {
+                        inGcProgress.countDown();
+                        try {
+                            createLatch.await();
+                        } catch (InterruptedException ie) {
+                        }
+                        paused = true;
+                    }
+                    LOG.info("Garbage Collected ledger {}", ledgerId);
                 }
-                LOG.info("Create Thread quits.");
-                endLatch.countDown();
+            });
+            LOG.info("Gc Thread quits.");
+            endLatch.countDown();
+        });
+
+        Thread createThread = new Thread(() -> {
+            try {
+                inGcProgress.await();
+                // create 10 more ledgers
+                createLedgers(10, createdLedgers);
+                LOG.info("Finished creating 10 more ledgers.");
+                createLatch.countDown();
+            } catch (Exception e) {
             }
-        };
+            LOG.info("Create Thread quits.");
+            endLatch.countDown();
+        });
 
         createThread.start();
         gcThread.start();
@@ -253,13 +234,10 @@ public class GcLedgersTest extends LedgerManagerTestCase {
 
         final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(getLedgerManager(),
                 new MockLedgerStorage(), baseConf);
-        GarbageCollector.GarbageCleaner cleaner = new GarbageCollector.GarbageCleaner() {
-                @Override
-                public void clean(long ledgerId) {
-                    LOG.info("Cleaned {}", ledgerId);
-                    cleaned.add(ledgerId);
-                }
-            };
+        GarbageCollector.GarbageCleaner cleaner = ledgerId -> {
+            LOG.info("Cleaned {}", ledgerId);
+            cleaned.add(ledgerId);
+        };
 
         garbageCollector.gc(cleaner);
         assertNull("Should have cleaned nothing", cleaned.poll());
@@ -289,13 +267,10 @@ public class GcLedgersTest extends LedgerManagerTestCase {
 
         final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(getLedgerManager(),
                 new MockLedgerStorage(), baseConf);
-        GarbageCollector.GarbageCleaner cleaner = new GarbageCollector.GarbageCleaner() {
-                @Override
-                public void clean(long ledgerId) {
-                    LOG.info("Cleaned {}", ledgerId);
-                    cleaned.add(ledgerId);
-                }
-            };
+        GarbageCollector.GarbageCleaner cleaner = ledgerId -> {
+            LOG.info("Cleaned {}", ledgerId);
+            cleaned.add(ledgerId);
+        };
 
         SortedSet<Long> scannedLedgers = new TreeSet<Long>();
         LedgerRangeIterator iterator = getLedgerManager().getLedgerRanges();

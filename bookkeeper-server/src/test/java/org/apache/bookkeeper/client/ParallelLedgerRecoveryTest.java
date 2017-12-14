@@ -107,16 +107,13 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
                                         final GenericCallback<Void> cb) {
             final CountDownLatch cdl = waitLatch;
             if (null != cdl) {
-                executorService.submit(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            cdl.await();
-                        } catch (InterruptedException e) {
-                            LOG.error("Interrupted on waiting latch : ", e);
-                        }
-                        lm.writeLedgerMetadata(ledgerId, metadata, cb);
+                executorService.submit(() -> {
+                    try {
+                        cdl.await();
+                    } catch (InterruptedException e) {
+                        LOG.error("Interrupted on waiting latch : ", e);
                     }
+                    lm.writeLedgerMetadata(ledgerId, metadata, cb);
                 });
             } else {
                 lm.writeLedgerMetadata(ledgerId, metadata, cb);
@@ -244,16 +241,13 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         final AtomicInteger numPendingAdds = new AtomicInteger(numEntries);
         final CountDownLatch addDone = new CountDownLatch(1);
         for (int i = 0; i < numEntries; i++) {
-            lh.asyncAddEntry(("" + i).getBytes(), new org.apache.bookkeeper.client.AsyncCallback.AddCallback() {
-                @Override
-                public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-                    if (BKException.Code.OK != rc) {
-                        addDone.countDown();
-                        return;
-                    }
-                    if (numPendingAdds.decrementAndGet() == 0) {
-                        addDone.countDown();
-                    }
+            lh.asyncAddEntry(("" + i).getBytes(), (rc, lh1, entryId, ctx) -> {
+                if (BKException.Code.OK != rc) {
+                    addDone.countDown();
+                    return;
+                }
+                if (numPendingAdds.decrementAndGet() == 0) {
+                    addDone.countDown();
                 }
             }, null);
         }
@@ -279,13 +273,10 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
 
         final CountDownLatch recoverLatch = new CountDownLatch(1);
         final AtomicBoolean success = new AtomicBoolean(false);
-        recoverLh.recover(new GenericCallback<Void>() {
-            @Override
-            public void operationComplete(int rc, Void result) {
-                LOG.info("Recovering ledger {} completed : {}.", lh.getId(), rc);
-                success.set(BKException.Code.OK == rc);
-                recoverLatch.countDown();
-            }
+        recoverLh.recover((rc, result) -> {
+            LOG.info("Recovering ledger {} completed : {}.", lh.getId(), rc);
+            success.set(BKException.Code.OK == rc);
+            recoverLatch.countDown();
         });
 
         // clear the metadata latch
@@ -305,12 +296,9 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
                 newRecoverLh.getLedgerMetadata().markLedgerInRecovery();
                 final CountDownLatch updateLatch = new CountDownLatch(1);
                 final AtomicInteger updateResult = new AtomicInteger(0x12345);
-                newRecoverLh.writeLedgerConfig(new GenericCallback<Void>() {
-                    @Override
-                    public void operationComplete(int rc, Void result) {
-                        updateResult.set(rc);
-                        updateLatch.countDown();
-                    }
+                newRecoverLh.writeLedgerConfig((rc, result) -> {
+                    updateResult.set(rc);
+                    updateLatch.countDown();
                 });
                 updateLatch.await();
                 assertEquals(BKException.Code.OK, updateResult.get());
@@ -366,13 +354,10 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         final AtomicBoolean addSuccess = new AtomicBoolean(false);
         LOG.info("Add entry {} with lac = {}", entryId, lac);
         lh.bk.getBookieClient().addEntry(lh.metadata.currentEnsemble.get(0), lh.getId(), lh.ledgerKey, entryId, toSend,
-            new WriteCallback() {
-                @Override
-                public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
+                (rc, ledgerId, entryId1, addr, ctx) -> {
                     addSuccess.set(BKException.Code.OK == rc);
                     addLatch.countDown();
-                }
-            }, 0, BookieProtocol.FLAG_NONE);
+                }, 0, BookieProtocol.FLAG_NONE);
         addLatch.await();
         assertTrue("add entry 14 should succeed", addSuccess.get());
 
@@ -393,18 +378,15 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         final AtomicBoolean isMetadataClosed = new AtomicBoolean(false);
         final AtomicInteger numSuccessCalls = new AtomicInteger(0);
         final AtomicInteger numFailureCalls = new AtomicInteger(0);
-        recoverLh.recover(new GenericCallback<Void>() {
-            @Override
-            public void operationComplete(int rc, Void result) {
-                if (BKException.Code.OK == rc) {
-                    newLac.set(recoverLh.getLastAddConfirmed());
-                    isMetadataClosed.set(recoverLh.getLedgerMetadata().isClosed());
-                    numSuccessCalls.incrementAndGet();
-                } else {
-                    numFailureCalls.incrementAndGet();
-                }
-                recoverLatch.countDown();
+        recoverLh.recover((rc, result) -> {
+            if (BKException.Code.OK == rc) {
+                newLac.set(recoverLh.getLastAddConfirmed());
+                isMetadataClosed.set(recoverLh.getLedgerMetadata().isClosed());
+                numSuccessCalls.incrementAndGet();
+            } else {
+                numFailureCalls.incrementAndGet();
             }
+            recoverLatch.countDown();
         });
         recoverLatch.await();
         assertEquals("wrong lac found", 9L, newLac.get());
@@ -456,15 +438,11 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         @Override
         public void addEntry(ByteBuf entry, final WriteCallback cb, Object ctx, byte[] masterKey)
                 throws IOException, BookieException {
-            super.addEntry(entry, new WriteCallback() {
-                @Override
-                public void writeComplete(int rc, long ledgerId, long entryId,
-                                          BookieSocketAddress addr, Object ctx) {
-                    if (delayAddResponse.get()) {
-                        delayQueue.add(new WriteCallbackEntry(cb, rc, ledgerId, entryId, addr, ctx));
-                    } else {
-                        cb.writeComplete(rc, ledgerId, entryId, addr, ctx);
-                    }
+            super.addEntry(entry, (rc, ledgerId, entryId, addr, ctx1) -> {
+                if (delayAddResponse.get()) {
+                    delayQueue.add(new WriteCallbackEntry(cb, rc, ledgerId, entryId, addr, ctx1));
+                } else {
+                    cb.writeComplete(rc, ledgerId, entryId, addr, ctx1);
                 }
             }, ctx, masterKey);
         }
@@ -543,14 +521,11 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         // 3) bk0 write more entries in parallel
         fakeBookie.delayAdd(true);
         for (int i = 2; i < 5; i++) {
-            lh0.asyncAddEntry(("entry-" + i).getBytes(UTF_8), new AsyncCallback.AddCallback() {
-                @Override
-                public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
-                    if (BKException.Code.OK != rc) {
-                        numAddFailures.incrementAndGet();
-                    }
-                    addLatch.countDown();
+            lh0.asyncAddEntry(("entry-" + i).getBytes(UTF_8), (rc, lh, entryId, ctx) -> {
+                if (BKException.Code.OK != rc) {
+                    numAddFailures.incrementAndGet();
                 }
+                addLatch.countDown();
             }, null);
         }
         while (fakeBookie.delayQueue.size() < 3) {
@@ -572,13 +547,10 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         tlm1.setLatch(metadataLatch);
         final CountDownLatch recoverLatch = new CountDownLatch(1);
         final AtomicBoolean recoverSuccess = new AtomicBoolean(false);
-        lh1.recover(new GenericCallback<Void>() {
-            @Override
-            public void operationComplete(int rc, Void result) {
-                LOG.info("Recovering ledger {} completed : {}", lh1.getId(), rc);
-                recoverSuccess.set(BKException.Code.OK == rc);
-                recoverLatch.countDown();
-            }
+        lh1.recover((rc, result) -> {
+            LOG.info("Recovering ledger {} completed : {}", lh1.getId(), rc);
+            recoverSuccess.set(BKException.Code.OK == rc);
+            recoverLatch.countDown();
         });
         Thread.sleep(2000);
         readLatch.countDown();
@@ -601,13 +573,10 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         final AtomicLong lacHolder = new AtomicLong(-1234L);
         final AtomicInteger rcHolder = new AtomicInteger(-1234);
         final CountDownLatch doneLatch = new CountDownLatch(1);
-        new ReadLastConfirmedOp(readLh, new ReadLastConfirmedOp.LastConfirmedDataCallback() {
-            @Override
-            public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {
-                rcHolder.set(rc);
-                lacHolder.set(data.lastAddConfirmed);
-                doneLatch.countDown();
-            }
+        new ReadLastConfirmedOp(readLh, (rc, data) -> {
+            rcHolder.set(rc);
+            lacHolder.set(data.lastAddConfirmed);
+            doneLatch.countDown();
         }).initiate();
         doneLatch.await();
         assertEquals(BKException.Code.OK, rcHolder.get());

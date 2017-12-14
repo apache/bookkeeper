@@ -92,17 +92,14 @@ public class SaslServerState {
                 }
 
                 try {
-                    return Subject.doAs(subject, new PrivilegedExceptionAction<SaslServer>() {
-                        @Override
-                        public SaslServer run() {
-                            try {
-                                SaslServer saslServer;
-                                saslServer = Sasl.createSaslServer("GSSAPI", servicePrincipalName, serviceHostname,
-                                        null, callbackHandler);
-                                return saslServer;
-                            } catch (SaslException e) {
-                                throw new RuntimeException(e);
-                            }
+                    return Subject.doAs(subject, (PrivilegedExceptionAction<SaslServer>) () -> {
+                        try {
+                            SaslServer saslServer;
+                            saslServer = Sasl.createSaslServer("GSSAPI", servicePrincipalName, serviceHostname,
+                                    null, callbackHandler);
+                            return saslServer;
+                        } catch (SaslException e) {
+                            throw new RuntimeException(e);
                         }
                     }
                     );

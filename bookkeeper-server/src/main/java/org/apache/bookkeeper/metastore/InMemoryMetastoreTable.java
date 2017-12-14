@@ -144,24 +144,16 @@ public class InMemoryMetastoreTable implements MetastoreScannableTable {
 
     @Override
     public void get(final String key, final MetastoreCallback<Versioned<Value>> cb, final Object ctx) {
-        scheduler.submit(new Runnable() {
-            @Override
-            public void run() {
-                scheduleGet(key, ALL_FIELDS, cb, ctx);
-            }
-        });
+        scheduler.submit(() -> scheduleGet(key, ALL_FIELDS, cb, ctx));
     }
 
     @Override
     public void get(final String key, final MetastoreWatcher watcher, final MetastoreCallback<Versioned<Value>> cb,
             final Object ctx) {
-        scheduler.submit(new Runnable() {
-            @Override
-            public void run() {
-                scheduleGet(key, ALL_FIELDS, cb, ctx);
-                synchronized (watcherMap) {
-                    watcherMap.put(key, watcher);
-                }
+        scheduler.submit(() -> {
+            scheduleGet(key, ALL_FIELDS, cb, ctx);
+            synchronized (watcherMap) {
+                watcherMap.put(key, watcher);
             }
         });
     }
@@ -169,12 +161,7 @@ public class InMemoryMetastoreTable implements MetastoreScannableTable {
     @Override
     public void get(final String key, final Set<String> fields, final MetastoreCallback<Versioned<Value>> cb,
             final Object ctx) {
-        scheduler.submit(new Runnable() {
-            @Override
-            public void run() {
-                scheduleGet(key, fields, cb, ctx);
-            }
-        });
+        scheduler.submit(() -> scheduleGet(key, fields, cb, ctx));
     }
 
     public synchronized void scheduleGet(String key, Set<String> fields, MetastoreCallback<Versioned<Value>> cb,
@@ -194,42 +181,36 @@ public class InMemoryMetastoreTable implements MetastoreScannableTable {
     @Override
     public void put(final String key, final Value value, final Version version, final MetastoreCallback<Version> cb,
             final Object ctx) {
-        scheduler.submit(new Runnable() {
-            @Override
-            public void run() {
-                if (null == key || null == value || null == version) {
-                    cb.complete(Code.IllegalOp.getCode(), null, ctx);
-                    return;
-                }
-                Result<Version> result = put(key, value, version);
-                cb.complete(result.code.getCode(), result.value, ctx);
+        scheduler.submit(() -> {
+            if (null == key || null == value || null == version) {
+                cb.complete(Code.IllegalOp.getCode(), null, ctx);
+                return;
+            }
+            Result<Version> result = put(key, value, version);
+            cb.complete(result.code.getCode(), result.value, ctx);
 
-                /*
-                 * If there is a watcher set for this key, we need
-                 * to trigger it.
-                 */
-                if (result.code == MSException.Code.OK) {
-                    triggerWatch(key, MSWatchedEvent.EventType.CHANGED);
-                }
+            /*
+             * If there is a watcher set for this key, we need
+             * to trigger it.
+             */
+            if (result.code == Code.OK) {
+                triggerWatch(key, MSWatchedEvent.EventType.CHANGED);
             }
         });
     }
 
     @Override
     public void remove(final String key, final Version version, final MetastoreCallback<Void> cb, final Object ctx) {
-        scheduler.submit(new Runnable() {
-            @Override
-            public void run() {
-                if (null == key || null == version) {
-                    cb.complete(Code.IllegalOp.getCode(), null, ctx);
-                    return;
-                }
-                Code code = remove(key, version);
-                cb.complete(code.getCode(), null, ctx);
+        scheduler.submit(() -> {
+            if (null == key || null == version) {
+                cb.complete(Code.IllegalOp.getCode(), null, ctx);
+                return;
+            }
+            Code code = remove(key, version);
+            cb.complete(code.getCode(), null, ctx);
 
-                if (code == MSException.Code.OK) {
-                    triggerWatch(key, MSWatchedEvent.EventType.REMOVED);
-                }
+            if (code == Code.OK) {
+                triggerWatch(key, MSWatchedEvent.EventType.REMOVED);
             }
         });
     }
@@ -261,13 +242,10 @@ public class InMemoryMetastoreTable implements MetastoreScannableTable {
                            final String lastKey, final boolean lastInclusive,
                            final Order order, final Set<String> fields,
                            final MetastoreCallback<MetastoreCursor> cb, final Object ctx) {
-        scheduler.submit(new Runnable() {
-            @Override
-            public void run() {
-                Result<MetastoreCursor> result = openCursor(firstKey, firstInclusive, lastKey, lastInclusive,
-                        order, fields);
-                cb.complete(result.code.getCode(), result.value, ctx);
-            }
+        scheduler.submit(() -> {
+            Result<MetastoreCursor> result = openCursor(firstKey, firstInclusive, lastKey, lastInclusive,
+                    order, fields);
+            cb.complete(result.code.getCode(), result.value, ctx);
         });
     }
 

@@ -186,12 +186,8 @@ public class FileSystemUpgrade {
                     }
                     c.writeToDirectory(tmpDir);
 
-                    String[] files = d.list(new FilenameFilter() {
-                            public boolean accept(File dir, String name) {
-                                return bookieFilesFilter.accept(dir, name)
-                                    && !(new File(dir, name).isDirectory());
-                            }
-                        });
+                    String[] files = d.list((dir, name) ->
+                            bookieFilesFilter.accept(dir, name) && !(new File(dir, name).isDirectory()));
                     HardLink.createHardLinkMult(d, files, tmpDir);
 
                     linkIndexDirectories(d, tmpDir);

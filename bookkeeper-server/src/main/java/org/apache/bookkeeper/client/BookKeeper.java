@@ -71,7 +71,6 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.proto.BookieClient;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -1276,14 +1275,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * @param cb    callback method
      */
     public void asyncIsClosed(long lId, final IsClosedCallback cb, final Object ctx){
-        ledgerManager.readLedgerMetadata(lId, new GenericCallback<LedgerMetadata>(){
-            public void operationComplete(int rc, LedgerMetadata lm){
-                if (rc == BKException.Code.OK) {
-                    cb.isClosedComplete(rc, lm.isClosed(), ctx);
-                } else {
-                    cb.isClosedComplete(rc, false, ctx);
-                }
-            }
+        ledgerManager.readLedgerMetadata(lId, (rc, lm) -> {
+            cb.isClosedComplete(rc, rc == BKException.Code.OK && lm.isClosed(), ctx);
         });
     }
 
@@ -1305,12 +1298,10 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
         final Result result = new Result();
 
-        final IsClosedCallback cb = new IsClosedCallback(){
-            public void isClosedComplete(int rc, boolean isClosed, Object ctx){
-                    result.isClosed = isClosed;
-                    result.rc = rc;
-                    result.notifier.countDown();
-            }
+        final IsClosedCallback cb = (rc, isClosed, ctx) -> {
+            result.isClosed = isClosed;
+            result.rc = rc;
+            result.notifier.countDown();
         };
 
         /*

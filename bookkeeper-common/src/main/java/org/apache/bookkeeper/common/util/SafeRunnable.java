@@ -54,12 +54,7 @@ public interface SafeRunnable extends Runnable {
      * </pre>
      */
     static SafeRunnable safeRun(Runnable runnable) {
-        return new SafeRunnable() {
-            @Override
-            public void safeRun() {
-                runnable.run();
-            }
-        };
+        return () -> runnable.run();
     }
 
     /**

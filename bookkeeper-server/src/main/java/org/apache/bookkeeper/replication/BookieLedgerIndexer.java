@@ -33,7 +33,6 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
-import org.apache.zookeeper.AsyncCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,48 +63,36 @@ public class BookieLedgerIndexer {
         final ConcurrentHashMap<String, Set<Long>> bookie2ledgersMap = new ConcurrentHashMap<String, Set<Long>>();
         final CountDownLatch ledgerCollectorLatch = new CountDownLatch(1);
 
-        Processor<Long> ledgerProcessor = new Processor<Long>() {
-            @Override
-            public void process(final Long ledgerId,
-                    final AsyncCallback.VoidCallback iterCallback) {
-                GenericCallback<LedgerMetadata> genericCallback = new GenericCallback<LedgerMetadata>() {
-                    @Override
-                    public void operationComplete(int rc,
-                            LedgerMetadata ledgerMetadata) {
-                        if (rc == BKException.Code.OK) {
-                            for (Map.Entry<Long, ArrayList<BookieSocketAddress>> ensemble : ledgerMetadata
-                                    .getEnsembles().entrySet()) {
-                                for (BookieSocketAddress bookie : ensemble
-                                        .getValue()) {
-                                    putLedger(bookie2ledgersMap,
-                                              bookie.toString(),
-                                              ledgerId);
-                                }
-                            }
-                        } else if (rc == BKException.Code.NoSuchLedgerExistsException) {
-                            LOG.info("Ignoring replication of already deleted ledger {}",
-                                    ledgerId);
-                            rc = BKException.Code.OK;
-                        } else {
-                            LOG.warn("Unable to read the ledger:" + ledgerId
-                                    + " information");
+        Processor<Long> ledgerProcessor = (ledgerId, iterCallback) -> {
+            GenericCallback<LedgerMetadata> genericCallback = (rc, ledgerMetadata) -> {
+                if (rc == BKException.Code.OK) {
+                    for (Map.Entry<Long, ArrayList<BookieSocketAddress>> ensemble : ledgerMetadata
+                            .getEnsembles().entrySet()) {
+                        for (BookieSocketAddress bookie : ensemble
+                                .getValue()) {
+                            putLedger(bookie2ledgersMap,
+                                      bookie.toString(),
+                                      ledgerId);
                         }
-                        iterCallback.processResult(rc, null, null);
                     }
-                };
-                ledgerManager.readLedgerMetadata(ledgerId, genericCallback);
-            }
+                } else if (rc == BKException.Code.NoSuchLedgerExistsException) {
+                    LOG.info("Ignoring replication of already deleted ledger {}",
+                            ledgerId);
+                    rc = BKException.Code.OK;
+                } else {
+                    LOG.warn("Unable to read the ledger:" + ledgerId
+                            + " information");
+                }
+                iterCallback.processResult(rc, null, null);
+            };
+            ledgerManager.readLedgerMetadata(ledgerId, genericCallback);
         };
         // Reading the result after processing all the ledgers
         final List<Integer> resultCode = new ArrayList<Integer>(1);
         ledgerManager.asyncProcessLedgers(ledgerProcessor,
-                new AsyncCallback.VoidCallback() {
-
-                    @Override
-                    public void processResult(int rc, String s, Object obj) {
-                        resultCode.add(rc);
-                        ledgerCollectorLatch.countDown();
-                    }
+                (rc, s, obj) -> {
+                    resultCode.add(rc);
+                    ledgerCollectorLatch.countDown();
                 }, null, BKException.Code.OK, BKException.Code.ReadException);
         try {
             ledgerCollectorLatch.await();

@@ -39,9 +39,6 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.MSLedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.bookkeeper.versioning.Version;
@@ -120,45 +117,27 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
         final CountDownLatch createLatch = new CountDownLatch(1);
         final CountDownLatch removeLatch = new CountDownLatch(1);
 
-        idGenerator.generateLedgerId(new GenericCallback<Long>() {
-            @Override
-            public void operationComplete(int rc, final Long lid) {
-                manager.createLedgerMetadata(lid, new LedgerMetadata(4, 2, 2, digestType, "fpj was here".getBytes()),
-                         new BookkeeperInternalCallbacks.GenericCallback<Void>(){
-
-                    @Override
-                    public void operationComplete(int rc, Void result) {
-                        bbLedgerId.putLong(lid);
-                        bbLedgerId.flip();
-                        createLatch.countDown();
-                    }
-                });
-
-            }
-        });
+        idGenerator.generateLedgerId((rc, lid) ->
+                manager.createLedgerMetadata(lid,
+                        new LedgerMetadata(4, 2, 2, digestType, "fpj was here".getBytes()),
+                        (rc1, result) -> {
+                            bbLedgerId.putLong(lid);
+                            bbLedgerId.flip();
+                            createLatch.countDown();
+                        }));
 
         assertTrue(createLatch.await(2000, TimeUnit.MILLISECONDS));
         final long createdLid = bbLedgerId.getLong();
 
         manager.registerLedgerMetadataListener(createdLid,
-                new LedgerMetadataListener() {
-
-            @Override
-            public void onChanged(long ledgerId, LedgerMetadata metadata) {
-                assertEquals(ledgerId, createdLid);
-                assertEquals(metadata, null);
-                removeLatch.countDown();
-            }
-        });
+                (ledgerId, metadata) -> {
+                    assertEquals(ledgerId, createdLid);
+                    assertEquals(metadata, null);
+                    removeLatch.countDown();
+                });
 
         manager.removeLedgerMetadata(createdLid, Version.ANY,
-                new BookkeeperInternalCallbacks.GenericCallback<Void>() {
-
-            @Override
-            public void operationComplete(int rc, Void result) {
-                assertEquals(rc, BKException.Code.OK);
-            }
-        });
+                (rc, result) -> assertEquals(rc, BKException.Code.OK));
         assertTrue(removeLatch.await(2000, TimeUnit.MILLISECONDS));
     }
 }

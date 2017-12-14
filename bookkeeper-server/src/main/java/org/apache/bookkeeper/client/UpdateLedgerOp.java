@@ -234,17 +234,14 @@ public class UpdateLedgerOp {
                 future.set(null);
                 return; // ledger doesn't contains the given curBookieId
             }
-            final GenericCallback<Void> writeCb = new GenericCallback<Void>() {
-                @Override
-                public void operationComplete(int rc, Void result) {
-                    if (rc != BKException.Code.OK) {
-                        // metadata update failed
-                        LOG.error("Ledger {} metadata update failed. Error code {}", ledgerId, rc);
-                        future.setException(BKException.create(rc));
-                        return;
-                    }
-                    future.set(null);
+            final GenericCallback<Void> writeCb = (rc1, result) -> {
+                if (rc1 != BKException.Code.OK) {
+                    // metadata update failed
+                    LOG.error("Ledger {} metadata update failed. Error code {}", ledgerId, rc1);
+                    future.setException(BKException.create(rc1));
+                    return;
                 }
+                future.set(null);
             };
             bkc.getLedgerManager().writeLedgerMetadata(ledgerId, metadata, writeCb);
         }

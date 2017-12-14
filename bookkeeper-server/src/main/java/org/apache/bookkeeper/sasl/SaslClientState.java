@@ -76,13 +76,10 @@ public class SaslClientState {
                 LOG.debug("Using JAAS/SASL/GSSAPI auth to connect to server Principal {}", serverPrincipal);
             }
             try {
-                saslClient = Subject.doAs(clientSubject, new PrivilegedExceptionAction<SaslClient>() {
-                    @Override
-                    public SaslClient run() throws SaslException {
-                        String[] mechs = {"GSSAPI"};
-                        return Sasl.createSaslClient(mechs, clientPrincipalName, serviceName, serviceHostname, null,
-                            new ClientCallbackHandler(null));
-                    }
+                saslClient = Subject.doAs(clientSubject, (PrivilegedExceptionAction<SaslClient>) () -> {
+                    String[] mechs = {"GSSAPI"};
+                    return Sasl.createSaslClient(mechs, clientPrincipalName, serviceName, serviceHostname, null,
+                        new ClientCallbackHandler(null));
                 });
             } catch (PrivilegedActionException err) {
                 if (LOG.isDebugEnabled()) {
@@ -103,12 +100,8 @@ public class SaslClientState {
         }
         if (clientSubject != null) {
             try {
-                final byte[] retval = Subject.doAs(clientSubject, new PrivilegedExceptionAction<byte[]>() {
-                        @Override
-                        public byte[] run() throws SaslException {
-                            return saslClient.evaluateChallenge(saslToken);
-                        }
-                    });
+                final byte[] retval = Subject.doAs(clientSubject,
+                        (PrivilegedExceptionAction<byte[]>) () -> saslClient.evaluateChallenge(saslToken));
                 return retval;
             } catch (PrivilegedActionException e) {
                 if (LOG.isDebugEnabled()) {

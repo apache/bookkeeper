@@ -152,17 +152,14 @@ class LedgerCreateOp implements GenericCallback<Void> {
     void generateLedgerIdAndCreateLedger() {
         // generate a ledgerId
         final LedgerIdGenerator ledgerIdGenerator = bk.getLedgerIdGenerator();
-        ledgerIdGenerator.generateLedgerId(new GenericCallback<Long>() {
-            @Override
-            public void operationComplete(int rc, Long ledgerId) {
-                if (BKException.Code.OK != rc) {
-                    createComplete(rc, null);
-                    return;
-                }
-                LedgerCreateOp.this.ledgerId = ledgerId;
-                // create a ledger with metadata
-                bk.getLedgerManager().createLedgerMetadata(ledgerId, metadata, LedgerCreateOp.this);
+        ledgerIdGenerator.generateLedgerId((rc, ledgerId) -> {
+            if (BKException.Code.OK != rc) {
+                createComplete(rc, null);
+                return;
             }
+            LedgerCreateOp.this.ledgerId = ledgerId;
+            // create a ledger with metadata
+            bk.getLedgerManager().createLedgerMetadata(ledgerId, metadata, LedgerCreateOp.this);
         });
     }
 

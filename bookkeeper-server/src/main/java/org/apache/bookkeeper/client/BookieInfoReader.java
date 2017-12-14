@@ -359,13 +359,9 @@ public class BookieInfoReader {
                         }
                         @Override
                         public void getBookieInfoComplete(final int rc, final BookieInfo bInfo, final Object ctx) {
-                            scheduler.submit(
-                                new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        processReadInfoComplete(rc, bInfo, ctx);
-                                    }
-                                });
+                            scheduler.submit(() ->
+                                    processReadInfoComplete(rc, bInfo, ctx)
+                            );
                         }
                     }, b);
             totalSent++;
@@ -407,25 +403,22 @@ public class BookieInfoReader {
 
         totalSent.set(bookies.size());
         for (BookieSocketAddress b : bookies) {
-            bkc.getBookieInfo(b, requested, new GetBookieInfoCallback() {
-                        @Override
-                        public void getBookieInfoComplete(int rc, BookieInfo bInfo, Object ctx) {
-                            BookieSocketAddress b = (BookieSocketAddress) ctx;
-                            if (rc != BKException.Code.OK) {
-                                if (LOG.isErrorEnabled()) {
-                                    LOG.error("Reading bookie info from bookie {} failed due to error: {}.", b, rc);
-                                }
-                            } else {
-                                if (LOG.isDebugEnabled()) {
-                                    LOG.debug("Free disk space on bookie {} is {}.", b, bInfo.getFreeDiskSpace());
-                                }
-                                map.put(b, bInfo);
-                            }
-                            if (totalCompleted.incrementAndGet() == totalSent.get()) {
-                                latch.countDown();
-                            }
-                        }
-                    }, b);
+            bkc.getBookieInfo(b, requested, (rc, bInfo, ctx) -> {
+                BookieSocketAddress b1 = (BookieSocketAddress) ctx;
+                if (rc != BKException.Code.OK) {
+                    if (LOG.isErrorEnabled()) {
+                        LOG.error("Reading bookie info from bookie {} failed due to error: {}.", b1, rc);
+                    }
+                } else {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Free disk space on bookie {} is {}.", b1, bInfo.getFreeDiskSpace());
+                    }
+                    map.put(b1, bInfo);
+                }
+                if (totalCompleted.incrementAndGet() == totalSent.get()) {
+                    latch.countDown();
+                }
+            }, b);
         }
         try {
             latch.await();

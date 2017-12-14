@@ -322,14 +322,12 @@ public class LedgerChecker {
                 final long entryToRead = curEntryId;
 
                 final EntryExistsCallback eecb = new EntryExistsCallback(lh.getLedgerMetadata().getWriteQuorumSize(),
-                                              new GenericCallback<Boolean>() {
-                                                  public void operationComplete(int rc, Boolean result) {
-                                                      if (result) {
-                                                          fragments.add(lastLedgerFragment);
-                                                      }
-                                                      checkFragments(fragments, cb);
-                                                  }
-                                              });
+                        (rc, result) -> {
+                            if (result) {
+                                fragments.add(lastLedgerFragment);
+                            }
+                            checkFragments(fragments, cb);
+                        });
 
                 DistributionSchedule.WriteSet writeSet = lh.getDistributionSchedule().getWriteSet(entryToRead);
                 for (int i = 0; i < writeSet.size(); i++) {

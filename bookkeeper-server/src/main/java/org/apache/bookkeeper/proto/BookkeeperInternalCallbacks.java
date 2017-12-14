@@ -222,12 +222,7 @@ public class BookkeeperInternalCallbacks {
         private void callback() {
             if (null != callbackExecutor) {
                 try {
-                    callbackExecutor.submit(new Runnable() {
-                        @Override
-                        public void run() {
-                            doCallback();
-                        }
-                    });
+                    callbackExecutor.submit(() -> doCallback());
                 } catch (RejectedExecutionException ree) {
                     // if the callback executor is shutdown, do callback in same thread
                     doCallback();

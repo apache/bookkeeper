@@ -117,22 +117,20 @@ public class LedgerCacheTest {
         }
         ledgerCache = ((InterleavedLedgerStorage) bookie.ledgerStorage).ledgerCache = new LedgerCacheImpl(
                 conf, activeLedgers, bookie.getIndexDirsManager());
-        flushThread = new Thread() {
-                public void run() {
-                    while (true) {
-                        try {
-                            sleep(conf.getFlushInterval());
-                            ledgerCache.flushLedger(true);
-                        } catch (InterruptedException ie) {
-                            // killed by teardown
-                            Thread.currentThread().interrupt();
-                            return;
-                        } catch (Exception e) {
-                            LOG.error("Exception in flush thread", e);
-                        }
-                    }
+        flushThread = new Thread(() -> {
+            while (true) {
+                try {
+                    Thread.sleep(conf.getFlushInterval());
+                    ledgerCache.flushLedger(true);
+                } catch (InterruptedException ie) {
+                    // killed by teardown
+                    Thread.currentThread().interrupt();
+                    return;
+                } catch (Exception e) {
+                    LOG.error("Exception in flush thread", e);
                 }
-            };
+            }
+        });
         flushThread.start();
     }
 
@@ -393,59 +391,53 @@ public class LedgerCacheTest {
         final AtomicInteger rc = new AtomicInteger(0);
         final LinkedBlockingQueue<Long> ledgerQ = new LinkedBlockingQueue<Long>(1);
         final byte[] masterKey = "masterKey".getBytes();
-        Thread newLedgerThread = new Thread() {
-                public void run() {
-                    try {
-                        for (int i = 0; i < 1000 && rc.get() == 0; i++) {
-                            ledgerCache.setMasterKey(i, masterKey);
-                            ledgerQ.put((long) i);
-                        }
-                    } catch (Exception e) {
-                        rc.set(-1);
-                        LOG.error("Exception in new ledger thread", e);
-                    }
+        Thread newLedgerThread = new Thread(() -> {
+            try {
+                for (int i = 0; i < 1000 && rc.get() == 0; i++) {
+                    ledgerCache.setMasterKey(i, masterKey);
+                    ledgerQ.put((long) i);
                 }
-            };
+            } catch (Exception e) {
+                rc.set(-1);
+                LOG.error("Exception in new ledger thread", e);
+            }
+        });
         newLedgerThread.start();
 
-        Thread flushThread = new Thread() {
-                public void run() {
-                    try {
-                        while (true) {
-                            Long id = ledgerQ.peek();
-                            if (id == null) {
-                                continue;
-                            }
-                            LOG.info("Put entry for {}", id);
-                            try {
-                                ledgerCache.putEntryOffset((long) id, 1, 0);
-                            } catch (Bookie.NoLedgerException nle) {
-                                //ignore
-                            }
-                            ledgerCache.flushLedger(true);
-                        }
-                    } catch (Exception e) {
-                        rc.set(-1);
-                        LOG.error("Exception in flush thread", e);
+        Thread flushThread = new Thread(() -> {
+            try {
+                while (true) {
+                    Long id = ledgerQ.peek();
+                    if (id == null) {
+                        continue;
                     }
+                    LOG.info("Put entry for {}", id);
+                    try {
+                        ledgerCache.putEntryOffset((long) id, 1, 0);
+                    } catch (NoLedgerException nle) {
+                        //ignore
+                    }
+                    ledgerCache.flushLedger(true);
                 }
-            };
+            } catch (Exception e) {
+                rc.set(-1);
+                LOG.error("Exception in flush thread", e);
+            }
+        });
         flushThread.start();
 
-        Thread deleteThread = new Thread() {
-                public void run() {
-                    try {
-                        while (true) {
-                            long id = ledgerQ.take();
-                            LOG.info("Deleting {}", id);
-                            ledgerCache.deleteLedger(id);
-                        }
-                    } catch (Exception e) {
-                        rc.set(-1);
-                        LOG.error("Exception in delete thread", e);
-                    }
+        Thread deleteThread = new Thread(() -> {
+            try {
+                while (true) {
+                    long id = ledgerQ.take();
+                    LOG.info("Deleting {}", id);
+                    ledgerCache.deleteLedger(id);
                 }
-            };
+            } catch (Exception e) {
+                rc.set(-1);
+                LOG.error("Exception in delete thread", e);
+            }
+        });
         deleteThread.start();
 
         newLedgerThread.join();

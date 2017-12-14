@@ -43,7 +43,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -54,7 +53,6 @@ import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
@@ -537,12 +535,9 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
             CountDownLatch latch = new CountDownLatch(1);
             long ledgerId = (Math.abs(rand.nextLong())) % 100000000;
             ledgerManager.createLedgerMetadata(ledgerId, metadata,
-                    new BookkeeperInternalCallbacks.GenericCallback<Void>() {
-                        @Override
-                        public void operationComplete(int rc, Void result) {
-                            ledgerCreateRC.setValue(rc);
-                            latch.countDown();
-                        }
+                    (rc, result) -> {
+                        ledgerCreateRC.setValue(rc);
+                        latch.countDown();
                     });
             Assert.assertTrue("Ledger creation should complete within 2 secs",
                     latch.await(2000, TimeUnit.MILLISECONDS));
@@ -862,12 +857,10 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
             ByteBuffer entry = ByteBuffer.allocate(4);
             entry.putInt(rng.nextInt(Integer.MAX_VALUE));
             entry.position(0);
-            lh.asyncAddEntry(entry.array(), new AddCallback() {
-                    public void addComplete(int rc2, LedgerHandle lh, long entryId, Object ctx) {
-                        rc.compareAndSet(BKException.Code.OK, rc2);
-                        completeLatch.countDown();
-                    }
-                }, null);
+            lh.asyncAddEntry(entry.array(), (rc2, lh1, entryId, ctx) -> {
+                rc.compareAndSet(BKException.Code.OK, rc2);
+                completeLatch.countDown();
+            }, null);
         }
         completeLatch.await();
         if (rc.get() != BKException.Code.OK) {

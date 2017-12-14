@@ -53,7 +53,6 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.junit.After;
 import org.junit.Before;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -199,14 +198,10 @@ public abstract class MockBookKeeperTestCase {
 
     private void setupBookieWatcherForNewEnsemble() throws BKException.BKNotEnoughBookiesException {
         when(bookieWatcher.newEnsemble(anyInt(), anyInt(), anyInt(), any()))
-            .thenAnswer((Answer<ArrayList<BookieSocketAddress>>) new Answer<ArrayList<BookieSocketAddress>>() {
-                @Override
-                @SuppressWarnings("unchecked")
-                public ArrayList<BookieSocketAddress> answer(InvocationOnMock invocation) throws Throwable {
-                    Object[] args = invocation.getArguments();
-                    int ensembleSize = (Integer) args[0];
-                    return generateNewEnsemble(ensembleSize);
-                }
+            .thenAnswer((Answer<ArrayList<BookieSocketAddress>>) invocation -> {
+                Object[] args = invocation.getArguments();
+                int ensembleSize = (Integer) args[0];
+                return generateNewEnsemble(ensembleSize);
             });
     }
 
@@ -273,13 +268,9 @@ public abstract class MockBookKeeperTestCase {
     }
 
     private void setupRegisterLedgerMetadataListener() {
-        doAnswer((Answer<Void>) new Answer<Void>() {
-            @Override
-            @SuppressWarnings("unchecked")
-            public Void answer(InvocationOnMock invocation) throws Throwable {
-                return null;
-            }
-        }).when(ledgerManager).registerLedgerMetadataListener(anyLong(), any());
+        doAnswer((Answer<Void>) invocation -> null)
+                .when(ledgerManager)
+                .registerLedgerMetadataListener(anyLong(), any());
     }
 
     @SuppressWarnings("unchecked")

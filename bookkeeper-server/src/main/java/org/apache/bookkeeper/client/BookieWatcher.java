@@ -20,7 +20,6 @@ package org.apache.bookkeeper.client;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
-import com.google.common.cache.RemovalNotification;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -82,14 +81,8 @@ class BookieWatcher {
         this.registrationClient = registrationClient;
         this.quarantinedBookies = CacheBuilder.newBuilder()
                 .expireAfterWrite(conf.getBookieQuarantineTimeSeconds(), TimeUnit.SECONDS)
-                .removalListener(new RemovalListener<BookieSocketAddress, Boolean>() {
-
-                    @Override
-                    public void onRemoval(RemovalNotification<BookieSocketAddress, Boolean> bookie) {
-                        log.info("Bookie {} is no longer quarantined", bookie.getKey());
-                    }
-
-                }).build();
+                .removalListener((RemovalListener<BookieSocketAddress, Boolean>) bookie ->
+                        log.info("Bookie {} is no longer quarantined", bookie.getKey())).build();
     }
 
     public Set<BookieSocketAddress> getBookies() throws BKException {
