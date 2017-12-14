@@ -85,7 +85,7 @@ using Google Doc.
 
 This section lists all the _bookkeeper proposals_ made to BookKeeper.
 
-*Next Proposal Number: 23*
+*Next Proposal Number: 24*
 
 ### Inprogress
 
@@ -97,6 +97,7 @@ Proposal | State
 [BP-14 Relax durability](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-14+Relax+durability) | Accepted
 [BP-16: Thin Client - Remove direct metadata storage access from clients](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-16%3A+Thin+Client+-+Remove+direct+metadata+storage+access+from+clients) | Draft
 [BP-18: LedgerType, Flags and StorageHints](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-18%3A+LedgerType%2C+Flags+and+StorageHints) | Accepted
+[BP-23: Ledger Rebalancer](../../bps/BP-23-ledger-rebalancer) | Draft
 
 
 ### Adopted
