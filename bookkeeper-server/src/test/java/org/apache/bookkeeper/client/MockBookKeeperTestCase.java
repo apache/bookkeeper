@@ -36,6 +36,7 @@ import io.netty.buffer.Unpooled;
 
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -528,7 +529,7 @@ public abstract class MockBookKeeperTestCase {
                 anyLong(), any(byte[].class),
                 anyLong(), any(ByteBufList.class),
                 any(BookkeeperInternalCallbacks.WriteCallback.class),
-                any(), anyInt(), anyBoolean());
+                any(), anyInt(), anyBoolean(), any(EnumSet.class));
     }
 
 }

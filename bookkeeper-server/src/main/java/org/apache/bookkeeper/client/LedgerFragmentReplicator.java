@@ -24,6 +24,7 @@ import static org.apache.bookkeeper.client.LedgerHandle.INVALID_ENTRY_ID;
 import io.netty.buffer.Unpooled;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -35,6 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
+import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -322,7 +324,8 @@ public class LedgerFragmentReplicator {
                 for (BookieSocketAddress newBookie : newBookies) {
                     bkc.getBookieClient().addEntry(newBookie, lh.getId(),
                             lh.getLedgerKey(), entryId, ByteBufList.clone(toSend),
-                            multiWriteCallback, dataLength, BookieProtocol.FLAG_RECOVERY_ADD);
+                            multiWriteCallback, dataLength, BookieProtocol.FLAG_RECOVERY_ADD,
+                            false, EnumSet.noneOf(WriteFlag.class));
                 }
                 toSend.release();
             }
