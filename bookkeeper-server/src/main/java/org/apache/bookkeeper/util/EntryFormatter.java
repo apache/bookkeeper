@@ -59,11 +59,10 @@ public abstract class EntryFormatter {
 
     public static EntryFormatter newEntryFormatter(Configuration conf, String clsProperty) {
         String cls = conf.getString(clsProperty, StringEntryFormatter.class.getName());
-        ClassLoader classLoader = EntryFormatter.class.getClassLoader();
         EntryFormatter formatter;
         try {
-            Class aCls = classLoader.loadClass(cls);
-            formatter = (EntryFormatter) aCls.newInstance();
+            Class<? extends EntryFormatter> aCls = ReflectionUtils.forName(cls, EntryFormatter.class);
+            formatter = ReflectionUtils.newInstance(aCls);
             formatter.setConf(conf);
         } catch (Exception e) {
             LOG.warn("No formatter class found : " + cls, e);

@@ -19,6 +19,7 @@ package org.apache.bookkeeper.tls;
 
 import com.google.common.base.Strings;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.handler.ssl.ClientAuth;
 import io.netty.handler.ssl.OpenSsl;
@@ -58,16 +59,17 @@ public class TLSContextFactory implements SecurityHandlerFactory {
 
     private String getPasswordFromFile(String path) throws IOException {
         byte[] pwd;
-        try (FileInputStream pwdin = new FileInputStream(path)) {
-            File passwdFile = new File(path);
-            if (passwdFile.length() == 0) {
-                return "";
-            }
-            pwd = FileUtils.readFileToByteArray(passwdFile);
+        File passwdFile = new File(path);
+        if (passwdFile.length() == 0) {
+            return "";
         }
+        pwd = FileUtils.readFileToByteArray(passwdFile);
         return new String(pwd, "UTF-8");
     }
 
+    @SuppressFBWarnings(
+        value = "OBL_UNSATISFIED_OBLIGATION",
+        justification = "work around for java 9: https://github.com/spotbugs/spotbugs/issues/493")
     private KeyStore loadKeyStore(String keyStoreType, String keyStoreLocation, String keyStorePassword)
             throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException {
         KeyStore ks = KeyStore.getInstance(keyStoreType);

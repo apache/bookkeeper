@@ -110,7 +110,7 @@ public class TestMetaStore {
             name = getFieldFromValue(value, FIELD_NAME);
             String c = getFieldFromValue(value, FIELD_COUNTER);
             if (c != null) {
-                counter = new Integer(c);
+                counter = Integer.parseInt(c);
             }
         }
 
