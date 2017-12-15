@@ -330,14 +330,12 @@ public class Cookie {
     public static Versioned<Cookie> readFromRegistrationManager(RegistrationManager rm,
                                                          BookieSocketAddress address) throws BookieException {
         Versioned<byte[]> cookieData = rm.readCookie(address.toString());
-        BufferedReader reader = new BufferedReader(new StringReader(new String(cookieData.getValue(), UTF_8)));
         try {
-            try {
+            try (BufferedReader reader = new BufferedReader(
+                    new StringReader(new String(cookieData.getValue(), UTF_8)))) {
                 Builder builder = parse(reader);
                 Cookie cookie = builder.build();
                 return new Versioned<Cookie>(cookie, cookieData.getVersion());
-            } finally {
-                reader.close();
             }
         } catch (IOException ioe) {
             throw new InvalidCookieException(ioe);
@@ -353,12 +351,9 @@ public class Cookie {
      */
     public static Cookie readFromDirectory(File directory) throws IOException {
         File versionFile = new File(directory, BookKeeperConstants.VERSION_FILENAME);
-        BufferedReader reader = new BufferedReader(
-                new InputStreamReader(new FileInputStream(versionFile), UTF_8));
-        try {
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(new FileInputStream(versionFile), UTF_8))) {
             return parse(reader).build();
-        } finally {
-            reader.close();
         }
     }
 

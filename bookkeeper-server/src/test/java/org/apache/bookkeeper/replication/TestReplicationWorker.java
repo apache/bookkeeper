@@ -510,12 +510,11 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
      */
     @Test
     public void testRWZKConnectionLost() throws Exception {
-        ZooKeeper zk = ZooKeeperClient.newBuilder()
+        try (ZooKeeper zk = ZooKeeperClient.newBuilder()
                 .connectString(zkUtil.getZooKeeperConnectString())
                 .sessionTimeoutMs(10000)
-                .build();
+                .build()) {
 
-        try {
             ReplicationWorker rw = new ReplicationWorker(zk, baseConf);
             rw.start();
             for (int i = 0; i < 10; i++) {
@@ -538,8 +537,6 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
             startZKCluster();
 
             assertTrue("Replication worker should still be running", rw.isRunning());
-        } finally {
-            zk.close();
         }
     }
 

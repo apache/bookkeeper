@@ -107,13 +107,10 @@ public class KeyValueStorageTest {
 
         // Iterate
         List<Long> foundKeys = Lists.newArrayList();
-        CloseableIterator<Entry<byte[], byte[]>> iter = db.iterator();
-        try {
+        try (CloseableIterator<Entry<byte[], byte[]>> iter = db.iterator()) {
             while (iter.hasNext()) {
                 foundKeys.add(fromArray(iter.next().getKey()));
             }
-        } finally {
-            iter.close();
         }
 
         assertEquals(Lists.newArrayList(3L, 5L), foundKeys);
