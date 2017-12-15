@@ -192,17 +192,15 @@ public class BenchReadThroughputLatency {
         final ClientConfiguration conf = new ClientConfiguration();
         conf.setReadTimeout(sockTimeout).setZkServers(servers);
 
-
-        final ZooKeeper zk = new ZooKeeper(servers, 3000, new Watcher() {
+        try (ZooKeeper zk = new ZooKeeper(servers, 3000, new Watcher() {
                 public void process(WatchedEvent event) {
                     if (event.getState() == Event.KeeperState.SyncConnected
                             && event.getType() == Event.EventType.None) {
                         connectedLatch.countDown();
                     }
                 }
-            });
-        final Set<String> processedLedgers = new HashSet<String>();
-        try {
+        })) {
+            final Set<String> processedLedgers = new HashSet<String>();
             zk.register(new Watcher() {
                     public void process(WatchedEvent event) {
                         try {
@@ -269,8 +267,6 @@ public class BenchReadThroughputLatency {
             }
             shutdownLatch.await();
             LOG.info("Shutting down");
-        } finally {
-            zk.close();
         }
     }
 }

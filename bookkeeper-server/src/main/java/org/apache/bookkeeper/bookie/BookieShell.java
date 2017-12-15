@@ -458,8 +458,7 @@ public class BookieShell implements Tool {
         private void deleteCookies(ClientConfiguration conf,
                                    Set<BookieSocketAddress> bookieAddrs) throws BKException {
             ServerConfiguration serverConf = new ServerConfiguration(conf);
-            RegistrationManager rm = new ZKRegistrationManager();
-            try {
+            try (RegistrationManager rm = new ZKRegistrationManager()) {
                 rm.initialize(serverConf, () -> {}, NullStatsLogger.INSTANCE);
                 for (BookieSocketAddress addr : bookieAddrs) {
                     deleteCookie(rm, addr);
@@ -468,8 +467,6 @@ public class BookieShell implements Tool {
                 BKException bke = new BKException.MetaStoreException();
                 bke.initCause(be);
                 throw bke;
-            } finally {
-                rm.close();
             }
         }
 
@@ -1748,8 +1745,7 @@ public class BookieShell implements Tool {
         @Override
         int runCmd(CommandLine cmdLine) {
             ServerConfiguration conf = new ServerConfiguration(bkConf);
-            RegistrationManager rm = new ZKRegistrationManager();
-            try {
+            try (RegistrationManager rm = new ZKRegistrationManager()) {
                 try {
                     rm.initialize(bkConf, () -> {}, NullStatsLogger.INSTANCE);
                 } catch (BookieException e) {
@@ -1773,8 +1769,6 @@ public class BookieShell implements Tool {
                     return -1;
                 }
                 return 0;
-            } finally {
-                rm.close();
             }
         }
     }

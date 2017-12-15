@@ -205,12 +205,11 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
         // simulating bookie restart, on restart bookie will create new
         // zkclient and doing the registration.
-        ZooKeeperClient newZk = createNewZKClient();
         RegistrationManager newRm = new ZKRegistrationManager();
         newRm.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
         b.registrationManager = newRm;
 
-        try {
+        try (ZooKeeperClient newZk = createNewZKClient()) {
             // deleting the znode, so that the bookie registration should
             // continue successfully on NodeDeleted event
             new Thread(() -> {
@@ -241,8 +240,6 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             assertTrue("Bookie is referring to old registration znode:"
                 + bkRegNode1 + ", New ZNode:" + bkRegNode2, bkRegNode1
                 .getEphemeralOwner() != bkRegNode2.getEphemeralOwner());
-        } finally {
-            newZk.close();
         }
     }
 

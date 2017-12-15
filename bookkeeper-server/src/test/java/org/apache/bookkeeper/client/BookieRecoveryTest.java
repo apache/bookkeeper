@@ -251,11 +251,8 @@ public class BookieRecoveryTest extends BookKeeperClusterTestCase {
         ClientConfiguration newConf = new ClientConfiguration(baseClientConf);
         newConf.setZkServers(zkUtil.getZooKeeperConnectString());
         newConf.setDelayEnsembleChange(true);
-        BookKeeper newBkc = new BookKeeper(newConf);
-        try {
+        try (BookKeeper newBkc = new BookKeeper(newConf)) {
             metadataConflictWithRecovery(newBkc);
-        } finally {
-            newBkc.close();
         }
     }
 
