@@ -22,16 +22,14 @@ import com.google.common.base.Stopwatch;
 import io.netty.channel.Channel;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
-import io.netty.util.TimerTask;
 import java.io.IOException;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification;
+import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadResponse;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
@@ -41,7 +39,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Processor handling long poll read entry request.
  */
-class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Observer {
+class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Watcher<LastAddConfirmedUpdateNotification> {
 
     private final static Logger logger = LoggerFactory.getLogger(LongPollReadEntryProcessorV3.class);
 
@@ -141,9 +139,9 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Obser
 
             final Stopwatch startTimeSw = Stopwatch.createStarted();
 
-            final Observable observable;
+            final boolean watched;
             try {
-                observable = requestProcessor.bookie.waitForLastAddConfirmedUpdate(ledgerId, previousLAC, this);
+                watched = requestProcessor.bookie.waitForLastAddConfirmedUpdate(ledgerId, previousLAC, this);
             } catch (Bookie.NoLedgerException e) {
                 logger.info("No ledger found while longpoll reading ledger {}, previous lac = {}.",
                         ledgerId, previousLAC);
@@ -157,19 +155,16 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Obser
             registerSuccessfulEvent(requestProcessor.longPollPreWaitStats, startTimeSw);
             lastPhaseStartTime.reset().start();
 
-            if (null != observable) {
-                // successfully registered observable to lac updates
+            if (watched) {
+                // successfully registered watcher to lac updates
                 if (logger.isTraceEnabled()) {
                     logger.trace("Waiting For LAC Update {}: Timeout {}", previousLAC, readRequest.getTimeOut());
                 }
                 synchronized (this) {
-                    expirationTimerTask = requestTimer.newTimeout(new TimerTask() {
-                        @Override
-                        public void run(Timeout timeout) throws Exception {
-                            // When the timeout expires just get whatever is the current
-                            // readLastConfirmed
-                            LongPollReadEntryProcessorV3.this.scheduleDeferredRead(observable, true);
-                        }
+                    expirationTimerTask = requestTimer.newTimeout(timeout -> {
+                        // When the timeout expires just get whatever is the current
+                        // readLastConfirmed
+                        LongPollReadEntryProcessorV3.this.scheduleDeferredRead(true);
                     }, readRequest.getTimeOut(), TimeUnit.MILLISECONDS);
                 }
                 return null;
@@ -188,27 +183,25 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Obser
     }
 
     @Override
-    public void update(Observable observable, Object o) {
-        LastAddConfirmedUpdateNotification newLACNotification = (LastAddConfirmedUpdateNotification)o;
-        if (newLACNotification.lastAddConfirmed > previousLAC) {
-            if (newLACNotification.lastAddConfirmed != Long.MAX_VALUE &&
-                    !lastAddConfirmedUpdateTime.isPresent()) {
-                lastAddConfirmedUpdateTime = Optional.of(newLACNotification.timestamp);
+    public void update(LastAddConfirmedUpdateNotification newLACNotification) {
+        if (newLACNotification.getLastAddConfirmed() > previousLAC) {
+            if (newLACNotification.getLastAddConfirmed() != Long.MAX_VALUE && !lastAddConfirmedUpdateTime.isPresent()) {
+                lastAddConfirmedUpdateTime = Optional.of(newLACNotification.getTimestamp());
             }
             if (logger.isTraceEnabled()) {
                 logger.trace("Last Add Confirmed Advanced to {} for request {}",
-                        newLACNotification.lastAddConfirmed, request);
+                        newLACNotification.getLastAddConfirmed(), request);
             }
-            scheduleDeferredRead(observable, false);
+            scheduleDeferredRead(false);
         }
+        newLACNotification.recycle();
     }
 
-    private synchronized void scheduleDeferredRead(Observable observable, boolean timeout) {
+    private synchronized void scheduleDeferredRead(boolean timeout) {
         if (null == deferredTask) {
             if (logger.isTraceEnabled()) {
                 logger.trace("Deferred Task, expired: {}, request: {}", timeout, request);
             }
-            observable.deleteObserver(this);
             try {
                 shouldReadEntry = true;
                 deferredTask = longPollThreadPool.submit(this);
