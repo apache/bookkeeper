@@ -46,22 +46,25 @@ public class DbLedgerStorageWriteCacheTest {
     private static class MockedDbLedgerStorage extends DbLedgerStorage {
 
         @Override
-        public synchronized void flush() throws IOException {
-            // Swap the write caches and block indefinitely to simulate a slow disk
-            WriteCache tmp = writeCacheBeingFlushed;
-            writeCacheBeingFlushed = writeCache;
-            writeCache = tmp;
+        public void flush() throws IOException {
+            flushMutex.lock();
+            try {
+                // Swap the write caches and block indefinitely to simulate a slow disk
+                WriteCache tmp = writeCacheBeingFlushed;
+                writeCacheBeingFlushed = writeCache;
+                writeCache = tmp;
 
-            // since the cache is switched, we can allow flush to be triggered
-            hasFlushBeenTriggered.set(false);
+                // since the cache is switched, we can allow flush to be triggered
+                hasFlushBeenTriggered.set(false);
 
-            // Block the flushing thread
-            while (true) {
+                // Block the flushing thread
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     return;
                 }
+            } finally {
+                flushMutex.unlock();
             }
         }
 
@@ -89,6 +92,7 @@ public class DbLedgerStorageWriteCacheTest {
 
     @After
     public void teardown() throws Exception {
+        storage.shutdown();
         tmpDir.delete();
     }
 

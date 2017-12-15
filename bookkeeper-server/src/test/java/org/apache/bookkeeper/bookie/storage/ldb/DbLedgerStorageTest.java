@@ -44,13 +44,10 @@ import org.apache.bookkeeper.proto.BookieProtocol;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
 /**
  * Unit test for {@link DbLedgerStorage}.
  */
-@RunWith(Parameterized.class)
 public class DbLedgerStorageTest {
 
     private DbLedgerStorage storage;
@@ -77,6 +74,7 @@ public class DbLedgerStorageTest {
 
     @After
     public void teardown() throws Exception {
+        storage.shutdown();
         tmpDir.delete();
     }
 
@@ -198,8 +196,6 @@ public class DbLedgerStorageTest {
         } catch (NoEntryException e) {
             // ok
         }
-
-        storage.shutdown();
     }
 
     @Test
@@ -228,8 +224,6 @@ public class DbLedgerStorageTest {
         System.out.println("res:       " + ByteBufUtil.hexDump(res));
         System.out.println("newEntry3: " + ByteBufUtil.hexDump(newEntry3));
         assertEquals(newEntry3, res);
-
-        storage.shutdown();
     }
 
     @Test

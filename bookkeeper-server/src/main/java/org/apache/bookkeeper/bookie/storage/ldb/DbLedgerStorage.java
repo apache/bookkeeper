@@ -91,7 +91,7 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
     private final ReentrantReadWriteLock writeCacheMutex = new ReentrantReadWriteLock();
     private final Condition flushWriteCacheCondition = writeCacheMutex.writeLock().newCondition();
 
-    private final ReentrantLock flushMutex = new ReentrantLock();
+    protected final ReentrantLock flushMutex = new ReentrantLock();
 
     protected final AtomicBoolean hasFlushBeenTriggered = new AtomicBoolean(false);
     private final AtomicBoolean isFlushOngoing = new AtomicBoolean(false);
@@ -595,6 +595,8 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
             ledgerIndex.flush();
 
             cleanupExecutor.execute(() -> {
+                // There can only be one single cleanup task running because the cleanupExecutor
+                // is single-threaded
                 try {
                     if (log.isDebugEnabled()) {
                         log.debug("Removing deleted ledgers from db indexes");
