@@ -85,7 +85,7 @@ public class ProtocolBenchmark {
 
     @Benchmark
     public void testAddEntryV2() throws Exception {
-        BookieProtocol.AddRequest req = new BookieProtocol.AddRequest(
+        BookieProtocol.AddRequest req = BookieProtocol.AddRequest.create(
                 BookieProtocol.CURRENT_PROTOCOL_VERSION,
                 ledgerId,
                 entryId,
