@@ -106,15 +106,16 @@
     <hamcrest.version>1.3</hamcrest.version>
     <jmh.version>1.19</jmh.version>
     <junit.version>4.12</junit.version>
-    <lombok.version>1.16.12</lombok.version>
+    <lombok.version>1.16.18</lombok.version>
     <mockito-core.version>2.8.9</mockito-core.version>
-    <powermock.version>1.7.3</powermock.version>
-    <protobuf.version>3.4.0</protobuf.version>
     <netty.version>4.1.12.Final</netty.version>
     <netty-boringssl.version>2.0.3.Final</netty-boringssl.version>
-    <slf4j.version>1.7.25</slf4j.version>
-    <zookeeper.version>3.5.3-beta</zookeeper.version>
+    <powermock.version>1.7.3</powermock.version>
+    <protobuf.version>3.4.0</protobuf.version>
     <rocksdb.version>5.8.6</rocksdb.version>
+    <slf4j.version>1.7.25</slf4j.version>
+    <spotbugs-annotations.version>3.1.1</spotbugs-annotations.version>
+    <zookeeper.version>3.5.3-beta</zookeeper.version>
     <!-- plugin dependencies -->
     <spotbugs-maven-plugin.version>3.1.0-RC6</spotbugs-maven-plugin.version>
     <puppycrawl.checkstyle.version>6.19</puppycrawl.checkstyle.version>
@@ -141,6 +142,12 @@
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
       <version>${lombok.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.github.spotbugs</groupId>
+      <artifactId>spotbugs-annotations</artifactId>
+      <version>${spotbugs-annotations.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
