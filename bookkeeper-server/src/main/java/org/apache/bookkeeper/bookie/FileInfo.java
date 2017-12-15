@@ -22,6 +22,7 @@
 package org.apache.bookkeeper.bookie;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification.WATCHER_RECYCLER;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
@@ -32,9 +33,9 @@ import java.io.RandomAccessFile;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.bookkeeper.common.util.Watchable;
+import org.apache.bookkeeper.common.util.Watcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +59,7 @@ import org.slf4j.LoggerFactory;
  * in entry loggers.
  * </p>
  */
-class FileInfo extends Observable {
+class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
     private static final Logger LOG = LoggerFactory.getLogger(FileInfo.class);
 
     static final int NO_MASTER_KEY = -1;
@@ -93,8 +94,9 @@ class FileInfo extends Observable {
     protected String mode;
 
     public FileInfo(File lf, byte[] masterKey) throws IOException {
-        this.lf = lf;
+        super(WATCHER_RECYCLER);
 
+        this.lf = lf;
         this.masterKey = masterKey;
         mode = "rw";
     }
@@ -105,10 +107,11 @@ class FileInfo extends Observable {
 
     long setLastAddConfirmed(long lac) {
         long lacToReturn;
+        boolean changed = false;
         synchronized (this) {
             if (null == this.lac || this.lac < lac) {
                 this.lac = lac;
-                setChanged();
+                changed = true;
             }
             lacToReturn = this.lac;
         }
@@ -116,22 +119,24 @@ class FileInfo extends Observable {
             LOG.trace("Updating LAC {} , {}", lacToReturn, lac);
         }
 
-
-        notifyObservers(new LastAddConfirmedUpdateNotification(lacToReturn));
+        if (changed) {
+            notifyWatchers(LastAddConfirmedUpdateNotification.FUNC, lacToReturn);
+        }
         return lacToReturn;
     }
 
-    synchronized Observable waitForLastAddConfirmedUpdate(long previousLAC, Observer observe) {
+    synchronized boolean waitForLastAddConfirmedUpdate(long previousLAC,
+                                                       Watcher<LastAddConfirmedUpdateNotification> watcher) {
         if ((null != lac && lac > previousLAC)
                 || isClosed || ((stateBits & STATE_FENCED_BIT) == STATE_FENCED_BIT)) {
             if (LOG.isTraceEnabled()) {
                 LOG.trace("Wait For LAC {} , {}", this.lac, previousLAC);
             }
-            return null;
+            return false;
         }
 
-        addObserver(observe);
-        return this;
+        addWatcher(watcher);
+        return true;
     }
 
     public synchronized File getLf() {
@@ -283,6 +288,7 @@ class FileInfo extends Observable {
      */
     public boolean setFenced() throws IOException {
         boolean returnVal = false;
+        boolean changed = false;
         synchronized (this) {
             checkOpen(false);
             if (LOG.isDebugEnabled()) {
@@ -293,12 +299,14 @@ class FileInfo extends Observable {
                 stateBits |= STATE_FENCED_BIT;
                 needFlushHeader = true;
                 synchronized (this) {
-                    setChanged();
+                    changed = true;
                 }
                 returnVal = true;
             }
         }
-        notifyObservers(new LastAddConfirmedUpdateNotification(Long.MAX_VALUE));
+        if (changed) {
+            notifyWatchers(LastAddConfirmedUpdateNotification.FUNC, Long.MAX_VALUE);
+        }
         return returnVal;
     }
 
@@ -379,20 +387,36 @@ class FileInfo extends Observable {
      *          if set to false, the index is not forced to create.
      */
     public void close(boolean force) throws IOException {
-        synchronized (this) {
-            isClosed = true;
-            checkOpen(force, true);
-            // Any time when we force close a file, we should try to flush header. otherwise, we might lose fence bit.
-            if (force) {
-                flushHeader();
+        boolean closing = false;
+        try {
+            boolean changed = false;
+            synchronized (this) {
+                if (isClosed) {
+                    return;
+                }
+                isClosed = true;
+                closing = true;
+                checkOpen(force, true);
+                // Any time when we force close a file, we should try to flush header.
+                // otherwise, we might lose fence bit.
+                if (force) {
+                    flushHeader();
+                }
+                changed = true;
+                if (useCount.get() == 0 && fc != null) {
+                    fc.close();
+                    fc = null;
+                }
             }
-            setChanged();
-            if (useCount.get() == 0 && fc != null) {
-                fc.close();
-                fc = null;
+            if (changed) {
+                notifyWatchers(LastAddConfirmedUpdateNotification.FUNC, Long.MAX_VALUE);
+            }
+        } finally {
+            if (closing) {
+                // recycle this watchable after the FileInfo is closed.
+                recycle();
             }
         }
-        notifyObservers(new LastAddConfirmedUpdateNotification(Long.MAX_VALUE));
     }
 
     public synchronized long write(ByteBuffer[] buffs, long position) throws IOException {
