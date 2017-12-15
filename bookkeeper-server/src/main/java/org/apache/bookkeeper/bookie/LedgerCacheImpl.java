@@ -23,8 +23,7 @@ package org.apache.bookkeeper.bookie;
 
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
-import java.util.Observable;
-import java.util.Observer;
+import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -85,11 +84,12 @@ public class LedgerCacheImpl implements LedgerCache {
     }
 
     @Override
-    public Observable waitForLastAddConfirmedUpdate(long ledgerId, long previoisLAC, Observer observer)
+    public boolean waitForLastAddConfirmedUpdate(long ledgerId,
+                                                 long previousLAC,
+                                                 Watcher<LastAddConfirmedUpdateNotification> watcher)
             throws IOException {
-        return indexPersistenceManager.waitForLastAddConfirmedUpdate(ledgerId, previoisLAC, observer);
+        return indexPersistenceManager.waitForLastAddConfirmedUpdate(ledgerId, previousLAC, watcher);
     }
-
 
     @Override
     public void putEntryOffset(long ledger, long entry, long offset) throws IOException {

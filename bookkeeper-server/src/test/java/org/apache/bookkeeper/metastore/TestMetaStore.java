@@ -32,7 +32,7 @@ import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -314,7 +314,7 @@ public class TestMetaStore {
 
         // get partial field
         Set<String> fields =
-            new HashSet<String>(Arrays.asList(new String[] { FIELD_COUNTER }));
+            new HashSet<String>(Collections.singletonList(FIELD_COUNTER));
         try {
             myTable.get(RECORDID, fields);
             fail("Should fail to get a non-existent key with specified fields");
@@ -337,7 +337,7 @@ public class TestMetaStore {
         Versioned<Value> vv;
 
         final Set<String> fields =
-            new HashSet<String>(Arrays.asList(new String[] { FIELD_NAME }));
+            new HashSet<String>(Collections.singletonList(FIELD_NAME));
 
         final String name = "get";
         final Integer counter = getRandom();
@@ -526,10 +526,8 @@ public class TestMetaStore {
                              Order order, Set<String> fields,
                              Iterator<Map.Entry<String, Value>> expectedValues,
                              int numEntriesPerScan) throws Exception {
-        MetastoreCursor cursor = myTable.openCursor(firstKey, firstInclusive,
-                                                    lastKey, lastInclusive,
-                                                    order, fields);
-        try {
+        try (MetastoreCursor cursor =
+                     myTable.openCursor(firstKey, firstInclusive, lastKey, lastInclusive, order, fields)) {
             while (cursor.hasMoreEntries()) {
                 Iterator<MetastoreTableItem> iter = cursor.readEntries(numEntriesPerScan);
                 while (iter.hasNext()) {
@@ -541,8 +539,6 @@ public class TestMetaStore {
                 }
             }
             assertFalse(expectedValues.hasNext());
-        } finally {
-            cursor.close();
         }
     }
 

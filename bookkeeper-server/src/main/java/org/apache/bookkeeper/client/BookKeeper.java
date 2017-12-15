@@ -32,6 +32,7 @@ import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.DefaultThreadFactory;
 
 import java.io.IOException;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -55,6 +56,7 @@ import org.apache.bookkeeper.client.api.BookKeeperBuilder;
 import org.apache.bookkeeper.client.api.CreateBuilder;
 import org.apache.bookkeeper.client.api.DeleteBuilder;
 import org.apache.bookkeeper.client.api.OpenBuilder;
+import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient;
@@ -146,6 +148,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     final int explicitLacInterval;
     final boolean delayEnsembleChange;
     final boolean reorderReadSequence;
+    final long addEntryQuorumTimeoutNanos;
 
     final Optional<SpeculativeRequestExecutionPolicy> readSpeculativeRequestPolicy;
     final Optional<SpeculativeRequestExecutionPolicy> readLACSpeculativeRequestPolicy;
@@ -487,9 +490,9 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             this.readLACSpeculativeRequestPolicy = Optional.<SpeculativeRequestExecutionPolicy>absent();
         }
 
-
         // initialize bookie client
-        this.bookieClient = new BookieClient(conf, this.eventLoopGroup, this.mainWorkerPool, statsLogger);
+        this.bookieClient = new BookieClient(conf, this.eventLoopGroup, this.mainWorkerPool,
+                                             scheduler, statsLogger);
         this.bookieWatcher = new BookieWatcher(conf, this.placementPolicy, regClient);
         if (conf.getDiskWeightBasedPlacementEnabled()) {
             LOG.info("Weighted ledger placement enabled");
@@ -520,6 +523,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             LOG.debug("Explicit LAC Interval : {}", this.explicitLacInterval);
         }
 
+        this.addEntryQuorumTimeoutNanos = TimeUnit.SECONDS.toNanos(conf.getAddEntryQuorumTimeout());
         scheduleBookieHealthCheckIfEnabled();
     }
 
@@ -758,7 +762,8 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata)
+                               ackQuorumSize, digestType, passwd, cb, ctx,
+                               customMetadata, EnumSet.noneOf(WriteFlag.class))
                 .initiate();
         } finally {
             closeLock.readLock().unlock();
@@ -961,7 +966,9 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata).initiateAdv((long) (-1));
+                               ackQuorumSize, digestType, passwd, cb, ctx,
+                               customMetadata, EnumSet.noneOf(WriteFlag.class))
+                                       .initiateAdv(-1L);
         } finally {
             closeLock.readLock().unlock();
         }
@@ -1070,7 +1077,9 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 return;
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
-                               ackQuorumSize, digestType, passwd, cb, ctx, customMetadata).initiateAdv(ledgerId);
+                               ackQuorumSize, digestType, passwd, cb, ctx,
+                               customMetadata, EnumSet.noneOf(WriteFlag.class))
+                    .initiateAdv(ledgerId);
         } finally {
             closeLock.readLock().unlock();
         }

@@ -22,6 +22,7 @@ import static com.google.common.base.Charsets.UTF_8;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.AbstractFuture;
 
 import io.netty.buffer.ByteBuf;
@@ -33,6 +34,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.math.RoundingMode;
 import java.nio.ByteBuffer;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -59,8 +61,12 @@ import java.util.function.Predicate;
 
 import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
+import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.EntryLogger.EntryLogScanner;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
+import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
+import org.apache.bookkeeper.bookie.storage.ldb.EntryLocationIndex;
+import org.apache.bookkeeper.bookie.storage.ldb.LocationsIndexRebuildOp;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -142,6 +148,9 @@ public class BookieShell implements Tool {
     static final String CMD_DECOMMISSIONBOOKIE = "decommissionbookie";
     static final String CMD_LOSTBOOKIERECOVERYDELAY = "lostbookierecoverydelay";
     static final String CMD_TRIGGERAUDIT = "triggeraudit";
+    static final String CMD_CONVERT_TO_DB_STORAGE = "convert-to-db-storage";
+    static final String CMD_CONVERT_TO_INTERLEAVED_STORAGE = "convert-to-interleaved-storage";
+    static final String CMD_REBUILD_DB_LEDGER_LOCATIONS_INDEX = "rebuild-db-ledger-locations-index";
     static final String CMD_HELP = "help";
 
     final ServerConfiguration bkConf = new ServerConfiguration();
@@ -458,8 +467,7 @@ public class BookieShell implements Tool {
         private void deleteCookies(ClientConfiguration conf,
                                    Set<BookieSocketAddress> bookieAddrs) throws BKException {
             ServerConfiguration serverConf = new ServerConfiguration(conf);
-            RegistrationManager rm = new ZKRegistrationManager();
-            try {
+            try (RegistrationManager rm = new ZKRegistrationManager()) {
                 rm.initialize(serverConf, () -> {}, NullStatsLogger.INSTANCE);
                 for (BookieSocketAddress addr : bookieAddrs) {
                     deleteCookie(rm, addr);
@@ -468,8 +476,6 @@ public class BookieShell implements Tool {
                 BKException bke = new BKException.MetaStoreException();
                 bke.initCause(be);
                 throw bke;
-            } finally {
-                rm.close();
             }
         }
 
@@ -1240,9 +1246,9 @@ public class BookieShell implements Tool {
                 printUsage();
                 return 1;
             }
-            ClientConfiguration clientconf = new ClientConfiguration(bkConf)
-                .setZkServers(bkConf.getZkServers());
-            BookKeeperAdmin bka = new BookKeeperAdmin(clientconf);
+            ClientConfiguration clientConf = new ClientConfiguration(bkConf);
+            clientConf.setZkServers(bkConf.getZkServers());
+            BookKeeperAdmin bka = new BookKeeperAdmin(clientConf);
 
             int count = 0;
             Collection<BookieSocketAddress> bookies = new ArrayList<BookieSocketAddress>();
@@ -1569,10 +1575,9 @@ public class BookieShell implements Tool {
                     return -1;
                 }
                 LOG.info("Auditor: {}/{}:{}",
-                         new Object[] {
-                             bookieId.getSocketAddress().getAddress().getCanonicalHostName(),
-                             bookieId.getSocketAddress().getAddress().getHostAddress(),
-                             bookieId.getSocketAddress().getPort() });
+                        bookieId.getSocketAddress().getAddress().getCanonicalHostName(),
+                        bookieId.getSocketAddress().getAddress().getHostAddress(),
+                        bookieId.getSocketAddress().getPort());
             } finally {
                 if (zk != null) {
                     zk.close();
@@ -1749,8 +1754,7 @@ public class BookieShell implements Tool {
         @Override
         int runCmd(CommandLine cmdLine) {
             ServerConfiguration conf = new ServerConfiguration(bkConf);
-            RegistrationManager rm = new ZKRegistrationManager();
-            try {
+            try (RegistrationManager rm = new ZKRegistrationManager()) {
                 try {
                     rm.initialize(bkConf, () -> {}, NullStatsLogger.INSTANCE);
                 } catch (BookieException e) {
@@ -1774,8 +1778,6 @@ public class BookieShell implements Tool {
                     return -1;
                 }
                 return 0;
-            } finally {
-                rm.close();
             }
         }
     }
@@ -1886,7 +1888,6 @@ public class BookieShell implements Tool {
             }
             return 0;
         }
-
     }
 
     /**
@@ -2120,6 +2121,241 @@ public class BookieShell implements Tool {
         void progress(long updated, long issued);
     }
 
+
+    /**
+     * Convert bookie indexes from InterleavedStorage to DbLedgerStorage format.
+     */
+    class ConvertToDbStorageCmd extends MyCommand {
+        Options opts = new Options();
+
+        public ConvertToDbStorageCmd() {
+            super(CMD_CONVERT_TO_DB_STORAGE);
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Convert bookie indexes from InterleavedStorage to DbLedgerStorage format";
+        }
+
+        String getUsage() {
+            return CMD_CONVERT_TO_DB_STORAGE;
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            LOG.info("=== Converting to DbLedgerStorage ===");
+            ServerConfiguration conf = new ServerConfiguration(bkConf);
+            LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(bkConf, bkConf.getLedgerDirs(),
+                    new DiskChecker(bkConf.getDiskUsageThreshold(), bkConf.getDiskUsageWarnThreshold()));
+            LedgerDirsManager ledgerIndexManager = new LedgerDirsManager(bkConf, bkConf.getLedgerDirs(),
+                    new DiskChecker(bkConf.getDiskUsageThreshold(), bkConf.getDiskUsageWarnThreshold()));
+
+            InterleavedLedgerStorage interleavedStorage = new InterleavedLedgerStorage();
+            DbLedgerStorage dbStorage = new DbLedgerStorage();
+
+            CheckpointSource checkpointSource = new CheckpointSource() {
+                    @Override
+                    public Checkpoint newCheckpoint() {
+                        return Checkpoint.MAX;
+                    }
+
+                    @Override
+                    public void checkpointComplete(Checkpoint checkpoint, boolean compact)
+                            throws IOException {
+                    }
+                };
+            Checkpointer checkpointer = new Checkpointer() {
+                @Override
+                public void startCheckpoint(Checkpoint checkpoint) {
+                    // No-op
+                }
+            };
+
+            interleavedStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager,
+                    checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
+            dbStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager,
+                    checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
+
+            int convertedLedgers = 0;
+            for (long ledgerId : interleavedStorage.getActiveLedgersInRange(0, Long.MAX_VALUE)) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Converting ledger {}", ledgerId);
+                }
+
+                FileInfo fi = getFileInfo(ledgerId);
+
+                Iterable<SortedMap<Long, Long>> entries = getLedgerIndexEntries(ledgerId);
+
+                long numberOfEntries = dbStorage.addLedgerToIndex(ledgerId, fi.isFenced(), fi.getMasterKey(), entries);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("   -- done. fenced={} entries={}", fi.isFenced(), numberOfEntries);
+                }
+
+                // Remove index from old storage
+                interleavedStorage.deleteLedger(ledgerId);
+
+                if (++convertedLedgers % 1000 == 0) {
+                    LOG.info("Converted {} ledgers", convertedLedgers);
+                }
+            }
+
+            dbStorage.shutdown();
+            interleavedStorage.shutdown();
+
+            LOG.info("---- Done Converting ----");
+            return 0;
+        }
+    }
+
+    /**
+     * Convert bookie indexes from DbLedgerStorage to InterleavedStorage format.
+     */
+    class ConvertToInterleavedStorageCmd extends MyCommand {
+        Options opts = new Options();
+
+        public ConvertToInterleavedStorageCmd() {
+            super(CMD_CONVERT_TO_INTERLEAVED_STORAGE);
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Convert bookie indexes from DbLedgerStorage to InterleavedStorage format";
+        }
+
+        String getUsage() {
+            return CMD_CONVERT_TO_INTERLEAVED_STORAGE;
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            LOG.info("=== Converting DbLedgerStorage ===");
+            ServerConfiguration conf = new ServerConfiguration(bkConf);
+            LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(bkConf, bkConf.getLedgerDirs(),
+                    new DiskChecker(bkConf.getDiskUsageThreshold(), bkConf.getDiskUsageWarnThreshold()));
+            LedgerDirsManager ledgerIndexManager = new LedgerDirsManager(bkConf, bkConf.getLedgerDirs(),
+                    new DiskChecker(bkConf.getDiskUsageThreshold(), bkConf.getDiskUsageWarnThreshold()));
+
+            DbLedgerStorage dbStorage = new DbLedgerStorage();
+            InterleavedLedgerStorage interleavedStorage = new InterleavedLedgerStorage();
+
+            CheckpointSource checkpointSource = new CheckpointSource() {
+                    @Override
+                    public Checkpoint newCheckpoint() {
+                        return Checkpoint.MAX;
+                    }
+
+                    @Override
+                    public void checkpointComplete(Checkpoint checkpoint, boolean compact)
+                            throws IOException {
+                    }
+                };
+            Checkpointer checkpointer = new Checkpointer() {
+                @Override
+                public void startCheckpoint(Checkpoint checkpoint) {
+                    // No-op
+                }
+            };
+
+            dbStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager,
+                        checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
+            interleavedStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager,
+                    checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
+            LedgerCache interleavedLedgerCache = interleavedStorage.ledgerCache;
+
+            EntryLocationIndex dbEntryLocationIndex = dbStorage.getEntryLocationIndex();
+
+            int convertedLedgers = 0;
+            for (long ledgerId : dbStorage.getActiveLedgersInRange(0, Long.MAX_VALUE)) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Converting ledger {}", ledgerId);
+                }
+
+                interleavedStorage.setMasterKey(ledgerId, dbStorage.readMasterKey(ledgerId));
+                if (dbStorage.isFenced(ledgerId)) {
+                    interleavedStorage.setFenced(ledgerId);
+                }
+
+                long lastEntryInLedger = dbEntryLocationIndex.getLastEntryInLedger(ledgerId);
+                for (long entryId = 0; entryId <= lastEntryInLedger; entryId++) {
+                    try {
+                        long location = dbEntryLocationIndex.getLocation(ledgerId, entryId);
+                        if (location != 0L) {
+                            interleavedLedgerCache.putEntryOffset(ledgerId, entryId, location);
+                        }
+                    } catch (Bookie.NoEntryException e) {
+                        // Ignore entry
+                    }
+                }
+
+                if (++convertedLedgers % 1000 == 0) {
+                    LOG.info("Converted {} ledgers", convertedLedgers);
+                }
+            }
+
+            dbStorage.shutdown();
+
+            interleavedLedgerCache.flushLedger(true);
+            interleavedStorage.flush();
+            interleavedStorage.shutdown();
+
+            String baseDir = ledgerDirsManager.getAllLedgerDirs().get(0).toString();
+
+            // Rename databases and keep backup
+            Files.move(FileSystems.getDefault().getPath(baseDir, "ledgers"),
+                    FileSystems.getDefault().getPath(baseDir, "ledgers.backup"));
+
+            Files.move(FileSystems.getDefault().getPath(baseDir, "locations"),
+                    FileSystems.getDefault().getPath(baseDir, "locations.backup"));
+
+            LOG.info("---- Done Converting {} ledgers ----", convertedLedgers);
+            return 0;
+        }
+    }
+
+    /**
+     * Rebuild DbLedgerStorage locations index.
+     */
+    class RebuildDbLedgerLocationsIndexCmd extends MyCommand {
+        Options opts = new Options();
+
+        public RebuildDbLedgerLocationsIndexCmd() {
+            super(CMD_REBUILD_DB_LEDGER_LOCATIONS_INDEX);
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Rebuild DbLedgerStorage locations index by scanning the entry logs";
+        }
+
+        String getUsage() {
+            return CMD_REBUILD_DB_LEDGER_LOCATIONS_INDEX;
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            LOG.info("=== Rebuilding bookie index ===");
+            ServerConfiguration conf = new ServerConfiguration(bkConf);
+            new LocationsIndexRebuildOp(conf).initiate();
+            LOG.info("-- Done rebuilding bookie index --");
+            return 0;
+        }
+    }
+
     final Map<String, MyCommand> commands = new HashMap<String, MyCommand>();
     {
         commands.put(CMD_METAFORMAT, new MetaFormatCmd());
@@ -2145,6 +2381,9 @@ public class BookieShell implements Tool {
         commands.put(CMD_DELETELEDGER, new DeleteLedgerCmd());
         commands.put(CMD_BOOKIEINFO, new BookieInfoCmd());
         commands.put(CMD_DECOMMISSIONBOOKIE, new DecommissionBookieCmd());
+        commands.put(CMD_CONVERT_TO_DB_STORAGE, new ConvertToDbStorageCmd());
+        commands.put(CMD_CONVERT_TO_INTERLEAVED_STORAGE, new ConvertToInterleavedStorageCmd());
+        commands.put(CMD_REBUILD_DB_LEDGER_LOCATIONS_INDEX, new RebuildDbLedgerLocationsIndexCmd());
         commands.put(CMD_HELP, new HelpCmd());
         commands.put(CMD_LOSTBOOKIERECOVERYDELAY, new LostBookieRecoveryDelayCmd());
         commands.put(CMD_TRIGGERAUDIT, new TriggerAuditCmd());
@@ -2437,6 +2676,66 @@ public class BookieShell implements Tool {
                         + "or last index page is not fully flushed yet : " + ie.getMessage());
             }
         }
+    }
+
+    /**
+     * Get an iterable over pages of entries and locations for a ledger.
+     *
+     * @param ledgerId
+     * @return
+     * @throws IOException
+     */
+    protected Iterable<SortedMap<Long, Long>> getLedgerIndexEntries(final long ledgerId) throws IOException {
+        final FileInfo fi = getFileInfo(ledgerId);
+        final long size = fi.size();
+
+        final LedgerEntryPage lep = new LedgerEntryPage(pageSize, entriesPerPage);
+        lep.usePage();
+
+        final Iterator<SortedMap<Long, Long>> iterator = new Iterator<SortedMap<Long, Long>>() {
+            long curSize = 0;
+            long curEntry = 0;
+
+            @Override
+            public boolean hasNext() {
+                return curSize < size;
+            }
+
+            @Override
+            public SortedMap<Long, Long> next() {
+                SortedMap<Long, Long> entries = Maps.newTreeMap();
+                lep.setLedgerAndFirstEntry(ledgerId, curEntry);
+                try {
+                    lep.readPage(fi);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+                // process a page
+                for (int i = 0; i < entriesPerPage; i++) {
+                    long offset = lep.getOffset(i * 8);
+                    if (offset != 0) {
+                        entries.put(curEntry, offset);
+                    }
+                    ++curEntry;
+                }
+
+                curSize += pageSize;
+                return entries;
+            }
+
+            @Override
+            public void remove() {
+                throw new RuntimeException("Cannot remove");
+            }
+
+        };
+
+        return new Iterable<SortedMap<Long, Long>>() {
+            public Iterator<SortedMap<Long, Long>> iterator() {
+                return iterator;
+            }
+        };
     }
 
     /**

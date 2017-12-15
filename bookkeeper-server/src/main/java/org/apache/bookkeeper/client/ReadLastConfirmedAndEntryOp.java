@@ -466,7 +466,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
                         && (null != request.maybeSendSpeculativeRead(heardFromHostsBitSet))) {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Send speculative ReadLAC {} for ledger {} (previousLAC: {}). Hosts heard are {}.",
-                            new Object[] {request, lh.getId(), lastAddConfirmed, heardFromHostsBitSet });
+                                request, lh.getId(), lastAddConfirmed, heardFromHostsBitSet);
                     }
                     return true;
                 }
@@ -491,7 +491,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
     void sendReadTo(int bookieIndex, BookieSocketAddress to, ReadLACAndEntryRequest entry) throws InterruptedException {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Calling Read LAC and Entry with {} and long polling interval {} on Bookie {} - Parallel {}",
-                    new Object[] { prevEntryId, timeOutInMillis, to, parallelRead });
+                    prevEntryId, timeOutInMillis, to, parallelRead);
         }
         lh.bk.getBookieClient().readEntryWaitForLACUpdate(to,
             lh.ledgerId,
@@ -535,7 +535,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
     public void readEntryComplete(int rc, long ledgerId, long entryId, ByteBuf buffer, Object ctx) {
         if (LOG.isTraceEnabled()) {
             LOG.trace("{} received response for (lid={}, eid={}) : {}",
-                new Object[] { getClass().getName(), ledgerId, entryId, rc });
+                    getClass().getName(), ledgerId, entryId, rc);
         }
         ReadLastConfirmedAndEntryContext rCtx = (ReadLastConfirmedAndEntryContext) ctx;
         BookieSocketAddress bookie = rCtx.getBookieAddress();
@@ -543,7 +543,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
         if (BKException.Code.OK == rc) {
             if (LOG.isTraceEnabled()) {
                 LOG.trace("Received lastAddConfirmed (lac={}) from bookie({}) for (lid={}).",
-                    new Object[] { rCtx.getLastAddConfirmed(), bookie, ledgerId });
+                        rCtx.getLastAddConfirmed(), bookie, ledgerId);
             }
 
             if (rCtx.getLastAddConfirmed() > lastAddConfirmed) {
@@ -577,16 +577,16 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Completed readLACAndEntry(lid = {}, previousEntryId = {}) "
                                 + "after received {} empty responses ('{}').",
-                                new Object[]{ledgerId, prevEntryId, emptyResponsesFromHostsBitSet.cardinality(),
-                                    emptyResponsesFromHostsBitSet});
+                                ledgerId, prevEntryId, emptyResponsesFromHostsBitSet.cardinality(),
+                                emptyResponsesFromHostsBitSet);
                     }
                     completeRequest();
                 } else {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Received empty response for readLACAndEntry(lid = {}, previousEntryId = {}) from"
                                         + " bookie {} @ {}, reattempting reading next bookie : lac = {}",
-                                new Object[]{ledgerId, prevEntryId, rCtx.getBookieAddress(),
-                                        rCtx.getBookieAddress(), lastAddConfirmed});
+                                ledgerId, prevEntryId, rCtx.getBookieAddress(),
+                                rCtx.getBookieAddress(), lastAddConfirmed);
                     }
                     request.logErrorAndReattemptRead(rCtx.getBookieIndex(), bookie, "Empty Response", rc);
                 }

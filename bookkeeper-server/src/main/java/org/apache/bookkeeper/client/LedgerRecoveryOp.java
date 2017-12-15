@@ -200,7 +200,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
                 // check whether entry id is expected, so we won't overwritten any entries by mistake
                 if (entry.getEntryId() != lh.lastAddPushed + 1) {
                     LOG.error("Unexpected to recovery add entry {} as entry {} for ledger {}.",
-                              new Object[] { entry.getEntryId(), (lh.lastAddPushed + 1), lh.getId() });
+                            entry.getEntryId(), (lh.lastAddPushed + 1), lh.getId());
                     rc = BKException.Code.UnexpectedConditionException;
                 }
             }
@@ -226,13 +226,13 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
         // otherwise, some other error, we can't handle
         if (BKException.Code.OK != rc && callbackDone.compareAndSet(false, true)) {
             LOG.error("Failure {} while reading entries: ({} - {}), ledger: {} while recovering ledger",
-                      new Object[] { BKException.getMessage(rc), startEntryToRead, endEntryToRead, lh.getId() });
+                    BKException.getMessage(rc), startEntryToRead, endEntryToRead, lh.getId());
             submitCallback(rc);
         } else if (BKException.Code.OK == rc) {
             // we are here is because we successfully read an entry but readDone was already set to true.
             // this would happen on recovery a ledger than has gaps in the tail.
             LOG.warn("Successfully read entry {} for ledger {}, but readDone is already {}",
-                     new Object[] { entry.getEntryId(), lh.getId(), readDone });
+                    entry.getEntryId(), lh.getId(), readDone);
         }
         return;
     }

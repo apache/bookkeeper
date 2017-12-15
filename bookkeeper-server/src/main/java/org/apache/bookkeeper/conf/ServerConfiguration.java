@@ -18,11 +18,8 @@
 package org.apache.bookkeeper.conf;
 
 import com.google.common.annotations.Beta;
-
 import java.io.File;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.SortedLedgerStorage;
@@ -33,12 +30,11 @@ import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.lang.StringUtils;
 
 /**
  * Configuration manages server-side settings.
  */
-public class ServerConfiguration extends AbstractConfiguration {
+public class ServerConfiguration extends AbstractConfiguration<ServerConfiguration> {
     // Entry Log Parameters
     protected static final String ENTRY_LOG_SIZE_LIMIT = "logSizeLimit";
     protected static final String ENTRY_LOG_FILE_PREALLOCATION_ENABLED = "entryLogFilePreallocationEnabled";
@@ -101,8 +97,6 @@ public class ServerConfiguration extends AbstractConfiguration {
     protected static final String SERVER_SOCK_LINGER = "serverTcpLinger";
 
     // Zookeeper Parameters
-    protected static final String ZK_TIMEOUT = "zkTimeout";
-    protected static final String ZK_SERVERS = "zkServers";
     protected static final String ZK_RETRY_BACKOFF_START_MS = "zkRetryBackoffStartMs";
     protected static final String ZK_RETRY_BACKOFF_MAX_MS = "zkRetryBackoffMaxMs";
     protected static final String OPEN_LEDGER_REREPLICATION_GRACE_PERIOD = "openLedgerRereplicationGracePeriod";
@@ -985,51 +979,6 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public ServerConfiguration setServerSockKeepalive(boolean keepalive) {
         setProperty(SERVER_SOCK_KEEPALIVE, Boolean.toString(keepalive));
-        return this;
-    }
-
-    /**
-     * Get zookeeper servers to connect.
-     *
-     * @return zookeeper servers
-     */
-    public String getZkServers() {
-        List servers = getList(ZK_SERVERS, null);
-        if (null == servers || 0 == servers.size()) {
-            return null;
-        }
-        return StringUtils.join(servers, ",");
-    }
-
-    /**
-     * Set zookeeper servers to connect.
-     *
-     * @param zkServers
-     *          ZooKeeper servers to connect
-     */
-    public ServerConfiguration setZkServers(String zkServers) {
-        setProperty(ZK_SERVERS, zkServers);
-        return this;
-    }
-
-    /**
-     * Get zookeeper timeout.
-     *
-     * @return zookeeper server timeout
-     */
-    public int getZkTimeout() {
-        return getInt(ZK_TIMEOUT, 10000);
-    }
-
-    /**
-     * Set zookeeper timeout.
-     *
-     * @param zkTimeout
-     *          ZooKeeper server timeout
-     * @return server configuration
-     */
-    public ServerConfiguration setZkTimeout(int zkTimeout) {
-        setProperty(ZK_TIMEOUT, Integer.toString(zkTimeout));
         return this;
     }
 
@@ -2548,4 +2497,8 @@ public class ServerConfiguration extends AbstractConfiguration {
                 DEFAULT_LOADER);
     }
 
+    @Override
+    protected ServerConfiguration getThis() {
+        return this;
+    }
 }

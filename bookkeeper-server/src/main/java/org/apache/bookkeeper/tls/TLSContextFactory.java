@@ -57,16 +57,13 @@ public class TLSContextFactory implements SecurityHandlerFactory {
     private SslContext sslContext;
 
     private String getPasswordFromFile(String path) throws IOException {
-        FileInputStream pwdin = new FileInputStream(path);
         byte[] pwd;
-        try {
+        try (FileInputStream pwdin = new FileInputStream(path)) {
             File passwdFile = new File(path);
             if (passwdFile.length() == 0) {
                 return "";
             }
             pwd = FileUtils.readFileToByteArray(passwdFile);
-        } finally {
-            pwdin.close();
         }
         return new String(pwd, "UTF-8");
     }
@@ -74,11 +71,8 @@ public class TLSContextFactory implements SecurityHandlerFactory {
     private KeyStore loadKeyStore(String keyStoreType, String keyStoreLocation, String keyStorePassword)
             throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException {
         KeyStore ks = KeyStore.getInstance(keyStoreType);
-        FileInputStream ksin = new FileInputStream(keyStoreLocation);
-        try {
+        try (FileInputStream ksin = new FileInputStream(keyStoreLocation)) {
             ks.load(ksin, keyStorePassword.trim().toCharArray());
-        } finally {
-            ksin.close();
         }
         return ks;
     }

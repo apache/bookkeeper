@@ -58,7 +58,7 @@ docker run \
   -v "${LOCAL_HOME}:/home/${USER_NAME}" \
   -e MAVEN_OPTS='-Xmx4g -Xms2g' \
   ${IMAGE_NAME}-${USER_NAME} \
-  bash -c "mvn clean apache-rat:check package findbugs:check"
+  bash -c "mvn clean apache-rat:check package spotbugs:check"
 
 popd
 

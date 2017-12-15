@@ -46,9 +46,9 @@ public class NetworkLessBookieTest extends BookKeeperClusterTestCase {
 
     @Test
     public void testUseLocalBookie() throws Exception {
-        ClientConfiguration conf = new ClientConfiguration()
-                .setZkServers(zkUtil.getZooKeeperConnectString())
-                .setZkTimeout(20000);
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setZkServers(zkUtil.getZooKeeperConnectString());
+        conf.setZkTimeout(20000);
 
         try (BookKeeper bkc = new BookKeeper(conf)) {
             try (LedgerHandle h = bkc.createLedger(1, 1, DigestType.CRC32, "testPasswd".getBytes())) {

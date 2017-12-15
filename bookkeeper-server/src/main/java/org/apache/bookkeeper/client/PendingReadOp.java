@@ -199,12 +199,12 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
                 ++numMissedEntryReads;
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("No such entry found on bookie.  L{} E{} bookie: {}",
-                        new Object[] { lh.ledgerId, entryImpl.getEntryId(), host });
+                            lh.ledgerId, entryImpl.getEntryId(), host);
                 }
             } else {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug(errMsg + " while reading L{} E{} from bookie: {}",
-                        new Object[]{lh.ledgerId, entryImpl.getEntryId(), host});
+                            lh.ledgerId, entryImpl.getEntryId(), host);
                 }
             }
         }
@@ -256,7 +256,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
                     if (!isComplete() && null != maybeSendSpeculativeRead(heardFromHostsBitSet)) {
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("Send speculative read for {}. Hosts heard are {}, ensemble is {}.",
-                                new Object[] { this, heardFromHostsBitSet, ensemble });
+                                    this, heardFromHostsBitSet, ensemble);
                         }
                         return true;
                     }
@@ -582,8 +582,8 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         }
 
         if (numPendingEntries < 0) {
-            LOG.error("Read too many values for ledger {} : [{}, {}].", new Object[] { ledgerId,
-                    startEntryId, endEntryId });
+            LOG.error("Read too many values for ledger {} : [{}, {}].",
+                    ledgerId, startEntryId, endEntryId);
         }
     }
 
@@ -612,8 +612,8 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
                 }
             }
             LOG.error("Read of ledger entry failed: L{} E{}-E{}, Heard from {} : bitset = {}. First unread entry is {}",
-                    new Object[] { lh.getId(), startEntryId, endEntryId, heardFromHosts, heardFromHostsBitSet,
-                        firstUnread });
+                    lh.getId(), startEntryId, endEntryId, heardFromHosts, heardFromHostsBitSet,
+                    firstUnread);
             readOpLogger.registerFailedEvent(latencyNanos, TimeUnit.NANOSECONDS);
             // release the entries
             seq.forEach(LedgerEntryRequest::close);

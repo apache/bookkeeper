@@ -113,7 +113,7 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
             status = StatusCode.EOK;
         } catch (IOException e) {
             logger.error("Error writing entry:{} to ledger:{}",
-                         new Object[] { entryId, ledgerId, e });
+                    entryId, ledgerId, e);
             status = StatusCode.EIO;
         } catch (BookieException.LedgerFencedException e) {
             logger.debug("Ledger fenced while writing entry:{} to ledger:{}",
@@ -125,7 +125,7 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
             status = StatusCode.EUA;
         } catch (Throwable t) {
             logger.error("Unexpected exception while writing {}@{} : ",
-                         new Object[] { entryId, ledgerId, t });
+                    entryId, ledgerId, t);
             // some bad request which cause unexpected exception
             status = StatusCode.EBADREQ;
         }

@@ -131,8 +131,8 @@ public class RoundRobinDistributionScheduleTest {
             boolean canGetAck = canGetAckQuorum(ensemble, writeQuorum, ackQuorum, nodesAvailable);
             if (canGetAck == covSetSays) {
                 LOG.error("e{}:w{}:a{} available {}    canGetAck {} covSetSays {}",
-                          new Object[] { ensemble, writeQuorum, ackQuorum,
-                                         nodesAvailable, canGetAck, covSetSays });
+                        ensemble, writeQuorum, ackQuorum,
+                        nodesAvailable, canGetAck, covSetSays);
                 errors++;
             }
         }

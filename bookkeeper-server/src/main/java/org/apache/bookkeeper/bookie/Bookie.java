@@ -53,8 +53,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -73,6 +71,7 @@ import org.apache.bookkeeper.bookie.BookieException.UnknownBookieIdException;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
+import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.discover.ZKRegistrationManager;
@@ -211,7 +210,7 @@ public class Bookie extends BookieCriticalThread {
                                   BookieSocketAddress addr, Object ctx) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Finished writing entry {} @ ledger {} for {} : {}",
-                          new Object[] { entryId, ledgerId, addr, rc });
+                        entryId, ledgerId, addr, rc);
             }
         }
     }
@@ -1377,7 +1376,7 @@ public class Bookie extends BookieCriticalThread {
                                   BookieSocketAddress addr, Object ctx) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Finished writing entry {} @ ledger {} for {} : {}",
-                          new Object[] { entryId, ledgerId, addr, rc });
+                        entryId, ledgerId, addr, rc);
             }
 
             result.set(0 == rc);
@@ -1431,10 +1430,17 @@ public class Bookie extends BookieCriticalThread {
         return handle.getLastAddConfirmed();
     }
 
-    public Observable waitForLastAddConfirmedUpdate(long ledgerId, long previoisLAC, Observer observer)
+    public boolean waitForLastAddConfirmedUpdate(long ledgerId,
+                                                 long previousLAC,
+                                                 Watcher<LastAddConfirmedUpdateNotification> watcher)
             throws IOException {
         LedgerDescriptor handle = handles.getReadOnlyHandle(ledgerId);
-        return handle.waitForLastAddConfirmedUpdate(previoisLAC, observer);
+        return handle.waitForLastAddConfirmedUpdate(previousLAC, watcher);
+    }
+
+    @VisibleForTesting
+    public LedgerStorage getLedgerStorage() {
+        return ledgerStorage;
     }
 
     // The rest of the code is test stuff

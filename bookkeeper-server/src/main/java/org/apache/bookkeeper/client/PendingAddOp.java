@@ -25,8 +25,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import io.netty.util.ReferenceCountUtil;
-import io.netty.util.Timeout;
-import io.netty.util.TimerTask;
 
 import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
@@ -51,7 +49,7 @@ import org.slf4j.LoggerFactory;
  *
  *
  */
-class PendingAddOp extends SafeRunnable implements WriteCallback, TimerTask {
+class PendingAddOp extends SafeRunnable implements WriteCallback {
     private static final Logger LOG = LoggerFactory.getLogger(PendingAddOp.class);
 
     ByteBuf payload;
@@ -68,8 +66,7 @@ class PendingAddOp extends SafeRunnable implements WriteCallback, TimerTask {
     boolean isRecoveryAdd = false;
     long requestTimeNanos;
 
-    int timeoutSec;
-    Timeout timeout = null;
+    long timeoutNanos;
 
     OpStatsLogger addOpLogger;
     long currentLedgerLength;
@@ -91,14 +88,11 @@ class PendingAddOp extends SafeRunnable implements WriteCallback, TimerTask {
         op.completed = false;
         op.ackSet = lh.distributionSchedule.getAckSet();
         op.addOpLogger = lh.bk.getAddOpLogger();
-        if (op.timeout != null) {
-            op.timeout.cancel();
-        }
-        op.timeout = null;
-        op.timeoutSec = lh.bk.getConf().getAddEntryQuorumTimeout();
+        op.timeoutNanos = lh.bk.addEntryQuorumTimeoutNanos;
         op.pendingWriteRequests = 0;
         op.callbackTriggered = false;
         op.hasRun = false;
+        op.requestTimeNanos = Long.MAX_VALUE;
         return op;
     }
 
@@ -131,9 +125,12 @@ class PendingAddOp extends SafeRunnable implements WriteCallback, TimerTask {
         ++pendingWriteRequests;
     }
 
-    @Override
-    public void run(Timeout timeout) {
-        timeoutQuorumWait();
+    boolean maybeTimeout() {
+        if (MathUtils.elapsedNanos(requestTimeNanos) >= timeoutNanos) {
+            timeoutQuorumWait();
+            return true;
+        }
+        return false;
     }
 
     void timeoutQuorumWait() {
@@ -220,11 +217,6 @@ class PendingAddOp extends SafeRunnable implements WriteCallback, TimerTask {
             return;
         }
 
-        if (timeoutSec > -1) {
-            this.timeout = lh.bk.getBookieClient().scheduleTimeout(
-                    this, timeoutSec, TimeUnit.SECONDS);
-        }
-
         this.requestTimeNanos = MathUtils.nowInNano();
         checkNotNull(lh);
         checkNotNull(lh.macManager);
@@ -296,12 +288,12 @@ class PendingAddOp extends SafeRunnable implements WriteCallback, TimerTask {
             return;
         case BKException.Code.LedgerFencedException:
             LOG.warn("Fencing exception on write: L{} E{} on {}",
-                     new Object[] { ledgerId, entryId, addr });
+                    ledgerId, entryId, addr);
             lh.handleUnrecoverableErrorDuringAdd(rc);
             return;
         case BKException.Code.UnauthorizedAccessException:
             LOG.warn("Unauthorized access exception on write: L{} E{} on {}",
-                     new Object[] { ledgerId, entryId, addr });
+                    ledgerId, entryId, addr);
             lh.handleUnrecoverableErrorDuringAdd(rc);
             return;
         default:
@@ -310,19 +302,19 @@ class PendingAddOp extends SafeRunnable implements WriteCallback, TimerTask {
                         || rc == BKException.Code.WriteOnReadOnlyBookieException) {
                     Map<Integer, BookieSocketAddress> failedBookies = ackSet.getFailedBookies();
                     LOG.warn("Failed to write entry ({}, {}) to bookies {}, handling failures.",
-                             new Object[] { ledgerId, entryId, failedBookies });
+                            ledgerId, entryId, failedBookies);
                     // we can't meet ack quorum requirement, trigger ensemble change.
                     lh.handleBookieFailure(failedBookies);
                 } else {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Failed to write entry ({}, {}) to bookie ({}, {}),"
                                   + " but it didn't break ack quorum, delaying ensemble change : {}",
-                                  new Object[] { ledgerId, entryId, bookieIndex, addr, BKException.getMessage(rc) });
+                                ledgerId, entryId, bookieIndex, addr, BKException.getMessage(rc));
                     }
                 }
             } else {
                 LOG.warn("Failed to write entry ({}, {}): {}",
-                         new Object[] { ledgerId, entryId, BKException.getMessage(rc) });
+                        ledgerId, entryId, BKException.getMessage(rc));
                 lh.handleBookieFailure(ImmutableMap.of(bookieIndex, addr));
             }
             return;
@@ -340,10 +332,6 @@ class PendingAddOp extends SafeRunnable implements WriteCallback, TimerTask {
     }
 
     void submitCallback(final int rc) {
-        if (null != timeout) {
-            timeout.cancel();
-        }
-
         if (LOG.isDebugEnabled()) {
             LOG.debug("Submit callback (lid:{}, eid: {}). rc:{}", lh.getId(), entryId, rc);
         }
@@ -429,10 +417,6 @@ class PendingAddOp extends SafeRunnable implements WriteCallback, TimerTask {
         pendingWriteRequests = 0;
         callbackTriggered = false;
         hasRun = false;
-        if (timeout != null) {
-            timeout.cancel();
-        }
-        timeout = null;
 
         recyclerHandle.recycle(this);
     }

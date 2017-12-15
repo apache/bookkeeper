@@ -25,9 +25,8 @@ import com.google.common.util.concurrent.SettableFuture;
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.bookkeeper.common.util.Watcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,8 +54,8 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
     @Override
     void checkAccess(byte masterKey[]) throws BookieException, IOException {
         if (!Arrays.equals(this.masterKey, masterKey)) {
-            LOG.error("[{}] Requested master key {} does not match the cached master key {}", new Object[] {
-                    this.ledgerId, Arrays.toString(masterKey), Arrays.toString(this.masterKey) });
+            LOG.error("[{}] Requested master key {} does not match the cached master key {}",
+                    this.ledgerId, Arrays.toString(masterKey), Arrays.toString(this.masterKey));
             throw BookieException.create(BookieException.Code.UnauthorizedAccessException);
         }
     }
@@ -156,7 +155,8 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
     }
 
     @Override
-    Observable waitForLastAddConfirmedUpdate(long previousLAC, Observer observer) throws IOException {
-        return ledgerStorage.waitForLastAddConfirmedUpdate(ledgerId, previousLAC, observer);
+    boolean waitForLastAddConfirmedUpdate(long previousLAC,
+                                          Watcher<LastAddConfirmedUpdateNotification> watcher) throws IOException {
+        return ledgerStorage.waitForLastAddConfirmedUpdate(ledgerId, previousLAC, watcher);
     }
 }

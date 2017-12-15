@@ -37,6 +37,9 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.junit.Before;
 import org.junit.Test;
 
+/**
+ * Test the EntryMemTable class.
+ */
 public class TestEntryMemTable implements CacheCallback, SkipListFlusher, CheckpointSource {
 
     private EntryMemTable memTable;
@@ -76,7 +79,7 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
     }
 
     /**
-     * Basic put/get
+     * Basic put/get.
      * @throws IOException
      * */
     @Test
@@ -106,7 +109,7 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
     }
 
     /**
-     * Test read/write across snapshot
+     * Test read/write across snapshot.
      * @throws IOException
      */
     @Test
@@ -152,7 +155,7 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
     }
 
     /**
-     * Test flush w/ logMark parameter
+     * Test flush w/ logMark parameter.
      * @throws IOException
      */
     @Test
@@ -186,7 +189,7 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
     }
 
     /**
-     * Test snapshot/flush interaction
+     * Test snapshot/flush interaction.
      * @throws IOException
      */
     @Test
@@ -220,7 +223,7 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
     }
 
     /**
-     * Test NoLedger exception/flush interaction
+     * Test NoLedger exception/flush interaction.
      * @throws IOException
      */
     @Test
@@ -259,7 +262,7 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
             if (Checkpoint.MAX == o) {
                 return -1;
             }
-            return mark.compare(((TestCheckPoint)o).mark);
+            return mark.compare(((TestCheckPoint) o).mark);
         }
 
     }

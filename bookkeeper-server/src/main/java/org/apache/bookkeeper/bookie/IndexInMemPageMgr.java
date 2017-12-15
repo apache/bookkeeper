@@ -375,7 +375,7 @@ class IndexInMemPageMgr {
             this.pageLimit = conf.getPageLimit();
         }
         LOG.info("maxDirectMemory = {}, pageSize = {}, pageLimit = {}",
-                new Object[] { maxDirectMemory, pageSize, pageLimit });
+                maxDirectMemory, pageSize, pageLimit);
         // Expose Stats
         this.ledgerCacheHitCounter = statsLogger.getCounter(LEDGER_CACHE_HIT);
         this.ledgerCacheMissCounter = statsLogger.getCounter(LEDGER_CACHE_MISS);
