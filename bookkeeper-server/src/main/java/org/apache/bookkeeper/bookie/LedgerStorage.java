@@ -23,9 +23,8 @@ package org.apache.bookkeeper.bookie;
 
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
-import java.util.Observable;
-import java.util.Observer;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
+import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -119,12 +118,14 @@ public interface LedgerStorage {
     /**
      * Wait for last add confirmed update.
      *
-     * @param previoisLAC - The threshold beyond which we would wait for the update
-     * @param observer  - Observer to notify on update
+     * @param previousLAC - The threshold beyond which we would wait for the update
+     * @param watcher  - Watcher to notify on update
      * @return
      * @throws IOException
      */
-    Observable waitForLastAddConfirmedUpdate(long ledgerId, long previoisLAC, Observer observer) throws IOException;
+    boolean waitForLastAddConfirmedUpdate(long ledgerId,
+                                          long previousLAC,
+                                          Watcher<LastAddConfirmedUpdateNotification> watcher) throws IOException;
 
     /**
      * Flushes all data in the storage. Once this is called,
