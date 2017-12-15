@@ -32,8 +32,9 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.THREAD_RUNTIME;
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
+import java.time.Clock;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -91,10 +92,9 @@ public class GarbageCollectorThread extends SafeRunnable {
     private final int endTimeToMedianMajor;
     private final int startTimeToHighMajor;
     private final int endTimeToHighMajor;
-    private final Calendar calendar;
     // the time of day parameter: seconds
     private int timeOfDay;
-    // the day of week parameter: 1 - 7
+    // day of week from 1 (Monday) to 7 (Sunday)
     private int dayOfWeek;
 
     final boolean isForceGCAllowWhenNoSpace;
@@ -270,11 +270,11 @@ public class GarbageCollectorThread extends SafeRunnable {
         }
         if (startTimeToHighMajor < 1 || startTimeToHighMajor > 7){
             throw new IOException("Invalid start time to high major compaction  : "
-                    + startTimeToHighMajor + "it should be [0, 7) ");
+                    + startTimeToHighMajor + "it should be [1, 7] ");
         }
         if (endTimeToHighMajor < 1 || endTimeToHighMajor > 7){
             throw new IOException("Invalid end time to high major compaction  : "
-                    + endTimeToHighMajor + "it should be [0, 7) ");
+                    + endTimeToHighMajor + "it should be [1, 7] ");
         }
 
         if (enableMinorCompaction && enableMajorCompaction) {
@@ -293,7 +293,6 @@ public class GarbageCollectorThread extends SafeRunnable {
                + majorCompactionThreshold + ", interval=" + majorCompactionInterval);
 
         lastMinorCompactionTime = lastMajorCompactionTime = MathUtils.now();
-        calendar = Calendar.getInstance();
 
     }
 
@@ -370,25 +369,8 @@ public class GarbageCollectorThread extends SafeRunnable {
         boolean suspendMajor = suspendMajorCompaction.get();
         boolean suspendMinor = suspendMinorCompaction.get();
 
-        // change the threshold at the day of time
-        dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
-        timeOfDay = calendar.get(Calendar.HOUR_OF_DAY) * 3600 + calendar.get(Calendar.MINUTE) * 60
-                + calendar.get(Calendar.SECOND);
-        //if the time hit the specified in conf, change the threshold
-        // now the time is on the specified low load zone(eg, night)
-        if (timeOfDay > startTimeToMedianMajor && timeOfDay < endTimeToMedianMajor){
-            activateMedianThreshold();
-            // now the time is on the specified very low load zone(eg, weekend & night)
-            if (dayOfWeek >= startTimeToHighMajor && dayOfWeek <= endTimeToHighMajor){
-                activateHighThreshold();
-            }
-            runWithFlags(force, suspendMajor, suspendMinor);
-            // restore to normal threshold
-            restoreThreshold();
-        } else {
-            // normal threshold
-            runWithFlags(force, suspendMajor, suspendMinor);
-        }
+        runWithFlags(force, suspendMajor, suspendMinor);
+
         if (force) {
             // only set force to false if it had been true when the garbage
             // collection cycle started
@@ -423,6 +405,22 @@ public class GarbageCollectorThread extends SafeRunnable {
         if (force) {
             LOG.info("Garbage collector thread forced to perform GC before expiry of wait time.");
         }
+
+        ZonedDateTime now = ZonedDateTime.now(Clock.systemDefaultZone());
+        // change the threshold at the day of time
+        dayOfWeek = now.getDayOfWeek().getValue();
+        timeOfDay = now.getHour() * 3600 + now.getMinute() * 60
+                + now.getSecond();
+         //if the time hit the specified in conf, change the threshold
+        // now the time is on the specified low load zone(eg, night)
+        if (timeOfDay > startTimeToMedianMajor && timeOfDay < endTimeToMedianMajor){
+            activateMedianThreshold();
+            // now the time is on the specified very low load zone(eg, weekend & night)
+            if (dayOfWeek >= startTimeToHighMajor && dayOfWeek <= endTimeToHighMajor){
+                activateHighThreshold();
+            }
+        }
+
         // Recover and clean up previous state if using transactional compaction
         compactor.cleanUpAndRecover();
 
@@ -463,6 +461,8 @@ public class GarbageCollectorThread extends SafeRunnable {
         }
         this.gcThreadRuntime.registerSuccessfulEvent(
                 MathUtils.nowInNano() - threadStart, TimeUnit.NANOSECONDS);
+        // restore to normal threshold
+        restoreThreshold();
     }
 
     /**

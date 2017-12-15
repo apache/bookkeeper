@@ -1190,12 +1190,12 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * Set start time of median major compaction.
      *
      *
-     * @param time
+     * @param timeInSeconds
      *          start time to major compaction, seconds
      * @return server configuration
      */
-    public ServerConfiguration setStartTimeToMedianMajorCompaction(int time) {
-        setProperty(START_TIME_TO_MEDIAN_COMPACTION, time);
+    public ServerConfiguration setStartTimeToMedianMajorCompaction(int timeInSeconds) {
+        setProperty(START_TIME_TO_MEDIAN_COMPACTION, timeInSeconds);
         return this;
     }
     /**
@@ -1203,22 +1203,22 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *
      *<p>now specify a time of the day to indicate the system is on a low load status
      *
-     * @return end time, [0, 23]h, default[0,4]h, [0,14400]s
+     * @return end time, [0, 23]h, default[0,10]min, [0,600]s, median and high major compaction is disable.
      */
     public int getEndTimeToMedianMajorCompaction() {
-        return getInt(END_TIME_TO_MEDIAN_COMPACTION, 14400);
+        return getInt(END_TIME_TO_MEDIAN_COMPACTION, 600);
     }
 
     /**
      * Set end time of median major compaction.
      *
      *
-     * @param time
+     * @param timeInSeconds
      *          end time of median major compaction, seconds
      * @return server configuration
      */
-    public ServerConfiguration setEndTimeToMedianMajorCompaction(int time) {
-        setProperty(END_TIME_TO_MEDIAN_COMPACTION, time);
+    public ServerConfiguration setEndTimeToMedianMajorCompaction(int timeInSeconds) {
+        setProperty(END_TIME_TO_MEDIAN_COMPACTION, timeInSeconds);
         return this;
     }
     /**
