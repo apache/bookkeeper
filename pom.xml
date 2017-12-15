@@ -61,6 +61,7 @@
     <module>bookkeeper-http</module>
     <module>tests</module>
     <module>bookkeeper-dist</module>
+    <module>microbenchmarks</module>
   </modules>
   <mailingLists>
     <mailingList>
