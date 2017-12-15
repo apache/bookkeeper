@@ -27,6 +27,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.AsyncCallback;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -109,6 +110,8 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
                     zkActiveLedgers = ledgerListToSet(
                             ZkUtils.getChildrenInSingleNode(zk, ledgerRootPath), ledgerRootPath);
                     nextRange = new LedgerRange(zkActiveLedgers);
+                } catch (KeeperException.NoNodeException e) {
+                    throw new IOException("Path does not exist: " + ledgerRootPath, e);
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
                     throw new IOException("Error when get child nodes from zk", ie);

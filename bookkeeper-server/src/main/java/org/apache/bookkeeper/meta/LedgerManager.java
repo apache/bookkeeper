@@ -202,7 +202,7 @@ public interface LedgerManager extends Closeable {
         /**
          * Get the next element.
          *
-         * @return the next element.
+         * @return the next element, the LedgerRange returned must be non-empty
          * @throws IOException thrown when there is a problem accessing the ledger
          * metadata store. It is critical that it doesn't return false in the case
          * in the case it fails to access the ledger metadata store. Otherwise it
