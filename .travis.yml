@@ -27,6 +27,9 @@ matrix:
       osx_image: xcode8
     - os: linux
       env: CUSTOM_JDK="oraclejdk8"
+    - os: linux
+      dist: trusty
+      env: CUSTOM_JDK="openjdk8"
 
 before_install:
   - echo "MAVEN_OPTS='-Xmx3072m -XX:MaxPermSize=512m'" > ~/.mavenrc

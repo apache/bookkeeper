@@ -28,9 +28,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
-import java.util.Observable;
-import java.util.Observer;
-
+import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
@@ -239,29 +237,27 @@ public class IndexPersistenceMgrTest {
     @Test
     public void testEvictionShouldNotAffectLongPollRead() throws Exception {
         IndexPersistenceMgr indexPersistenceMgr = null;
-        Observer observer = (obs, obj) -> {
-            //no-ops
-        };
+        Watcher<LastAddConfirmedUpdateNotification> watcher = notification -> notification.recycle();
         try {
             indexPersistenceMgr = createIndexPersistenceManager(1);
             indexPersistenceMgr.getFileInfo(lid, masterKey);
             indexPersistenceMgr.getFileInfo(lid, null);
             indexPersistenceMgr.updateLastAddConfirmed(lid, 1);
-            Observable observable = indexPersistenceMgr.waitForLastAddConfirmedUpdate(lid, 1, observer);
-            // observer shouldn't be null because ledger is not evicted or closed
-            assertNotNull("Observer should not be null", observable);
+            // watch should succeed because ledger is not evicted or closed
+            assertTrue(
+                indexPersistenceMgr.waitForLastAddConfirmedUpdate(lid, 1, watcher));
             // now evict ledger 1 from write cache
             indexPersistenceMgr.getFileInfo(lid + 1, masterKey);
-            observable = indexPersistenceMgr.waitForLastAddConfirmedUpdate(lid, 1, observer);
-            // even if ledger 1 is evicted from write cache, observer still shouldn't be null
-            assertNotNull("Observer should not be null", observable);
+            // even if ledger 1 is evicted from write cache, watcher should still succeed
+            assertTrue(
+                indexPersistenceMgr.waitForLastAddConfirmedUpdate(lid, 1, watcher));
             // now evict ledger 1 from read cache
             indexPersistenceMgr.getFileInfo(lid + 2, masterKey);
             indexPersistenceMgr.getFileInfo(lid + 2, null);
-            // even if ledger 1 is evicted from both cache, observer still shouldn't be null because it
+            // even if ledger 1 is evicted from both cache, watcher should still succeed because it
             // will create a new FileInfo when cache miss
-            observable = indexPersistenceMgr.waitForLastAddConfirmedUpdate(lid, 1, observer);
-            assertNotNull("Observer should not be null", observable);
+            assertTrue(
+                indexPersistenceMgr.waitForLastAddConfirmedUpdate(lid, 1, watcher));
         } finally {
             if (null != indexPersistenceMgr) {
                 indexPersistenceMgr.close();
