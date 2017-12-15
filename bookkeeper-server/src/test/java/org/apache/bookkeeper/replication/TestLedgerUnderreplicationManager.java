@@ -92,7 +92,8 @@ public class TestLedgerUnderreplicationManager {
         zkUtil = new ZooKeeperUtil();
         zkUtil.startServer();
 
-        conf = TestBKConfiguration.newServerConfiguration().setZkServers(zkUtil.getZooKeeperConnectString());
+        conf = TestBKConfiguration.newServerConfiguration();
+        conf.setZkServers(zkUtil.getZooKeeperConnectString());
 
         executor = Executors.newCachedThreadPool();
 

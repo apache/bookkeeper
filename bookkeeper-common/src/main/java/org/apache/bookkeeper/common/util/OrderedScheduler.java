@@ -161,7 +161,7 @@ public class OrderedScheduler {
             taskExecutionStats.registerSuccessfulEvent(elapsedMicroSec, TimeUnit.MICROSECONDS);
             if (elapsedMicroSec >= warnTimeMicroSec) {
                 LOGGER.warn("Runnable {}:{} took too long {} micros to execute.",
-                            new Object[] { runnable, runnable.getClass(), elapsedMicroSec });
+                        runnable, runnable.getClass(), elapsedMicroSec);
             }
         }
     }

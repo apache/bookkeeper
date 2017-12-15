@@ -108,13 +108,13 @@ public final class NativeIO {
             // if JNA is unavailable just skipping Direct I/O
             // instance of this class will act like normal RandomAccessFile
             LOG.warn("Unsatisfied Link error: posix_fadvise failed on file descriptor {}, offset {} : ",
-                    new Object[] { fd, offset, ule });
+                    fd, offset, ule);
             fadvisePossible = false;
         } catch (Exception e) {
             // This is best effort anyway so lets just log that there was an
             // exception and forget
             LOG.warn("Unknown exception: posix_fadvise failed on file descriptor {}, offset {} : ",
-                    new Object[] { fd, offset, e });
+                    fd, offset, e);
         }
     }
 

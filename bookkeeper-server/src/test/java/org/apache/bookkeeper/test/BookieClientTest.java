@@ -27,12 +27,15 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.util.concurrent.DefaultThreadFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.Code;
@@ -48,6 +51,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCall
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.proto.BookkeeperProtocol;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.junit.After;
@@ -64,6 +68,7 @@ public class BookieClientTest {
 
     public EventLoopGroup eventLoopGroup;
     public OrderedSafeExecutor executor;
+    private ScheduledExecutorService scheduler;
     ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
 
     @Before
@@ -73,9 +78,10 @@ public class BookieClientTest {
         // know via ZooKeeper which Bookies are available, okay, so pass in null
         // for the zkServers input parameter when constructing the BookieServer.
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
-        conf.setZkServers(null).setBookiePort(port)
+        conf.setBookiePort(port)
             .setJournalDirName(tmpDir.getPath())
-            .setLedgerDirNames(new String[] { tmpDir.getPath() });
+            .setLedgerDirNames(new String[] { tmpDir.getPath() })
+            .setZkServers(null);
         bs = new BookieServer(conf);
         bs.start();
         eventLoopGroup = new NioEventLoopGroup();
@@ -83,10 +89,13 @@ public class BookieClientTest {
                 .name("BKClientOrderedSafeExecutor")
                 .numThreads(2)
                 .build();
+        scheduler = Executors.newSingleThreadScheduledExecutor(
+                new DefaultThreadFactory("BookKeeperClientScheduler"));
     }
 
     @After
     public void tearDown() throws Exception {
+        scheduler.shutdown();
         bs.shutdown();
         recursiveDelete(tmpDir);
         eventLoopGroup.shutdownGracefully();
@@ -146,7 +155,8 @@ public class BookieClientTest {
         BookieSocketAddress addr = new BookieSocketAddress("127.0.0.1", port);
         ResultStruct arc = new ResultStruct();
 
-        BookieClient bc = new BookieClient(new ClientConfiguration(), eventLoopGroup, executor);
+        BookieClient bc = new BookieClient(new ClientConfiguration(), eventLoopGroup, executor,
+                                           scheduler, NullStatsLogger.INSTANCE);
         ByteBuf bb = createByteBuffer(1, 1, 1);
         bc.addEntry(addr, 1, passwd, 1, bb, wrcb, arc, BookieProtocol.FLAG_NONE);
         synchronized (arc) {
@@ -246,7 +256,8 @@ public class BookieClientTest {
     public void testNoLedger() throws Exception {
         ResultStruct arc = new ResultStruct();
         BookieSocketAddress addr = new BookieSocketAddress("127.0.0.1", port);
-        BookieClient bc = new BookieClient(new ClientConfiguration(), eventLoopGroup, executor);
+        BookieClient bc = new BookieClient(new ClientConfiguration(), eventLoopGroup, executor,
+                                           scheduler, NullStatsLogger.INSTANCE);
         synchronized (arc) {
             bc.readEntry(addr, 2, 13, recb, arc);
             arc.wait(1000);
@@ -257,7 +268,8 @@ public class BookieClientTest {
     @Test
     public void testGetBookieInfo() throws IOException, InterruptedException {
         BookieSocketAddress addr = new BookieSocketAddress("127.0.0.1", port);
-        BookieClient bc = new BookieClient(new ClientConfiguration(), new NioEventLoopGroup(), executor);
+        BookieClient bc = new BookieClient(new ClientConfiguration(), new NioEventLoopGroup(), executor,
+                                           scheduler, NullStatsLogger.INSTANCE);
         long flags = BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE
                 | BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE;
 

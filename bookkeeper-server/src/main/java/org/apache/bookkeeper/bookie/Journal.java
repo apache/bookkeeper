@@ -42,6 +42,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
+import org.apache.bookkeeper.common.collections.RecyclableArrayList;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.Counter;
@@ -52,7 +53,6 @@ import org.apache.bookkeeper.util.DaemonThreadFactory;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.collections.GrowableArrayBlockingQueue;
-import org.apache.bookkeeper.util.collections.RecyclableArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -212,15 +212,12 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             for (File dir: ledgerDirsManager.getAllLedgerDirs()) {
                 File file = new File(dir, "lastMark");
                 try {
-                    FileInputStream fis = new FileInputStream(file);
-                    try {
+                    try (FileInputStream fis = new FileInputStream(file)) {
                         int bytesRead = fis.read(buff);
                         if (bytesRead != 16) {
                             throw new IOException("Couldn't read enough bytes from lastMark."
                                                   + " Wanted " + 16 + ", got " + bytesRead);
                         }
-                    } finally {
-                        fis.close();
                     }
                     bb.clear();
                     mark.readLogMark(bb);

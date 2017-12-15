@@ -15,7 +15,7 @@
  * under the License.
  */
 
-package org.apache.bookkeeper.util.collections;
+package org.apache.bookkeeper.common.collections;
 
 import io.netty.util.Recycler.Handle;
 import java.util.ArrayList;

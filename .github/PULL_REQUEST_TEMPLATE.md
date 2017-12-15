@@ -22,7 +22,7 @@ Master Issue: #<master-issue-number>
 >     `<Issue # or BOOKKEEPER-#>: Description of pull request`
 >     `e.g. Issue 123: Description ...`
 >     `e.g. BOOKKEEPER-1234: Description ...`
-> - [ ] Make sure tests pass via `mvn clean apache-rat:check install findbugs:check`.
+> - [ ] Make sure tests pass via `mvn clean apache-rat:check install spotbugs:check`.
 > - [ ] Replace `<Issue # or BOOKKEEPER-#>` in the title with the actual Issue/JIRA number.
 > 
 > ---

@@ -21,6 +21,7 @@ import static org.apache.bookkeeper.conf.ClientConfiguration.CLIENT_AUTH_PROVIDE
 
 import java.net.URL;
 import java.util.Iterator;
+import java.util.List;
 import javax.net.ssl.SSLEngine;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
@@ -29,11 +30,13 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Abstract configuration.
  */
-public abstract class AbstractConfiguration extends CompositeConfiguration {
+public abstract class AbstractConfiguration<T extends AbstractConfiguration>
+    extends CompositeConfiguration {
 
     public static final String READ_SYSTEM_PROPERTIES_PROPERTY = "org.apache.bookkeeper.conf.readsystemproperties";
 
@@ -50,6 +53,10 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
         }
         DEFAULT_LOADER = loader;
     }
+
+    // Zookeeper Parameters
+    protected static final String ZK_TIMEOUT = "zkTimeout";
+    protected static final String ZK_SERVERS = "zkServers";
 
     // Ledger Manager
     protected static final String LEDGER_MANAGER_TYPE = "ledgerManagerType";
@@ -131,6 +138,51 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
             String key = iter.next();
             setProperty(key, baseConf.getProperty(key));
         }
+    }
+
+    /**
+     * Get zookeeper servers to connect.
+     *
+     * @return zookeeper servers
+     */
+    public String getZkServers() {
+        List servers = getList(ZK_SERVERS, null);
+        if (null == servers || 0 == servers.size()) {
+            return null;
+        }
+        return StringUtils.join(servers, ",");
+    }
+
+    /**
+     * Set zookeeper servers to connect.
+     *
+     * @param zkServers
+     *          ZooKeeper servers to connect
+     */
+    public T setZkServers(String zkServers) {
+        setProperty(ZK_SERVERS, zkServers);
+        return getThis();
+    }
+
+    /**
+     * Get zookeeper timeout.
+     *
+     * @return zookeeper server timeout
+     */
+    public int getZkTimeout() {
+        return getInt(ZK_TIMEOUT, 10000);
+    }
+
+    /**
+     * Set zookeeper timeout.
+     *
+     * @param zkTimeout
+     *          ZooKeeper server timeout
+     * @return server configuration
+     */
+    public T setZkTimeout(int zkTimeout) {
+        setProperty(ZK_TIMEOUT, Integer.toString(zkTimeout));
+        return getThis();
     }
 
     /**
@@ -329,10 +381,10 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      *          the client authentication provider factory class name
      * @return client configuration
      */
-    public AbstractConfiguration setClientAuthProviderFactoryClass(
+    public T setClientAuthProviderFactoryClass(
             String factoryClass) {
         setProperty(CLIENT_AUTH_PROVIDER_FACTORY_CLASS, factoryClass);
-        return this;
+        return getThis();
     }
 
     /**
@@ -363,9 +415,9 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      *          the max size in bytes
      * @return server configuration
      */
-    public AbstractConfiguration setNettyMaxFrameSizeBytes(int maxSize) {
+    public T setNettyMaxFrameSizeBytes(int maxSize) {
         setProperty(NETTY_MAX_FRAME_SIZE, String.valueOf(maxSize));
-        return this;
+        return getThis();
     }
 
     /**
@@ -384,9 +436,9 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      *            the client security provider factory class name
      * @return client configuration
      */
-    public AbstractConfiguration setTLSProviderFactoryClass(String factoryClass) {
+    public T setTLSProviderFactoryClass(String factoryClass) {
         setProperty(TLS_PROVIDER_FACTORY_CLASS, factoryClass);
-        return this;
+        return getThis();
     }
 
     /**
@@ -405,9 +457,9 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      *            TLS Provider type
      * @return Client Configuration
      */
-    public AbstractConfiguration setTLSProvider(String provider) {
+    public T setTLSProvider(String provider) {
         setProperty(TLS_PROVIDER, provider);
-        return this;
+        return getThis();
     }
 
     /**
@@ -427,9 +479,9 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      *            Whether to send a certificate or not
      * @return client configuration
      */
-    public AbstractConfiguration setTLSClientAuthentication(boolean enabled) {
+    public T setTLSClientAuthentication(boolean enabled) {
         setProperty(TLS_CLIENT_AUTHENTICATION, enabled);
-        return this;
+        return getThis();
     }
 
     /**
@@ -440,10 +492,10 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      *            comma separated list of enabled TLS cipher suites
      * @return current configuration
      */
-    public AbstractConfiguration setTLSEnabledCipherSuites(
+    public T setTLSEnabledCipherSuites(
             String list) {
         setProperty(TLS_ENABLED_CIPHER_SUITES, list);
-        return this;
+        return getThis();
     }
 
     /**
@@ -465,10 +517,10 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
      *            comma separated list of enabled TLS cipher suites
      * @return current configuration
      */
-    public AbstractConfiguration setTLSEnabledProtocols(
+    public T setTLSEnabledProtocols(
             String list) {
         setProperty(TLS_ENABLED_PROTOCOLS, list);
-        return this;
+        return getThis();
     }
 
     /**
@@ -481,4 +533,10 @@ public abstract class AbstractConfiguration extends CompositeConfiguration {
     public String getTLSEnabledProtocols() {
         return getString(TLS_ENABLED_PROTOCOLS, null);
     }
+
+
+    /**
+     * Trickery to allow inheritance with fluent style.
+     */
+    protected abstract T getThis();
 }

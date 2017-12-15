@@ -71,7 +71,8 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
     @Test
     public void testLedgerCloseWithConsistentLength() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setZkServers(zkUtil.getZooKeeperConnectString()).setReadTimeout(1);
+        conf.setZkServers(zkUtil.getZooKeeperConnectString());
+        conf.setReadTimeout(1);
 
         BookKeeper bkc = new BookKeeper(conf);
         LedgerHandle lh = bkc.createLedger(6, 3, DigestType.CRC32, new byte[] {});

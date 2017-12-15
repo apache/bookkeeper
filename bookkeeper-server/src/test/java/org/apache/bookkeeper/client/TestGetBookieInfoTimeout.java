@@ -25,8 +25,11 @@ import static org.junit.Assert.assertTrue;
 
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.util.concurrent.DefaultThreadFactory;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -36,6 +39,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
 import org.apache.bookkeeper.proto.BookkeeperProtocol;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.junit.After;
@@ -53,6 +57,7 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
     DigestType digestType;
     public EventLoopGroup eventLoopGroup;
     public OrderedSafeExecutor executor;
+    private ScheduledExecutorService scheduler;
 
     public TestGetBookieInfoTimeout() {
         super(10);
@@ -68,10 +73,13 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
                 .name("BKClientOrderedSafeExecutor")
                 .numThreads(2)
                 .build();
+        scheduler = Executors.newSingleThreadScheduledExecutor(
+                new DefaultThreadFactory("BookKeeperClientScheduler"));
     }
 
     @After
     public void tearDown() throws Exception {
+        scheduler.shutdown();
         eventLoopGroup.shutdownGracefully();
         executor.shutdown();
     }
@@ -99,7 +107,7 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
         // try to get bookie info from the sleeping bookie. It should fail with timeout error
         BookieSocketAddress addr = new BookieSocketAddress(bookieToSleep.getSocketAddress().getHostString(),
                 bookieToSleep.getPort());
-        BookieClient bc = new BookieClient(cConf, eventLoopGroup, executor);
+        BookieClient bc = new BookieClient(cConf, eventLoopGroup, executor, scheduler, NullStatsLogger.INSTANCE);
         long flags = BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE
                 | BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE;
 

@@ -270,7 +270,7 @@ public class LedgerFragmentReplicator {
             public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
                 if (rc != BKException.Code.OK) {
                     LOG.error("BK error writing entry for ledgerId: {}, entryId: {}, bookie: {}",
-                              new Object[] { ledgerId, entryId, addr, BKException.create(rc) });
+                            ledgerId, entryId, addr, BKException.create(rc));
                     if (completed.compareAndSet(false, true)) {
                         ledgerFragmentEntryMcb.processResult(rc, null, null);
                     }
@@ -281,7 +281,7 @@ public class LedgerFragmentReplicator {
                     }
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("Success writing ledger id {}, entry id {} to a new bookie {}!",
-                                  new Object[] { ledgerId, entryId, addr });
+                                ledgerId, entryId, addr);
                     }
                     if (numCompleted.incrementAndGet() == newBookies.size() && completed.compareAndSet(false, true)) {
                         ledgerFragmentEntryMcb.processResult(rc, null, null);

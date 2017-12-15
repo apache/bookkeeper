@@ -91,7 +91,7 @@ public class StabilizeNetworkTopology implements NetworkTopology {
                 long millisSinceLastSeen = MathUtils.now() - status.getLastPresentTime();
                 if (millisSinceLastSeen >= stabilizePeriodMillis) {
                     logger.info("Node {} (seen @ {}) becomes stale for {} ms, remove it from the topology.",
-                            new Object[] { node, status.getLastPresentTime(), millisSinceLastSeen });
+                            node, status.getLastPresentTime(), millisSinceLastSeen);
                     impl.remove(node);
                     nodeStatuses.remove(node, status);
                 }

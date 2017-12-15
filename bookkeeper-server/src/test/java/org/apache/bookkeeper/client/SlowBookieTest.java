@@ -55,7 +55,7 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
     @Test
     public void testSlowBookie() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setZkServers(zkUtil.getZooKeeperConnectString()).setReadTimeout(360);
+        conf.setReadTimeout(360).setZkServers(zkUtil.getZooKeeperConnectString());
 
         BookKeeper bkc = new BookKeeper(conf);
 
@@ -101,7 +101,7 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
     @Test
     public void testBookieFailureWithSlowBookie() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setZkServers(zkUtil.getZooKeeperConnectString()).setReadTimeout(5);
+        conf.setReadTimeout(5).setZkServers(zkUtil.getZooKeeperConnectString());
 
         BookKeeper bkc = new BookKeeper(conf);
 
@@ -155,7 +155,7 @@ public class SlowBookieTest extends BookKeeperClusterTestCase {
     @Test
     public void testManyBookieFailureWithSlowBookies() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setZkServers(zkUtil.getZooKeeperConnectString()).setReadTimeout(5);
+        conf.setReadTimeout(5).setZkServers(zkUtil.getZooKeeperConnectString());
 
         BookKeeper bkc = new BookKeeper(conf);
 

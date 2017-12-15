@@ -31,7 +31,7 @@
     node: Hadoop
     maven:
       root-pom: pom.xml
-      goals: clean apache-rat:check package findbugs:check -Dmaven.test.failure.ignore=false deploy
+      goals: clean apache-rat:check package spotbugs:check -Dmaven.test.failure.ignore=false deploy
       incremental-build: true
     reporters:
     - email:

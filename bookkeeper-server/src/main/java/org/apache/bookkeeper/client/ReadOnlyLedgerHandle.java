@@ -21,12 +21,14 @@
 package org.apache.bookkeeper.client;
 
 import java.security.GeneralSecurityException;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
 
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.util.SafeRunnable;
@@ -73,7 +75,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
     ReadOnlyLedgerHandle(BookKeeper bk, long ledgerId, LedgerMetadata metadata,
                          DigestType digestType, byte[] password, boolean watch)
             throws GeneralSecurityException, NumberFormatException {
-        super(bk, ledgerId, metadata, digestType, password);
+        super(bk, ledgerId, metadata, digestType, password, EnumSet.noneOf(WriteFlag.class));
         if (watch) {
             bk.getLedgerManager().registerLedgerMetadataListener(ledgerId, this);
         }
@@ -155,7 +157,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
                 this.metadata.getVersion().compare(newMetadata.getVersion());
         if (LOG.isDebugEnabled()) {
             LOG.debug("Try to update metadata from {} to {} : {}",
-                    new Object[] { this.metadata, newMetadata, occurred });
+                    this.metadata, newMetadata, occurred);
         }
         if (Version.Occurred.BEFORE == occurred) { // the metadata is updated
             try {

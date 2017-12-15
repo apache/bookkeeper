@@ -117,7 +117,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
                 @Override
                 public void onFailure(Throwable t) {
                     LOG.error("Fence request for ledgerId {} entryId {} encountered exception",
-                        new Object[] { ledgerId, entryId, t });
+                            ledgerId, entryId, t);
                     sendFenceResponse(readResponseBuilder, entryBody, false, startTimeSw);
                 }
             }, fenceThreadPool);
@@ -127,7 +127,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
                 success = fenceResult.get(1000, TimeUnit.MILLISECONDS);
             } catch (Throwable t) {
                 LOG.error("Fence request for ledgerId {} entryId {} encountered exception : ",
-                    new Object[]{ readRequest.getLedgerId(), readRequest.getEntryId(), t });
+                        readRequest.getLedgerId(), readRequest.getEntryId(), t);
             }
             sendFenceResponse(readResponseBuilder, entryBody, success, startTimeSw);
         }
@@ -226,12 +226,12 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
             }
             return buildResponse(readResponse, StatusCode.ENOENTRY, startTimeSw);
         } catch (IOException e) {
-            LOG.error("IOException while reading entry: {} from ledger {} ", new Object[] { entryId, ledgerId, e });
+            LOG.error("IOException while reading entry: {} from ledger {} ", entryId, ledgerId, e);
             return buildResponse(readResponse, StatusCode.EIO, startTimeSw);
         } catch (BookieException e) {
             LOG.error(
                 "Unauthorized access to ledger:{} while reading entry:{} in request from address: {}",
-                new Object[] { ledgerId, entryId, channel.remoteAddress() });
+                    ledgerId, entryId, channel.remoteAddress());
             return buildResponse(readResponse, StatusCode.EUA, startTimeSw);
         }
     }
