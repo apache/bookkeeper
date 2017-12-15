@@ -53,13 +53,13 @@
       <fileMode>644</fileMode>
     </file>
     <file>
-      <source>../src/main/resources/LICENSE.bin.txt</source>
+      <source>../src/main/resources/LICENSE-server.bin.txt</source>
       <outputDirectory>/</outputDirectory>
       <destName>LICENSE</destName>
       <fileMode>644</fileMode>
     </file>
     <file>
-      <source>../src/main/resources//NOTICE-server.bin.txt</source>
+      <source>../src/main/resources/NOTICE-server.bin.txt</source>
       <outputDirectory>/</outputDirectory>
       <destName>NOTICE</destName>
       <fileMode>644</fileMode>
