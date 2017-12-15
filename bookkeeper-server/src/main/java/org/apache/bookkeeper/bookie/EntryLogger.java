@@ -347,10 +347,7 @@ public class EntryLogger {
             return CacheBuilder.newBuilder().concurrencyLevel(1)
                     .expireAfterAccess(expireReadChannelCache, TimeUnit.MILLISECONDS)
                     //decrease the refCnt
-                    .removalListener(removal -> {
-                        LOG.info("refCnt for {} is {} ", removal.getKey(), logid2FileChannel.get(removal.getKey()).refCnt());
-                        logid2FileChannel.get(removal.getKey()).release();
-                    })
+                    .removalListener(removal -> logid2FileChannel.get(removal.getKey()).release())
                     .build(readChannelLoader);
         }
     };
