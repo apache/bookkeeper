@@ -335,7 +335,7 @@
         <configuration>
           <!-- Avoid for missing javadoc comments to be marked as errors -->
           <additionalparam>-Xdoclint:none</additionalparam>
-          <subpackages>org.apache.bookkeeper.client:org.apache.bookkeeper.common.annotation:org.apache.bookkeeper.conf:org.apache.bookkeeper.feature:org.apache.bookkeeper.stats</subpackages>
+          <subpackages>org.apache.bookkeeper.client:org.apache.bookkeeper.conf:org.apache.bookkeeper.feature</subpackages>
           <groups>
             <group>
               <title>Bookkeeper</title>

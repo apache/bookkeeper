@@ -188,7 +188,7 @@ public class TestSkipListArena {
                     treeMap = new TreeMap<Integer, AllocBuffer>();
                     mapsByArray.put(ptr, treeMap);
                 }
-                AllocBuffer other = treeMap.put(new Integer(buf.alloc.getOffset()), buf);
+                AllocBuffer other = treeMap.put(buf.alloc.getOffset(), buf);
                 if (other != null) {
                     fail("Buffer " + other.toString() + " overlapped with " + buf.toString());
                 }
