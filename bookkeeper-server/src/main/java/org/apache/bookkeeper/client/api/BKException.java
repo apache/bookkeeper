@@ -15,6 +15,8 @@
  */
 package org.apache.bookkeeper.client.api;
 
+import java.lang.reflect.Field;
+import java.util.HashMap;
 import org.apache.bookkeeper.client.LedgerHandleAdv;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
@@ -29,6 +31,8 @@ import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
 public abstract class BKException extends Exception {
     protected final int code;
 
+    private static final HashMap<Integer, String> codeNames = new HashMap<>();
+
     /**
      * Create a new exception.
      *
@@ -39,6 +43,17 @@ public abstract class BKException extends Exception {
     public BKException(int code) {
         super(getMessage(code));
         this.code = code;
+    }
+
+    static {
+        Class codeClass = Code.class;
+        for (Field field : codeClass.getDeclaredFields()) {
+            try {
+                codeNames.put(field.getInt(null), field.getName());
+            } catch (IllegalAccessException e) {
+                // e.printStackTrace();
+            }
+        }
     }
 
     /**
@@ -53,9 +68,32 @@ public abstract class BKException extends Exception {
     }
 
     /**
+     * Get code identifier name by code value.
+     *
+     * @param code the error code value
+     *
+     * @return the code identifier name
+     */
+    public static String getCodeName(int code) {
+        String name = codeNames.get(code);
+        return name != null ? name : Integer.toString(code);
+    }
+
+    /**
+     * Creates a lazy error code formatter suitable to pass to log functions.
+     *
+     * @param code the error code value
+     *
+     * @return lazy error code log formatter
+     */
+    public static Object codeLogger(int code) {
+        return new CodeLogFormatter(code);
+    }
+
+    /**
      * Describe an error code.
      *
-     * @param code
+     * @param code the error code value
      *
      * @return the description of the error code
      */
@@ -131,7 +169,7 @@ public abstract class BKException extends Exception {
     }
 
     /**
-     * Codes which represent the various exceptoin types.
+     * Codes which represent the various exception types.
      */
     public interface Code {
         /** A placer holder (unused). */
@@ -240,4 +278,19 @@ public abstract class BKException extends Exception {
         int UnexpectedConditionException = -999;
     }
 
+    /**
+     * Lazy exception code log formatter.
+     */
+    private static class CodeLogFormatter {
+        private int code;
+
+        private CodeLogFormatter(int code) {
+            this.code = code;
+        }
+
+        @Override
+        public String toString() {
+            return getCodeName(code) + ": " + getMessage(code);
+        }
+    }
 }

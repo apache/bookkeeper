@@ -483,8 +483,8 @@ public class LedgerHandle implements WriteHandle {
                                 @Override
                                 public void safeOperationComplete(int newrc, LedgerMetadata newMeta) {
                                     if (newrc != BKException.Code.OK) {
-                                        LOG.error("Error reading new metadata from ledger {} when closing, code={}",
-                                                ledgerId, newrc);
+                                        LOG.error("Error reading new metadata from ledger {} when closing: {}",
+                                                ledgerId, BKException.codeLogger(newrc));
                                         cb.closeComplete(rc, LedgerHandle.this, ctx);
                                     } else {
                                         metadata.setState(prevState);
@@ -519,7 +519,8 @@ public class LedgerHandle implements WriteHandle {
                                 }
                             });
                         } else if (rc != BKException.Code.OK) {
-                            LOG.error("Error update ledger metadata for ledger {} : {}", ledgerId, rc);
+                            LOG.error("Error update ledger metadata for ledger {} : {}",
+                                    ledgerId, BKException.codeLogger(rc));
                             cb.closeComplete(rc, LedgerHandle.this, ctx);
                         } else {
                             cb.closeComplete(BKException.Code.OK, LedgerHandle.this, ctx);
@@ -1394,7 +1395,7 @@ public class LedgerHandle implements WriteHandle {
             errorOutPendingAdds(rc);
             return;
         }
-        LOG.error("Closing ledger {} due to error {}", ledgerId, rc);
+        LOG.error("Closing ledger {} due to {}", ledgerId, BKException.codeLogger(rc));
         asyncCloseInternal(NoopCloseCallback.instance, null, rc);
     }
 
@@ -1657,14 +1658,15 @@ public class LedgerHandle implements WriteHandle {
         @Override
         public void safeOperationComplete(int newrc, LedgerMetadata newMeta) {
             if (newrc != BKException.Code.OK) {
-                LOG.error("[EnsembleChange-L{}-{}] : error re-reading metadata to address ensemble change conflicts,"
-                        + " code=", ledgerId, ensembleChangeIdx, newrc);
+                LOG.error("[EnsembleChange-L{}-{}] : error re-reading metadata "
+                                + "to address ensemble change conflicts: {}",
+                        ledgerId, ensembleChangeIdx, BKException.codeLogger(newrc));
                 handleUnrecoverableErrorDuringAdd(rc);
             } else {
                 if (!resolveConflict(newMeta)) {
                     LOG.error("[EnsembleChange-L{}-{}] : could not resolve ledger metadata conflict"
-                            + " while changing ensemble to: {}, local meta data is \n {} \n,"
-                            + " zk meta data is \n {} \n, closing ledger",
+                                    + " while changing ensemble to: {}, local meta data is \n {} \n,"
+                                    + " zk meta data is \n {} \n, closing ledger",
                             ledgerId, ensembleChangeIdx, ensembleInfo.newEnsemble, metadata, newMeta);
                     handleUnrecoverableErrorDuringAdd(rc);
                 }
@@ -1921,7 +1923,7 @@ public class LedgerHandle implements WriteHandle {
                         .setEntryListener(listener)
                         .initiate();
                 } else {
-                    LOG.error("Error writing ledger config {} of ledger {}", rc, ledgerId);
+                    LOG.error("Error writing ledger {} config: {}", ledgerId, BKException.codeLogger(rc));
                     cb.operationComplete(rc, null);
                 }
             }
@@ -1939,7 +1941,7 @@ public class LedgerHandle implements WriteHandle {
         @Override
         public void closeComplete(int rc, LedgerHandle lh, Object ctx) {
             if (rc != BKException.Code.OK) {
-                LOG.warn("Close failed: " + BKException.getMessage(rc));
+                LOG.warn("Close failed: {}", BKException.codeLogger(rc));
             }
             // noop
         }
