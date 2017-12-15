@@ -30,8 +30,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.util.concurrent.DefaultThreadFactory;
 
 import java.io.IOException;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.SortedMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
@@ -53,9 +51,11 @@ import org.apache.bookkeeper.bookie.CompactableLedgerStorage;
 import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.EntryLogger;
 import org.apache.bookkeeper.bookie.GarbageCollectorThread;
+import org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorageDataFormats.LedgerData;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorage.Batch;
+import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookieProtocol;
@@ -714,8 +714,8 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
     }
 
     @Override
-    public Observable waitForLastAddConfirmedUpdate(long ledgerId, long previoisLAC, Observer observer)
-            throws IOException {
+    public boolean waitForLastAddConfirmedUpdate(long ledgerId, long previousLAC,
+            Watcher<LastAddConfirmedUpdateNotification> watcher) throws IOException {
         throw new UnsupportedOperationException();
     }
 
