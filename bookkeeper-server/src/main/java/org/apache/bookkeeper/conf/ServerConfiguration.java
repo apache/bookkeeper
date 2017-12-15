@@ -47,6 +47,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String COMPACTION_RATE = "compactionRate";
     protected static final String COMPACTION_RATE_BY_ENTRIES = "compactionRateByEntries";
     protected static final String COMPACTION_RATE_BY_BYTES = "compactionRateByBytes";
+    protected static final String EXPIRE_READ_CHANNEL_CACHE = "expireReadChannelCache";
 
     // Gc Parameters
     protected static final String GC_WAIT_TIME = "gcWaitTime";
@@ -235,6 +236,27 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setEntryLogFilePreAllocationEnabled(boolean enabled) {
         this.setProperty(ENTRY_LOG_FILE_PREALLOCATION_ENABLED, enabled);
+        return this;
+    }
+
+    /**
+     * get ReadChannelCache expire time.
+     *
+     * @return server configuration object.
+     */
+    public long getExpireReadChannelCache() {
+        return this.getLong(EXPIRE_READ_CHANNEL_CACHE, 3600000);
+    }
+
+    /**
+     * set ReadChannelCache expire time. Default value is 1h.
+     *
+     * @param millis
+     *          expire time.
+     * @return server configuration object.
+     */
+    public ServerConfiguration setExpireReadChannelCache(long millis) {
+        this.setProperty(EXPIRE_READ_CHANNEL_CACHE, millis);
         return this;
     }
 
@@ -2633,4 +2655,5 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected ServerConfiguration getThis() {
         return this;
     }
+
 }

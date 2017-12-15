@@ -202,7 +202,7 @@ public class EntryLogger {
     private final boolean doRegularFlushes;
     private long bytesWrittenSinceLastFlush = 0;
     private final int maxSaneEntrySize;
-    private final int expireReadChannelCacheInHour = 1;
+    private final long expireReadChannelCache;
 
     final ServerConfiguration conf;
     /**
@@ -292,6 +292,7 @@ public class EntryLogger {
         flushIntervalInBytes = conf.getFlushIntervalInBytes();
         doRegularFlushes = flushIntervalInBytes > 0;
 
+        expireReadChannelCache = conf.getExpireReadChannelCache();
         initialize();
     }
 
@@ -344,12 +345,20 @@ public class EntryLogger {
             // We dont really need the concurrency, but we need to use
             // the weak values. Therefore using the concurrency level of 1
             return CacheBuilder.newBuilder().concurrencyLevel(1)
-                    .expireAfterAccess(expireReadChannelCacheInHour, TimeUnit.HOURS)
+                    .expireAfterAccess(expireReadChannelCache, TimeUnit.MILLISECONDS)
                     //decrease the refCnt
-                    .removalListener(removal -> logid2FileChannel.get(removal.getKey()).release())
+                    .removalListener(removal -> {
+                        LOG.info("refCnt for {} is {} ", removal.getKey(), logid2FileChannel.get(removal.getKey()).refCnt());
+                        logid2FileChannel.get(removal.getKey()).release();
+                    })
                     .build(readChannelLoader);
         }
     };
+
+    // only used for test.
+    ThreadLocal<Cache<Long, BufferedReadChannel>> getLogid2Channel() {
+        return logid2Channel;
+    }
 
     private final  CacheLoader<Long, BufferedReadChannel> readChannelLoader =
             new CacheLoader<Long, BufferedReadChannel> () {
@@ -361,7 +370,11 @@ public class EntryLogger {
     };
 
 
-    private static class ReferenceCountedFileChannel extends AbstractReferenceCounted {
+    static class ReferenceCountedFileChannel extends AbstractReferenceCounted {
+        FileChannel getFc() {
+            return fc;
+        }
+
         private final FileChannel fc;
 
         public ReferenceCountedFileChannel(FileChannel fileChannel) {
@@ -374,7 +387,7 @@ public class EntryLogger {
             return this;
         }
 
-        // when the refCnt decreased to
+        // when the refCnt decreased to 0 or force deallocate
         @Override
         protected void deallocate() {
             try {
@@ -389,7 +402,6 @@ public class EntryLogger {
 
     }
 
-
     /**
      * Each thread local buffered read channel can share the same file handle because reads are not relative
      * and don't cause a change in the channel's position.
@@ -398,7 +410,10 @@ public class EntryLogger {
      */
     private ConcurrentMap<Long, ReferenceCountedFileChannel>
             logid2FileChannel = new ConcurrentHashMap<>();
-
+    // only for test.
+    ConcurrentMap<Long, ReferenceCountedFileChannel> getLogid2FileChannel() {
+        return logid2FileChannel;
+    }
 
     /**
      * Put the logId, bc pair in the map responsible for the current thread.
@@ -415,12 +430,12 @@ public class EntryLogger {
      * @param logId
      */
     public void removeFromChannelsAndClose(long logId) {
-        //remove the fileChannel from logId2Channel
-        Cache<Long, BufferedReadChannel> threadCahe = logid2Channel.get();
-        threadCahe.invalidate(logId);
 
         //remove the fileChannel from logId2FileChannel and close it
-        logid2FileChannel.remove(logId).deallocate();
+        ReferenceCountedFileChannel fileChannel = logid2FileChannel.remove(logId);
+        if (null != fileChannel) {
+            fileChannel.deallocate();
+        }
 
     }
 
@@ -1142,25 +1157,30 @@ public class EntryLogger {
         }
     }
 
-
     private BufferedReadChannel getChannelForLogId(long entryLogId) throws IOException {
         BufferedReadChannel brc = getFromChannels(entryLogId);
         if (brc != null) {
-            // increment the refCnt
-            logid2FileChannel.get(entryLogId).retain();
             return brc;
         }
 
         File file = findFile(entryLogId);
         // get channel is used to open an existing entry log file
         // it would be better to open using read mode
-        FileChannel fc = new RandomAccessFile(file, "r").getChannel();
-        logid2FileChannel.put(entryLogId, new ReferenceCountedFileChannel(fc));
+        FileChannel newFc = new RandomAccessFile(file, "r").getChannel();
+        ReferenceCountedFileChannel oldFc =
+                logid2FileChannel.putIfAbsent(entryLogId, new ReferenceCountedFileChannel(newFc));
+        if (null != oldFc) {
+            newFc.close();
+            newFc = oldFc.fc;
+            // increment the refCnt
+            oldFc.retain();
+        }
 
         // We set the position of the write buffer of this buffered channel to Long.MAX_VALUE
         // so that there are no overlaps with the write buffer while reading
-        brc = new BufferedReadChannel(fc, conf.getReadBufferBytes());
+        brc = new BufferedReadChannel(newFc, conf.getReadBufferBytes());
         putInReadChannels(entryLogId, brc);
+        LOG.info("put readChannel: {}, corresponding to: {} ", brc, entryLogId);
         return brc;
     }
 

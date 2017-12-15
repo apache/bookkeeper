@@ -27,18 +27,17 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.google.common.cache.Cache;
 import com.google.common.collect.Sets;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.concurrent.ConcurrentMap;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.util.DiskChecker;
@@ -320,6 +319,93 @@ public class EntryLogTest {
         assertFalse(meta.getLedgersMap().containsKey(4L));
         assertEquals(120, meta.getTotalSize());
         assertEquals(120, meta.getRemainingSize());
+    }
+
+    /**
+     * Test Cache for logid2Channel and concurrentMap for logid2FileChannel work correctly.
+     * Note that, when an entryLogger is initialized, the entry log id will increase one.
+     * when the preallocation is enabled, a new entrylogger will cost 2 logId.
+     */
+    @Test
+    public void testCacheInEntryLog() throws Exception {
+        File tmpDir = createTempDir("bkTest", ".dir");
+        File curDir = Bookie.getCurrentDirectory(tmpDir);
+        Bookie.checkDirectoryStructure(curDir);
+
+        int gcWaitTime = 1000;
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setGcWaitTime(gcWaitTime);
+        conf.setLedgerDirNames(new String[] {tmpDir.toString()});
+        //since last access, expire after 1s
+        conf.setExpireReadChannelCache(1000);
+        conf.setEntryLogFilePreAllocationEnabled(false);
+        // below one will cost logId 0
+        Bookie bookie = new Bookie(conf);
+        // create some entries
+        int numLogs = 4;
+        int numEntries = 10;
+        long[][] positions = new long[numLogs][];
+        for (int i = 0; i < numLogs; i++) {
+            positions[i] = new long[numEntries];
+            EntryLogger logger = new EntryLogger(conf,
+                    bookie.getLedgerDirsManager());
+            for (int j = 0; j < numEntries; j++) {
+                positions[i][j] = logger.addEntry(i, generateEntry(i, j).nioBuffer());
+            }
+            logger.flush();
+            LOG.info("log id is {}, LeastUnflushedLogId is {} ", logger.getCurrentLogId(),
+                    logger.getLeastUnflushedLogId());
+        }
+
+        for (int i = 1; i < numLogs + 1; i++) {
+            File logFile = new File(curDir, Long.toHexString(i) + ".log");
+            assertTrue(logFile.exists());
+        }
+
+        // create some read for the entry log
+        EntryLogger logger = ((InterleavedLedgerStorage) bookie.ledgerStorage).entryLogger;
+        ThreadLocal<Cache<Long, BufferedReadChannel>>  cacheThreadLocal = logger.getLogid2Channel();
+        ConcurrentMap<Long, EntryLogger.ReferenceCountedFileChannel> logid2FileChannel = logger.getLogid2FileChannel();
+        for (int j = 0; j < numEntries; j++) {
+            logger.readEntry(0, j, positions[0][j]);
+        }
+        LOG.info("cache size is {}, content is {}", cacheThreadLocal.get().size(),
+                cacheThreadLocal.get().asMap().toString());
+        // the cache has readChannel for 1.log
+        assertNotNull(cacheThreadLocal.get().getIfPresent(1L));
+        for (int j = 0; j < numEntries; j++) {
+            logger.readEntry(1, j, positions[1][j]);
+        }
+        LOG.info("cache size is {}, content is {}", cacheThreadLocal.get().size(),
+                cacheThreadLocal.get().asMap().toString());
+        // the cache has readChannel for 2.log
+        assertNotNull(cacheThreadLocal.get().getIfPresent(2L));
+        // expire time
+        Thread.sleep(1000);
+        // read to new entry log, the old values in logid2Channel should has been invalidated
+        for (int j = 0; j < numEntries; j++) {
+            logger.readEntry(2, j, positions[2][j]);
+        }
+        for (int j = 0; j < numEntries; j++) {
+            logger.readEntry(3, j, positions[3][j]);
+        }
+        LOG.info("cache size is {}, content is {}", cacheThreadLocal.get().size(),
+                cacheThreadLocal.get().asMap().toString());
+        // the cache has readChannel for 3.log
+        assertNotNull(cacheThreadLocal.get().getIfPresent(3L));
+        // the cache has readChannel for 4.log
+        assertNotNull(cacheThreadLocal.get().getIfPresent(4L));
+        // the cache hasn't readChannel for 1.log
+        assertNull(cacheThreadLocal.get().getIfPresent(1L));
+        // the cache hasn't readChannel for 2.log
+        assertNull(cacheThreadLocal.get().getIfPresent(2L));
+        // the corresponding file channel should be closed
+        LOG.info("map content is {}", logid2FileChannel.toString());
+        assertEquals(0, logid2FileChannel.get(1L).refCnt());
+        assertEquals(0, logid2FileChannel.get(2L).refCnt());
+        assertEquals(1, logid2FileChannel.get(3L).refCnt());
+        assertEquals(1, logid2FileChannel.get(4L).refCnt());
+//        assertNull(logid2FileChannel.get(2L).getFc());
     }
 
     /**
