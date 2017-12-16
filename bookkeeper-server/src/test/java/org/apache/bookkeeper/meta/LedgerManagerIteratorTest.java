@@ -50,7 +50,6 @@ import org.apache.bookkeeper.versioning.Version;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
 import org.junit.After;
-import org.junit.Assume;
 import org.junit.Test;
 
 
@@ -354,11 +353,6 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
 
     @Test
     public void checkConcurrentModifications() throws Throwable {
-        // Fails at this time on LegacyHLM, see next patch
-        Assume.assumeFalse(
-                baseConf.getLedgerManagerFactoryClass() == HierarchicalLedgerManagerFactory.class);
-        Assume.assumeFalse(
-                baseConf.getLedgerManagerFactoryClass() == LegacyHierarchicalLedgerManagerFactory.class);
         final int numWriters = 10;
         final int numCheckers = 10;
         final int numLedgers = 100;
