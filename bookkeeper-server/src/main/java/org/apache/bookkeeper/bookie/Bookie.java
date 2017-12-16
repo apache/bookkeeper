@@ -767,6 +767,9 @@ public class Bookie extends BookieCriticalThread {
 
                             recBuff.get(masterKey);
                             masterKeyCache.put(ledgerId, masterKey);
+
+                            // Force to re-insert the master key in ledger storage
+                            handles.getHandle(ledgerId, masterKey);
                         } else {
                             throw new IOException("Invalid journal. Contains journalKey "
                                     + " but layout version (" + journalVersion
