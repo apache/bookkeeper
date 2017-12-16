@@ -22,13 +22,13 @@ package org.apache.bookkeeper.client.api;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.hasItems;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import io.netty.buffer.Unpooled;
@@ -248,7 +248,7 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
     public void testOpenLedgerWithRecovery() throws Exception {
 
         loggerOutput.expect((List<LoggingEvent> logEvents) -> {
-            assertThat(logEvents, hasItems(hasProperty("renderedMessage",
+            assertThat(logEvents, hasItem(hasProperty("renderedMessage",
                     containsString("due to LedgerFencedException: "
                             + "Ledger has been fenced off. Some other client must have opened it to read")
             )));
