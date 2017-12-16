@@ -1,0 +1,49 @@
+version: '2'
+
+services:
+
+  zookeeper:
+    image: zookeeper
+    hostname: zookeeper
+
+  bookie1:
+    image: apache/bookkeeper
+    hostname: bookie1
+    links:
+      - zookeeper
+    environment:
+      - JAVA_HOME=/usr/lib/jvm/jre-1.8.0
+      - BK_zkServers=zookeeper:2181
+      - BK_zkLedgersRootPath = /ledgers
+
+  bookie2:
+    image: apache/bookkeeper
+    hostname: bookie2
+    links:
+      - zookeeper
+    environment:
+      - JAVA_HOME=/usr/lib/jvm/jre-1.8.0
+      - BK_zkServers=zookeeper:2181
+      - BK_zkLedgersRootPath = /ledgers
+
+  bookie3:
+    image: apache/bookkeeper
+    hostname: bookie3
+    links:
+      - zookeeper
+    environment:
+      - JAVA_HOME=/usr/lib/jvm/jre-1.8.0
+      - BK_zkServers=zookeeper:2181
+      - BK_zkLedgersRootPath = /ledgers
+
+  dice:
+    image: caiok/bookkeeper-tutorial
+    depends_on:
+      - zookeeper
+    links:
+      - zookeeper
+      - bookie3
+    environment:
+      - ZOOKEEPER_SERVERS=zookeeper:2181
+      - BOOKKEEPER_SERVER=bookie3
+
