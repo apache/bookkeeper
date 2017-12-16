@@ -90,14 +90,14 @@ public class LoggerOutput implements TestRule {
             public Level getLevel() {
                 switch (log4jEvent.getLevel().toString()) {
                     case "FATAL":
-                    case "ERROR": return org.slf4j.event.Level.ERROR;
-                    case "WARN": return org.slf4j.event.Level.WARN;
-                    case "INFO": return org.slf4j.event.Level.INFO;
-                    case "DEBUG": return org.slf4j.event.Level.DEBUG;
+                    case "ERROR": return Level.ERROR;
+                    case "WARN": return Level.WARN;
+                    case "INFO": return Level.INFO;
+                    case "DEBUG": return Level.DEBUG;
                     case "TRACE":
                     case "ALL":
                     case "OFF":
-                    default: return org.slf4j.event.Level.TRACE;
+                    default: return Level.TRACE;
                 }
             }
 
