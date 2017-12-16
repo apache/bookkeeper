@@ -16,7 +16,7 @@
 package org.apache.bookkeeper.client.api;
 
 import java.lang.reflect.Field;
-import java.util.HashMap;
+
 import org.apache.bookkeeper.client.LedgerHandleAdv;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
@@ -31,7 +31,7 @@ import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
 public abstract class BKException extends Exception {
     protected final int code;
 
-    private static final HashMap<Integer, String> codeNames = new HashMap<>();
+    private static final LogMessagePool logMessagePool = new LogMessagePool();
 
     /**
      * Create a new exception.
@@ -43,17 +43,6 @@ public abstract class BKException extends Exception {
     public BKException(int code) {
         super(getMessage(code));
         this.code = code;
-    }
-
-    static {
-        Class codeClass = Code.class;
-        for (Field field : codeClass.getDeclaredFields()) {
-            try {
-                codeNames.put(field.getInt(null), field.getName());
-            } catch (IllegalAccessException e) {
-                // e.printStackTrace();
-            }
-        }
     }
 
     /**
@@ -68,26 +57,14 @@ public abstract class BKException extends Exception {
     }
 
     /**
-     * Get code identifier name by code value.
-     *
-     * @param code the error code value
-     *
-     * @return the code identifier name
-     */
-    public static String getCodeName(int code) {
-        String name = codeNames.get(code);
-        return name != null ? name : Integer.toString(code);
-    }
-
-    /**
-     * Creates a lazy error code formatter suitable to pass to log functions.
+     * Returns a lazy error code formatter suitable to pass to log functions.
      *
      * @param code the error code value
      *
      * @return lazy error code log formatter
      */
     public static Object codeLogger(int code) {
-        return new CodeLogFormatter(code);
+        return logMessagePool.get(code);
     }
 
     /**
@@ -279,18 +256,59 @@ public abstract class BKException extends Exception {
     }
 
     /**
-     * Lazy exception code log formatter.
+     * Code log message pool.
      */
-    private static class CodeLogFormatter {
-        private int code;
+    private static class LogMessagePool {
+        private static final int lastKnown = 200;
+        private final String[] pool = new String[lastKnown + 2]; // UnexpectedConditionException is an outlier
 
-        private CodeLogFormatter(int code) {
-            this.code = code;
+        private LogMessagePool() {
+            for (Field field : Code.class.getDeclaredFields()) {
+                int code = getFieldInt(field);
+                int index = poolIndex(code);
+                if (index >= 0) {
+                    pool[index] = String.format("%s: %s", field.getName(), getMessage(code));
+                }
+            }
         }
 
-        @Override
-        public String toString() {
-            return getCodeName(code) + ": " + getMessage(code);
+        private int getFieldInt(Field field) {
+            try {
+                return field.getInt(null);
+            } catch (IllegalAccessException e) {
+                return -1;
+            }
+        }
+
+        private Object get(int code) {
+            int index = poolIndex(code);
+            String logMessage = index >= 0 ? pool[index] : null;
+            return logMessage != null ? logMessage : new UnrecognizedCodeLogFormatter(code);
+        }
+
+        private int poolIndex(int code) {
+            switch (code) {
+            case Code.UnexpectedConditionException:
+                return lastKnown + 1;
+            default:
+                return code <= 0 && code >= -lastKnown ? lastKnown + code : -1;
+            }
+        }
+
+        /**
+         * Unrecognized code lazy log message formatter.
+         */
+        private static class UnrecognizedCodeLogFormatter {
+            private final int code;
+
+            private UnrecognizedCodeLogFormatter(int code) {
+                this.code = code;
+            }
+
+            @Override
+            public String toString() {
+                return String.format("%d: %s", code, getMessage(code));
+            }
         }
     }
 }

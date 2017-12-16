@@ -354,6 +354,22 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
         }
     }
 
+    @Test
+    public void testBKExceptionCodeLogger() {
+        assertEquals("OK: No problem", BKException.codeLogger(0).toString());
+        assertEquals("ReadException: Error while reading ledger", BKException.codeLogger(-1).toString());
+        assertEquals("IncorrectParameterException: Incorrect parameter input", BKException.codeLogger(-14).toString());
+        assertEquals("LedgerFencedException: Ledger has been fenced off. Some other client must have opened it to read",
+                BKException.codeLogger(-101).toString());
+        assertEquals("ReplicationException: Errors in replication pipeline", BKException.codeLogger(-200).toString());
+
+        assertEquals("UnexpectedConditionException: Unexpected condition", BKException.codeLogger(-999).toString());
+
+        assertEquals("1: Unexpected condition", BKException.codeLogger(1).toString());
+        assertEquals("123: Unexpected condition", BKException.codeLogger(123).toString());
+        assertEquals("-201: Unexpected condition", BKException.codeLogger(-201).toString());
+    }
+
     private static void checkEntries(LedgerEntries entries, byte[] data)
         throws InterruptedException, BKException {
         Iterator<LedgerEntry> iterator = entries.iterator();
