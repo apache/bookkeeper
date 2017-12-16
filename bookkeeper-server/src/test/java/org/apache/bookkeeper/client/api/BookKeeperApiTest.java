@@ -44,9 +44,9 @@ import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
 import org.apache.bookkeeper.client.BKException.BKUnauthorizedAccessException;
 import org.apache.bookkeeper.client.MockBookKeeperTestCase;
 import org.apache.bookkeeper.util.LoggerOutput;
-import org.apache.log4j.spi.LoggingEvent;
 import org.junit.Rule;
 import org.junit.Test;
+import org.slf4j.event.LoggingEvent;
 
 /**
  * Unit tests of classes in this package.
@@ -248,7 +248,7 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
     public void testOpenLedgerWithRecovery() throws Exception {
 
         loggerOutput.expect((List<LoggingEvent> logEvents) -> {
-            assertThat(logEvents, hasItem(hasProperty("renderedMessage",
+            assertThat(logEvents, hasItem(hasProperty("message",
                     containsString("due to LedgerFencedException: "
                             + "Ledger has been fenced off. Some other client must have opened it to read")
             )));
