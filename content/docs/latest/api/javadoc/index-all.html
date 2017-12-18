@@ -1577,6 +1577,8 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html#ensembleSize">ensembleSize</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.RRTopologyAwareCoverageEnsemble</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#ENTRY_FORMATTER_CLASS">ENTRY_FORMATTER_CLASS</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.LastConfirmedCtx.html#ENTRY_ID_PENDING">ENTRY_ID_PENDING</a></span> - Static variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.LastConfirmedCtx.html" title="class in org.apache.bookkeeper.client">LedgerHandle.LastConfirmedCtx</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#ENTRY_LOG_FILE_PREALLOCATION_ENABLED">ENTRY_LOG_FILE_PREALLOCATION_ENABLED</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
@@ -2182,6 +2184,10 @@
 <dd>
 <div class="block">Returns the content of the entry as a byte array.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#getEntryFormatterClass--">getEntryFormatterClass()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>
+<div class="block">Get entry formatter class.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/api/LedgerEntry.html#getEntryId--">getEntryId()</a></span> - Method in interface org.apache.bookkeeper.client.api.<a href="org/apache/bookkeeper/client/api/LedgerEntry.html" title="interface in org.apache.bookkeeper.client.api">LedgerEntry</a></dt>
 <dd>
 <div class="block">The id of the entry.</div>
@@ -2451,6 +2457,10 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerFragment.html#getLedgerId--">getLedgerId()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#getLedgerIdFormatterClass--">getLedgerIdFormatterClass()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>
+<div class="block">Get ledger id formatter class.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#getLedgerIdGenerator--">getLedgerIdGenerator()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#getLedgerKey--">getLedgerKey()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
@@ -3734,6 +3744,8 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#ledgerId">ledgerId</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerOpenOp.html#ledgerId">ledgerId</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerOpenOp.html" title="class in org.apache.bookkeeper.client">LedgerOpenOp</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#LEDGERID_FORMATTER_CLASS">LEDGERID_FORMATTER_CLASS</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#ledgerIdGenerator">ledgerIdGenerator</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>&nbsp;</dd>
@@ -5494,6 +5506,10 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/LedgerEntryImpl.html#setEntryBuf-io.netty.buffer.ByteBuf-">setEntryBuf(ByteBuf)</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/LedgerEntryImpl.html" title="class in org.apache.bookkeeper.client.impl">LedgerEntryImpl</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#setEntryFormatterClass-java.lang.Class-">setEntryFormatterClass(Class&lt;? extends EntryFormatter&gt;)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>
+<div class="block">Set entry formatter Class.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/impl/LedgerEntryImpl.html#setEntryId-long-">setEntryId(long)</a></span> - Method in class org.apache.bookkeeper.client.impl.<a href="org/apache/bookkeeper/client/impl/LedgerEntryImpl.html" title="class in org.apache.bookkeeper.client.impl">LedgerEntryImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingAddOp.html#setEntryId-long-">setEntryId(long)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a></dt>
@@ -5644,6 +5660,10 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#setLedgerDirNames-java.lang.String:A-">setLedgerDirNames(String[])</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Set dir names to store ledger data.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/AbstractConfiguration.html#setLedgerIdFormatterClass-java.lang.Class-">setLedgerIdFormatterClass(Class&lt;? extends LedgerIdFormatter&gt;)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/AbstractConfiguration.html" title="class in org.apache.bookkeeper.conf">AbstractConfiguration</a></dt>
+<dd>
+<div class="block">Set Ledger id formatter Class.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingAddOp.html#setLedgerLength-long-">setLedgerLength(long)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingAddOp.html" title="class in org.apache.bookkeeper.client">PendingAddOp</a></dt>
 <dd>&nbsp;</dd>
