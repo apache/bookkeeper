@@ -225,10 +225,11 @@ Please refer to our <a href="https://github.com/apache/bookkeeper/blob/master/bu
 <p>Apache BookKeeper code should follow the <a href="http://www.oracle.com/technetwork/java/javase/documentation/codeconvtoc-136057.html">Sun Java Coding Convention</a>, with the following additions.</p>
 
 <ul>
-  <li>Lines can be up to 120 characters long.</li>
+  <li>Lines can not be longer than 120 characters.</li>
   <li>Indentation should be <strong>4 spaces</strong>. Tabs should never be used.</li>
   <li>Use curly braces even for single-line ifs and elses.</li>
-  <li>No @author tags in any javadoc</li>
+  <li>No @author tags in any javadoc.</li>
+  <li>Use try-with-resources blocks whenever is possible.</li>
   <li><strong>TODO</strong>s should be associated to at least one issue. E.g. <code class="highlighter-rouge">// TODO: make this parameter configurable (https://github.com/apache/bookkeeper/issues/280)</code></li>
 </ul>
 
