@@ -32,7 +32,55 @@ then run test command, such as:
 ```
 ## TL;DR -- BookKeeper cluster 
 
-If you want to setup cluster, you can play with Makefile hosted in this project and check its targets for a fairly complex set up example:
+If you want to setup cluster, you can play with Makefile or docker-compose hosted in this project and check its targets for a fairly complex set up example:
+
+### Docker compose
+
+```
+git clone https://github.com/apache/bookkeeper
+cd bookkeeper/docker
+docker-compose up -d
+```
+
+and it spawns and ensemble of 3 bookies with 1 dice:
+
+```
+bookie1_1    | 2017-12-08 23:18:11,315 - INFO  -
+[bookie-io-1:BookieRequestHandler@51] - Channel connected  [id: 0x405d690e,
+L:/172.19.0.3:3181 - R:/172.19.0.6:34922]
+bookie2_1    | 2017-12-08 23:18:11,326 - INFO  -
+[bookie-io-1:BookieRequestHandler@51] - Channel connected  [id: 0x7fa8645d,
+L:/172.19.0.4:3181 - R:/172.19.0.6:38862]
+dice_1       | Value = 1, epoch = 5, leading
+dice_1       | Value = 2, epoch = 5, leading
+dice_1       | Value = 4, epoch = 5, leading
+dice_1       | Value = 3, epoch = 5, leading
+```
+
+If you want to see how it behaves with more dices you only need to use
+`docker-compose up -d --scale dice=3`:
+
+```sh
+dice_3       | Value = 3, epoch = 5, following
+dice_2       | Value = 3, epoch = 5, following
+dice_1       | Value = 2, epoch = 5, leading
+dice_3       | Value = 2, epoch = 5, following
+dice_2       | Value = 2, epoch = 5, following
+dice_1       | Value = 1, epoch = 5, leading
+dice_3       | Value = 2, epoch = 5, following
+dice_2       | Value = 2, epoch = 5, following
+```
+
+You can scale the numbers of bookkeepers too selecting one of the bookies and
+using `docker-compose up -d --scale bookie1=3`
+
+Remember to shutdown the docker-compose service with `docker-compose down` to
+remove the containers and avoid errors with leftovers in next executions of the
+service.
+
+
+### Makefile
+
 ```
 git clone https://github.com/apache/bookkeeper
 cd bookkeeper/docker
