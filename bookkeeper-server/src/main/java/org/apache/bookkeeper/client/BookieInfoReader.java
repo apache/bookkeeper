@@ -339,7 +339,8 @@ public class BookieInfoReader {
                                 BookieSocketAddress b = (BookieSocketAddress) ctx;
                                 if (rc != BKException.Code.OK) {
                                     if (LOG.isErrorEnabled()) {
-                                        LOG.error("Reading bookie info from bookie {} failed due to error: {}.", b, rc);
+                                        LOG.error("Reading bookie info from bookie {} failed due to {}",
+                                                b, BKException.codeLogger(rc));
                                     }
                                     // We reread bookies missing from the map each time, so remove to ensure
                                     // we get to it on the next scan
@@ -413,7 +414,8 @@ public class BookieInfoReader {
                             BookieSocketAddress b = (BookieSocketAddress) ctx;
                             if (rc != BKException.Code.OK) {
                                 if (LOG.isErrorEnabled()) {
-                                    LOG.error("Reading bookie info from bookie {} failed due to error: {}.", b, rc);
+                                    LOG.error("Reading bookie info from bookie {} failed due to {}",
+                                            b, BKException.codeLogger(rc));
                                 }
                             } else {
                                 if (LOG.isDebugEnabled()) {

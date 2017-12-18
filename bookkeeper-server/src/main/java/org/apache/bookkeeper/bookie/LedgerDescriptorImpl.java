@@ -26,6 +26,7 @@ import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.bookkeeper.client.api.BKException;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -122,7 +123,10 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
         }
         ByteBuf entry = createLedgerFenceEntry(ledgerId);
         journal.logAddEntry(entry, (rc, ledgerId, entryId, addr, ctx) -> {
-            LOG.debug("Record fenced state for ledger {} in journal with rc {}", ledgerId, rc);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Record fenced state for ledger {} in journal with rc {}",
+                        ledgerId, BKException.codeLogger(rc));
+            }
             if (rc == 0) {
                 fenceEntryPersisted.compareAndSet(false, true);
                 result.set(true);
