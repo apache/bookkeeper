@@ -240,8 +240,8 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
     @Override
     public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
         if (rc != BKException.Code.OK) {
-            LOG.error("Failure " + BKException.getMessage(rc) + " while writing entry: " + (entryId + 1)
-                      + " ledger: " + lh.ledgerId + " while recovering ledger");
+            LOG.error("Failure {} while writing entry: {} while recovering ledger: {}",
+                    BKException.codeLogger(rc), entryId + 1, lh.ledgerId);
             if (callbackDone.compareAndSet(false, true)) {
                 // Give up, we can't recover from this error
                 submitCallback(rc);

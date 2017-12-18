@@ -438,8 +438,8 @@ public class LedgerFragmentReplicator {
                         });
                 return;
             } else if (rc != BKException.Code.OK) {
-                LOG.error("Error updating ledger config metadata for ledgerId "
-                        + lh.getId() + " : " + BKException.getMessage(rc));
+                LOG.error("Error updating ledger config metadata for ledgerId {} : {}",
+                        lh.getId(), BKException.codeLogger(rc));
             } else {
                 LOG.info("Updated ZK for ledgerId: (" + lh.getId() + " : "
                         + fragmentStartId
