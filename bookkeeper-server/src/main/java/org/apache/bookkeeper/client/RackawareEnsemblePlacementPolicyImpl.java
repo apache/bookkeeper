@@ -827,7 +827,7 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
      * This function orders the read sequence with a given region. For region-unaware policies (e.g.
      * RackAware), we pass in false for regionAware and an empty myRegion. When this happens, any
      * remote list will stay empty. The ordering is as follows (the R* at the beginning of each list item
-     * is only present for region aware policies.
+     * is only present for region aware policies).
      *      1. available (local) bookies
      *      2. R* a remote bookie (based on remoteNodeInReorderSequence
      *      3. R* remaining (local) bookies
