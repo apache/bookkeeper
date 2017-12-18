@@ -95,7 +95,7 @@ public abstract class LedgerIdFormatter {
 
         @Override
         public long readLedgerId(String ledgerIdString) {
-            return Long.valueOf(ledgerIdString.trim());
+            return Long.parseLong(ledgerIdString.trim());
         }
     }
 
