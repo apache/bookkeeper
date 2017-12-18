@@ -10,10 +10,11 @@ Please refer to our [checkstyle rules](https://github.com/apache/bookkeeper/blob
 
 Apache BookKeeper code should follow the [Sun Java Coding Convention](http://www.oracle.com/technetwork/java/javase/documentation/codeconvtoc-136057.html), with the following additions.
 
-* Lines can be up to 120 characters long.
+* Lines can not be longer than 120 characters.
 * Indentation should be **4 spaces**. Tabs should never be used.
 * Use curly braces even for single-line ifs and elses.
-* No @author tags in any javadoc
+* No @author tags in any javadoc.
+* Use try-with-resources blocks whenever is possible.
 * **TODO**s should be associated to at least one issue. E.g. `// TODO: make this parameter configurable (https://github.com/apache/bookkeeper/issues/280)`
 
 ### Dependencies
