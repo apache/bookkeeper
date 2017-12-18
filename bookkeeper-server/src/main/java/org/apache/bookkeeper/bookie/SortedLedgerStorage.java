@@ -45,6 +45,7 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
         implements LedgerStorage, CacheCallback, SkipListFlusher {
     private static final Logger LOG = LoggerFactory.getLogger(SortedLedgerStorage.class);
 
+    private SortedLedgerStorageListener listener;
     EntryMemTable memTable;
     private ScheduledExecutorService scheduler;
 
@@ -218,8 +219,7 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
                         checkpointer.startCheckpoint(cp);
                     }
                 } catch (IOException e) {
-                    // TODO: if we failed to flush data, we should switch the bookie back to readonly mode
-                    //       or shutdown it. {@link https://github.com/apache/bookkeeper/issues/280}
+                    SortedLedgerStorage.this.listener.flushFailed();
                     LOG.error("Exception thrown while flushing skip list cache.", e);
                 }
             }
@@ -232,5 +232,22 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
         // we don't trigger any checkpoint logic when an entry log file is rotated, because entry log file rotation
         // can happen because compaction. in a sorted ledger storage, checkpoint should happen after the data is
         // flushed to the entry log file.
+    }
+
+    public void addSortedLedgerStorageListener(SortedLedgerStorageListener listener) {
+        this.listener  = listener;
+    }
+
+    /**
+     * Listener for the flush check events will be notified from the
+     * {@link SortedLedgerStorage} whenever flush failure happened.
+     */
+    public interface SortedLedgerStorageListener {
+
+        /**
+         * This will be notified on flush failure error.
+         *
+         */
+        void flushFailed();
     }
 }

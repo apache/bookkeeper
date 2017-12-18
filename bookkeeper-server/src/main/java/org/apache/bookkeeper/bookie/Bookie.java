@@ -72,6 +72,7 @@ import org.apache.bookkeeper.bookie.BookieException.UnknownBookieIdException;
 import org.apache.bookkeeper.bookie.Journal.JournalScanner;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
+import org.apache.bookkeeper.bookie.SortedLedgerStorage.SortedLedgerStorageListener;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
@@ -877,6 +878,11 @@ public class Bookie extends BookieCriticalThread {
 
         ledgerStorage.start();
 
+        // if ledgerStorage is SortedLedgerStorage, then add SortedLedgerStorageListener
+        if (ledgerStorage instanceof SortedLedgerStorage){
+            ((SortedLedgerStorage) ledgerStorage).addSortedLedgerStorageListener(getSortedLedgerStorageListener());
+        }
+
         // check the bookie status to start with
         if (forceReadOnly.get()) {
             this.bookieStatus.setToReadOnlyMode();
@@ -941,6 +947,16 @@ public class Bookie extends BookieCriticalThread {
             public void diskJustWritable(File disk) {
                 // Transition to writable mode when a disk becomes writable again.
                 transitionToWritableMode();
+            }
+        };
+    }
+
+    private SortedLedgerStorageListener getSortedLedgerStorageListener(){
+        return new SortedLedgerStorageListener() {
+            @Override
+            public void flushFailed() {
+                // turn the bookie to readonly mode when SortedLedgerStroage flush fails.
+                transitionToReadOnlyMode();
             }
         };
     }
