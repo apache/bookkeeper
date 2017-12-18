@@ -43,6 +43,8 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager.RegistrationListener;
 import org.apache.bookkeeper.discover.ZKRegistrationManager;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.util.EntryFormatter;
+import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
@@ -73,7 +75,7 @@ public class BookieShellTest {
 
     @Before
     public void setup() throws Exception {
-        this.shell = new BookieShell();
+        this.shell = new BookieShell(LedgerIdFormatter.LONG_LEDGERID_FORMATTER, EntryFormatter.STRING_FORMATTER);
         this.admin = PowerMockito.mock(BookKeeperAdmin.class);
         whenNew(BookKeeperAdmin.class)
             .withParameterTypes(ClientConfiguration.class)

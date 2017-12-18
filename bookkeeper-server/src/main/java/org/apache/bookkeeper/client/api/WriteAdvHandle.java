@@ -82,6 +82,6 @@ public interface WriteAdvHandle extends ReadHandle {
      * @param data array of bytes to be written
      * @return an handle to the result, in case of success it will return the same value of param entryId
      */
-    CompletableFuture<Long> write(final long entryId, final ByteBuf data);
+    CompletableFuture<Long> write(long entryId, ByteBuf data);
 
 }
