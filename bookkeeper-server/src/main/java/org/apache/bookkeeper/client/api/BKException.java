@@ -259,11 +259,29 @@ public abstract class BKException extends Exception {
      * Code log message pool.
      */
     private static class LogMessagePool {
-        private static final int lastKnown = 200;
-        private final String[] pool = new String[lastKnown + 2]; // UnexpectedConditionException is an outlier
+        private final int minCode;
+        private final String[] pool;
 
         private LogMessagePool() {
-            for (Field field : Code.class.getDeclaredFields()) {
+            Field[] fields = Code.class.getDeclaredFields();
+            this.minCode = minCode(fields);
+            this.pool = new String[-minCode + 2]; // UnexpectedConditionException is an outlier
+            initPoolMessages(fields);
+        }
+
+        private int minCode(Field[] fields) {
+            int min = 0;
+            for (Field field : fields) {
+                int code = getFieldInt(field);
+                if (code < min && code > Code.UnexpectedConditionException) {
+                    min = code;
+                }
+            }
+            return min;
+        }
+
+        private void initPoolMessages(Field[] fields) {
+            for (Field field : fields) {
                 int code = getFieldInt(field);
                 int index = poolIndex(code);
                 if (index >= 0) {
@@ -272,7 +290,7 @@ public abstract class BKException extends Exception {
             }
         }
 
-        private int getFieldInt(Field field) {
+        private static int getFieldInt(Field field) {
             try {
                 return field.getInt(null);
             } catch (IllegalAccessException e) {
@@ -289,9 +307,9 @@ public abstract class BKException extends Exception {
         private int poolIndex(int code) {
             switch (code) {
             case Code.UnexpectedConditionException:
-                return lastKnown + 1;
+                return -minCode + 1;
             default:
-                return code <= 0 && code >= -lastKnown ? lastKnown + code : -1;
+                return code <= 0 && code >= minCode ? -minCode + code : -1;
             }
         }
 
