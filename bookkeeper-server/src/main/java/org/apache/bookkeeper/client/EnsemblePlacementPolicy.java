@@ -20,12 +20,12 @@ package org.apache.bookkeeper.client;
 import io.netty.util.HashedWheelTimer;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
+import org.apache.bookkeeper.client.DistributionSchedule.WriteSet;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience;
 import org.apache.bookkeeper.common.annotation.InterfaceStability;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -151,7 +151,8 @@ import org.apache.bookkeeper.stats.StatsLogger;
  *
  * <h3>How to choose bookies to do speculative reads?</h3>
  *
- * <p>{@link #reorderReadSequence(ArrayList, BookiesHealthInfo, Map)} and {@link #reorderReadLACSequence(ArrayList, BookiesHealthInfo, Map)} are
+ * <p>{@link #reorderReadSequence(ArrayList, BookiesHealthInfo, WriteSet)} and
+ * {@link #reorderReadLACSequence(ArrayList, BookiesHealthInfo, WriteSet)} are
  * two methods exposed by the placement policy, to help client determine a better read sequence according to the
  * network topology and the bookie failure history.
  *
@@ -297,7 +298,7 @@ public interface EnsemblePlacementPolicy {
      * @param entryId
      *          Entry ID that caused a speculative timeout on the bookie.
      */
-    public void registerSlowBookie(BookieSocketAddress bookieSocketAddress, long entryId);
+    void registerSlowBookie(BookieSocketAddress bookieSocketAddress, long entryId);
 
     /**
      * Reorder the read sequence of a given write quorum <i>writeSet</i>.

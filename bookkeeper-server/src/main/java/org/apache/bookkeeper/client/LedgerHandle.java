@@ -107,9 +107,9 @@ public class LedgerHandle implements WriteHandle {
     final LoadingCache<BookieSocketAddress, Long> bookieFailureHistory;
     final boolean enableParallelRecoveryRead;
     final int recoveryReadBatchSize;
+    final BookiesHealthInfo bookiesHealthInfo;
     final EnumSet<WriteFlag> writeFlags;
     ScheduledFuture<?> timeoutFuture = null;
-    final BookiesHealthInfo bookiesHealthInfo;
 
     /**
      * Invalid entry id. This value is returned from methods which
@@ -349,11 +349,11 @@ public class LedgerHandle implements WriteHandle {
     }
 
     /**
-     * Get the health info for bookies for this ledger
+     * Get the health info for bookies for this ledger.
      *
      * @return BookiesHealthInfo for every bookie in the write set.
      */
-    public BookiesHealthInfo getBookiesHealthInfo() {
+    BookiesHealthInfo getBookiesHealthInfo() {
         return bookiesHealthInfo;
     }
 

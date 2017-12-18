@@ -112,7 +112,8 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     // Ensemble Placement Policy
     protected static final String ENSEMBLE_PLACEMENT_POLICY = "ensemblePlacementPolicy";
     protected static final String NETWORK_TOPOLOGY_STABILIZE_PERIOD_SECONDS = "networkTopologyStabilizePeriodSeconds";
-    protected static final String ENSEMBLE_PLACEMENT_POLICY_ORDER_SLOW_BOOKIES = "ensemblePlacementPolicyOrderSlowBookies";
+    protected static final String ENSEMBLE_PLACEMENT_POLICY_ORDER_SLOW_BOOKIES =
+        "ensemblePlacementPolicyOrderSlowBookies";
 
     // Ledger Metadata Parameters
     protected static final String STORE_SYSTEMTIME_AS_LEDGER_CREATION_TIME = "storeSystemTimeAsLedgerCreationTime";

@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.bookkeeper.client.RegionAwareEnsemblePlacementPolicy.UNKNOWN_REGION;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
@@ -67,7 +68,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.bookkeeper.client.RegionAwareEnsemblePlacementPolicy.UNKNOWN_REGION;
 
 /**
  * Simple rackware ensemble placement policy.
@@ -820,7 +820,8 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
         for (int i = 0; i < writeSet.size(); i++) {
             writeSetWithRegion.put(writeSet.get(i), "");
         }
-        return reorderReadSequenceWithRegion(ensemble, writeSet, writeSetWithRegion, bookiesHealthInfo, false, "", writeSet.size());
+        return reorderReadSequenceWithRegion(
+            ensemble, writeSet, writeSetWithRegion, bookiesHealthInfo, false, "", writeSet.size());
     }
 
     /**
@@ -956,7 +957,7 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
         }
         if (firstRemote != -1) {
             int i = 0;
-            for (;i < remoteNodeInReorderSequence
+            for (; i < remoteNodeInReorderSequence
                 && i < writeSet.size(); i++) {
                 if ((writeSet.get(i) & MASK_BITS) != LOCAL_MASK) {
                     break;
