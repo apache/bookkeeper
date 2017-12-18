@@ -47,7 +47,7 @@ Postcommit test results can be found in [Jenkins](https://builds.apache.org/job/
 
 All the precommit and postcommit CI jobs are managed either by Jenkins or Travis CI.
 
-For Jenkins jobs, they are now all written and managed using [Jenkin-DSL](https://github.com/jenkinsci/job-dsl-plugin/wiki).
+For Jenkins jobs, they are all written and managed using [Jenkin-DSL](https://github.com/jenkinsci/job-dsl-plugin/wiki).
 The DSL scripts are maintained under [.test-infra](https://github.com/apache/bookkeeper/tree/master/.test-infra/jenkins).
 Any jenkins changes should be made in these files and reviewed by the community.
 
