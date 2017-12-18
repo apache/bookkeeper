@@ -21,8 +21,7 @@
 
 package org.apache.bookkeeper.util;
 
-import org.apache.commons.configuration.Configuration;
-
+import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,12 +31,6 @@ import org.slf4j.LoggerFactory;
 public abstract class EntryFormatter {
 
     private static final Logger LOG = LoggerFactory.getLogger(EntryFormatter.class);
-
-    protected Configuration conf;
-
-    public void setConf(Configuration conf) {
-        this.conf = conf;
-    }
 
     /**
      * Format an entry into a readable format.
@@ -54,20 +47,30 @@ public abstract class EntryFormatter {
      *          Input Stream
      */
     public abstract void formatEntry(java.io.InputStream input);
-
     public static final EntryFormatter STRING_FORMATTER = new StringEntryFormatter();
 
-    public static EntryFormatter newEntryFormatter(Configuration conf, String clsProperty) {
-        String cls = conf.getString(clsProperty, StringEntryFormatter.class.getName());
+    public static EntryFormatter newEntryFormatter(AbstractConfiguration<?> conf) {
         EntryFormatter formatter;
         try {
-            Class<? extends EntryFormatter> aCls = ReflectionUtils.forName(cls, EntryFormatter.class);
-            formatter = ReflectionUtils.newInstance(aCls);
-            formatter.setConf(conf);
+            Class<? extends EntryFormatter> entryFormatterClass = conf.getEntryFormatterClass();
+            formatter = ReflectionUtils.newInstance(entryFormatterClass);
         } catch (Exception e) {
-            LOG.warn("No formatter class found : " + cls, e);
+            LOG.warn("No formatter class found", e);
             LOG.warn("Using Default String Formatter.");
-            formatter = STRING_FORMATTER;
+            formatter = new StringEntryFormatter();
+        }
+        return formatter;
+    }
+
+    public static EntryFormatter newEntryFormatter(String opt, AbstractConfiguration conf) {
+        EntryFormatter formatter;
+        if ("hex".equals(opt)) {
+            formatter = new HexDumpEntryFormatter();
+        } else if ("string".equals(opt)) {
+            formatter = new StringEntryFormatter();
+        } else {
+            LOG.warn("specified unexpected entryformat {}, so default EntryFormatter is used", opt);
+            formatter = newEntryFormatter(conf);
         }
         return formatter;
     }
