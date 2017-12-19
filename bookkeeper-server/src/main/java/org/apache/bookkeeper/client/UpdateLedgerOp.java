@@ -218,7 +218,7 @@ public class UpdateLedgerOp {
                 return; // this is OK
             } else if (BKException.Code.OK != rc) {
                 // open ledger failed.
-                LOG.error("Get ledger metadata {} failed. Error code {}", ledgerId, rc);
+                LOG.error("Get ledger metadata {} failed: {}", ledgerId, BKException.codeLogger(rc));
                 future.setException(BKException.create(rc));
                 return;
             }

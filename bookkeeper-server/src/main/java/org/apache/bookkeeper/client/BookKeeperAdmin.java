@@ -545,7 +545,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         asyncRecoverBookieData(bookiesSrc, dryrun, skipOpenLedgers, new RecoverCallback() {
             @Override
             public void recoverComplete(int rc, Object ctx) {
-                LOG.info("Recover bookie operation completed with rc: " + rc);
+                LOG.info("Recover bookie operation completed with rc: {}", BKException.codeLogger(rc));
                 SyncObject syncObj = (SyncObject) ctx;
                 synchronized (syncObj) {
                     syncObj.rc = rc;
@@ -574,7 +574,7 @@ public class BookKeeperAdmin implements AutoCloseable {
         SyncObject sync = new SyncObject();
         // Call the async method to recover bookie data.
         asyncRecoverBookieData(lid, bookiesSrc, dryrun, skipOpenLedgers, (rc, ctx) -> {
-            LOG.info("Recover bookie for {} completed with rc : {}", lid, rc);
+            LOG.info("Recover bookie for {} completed with rc : {}", lid, BKException.codeLogger(rc));
             SyncObject syncObject = (SyncObject) ctx;
             synchronized (syncObject) {
                 syncObject.rc = rc;
@@ -780,7 +780,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                     @Override
                     public void processResult(int rc, String path, Object ctx) {
                         if (BKException.Code.OK != rc) {
-                            LOG.error("Failed to recover ledger {} : {}", lId, rc);
+                            LOG.error("Failed to recover ledger {} : {}", lId, BKException.codeLogger(rc));
                         } else {
                             LOG.info("Recovered ledger {}.", lId);
                         }
@@ -789,7 +789,7 @@ public class BookKeeperAdmin implements AutoCloseable {
                         } catch (InterruptedException ie) {
                             Thread.currentThread().interrupt();
                         } catch (BKException bke) {
-                            LOG.warn("Error on cloing ledger handle for {}.", lId);
+                            LOG.warn("Error on closing ledger handle for {}.", lId);
                         }
                         finalLedgerIterCb.processResult(rc, path, ctx);
                     }
