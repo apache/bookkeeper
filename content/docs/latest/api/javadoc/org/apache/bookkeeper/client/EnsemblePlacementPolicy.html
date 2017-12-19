@@ -162,7 +162,7 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
  bookie changes, the ensemble placement policy will be notified with new list of bookies via
  <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#onClusterChanged-java.util.Set-java.util.Set-"><code>onClusterChanged(Set, Set)</code></a>. The implementation of the ensemble placement policy will react on those
  changes to build new network topology. Subsequent operations like <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#newEnsemble-int-int-int-java.util.Map-java.util.Set-"><code>newEnsemble(int, int, int, Map, Set)</code></a> or
- <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#replaceBookie-int-int-int-java.util.Map-java.util.Collection-org.apache.bookkeeper.net.BookieSocketAddress-java.util.Set-"><code>replaceBookie(int, int, int, Map, Collection, BookieSocketAddress, Set)</code></a> hence can operate on the new
+ <code>#replaceBookie(int, int, int, Map, Collection, BookieSocketAddress, Set)</code> hence can operate on the new
  network topology.
 
  <p>Both <a href="../../../../org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client"><code>RackawareEnsemblePlacementPolicy</code></a> and <a href="../../../../org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client"><code>RegionAwareEnsemblePlacementPolicy</code></a> are
@@ -341,11 +341,11 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
 </tr>
 <tr id="i6" class="altColor">
 <td class="colFirst"><code>org.apache.bookkeeper.net.BookieSocketAddress</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#replaceBookie-int-int-int-java.util.Map-java.util.Collection-org.apache.bookkeeper.net.BookieSocketAddress-java.util.Set-">replaceBookie</a></span>(int&nbsp;ensembleSize,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#replaceBookie-int-int-int-java.util.Map-java.util.Set-org.apache.bookkeeper.net.BookieSocketAddress-java.util.Set-">replaceBookie</a></span>(int&nbsp;ensembleSize,
              int&nbsp;writeQuorumSize,
              int&nbsp;ackQuorumSize,
              <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
-             <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;currentEnsemble,
+             <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;currentEnsemble,
              org.apache.bookkeeper.net.BookieSocketAddress&nbsp;bookieToReplace,
              <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)</code>
 <div class="block">Choose a new bookie to replace <i>bookieToReplace</i>.</div>
@@ -425,7 +425,7 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
 
  <p>The implementation should take actions when the cluster view is changed. So subsequent
  <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#newEnsemble-int-int-int-java.util.Map-java.util.Set-"><code>newEnsemble(int, int, int, Map, Set)</code></a> and
- <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#replaceBookie-int-int-int-java.util.Map-java.util.Collection-org.apache.bookkeeper.net.BookieSocketAddress-java.util.Set-"><code>replaceBookie(int, int, int, Map, Collection, BookieSocketAddress, Set)</code></a> can choose proper bookies.</div>
+ <code>#replaceBookie(int, int, int, Map, Collection, BookieSocketAddress, Set)</code> can choose proper bookies.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>writableBookies</code> - All the bookies in the cluster available for write/read.</dd>
@@ -470,7 +470,7 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
 </dl>
 </li>
 </ul>
-<a name="replaceBookie-int-int-int-java.util.Map-java.util.Collection-org.apache.bookkeeper.net.BookieSocketAddress-java.util.Set-">
+<a name="replaceBookie-int-int-int-java.util.Map-java.util.Set-org.apache.bookkeeper.net.BookieSocketAddress-java.util.Set-">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -480,7 +480,7 @@ public interface <span class="typeNameLabel">EnsemblePlacementPolicy</span></pre
                                                             int&nbsp;writeQuorumSize,
                                                             int&nbsp;ackQuorumSize,
                                                             <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,byte[]&gt;&nbsp;customMetadata,
-                                                            <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;currentEnsemble,
+                                                            <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;currentEnsemble,
                                                             org.apache.bookkeeper.net.BookieSocketAddress&nbsp;bookieToReplace,
                                                             <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;excludeBookies)
                                                      throws <a href="../../../../org/apache/bookkeeper/client/BKException.BKNotEnoughBookiesException.html" title="class in org.apache.bookkeeper.client">BKException.BKNotEnoughBookiesException</a></pre>
