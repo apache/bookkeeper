@@ -83,25 +83,29 @@ public class TestTLS extends BookKeeperClusterTestCase {
         baseClientConf.setTLSProviderFactoryClass(TLSContextFactory.class.getName());
         baseClientConf.setTLSClientAuthentication(true);
         baseClientConf.setTLSKeyStoreType("JKS");
-        baseClientConf.setTLSKeyStore(this.getClass().getClassLoader().getResource("client.jks").getPath());
+        baseClientConf.setTLSKeyStore(
+            this.getClass().getClassLoader().getResource("client.jks").toURI().getRawPath());
         baseClientConf.setTLSKeyStorePasswordPath(
-                this.getClass().getClassLoader().getResource("keyStoreClientPassword.txt").getPath());
+            this.getClass().getClassLoader().getResource("keyStoreClientPassword.txt").toURI().getRawPath());
         baseClientConf.setTLSTrustStoreType("JKS");
-        baseClientConf.setTLSTrustStore(this.getClass().getClassLoader().getResource("cacerts").getPath());
+        baseClientConf.setTLSTrustStore(
+            this.getClass().getClassLoader().getResource("cacerts").toURI().getRawPath());
         baseClientConf.setTLSTrustStorePasswordPath(
-                this.getClass().getClassLoader().getResource("trustStorePassword.txt").getPath());
+            this.getClass().getClassLoader().getResource("trustStorePassword.txt").toURI().getRawPath());
 
         /* server configuration */
         baseConf.setTLSProviderFactoryClass(TLSContextFactory.class.getName());
         baseConf.setTLSClientAuthentication(true);
         baseConf.setTLSKeyStoreType("JKS");
-        baseConf.setTLSKeyStore(this.getClass().getClassLoader().getResource("server.jks").getPath());
+        baseConf.setTLSKeyStore(
+            this.getClass().getClassLoader().getResource("server.jks").toURI().getRawPath());
         baseConf.setTLSKeyStorePasswordPath(
-                this.getClass().getClassLoader().getResource("keyStoreServerPassword.txt").getPath());
+            this.getClass().getClassLoader().getResource("keyStoreServerPassword.txt").toURI().getRawPath());
         baseConf.setTLSTrustStoreType("JKS");
-        baseConf.setTLSTrustStore(this.getClass().getClassLoader().getResource("cacerts").getPath());
+        baseConf.setTLSTrustStore(
+            this.getClass().getClassLoader().getResource("cacerts").toURI().getRawPath());
         baseConf.setTLSTrustStorePasswordPath(
-                this.getClass().getClassLoader().getResource("trustStorePassword.txt").getPath());
+            this.getClass().getClassLoader().getResource("trustStorePassword.txt").toURI().getRawPath());
 
         super.setUp();
     }
