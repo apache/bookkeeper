@@ -20,12 +20,12 @@ package org.apache.bookkeeper.client;
 import io.netty.util.HashedWheelTimer;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
+import org.apache.bookkeeper.client.DistributionSchedule.WriteSet;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience;
 import org.apache.bookkeeper.common.annotation.InterfaceStability;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -151,7 +151,8 @@ import org.apache.bookkeeper.stats.StatsLogger;
  *
  * <h3>How to choose bookies to do speculative reads?</h3>
  *
- * <p>{@link #reorderReadSequence(ArrayList, List, Map)} and {@link #reorderReadLACSequence(ArrayList, List, Map)} are
+ * <p>{@link #reorderReadSequence(ArrayList, BookiesHealthInfo, WriteSet)} and
+ * {@link #reorderReadLACSequence(ArrayList, BookiesHealthInfo, WriteSet)} are
  * two methods exposed by the placement policy, to help client determine a better read sequence according to the
  * network topology and the bookie failure history.
  *
@@ -290,12 +291,22 @@ public interface EnsemblePlacementPolicy {
         throws BKNotEnoughBookiesException;
 
     /**
+     * Register a bookie as slow so that it is tried after available and read-only bookies.
+     *
+     * @param bookieSocketAddress
+     *          Address of bookie host
+     * @param entryId
+     *          Entry ID that caused a speculative timeout on the bookie.
+     */
+    void registerSlowBookie(BookieSocketAddress bookieSocketAddress, long entryId);
+
+    /**
      * Reorder the read sequence of a given write quorum <i>writeSet</i>.
      *
      * @param ensemble
      *          Ensemble to read entries.
-     * @param bookieFailureHistory
-     *          Observed failures on the bookies
+     * @param bookiesHealthInfo
+     *          Health info for bookies
      * @param writeSet
      *          Write quorum to read entries. This will be modified, rather than
      *          allocating a new WriteSet.
@@ -305,7 +316,7 @@ public interface EnsemblePlacementPolicy {
      */
     DistributionSchedule.WriteSet reorderReadSequence(
             ArrayList<BookieSocketAddress> ensemble,
-            Map<BookieSocketAddress, Long> bookieFailureHistory,
+            BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet);
 
 
@@ -314,8 +325,8 @@ public interface EnsemblePlacementPolicy {
      *
      * @param ensemble
      *          Ensemble to read entries.
-     * @param bookieFailureHistory
-     *          Observed failures on the bookies
+     * @param bookiesHealthInfo
+     *          Health info for bookies
      * @param writeSet
      *          Write quorum to read entries. This will be modified, rather than
      *          allocating a new WriteSet.
@@ -325,7 +336,7 @@ public interface EnsemblePlacementPolicy {
      */
     DistributionSchedule.WriteSet reorderReadLACSequence(
             ArrayList<BookieSocketAddress> ensemble,
-            Map<BookieSocketAddress, Long> bookieFailureHistory,
+            BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet);
 
     /**
