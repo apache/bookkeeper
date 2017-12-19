@@ -1,49 +1,124 @@
 Apache BookKeeper
 Copyright 2011-2017 The Apache Software Foundation
 
-Licensed under the Apache License, Version 2.0 (the
-"License"); you may not use this file except in compliance
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+------------------------------------------------------------------------------------
+- lib/io.dropwizard.metrics-metrics-core-3.1.0.jar
+- lib/io.dropwizard.metrics-metrics-graphite-3.1.0.jar
+- lib/io.dropwizard.metrics-metrics-jvm-3.1.0.jar
+
+Metrics
+Copyright 2010-2013 Coda Hale and Yammer, Inc.
+
+This product includes software developed by Coda Hale and Yammer, Inc.
+
+This product includes code derived from the JSR-166 project (ThreadLocalRandom, Striped64,
+LongAdder), which was released with the following comments:
+
+    Written by Doug Lea with assistance from members of JCP JSR-166
+    Expert Group and released to the public domain, as explained at
+    http://creativecommons.org/publicdomain/zero/1.0/
+------------------------------------------------------------------------------------
+- lib/commons-lang-commons-lang-2.6.jar
+- lib/org.apache.commons-commons-lang3-3.3.2.jar
+include software from the Spring Framework, under the Apache License 2.0
+(see: StringUtils.containsWhitespace())
+------------------------------------------------------------------------------------
+- lib/io.netty-netty-3.10.1.Final.jar
+
+                            The Netty Project
+                            =================
+
+Please visit the Netty web site for more information:
+
+  * http://netty.io/
+
+Copyright 2011 The Netty Project
+
+The Netty Project licenses this file to you under the Apache License,
+version 2.0 (the "License"); you may not use this file except in compliance
 with the License. You may obtain a copy of the License at:
 
 http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing,
-software distributed under the License is distributed on
-an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, either express or implied. See the License for the
-specific language governing permissions and limitations
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations
 under the License.
 
-This project includes:
-  Apache Log4j under The Apache Software License, Version 2.0
-  Caffeine under The Apache Software License, Version 2.0
-  Commons CLI under The Apache Software License, Version 2.0
-  Commons Codec under The Apache Software License, Version 2.0
-  Commons Collections under The Apache Software License, Version 2.0
-  Commons Configuration under The Apache Software License, Version 2.0
-  Commons IO under The Apache Software License, Version 2.0
-  Commons Lang under The Apache Software License, Version 2.0
-  Commons Logging under The Apache Software License, Version 2.0
-  Dropwizard Metrics under The Apache Software License, Version 2.0
-  Guava under The Apache Software License, Version 2.0
-  Jackson under The Apache Software License, Version 2.0
-  Java Native Access under The Apache Software License, Version 2.0
-  Java Servlet API under Common Development and Distribution License 1.0
-  Javax.inject under The Apache Software License, Version 2.0
-  Jetty under The Apache Software License, Version 2.0
-  JSR305 Annotations for Findbugs under The Apache Software License, Version 2.0
-  ParaNamer under New BSD License
-  Prometheus under The Apache Software License, Version 2.0
-  Protocol Buffer Java API under New BSD License
-  Scala under New BSD License
-  SLF4J API Module under MIT License
-  SLF4J LOG4J-12 Binding under MIT License
-  The Netty Project under The Apache Software License, Version 2.0
-  Twitter Finagle under The Apache Software License, Version 2.0
-  Twitter JSR166e under Creative Commons Zero v1.0 Universal
-  Twitter LibThrift under The Apache Software License, Version 2.0
-  Twitter Server under The Apache Software License, Version 2.0
-  Twitter Scrooge under The Apache Software License, Version 2.0
-  Twitter Util under The Apache Software License, Version 2.0
-  Vertx under The Apache Software License, Version 2.0
-  ZooKeeper under The Apache Software License, Version 2.0
+Netty 3.10.1.Final bundles some 3rd party dependencies. For details see deps/netty-3.19.1.Final/
+------------------------------------------------------------------------------------
+- lib/io.netty-netty-all-4.1.12.Final.jar
+
+                            The Netty Project
+                            =================
+
+Please visit the Netty web site for more information:
+
+  * http://netty.io/
+
+Copyright 2014 The Netty Project
+
+The Netty Project licenses this file to you under the Apache License,
+version 2.0 (the "License"); you may not use this file except in compliance
+with the License. You may obtain a copy of the License at:
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations
+under the License.
+
+Netty 4.1.12.Final bundles some 3rd party dependencies. For details see deps/netty-4.1.12.Final/
+------------------------------------------------------------------------------------
+- lib/io.prometheus-simpleclient-0.0.21.jar
+- lib/io.prometheus-simpleclient_common-0.0.21.jar
+- lib/io.prometheus-simpleclient_hotspot-0.0.21.jar
+- lib/io.prometheus-simpleclient_servlet-0.0.21.jar
+
+Prometheus instrumentation library for JVM applications
+Copyright 2012-2015 The Prometheus Authors
+
+This product includes software developed at
+Boxever Ltd. (http://www.boxever.com/).
+
+This product includes software developed at
+SoundCloud Ltd. (http://soundcloud.com/).
+
+This product includes software developed as part of the
+Ocelli project by Netflix Inc. (https://github.com/Netflix/ocelli/).
+------------------------------------------------------------------------------------
+- lib/org.eclipse.jetty-jetty-http-9.4.5.v20170502.jar
+- lib/org.eclipse.jetty-jetty-io-9.4.5.v20170502.jar
+- lib/org.eclipse.jetty-jetty-security-9.4.5.v20170502.jar
+- lib/org.eclipse.jetty-jetty-server-9.4.5.v20170502.jar
+- lib/org.eclipse.jetty-jetty-servlet-9.4.5.v20170502.jar
+- lib/org.eclipse.jetty-jetty-util-9.4.5.v20170502.jar
+
+==============================================================
+ Jetty Web Container
+ Copyright 1995-2017 Mort Bay Consulting Pty Ltd.
+ ==============================================================
+
+The Jetty Web Container is Copyright Mort Bay Consulting Pty Ltd
+unless otherwise noted.
+
+Jetty is dual licensed under both
+
+  * The Apache 2.0 License
+    http://www.apache.org/licenses/LICENSE-2.0.html
+
+      and
+
+  * The Eclipse Public 1.0 License
+    http://www.eclipse.org/legal/epl-v10.html
+
+Jetty may be distributed under either license.
+
+Jetty 9.4.5 bundles some 3rd party dependencies. See deps/jetty-9.4.5/ for details.
+------------------------------------------------------------------------------------
