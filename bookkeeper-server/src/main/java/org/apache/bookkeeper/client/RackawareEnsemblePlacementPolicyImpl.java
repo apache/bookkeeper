@@ -434,8 +434,8 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
         return nodes;
     }
 
-    private Set<String> getNetworkLocations(Set<Node> bookieNodes) {
-        Set<String> networkLocs = new HashSet<String>();
+    private static Set<String> getNetworkLocations(Set<Node> bookieNodes) {
+        Set<String> networkLocs = new HashSet<>();
         for (Node bookieNode : bookieNodes) {
             networkLocs.add(bookieNode.getNetworkLocation());
         }
@@ -636,11 +636,11 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
         } catch (BKNotEnoughBookiesException e) {
             if (isWeighted) {
                 // if weight based selection is enabled, randomly select one from the whole cluster
-                // based on weights and ignore the provided predicate.
+                // based on weights and ignore the provided <tt>excludeRacks</tt>.
                 // randomly choose one from whole cluster, ignore the provided predicate.
                 return selectRandom(1, excludeBookies, predicate, ensemble).get(0);
             } else {
-                // if weight based selection is enabled, and there is no enough bookie from local rack,
+                // if weight based selection is disabled, and there is no enough bookie from local rack,
                 // select bookies from the whole cluster and exclude the racks specified at <tt>excludeRacks</tt>.
                 return selectFromNetworkLocation(excludeRacks, excludeBookies, predicate, ensemble);
             }
