@@ -454,9 +454,9 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
         }
 
         @Override
-        public void addEntry(ByteBuf entry, final WriteCallback cb, Object ctx, byte[] masterKey)
-                throws IOException, BookieException {
-            super.addEntry(entry, new WriteCallback() {
+        public void addEntry(ByteBuf entry, boolean ackBeforeForce, final WriteCallback cb,
+                             Object ctx, byte[] masterKey) throws IOException, BookieException {
+            super.addEntry(entry, ackBeforeForce, new WriteCallback() {
                 @Override
                 public void writeComplete(int rc, long ledgerId, long entryId,
                                           BookieSocketAddress addr, Object ctx) {

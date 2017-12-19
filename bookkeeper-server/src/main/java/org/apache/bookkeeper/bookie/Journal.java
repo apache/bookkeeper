@@ -283,30 +283,43 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         WriteCallback cb;
         Object ctx;
         long enqueueTime;
+        boolean ackBeforeForce;
+        boolean persisted;
 
         OpStatsLogger journalAddEntryStats;
 
-        static QueueEntry create(ByteBuf entry, long ledgerId, long entryId, WriteCallback cb, Object ctx,
-                long enqueueTime, OpStatsLogger journalAddEntryStats) {
+        static QueueEntry create(ByteBuf entry, boolean ackBeforeForce, long ledgerId, long entryId,
+                WriteCallback cb, Object ctx, long enqueueTime, OpStatsLogger journalAddEntryStats) {
             QueueEntry qe = RECYCLER.get();
             qe.entry = entry;
+            qe.ackBeforeForce = ackBeforeForce;
             qe.cb = cb;
             qe.ctx = ctx;
             qe.ledgerId = ledgerId;
             qe.entryId = entryId;
             qe.enqueueTime = enqueueTime;
             qe.journalAddEntryStats = journalAddEntryStats;
+            qe.persisted = false;
             return qe;
         }
 
         @Override
         public void run() {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Acknowledge Ledger: {}, Entry: {}", ledgerId, entryId);
+                LOG.debug("Acknowledge Ledger: {}, Entry: {} ackBeforeForce {} persisted {}", ledgerId, entryId,
+                          ackBeforeForce, persisted);
             }
-            journalAddEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueTime), TimeUnit.NANOSECONDS);
-            cb.writeComplete(0, ledgerId, entryId, null, ctx);
-            recycle();
+
+            if ((!ackBeforeForce) || (ackBeforeForce && !persisted)) {
+                // for entries with ackBeforeForce=true this callback will be executed twice
+                // we will update the LastAddSynced cursor on the second call
+                journalAddEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueTime), TimeUnit.NANOSECONDS);
+                cb.writeComplete(0, ledgerId, entryId, null, ctx);
+            }
+            if (persisted){
+                // update lastAddSynced cursor (to be implemented)
+                recycle();
+            }
         }
 
         private final Handle<QueueEntry> recyclerHandle;
@@ -350,7 +363,9 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
                 // Notify the waiters that the force write succeeded
                 for (int i = 0; i < forceWriteWaiters.size(); i++) {
-                    cbThreadPool.execute(forceWriteWaiters.get(i));
+                    QueueEntry qe = forceWriteWaiters.get(i);
+                    qe.persisted = true;
+                    cbThreadPool.execute(qe);
                 }
 
                 return forceWriteWaiters.size();
@@ -810,21 +825,22 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         }
     }
 
-    public void logAddEntry(ByteBuffer entry, WriteCallback cb, Object ctx) {
-        logAddEntry(Unpooled.wrappedBuffer(entry), cb, ctx);
+    public void logAddEntry(ByteBuffer entry, boolean ackBeforeForce, WriteCallback cb, Object ctx) {
+        logAddEntry(Unpooled.wrappedBuffer(entry), ackBeforeForce, cb, ctx);
     }
 
     /**
      * record an add entry operation in journal.
      */
-    public void logAddEntry(ByteBuf entry, WriteCallback cb, Object ctx) {
+    public void logAddEntry(ByteBuf entry, boolean ackBeforeForce, WriteCallback cb, Object ctx) {
         long ledgerId = entry.getLong(entry.readerIndex() + 0);
         long entryId = entry.getLong(entry.readerIndex() + 8);
         journalQueueSize.inc();
 
         //Retain entry until it gets written to journal
         entry.retain();
-        queue.add(QueueEntry.create(entry, ledgerId, entryId, cb, ctx, MathUtils.nowInNano(), journalAddEntryStats));
+        queue.add(QueueEntry.create(entry, ackBeforeForce, ledgerId, entryId,
+                  cb, ctx, MathUtils.nowInNano(), journalAddEntryStats));
     }
 
     /**
@@ -959,6 +975,16 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                             }
                             journalFlushWatcher.reset().start();
                             bc.flush(false);
+
+                            // early acknowledge entries written with WriteFlag.DEFERRED_SYNC
+                            for (int i = 0; i < toFlush.size(); i++) {
+                                QueueEntry entry = toFlush.get(i);
+                                if (entry.ackBeforeForce) {
+                                    entry.persisted = false;
+                                    cbThreadPool.execute(entry);
+                                }
+                            }
+
                             lastFlushPosition = bc.position();
                             journalFlushStats.registerSuccessfulEvent(
                                     journalFlushWatcher.stop().elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
@@ -985,7 +1011,10 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                                 // Data is already written on the file (though it might still be in the OS page-cache)
                                 lastLogMark.setCurLogMark(logId, lastFlushPosition);
                                 for (int i = 0; i < toFlush.size(); i++) {
-                                    cbThreadPool.execute(toFlush.get(i));
+                                    QueueEntry entry = toFlush.get(i);
+                                    // with syncData = false we should consider this case as 'persisted'
+                                    entry.persisted = true;
+                                    cbThreadPool.execute(entry);
                                 }
 
                                 toFlush.clear();
