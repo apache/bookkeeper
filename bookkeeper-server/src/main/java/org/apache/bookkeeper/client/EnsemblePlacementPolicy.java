@@ -285,7 +285,7 @@ public interface EnsemblePlacementPolicy {
                                       int writeQuorumSize,
                                       int ackQuorumSize,
                                       Map<String, byte[]> customMetadata,
-                                      Collection<BookieSocketAddress> currentEnsemble,
+                                      Set<BookieSocketAddress> currentEnsemble,
                                       BookieSocketAddress bookieToReplace,
                                       Set<BookieSocketAddress> excludeBookies)
         throws BKNotEnoughBookiesException;
