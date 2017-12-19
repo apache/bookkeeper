@@ -38,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.apache.bookkeeper.test.BookKeeperClusterTestCase.SimpleStateManger;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase.SimpleStateManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -125,7 +125,7 @@ public class SortedLedgerStorageCheckpointTest extends LedgerStorageTestBase {
             mock(LedgerManager.class),
             ledgerDirsManager,
             ledgerDirsManager,
-                new SimpleStateManger(),
+                new SimpleStateManager(),
                 checkpointSrc,
             checkpointer,
             NullStatsLogger.INSTANCE);

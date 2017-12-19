@@ -247,7 +247,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             LedgerManagerFactory.newLedgerManagerFactory(conf, zkc).newLedgerManager(),
             dirManager,
             dirManager,
-                new SimpleStateManger(),
+                new SimpleStateManager(),
             cp,
             Checkpointer.NULL,
             NullStatsLogger.INSTANCE);
@@ -636,7 +636,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             manager,
             dirs,
             dirs,
-                new SimpleStateManger(),
+                new SimpleStateManager(),
                 checkpointSource,
             Checkpointer.NULL,
             NullStatsLogger.INSTANCE);
@@ -661,7 +661,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         storage.initialize(
             conf,
             manager,
-            dirs, dirs, new SimpleStateManger(),
+            dirs, dirs, new SimpleStateManager(),
                 checkpointSource,
             Checkpointer.NULL,
             NullStatsLogger.INSTANCE);
@@ -685,7 +685,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             manager,
             dirs,
             dirs,
-                new SimpleStateManger(),
+                new SimpleStateManager(),
                 checkpointSource,
             Checkpointer.NULL,
             NullStatsLogger.INSTANCE);
@@ -790,7 +790,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             manager,
             dirs,
             dirs,
-                new SimpleStateManger(),
+                new SimpleStateManager(),
                 checkpointSource,
             Checkpointer.NULL,
             NullStatsLogger.INSTANCE);
@@ -846,7 +846,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             LedgerManagerFactory.newLedgerManagerFactory(conf, zkc).newLedgerManager(),
             dirManager,
             dirManager,
-                new SimpleStateManger(),
+                new SimpleStateManager(),
                 cp,
             Checkpointer.NULL,
             NullStatsLogger.INSTANCE);
