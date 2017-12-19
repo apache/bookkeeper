@@ -147,26 +147,30 @@ implements <a href="../../../../org/apache/bookkeeper/client/SpeculativeRequestE
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html#complete">complete</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>(package private) long</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html#eId">eId</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>(package private) <a href="http://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html#ensemble">ensemble</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/impl/LedgerEntryImpl.html" title="class in org.apache.bookkeeper.client.impl">LedgerEntryImpl</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html#entryImpl">entryImpl</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html#firstError">firstError</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html#numMissedEntryReads">numMissedEntryReads</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>(package private) int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html#rc">rc</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>(package private) <a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html#writeSet">writeSet</a></span></code>&nbsp;</td>
 </tr>
@@ -345,10 +349,19 @@ implements <a href="../../../../org/apache/bookkeeper/client/SpeculativeRequestE
 <a name="entryImpl">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>entryImpl</h4>
 <pre>final&nbsp;<a href="../../../../org/apache/bookkeeper/client/impl/LedgerEntryImpl.html" title="class in org.apache.bookkeeper.client.impl">LedgerEntryImpl</a> entryImpl</pre>
+</li>
+</ul>
+<a name="eId">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>eId</h4>
+<pre>final&nbsp;long eId</pre>
 </li>
 </ul>
 </li>

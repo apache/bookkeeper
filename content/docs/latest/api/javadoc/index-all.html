@@ -764,6 +764,13 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html#BookieNode-org.apache.bookkeeper.net.BookieSocketAddress-java.lang.String-">BookieNode(BookieSocketAddress, String)</a></span> - Constructor for class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.BookieNode.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.BookieNode</a></dt>
 <dd>&nbsp;</dd>
+<dt><a href="org/apache/bookkeeper/client/BookiesHealthInfo.html" title="interface in org.apache.bookkeeper.client"><span class="typeNameLink">BookiesHealthInfo</span></a> - Interface in <a href="org/apache/bookkeeper/client/package-summary.html">org.apache.bookkeeper.client</a></dt>
+<dd>
+<div class="block">This interface returns heuristics used to determine the health of a Bookkeeper server for read
+ ordering.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#bookiesHealthInfo">bookiesHealthInfo</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#bookiesJoinedCounter">bookiesJoinedCounter</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#bookiesLeftCounter">bookiesLeftCounter</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
@@ -1130,12 +1137,16 @@
 <dd>
 <div class="block">Complete the read request from <i>host</i>.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingReadOp.SequenceReadRequest.html#complete-int-org.apache.bookkeeper.net.BookieSocketAddress-io.netty.buffer.ByteBuf-">complete(int, BookieSocketAddress, ByteBuf)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingReadOp.SequenceReadRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.SequenceReadRequest</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html#complete">complete</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html" title="class in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html#complete-int-org.apache.bookkeeper.net.BookieSocketAddress-io.netty.buffer.ByteBuf-long-">complete(int, BookieSocketAddress, ByteBuf, long)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html" title="class in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest</a></dt>
 <dd>
 <div class="block">Complete the read request from <i>host</i>.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.SequenceReadRequest.html#complete-int-org.apache.bookkeeper.net.BookieSocketAddress-io.netty.buffer.ByteBuf-long-">complete(int, BookieSocketAddress, ByteBuf, long)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.SequenceReadRequest.html" title="class in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp.SequenceReadRequest</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/DistributionSchedule.AckSet.html#completeBookieAndCheck-int-">completeBookieAndCheck(int)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/DistributionSchedule.AckSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.AckSet</a></dt>
 <dd>
 <div class="block">Add a bookie response and check if quorum has been met.</div>
@@ -1514,6 +1525,8 @@
 </a>
 <h2 class="title">E</h2>
 <dl>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html#eId">eId</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/PendingReadOp.LedgerEntryRequest.html" title="class in org.apache.bookkeeper.client">PendingReadOp.LedgerEntryRequest</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.EnsembleForReplacementWithNoConstraints.html#EMPTY_LIST">EMPTY_LIST</a></span> - Static variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.EnsembleForReplacementWithNoConstraints.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy.EnsembleForReplacementWithNoConstraints</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html#EMPTY_SET">EMPTY_SET</a></span> - Static variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">DefaultEnsemblePlacementPolicy</a></dt>
@@ -1563,6 +1576,8 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeperClientStats.html#ENSEMBLE_CHANGES">ENSEMBLE_CHANGES</a></span> - Static variable in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeperClientStats.html" title="interface in org.apache.bookkeeper.client">BookKeeperClientStats</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#ENSEMBLE_PLACEMENT_POLICY">ENSEMBLE_PLACEMENT_POLICY</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#ENSEMBLE_PLACEMENT_POLICY_ORDER_SLOW_BOOKIES">ENSEMBLE_PLACEMENT_POLICY_ORDER_SLOW_BOOKIES</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#ensembleChangeCounter">ensembleChangeCounter</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>&nbsp;</dd>
@@ -1893,6 +1908,10 @@
 <dd>
 <div class="block">Get the error threshold for a bookie to be quarantined.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookiesHealthInfo.html#getBookieFailureHistory-org.apache.bookkeeper.net.BookieSocketAddress-">getBookieFailureHistory(BookieSocketAddress)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookiesHealthInfo.html" title="interface in org.apache.bookkeeper.client">BookiesHealthInfo</a></dt>
+<dd>
+<div class="block">Return the failure history for a bookie.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#getBookieFailureHistoryExpirationMSec--">getBookieFailureHistoryExpirationMSec()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
 <div class="block">Get the bookie failure tracking expiration timeout.</div>
@@ -1915,6 +1934,10 @@
 <dd>
 <div class="block">Returns the max multiple to use for nodes with very high weight.</div>
 </dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookiesHealthInfo.html#getBookiePendingRequests-org.apache.bookkeeper.net.BookieSocketAddress-">getBookiePendingRequests(BookieSocketAddress)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookiesHealthInfo.html" title="interface in org.apache.bookkeeper.client">BookiesHealthInfo</a></dt>
+<dd>
+<div class="block">Returns pending requests to a bookie.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#getBookiePort--">getBookiePort()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>
 <div class="block">Get bookie port that bookie server listen on.</div>
@@ -1933,6 +1956,10 @@
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookieWatcher.html#getBookies--">getBookies()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookieWatcher.html" title="class in org.apache.bookkeeper.client">BookieWatcher</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#getBookiesHealthInfo--">getBookiesHealthInfo()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
+<dd>
+<div class="block">Get the health info for bookies for this ledger.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerFragment.html#getBookiesIndexes--">getBookiesIndexes()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerFragment.html" title="class in org.apache.bookkeeper.client">LedgerFragment</a></dt>
 <dd>
 <div class="block">Gets the failedBookie index.</div>
@@ -2132,6 +2159,10 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#getEnsemblePlacementPolicy--">getEnsemblePlacementPolicy()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
 <div class="block">Get Ensemble Placement Policy Class.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#getEnsemblePlacementPolicySlowBookies--">getEnsemblePlacementPolicySlowBookies()</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
+<dd>
+<div class="block">Whether to order slow bookies in placement policy.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#getEnsembles--">getEnsembles()</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
 <dd>
@@ -4940,6 +4971,14 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerHandle.html#registerOperationFailureOnBookie-org.apache.bookkeeper.net.BookieSocketAddress-long-">registerOperationFailureOnBookie(BookieSocketAddress, long)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html#registerSlowBookie-org.apache.bookkeeper.net.BookieSocketAddress-long-">registerSlowBookie(BookieSocketAddress, long)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">DefaultEnsemblePlacementPolicy</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#registerSlowBookie-org.apache.bookkeeper.net.BookieSocketAddress-long-">registerSlowBookie(BookieSocketAddress, long)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></dt>
+<dd>
+<div class="block">Register a bookie as slow so that it is tried after available and read-only bookies.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#registerSlowBookie-org.apache.bookkeeper.net.BookieSocketAddress-long-">registerSlowBookie(BookieSocketAddress, long)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
+<dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html#registerSuccessfulEvent-long-java.util.concurrent.TimeUnit-">registerSuccessfulEvent(long, TimeUnit)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/CodahaleOpStatsLogger.html" title="class in org.apache.bookkeeper.stats">CodahaleOpStatsLogger</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/stats/NullStatsLogger.NullOpStatsLogger.html#registerSuccessfulEvent-long-java.util.concurrent.TimeUnit-">registerSuccessfulEvent(long, TimeUnit)</a></span> - Method in class org.apache.bookkeeper.stats.<a href="org/apache/bookkeeper/stats/NullStatsLogger.NullOpStatsLogger.html" title="class in org.apache.bookkeeper.stats">NullStatsLogger.NullOpStatsLogger</a></dt>
@@ -5012,34 +5051,38 @@
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#REORDER_READ_SEQUENCE_ENABLED">REORDER_READ_SEQUENCE_ENABLED</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html#reorderReadLACSequence-java.util.ArrayList-java.util.Map-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadLACSequence(ArrayList&lt;BookieSocketAddress&gt;, Map&lt;BookieSocketAddress, Long&gt;, DistributionSchedule.WriteSet)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">DefaultEnsemblePlacementPolicy</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html#reorderReadLACSequence-java.util.ArrayList-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadLACSequence(ArrayList&lt;BookieSocketAddress&gt;, BookiesHealthInfo, DistributionSchedule.WriteSet)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">DefaultEnsemblePlacementPolicy</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#reorderReadLACSequence-java.util.ArrayList-java.util.Map-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadLACSequence(ArrayList&lt;BookieSocketAddress&gt;, Map&lt;BookieSocketAddress, Long&gt;, DistributionSchedule.WriteSet)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#reorderReadLACSequence-java.util.ArrayList-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadLACSequence(ArrayList&lt;BookieSocketAddress&gt;, BookiesHealthInfo, DistributionSchedule.WriteSet)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></dt>
 <dd>
 <div class="block">Reorder the read last add confirmed sequence of a given write quorum <i>writeSet</i>.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html#reorderReadLACSequence-java.util.ArrayList-java.util.Map-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadLACSequence(ArrayList&lt;BookieSocketAddress&gt;, Map&lt;BookieSocketAddress, Long&gt;, DistributionSchedule.WriteSet)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicy</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html#reorderReadLACSequence-java.util.ArrayList-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadLACSequence(ArrayList&lt;BookieSocketAddress&gt;, BookiesHealthInfo, DistributionSchedule.WriteSet)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicy</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html#reorderReadLACSequence-java.util.ArrayList-java.util.Map-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadLACSequence(ArrayList&lt;BookieSocketAddress&gt;, Map&lt;BookieSocketAddress, Long&gt;, DistributionSchedule.WriteSet)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RegionAwareEnsemblePlacementPolicy</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html#reorderReadLACSequence-java.util.ArrayList-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadLACSequence(ArrayList&lt;BookieSocketAddress&gt;, BookiesHealthInfo, DistributionSchedule.WriteSet)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RegionAwareEnsemblePlacementPolicy</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#reorderReadLACSequence-java.util.ArrayList-java.util.Map-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadLACSequence(ArrayList&lt;BookieSocketAddress&gt;, Map&lt;BookieSocketAddress, Long&gt;, DistributionSchedule.WriteSet)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#reorderReadLACSequence-java.util.ArrayList-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadLACSequence(ArrayList&lt;BookieSocketAddress&gt;, BookiesHealthInfo, DistributionSchedule.WriteSet)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookKeeper.html#reorderReadSequence">reorderReadSequence</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookKeeper.html" title="class in org.apache.bookkeeper.client">BookKeeper</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html#reorderReadSequence-java.util.ArrayList-java.util.Map-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadSequence(ArrayList&lt;BookieSocketAddress&gt;, Map&lt;BookieSocketAddress, Long&gt;, DistributionSchedule.WriteSet)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">DefaultEnsemblePlacementPolicy</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html#reorderReadSequence-java.util.ArrayList-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadSequence(ArrayList&lt;BookieSocketAddress&gt;, BookiesHealthInfo, DistributionSchedule.WriteSet)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/DefaultEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">DefaultEnsemblePlacementPolicy</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#reorderReadSequence-java.util.ArrayList-java.util.Map-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadSequence(ArrayList&lt;BookieSocketAddress&gt;, Map&lt;BookieSocketAddress, Long&gt;, DistributionSchedule.WriteSet)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#reorderReadSequence-java.util.ArrayList-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadSequence(ArrayList&lt;BookieSocketAddress&gt;, BookiesHealthInfo, DistributionSchedule.WriteSet)</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></dt>
 <dd>
 <div class="block">Reorder the read sequence of a given write quorum <i>writeSet</i>.</div>
 </dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html#reorderReadSequence-java.util.ArrayList-java.util.Map-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadSequence(ArrayList&lt;BookieSocketAddress&gt;, Map&lt;BookieSocketAddress, Long&gt;, DistributionSchedule.WriteSet)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicy</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html#reorderReadSequence-java.util.ArrayList-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadSequence(ArrayList&lt;BookieSocketAddress&gt;, BookiesHealthInfo, DistributionSchedule.WriteSet)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicy</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#reorderReadSequence-java.util.ArrayList-java.util.Map-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadSequence(ArrayList&lt;BookieSocketAddress&gt;, Map&lt;BookieSocketAddress, Long&gt;, DistributionSchedule.WriteSet)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#reorderReadSequence-java.util.ArrayList-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadSequence(ArrayList&lt;BookieSocketAddress&gt;, BookiesHealthInfo, DistributionSchedule.WriteSet)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html#reorderReadSequence-java.util.ArrayList-java.util.Map-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadSequence(ArrayList&lt;BookieSocketAddress&gt;, Map&lt;BookieSocketAddress, Long&gt;, DistributionSchedule.WriteSet)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RegionAwareEnsemblePlacementPolicy</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html#reorderReadSequence-java.util.ArrayList-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadSequence(ArrayList&lt;BookieSocketAddress&gt;, BookiesHealthInfo, DistributionSchedule.WriteSet)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RegionAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RegionAwareEnsemblePlacementPolicy</a></dt>
 <dd>&nbsp;</dd>
-<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#reorderReadSequence-java.util.ArrayList-java.util.Map-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadSequence(ArrayList&lt;BookieSocketAddress&gt;, Map&lt;BookieSocketAddress, Long&gt;, DistributionSchedule.WriteSet)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy</a></dt>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#reorderReadSequence-java.util.ArrayList-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadSequence(ArrayList&lt;BookieSocketAddress&gt;, BookiesHealthInfo, DistributionSchedule.WriteSet)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">TopologyAwareEnsemblePlacementPolicy</a></dt>
 <dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#reorderReadSequenceWithRegion-java.util.ArrayList-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-java.util.Map-org.apache.bookkeeper.client.BookiesHealthInfo-boolean-java.lang.String-int-">reorderReadSequenceWithRegion(ArrayList&lt;BookieSocketAddress&gt;, DistributionSchedule.WriteSet, Map&lt;Integer, String&gt;, BookiesHealthInfo, boolean, String, int)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
+<dd>
+<div class="block">This function orders the read sequence with a given region.</div>
+</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#reorderReadsRandom">reorderReadsRandom</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/BookieWatcher.html#replaceBookie-int-int-int-java.util.Map-java.util.List-int-java.util.Set-">replaceBookie(int, int, int, Map&lt;String, byte[]&gt;, List&lt;BookieSocketAddress&gt;, int, Set&lt;BookieSocketAddress&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/BookieWatcher.html" title="class in org.apache.bookkeeper.client">BookieWatcher</a></dt>
@@ -5501,6 +5544,10 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#setEnsemblePlacementPolicy-java.lang.Class-">setEnsemblePlacementPolicy(Class&lt;? extends EnsemblePlacementPolicy&gt;)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
 <dd>
 <div class="block">Set Ensemble Placement Policy Class.</div>
+</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ClientConfiguration.html#setEnsemblePlacementPolicySlowBookies-boolean-">setEnsemblePlacementPolicySlowBookies(boolean)</a></span> - Method in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a></dt>
+<dd>
+<div class="block">Enable/Disable ordering slow bookies in placement policy.</div>
 </dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/LedgerMetadata.html#setEnsembles-java.util.TreeMap-">setEnsembles(TreeMap&lt;Long, ArrayList&lt;BookieSocketAddress&gt;&gt;)</a></span> - Method in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/LedgerMetadata.html" title="class in org.apache.bookkeeper.client">LedgerMetadata</a></dt>
 <dd>&nbsp;</dd>
@@ -6150,6 +6197,10 @@
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/conf/ServerConfiguration.html#SKIP_LIST_SIZE_LIMIT">SKIP_LIST_SIZE_LIMIT</a></span> - Static variable in class org.apache.bookkeeper.conf.<a href="org/apache/bookkeeper/conf/ServerConfiguration.html" title="class in org.apache.bookkeeper.conf">ServerConfiguration</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html#slave">slave</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicy.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicy</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#SLOW_MASK">SLOW_MASK</a></span> - Static variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
+<dd>&nbsp;</dd>
+<dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html#slowBookies">slowBookies</a></span> - Variable in class org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/RackawareEnsemblePlacementPolicyImpl.html" title="class in org.apache.bookkeeper.client">RackawareEnsemblePlacementPolicyImpl</a></dt>
 <dd>&nbsp;</dd>
 <dt><span class="memberNameLink"><a href="org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html#sort--">sort()</a></span> - Method in interface org.apache.bookkeeper.client.<a href="org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></dt>
 <dd>

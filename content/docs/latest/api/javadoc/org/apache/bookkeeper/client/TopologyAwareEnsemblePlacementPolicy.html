@@ -217,16 +217,16 @@ implements <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsem
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#reorderReadLACSequence-java.util.ArrayList-java.util.Map-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadLACSequence</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
-                      <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress,<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;bookieFailureHistory,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#reorderReadLACSequence-java.util.ArrayList-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadLACSequence</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
+                      <a href="../../../../org/apache/bookkeeper/client/BookiesHealthInfo.html" title="interface in org.apache.bookkeeper.client">BookiesHealthInfo</a>&nbsp;bookiesHealthInfo,
                       <a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;writeSet)</code>
 <div class="block">Reorder the read last add confirmed sequence of a given write quorum <i>writeSet</i>.</div>
 </td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code><a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#reorderReadSequence-java.util.ArrayList-java.util.Map-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadSequence</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
-                   <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress,<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;bookieFailureHistory,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/TopologyAwareEnsemblePlacementPolicy.html#reorderReadSequence-java.util.ArrayList-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadSequence</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
+                   <a href="../../../../org/apache/bookkeeper/client/BookiesHealthInfo.html" title="interface in org.apache.bookkeeper.client">BookiesHealthInfo</a>&nbsp;bookiesHealthInfo,
                    <a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;writeSet)</code>
 <div class="block">Reorder the read sequence of a given write quorum <i>writeSet</i>.</div>
 </td>
@@ -251,7 +251,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsem
 <!--   -->
 </a>
 <h3>Methods inherited from interface&nbsp;org.apache.bookkeeper.client.<a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></h3>
-<code><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#initialize-org.apache.bookkeeper.conf.ClientConfiguration-java.util.Optional-io.netty.util.HashedWheelTimer-org.apache.bookkeeper.feature.FeatureProvider-org.apache.bookkeeper.stats.StatsLogger-">initialize</a>, <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#newEnsemble-int-int-int-java.util.Map-java.util.Set-">newEnsemble</a>, <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#onClusterChanged-java.util.Set-java.util.Set-">onClusterChanged</a>, <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#replaceBookie-int-int-int-java.util.Map-java.util.Collection-org.apache.bookkeeper.net.BookieSocketAddress-java.util.Set-">replaceBookie</a>, <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#uninitalize--">uninitalize</a>, <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#updateBookieInfo-java.util.Map-">updateBookieInfo</a></code></li>
+<code><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#initialize-org.apache.bookkeeper.conf.ClientConfiguration-java.util.Optional-io.netty.util.HashedWheelTimer-org.apache.bookkeeper.feature.FeatureProvider-org.apache.bookkeeper.stats.StatsLogger-">initialize</a>, <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#newEnsemble-int-int-int-java.util.Map-java.util.Set-">newEnsemble</a>, <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#onClusterChanged-java.util.Set-java.util.Set-">onClusterChanged</a>, <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#registerSlowBookie-org.apache.bookkeeper.net.BookieSocketAddress-long-">registerSlowBookie</a>, <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#replaceBookie-int-int-int-java.util.Map-java.util.Collection-org.apache.bookkeeper.net.BookieSocketAddress-java.util.Set-">replaceBookie</a>, <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#uninitalize--">uninitalize</a>, <a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#updateBookieInfo-java.util.Map-">updateBookieInfo</a></code></li>
 </ul>
 </li>
 </ul>
@@ -301,23 +301,23 @@ implements <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsem
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a name="reorderReadSequence-java.util.ArrayList-java.util.Map-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">
+<a name="reorderReadSequence-java.util.ArrayList-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>reorderReadSequence</h4>
 <pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;reorderReadSequence(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
-                                                         <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress,<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;bookieFailureHistory,
+                                                         <a href="../../../../org/apache/bookkeeper/client/BookiesHealthInfo.html" title="interface in org.apache.bookkeeper.client">BookiesHealthInfo</a>&nbsp;bookiesHealthInfo,
                                                          <a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;writeSet)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#reorderReadSequence-java.util.ArrayList-java.util.Map-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">EnsemblePlacementPolicy</a></code></span></div>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#reorderReadSequence-java.util.ArrayList-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">EnsemblePlacementPolicy</a></code></span></div>
 <div class="block">Reorder the read sequence of a given write quorum <i>writeSet</i>.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#reorderReadSequence-java.util.ArrayList-java.util.Map-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadSequence</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></code></dd>
+<dd><code><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#reorderReadSequence-java.util.ArrayList-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadSequence</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>ensemble</code> - Ensemble to read entries.</dd>
-<dd><code>bookieFailureHistory</code> - Observed failures on the bookies</dd>
+<dd><code>bookiesHealthInfo</code> - Health info for bookies</dd>
 <dd><code>writeSet</code> - Write quorum to read entries. This will be modified, rather than
           allocating a new WriteSet.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
@@ -326,23 +326,23 @@ implements <a href="../../../../org/apache/bookkeeper/client/ITopologyAwareEnsem
 </dl>
 </li>
 </ul>
-<a name="reorderReadLACSequence-java.util.ArrayList-java.util.Map-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">
+<a name="reorderReadLACSequence-java.util.ArrayList-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>reorderReadLACSequence</h4>
 <pre>public&nbsp;<a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;reorderReadLACSequence(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress&gt;&nbsp;ensemble,
-                                                            <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;org.apache.bookkeeper.net.BookieSocketAddress,<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>&gt;&nbsp;bookieFailureHistory,
+                                                            <a href="../../../../org/apache/bookkeeper/client/BookiesHealthInfo.html" title="interface in org.apache.bookkeeper.client">BookiesHealthInfo</a>&nbsp;bookiesHealthInfo,
                                                             <a href="../../../../org/apache/bookkeeper/client/DistributionSchedule.WriteSet.html" title="interface in org.apache.bookkeeper.client">DistributionSchedule.WriteSet</a>&nbsp;writeSet)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#reorderReadLACSequence-java.util.ArrayList-java.util.Map-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">EnsemblePlacementPolicy</a></code></span></div>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#reorderReadLACSequence-java.util.ArrayList-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">EnsemblePlacementPolicy</a></code></span></div>
 <div class="block">Reorder the read last add confirmed sequence of a given write quorum <i>writeSet</i>.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#reorderReadLACSequence-java.util.ArrayList-java.util.Map-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadLACSequence</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></code></dd>
+<dd><code><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html#reorderReadLACSequence-java.util.ArrayList-org.apache.bookkeeper.client.BookiesHealthInfo-org.apache.bookkeeper.client.DistributionSchedule.WriteSet-">reorderReadLACSequence</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/EnsemblePlacementPolicy.html" title="interface in org.apache.bookkeeper.client">EnsemblePlacementPolicy</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>ensemble</code> - Ensemble to read entries.</dd>
-<dd><code>bookieFailureHistory</code> - Observed failures on the bookies</dd>
+<dd><code>bookiesHealthInfo</code> - Health info for bookies</dd>
 <dd><code>writeSet</code> - Write quorum to read entries. This will be modified, rather than
           allocating a new WriteSet.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>

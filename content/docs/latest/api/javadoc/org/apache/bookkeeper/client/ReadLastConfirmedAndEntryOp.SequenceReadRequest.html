@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -204,6 +204,15 @@ extends <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEn
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tr id="i0" class="altColor">
+<td class="colFirst"><code>(package private) boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.SequenceReadRequest.html#complete-int-org.apache.bookkeeper.net.BookieSocketAddress-io.netty.buffer.ByteBuf-long-">complete</a></span>(int&nbsp;bookieIndex,
+        org.apache.bookkeeper.net.BookieSocketAddress&nbsp;host,
+        io.netty.buffer.ByteBuf&nbsp;buffer,
+        long&nbsp;entryId)</code>
+<div class="block">Complete the read request from <i>host</i>.</div>
+</td>
+</tr>
+<tr id="i1" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.SequenceReadRequest.html#logErrorAndReattemptRead-int-org.apache.bookkeeper.net.BookieSocketAddress-java.lang.String-int-">logErrorAndReattemptRead</a></span>(int&nbsp;bookieIndex,
                         org.apache.bookkeeper.net.BookieSocketAddress&nbsp;host,
@@ -212,19 +221,19 @@ extends <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEn
 <div class="block">Log error <i>errMsg</i> and reattempt read from <i>host</i>.</div>
 </td>
 </tr>
-<tr id="i1" class="rowColor">
+<tr id="i2" class="altColor">
 <td class="colFirst"><code>(package private) org.apache.bookkeeper.net.BookieSocketAddress</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.SequenceReadRequest.html#maybeSendSpeculativeRead-java.util.BitSet-">maybeSendSpeculativeRead</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/BitSet.html?is-external=true" title="class or interface in java.util">BitSet</a>&nbsp;heardFrom)</code>
 <div class="block">Send to next replica speculatively, if required and possible.</div>
 </td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>(package private) void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.SequenceReadRequest.html#read--">read</a></span>()</code>
 <div class="block">Execute the read request.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>(package private) org.apache.bookkeeper.net.BookieSocketAddress</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.SequenceReadRequest.html#sendNextRead--">sendNextRead</a></span>()</code>&nbsp;</td>
 </tr>
@@ -234,7 +243,7 @@ extends <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEn
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.bookkeeper.client.<a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html" title="class in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest</a></h3>
-<code><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html#close--">close</a>, <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html#complete-int-org.apache.bookkeeper.net.BookieSocketAddress-io.netty.buffer.ByteBuf-long-">complete</a>, <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html#fail-int-">fail</a>, <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html#getFirstError--">getFirstError</a>, <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html#getRc--">getRc</a>, <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html#isComplete--">isComplete</a>, <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html#toString--">toString</a></code></li>
+<code><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html#close--">close</a>, <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html#fail-int-">fail</a>, <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html#getFirstError--">getFirstError</a>, <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html#getRc--">getRc</a>, <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html#isComplete--">isComplete</a>, <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html#toString--">toString</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.java.lang.Object">
@@ -379,7 +388,7 @@ extends <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEn
 <a name="logErrorAndReattemptRead-int-org.apache.bookkeeper.net.BookieSocketAddress-java.lang.String-int-">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>logErrorAndReattemptRead</h4>
 <pre>void&nbsp;logErrorAndReattemptRead(int&nbsp;bookieIndex,
@@ -396,6 +405,31 @@ extends <a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEn
 <dd><code>host</code> - host that just respond</dd>
 <dd><code>errMsg</code> - error msg to log</dd>
 <dd><code>rc</code> - read result code</dd>
+</dl>
+</li>
+</ul>
+<a name="complete-int-org.apache.bookkeeper.net.BookieSocketAddress-io.netty.buffer.ByteBuf-long-">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>complete</h4>
+<pre>boolean&nbsp;complete(int&nbsp;bookieIndex,
+                 org.apache.bookkeeper.net.BookieSocketAddress&nbsp;host,
+                 io.netty.buffer.ByteBuf&nbsp;buffer,
+                 long&nbsp;entryId)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html#complete-int-org.apache.bookkeeper.net.BookieSocketAddress-io.netty.buffer.ByteBuf-long-">ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest</a></code></span></div>
+<div class="block">Complete the read request from <i>host</i>.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html#complete-int-org.apache.bookkeeper.net.BookieSocketAddress-io.netty.buffer.ByteBuf-long-">complete</a></code>&nbsp;in class&nbsp;<code><a href="../../../../org/apache/bookkeeper/client/ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest.html" title="class in org.apache.bookkeeper.client">ReadLastConfirmedAndEntryOp.ReadLACAndEntryRequest</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>bookieIndex</code> - bookie index</dd>
+<dd><code>host</code> - host that respond the read</dd>
+<dd><code>buffer</code> - the data buffer</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>return true if we managed to complete the entry;
+         otherwise return false if the read entry is not complete or it is already completed before</dd>
 </dl>
 </li>
 </ul>
