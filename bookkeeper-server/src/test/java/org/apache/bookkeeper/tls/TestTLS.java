@@ -84,28 +84,28 @@ public class TestTLS extends BookKeeperClusterTestCase {
         baseClientConf.setTLSClientAuthentication(true);
         baseClientConf.setTLSKeyStoreType("JKS");
         baseClientConf.setTLSKeyStore(
-            this.getClass().getClassLoader().getResource("client.jks").toURI().getRawPath());
+            this.getClass().getClassLoader().getResource("client.jks").toURI().getPath());
         baseClientConf.setTLSKeyStorePasswordPath(
-            this.getClass().getClassLoader().getResource("keyStoreClientPassword.txt").toURI().getRawPath());
+            this.getClass().getClassLoader().getResource("keyStoreClientPassword.txt").toURI().getPath());
         baseClientConf.setTLSTrustStoreType("JKS");
         baseClientConf.setTLSTrustStore(
-            this.getClass().getClassLoader().getResource("cacerts").toURI().getRawPath());
+            this.getClass().getClassLoader().getResource("cacerts").toURI().getPath());
         baseClientConf.setTLSTrustStorePasswordPath(
-            this.getClass().getClassLoader().getResource("trustStorePassword.txt").toURI().getRawPath());
+            this.getClass().getClassLoader().getResource("trustStorePassword.txt").toURI().getPath());
 
         /* server configuration */
         baseConf.setTLSProviderFactoryClass(TLSContextFactory.class.getName());
         baseConf.setTLSClientAuthentication(true);
         baseConf.setTLSKeyStoreType("JKS");
         baseConf.setTLSKeyStore(
-            this.getClass().getClassLoader().getResource("server.jks").toURI().getRawPath());
+            this.getClass().getClassLoader().getResource("server.jks").toURI().getPath());
         baseConf.setTLSKeyStorePasswordPath(
-            this.getClass().getClassLoader().getResource("keyStoreServerPassword.txt").toURI().getRawPath());
+            this.getClass().getClassLoader().getResource("keyStoreServerPassword.txt").toURI().getPath());
         baseConf.setTLSTrustStoreType("JKS");
         baseConf.setTLSTrustStore(
-            this.getClass().getClassLoader().getResource("cacerts").toURI().getRawPath());
+            this.getClass().getClassLoader().getResource("cacerts").toURI().getPath());
         baseConf.setTLSTrustStorePasswordPath(
-            this.getClass().getClassLoader().getResource("trustStorePassword.txt").toURI().getRawPath());
+            this.getClass().getClassLoader().getResource("trustStorePassword.txt").toURI().getPath());
 
         super.setUp();
     }
