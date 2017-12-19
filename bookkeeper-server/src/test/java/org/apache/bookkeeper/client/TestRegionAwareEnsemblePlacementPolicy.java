@@ -356,7 +356,7 @@ public class TestRegionAwareEnsemblePlacementPolicy extends TestCase {
         addrs.add(addr3);
         addrs.add(addr4);
         repp.onClusterChanged(addrs, new HashSet<BookieSocketAddress>());
-        repp.registerSlowBookie(addr1, 0L);;
+        repp.registerSlowBookie(addr1, 0L);
         Map<BookieSocketAddress, Long> bookiePendingMap = new HashMap<>();
         bookiePendingMap.put(addr1, 1L);
         addrs.remove(addr2);

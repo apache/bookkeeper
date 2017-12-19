@@ -156,8 +156,9 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
             speccb.expectSuccess(4000);
             nospeccb.expectTimeout(4000);
             // Check that the second bookie is registered as slow at entryId 1
-            assertTrue(((RackawareEnsemblePlacementPolicy) lspec.bk.placementPolicy).slowBookies.asMap().size() == 1);
-            assertTrue(((RackawareEnsemblePlacementPolicy) lspec.bk.placementPolicy).slowBookies.asMap().get(second) == 1L);
+            RackawareEnsemblePlacementPolicy rep = (RackawareEnsemblePlacementPolicy) lspec.bk.placementPolicy;
+            assertTrue(rep.slowBookies.asMap().size() == 1);
+            assertTrue(rep.slowBookies.asMap().get(second) == 1L);
         } finally {
             sleepLatch.countDown();
             lspec.close();

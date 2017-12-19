@@ -34,7 +34,7 @@ public interface BookiesHealthInfo {
      * @param bookieSocketAddress
      * @return failed entries on a bookie, -1 if there have been no failures
      */
-    public long getBookieFailureHistory(BookieSocketAddress bookieSocketAddress);
+    long getBookieFailureHistory(BookieSocketAddress bookieSocketAddress);
 
     /**
      * Returns pending requests to a bookie.
@@ -42,5 +42,6 @@ public interface BookiesHealthInfo {
      * @param bookieSocketAddress
      * @return number of pending requests
      */
-    public long getBookiePendingRequests(BookieSocketAddress bookieSocketAddress);
+    long getBookiePendingRequests(BookieSocketAddress bookieSocketAddress);
+
 }
