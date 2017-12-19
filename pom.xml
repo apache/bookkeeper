@@ -310,6 +310,7 @@
             <exclude>**/.classpath</exclude>
             <exclude>**/.gitignore</exclude>
             <exclude>**/.project</exclude>
+            <exclude>**/.checkstyle</exclude>
             <exclude>**/.settings/*</exclude>
             <exclude>**/*.iml</exclude>
             <exclude>site/**</exclude>

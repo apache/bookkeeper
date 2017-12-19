@@ -46,6 +46,7 @@
             <exclude>**/DataFormats.java</exclude>
             <exclude>**/BookkeeperProtocol.java</exclude>
             <exclude>**/DbLedgerStorageDataFormats.java</exclude>
+            <exclude>**/.checkstyle</exclude>
           </excludes>
         </configuration>
       </plugin>
