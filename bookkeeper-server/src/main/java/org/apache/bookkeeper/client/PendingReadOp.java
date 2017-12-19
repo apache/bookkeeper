@@ -86,16 +86,18 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         final ArrayList<BookieSocketAddress> ensemble;
         final DistributionSchedule.WriteSet writeSet;
         final LedgerEntryImpl entryImpl;
+        final long eId;
 
         LedgerEntryRequest(ArrayList<BookieSocketAddress> ensemble, long lId, long eId) {
             this.entryImpl = LedgerEntryImpl.create(lId, eId);
             this.ensemble = ensemble;
+            this.eId = eId;
 
             if (lh.bk.isReorderReadSequence()) {
                 writeSet = lh.bk.getPlacementPolicy()
                     .reorderReadSequence(
                             ensemble,
-                            lh.bookieFailureHistory.asMap(),
+                            lh.getBookiesHealthInfo(),
                             lh.distributionSchedule.getWriteSet(eId));
             } else {
                 writeSet = lh.distributionSchedule.getWriteSet(eId);
@@ -420,6 +422,21 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             }
         }
 
+        @Override
+        boolean complete(int bookieIndex, BookieSocketAddress host, ByteBuf buffer) {
+            boolean completed = super.complete(bookieIndex, host, buffer);
+            if (completed) {
+                int numReplicasTried = getNextReplicaIndexToReadFrom();
+                // Check if any speculative reads were issued and mark any slow bookies before
+                // the first successful speculative read as "slow"
+                for (int i = 0; i < numReplicasTried - 1; i++) {
+                    int slowBookieIndex = writeSet.get(i);
+                    BookieSocketAddress slowBookieSocketAddress = ensemble.get(slowBookieIndex);
+                    lh.bk.placementPolicy.registerSlowBookie(slowBookieSocketAddress, eId);
+                }
+            }
+            return completed;
+        }
     }
 
     PendingReadOp(LedgerHandle lh,

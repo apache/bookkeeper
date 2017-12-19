@@ -77,6 +77,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.TimedGenericCallback;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.State;
+import org.apache.bookkeeper.proto.PerChannelBookieClientPool;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallback;
@@ -106,6 +107,7 @@ public class LedgerHandle implements WriteHandle {
     final LoadingCache<BookieSocketAddress, Long> bookieFailureHistory;
     final boolean enableParallelRecoveryRead;
     final int recoveryReadBatchSize;
+    final BookiesHealthInfo bookiesHealthInfo;
     final EnumSet<WriteFlag> writeFlags;
     ScheduledFuture<?> timeoutFuture = null;
 
@@ -174,6 +176,19 @@ public class LedgerHandle implements WriteHandle {
                 return -1L;
             }
         });
+        this.bookiesHealthInfo = new BookiesHealthInfo() {
+            @Override
+            public long getBookieFailureHistory(BookieSocketAddress bookieSocketAddress) {
+                Long lastFailure = bookieFailureHistory.getIfPresent(bookieSocketAddress);
+                return lastFailure == null ? -1L : lastFailure;
+            }
+
+            @Override
+            public long getBookiePendingRequests(BookieSocketAddress bookieSocketAddress) {
+                PerChannelBookieClientPool pcbcPool = bk.bookieClient.lookupClient(bookieSocketAddress);
+                return pcbcPool == null ? 0 : pcbcPool.getNumPendingCompletionRequests();
+            }
+        };
 
         ensembleChangeCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.ENSEMBLE_CHANGES);
         lacUpdateHitsCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.LAC_UPDATE_HITS);
@@ -331,6 +346,15 @@ public class LedgerHandle implements WriteHandle {
      */
     DistributionSchedule getDistributionSchedule() {
         return distributionSchedule;
+    }
+
+    /**
+     * Get the health info for bookies for this ledger.
+     *
+     * @return BookiesHealthInfo for every bookie in the write set.
+     */
+    BookiesHealthInfo getBookiesHealthInfo() {
+        return bookiesHealthInfo;
     }
 
     void writeLedgerConfig(GenericCallback<Void> writeCb) {
