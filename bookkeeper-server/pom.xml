@@ -280,6 +280,7 @@
             <exclude>**/.classpath</exclude>
             <exclude>**/.gitignore</exclude>
             <exclude>**/.project</exclude>
+            <exclude>**/.checkstyle</exclude>
             <exclude>**/.settings/*</exclude>
             <exclude>certs/keyStoreClientPassword.txt</exclude>
             <exclude>certs/keyStoreServerPassword.txt</exclude>
