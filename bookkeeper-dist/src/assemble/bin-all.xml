@@ -50,6 +50,11 @@
         <include>${basedir}/*.txt</include>
       </includes>
     </fileSet>
+    <fileSet>
+      <directory>../src/main/resources/deps</directory>
+      <outputDirectory>/deps</outputDirectory>
+      <fileMode>644</fileMode>
+    </fileSet>
   </fileSets>
   <files>
     <file>
