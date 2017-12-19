@@ -119,4 +119,13 @@ class DefaultPerChannelBookieClientPool implements PerChannelBookieClientPool,
             pcbc.close(wait);
         }
     }
+
+    @Override
+    public long getNumPendingCompletionRequests() {
+        long numPending = 0;
+        for (PerChannelBookieClient pcbc : clients) {
+            numPending += pcbc.getNumPendingCompletionRequests();
+        }
+        return numPending;
+    }
 }
