@@ -2331,8 +2331,8 @@ public class BookieShell implements Tool {
             };
 
             interleavedStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager,
-                    checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
-            dbStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager,
+                    null, checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
+            dbStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager, null,
                     checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
 
             int convertedLedgers = 0;
@@ -2420,10 +2420,10 @@ public class BookieShell implements Tool {
                 }
             };
 
-            dbStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager,
+            dbStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager, null,
                         checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
             interleavedStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager,
-                    checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
+                    null, checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
             LedgerCache interleavedLedgerCache = interleavedStorage.ledgerCache;
 
             EntryLocationIndex dbEntryLocationIndex = dbStorage.getEntryLocationIndex();

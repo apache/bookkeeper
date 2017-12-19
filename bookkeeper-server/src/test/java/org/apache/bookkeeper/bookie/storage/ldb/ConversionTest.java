@@ -85,8 +85,8 @@ public class ConversionTest {
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
 
         InterleavedLedgerStorage interleavedStorage = new InterleavedLedgerStorage();
-        interleavedStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager, checkpointSource, checkpointer,
-                NullStatsLogger.INSTANCE);
+        interleavedStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager,
+                null, checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
 
         // Insert some ledger & entries in the interleaved storage
         for (long ledgerId = 0; ledgerId < 5; ledgerId++) {
@@ -115,12 +115,12 @@ public class ConversionTest {
 
         // Verify that db index has the same entries
         DbLedgerStorage dbStorage = new DbLedgerStorage();
-        dbStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager, checkpointSource, checkpointer,
-                NullStatsLogger.INSTANCE);
+        dbStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager,
+                null, checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
 
         interleavedStorage = new InterleavedLedgerStorage();
-        interleavedStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager, checkpointSource, checkpointer,
-                NullStatsLogger.INSTANCE);
+        interleavedStorage.initialize(conf, null, ledgerDirsManager,
+                ledgerDirsManager, null, checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
 
         Set<Long> ledgers = Sets.newTreeSet(dbStorage.getActiveLedgersInRange(0, Long.MAX_VALUE));
         Assert.assertEquals(Sets.newTreeSet(Lists.newArrayList(0L, 1L, 2L, 3L, 4L)), ledgers);
