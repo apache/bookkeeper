@@ -107,10 +107,10 @@
     <jmh.version>1.19</jmh.version>
     <junit.version>4.12</junit.version>
     <lombok.version>1.16.18</lombok.version>
-    <mockito-core.version>2.8.9</mockito-core.version>
+    <mockito-core.version>2.13.0</mockito-core.version>
     <netty.version>4.1.12.Final</netty.version>
     <netty-boringssl.version>2.0.3.Final</netty-boringssl.version>
-    <powermock.version>1.7.3</powermock.version>
+    <powermock.version>2.0.0-beta.5</powermock.version>
     <protobuf.version>3.4.0</protobuf.version>
     <rocksdb.version>5.8.6</rocksdb.version>
     <slf4j.version>1.7.25</slf4j.version>
