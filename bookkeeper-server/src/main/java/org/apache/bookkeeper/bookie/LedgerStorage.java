@@ -45,6 +45,7 @@ public interface LedgerStorage {
                     LedgerManager ledgerManager,
                     LedgerDirsManager ledgerDirsManager,
                     LedgerDirsManager indexDirsManager,
+                    StateManager stateManager,
                     CheckpointSource checkpointSource,
                     Checkpointer checkpointer,
                     StatsLogger statsLogger)

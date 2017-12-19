@@ -38,6 +38,7 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import org.apache.bookkeeper.bookie.Bookie.BookieStateManager;
 import org.apache.bookkeeper.bookie.BookieException.DiskPartitionDuplicationException;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -109,8 +110,14 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         }
 
         void testRegisterBookie(ServerConfiguration conf) throws IOException {
-            super.doRegisterBookie();
+            ((BookieStateManager) super.getStateManager()).doRegisterBookie();
         }
+
+        void updateRegistration(RegistrationManager newRm){
+            registrationManager = newRm;
+            stateManager = new BookieStateManager(bookieStatus, newRm);
+        }
+
     }
 
     /**
@@ -134,6 +141,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                 MockBookie bookie = new MockBookie(conf);
                 rm.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
                 bookie.registrationManager = rm;
+                bookie.updateRegistration(rm);
                 ((ZKRegistrationManager) bookie.registrationManager).setZk(zkc);
                 ((ZKRegistrationManager) bookie.registrationManager).getZk().close();
                 return bookie;
@@ -162,8 +170,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         MockBookie b = new MockBookie(conf);
         conf.setZkServers(zkUtil.getZooKeeperConnectString());
         rm.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
-        b.registrationManager = rm;
-
+        b.updateRegistration(rm);
         b.testRegisterBookie(conf);
         ZooKeeper zooKeeper = ((ZKRegistrationManager) rm).getZk();
         assertNotNull("Bookie registration node doesn't exists!",
@@ -196,8 +203,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
         conf.setZkServers(zkUtil.getZooKeeperConnectString());
         rm.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
-        b.registrationManager = rm;
-
+        b.updateRegistration(rm);
         b.testRegisterBookie(conf);
 
         Stat bkRegNode1 = ((ZKRegistrationManager) rm).getZk().exists(bkRegPath, false);
@@ -208,7 +214,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         // zkclient and doing the registration.
         RegistrationManager newRm = new ZKRegistrationManager();
         newRm.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
-        b.registrationManager = newRm;
+        b.updateRegistration(newRm);
 
         try (ZooKeeperClient newZk = createNewZKClient()) {
             // deleting the znode, so that the bookie registration should
@@ -308,8 +314,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
         conf.setZkServers(zkUtil.getZooKeeperConnectString());
         rm.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
-        b.registrationManager = rm;
-
+        b.updateRegistration(rm);
         b.testRegisterBookie(conf);
         Stat bkRegNode1 = zkc.exists(bkRegPath, false);
         assertNotNull("Bookie registration node doesn't exists!",
@@ -320,7 +325,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         ZooKeeperClient newzk = createNewZKClient();
         RegistrationManager newRm = new ZKRegistrationManager();
         newRm.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
-        b.registrationManager = newRm;
+        b.updateRegistration(newRm);
         try {
             b.testRegisterBookie(conf);
             fail("Should throw NodeExistsException as the znode is not getting expired");
@@ -814,7 +819,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         Bookie bookie = bookieServer.getBookie();
         assertFalse(bookie.isReadOnly());
         // transition to readonly mode, bookie status should be persisted in ledger disks
-        bookie.doTransitionToReadOnlyMode();
+        ((Bookie.BookieStateManager) bookie.getStateManager()).doTransitionToReadOnlyMode();
         assertTrue(bookie.isReadOnly());
 
         // restart bookie should start in read only mode
@@ -824,7 +829,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         bookie = bookieServer.getBookie();
         assertTrue(bookie.isReadOnly());
         // transition to writable mode
-        bookie.doTransitionToWritableMode();
+        ((Bookie.BookieStateManager) bookie.getStateManager()).doTransitionToWritableMode();
         // restart bookie should start in writable mode
         bookieServer.shutdown();
         bookieServer = new BookieServer(conf);
@@ -850,8 +855,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         bookieServer.start();
         Bookie bookie = bookieServer.getBookie();
         // persist bookie status
-        bookie.doTransitionToReadOnlyMode();
-        bookie.doTransitionToWritableMode();
+        ((Bookie.BookieStateManager) bookie.getStateManager()).doTransitionToReadOnlyMode();
+        ((Bookie.BookieStateManager) bookie.getStateManager()).doTransitionToWritableMode();
         assertFalse(bookie.isReadOnly());
         bookieServer.shutdown();
         // start read only bookie
@@ -863,7 +868,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         bookie = bookieServer.getBookie();
         assertTrue(bookie.isReadOnly());
         // transition to writable should fail
-        bookie.doTransitionToWritableMode();
+        ((Bookie.BookieStateManager) bookie.getStateManager()).doTransitionToWritableMode();
         assertTrue(bookie.isReadOnly());
         bookieServer.shutdown();
     }
@@ -892,7 +897,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         // transition in to read only and persist the status on disk
         Bookie bookie = bookieServer.getBookie();
         assertFalse(bookie.isReadOnly());
-        bookie.doTransitionToReadOnlyMode();
+        ((Bookie.BookieStateManager) bookie.getStateManager()).doTransitionToReadOnlyMode();
         assertTrue(bookie.isReadOnly());
         // corrupt status file
         List<File> ledgerDirs = bookie.getLedgerDirsManager().getAllLedgerDirs();
@@ -931,7 +936,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         // transition in to read only and persist the status on disk
         Bookie bookie = bookieServer.getBookie();
         assertFalse(bookie.isReadOnly());
-        bookie.doTransitionToReadOnlyMode();
+        ((Bookie.BookieStateManager) bookie.getStateManager()).doTransitionToReadOnlyMode();
         assertTrue(bookie.isReadOnly());
         // Manually update a status file, so it becomes the latest
         Thread.sleep(1);

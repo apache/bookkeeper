@@ -43,6 +43,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -295,7 +297,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         ServerConfiguration bookieConf = bsConfs.get(2);
         BookieServer bk = bs.get(2);
         bookieConf.setReadOnlyModeEnabled(true);
-        bk.getBookie().doTransitionToReadOnlyMode();
+        ((Bookie.BookieStateManager) bk.getBookie().getStateManager()).doTransitionToReadOnlyMode();
 
         // grace period for publishing the bk-ledger
         LOG.debug("Waiting for Auditor to finish ledger check.");
@@ -321,7 +323,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         ServerConfiguration bookieConf = bsConfs.get(bkIndex);
         BookieServer bk = bs.get(bkIndex);
         bookieConf.setReadOnlyModeEnabled(true);
-        bk.getBookie().doTransitionToReadOnlyMode();
+        ((Bookie.BookieStateManager) bk.getBookie().getStateManager()).doTransitionToReadOnlyMode();
 
         // grace period for publishing the bk-ledger
         LOG.debug("Waiting for Auditor to finish ledger check.");

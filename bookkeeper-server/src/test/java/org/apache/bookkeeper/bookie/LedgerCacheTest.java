@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -483,6 +482,7 @@ public class LedgerCacheTest {
                                LedgerManager ledgerManager,
                                LedgerDirsManager ledgerDirsManager,
                                LedgerDirsManager indexDirsManager,
+                               StateManager stateManager,
                                CheckpointSource checkpointSource,
                                Checkpointer checkpointer,
                                StatsLogger statsLogger) throws IOException {
@@ -491,7 +491,8 @@ public class LedgerCacheTest {
                 ledgerManager,
                 ledgerDirsManager,
                 indexDirsManager,
-                checkpointSource,
+                    stateManager,
+                    checkpointSource,
                 checkpointer,
                 statsLogger);
             this.memTable = new EntryMemTable(conf, checkpointSource, statsLogger) {

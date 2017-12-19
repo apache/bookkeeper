@@ -45,9 +45,9 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
         implements LedgerStorage, CacheCallback, SkipListFlusher {
     private static final Logger LOG = LoggerFactory.getLogger(SortedLedgerStorage.class);
 
-    private SortedLedgerStorageListener listener;
     EntryMemTable memTable;
     private ScheduledExecutorService scheduler;
+    private StateManager stateManager;
 
     public SortedLedgerStorage() {
         super();
@@ -58,6 +58,7 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
                            LedgerManager ledgerManager,
                            LedgerDirsManager ledgerDirsManager,
                            LedgerDirsManager indexDirsManager,
+                           StateManager stateManager,
                            CheckpointSource checkpointSource,
                            Checkpointer checkpointer,
                            StatsLogger statsLogger)
@@ -67,6 +68,7 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
             ledgerManager,
             ledgerDirsManager,
             indexDirsManager,
+                stateManager,
             checkpointSource,
             checkpointer,
             statsLogger);
@@ -75,6 +77,7 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
                 new ThreadFactoryBuilder()
                 .setNameFormat("SortedLedgerStorage-%d")
                 .setPriority((Thread.NORM_PRIORITY + Thread.MAX_PRIORITY) / 2).build());
+        this.stateManager = stateManager;
     }
 
     @VisibleForTesting
@@ -219,7 +222,7 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
                         checkpointer.startCheckpoint(cp);
                     }
                 } catch (IOException e) {
-                    SortedLedgerStorage.this.listener.flushFailed();
+                    stateManager.transitionToReadOnlyMode();
                     LOG.error("Exception thrown while flushing skip list cache.", e);
                 }
             }
@@ -234,20 +237,4 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
         // flushed to the entry log file.
     }
 
-    public void addSortedLedgerStorageListener(SortedLedgerStorageListener listener) {
-        this.listener  = listener;
-    }
-
-    /**
-     * Listener for the flush check events will be notified from the
-     * {@link SortedLedgerStorage} whenever flush failure happened.
-     */
-    public interface SortedLedgerStorageListener {
-
-        /**
-         * This will be notified on flush failure error.
-         *
-         */
-        void flushFailed();
-    }
 }

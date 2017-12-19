@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.StateManager;
 import org.apache.bookkeeper.client.BookKeeperTestClient;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -326,7 +327,7 @@ public abstract class BookKeeperClusterTestCase {
     public void setBookieToReadOnly(BookieSocketAddress addr) throws InterruptedException, UnknownHostException {
         for (BookieServer server : bs) {
             if (server.getLocalAddress().equals(addr)) {
-                server.getBookie().doTransitionToReadOnlyMode();
+                ((Bookie.BookieStateManager) server.getBookie().getStateManager()).doTransitionToReadOnlyMode();
                 break;
             }
         }

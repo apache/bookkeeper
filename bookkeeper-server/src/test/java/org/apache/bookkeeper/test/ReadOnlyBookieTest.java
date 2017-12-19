@@ -260,7 +260,7 @@ public class ReadOnlyBookieTest extends BookKeeperClusterTestCase {
         killBookie(1);
         baseConf.setReadOnlyModeEnabled(true);
         startNewBookie();
-        bs.get(1).getBookie().doTransitionToReadOnlyMode();
+        ((Bookie.BookieStateManager) bs.get(1).getBookie().getStateManager()).doTransitionToReadOnlyMode();
         try {
             bkc.waitForReadOnlyBookie(Bookie.getBookieAddress(bsConfs.get(1)))
                 .get(30, TimeUnit.SECONDS);
