@@ -59,9 +59,9 @@ public abstract class LedgerManagerFactory {
      * @return ledger manager factory instance
      * @throws IOException when fail to initialize the factory.
      */
-    public abstract LedgerManagerFactory initialize(final AbstractConfiguration conf,
-                                                    final ZooKeeper zk,
-                                                    final int factoryVersion)
+    public abstract LedgerManagerFactory initialize(AbstractConfiguration conf,
+                                                    ZooKeeper zk,
+                                                    int factoryVersion)
     throws IOException;
 
     /**

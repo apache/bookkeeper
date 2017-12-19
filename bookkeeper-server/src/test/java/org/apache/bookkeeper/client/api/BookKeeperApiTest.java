@@ -22,14 +22,19 @@ package org.apache.bookkeeper.client.api;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasProperty;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import io.netty.buffer.Unpooled;
 import java.nio.ByteBuffer;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
@@ -38,7 +43,10 @@ import org.apache.bookkeeper.client.BKException.BKLedgerFencedException;
 import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
 import org.apache.bookkeeper.client.BKException.BKUnauthorizedAccessException;
 import org.apache.bookkeeper.client.MockBookKeeperTestCase;
+import org.apache.bookkeeper.util.LoggerOutput;
+import org.junit.Rule;
 import org.junit.Test;
+import org.slf4j.event.LoggingEvent;
 
 /**
  * Unit tests of classes in this package.
@@ -47,6 +55,9 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
 
     private static final byte[] data = "foo".getBytes(UTF_8);
     private static final byte[] password = "password".getBytes(UTF_8);
+
+    @Rule
+    public LoggerOutput loggerOutput = new LoggerOutput();
 
     @Test
     public void testWriteHandle() throws Exception {
@@ -235,6 +246,14 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
 
     @Test(expected = BKLedgerFencedException.class)
     public void testOpenLedgerWithRecovery() throws Exception {
+
+        loggerOutput.expect((List<LoggingEvent> logEvents) -> {
+            assertThat(logEvents, hasItem(hasProperty("message",
+                    containsString("due to LedgerFencedException: "
+                            + "Ledger has been fenced off. Some other client must have opened it to read")
+            )));
+        });
+
         long lId;
         try (WriteHandle writer = result(newCreateLedgerOp()
             .withAckQuorumSize(1)
@@ -250,10 +269,10 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
 
             // open with fencing
             try (ReadHandle reader = result(newOpenLedgerOp()
-                .withPassword(password)
-                .withRecovery(true)
-                .withLedgerId(lId)
-                .execute())) {
+                    .withPassword(password)
+                    .withRecovery(true)
+                    .withLedgerId(lId)
+                    .execute())) {
                 assertTrue(reader.isClosed());
                 assertEquals(1L, reader.getLastAddConfirmed());
             }
@@ -333,6 +352,22 @@ public class BookKeeperApiTest extends MockBookKeeperTestCase {
                     });
             }
         }
+    }
+
+    @Test
+    public void testBKExceptionCodeLogger() {
+        assertEquals("OK: No problem", BKException.codeLogger(0).toString());
+        assertEquals("ReadException: Error while reading ledger", BKException.codeLogger(-1).toString());
+        assertEquals("IncorrectParameterException: Incorrect parameter input", BKException.codeLogger(-14).toString());
+        assertEquals("LedgerFencedException: Ledger has been fenced off. Some other client must have opened it to read",
+                BKException.codeLogger(-101).toString());
+        assertEquals("ReplicationException: Errors in replication pipeline", BKException.codeLogger(-200).toString());
+
+        assertEquals("UnexpectedConditionException: Unexpected condition", BKException.codeLogger(-999).toString());
+
+        assertEquals("1: Unexpected condition", BKException.codeLogger(1).toString());
+        assertEquals("123: Unexpected condition", BKException.codeLogger(123).toString());
+        assertEquals("-201: Unexpected condition", BKException.codeLogger(-201).toString());
     }
 
     private static void checkEntries(LedgerEntries entries, byte[] data)

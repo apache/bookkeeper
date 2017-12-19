@@ -15,6 +15,8 @@
  */
 package org.apache.bookkeeper.client.api;
 
+import java.lang.reflect.Field;
+
 import org.apache.bookkeeper.client.LedgerHandleAdv;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
@@ -28,6 +30,8 @@ import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
 @Unstable
 public abstract class BKException extends Exception {
     protected final int code;
+
+    private static final LogMessagePool logMessagePool = new LogMessagePool();
 
     /**
      * Create a new exception.
@@ -53,9 +57,20 @@ public abstract class BKException extends Exception {
     }
 
     /**
+     * Returns a lazy error code formatter suitable to pass to log functions.
+     *
+     * @param code the error code value
+     *
+     * @return lazy error code log formatter
+     */
+    public static Object codeLogger(int code) {
+        return logMessagePool.get(code);
+    }
+
+    /**
      * Describe an error code.
      *
-     * @param code
+     * @param code the error code value
      *
      * @return the description of the error code
      */
@@ -131,7 +146,7 @@ public abstract class BKException extends Exception {
     }
 
     /**
-     * Codes which represent the various exceptoin types.
+     * Codes which represent the various exception types.
      */
     public interface Code {
         /** A placer holder (unused). */
@@ -240,4 +255,78 @@ public abstract class BKException extends Exception {
         int UnexpectedConditionException = -999;
     }
 
+    /**
+     * Code log message pool.
+     */
+    private static class LogMessagePool {
+        private final int minCode;
+        private final String[] pool;
+
+        private LogMessagePool() {
+            Field[] fields = Code.class.getDeclaredFields();
+            this.minCode = minCode(fields);
+            this.pool = new String[-minCode + 2]; // UnexpectedConditionException is an outlier
+            initPoolMessages(fields);
+        }
+
+        private int minCode(Field[] fields) {
+            int min = 0;
+            for (Field field : fields) {
+                int code = getFieldInt(field);
+                if (code < min && code > Code.UnexpectedConditionException) {
+                    min = code;
+                }
+            }
+            return min;
+        }
+
+        private void initPoolMessages(Field[] fields) {
+            for (Field field : fields) {
+                int code = getFieldInt(field);
+                int index = poolIndex(code);
+                if (index >= 0) {
+                    pool[index] = String.format("%s: %s", field.getName(), getMessage(code));
+                }
+            }
+        }
+
+        private static int getFieldInt(Field field) {
+            try {
+                return field.getInt(null);
+            } catch (IllegalAccessException e) {
+                return -1;
+            }
+        }
+
+        private Object get(int code) {
+            int index = poolIndex(code);
+            String logMessage = index >= 0 ? pool[index] : null;
+            return logMessage != null ? logMessage : new UnrecognizedCodeLogFormatter(code);
+        }
+
+        private int poolIndex(int code) {
+            switch (code) {
+            case Code.UnexpectedConditionException:
+                return -minCode + 1;
+            default:
+                return code <= 0 && code >= minCode ? -minCode + code : -1;
+            }
+        }
+
+        /**
+         * Unrecognized code lazy log message formatter.
+         */
+        private static class UnrecognizedCodeLogFormatter {
+            private final int code;
+
+            private UnrecognizedCodeLogFormatter(int code) {
+                this.code = code;
+            }
+
+            @Override
+            public String toString() {
+                return String.format("%d: %s", code, getMessage(code));
+            }
+        }
+    }
 }

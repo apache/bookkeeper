@@ -685,7 +685,7 @@ public class BookKeeperTest extends BookKeeperClusterTestCase {
                 try (LedgerHandle lh2 = bkc.createLedger(digestType, "testPasswd".getBytes())) {
                     ledgerId = lh2.getId();
                     lh2.addEntry(data);
-                    try (LedgerHandle lh2_fence = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
+                    try (LedgerHandle lh2Fence = bkc.openLedger(ledgerId, digestType, "testPasswd".getBytes())) {
                     }
                     try {
                         lh2.addEntry(data);

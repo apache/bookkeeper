@@ -1327,7 +1327,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
 
         public abstract void errorOut();
-        public abstract void errorOut(final int rc);
+        public abstract void errorOut(int rc);
 
         protected void errorOutAndRunCallback(final Runnable callback) {
             executor.submitOrdered(ledgerId,
