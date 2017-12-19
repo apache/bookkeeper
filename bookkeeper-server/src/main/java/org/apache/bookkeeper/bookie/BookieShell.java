@@ -609,11 +609,11 @@ public class BookieShell implements Tool {
                 bk = new BookKeeperAdmin(conf);
                 if (forceRecovery) {
                     // Force the opening of the ledger to trigger recovery
-                    LedgerHandle lh = bk.openLedger(ledgerId);
-                    if (lastEntry == -1 || lastEntry > lh.getLastAddConfirmed()) {
-                        lastEntry = lh.getLastAddConfirmed();
+                    try (LedgerHandle lh = bk.openLedger(ledgerId)) {
+                        if (lastEntry == -1 || lastEntry > lh.getLastAddConfirmed()) {
+                            lastEntry = lh.getLastAddConfirmed();
+                        }
                     }
-                    lh.close();
                 }
 
                 Iterator<LedgerEntry> entries = bk.readEntries(ledgerId, firstEntry, lastEntry).iterator();
@@ -621,12 +621,8 @@ public class BookieShell implements Tool {
                     LedgerEntry entry = entries.next();
                     formatEntry(entry, printMsg);
                 }
-            } catch (NumberFormatException nfe) {
-                System.err.println("ERROR: invalid number " + nfe.getMessage());
-                printUsage();
-                return -1;
             } catch (Exception e) {
-                LOG.error("Error reading entries from ledger", e);
+                LOG.error("Error reading entries from ledger {}", ledgerId, e);
                 return -1;
             } finally {
                 if (bk != null) {
