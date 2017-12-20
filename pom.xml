@@ -315,7 +315,7 @@
             <exclude>**/*.iml</exclude>
             <exclude>site/**</exclude>
             <exclude>.repository/**</exclude>
-            <exclude>bookkeeper-dist/src/main/resources/deps/**</exclude>
+            <exclude>**/src/main/resources/deps/**</exclude>
           </excludes>
           <consoleOutput>true</consoleOutput>
         </configuration>
