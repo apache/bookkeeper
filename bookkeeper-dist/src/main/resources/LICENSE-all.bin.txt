@@ -306,28 +306,123 @@ Apache Software License, Version 2.
 [34] Source available at https://github.com/eclipse/jetty.project/tree/jetty-9.4.5.v20170502
 
 ------------------------------------------------------------------------------------
-lib/io.netty-netty-3.10.1.Final.jar bundles some 3rd party dependencies.
+lib/io.netty-netty-3.10.1.Final.jar contains the extensions to Java Collections Framework which has
+been derived from the works by JSR-166 EG, Doug Lea, and Jason T. Greene:
 
-For details see deps/netty-3.19.1.Final/
+  * LICENSE:
+    * deps/netty-3.10.1.Final/LICENSE.jsr166y.txt (Public Domain)
+  * HOMEPAGE:
+    * http://gee.cs.oswego.edu/cgi-bin/viewcvs.cgi/jsr166/
+    * http://viewvc.jboss.org/cgi-bin/viewvc.cgi/jbosscache/experimental/jsr166/
+
+lib/io.netty-netty-3.10.1.Final.jar contains a modified version of Robert Harder's Public Domain
+Base64 Encoder and Decoder, which can be obtained at:
+
+  * LICENSE:
+    * deps/netty-3.10.1.Final/LICENSE.base64.txt (Public Domain)
+  * HOMEPAGE:
+    * http://iharder.sourceforge.net/current/java/base64/
+
+lib/io.netty-netty-3.10.1.Final.jar contains a modified version of 'JZlib', a re-implementation of
+zlib in pure Java, which can be obtained at:
+
+  * LICENSE:
+    * deps/netty-3.10.1.Final/LICENSE.jzlib.txt (BSD Style License)
+  * HOMEPAGE:
+    * http://www.jcraft.com/jzlib/
+
+lib/io.netty-netty-3.10.1.Final.jar contains a modified version of 'Webbit', a Java event based
+WebSocket and HTTP server:
+
+  * LICENSE:
+    * deps/netty-3.10.1.Final/LICENSE.webbit.txt (BSD License)
+  * HOMEPAGE:
+    * https://github.com/joewalnes/webbit
+
 ------------------------------------------------------------------------------------
 lib/io.netty-netty-all-4.1.12.Final.jar bundles some 3rd party dependencies
 
-For details see deps/netty-4.1.12.Final/
+lib/io.netty-netty-all-4.1.12.Final.jar contains the extensions to Java Collections Framework which has
+been derived from the works by JSR-166 EG, Doug Lea, and Jason T. Greene:
+
+  * LICENSE:
+    * deps/netty-4.1.12.Final/LICENSE.jsr166y.txt (Public Domain)
+  * HOMEPAGE:
+    * http://gee.cs.oswego.edu/cgi-bin/viewcvs.cgi/jsr166/
+    * http://viewvc.jboss.org/cgi-bin/viewvc.cgi/jbosscache/experimental/jsr166/
+
+lib/io.netty-netty-all-4.1.12.Final.jar contains a modified version of Robert Harder's Public Domain
+Base64 Encoder and Decoder, which can be obtained at:
+
+  * LICENSE:
+    * deps/netty-4.1.12.Final/LICENSE.base64.txt (Public Domain)
+  * HOMEPAGE:
+    * http://iharder.sourceforge.net/current/java/base64/
+
+lib/io.netty-netty-all-4.1.12.Final.jar contains a modified portion of 'Webbit', an event based  
+WebSocket and HTTP server, which can be obtained at:
+
+  * LICENSE:
+    * deps/netty-4.1.12.Final/LICENSE.webbit.txt (BSD License)
+  * HOMEPAGE:
+    * https://github.com/joewalnes/webbit
+
+lib/io.netty-netty-all-4.1.12.Final.jar contains a modified portion of 'SLF4J', a simple logging
+facade for Java, which can be obtained at:
+
+  * LICENSE:
+    * deps/netty-4.1.12.Final/LICENSE.slf4j.txt (MIT License)
+  * HOMEPAGE:
+    * http://www.slf4j.org/
+
+lib/io.netty-netty-all-4.1.12.Final.jar contains a modified portion of 'jbzip2', a Java bzip2 compression
+and decompression library written by Matthew J. Francis. It can be obtained at:
+
+  * LICENSE:
+    * deps/netty-4.1.12.Final/LICENSE.jbzip2.txt (MIT License)
+  * HOMEPAGE:
+    * https://code.google.com/p/jbzip2/
+
+lib/io.netty-netty-all-4.1.12.Final.jar contains a modified portion of 'libdivsufsort', a C API library to construct
+the suffix array and the Burrows-Wheeler transformed string for any input string of
+a constant-size alphabet written by Yuta Mori. It can be obtained at:
+
+  * LICENSE:
+    * deps/netty-4.1.12.Final/LICENSE.libdivsufsort.txt (MIT License)
+  * HOMEPAGE:
+    * https://github.com/y-256/libdivsufsort
+
+lib/io.netty-netty-all-4.1.12.Final.jar contains a modified portion of 'jfastlz', a Java port of FastLZ compression
+and decompression library written by William Kinney. It can be obtained at:
+
+  * LICENSE:
+    * deps/netty-4.1.12.Final/LICENSE.jfastlz.txt (MIT License)
+  * HOMEPAGE:
+    * https://code.google.com/p/jfastlz/
+
+lib/io.netty-netty-all-4.1.12.Final.jar contains a modified portion of and optionally depends on 'Protocol Buffers', Google's data
+interchange format, which can be obtained at:
+
+  * LICENSE:
+    * deps/netty-4.1.12.Final/LICENSE.protobuf.txt (New BSD License)
+  * HOMEPAGE:
+    * https://github.com/google/protobuf
+
 ------------------------------------------------------------------------------------
 This product bundles the JSR-305 reference implementation, which is available under
-a "3-clause BSD" license.  For details, see deps/jsr305/.
+a "3-clause BSD" license.  For details, see deps/jsr-305/LICENSE.
 
 Bundled as lib/com.google.code.findbugs-jsr305-2.0.1.jar
 Source available at https://storage.googleapis.com/google-code-archive-source/v2/code.google.com/jsr-305/source-archive.zip
 ------------------------------------------------------------------------------------
 This product bundles Google Protocal Buffers, which is available under a "3-clause BSD"
-license. For details, see deps/protobuf-3.4.0/.
+license. For details, see deps/protobuf-3.4.0/LICENSE.
 
 Bundled as lib/com.google.protobuf-protobuf-java-3.4.0.jar
 Source available at https://github.com/google/protobuf/tree/v3.4.0
 ------------------------------------------------------------------------------------
 This product bundles Paranamer, which is available under a "3-clause BSD" license.
-For details, see deps/paranamer-2.8/.
+For details, see deps/paranamer-2.8/LICENSE.txt.
 
 Bundled as lib/com.thoughtworks.paranamer-paranamer-2.8.jar
 Source available at https://github.com/paul-hammant/paranamer/tree/paranamer-parent-2.8
@@ -338,31 +433,31 @@ Bundled as lib/com.twitter-jsr166e-1.0.0.jar
 Source available at https://github.com/twitter/jsr166e/tree/v1.0.0
 ------------------------------------------------------------------------------------
 This product bundles the JCP Standard Java Servlet API, which is available under a
-CDDL 1.1 license. For details, see deps/javax.servlet-api-3.1.0/.
+CDDL 1.1 license. For details, see deps/javax.servlet-api-3.1.0/CDDL+GPL-1.1.
 
 Bundled as lib/javax.servlet-javax.servlet-api-3.1.0.jar
 Source available at https://github.com/javaee/servlet-spec/tree/3.1.0
 ------------------------------------------------------------------------------------
 This product bundles the Scala Standard Parser Combinator Library, which is available
-under a "3-clause BSD" license. For details, see deps/scala-parser-combinators_2.11-1.0.4/.
+under a "3-clause BSD" license. For details, see deps/scala-parser-combinators_2.11-1.0.4/LICENSE.md.
 
 Bundled as lib/org.scala-lang.modules-scala-parser-combinators_2.11-1.0.4.jar
 Source available at https://github.com/scala/scala-parser-combinators/tree/v1.0.4
 ------------------------------------------------------------------------------------
 This product bundles the Scala Standard Library, which is available under a
-"3-clause BSD" license. For details, see deps/scala-library-2.11.7/.
+"3-clause BSD" license. For details, see deps/scala-library-2.11.7/LICENSE.md.
 
 Bundled as lib/org.scala-lang-scala-library-2.11.7.jar
 Source available at org.scala-lang-scala-library-2.11.7.jar
 ------------------------------------------------------------------------------------
 This product bundles the Scala Reflection API, which is available under a
-"3-clause BSD" license. For details, see deps/scala-reflect-2.11.8/.
+"3-clause BSD" license. For details, see deps/scala-reflect-2.11.8/LICENSE.md.
 
 Bundled as lib/org.scala-lang-scala-reflect-2.11.8.jar
 Source available at https://github.com/scala/scala/tree/v2.11.8
 ------------------------------------------------------------------------------------
 This product bundles Simple Logging Facade for Java, which is available under a
-MIT license. For details, see deps/slf4j-1.7.25/.
+MIT license. For details, see deps/slf4j-1.7.25/LICENSE.txt.
 
 Bundled as
   - lib/org.slf4j-slf4j-api-1.7.25.jar

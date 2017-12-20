@@ -32,11 +32,17 @@ if [ -z $TARBALL ]; then
 fi
 
 JARS=$(tar --wildcards -tf $TARBALL '*.jar' | sed 's!.*/!!' | sort)
-LICENSE=$(tar --wildcards -O -xf $TARBALL '*/LICENSE')
-NOTICE=$(tar --wildcards -O -xf $TARBALL '*/NOTICE')
 
-LICENSEJARS=$(echo "$LICENSE" | sed -nE 's!.*lib/(.*\.jar).*!\1!p')
-NOTICEJARS=$(echo "$NOTICE" | sed -nE 's!.*lib/(.*\.jar).*!\1!p')
+LICENSEPATH=$(tar -tf $TARBALL  | awk '/^[^\/]*\/LICENSE/')
+LICENSE=$(tar --wildcards -O -xf $TARBALL "$LICENSEPATH")
+NOTICEPATH=$(tar -tf $TARBALL  | awk '/^[^\/]*\/NOTICE/')
+NOTICE=$(tar --wildcards -O -xf $TARBALL $NOTICEPATH)
+
+LICENSEJARS=$(echo "$LICENSE" | sed -nE 's!.*lib/(.*\.jar).*!\1!gp')
+NOTICEJARS=$(echo "$NOTICE" | sed -nE 's!.*lib/(.*\.jar).*!\1!gp')
+
+BUNDLEDLICENSES=$(tar --wildcards -tf $TARBALL '*/deps/*' | sed 's!^[^/]*/!!' | grep -v /$)
+LINKEDINLICENSE=$(echo "$LICENSE" | sed -nE 's!.*(deps/[[:graph:]]*).*!\1!gp' | sed 's!\.$!!')
 
 EXIT=0
 
@@ -72,6 +78,24 @@ for J in $NOTICEJARS; do
     if [ $? != 0 ]; then
         echo $J mentioned in NOTICE, but not bundled
         EXIT=3
+    fi
+done
+
+# Check all linked LICENSE files are in tarball
+for L in $LINKEDINLICENSE; do
+    echo "$BUNDLEDLICENSES" | grep -q $L
+    if [ $? != 0 ]; then
+        echo $L linked from LICENSE, but not found in tarball
+        EXIT=4
+    fi
+done
+
+# Check all LICENSE files bundled are linked from LICENSE
+for L in $BUNDLEDLICENSES; do
+    echo "$LINKEDINLICENSE" | grep -q $L
+    if [ $? != 0 ]; then
+        echo $L bundled, but not linked from LICENSE
+        EXIT=5
     fi
 done
 
