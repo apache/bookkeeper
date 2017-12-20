@@ -22,8 +22,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.NavigableSet;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
@@ -61,9 +61,6 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
     static final Logger LOG = LoggerFactory.getLogger(LongHierarchicalLedgerManager.class);
 
     static final String IDGEN_ZNODE = "idgen-long";
-    private static final String MAX_ID_SUFFIX = "9999";
-    private static final String MIN_ID_SUFFIX = "0000";
-
 
     /**
      * Constructor.
@@ -94,41 +91,6 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
     //
     // Active Ledger Manager
     //
-
-    /**
-     * Get the smallest cache id in a specified node /level0/level1/level2/level3.
-     *
-     * @param level0
-     *            1st level node name
-     * @param level1
-     *            2nd level node name
-     * @param level2
-     *            3rd level node name
-     * @param level3
-     *            4th level node name
-     * @return the smallest ledger id
-     */
-    private long getStartLedgerIdByLevel(String level0, String level1, String level2, String level3)
-            throws IOException {
-        return getLedgerId(level0, level1, level2, level3, MIN_ID_SUFFIX);
-    }
-
-    /**
-     * Get the largest cache id in a specified node /level0/level1/level2/level3.
-     *
-     * @param level0
-     *            1st level node name
-     * @param level1
-     *            2nd level node name
-     * @param level2
-     *            3rd level node name
-     * @param level3
-     *            4th level node name
-     * @return the largest ledger id
-     */
-    private long getEndLedgerIdByLevel(String level0, String level1, String level2, String level3) throws IOException {
-        return getLedgerId(level0, level1, level2, level3, MAX_ID_SUFFIX);
-    }
 
     @Override
     public void asyncProcessLedgers(final Processor<Long> processor, final AsyncCallback.VoidCallback finalCb,
@@ -188,170 +150,165 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
         return new LongHierarchicalLedgerRangeIterator();
     }
 
+
     /**
-     * Iterator through each metadata bucket with hierarchical mode.
+     * Iterates recursively through each metadata bucket.
      */
     private class LongHierarchicalLedgerRangeIterator implements LedgerRangeIterator {
-        private List<Iterator<String>> levelNodesIter;
-        private List<String> curLevelNodes;
+        LedgerRangeIterator rootIterator;
 
-        private boolean initialized = false;
-        private boolean iteratorDone = false;
-        private LedgerRange nextRange = null;
-
-        private LongHierarchicalLedgerRangeIterator() {
-            levelNodesIter = new ArrayList<Iterator<String>>(Collections.nCopies(4, (Iterator<String>) null));
-            curLevelNodes = new ArrayList<String>(Collections.nCopies(4, (String) null));
-        }
-
-        private synchronized void initialize(String path, int level) throws KeeperException, InterruptedException,
-                IOException {
-            List<String> levelNodes = zk.getChildren(path, null);
-            Collections.sort(levelNodes);
-            if (level == 0) {
-                Iterator<String> l0NodesIter = levelNodes.iterator();
-                levelNodesIter.set(0, l0NodesIter);
-                while (l0NodesIter.hasNext()) {
-                    String curL0Node = l0NodesIter.next();
-                    if (!isSpecialZnode(curL0Node)) {
-                        curLevelNodes.set(0, curL0Node);
-                        break;
-                    }
+        /**
+         * Returns all children with path as a parent.  If path is non-existent,
+         * returns an empty list anyway (after all, there are no children there).
+         * Maps all exceptions (other than NoNode) to IOException in keeping with
+         * LedgerRangeIterator.
+         *
+         * @param path
+         * @return Iterator into set of all children with path as a parent
+         * @throws IOException
+         */
+        List<String> getChildrenAt(String path) throws IOException {
+            try {
+                List<String> children = ZkUtils.getChildrenInSingleNode(zk, path);
+                Collections.sort(children);
+                return children;
+            } catch (KeeperException.NoNodeException e) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("NoNodeException at path {}, assumed race with deletion", path);
                 }
-            } else {
-                Iterator<String> lNodesIter = levelNodes.iterator();
-                levelNodesIter.set(level, lNodesIter);
-                if (lNodesIter.hasNext()) {
-                    String curLNode = lNodesIter.next();
-                    curLevelNodes.set(level, curLNode);
-                }
-            }
-            String curLNode = curLevelNodes.get(level);
-            if (curLNode != null) {
-                // Traverse down through levels 0-3
-                // The nextRange becomes a listing of the children
-                // in the level4 directory.
-                if (level != 3) {
-                    String nextLevelPath = path + "/" + curLNode;
-                    initialize(nextLevelPath, level + 1);
-                } else {
-                    nextRange = getLedgerRangeByLevel(curLevelNodes);
-                    initialized = true;
-                }
-            } else {
-                iteratorDone = true;
+                return new ArrayList<>();
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Interrupted while reading ledgers at path " + path, ie);
             }
         }
 
-        private void clearHigherLevels(int level) {
-            for (int i = level + 1; i < 4; i++) {
-                curLevelNodes.set(i, null);
+        /**
+         * Represents the ledger range rooted at a leaf node, returns at most one LedgerRange.
+         */
+        class LeafIterator implements LedgerRangeIterator {
+            // Null iff iteration is complete
+            LedgerRange range;
+
+            LeafIterator(String path) throws IOException {
+                List<String> ledgerLeafNodes = getChildrenAt(path);
+                Set<Long> ledgerIds = ledgerListToSet(ledgerLeafNodes, path);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("All active ledgers from ZK for hash node {}: {}", path, ledgerIds);
+                }
+                if (!ledgerIds.isEmpty()) {
+                    range = new LedgerRange(ledgerIds);
+                } // else, hasNext() should return false so that advance will skip us and move on
+            }
+
+            @Override
+            public boolean hasNext() throws IOException {
+                return range != null;
+            }
+
+            @Override
+            public LedgerRange next() throws IOException {
+                if (range == null) {
+                    throw new NoSuchElementException(
+                            "next() must only be called if hasNext() is true");
+                }
+                LedgerRange ret = range;
+                range = null;
+                return ret;
             }
         }
 
-        private synchronized boolean moveToNext(int level) throws KeeperException, InterruptedException {
-            Iterator<String> curLevelNodesIter = levelNodesIter.get(level);
-            boolean movedToNextNode = false;
-            if (level == 0) {
-                while (curLevelNodesIter.hasNext()) {
-                    String nextNode = curLevelNodesIter.next();
-                    if (isSpecialZnode(nextNode)) {
+
+        /**
+         * The main constraint is that between calls one of two things must be true.
+         * 1) nextLevelIterator is null and thisLevelIterator.hasNext() == false: iteration complete, hasNext()
+         *    returns false
+         * 2) nextLevelIterator is non-null: nextLevelIterator.hasNext() must return true and nextLevelIterator.next()
+         *    must return the next LedgerRange
+         * The above means that nextLevelIterator != null ==> nextLevelIterator.hasNext()
+         * It also means that hasNext() iff nextLevelIterator != null
+         */
+        private class InnerIterator implements LedgerRangeIterator {
+            final String path;
+            final int level;
+
+            // Always non-null
+            final Iterator<String> thisLevelIterator;
+            // non-null iff nextLevelIterator.hasNext() is true
+            LedgerRangeIterator nextLevelIterator;
+
+            /**
+             * Builds InnerIterator.
+             *
+             * @param path Subpath for thisLevelIterator
+             * @param level Level of thisLevelIterator (must be <= 3)
+             * @throws IOException
+             */
+            InnerIterator(String path, int level) throws IOException {
+                this.path = path;
+                this.level = level;
+                thisLevelIterator = getChildrenAt(path).iterator();
+                advance();
+            }
+
+            /**
+             * Resolves the difference between cases 1 and 2 after nextLevelIterator is exhausted.
+             * Pre-condition: nextLevelIterator == null, thisLevelIterator != null
+             * Post-condition: nextLevelIterator == null && !thisLevelIterator.hasNext() OR
+             *                 nextLevelIterator.hasNext() == true and nextLevelIterator.next()
+             *                 yields the next result of next()
+             * @throws IOException Exception representing error
+             */
+            void advance() throws IOException {
+                while (thisLevelIterator.hasNext()) {
+                    String node = thisLevelIterator.next();
+                    if (level == 0 && isSpecialZnode(node)) {
                         continue;
-                    } else {
-                        curLevelNodes.set(level, nextNode);
-                        clearHigherLevels(level);
-                        movedToNextNode = true;
+                    }
+                    LedgerRangeIterator nextIterator = level < 3
+                            ? new InnerIterator(path + "/" + node, level + 1)
+                            : new LeafIterator(path + "/" + node);
+                    if (nextIterator.hasNext()) {
+                        nextLevelIterator = nextIterator;
                         break;
                     }
                 }
-            } else {
-                if (curLevelNodesIter.hasNext()) {
-                    String nextNode = curLevelNodesIter.next();
-                    curLevelNodes.set(level, nextNode);
-                    clearHigherLevels(level);
-                    movedToNextNode = true;
-                } else {
-                    movedToNextNode = moveToNext(level - 1);
-                    if (movedToNextNode) {
-                        StringBuilder path = new StringBuilder(ledgerRootPath);
-                        for (int i = 0; i < level; i++) {
-                            path = path.append("/").append(curLevelNodes.get(i));
-                        }
-                        List<String> newCurLevelNodesList = zk.getChildren(path.toString(), null);
-                        Collections.sort(newCurLevelNodesList);
-                        Iterator<String> newCurLevelNodesIter = newCurLevelNodesList.iterator();
-                        levelNodesIter.set(level, newCurLevelNodesIter);
-                        if (newCurLevelNodesIter.hasNext()) {
-                            curLevelNodes.set(level, newCurLevelNodesIter.next());
-                            clearHigherLevels(level);
-                            movedToNextNode = true;
-                        }
-                    }
-                }
             }
-            return movedToNextNode;
+
+            @Override
+            public boolean hasNext() throws IOException {
+                return nextLevelIterator != null;
+            }
+
+            @Override
+            public LedgerRange next() throws IOException {
+                LedgerRange ret = nextLevelIterator.next();
+                if (!nextLevelIterator.hasNext()) {
+                    nextLevelIterator = null;
+                    advance();
+                }
+                return ret;
+            }
         }
 
-        private synchronized void preload() throws IOException, KeeperException, InterruptedException {
-            if (!iteratorDone && !initialized) {
-                initialize(ledgerRootPath, 0);
-            }
-            while (((nextRange == null) || (nextRange.size() == 0)) && !iteratorDone) {
-                boolean movedToNextNode = moveToNext(3);
-                if (movedToNextNode) {
-                    nextRange = getLedgerRangeByLevel(curLevelNodes);
-                } else {
-                    iteratorDone = true;
-                }
+        private LongHierarchicalLedgerRangeIterator() {}
+
+        private void bootstrap() throws IOException {
+            if (rootIterator == null) {
+                rootIterator = new InnerIterator(ledgerRootPath, 0);
             }
         }
 
         @Override
         public synchronized boolean hasNext() throws IOException {
-            try {
-                preload();
-            } catch (KeeperException ke) {
-                throw new IOException("Error preloading next range", ke);
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-                throw new IOException("Interrupted while preloading", ie);
-            }
-            return nextRange != null && !iteratorDone;
+            bootstrap();
+            return rootIterator.hasNext();
         }
 
         @Override
         public synchronized LedgerRange next() throws IOException {
-            if (!hasNext()) {
-                throw new NoSuchElementException();
-            }
-            LedgerRange r = nextRange;
-            nextRange = null;
-            return r;
-        }
-
-        private LedgerRange getLedgerRangeByLevel(List<String> curLevelNodes) throws IOException {
-            String level0 = curLevelNodes.get(0);
-            String level1 = curLevelNodes.get(1);
-            String level2 = curLevelNodes.get(2);
-            String level3 = curLevelNodes.get(3);
-
-            StringBuilder nodeBuilder = new StringBuilder();
-            nodeBuilder.append(ledgerRootPath).append("/").append(level0).append("/").append(level1).append("/")
-                    .append(level2).append("/").append(level3);
-            String nodePath = nodeBuilder.toString();
-            List<String> ledgerNodes = null;
-            try {
-                ledgerNodes = ZkUtils.getChildrenInSingleNode(zk, nodePath);
-            } catch (InterruptedException e) {
-                throw new IOException("Error when get child nodes from zk", e);
-            }
-            NavigableSet<Long> zkActiveLedgers = ledgerListToSet(ledgerNodes, nodePath);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("All active ledgers from ZK for hash node " + level0 + "/" + level1 + "/" + level2 + "/"
-                        + level3 + " : " + zkActiveLedgers);
-            }
-            return new LedgerRange(zkActiveLedgers.subSet(getStartLedgerIdByLevel(level0, level1, level2, level3), true,
-                    getEndLedgerIdByLevel(level0, level1, level2, level3), true));
+            bootstrap();
+            return rootIterator.next();
         }
     }
 }

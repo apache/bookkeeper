@@ -18,6 +18,7 @@
 package org.apache.bookkeeper.meta;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -261,6 +262,10 @@ class LegacyHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager 
             List<String> ledgerNodes = null;
             try {
                 ledgerNodes = ZkUtils.getChildrenInSingleNode(zk, nodePath);
+            } catch (KeeperException.NoNodeException e) {
+                /* If the node doesn't exist, we must have raced with a recursive node removal, just
+                 * return an empty list. */
+                ledgerNodes = new ArrayList<>();
             } catch (InterruptedException e) {
                 throw new IOException("Error when get child nodes from zk", e);
             }
