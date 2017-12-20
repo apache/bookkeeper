@@ -219,7 +219,7 @@ public class LedgerHandle implements WriteHandle {
     }
 
     protected void initializeExplicitLacFlushPolicy() {
-        if (!metadata.isClosed() && bk.getExplicitLacInterval() > 0) {
+        if (!metadata.isClosed() && !(this instanceof ReadOnlyLedgerHandle) && bk.getExplicitLacInterval() > 0) {
             explicitLacFlushPolicy = new ExplicitLacFlushPolicy.ExplicitLacFlushPolicyImpl(this);
         } else {
             explicitLacFlushPolicy = ExplicitLacFlushPolicy.VOID_EXPLICITLAC_FLUSH_POLICY;
@@ -337,6 +337,15 @@ public class LedgerHandle implements WriteHandle {
      */
     public synchronized long getLength() {
         return this.length;
+    }
+
+    /**
+     * Returns the ledger creation time.
+     *
+     * @return the ledger creation time
+     */
+    public long getCtime() {
+        return this.metadata.getCtime();
     }
 
     /**
@@ -1648,6 +1657,8 @@ public class LedgerHandle implements WriteHandle {
 
             // We've successfully changed an ensemble
             ensembleChangeCounter.inc();
+            LOG.info("New Ensemble: {} for ledger: {}", ensembleInfo.newEnsemble, ledgerId);
+
             // the failed bookie has been replaced
             unsetSuccessAndSendWriteRequest(ensembleInfo.replacedBookies);
         }
