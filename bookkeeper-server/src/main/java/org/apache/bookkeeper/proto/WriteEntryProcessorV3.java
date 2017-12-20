@@ -109,7 +109,7 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
         } else {
             writeFlags = EnumSet.noneOf(WriteFlag.class);
         }
-        final boolean ackBeforeForce = writeFlags.contains(WriteFlag.DEFERRED_SYNC);
+        final boolean ackBeforeSync = writeFlags.contains(WriteFlag.DEFERRED_SYNC);
         StatusCode status = null;
         byte[] masterKey = addRequest.getMasterKey().toByteArray();
         ByteBuf entryToAdd = Unpooled.wrappedBuffer(addRequest.getBody().asReadOnlyByteBuffer());
@@ -117,7 +117,7 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
             if (addRequest.hasFlag() && addRequest.getFlag().equals(AddRequest.Flag.RECOVERY_ADD)) {
                 requestProcessor.bookie.recoveryAddEntry(entryToAdd, wcb, channel, masterKey);
             } else {
-                requestProcessor.bookie.addEntry(entryToAdd, ackBeforeForce, wcb, channel, masterKey);
+                requestProcessor.bookie.addEntry(entryToAdd, ackBeforeSync, wcb, channel, masterKey);
             }
             status = StatusCode.EOK;
         } catch (IOException e) {
