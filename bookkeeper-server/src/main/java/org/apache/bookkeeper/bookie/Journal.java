@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.bookie;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 
 import io.netty.buffer.ByteBuf;
@@ -827,7 +828,12 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         long ledgerId = entry.getLong(entry.readerIndex() + 0);
         long entryId = entry.getLong(entry.readerIndex() + 8);
         journalQueueSize.inc();
+        logAddEntry(ledgerId, entryId, entry, ackBeforeSync, cb, ctx);
+    }
 
+    @VisibleForTesting
+    void logAddEntry(long ledgerId, long entryId, ByteBuf entry,
+                     boolean ackBeforeSync, WriteCallback cb, Object ctx) {
         //Retain entry until it gets written to journal
         entry.retain();
         queue.add(QueueEntry.create(entry, ackBeforeSync, ledgerId, entryId,
@@ -863,6 +869,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         LOG.info("Starting journal on {}", journalDirectory);
 
         RecyclableArrayList<QueueEntry> toFlush = entryListRecycler.newInstance();
+        int waitingFlush = 0;
         ByteBuf lenBuff = Unpooled.buffer(4);
         ByteBuf paddingBuff = Unpooled.buffer(2 * conf.getJournalAlignmentSize());
         paddingBuff.writeZero(paddingBuff.capacity());
@@ -908,7 +915,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                                 TimeUnit.NANOSECONDS);
                     }
 
-                    if (toFlush.isEmpty()) {
+                    if (waitingFlush == 0) {
                         qe = queue.take();
                         dequeueStartTime = MathUtils.nowInNano();
                         journalQueueStats.registerSuccessfulEvent(MathUtils.elapsedNanos(qe.enqueueTime),
@@ -945,7 +952,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                             shouldFlush = true;
                             flushMaxWaitCounter.inc();
                         } else if (qe != null
-                                && ((bufferedEntriesThreshold > 0 && toFlush.size() > bufferedEntriesThreshold)
+                                && ((bufferedEntriesThreshold > 0 && waitingFlush > bufferedEntriesThreshold)
                                 || (bc.position() > lastFlushPosition + bufferedWritesThreshold))) {
                             // 2. If we have buffered more than the buffWriteThreshold or bufferedEntriesThreshold
                             shouldFlush = true;
@@ -967,6 +974,15 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                             journalFlushWatcher.reset().start();
                             bc.flush(false);
 
+                            for (int i = 0; i < toFlush.size(); i++) {
+                                QueueEntry entry = toFlush.get(i);
+                                if (entry != null && (!syncData || entry.ackBeforeSync)) {
+                                    toFlush.set(i, null);
+                                    waitingFlush--;
+                                    cbThreadPool.execute(entry);
+                                }
+                            }
+
                             lastFlushPosition = bc.position();
                             journalFlushStats.registerSuccessfulEvent(
                                     journalFlushWatcher.stop().elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
@@ -981,7 +997,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                                 }
                             }
 
-                            forceWriteBatchEntriesStats.registerSuccessfulValue(toFlush.size());
+                            forceWriteBatchEntriesStats.registerSuccessfulValue(waitingFlush);
                             forceWriteBatchBytesStats.registerSuccessfulValue(batchSize);
 
                             boolean shouldRolloverJournal = (lastFlushPosition > maxJournalSize);
@@ -991,19 +1007,12 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                                 forceWriteRequests.put(createForceWriteRequest(logFile, logId, lastFlushPosition,
                                                                                toFlush, shouldRolloverJournal, false));
                                 toFlush = entryListRecycler.newInstance();
+                                waitingFlush = 0;
                             } else {
                                 // Data is already written on the file (though it might still be in the OS page-cache)
                                 lastLogMark.setCurLogMark(logId, lastFlushPosition);
-                            }
-                            for (int i = 0; i < toFlush.size(); i++) {
-                                QueueEntry entry = toFlush.get(i);
-                                if (!syncData || entry.ackBeforeSync) {
-                                    toFlush.set(i, null);
-                                    cbThreadPool.execute(toFlush.get(i));
-                                }
-                            }
-                            if (!syncData) {
                                 toFlush.clear();
+                                waitingFlush = 0;
                                 if (shouldRolloverJournal) {
                                     forceWriteRequests.put(
                                             createForceWriteRequest(
@@ -1048,6 +1057,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 qe.entry.release();
 
                 toFlush.add(qe);
+                waitingFlush++;
                 qe = null;
             }
             logFile.close();

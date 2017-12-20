@@ -1267,7 +1267,8 @@ public class Bookie extends BookieCriticalThread {
         return l;
     }
 
-    private Journal getJournal(long ledgerId) {
+    @VisibleForTesting
+    Journal getJournal(long ledgerId) {
         return journals.get(MathUtils.signSafeMod(ledgerId, journals.size()));
     }
 

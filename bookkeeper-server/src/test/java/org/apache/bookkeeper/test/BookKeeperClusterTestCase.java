@@ -329,16 +329,6 @@ public abstract class BookKeeperClusterTestCase {
     }
 
     /**
-     * Access a BookieServer from the cluster.
-     *
-     * @param index the index
-     * @return the BookieServer
-     */
-    public BookieServer getBookieServer(int index) {
-        return bs.get(index);
-    }
-
-    /**
      * Kill a bookie by index. Also, stops the respective auto recovery process
      * for this bookie, if isAutoRecoveryEnabled is true.
      *
