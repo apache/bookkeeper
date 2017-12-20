@@ -244,12 +244,12 @@ public class Bookie extends BookieCriticalThread {
     }
 
     @VisibleForTesting
-    public void setRegistrationManager(RegistrationManager rm) {
-        this.registrationManager = rm;
+    public synchronized void setRegistrationManager(RegistrationManager rm) {
+            this.registrationManager = rm;
     }
 
     @VisibleForTesting
-    public RegistrationManager getRegistrationManager() {
+    public synchronized RegistrationManager getRegistrationManager() {
         return this.registrationManager;
     }
 
