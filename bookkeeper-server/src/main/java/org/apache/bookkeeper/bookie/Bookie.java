@@ -1266,9 +1266,8 @@ public class Bookie extends BookieCriticalThread {
 
         return l;
     }
-
-    @VisibleForTesting
-    Journal getJournal(long ledgerId) {
+    
+    private Journal getJournal(long ledgerId) {
         return journals.get(MathUtils.signSafeMod(ledgerId, journals.size()));
     }
 
@@ -1304,7 +1303,7 @@ public class Bookie extends BookieCriticalThread {
             LedgerDescriptor handle = getLedgerForEntry(entry, masterKey);
             synchronized (handle) {
                 entrySize = entry.readableBytes();
-                addEntryInternal(handle, entry, false, cb, ctx);
+                addEntryInternal(handle, entry, false /* ackBeforeSync */, cb, ctx);
             }
             success = true;
         } catch (NoWritableLedgerDirException e) {
@@ -1585,7 +1584,7 @@ public class Bookie extends BookieCriticalThread {
             buff.writeLong(1);
             buff.writeLong(i);
             cb.incCount();
-            b.addEntry(buff, false, cb, null, new byte[0]);
+            b.addEntry(buff, false /* ackBeforeSync */, cb, null, new byte[0]);
         }
         cb.waitZero();
         long end = MathUtils.now();
