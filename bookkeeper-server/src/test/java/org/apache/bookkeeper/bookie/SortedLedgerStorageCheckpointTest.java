@@ -38,7 +38,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.apache.bookkeeper.test.BookKeeperClusterTestCase.SimpleStateManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -120,13 +119,14 @@ public class SortedLedgerStorageCheckpointTest extends LedgerStorageTestBase {
                 log.error("Failed to checkpoint at {}", checkpoint, e);
             }
         });
+        // if the SortedLedgerStorage need not to change bookie's state, pass StateManager==null is ok
         this.storage.initialize(
             conf,
             mock(LedgerManager.class),
             ledgerDirsManager,
             ledgerDirsManager,
-                new SimpleStateManager(),
-                checkpointSrc,
+            null,
+            checkpointSrc,
             checkpointer,
             NullStatsLogger.INSTANCE);
     }

@@ -36,7 +36,6 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_BYTES;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.SettableFuture;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.File;
@@ -55,11 +54,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -133,21 +128,11 @@ public class Bookie extends BookieCriticalThread {
     // Registration Manager for managing registration
     RegistrationManager registrationManager;
 
-    // Running flag
-    private volatile boolean running = false;
-    // Flag identify whether it is in shutting down progress
-    private volatile boolean shuttingdown = false;
-    // Bookie status
-    final BookieStatus bookieStatus = new BookieStatus();
 
     private int exitCode = ExitCode.OK;
 
     private final ConcurrentLongHashMap<byte[]> masterKeyCache = new ConcurrentLongHashMap<>();
 
-    protected final String bookieId;
-
-    private final AtomicBoolean rmRegistered = new AtomicBoolean(false);
-    protected final AtomicBoolean forceReadOnly = new AtomicBoolean(false);
     StateManager stateManager;
 
     // Expose Stats
@@ -244,12 +229,13 @@ public class Bookie extends BookieCriticalThread {
     }
 
     @VisibleForTesting
-    public synchronized void setRegistrationManager(RegistrationManager rm) {
+    public void setRegistrationManager(RegistrationManager rm) {
             this.registrationManager = rm;
+            this.getStateManager().setRegistrationManager(rm);
     }
 
     @VisibleForTesting
-    public synchronized RegistrationManager getRegistrationManager() {
+    public RegistrationManager getRegistrationManager() {
         return this.registrationManager;
     }
 
@@ -665,8 +651,9 @@ public class Bookie extends BookieCriticalThread {
         } catch (KeeperException e) {
             throw new MetadataStoreException("Failed to initialize ledger manager", e);
         }
-        stateManager = new BookieStateManager(bookieStatus, registrationManager);
-
+        stateManager = new BookieStateManager(conf, registrationManager, ledgerDirsManager);
+        // register shutdown handler using trigger mode
+        stateManager.setShutdownHandler(exitCode -> triggerBookieShutdown(exitCode));
         // Initialise ledgerDirMonitor. This would look through all the
         // configured directories. When disk errors or all the ledger
         // directories are full, would throws exception and fail bookie startup.
@@ -698,8 +685,6 @@ public class Bookie extends BookieCriticalThread {
             }
         }
 
-        // ZK ephemeral node for this Bookie.
-        this.bookieId = getMyId();
 
         // instantiate the journals
         journals = Lists.newArrayList();
@@ -721,7 +706,7 @@ public class Bookie extends BookieCriticalThread {
             ledgerManager,
             ledgerDirsManager,
             indexDirsManager,
-                stateManager,
+            stateManager,
             checkpointSource,
             syncThread,
             statsLogger);
@@ -746,19 +731,9 @@ public class Bookie extends BookieCriticalThread {
 
             @Override
             public Number getSample() {
-                if (!rmRegistered.get()){
-                    return -1;
-                } else if (forceReadOnly.get() || bookieStatus.isInReadOnlyMode()) {
-                    return 0;
-                } else {
-                    return 1;
-                }
+               return stateManager.getState();
             }
         });
-    }
-
-    private String getMyId() throws UnknownHostException {
-        return Bookie.getBookieAddress(conf).toString();
     }
 
     void readJournal() throws IOException, BookieException {
@@ -877,17 +852,11 @@ public class Bookie extends BookieCriticalThread {
 
         ledgerStorage.start();
 
-        // check the bookie status to start with
-        if (forceReadOnly.get()) {
-            this.bookieStatus.setToReadOnlyMode();
-        } else if (conf.isPersistBookieStatusEnabled()) {
-            this.bookieStatus.readFromDirectories(ledgerDirsManager.getAllLedgerDirs());
-        }
-
-        // set running here.
+        // check the bookie status to start with, and set running.
         // since bookie server use running as a flag to tell bookie server whether it is alive
         // if setting it in bookie thread, the watcher might run before bookie thread.
-        running = true;
+        stateManager.initState();
+
         try {
             stateManager.registerBookie(true).get();
         } catch (Exception e) {
@@ -959,21 +928,21 @@ public class Bookie extends BookieCriticalThread {
 
         RegistrationManager manager = ReflectionUtils.newInstance(managerCls);
         return manager.initialize(conf, () -> {
-            rmRegistered.set(false);
+            stateManager.forceToUnregistered();
             // schedule a re-register operation
             stateManager.registerBookie(false);
         }, statsLogger);
     }
 
     /*
-     * Check whether Bookie is writable
+     * Check whether Bookie is writable.
      */
     public boolean isReadOnly() {
-        return forceReadOnly.get() || bookieStatus.isInReadOnlyMode();
+        return stateManager.isReadOnly();
     }
 
     public boolean isRunning() {
-        return running;
+        return stateManager.isRunning();
     }
 
     @Override
@@ -995,7 +964,7 @@ public class Bookie extends BookieCriticalThread {
             LOG.warn("Interrupted on running journal thread : ", ie);
         }
         // if the journal thread quits due to shutting down, it is ok
-        if (!shuttingdown) {
+        if (!stateManager.isShuttingDown()) {
             // some error found in journal thread and it quits
             // following add operations to it would hang unit client timeout
             // so we should let bookie server exists
@@ -1033,19 +1002,19 @@ public class Bookie extends BookieCriticalThread {
     // when encountering exception
     synchronized int shutdown(int exitCode) {
         try {
-            if (running) { // avoid shutdown twice
+            if (isRunning()) { // avoid shutdown twice
                 // the exitCode only set when first shutdown usually due to exception found
                 LOG.info("Shutting down Bookie-{} with exitCode {}",
                          conf.getBookiePort(), exitCode);
                 if (this.exitCode == ExitCode.OK) {
                     this.exitCode = exitCode;
                 }
-                // mark bookie as in shutting down progress
-                shuttingdown = true;
+
+                stateManager.forceToShuttingDown();
 
                 // turn bookie to read only during shutting down process
                 LOG.info("Turning bookie to read only during shut down");
-                this.forceReadOnly.set(true);
+                stateManager.forceToReadOnly();
 
                 // Shutdown Sync thread
                 syncThread.shutdown();
@@ -1089,7 +1058,7 @@ public class Bookie extends BookieCriticalThread {
         } finally {
             // setting running to false here, so watch thread
             // in bookie server know it only after bookie shut down
-            running = false;
+            stateManager.forceToShutDown();
         }
         return this.exitCode;
     }
@@ -1316,153 +1285,11 @@ public class Bookie extends BookieCriticalThread {
         return ledgerStorage;
     }
 
-    /**
-     * A implementation of StateManager.
-     */
-    public class BookieStateManager implements StateManager{
-        // use an executor to execute the state changes task
-        final ExecutorService stateService = Executors.newSingleThreadExecutor(
-                new ThreadFactoryBuilder().setNameFormat("BookieStateManagerService-%d").build());
-        final BookieStatus bookieStatus;
-        RegistrationManager registrationManager;
-        public BookieStateManager(BookieStatus bookieStatus, RegistrationManager registrationManager){
-            this.bookieStatus = bookieStatus;
-            this.registrationManager = registrationManager;
-        }
-
-          @Override
-        public void close() {
-            stateService.shutdown();
-        }
-
-        @Override
-        public Future<Void> registerBookie(final boolean throwException) {
-            return stateService.submit(new Callable<Void>() {
-                @Override
-                public Void call() throws IOException {
-                    try {
-                        doRegisterBookie();
-                    } catch (IOException ioe) {
-                        if (throwException) {
-                            throw ioe;
-                        } else {
-                            LOG.error("Couldn't register bookie with zookeeper, shutting down : ", ioe);
-                            triggerBookieShutdown(ExitCode.ZK_REG_FAIL);
-                        }
-                    }
-                    return (Void) null;
-                }
-            });
-        }
-
-        @Override
-        public void transitionToWritableMode() {
-            stateService.execute(() -> doTransitionToWritableMode());
-        }
-
-        @Override
-        public void transitionToReadOnlyMode() {
-            stateService.execute(() -> doTransitionToReadOnlyMode());
-        }
-
-        void doRegisterBookie() throws IOException {
-            doRegisterBookie(forceReadOnly.get() || bookieStatus.isInReadOnlyMode());
-        }
-
-        private void doRegisterBookie(boolean isReadOnly) throws IOException {
-            if (null == registrationManager || ((ZKRegistrationManager) this.registrationManager).getZk() == null) {
-                // registration manager is null, means not register itself to zk.
-                // ZooKeeper is null existing only for testing.
-                LOG.info("null zk while do register");
-                return;
-            }
-
-            rmRegistered.set(false);
-            try {
-                registrationManager.registerBookie(bookieId, isReadOnly);
-                rmRegistered.set(true);
-            } catch (BookieException e) {
-                throw new IOException(e);
-            }
-        }
-
-        @VisibleForTesting
-        public void doTransitionToWritableMode() {
-            if (shuttingdown || forceReadOnly.get()) {
-                return;
-            }
-
-            if (!bookieStatus.setToWritableMode()) {
-                // do nothing if already in writable mode
-                return;
-            }
-            LOG.info("Transitioning Bookie to Writable mode and will serve read/write requests.");
-            if (conf.isPersistBookieStatusEnabled()) {
-                bookieStatus.writeToDirectories(ledgerDirsManager.getAllLedgerDirs());
-            }
-            // change zookeeper state only when using zookeeper
-            if (null == registrationManager) {
-                return;
-            }
-            try {
-                doRegisterBookie(false);
-            } catch (IOException e) {
-                LOG.warn("Error in transitioning back to writable mode : ", e);
-                transitionToReadOnlyMode();
-                return;
-            }
-            // clear the readonly state
-            try {
-                registrationManager.unregisterBookie(bookieId, true);
-            } catch (BookieException e) {
-                // if we failed when deleting the readonly flag in zookeeper, it is OK since client would
-                // already see the bookie in writable list. so just log the exception
-                LOG.warn("Failed to delete bookie readonly state in zookeeper : ", e);
-                return;
-            }
-        }
-        @VisibleForTesting
-        public void doTransitionToReadOnlyMode() {
-            if (shuttingdown) {
-                return;
-            }
-            if (!bookieStatus.setToReadOnlyMode()) {
-                return;
-            }
-            if (!conf.isReadOnlyModeEnabled()) {
-                LOG.warn("ReadOnly mode is not enabled. "
-                        + "Can be enabled by configuring "
-                        + "'readOnlyModeEnabled=true' in configuration."
-                        + "Shutting down bookie");
-                triggerBookieShutdown(ExitCode.BOOKIE_EXCEPTION);
-                return;
-            }
-            LOG.info("Transitioning Bookie to ReadOnly mode,"
-                    + " and will serve only read requests from clients!");
-            // persist the bookie status if we enable this
-            if (conf.isPersistBookieStatusEnabled()) {
-                this.bookieStatus.writeToDirectories(ledgerDirsManager.getAllLedgerDirs());
-            }
-            // change zookeeper state only when using zookeeper
-            if (null == registrationManager) {
-                return;
-            }
-            try {
-                registrationManager.registerBookie(bookieId, true);
-            } catch (BookieException e) {
-                LOG.error("Error in transition to ReadOnly Mode."
-                        + " Shutting down", e);
-                triggerBookieShutdown(ExitCode.BOOKIE_EXCEPTION);
-                return;
-            }
-        }
-
-    }
-
     @VisibleForTesting
-    public StateManager getStateManager() {
-        return this.stateManager;
+    public BookieStateManager getStateManager() {
+        return (BookieStateManager) this.stateManager;
     }
+
     // The rest of the code is test stuff
     static class CounterCallback implements WriteCallback {
         int count;

@@ -41,7 +41,7 @@ public class ReadOnlyBookie extends Bookie {
     public ReadOnlyBookie(ServerConfiguration conf, StatsLogger statsLogger)
             throws IOException, KeeperException, InterruptedException, BookieException {
         super(conf, statsLogger);
-        stateManager = new BookieStateManager(bookieStatus, registrationManager){
+        stateManager = new BookieStateManager(conf, registrationManager, getLedgerDirsManager()) {
 
             @Override
             public void doTransitionToWritableMode() {
@@ -56,7 +56,7 @@ public class ReadOnlyBookie extends Bookie {
             }
         };
         if (conf.isReadOnlyModeEnabled()) {
-            forceReadOnly.set(true);
+            stateManager.forceToReadOnly();
         } else {
             String err = "Try to init ReadOnly Bookie, while ReadOnly mode is not enabled";
             LOG.error(err);

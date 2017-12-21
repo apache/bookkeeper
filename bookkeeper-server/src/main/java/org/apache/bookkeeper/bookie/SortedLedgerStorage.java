@@ -68,7 +68,7 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
             ledgerManager,
             ledgerDirsManager,
             indexDirsManager,
-                stateManager,
+            stateManager,
             checkpointSource,
             checkpointer,
             statsLogger);

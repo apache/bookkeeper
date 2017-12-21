@@ -491,8 +491,8 @@ public class LedgerCacheTest {
                 ledgerManager,
                 ledgerDirsManager,
                 indexDirsManager,
-                    stateManager,
-                    checkpointSource,
+                stateManager,
+                checkpointSource,
                 checkpointer,
                 statsLogger);
             this.memTable = new EntryMemTable(conf, checkpointSource, statsLogger) {
@@ -566,9 +566,9 @@ public class LedgerCacheTest {
 
         int gcWaitTime = 1000;
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
-        conf.setGcWaitTime(gcWaitTime);
-        conf.setLedgerDirNames(new String[] { tmpDir.toString() });
-        conf.setLedgerStorageClass(FlushTestSortedLedgerStorage.class.getName());
+        conf.setGcWaitTime(gcWaitTime)
+            .setLedgerDirNames(new String[] { tmpDir.toString() })
+            .setLedgerStorageClass(FlushTestSortedLedgerStorage.class.getName());
 
         Bookie bookie = new Bookie(conf);
         bookie.start();
@@ -589,6 +589,7 @@ public class LedgerCacheTest {
         // since we simulated sizeLimitReached, snapshot shouldn't be empty
         assertFalse("EntryMemTable SnapShot is not expected to be empty", memTable.snapshot.isEmpty());
         // after flush failure, the bookie is set to readOnly
+        LOG.info("state is {}", bookie.getStateManager().getState());
         assertTrue("Bookie is expected to be in Read mode", bookie.isReadOnly());
         // write fail
         bookie.addEntry(generateEntry(1, 3), new BookkeeperInternalCallbacks.WriteCallback(){
@@ -599,6 +600,7 @@ public class LedgerCacheTest {
 
         }, null, "passwd".getBytes());
         bookie.shutdown();
+
     }
 
     private ByteBuf generateEntry(long ledger, long entry) {
