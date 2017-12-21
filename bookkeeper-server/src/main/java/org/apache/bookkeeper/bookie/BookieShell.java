@@ -1244,6 +1244,8 @@ public class BookieShell implements Tool {
             super(CMD_LISTBOOKIES);
             opts.addOption("rw", "readwrite", false, "Print readwrite bookies");
             opts.addOption("ro", "readonly", false, "Print readonly bookies");
+            // @deprecated 'rw'/'ro' option print both hostname and ip, so this option is not needed anymore
+            opts.addOption("h", "hostnames", false, "Also print hostname of the bookie");
         }
 
         @Override
