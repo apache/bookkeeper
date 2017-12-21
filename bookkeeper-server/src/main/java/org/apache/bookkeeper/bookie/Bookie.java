@@ -229,13 +229,13 @@ public class Bookie extends BookieCriticalThread {
     }
 
     @VisibleForTesting
-    public void setRegistrationManager(RegistrationManager rm) {
+    public synchronized void setRegistrationManager(RegistrationManager rm) {
             this.registrationManager = rm;
             this.getStateManager().setRegistrationManager(rm);
     }
 
     @VisibleForTesting
-    public RegistrationManager getRegistrationManager() {
+    public synchronized RegistrationManager getRegistrationManager() {
         return this.registrationManager;
     }
 
