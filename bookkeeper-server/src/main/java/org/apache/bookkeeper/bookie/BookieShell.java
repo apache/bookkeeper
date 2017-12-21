@@ -2743,12 +2743,12 @@ public class BookieShell implements Tool {
     }
 
     protected void printEntryLogMetadata(long logId) throws IOException {
-        LOG.info("Print entryLogMetadata of entrylog " + logId + " (" + Long.toHexString(logId) + ".log)");
+        LOG.info("Print entryLogMetadata of entrylog {} ({}.log)", logId, Long.toHexString(logId));
         initEntryLogger();
         EntryLogMetadata entryLogMetadata = entryLogger.getEntryLogMetadata(logId);
         entryLogMetadata.getLedgersMap().forEach((ledgerId, size) -> {
-            LOG.info("--------- Lid=" + ledgerIdFormatter.formatLedgerId(ledgerId) + ", TotalSizeOfEntriesOfLedger="
-                    + size + " ---------");
+            LOG.info("--------- Lid={}, TotalSizeOfEntriesOfLedger={}  ---------",
+                    ledgerIdFormatter.formatLedgerId(ledgerId), size);
         });
     }
 
