@@ -44,10 +44,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String MAJOR_COMPACTION_THRESHOLD = "majorCompactionThreshold";
     protected static final String MAJOR_MEDIAN_COMPACTION_THRESHOLD = "majorMedianCompactionThreshold";
     protected static final String MAJOR_HIGH_COMPACTION_THRESHOLD = "majorHighCompactionThreshold";
-    private static final String START_TIME_TO_MEDIAN_COMPACTION = "startTimeToMedianMajorCompaction";
-    private static final String END_TIME_TO_MEDIAN_COMPACTION = "endTimeToMedianMajorCompaction";
-    private static final String START_TIME_TO_HIGH_COMPACTION = "startTimeToHighMajorCompaction";
-    private static final String END_TIME_TO_HIGH_COMPACTION = "endTimeToHighMajorCompaction";
+    private static final String MEDIAN_MAJOR_COMPACTION_CRON = "medianMajorCompactionCron";
+    private static final String HIGH_MAJOR_COMPACTION_CRON = "highMajorCompactionCron";
     protected static final String IS_THROTTLE_BY_BYTES = "isThrottleByBytes";
     protected static final String COMPACTION_MAX_OUTSTANDING_REQUESTS = "compactionMaxOutstandingRequests";
     protected static final String COMPACTION_RATE = "compactionRate";
@@ -1176,99 +1174,47 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get start time of median major compaction.
-     *
-     *<p>now specify a time of the day to indicate the system is on a low load status
-     *
-     * @return start time, [0, 23]h
+     * Get median major compaction cron expression.
+     * default is 0-3 h every day.
      */
-    public int getStartTimeToMedianMajorCompaction() {
-        return getInt(START_TIME_TO_MEDIAN_COMPACTION, 0);
+    public String getMedianMajorCompactionCron() {
+        return getString(MEDIAN_MAJOR_COMPACTION_CRON, "0 * 0-3 ? * *");
     }
 
     /**
-     * Set start time of median major compaction.
+     * Set median major compaction cron expression.
      *
      *
-     * @param timeInSeconds
-     *          start time to major compaction, seconds
+     * @param medianMajorCompactionCron
+     *          specified cron expression indicates median major compaction.
      * @return server configuration
      */
-    public ServerConfiguration setStartTimeToMedianMajorCompaction(int timeInSeconds) {
-        setProperty(START_TIME_TO_MEDIAN_COMPACTION, timeInSeconds);
+    public ServerConfiguration setMedianMajorCompactionCron(String medianMajorCompactionCron) {
+        setProperty(MEDIAN_MAJOR_COMPACTION_CRON, medianMajorCompactionCron);
         return this;
-    }
-    /**
-     * Get end time of median major compaction.
-     *
-     *<p>now specify a time of the day to indicate the system is on a low load status
-     *
-     * @return end time, [0, 23]h, default[0,10]min, [0,600]s, median and high major compaction is disable.
-     */
-    public int getEndTimeToMedianMajorCompaction() {
-        return getInt(END_TIME_TO_MEDIAN_COMPACTION, 600);
     }
 
     /**
-     * Set end time of median major compaction.
-     *
-     *
-     * @param timeInSeconds
-     *          end time of median major compaction, seconds
-     * @return server configuration
+     * Get high major compaction cron expression.
+     * default is 0-3 h in Saturday & Sunday.
      */
-    public ServerConfiguration setEndTimeToMedianMajorCompaction(int timeInSeconds) {
-        setProperty(END_TIME_TO_MEDIAN_COMPACTION, timeInSeconds);
-        return this;
-    }
-    /**
-     * Get day of week for high major compaction.
-     *
-     *<p>now specify a time of the specified day to indicate the system is on a very low load status
-     *  the high threshold is enable when the day of week and time of the day(for median major) are met both.
-     *
-     * @return day of week, [1, 7],indicates :sunday, monday,...
-     */
-    public int getStartTimeToHighMajorCompaction() {
-        return getInt(START_TIME_TO_HIGH_COMPACTION, 1);
+    public String getHighMajorCompactionCron() {
+        return getString(HIGH_MAJOR_COMPACTION_CRON, "0 * 0-3 ? * 7-1");
     }
 
     /**
-     * Set start time of median major compaction.
+     * Set high major compaction cron expression.
      *
      *
-     * @param day
-     *          specified day, one of the condition to  high major compaction
+     * @param medianMajorCompactionCron
+     *          specified cron expression indicates median major compaction.
      * @return server configuration
      */
-    public ServerConfiguration setStartTimeToHighMajorCompaction(int day) {
-        setProperty(START_TIME_TO_HIGH_COMPACTION, day);
+    public ServerConfiguration setHighMajorCompactionCron(String medianMajorCompactionCron) {
+        setProperty(HIGH_MAJOR_COMPACTION_CRON, medianMajorCompactionCron);
         return this;
-    }
-    /**
-     * Get day of week for high major compaction.
-     *
-     *<p>now specify a time of the specified day to indicate the system is on a very low load status
-     *  the high threshold is enable when the day of week and time of the day(for median major) are met both.
-     *
-     * @return day of week, [1, 7]
-     */
-    public int getEndTimeToHighMajorCompaction() {
-        return getInt(END_TIME_TO_HIGH_COMPACTION, 2);
     }
 
-    /**
-     * Set start time of median major compaction.
-     *
-     *
-     * @param day
-     *          specified day, one of the condition to  high major compaction
-     * @return server configuration
-     */
-    public ServerConfiguration setEndTimeToHighMajorCompaction(int day) {
-        setProperty(END_TIME_TO_HIGH_COMPACTION, day);
-        return this;
-    }
 
     /**
      * Get interval to run minor compaction, in seconds.

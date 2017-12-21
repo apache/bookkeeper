@@ -51,6 +51,7 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
+import org.apache.bookkeeper.common.util.CronExpression;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
@@ -90,8 +91,6 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
     private final int gcWaitTime;
     private final double minorCompactionThreshold;
     private final double majorCompactionThreshold;
-    private final double medianMajorCompactionThreshold;
-    private final double highMajorCompactionThreshold;
     private final long minorCompactionInterval;
     private final long majorCompactionInterval;
     private final String msg;
@@ -106,8 +105,6 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         gcWaitTime = 1000;
         minorCompactionThreshold = 0.1f;
         majorCompactionThreshold = 0.5f;
-        medianMajorCompactionThreshold = 0.71f;
-        highMajorCompactionThreshold = 0.8f;
         minorCompactionInterval = 2 * gcWaitTime / 1000;
         majorCompactionInterval = 4 * gcWaitTime / 1000;
 
@@ -540,13 +537,16 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testTimeBasedPolicyMajorCompaction() throws Exception {
+    public void testCronExpressionBasedCompaction() throws Exception {
         // prepare data
         LedgerHandle[] lhs = prepareData(3, true);
 
         for (LedgerHandle lh : lhs) {
             lh.close();
         }
+
+        baseConf.setMedianMajorCompactionThreshold(0.71);
+        baseConf.setHighMajorCompactionThreshold(0.91f);
 
         long lastMinorCompactionTime = getGCThread().lastMinorCompactionTime;
         long lastMajorCompactionTime = getGCThread().lastMajorCompactionTime;
@@ -564,7 +564,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         assertTrue(getGCThread().lastMinorCompactionTime > lastMinorCompactionTime);
         assertTrue(getGCThread().lastMajorCompactionTime > lastMajorCompactionTime);
 
-        // entry logs ([0,1,2].log) should not be compacted
+        // entry logs ([0,1,2].log) should not be compacted, all remaining >= 0.7
         for (File ledgerDirectory : tmpDirs) {
             assertTrue("Not Found entry log file ([1,2].log that should have not been compacted in ledgerDirectory: "
                     + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, false, 0, 1, 2));
@@ -572,27 +572,31 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
 
         // during specified peroid( low load system status), the Major GC goes deeper
         ZonedDateTime now = ZonedDateTime.now();
-        int currentSecondsOfDay = now.getHour() * 3600 + now.getMinute() * 60
-                + now.getSecond();
-        baseConf.setStartTimeToMedianMajorCompaction(currentSecondsOfDay);
-        baseConf.setEndTimeToMedianMajorCompaction(currentSecondsOfDay + 3600);
+        String cron, disableHighCron;
+        // execute every second
+        cron = "* * * ? * *";
+        // set high cron expression more far to avoid high major compaction occur
+        if (now.getDayOfMonth() < 10) {
+            disableHighCron = " 0 0 0 28 * ?";
+        } else {
+            disableHighCron = " 0 0 0 1 * ?";
+        }
+        LOG.info("cron expression is {}, next fire time {}", cron, new CronExpression(cron).nextTimeAfter(now));
+        baseConf.setMedianMajorCompactionCron(cron);
+        baseConf.setHighMajorCompactionCron(disableHighCron);
         // restart bookie to enable the new config
         restartBookies(baseConf);
         // median gc period
         getGCThread().enableForceGC();
         getGCThread().triggerGC().get();
-        // entry logs ([0].log) should be compacted
+        // entry logs ([0].log) should be compacted, whose usaage = 0.7, which threshold = 0.71
         for (File ledgerDirectory : tmpDirs) {
             assertFalse("Found entry log file 0.log that should have been compacted in ledgerDirectory: "
                     + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, false, 0));
         }
-        now = ZonedDateTime.now();
-        currentSecondsOfDay = now.getHour() * 3600 + now.getMinute() * 60
-                + now.getSecond();
-        baseConf.setStartTimeToMedianMajorCompaction(currentSecondsOfDay);
-        baseConf.setEndTimeToMedianMajorCompaction(currentSecondsOfDay + 3600);
-        baseConf.setStartTimeToHighMajorCompaction(now.getDayOfWeek().getValue());
-        baseConf.setEndTimeToHighMajorCompaction(now.getDayOfWeek().getValue());
+
+
+        baseConf.setHighMajorCompactionCron(cron);
         restartBookies(baseConf);
         // high gc period
         getGCThread().enableForceGC();
