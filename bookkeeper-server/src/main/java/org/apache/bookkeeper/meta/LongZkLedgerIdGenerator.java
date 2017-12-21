@@ -111,6 +111,10 @@ public class LongZkLedgerIdGenerator implements LedgerIdGenerator {
                         cb.operationComplete(BKException.Code.IllegalOpException, null);
                     }
 
+                } else {
+                    LOG.error("Failed to create long ledger ID path",
+                            KeeperException.create(KeeperException.Code.get(rc)));
+                    cb.operationComplete(BKException.Code.ZKException, null);
                 }
             }
 
