@@ -568,6 +568,7 @@ public class LedgerCacheTest {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setGcWaitTime(gcWaitTime)
             .setLedgerDirNames(new String[] { tmpDir.toString() })
+            .setJournalDirName(tmpDir.toString())
             .setLedgerStorageClass(FlushTestSortedLedgerStorage.class.getName());
 
         Bookie bookie = new Bookie(conf);
