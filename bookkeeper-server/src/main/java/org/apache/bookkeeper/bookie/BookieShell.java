@@ -1669,6 +1669,7 @@ public class BookieShell implements Tool {
                 }
                 retValue = updateBookieIdInCookie(bookieId, useHostName);
             } else if (thisCommandOption.getLongOpt().equals(EXPANDSTORAGE)) {
+                bkConf.setAllowStorageExpansion(true);
                 return expandStorage();
             } else if (thisCommandOption.getLongOpt().equals(LIST)) {
                 return listOrDeleteCookies(false, false);
@@ -1848,7 +1849,7 @@ public class BookieShell implements Tool {
                 LOG.info("No local cookies for Bookie: {}", bookieAddress);
             }
 
-            try (RegistrationManager rm = new ZKRegistrationManager()) {
+            try (ZKRegistrationManager rm = new ZKRegistrationManager()) {
                 Versioned<Cookie> cookie = null;
                 try {
                     rm.initialize(bkConf, () -> { }, NullStatsLogger.INSTANCE);
