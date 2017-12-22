@@ -246,7 +246,7 @@ public interface BookieProtocol {
     class AddRequest extends Request {
         ByteBuf data;
 
-        static AddRequest create(byte protocolVersion, long ledgerId,
+        public static AddRequest create(byte protocolVersion, long ledgerId,
                                  long entryId, short flags, byte[] masterKey,
                                  ByteBuf data) {
             AddRequest add = RECYCLER.get();

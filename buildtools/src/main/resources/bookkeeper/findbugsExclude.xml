@@ -76,6 +76,11 @@
     <Bug pattern="NM_METHOD_NAMING_CONVENTION" />
   </Match>
   <Match>
+    <Class name="org.apache.bookkeeper.common.checksum.PureJavaCrc32C"/>
+    <Method name="update" />
+    <Bug pattern="SF_SWITCH_NO_DEFAULT" />
+  </Match>
+  <Match>
     <Class name="org.apache.bookkeeper.util.MathUtils"/>
     <Bug pattern="NM_SAME_SIMPLE_NAME_AS_SUPERCLASS" />
   </Match>
@@ -95,4 +100,17 @@
     <Class name="org.apache.bookkeeper.client.BKException$Code" />
     <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE"/>
   </And>
+  <!-- tests module -->
+  <Match>
+    <Class name="org.apache.bookkeeper.tests.ChecksumBenchmark" />
+    <Bug pattern="NP_UNWRITTEN_FIELD"/>
+  </Match>
+  <Match>
+    <Class name="org.apache.bookkeeper.tests.ChecksumBenchmark$DirectPureJavaCRC32CProvider" />
+    <Bug pattern="UWF_UNWRITTEN_FIELD"/>
+  </Match>
+  <Match>
+    <Class name="org.apache.bookkeeper.tests.ChecksumBenchmark$HeapPureJavaCRC32CProvider" />
+    <Bug pattern="UWF_UNWRITTEN_FIELD"/>
+  </Match>
 </FindBugsFilter>

@@ -32,6 +32,7 @@
     <module>bookkeeper-server-compat-4.1.0</module>
     <module>bookkeeper-server-compat-4.2.0</module>
     <module>backward</module>
+    <module>jmh</module>
   </modules>
   <build>
     <plugins>
