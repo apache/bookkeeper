@@ -80,6 +80,8 @@ public class EntryLogTest {
 
         int gcWaitTime = 1000;
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(tmpDir.toString());
+
         conf.setGcWaitTime(gcWaitTime);
         conf.setLedgerDirNames(new String[] {tmpDir.toString()});
         Bookie bookie = new Bookie(conf);
@@ -120,6 +122,7 @@ public class EntryLogTest {
         Bookie.checkDirectoryStructure(curDir);
 
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(tmpDir.toString());
         conf.setLedgerDirNames(new String[] {tmpDir.toString()});
         Bookie bookie = new Bookie(conf);
         // create some entries
@@ -206,6 +209,7 @@ public class EntryLogTest {
         File ledgerDir1 = createTempDir("bkTest", ".dir");
         File ledgerDir2 = createTempDir("bkTest", ".dir");
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(ledgerDir1.toString());
         conf.setLedgerDirNames(new String[] { ledgerDir1.getAbsolutePath(),
                 ledgerDir2.getAbsolutePath() });
         Bookie bookie = new Bookie(conf);
@@ -240,6 +244,8 @@ public class EntryLogTest {
 
         int gcWaitTime = 1000;
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(tmpDir.toString());
+
         conf.setGcWaitTime(gcWaitTime);
         conf.setLedgerDirNames(new String[] {tmpDir.toString()});
         Bookie bookie = new Bookie(conf);
@@ -276,6 +282,7 @@ public class EntryLogTest {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setGcWaitTime(gcWaitTime);
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
+        conf.setJournalDirName(tmpDir.toString());
         Bookie bookie = new Bookie(conf);
 
         // create some entries
