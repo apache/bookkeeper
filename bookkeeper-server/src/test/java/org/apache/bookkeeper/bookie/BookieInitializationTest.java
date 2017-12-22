@@ -62,6 +62,7 @@ import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -241,6 +242,48 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                 + bkRegNode1 + ", New ZNode:" + bkRegNode2, bkRegNode1
                 .getEphemeralOwner() != bkRegNode2.getEphemeralOwner());
         }
+    }
+
+    @Test(timeout = 20000)
+    public void testBookieRegistrationWithFQDNHostNameAsBookieID() throws Exception {
+        File tmpDir = createTempDir("bookie", "test");
+
+        final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration().setZkServers(null)
+                .setJournalDirName(tmpDir.getPath()).setLedgerDirNames(new String[] { tmpDir.getPath() })
+                .setUseHostNameAsBookieID(true);
+
+        final String bkRegPath = conf.getZkAvailableBookiesPath() + "/"
+                + InetAddress.getLocalHost().getCanonicalHostName() + ":" + conf.getBookiePort();
+
+        MockBookie bWithFQDNHostname = new MockBookie(conf);
+        conf.setZkServers(zkUtil.getZooKeeperConnectString());
+        rm.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
+        bWithFQDNHostname.registrationManager = rm;
+
+        bWithFQDNHostname.testRegisterBookie(conf);
+        Stat bkRegNode1 = zkc.exists(bkRegPath, false);
+        Assert.assertNotNull("Bookie registration node doesn't exists!", bkRegNode1);
+    }
+
+    @Test(timeout = 20000)
+    public void testBookieRegistrationWithShortHostNameAsBookieID() throws Exception {
+        File tmpDir = createTempDir("bookie", "test");
+
+        final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration().setZkServers(null)
+                .setJournalDirName(tmpDir.getPath()).setLedgerDirNames(new String[] { tmpDir.getPath() })
+                .setUseHostNameAsBookieID(true).setUseShortHostName(true);
+
+        final String bkRegPath = conf.getZkAvailableBookiesPath() + "/"
+                + (InetAddress.getLocalHost().getCanonicalHostName().split("\\.", 2)[0]) + ":" + conf.getBookiePort();
+
+        MockBookie bWithShortHostname = new MockBookie(conf);
+        conf.setZkServers(zkUtil.getZooKeeperConnectString());
+        rm.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
+        bWithShortHostname.registrationManager = rm;
+
+        bWithShortHostname.testRegisterBookie(conf);
+        Stat bkRegNode1 = zkc.exists(bkRegPath, false);
+        Assert.assertNotNull("Bookie registration node doesn't exists!", bkRegNode1);
     }
 
     /**
