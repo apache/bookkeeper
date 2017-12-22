@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.bookkeeper.checksum.utils;
+package com.scurrilous.circe.utils;
 
 import java.io.FileNotFoundException;
 import org.testng.Assert;

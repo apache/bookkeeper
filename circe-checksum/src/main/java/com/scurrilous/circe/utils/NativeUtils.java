@@ -16,7 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.bookkeeper.checksum.utils;
+package com.scurrilous.circe.utils;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -25,8 +27,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Locale;
-
-import static com.google.common.base.Preconditions.*;
 
 /**
  * Utils for loading native checksum library.

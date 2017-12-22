@@ -15,7 +15,8 @@
  ******************************************************************************/
 package com.scurrilous.circe.crc;
 
-import static org.apache.bookkeeper.checksum.utils.NativeUtils.*;
+import static com.scurrilous.circe.utils.NativeUtils.loadLibraryFromJar;
+import static com.scurrilous.circe.utils.NativeUtils.libType;
 
 import java.nio.ByteBuffer;
 import com.scurrilous.circe.IncrementalIntHash;
@@ -31,7 +32,7 @@ public final class Sse42Crc32C extends AbstractIncrementalIntHash implements Inc
 
     private static boolean checkSupported() {
         try {
-            loadLibraryFromJar("/lib/libbookkeeper-checksum." + libType());
+            loadLibraryFromJar("/lib/libcirce-checksum." + libType());
             return nativeSupported();
         } catch (final Exception | UnsatisfiedLinkError e) {
             return false;

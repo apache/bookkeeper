@@ -30,10 +30,10 @@
     <relativePath>..</relativePath>
   </parent>
 
-  <artifactId>bookkeeper-checksum</artifactId>
+  <artifactId>circe-checksum</artifactId>
   <packaging>nar</packaging>
-  <name>Apache BookKeeper :: Checksum Library</name>
-  <description>Checksum Library</description>
+  <name>Apache BookKeeper :: Circe Checksum Library</name>
+  <description>Circe Checksum Library</description>
 
   <properties>
     <nar.runtime>dynamic</nar.runtime>
@@ -65,6 +65,41 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>${maven-checkstyle-plugin.version}</version>
+        <dependencies>
+          <dependency>
+            <groupId>com.puppycrawl.tools</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>${puppycrawl.checkstyle.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.apache.bookkeeper</groupId>
+            <artifactId>buildtools</artifactId>
+            <version>${project.parent.version}</version>
+          </dependency>
+        </dependencies>
+        <configuration>
+          <configLocation>bookkeeper/checkstyle.xml</configLocation>
+          <suppressionsLocation>bookkeeper/suppressions.xml</suppressionsLocation>
+          <consoleOutput>true</consoleOutput>
+          <failOnViolation>true</failOnViolation>
+          <includeResources>false</includeResources>
+          <includeTestSourceDirectory>true</includeTestSourceDirectory>
+        </configuration>
+        <executions>
+          <execution>
+            <id>checkstyle</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
       <plugin>
         <groupId>com.github.maven-nar</groupId>
         <artifactId>nar-maven-plugin</artifactId>
@@ -111,11 +146,11 @@
             <extensions>true</extensions>
             <configuration>
               <runtime>${nar.runtime}</runtime>
-              <output>bookkeeper-checksum</output>
+              <output>circe-checksum</output>
               <libraries>
                 <library>
                   <type>jni</type>
-                  <narSystemPackage>org.apache.bookkeeper.checksum</narSystemPackage>
+                  <narSystemPackage>com.scurrilous.circe.checksum</narSystemPackage>
                 </library>
               </libraries>
               <cpp>
@@ -145,11 +180,11 @@
             <extensions>true</extensions>
             <configuration>
               <runtime>${nar.runtime}</runtime>
-              <output>bookkeeper-checksum</output>
+              <output>circe-checksum</output>
               <libraries>
                 <library>
                   <type>jni</type>
-                  <narSystemPackage>org.apache.bookkeeper.checksum</narSystemPackage>
+                  <narSystemPackage>com.scurrilous.circe.checksum</narSystemPackage>
                 </library>
               </libraries>
               <cpp>

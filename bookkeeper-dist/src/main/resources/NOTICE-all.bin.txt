@@ -47,3 +47,9 @@ This project includes:
   Twitter Util under The Apache Software License, Version 2.0
   Vertx under The Apache Software License, Version 2.0
   ZooKeeper under The Apache Software License, Version 2.0
+
+This product contains a modified version of 'Circe', a high-performance
+hash algorithm framework & library from Trevor Robinson:
+
+  * LICENSE: Apache License 2.0
+  * HOMEPAGE: https://github.com/trevorr/circe
