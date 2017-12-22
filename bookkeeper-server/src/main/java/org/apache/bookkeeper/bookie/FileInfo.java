@@ -33,7 +33,6 @@ import java.io.RandomAccessFile;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.common.util.Watchable;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.slf4j.Logger;
@@ -79,7 +78,6 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
 
     static final long START_OF_DATA = 1024;
     private long size;
-    private AtomicInteger useCount = new AtomicInteger(0);
     private boolean isClosed;
     private long sizeSinceLastwrite;
 
@@ -387,35 +385,26 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
      *          if set to false, the index is not forced to create.
      */
     public void close(boolean force) throws IOException {
-        boolean closing = false;
-        try {
-            boolean changed = false;
-            synchronized (this) {
-                if (isClosed) {
-                    return;
-                }
-                isClosed = true;
-                closing = true;
-                checkOpen(force, true);
-                // Any time when we force close a file, we should try to flush header.
-                // otherwise, we might lose fence bit.
-                if (force) {
-                    flushHeader();
-                }
-                changed = true;
-                if (useCount.get() == 0 && fc != null) {
-                    fc.close();
-                    fc = null;
-                }
+        boolean changed = false;
+        synchronized (this) {
+            if (isClosed) {
+                return;
             }
-            if (changed) {
-                notifyWatchers(LastAddConfirmedUpdateNotification.FUNC, Long.MAX_VALUE);
+            isClosed = true;
+            checkOpen(force, true);
+            // Any time when we force close a file, we should try to flush header.
+            // otherwise, we might lose fence bit.
+            if (force) {
+                flushHeader();
             }
-        } finally {
-            if (closing) {
-                // recycle this watchable after the FileInfo is closed.
-                recycle();
+            changed = true;
+            if (fc != null) {
+                fc.close();
             }
+            fc = null;
+        }
+        if (changed) {
+            notifyWatchers(LastAddConfirmedUpdateNotification.FUNC, Long.MAX_VALUE);
         }
     }
 
@@ -500,26 +489,6 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
     public synchronized byte[] getMasterKey() throws IOException {
         checkOpen(false);
         return masterKey;
-    }
-
-    public void use() {
-        useCount.incrementAndGet();
-    }
-
-    @VisibleForTesting
-    int getUseCount() {
-        return useCount.get();
-    }
-
-    public synchronized void release() {
-        int count = useCount.decrementAndGet();
-        if (isClosed && (count == 0) && fc != null) {
-            try {
-                fc.close();
-            } catch (IOException e) {
-                LOG.error("Error closing file channel", e);
-            }
-        }
     }
 
     public synchronized boolean delete() {

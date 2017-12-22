@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
+import org.apache.bookkeeper.bookie.FileInfoBackingCache.CachedFileInfo;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -272,7 +273,6 @@ public class LedgerCacheTest {
         File ledgerDir2 = createTempDir("bkTest", ".dir");
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setLedgerDirNames(new String[] { ledgerDir1.getAbsolutePath(), ledgerDir2.getAbsolutePath() });
-        conf.setJournalDirName(ledgerDir1.toString());
 
         Bookie bookie = new Bookie(conf);
         InterleavedLedgerStorage ledgerStorage = ((InterleavedLedgerStorage) bookie.ledgerStorage);
@@ -280,12 +280,13 @@ public class LedgerCacheTest {
         // Create ledger index file
         ledgerStorage.setMasterKey(1, "key".getBytes());
 
-        FileInfo fileInfo = ledgerCache.getIndexPersistenceManager().getFileInfo(Long.valueOf(1), null);
+        CachedFileInfo fileInfo = ledgerCache.getIndexPersistenceManager().getFileInfo(Long.valueOf(1), null);
+        fileInfo.release();
 
-        // Simulate the flush failure
-        FileInfo newFileInfo = new FileInfo(fileInfo.getLf(), fileInfo.getMasterKey());
-        ledgerCache.getIndexPersistenceManager().writeFileInfoCache.put(Long.valueOf(1), newFileInfo);
-        ledgerCache.getIndexPersistenceManager().readFileInfoCache.put(Long.valueOf(1), newFileInfo);
+        // Simulate the flush failure (force the caches to release their refcount on the fileinfo)
+        ledgerCache.getIndexPersistenceManager().writeFileInfoCache.put(Long.valueOf(1), fileInfo);
+        ledgerCache.getIndexPersistenceManager().readFileInfoCache.put(Long.valueOf(1), fileInfo);
+
         // Add entries
         ledgerStorage.addEntry(generateEntry(1, 1));
         ledgerStorage.addEntry(generateEntry(1, 2));
@@ -294,13 +295,13 @@ public class LedgerCacheTest {
         ledgerStorage.addEntry(generateEntry(1, 3));
         // add the dir to failed dirs
         bookie.getIndexDirsManager().addToFilledDirs(
-                newFileInfo.getLf().getParentFile().getParentFile().getParentFile());
-        File before = newFileInfo.getLf();
+                fileInfo.getLf().getParentFile().getParentFile().getParentFile());
+        File before = fileInfo.getLf();
         // flush after disk is added as failed.
         ledgerStorage.flush();
-        File after = newFileInfo.getLf();
+        File after = fileInfo.getLf();
 
-        assertEquals("Reference counting for the file info should be zero.", 0, newFileInfo.getUseCount());
+        assertEquals("Reference counting for the file info should be zero.", 0, fileInfo.getRefCount());
 
         assertFalse("After flush index file should be changed", before.equals(after));
         // Verify written entries
