@@ -64,7 +64,7 @@ class FileInfoBackingCache {
         }
     }
 
-    void releaseFileInfo(long ledgerId, FileInfo fileInfo) {
+    private void releaseFileInfo(long ledgerId, FileInfo fileInfo) {
         lock.writeLock().lock();
         try {
             fileInfo.close(true);

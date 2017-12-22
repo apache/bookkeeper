@@ -211,7 +211,9 @@ public class IndexPersistenceMgr {
             CachedFileInfo fi;
             pendingGetFileInfoCounter.inc();
             Callable<CachedFileInfo> loader = () -> {
-                return fileInfoBackingCache.loadFileInfo(ledger, masterKey);
+                CachedFileInfo fileInfo = fileInfoBackingCache.loadFileInfo(ledger, masterKey);
+                activeLedgers.put(ledger, true);
+                return fileInfo;
             };
             if (null != masterKey) {
                 fi = writeFileInfoCache.get(ledger, loader);
