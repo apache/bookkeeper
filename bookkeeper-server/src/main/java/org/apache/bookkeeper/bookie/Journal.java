@@ -388,7 +388,6 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 ForceWriteRequest req = null;
                 try {
                     req = forceWriteRequests.take();
-
                     // Force write the file and then notify the write completions
                     //
                     if (!req.isMarker) {
@@ -408,8 +407,8 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                                 numReqInLastForceWrite = 0;
                             }
                         }
-                        numReqInLastForceWrite += req.process(shouldForceWrite);
                     }
+                    numReqInLastForceWrite += req.process(shouldForceWrite);
 
                     if (enableGroupForceWrites
                             // if its a marker we should switch back to flushing
