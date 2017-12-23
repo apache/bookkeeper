@@ -318,6 +318,7 @@
             <exclude>**/*.iml</exclude>
             <exclude>site/**</exclude>
             <exclude>.repository/**</exclude>
+            <exclude>**/META-INF/**</exclude>
           </excludes>
           <consoleOutput>true</consoleOutput>
         </configuration>
