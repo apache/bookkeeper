@@ -64,11 +64,22 @@ class FileInfoBackingCache {
         }
     }
 
-    private void releaseFileInfo(long ledgerId, FileInfo fileInfo) {
+    private void releaseFileInfo(long ledgerId, CachedFileInfo fileInfo) {
         lock.writeLock().lock();
         try {
-            fileInfo.close(true);
-            fileInfos.remove(ledgerId, fileInfo);
+            /* RefCount may have been incremented between the call
+             * to decrementAndGet in CachedFileInfo#release and getting
+             * to this point in the code, so check it again.
+             * If the refCount for a fileInfo is 0, it means that the only
+             * object referencing it is the fileInfos map. Acquiring the
+             * fileInfo from the map is done under the lock, so if the
+             * refcount is 0 here, we'll be able to remove it from the
+             * map before anyone has a chance to increment it.
+             */
+            if (fileInfo.getRefCount() == 0) {
+                fileInfo.close(true);
+                fileInfos.remove(ledgerId, fileInfo);
+            }
         } catch (IOException ioe) {
             log.error("Error evicting file info({}) for ledger {} from backing cache",
                       fileInfo, ledgerId, ioe);

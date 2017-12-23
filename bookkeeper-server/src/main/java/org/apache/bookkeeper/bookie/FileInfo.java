@@ -137,6 +137,10 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
         return true;
     }
 
+    public boolean isClosed() {
+        return isClosed;
+    }
+
     public synchronized File getLf() {
         return lf;
     }

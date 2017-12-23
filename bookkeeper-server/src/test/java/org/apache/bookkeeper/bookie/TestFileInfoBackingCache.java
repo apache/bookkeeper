@@ -20,18 +20,29 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
-import java.util.concurrent.CountDownLatch;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.FileInfoBackingCache.CachedFileInfo;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,16 +54,28 @@ import org.junit.Test;
 public class TestFileInfoBackingCache {
     final byte[] masterKey = new byte[0];
     final File baseDir;
+    final ThreadFactory threadFactory = new ThreadFactoryBuilder()
+        .setNameFormat("backing-cache-test-").setDaemon(true).build();
+    ExecutorService executor;
 
     public TestFileInfoBackingCache() throws Exception {
         baseDir = File.createTempFile("foo", "bar");
     }
 
     @Before
-    public void setupDir() throws Exception {
+    public void setup() throws Exception {
         Assert.assertTrue(baseDir.delete());
         Assert.assertTrue(baseDir.mkdirs());
         baseDir.deleteOnExit();
+
+        executor = Executors.newCachedThreadPool(threadFactory);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (executor != null) {
+            executor.shutdown();
+        }
     }
 
     @Test
@@ -99,50 +122,94 @@ public class TestFileInfoBackingCache {
      */
     @Test
     public void testForDeadlocks() throws Exception {
-        int numThreads = 20;
+        int numRunners = 20;
         int maxLedgerId = 10;
         AtomicBoolean done = new AtomicBoolean(false);
-        CountDownLatch success = new CountDownLatch(numThreads);
+
         FileInfoBackingCache cache = new FileInfoBackingCache(
                 (ledgerId, createIfNotFound) -> {
                     File f = new File(baseDir, String.valueOf(ledgerId));
                     f.deleteOnExit();
                     return f;
                 });
-        for (int i = 0; i < numThreads; i++) {
-            Thread t = new Thread(() -> {
-                    try {
-                        Random r = new Random();
-                        List<CachedFileInfo> fileInfos = new ArrayList<>();
-                        while (!done.get()) {
-                            if (r.nextBoolean() && fileInfos.size() < 5) { // take a reference
-                                fileInfos.add(cache.loadFileInfo(r.nextInt(maxLedgerId), masterKey));
-                            } else { // release a reference
-                                Collections.shuffle(fileInfos);
-                                if (!fileInfos.isEmpty()) {
-                                    fileInfos.remove(0).release();
+        Iterable<Future<Set<CachedFileInfo>>> futures =
+            IntStream.range(0, numRunners).mapToObj(
+                    (i) -> {
+                        Callable<Set<CachedFileInfo>> c = () -> {
+                            Random r = new Random();
+                            List<CachedFileInfo> fileInfos = new ArrayList<>();
+                            Set<CachedFileInfo> allFileInfos = new HashSet<>();
+                            while (!done.get()) {
+                                if (r.nextBoolean() && fileInfos.size() < 5) { // take a reference
+                                    CachedFileInfo fi = cache.loadFileInfo(r.nextInt(maxLedgerId), masterKey);
+                                    Assert.assertFalse(fi.isClosed());
+                                    allFileInfos.add(fi);
+                                    fileInfos.add(fi);
+                                } else { // release a reference
+                                    Collections.shuffle(fileInfos);
+                                    if (!fileInfos.isEmpty()) {
+                                        fileInfos.remove(0).release();
+                                    }
                                 }
                             }
-                        }
-                        for (CachedFileInfo fi : fileInfos) {
-                            fi.release();
-                        }
-                        success.countDown();
-                    } catch (Exception e) {
-                        log.error("Something nasty happened, success will never complete", e);
-                    }
-                }, "HammerThread-" + i);
-            t.setDaemon(true);
-            t.start();
-        }
+                            for (CachedFileInfo fi : fileInfos) {
+                                Assert.assertFalse(fi.isClosed());
+                                fi.release();
+                            }
+                            return allFileInfos;
+                        };
+                        return executor.submit(c);
+                    }).collect(Collectors.toList());
         Thread.sleep(TimeUnit.SECONDS.toMillis(10));
         done.set(true);
-        Assert.assertTrue(success.await(5, TimeUnit.SECONDS));
+
+        for (Future<Set<CachedFileInfo>> f : futures) {
+            for (CachedFileInfo fi : f.get()) {
+                Assert.assertTrue(fi.isClosed());
+                Assert.assertEquals(0, fi.getRefCount());
+            }
+        }
 
         // try to load all ledgers again.
         // They should be loaded fresh (i.e. this load should be only reference)
         for (int i = 0; i < maxLedgerId; i++) {
             Assert.assertEquals(1, cache.loadFileInfo(i, masterKey).getRefCount());
+        }
+    }
+
+    @Test
+    public void testRefCountRace() throws Exception {
+        AtomicBoolean done = new AtomicBoolean(false);
+        FileInfoBackingCache cache = new FileInfoBackingCache(
+                (ledgerId, createIfNotFound) -> {
+                    File f = new File(baseDir, String.valueOf(ledgerId));
+                    f.deleteOnExit();
+                    return f;
+                });
+
+        Iterable<Future<Set<CachedFileInfo>>> futures =
+            IntStream.range(0, 2).mapToObj(
+                    (i) -> {
+                        Callable<Set<CachedFileInfo>> c = () -> {
+                            Set<CachedFileInfo> allFileInfos = new HashSet<>();
+                            while (!done.get()) {
+                                CachedFileInfo fi = cache.loadFileInfo(1, masterKey);
+                                Assert.assertFalse(fi.isClosed());
+                                allFileInfos.add(fi);
+                                fi.release();
+                            }
+                            return allFileInfos;
+                        };
+                        return executor.submit(c);
+                    }).collect(Collectors.toList());
+        Thread.sleep(TimeUnit.SECONDS.toMillis(10));
+        done.set(true);
+
+        for (Future<Set<CachedFileInfo>> f : futures) {
+            for (CachedFileInfo fi : f.get()) {
+                Assert.assertTrue(fi.isClosed());
+                Assert.assertEquals(0, fi.getRefCount());
+            }
         }
     }
 }
