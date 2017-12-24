@@ -566,7 +566,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
 
         // entry logs ([0,1,2].log) should not be compacted, all remaining >= 0.7
         for (File ledgerDirectory : tmpDirs) {
-            assertTrue("Not Found entry log file ([1,2].log that should have not been compacted in ledgerDirectory: "
+            assertTrue("Not Found entry log file ([0,1,2].log that should have not been compacted in ledgerDirectory: "
                     + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, false, 0, 1, 2));
         }
 
@@ -577,9 +577,9 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         cron = "* * * ? * *";
         // set high cron expression more far to avoid high major compaction occur
         if (now.getDayOfMonth() < 10) {
-            disableHighCron = " 0 0 0 28 * ?";
+            disableHighCron = "0 0 0 28 * ?";
         } else {
-            disableHighCron = " 0 0 0 1 * ?";
+            disableHighCron = "0 0 0 1 * ?";
         }
         LOG.info("cron expression is {}, next fire time {}", cron, new CronExpression(cron).nextTimeAfter(now));
         baseConf.setMedianMajorCompactionCron(cron);
@@ -589,10 +589,13 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         // median gc period
         getGCThread().enableForceGC();
         getGCThread().triggerGC().get();
-        // entry logs ([0].log) should be compacted, whose usaage = 0.7, which threshold = 0.71
+        // entry logs ([0].log) should be compacted, whose usage = 0.7, which threshold = 0.71
         for (File ledgerDirectory : tmpDirs) {
             assertFalse("Found entry log file 0.log that should have been compacted in ledgerDirectory: "
                     + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, false, 0));
+            assertTrue("Not Found entry log file ([1,2].log that should have not been compacted in ledgerDirectory: "
+                    + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, false, 1, 2));
+
         }
 
 

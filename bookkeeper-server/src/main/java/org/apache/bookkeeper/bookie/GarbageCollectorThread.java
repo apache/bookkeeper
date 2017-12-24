@@ -32,10 +32,9 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.THREAD_RUNTIME;
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
-import java.text.ParseException;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,6 +45,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.bookie.GarbageCollector.GarbageCleaner;
+import org.apache.bookkeeper.common.util.CronExpression;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.stats.Counter;
@@ -54,7 +54,6 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.SafeRunnable;
-import org.quartz.CronExpression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,6 +89,7 @@ public class GarbageCollectorThread extends SafeRunnable {
     final double highMajorCompactionThreshold;
     final long majorCompactionInterval;
     long lastMajorCompactionTime;
+    long lastChangeThresholdTime;
     private final CronExpression medianMajorCron;
     private final CronExpression highMajorCron;
 
@@ -212,14 +212,10 @@ public class GarbageCollectorThread extends SafeRunnable {
         } else {
             this.compactor = new EntryLogCompactor(this);
         }
-        try {
-            medianMajorCron = new CronExpression(conf.getMedianMajorCompactionCron());
-            highMajorCron = new CronExpression(conf.getHighMajorCompactionCron());
-        } catch (ParseException pe) {
-            LOG.error("Parse Exception {}, high: {}, median: {}",
-                    pe, conf.getMedianMajorCompactionCron(), conf.getHighMajorCompactionCron());
-            throw new IOException(pe);
-        }
+
+        medianMajorCron = new CronExpression(conf.getMedianMajorCompactionCron());
+        highMajorCron = new CronExpression(conf.getHighMajorCompactionCron());
+
         if (minorCompactionInterval > 0 && minorCompactionThreshold > 0) {
             if (minorCompactionThreshold > 1.0f) {
                 throw new IOException("Invalid minor compaction threshold "
@@ -260,6 +256,7 @@ public class GarbageCollectorThread extends SafeRunnable {
                + majorCompactionThreshold + ", interval=" + majorCompactionInterval);
 
         lastMinorCompactionTime = lastMajorCompactionTime = MathUtils.now();
+        lastChangeThresholdTime = ZonedDateTime.now().toInstant().toEpochMilli();
     }
 
     public void enableForceGC() {
@@ -362,14 +359,15 @@ public class GarbageCollectorThread extends SafeRunnable {
      */
     private void changeMajorCompactionThreshold(){
         // next fire time is in the interval
-        if (medianMajorCron.getNextValidTimeAfter(new Date(MathUtils.now())).compareTo(
-                new Date(majorCompactionInterval + lastMajorCompactionTime)) != 1) {
+        if (medianMajorCron.nextTimeAfter(ZonedDateTime.now()).toInstant().toEpochMilli()
+                <= (majorCompactionInterval + lastChangeThresholdTime)) {
             activateMedianThreshold();
         }
-        if (highMajorCron.getNextValidTimeAfter(new Date(MathUtils.now())).compareTo(
-                new Date(majorCompactionInterval + lastMajorCompactionTime)) != 1) {
+        if (highMajorCron.nextTimeAfter(ZonedDateTime.now()).toInstant().toEpochMilli()
+                <= (majorCompactionInterval + lastChangeThresholdTime)) {
             activateHighThreshold();
         }
+        lastChangeThresholdTime = ZonedDateTime.now().toInstant().toEpochMilli();
     }
 
     /**

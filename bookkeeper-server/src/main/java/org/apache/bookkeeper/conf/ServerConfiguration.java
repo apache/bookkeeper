@@ -1196,10 +1196,10 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     /**
      * Get high major compaction cron expression.
-     * default is 0-3 h in Saturday & Sunday.
+     * default is 0-3 h in Saturday.
      */
     public String getHighMajorCompactionCron() {
-        return getString(HIGH_MAJOR_COMPACTION_CRON, "0 * 0-3 ? * 7-1");
+        return getString(HIGH_MAJOR_COMPACTION_CRON, "0 * 0-3 ? * 7");
     }
 
     /**
