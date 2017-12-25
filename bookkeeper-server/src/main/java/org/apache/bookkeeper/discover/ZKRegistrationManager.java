@@ -165,7 +165,13 @@ public class ZKRegistrationManager implements RegistrationManager {
         }
     }
 
-    private String getCookiePath(String bookieId) {
+    /**
+     * Returns the CookiePath of the bookie in the ZooKeeper.
+     *
+     * @param bookieId bookie id
+     * @return
+     */
+    public String getCookiePath(String bookieId) {
         return this.cookiePath + "/" + bookieId;
     }
 
