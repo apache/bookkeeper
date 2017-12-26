@@ -545,7 +545,7 @@ Use the template below for all the messages.
 
 
     From: xxx@apache.org
-    To: dev@bookkeeper.apache.org, dev@bookkeeper.apache.org, announce@apache.org
+    To: dev@bookkeeper.apache.org, user@bookkeeper.apache.org, announce@apache.org
     Subject: [ANNOUNCE] Apache BookKeeper x.y.z released
      
     The Apache BookKeeper team is proud to announce Apache BookKeeper version
