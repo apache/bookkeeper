@@ -53,6 +53,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String IS_FORCE_GC_ALLOW_WHEN_NO_SPACE = "isForceGCAllowWhenNoSpace";
     protected static final String GC_OVERREPLICATED_LEDGER_WAIT_TIME = "gcOverreplicatedLedgerWaitTime";
     protected static final String USE_TRANSACTIONAL_COMPACTION = "useTransactionalCompaction";
+    protected static final String VERIFY_METADATA_ON_GC = "verifyMetadataOnGC";
     // Sync Parameters
     protected static final String FLUSH_INTERVAL = "flushInterval";
     protected static final String FLUSH_ENTRYLOG_INTERVAL_BYTES = "flushEntrylogBytes";
@@ -307,6 +308,25 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setUseTransactionalCompaction(boolean useTransactionalCompaction) {
         this.setProperty(USE_TRANSACTIONAL_COMPACTION, useTransactionalCompaction);
+        return this;
+    }
+
+    /**
+     * Get whether the bookie is configured to double check prior to gc.
+     *
+     * @return use transactional compaction
+     */
+    public boolean getVerifyMetadataOnGC() {
+        return this.getBoolean(VERIFY_METADATA_ON_GC, false);
+    }
+
+    /**
+     * Set whether the bookie is configured to double check prior to gc.
+     * @param verifyMetadataOnGC
+     * @return server configuration
+     */
+    public ServerConfiguration setVerifyMetadataOnGc(boolean verifyMetadataOnGC) {
+        this.setProperty(VERIFY_METADATA_ON_GC, verifyMetadataOnGC);
         return this;
     }
 
