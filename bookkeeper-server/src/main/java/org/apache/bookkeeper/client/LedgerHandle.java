@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.client;
 
 import static org.apache.bookkeeper.client.api.BKException.Code.ClientClosedException;
+import static org.apache.bookkeeper.client.api.BKException.Code.WriteException;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
@@ -120,6 +121,7 @@ public class LedgerHandle implements WriteHandle {
 
     final AtomicInteger blockAddCompletions = new AtomicInteger(0);
     final AtomicInteger numEnsembleChanges = new AtomicInteger(0);
+    final int maxNumEnsembleChanges;
     Queue<PendingAddOp> pendingAddOps;
     ExplicitLacFlushPolicy explicitLacFlushPolicy;
 
@@ -191,6 +193,7 @@ public class LedgerHandle implements WriteHandle {
             }
         };
 
+        maxNumEnsembleChanges = bk.getConf().getMaxEnsembleChangesNum();
         ensembleChangeCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.ENSEMBLE_CHANGES);
         lacUpdateHitsCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.LAC_UPDATE_HITS);
         lacUpdateMissesCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.LAC_UPDATE_MISSES);
@@ -1565,6 +1568,14 @@ public class LedgerHandle implements WriteHandle {
 
         int curNumEnsembleChanges = numEnsembleChanges.incrementAndGet();
 
+        // when the ensemble changes are too frequent, close handle
+        if (curNumEnsembleChanges > maxNumEnsembleChanges){
+            if (LOG.isDebugEnabled()) {
+                  LOG.debug("touch maxNumEnsembleChanges");
+            }
+            handleUnrecoverableErrorDuringAdd(WriteException);
+            return;
+        }
         synchronized (metadata) {
             try {
                 EnsembleInfo ensembleInfo = replaceBookieInMetadata(failedBookies, curNumEnsembleChanges);
