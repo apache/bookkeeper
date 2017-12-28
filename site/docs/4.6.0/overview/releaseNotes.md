@@ -54,7 +54,9 @@ The main features in 4.6.0 cover are around following areas:
 
 ### Deployment or Ease of use
 - Deployment BookKeeper on K8s. 
-  - Provide yaml files to run BookKeeper on Kubernetes using both StatefulSets and DaemonSet. See [Issue-337](https://github.com/apache/bookkeeper/issues/337) and [Issue-681](https://github.com/apache/bookkeeper/issues/681)for more details.
+  - Provide yaml files to run BookKeeper on Kubernetes using both StatefulSets and DaemonSet. See [Issue-337](https://github.com/apache/bookkeeper/issues/337) and [Issue-681](https://github.com/apache/bookkeeper/issues/681) for more details.
+
+- Produce shaded and unshaded bookkeeper-server, so applications can choose what jar to use. The shaded jar is classified with shaded classifier. See [Issue-466](https://github.com/apache/bookkeeper/issues/466) for more details.
 
 ## Existing API changes
 
