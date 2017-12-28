@@ -139,6 +139,7 @@ public class EntryLogTest {
                 positions[i][j] = logger.addEntry(i, generateEntry(i, j).nioBuffer());
             }
             logger.flush();
+            logger.shutdown();
         }
         // delete last log id
         File lastLogId = new File(curDir, "lastId");
@@ -154,6 +155,7 @@ public class EntryLogTest {
                 positions[i][j] = logger.addEntry(i, generateEntry(i, j).nioBuffer());
             }
             logger.flush();
+            logger.shutdown();
         }
 
         EntryLogger newLogger = new EntryLogger(conf,
@@ -335,11 +337,12 @@ public class EntryLogTest {
         Bookie.checkDirectoryStructure(curDir);
 
         int gcWaitTime = 1000;
+        int expireTime = 1000;
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setGcWaitTime(gcWaitTime);
         conf.setLedgerDirNames(new String[] {tmpDir.toString()});
         //since last access, expire after 1s
-        conf.setExpireReadChannelCache(1000);
+        conf.setReadChannelCacheExpireTimeMs(expireTime);
         conf.setEntryLogFilePreAllocationEnabled(false);
         // below one will cost logId 0
         Bookie bookie = new Bookie(conf);
@@ -357,6 +360,7 @@ public class EntryLogTest {
             logger.flush();
             LOG.info("log id is {}, LeastUnflushedLogId is {} ", logger.getCurrentLogId(),
                     logger.getLeastUnflushedLogId());
+            logger.shutdown();
         }
 
         for (int i = 1; i < numLogs + 1; i++) {
@@ -383,7 +387,7 @@ public class EntryLogTest {
         // the cache has readChannel for 2.log
         assertNotNull(cacheThreadLocal.get().getIfPresent(2L));
         // expire time
-        Thread.sleep(1000);
+        Thread.sleep(expireTime);
         // read to new entry log, the old values in logid2Channel should has been invalidated
         for (int j = 0; j < numEntries; j++) {
             logger.readEntry(2, j, positions[2][j]);
@@ -419,6 +423,7 @@ public class EntryLogTest {
         } catch (ClosedChannelException exception){
 
         }
+        logger.shutdown();
     }
 
     /**

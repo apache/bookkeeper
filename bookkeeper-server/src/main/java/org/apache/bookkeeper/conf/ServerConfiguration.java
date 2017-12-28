@@ -47,7 +47,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String COMPACTION_RATE = "compactionRate";
     protected static final String COMPACTION_RATE_BY_ENTRIES = "compactionRateByEntries";
     protected static final String COMPACTION_RATE_BY_BYTES = "compactionRateByBytes";
-    protected static final String READ_CHANNEL_CACHE_EXPIRE_TIME_MS = "expireReadChannelCache";
+    protected static final String READ_CHANNEL_CACHE_EXPIRE_TIME_MS = "readChannelCacheExpireTimeMs";
 
     // Gc Parameters
     protected static final String GC_WAIT_TIME = "gcWaitTime";
@@ -244,7 +244,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *
      * @return server configuration object.
      */
-    public long getExpireReadChannelCache() {
+    public long getReadChannelCacheExpireTimeMs() {
         return this.getLong(READ_CHANNEL_CACHE_EXPIRE_TIME_MS, 3600000);
     }
 
@@ -255,7 +255,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      *          expire time.
      * @return server configuration object.
      */
-    public ServerConfiguration setExpireReadChannelCache(long millis) {
+    public ServerConfiguration setReadChannelCacheExpireTimeMs(long millis) {
         this.setProperty(READ_CHANNEL_CACHE_EXPIRE_TIME_MS, millis);
         return this;
     }

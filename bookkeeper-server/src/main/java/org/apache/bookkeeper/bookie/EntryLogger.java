@@ -293,7 +293,7 @@ public class EntryLogger {
         flushIntervalInBytes = conf.getFlushIntervalInBytes();
         doRegularFlushes = flushIntervalInBytes > 0;
 
-        expireReadChannelCache = conf.getExpireReadChannelCache();
+        expireReadChannelCache = conf.getReadChannelCacheExpireTimeMs();
         initialize();
     }
 
@@ -353,7 +353,7 @@ public class EntryLogger {
         }
     };
 
-    // only used for test.
+    @VisibleForTesting
     ThreadLocal<Cache<Long, BufferedReadChannel>> getLogid2Channel() {
         return logid2Channel;
     }
@@ -408,7 +408,7 @@ public class EntryLogger {
      */
     private ConcurrentMap<Long, ReferenceCountedFileChannel>
             logid2FileChannel = new ConcurrentHashMap<>();
-    // only for test.
+    @VisibleForTesting
     ConcurrentMap<Long, ReferenceCountedFileChannel> getLogid2FileChannel() {
         return logid2FileChannel;
     }
@@ -1178,7 +1178,6 @@ public class EntryLogger {
         // so that there are no overlaps with the write buffer while reading
         brc = new BufferedReadChannel(newFc, conf.getReadBufferBytes());
         putInReadChannels(entryLogId, brc);
-        LOG.info("put readChannel: {}, corresponding to: {} ", brc, entryLogId);
         return brc;
     }
 
