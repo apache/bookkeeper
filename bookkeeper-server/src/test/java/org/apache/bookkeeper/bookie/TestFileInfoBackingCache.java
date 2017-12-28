@@ -20,6 +20,9 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.RemovalNotification;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import java.io.File;
@@ -39,6 +42,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.FileInfoBackingCache.CachedFileInfo;
 
@@ -211,5 +215,57 @@ public class TestFileInfoBackingCache {
                 Assert.assertEquals(0, fi.getRefCount());
             }
         }
+    }
+
+    private void guavaEvictionListener(RemovalNotification<Long, CachedFileInfo> notification) {
+        notification.getValue().release();
+    }
+
+    @Test
+    public void testRaceGuavaEvictAndReleaseBeforeRetain() throws Exception {
+        AtomicBoolean done = new AtomicBoolean(false);
+        FileInfoBackingCache cache = new FileInfoBackingCache(
+                (ledgerId, createIfNotFound) -> {
+                    File f = new File(baseDir, String.valueOf(ledgerId));
+                    f.deleteOnExit();
+                    return f;
+                });
+
+        Cache<Long, CachedFileInfo> guavaCache = CacheBuilder.newBuilder()
+            .maximumSize(1)
+            .removalListener(this::guavaEvictionListener)
+            .build();
+
+        Iterable<Future<Set<CachedFileInfo>>> futures =
+            LongStream.range(0L, 2L).mapToObj(
+                    (i) -> {
+                        Callable<Set<CachedFileInfo>> c = () -> {
+                            Set<CachedFileInfo> allFileInfos = new HashSet<>();
+                            while (!done.get()) {
+                                CachedFileInfo fi = guavaCache.get(
+                                        i, () -> cache.loadFileInfo(i, masterKey));
+                                allFileInfos.add(fi);
+
+                                Thread.sleep(100);
+                                fi.retain();
+                                Assert.assertFalse(fi.isClosed());
+                                fi.release();
+                            }
+                            return allFileInfos;
+                        };
+                        return executor.submit(c);
+                    }).collect(Collectors.toList());
+        Thread.sleep(TimeUnit.SECONDS.toMillis(10));
+        done.set(true);
+
+        guavaCache.invalidateAll();
+
+        for (Future<Set<CachedFileInfo>> f : futures) {
+            for (CachedFileInfo fi : f.get()) {
+                Assert.assertTrue(fi.isClosed());
+                Assert.assertEquals(0, fi.getRefCount());
+            }
+        }
+
     }
 }
