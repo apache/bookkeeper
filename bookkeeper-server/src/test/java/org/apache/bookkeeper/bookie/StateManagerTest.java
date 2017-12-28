@@ -190,7 +190,6 @@ public class StateManagerTest extends BookKeeperClusterTestCase {
         // different dimension of bookie state: running <--> down, read <--> write, unregistered <--> registered
         // bookie2 is set to readOnly when shutdown
         assertTrue(stateManager.isReadOnly());
-
     }
 
     @Test
