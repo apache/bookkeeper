@@ -281,11 +281,6 @@ public class LedgerCacheTest {
         ledgerStorage.setMasterKey(1, "key".getBytes());
 
         CachedFileInfo fileInfo = ledgerCache.getIndexPersistenceManager().getFileInfo(Long.valueOf(1), null);
-        fileInfo.release();
-
-        // Simulate the flush failure (force the caches to release their refcount on the fileinfo)
-        ledgerCache.getIndexPersistenceManager().writeFileInfoCache.put(Long.valueOf(1), fileInfo);
-        ledgerCache.getIndexPersistenceManager().readFileInfoCache.put(Long.valueOf(1), fileInfo);
 
         // Add entries
         ledgerStorage.addEntry(generateEntry(1, 1));
@@ -300,8 +295,6 @@ public class LedgerCacheTest {
         // flush after disk is added as failed.
         ledgerStorage.flush();
         File after = fileInfo.getLf();
-
-        assertEquals("Reference counting for the file info should be zero.", 0, fileInfo.getRefCount());
 
         assertFalse("After flush index file should be changed", before.equals(after));
         // Verify written entries
