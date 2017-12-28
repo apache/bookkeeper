@@ -189,7 +189,6 @@ public class IndexPersistenceMgr {
      */
     private void handleLedgerEviction(RemovalNotification<Long, CachedFileInfo> notification) {
         CachedFileInfo fileInfo = notification.getValue();
-        Long ledgerId = notification.getKey();
         if (null == fileInfo || null == notification.getKey()) {
             return;
         }
