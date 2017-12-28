@@ -35,6 +35,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
@@ -405,7 +407,18 @@ public class EntryLogTest {
         assertEquals(0, logid2FileChannel.get(2L).refCnt());
         assertEquals(1, logid2FileChannel.get(3L).refCnt());
         assertEquals(1, logid2FileChannel.get(4L).refCnt());
-//        assertNull(logid2FileChannel.get(2L).getFc());
+        try {
+            logid2FileChannel.get(1L).getFileChannel().write(ByteBuffer.allocate(5));
+            fail("FileChannel has been closed, should not come here");
+        } catch (ClosedChannelException exception){
+
+        }
+        try {
+            logid2FileChannel.get(2L).getFileChannel().write(ByteBuffer.allocate(5));
+            fail("FileChannel has been closed, should not come here");
+        } catch (ClosedChannelException exception){
+
+        }
     }
 
     /**

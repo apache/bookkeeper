@@ -25,6 +25,7 @@ import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.bookkeeper.bookie.TransactionalEntryLogCompactor.COMPACTING_SUFFIX;
 import static org.apache.bookkeeper.util.BookKeeperConstants.MAX_LOG_SIZE_LIMIT;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -368,16 +369,16 @@ public class EntryLogger {
 
 
     static class ReferenceCountedFileChannel extends AbstractReferenceCounted {
-        FileChannel getFc() {
-            return fc;
-        }
-
         private final FileChannel fc;
 
         public ReferenceCountedFileChannel(FileChannel fileChannel) {
             this.fc = fileChannel;
         }
 
+        @VisibleForTesting
+        FileChannel getFileChannel(){
+            return fc;
+        }
 
         @Override
         public ReferenceCounted touch(Object hint) {
