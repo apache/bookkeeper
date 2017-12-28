@@ -510,6 +510,20 @@ public class LedgerCacheTest {
             }
             super.process(ledgerId, entryId, buffer);
         }
+        // simplified memTable full callback.
+        @Override
+        public void onSizeLimitReached(final CheckpointSource.Checkpoint cp) throws IOException {
+            LOG.info("Reached size {}", cp);
+            // use synchronous way
+            try {
+                LOG.info("Started flushing mem table.");
+                memTable.flush(FlushTestSortedLedgerStorage.this);
+            } catch (IOException e) {
+                getStateManager().doTransitionToReadOnlyMode();
+                LOG.error("Exception thrown while flushing skip list cache.", e);
+         }
+         }
+
     }
 
     @Test
@@ -585,12 +599,10 @@ public class LedgerCacheTest {
         flushTestSortedLedgerStorage.setInjectMemTableSizeLimitReached(true);
         flushTestSortedLedgerStorage.setInjectFlushException(true);
         flushTestSortedLedgerStorage.addEntry(generateEntry(1, 2));
-        Thread.sleep(1000);
 
         // since we simulated sizeLimitReached, snapshot shouldn't be empty
         assertFalse("EntryMemTable SnapShot is not expected to be empty", memTable.snapshot.isEmpty());
         // after flush failure, the bookie is set to readOnly
-        LOG.info("state is {}", bookie.getStateManager().getState());
         assertTrue("Bookie is expected to be in Read mode", bookie.isReadOnly());
         // write fail
         bookie.addEntry(generateEntry(1, 3), new BookkeeperInternalCallbacks.WriteCallback(){

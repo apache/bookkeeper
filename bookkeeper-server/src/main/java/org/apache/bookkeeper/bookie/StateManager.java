@@ -32,11 +32,6 @@ public interface StateManager extends AutoCloseable {
     void initState();
 
     /**
-     * Get current state of Bookie.
-     */
-    int getState();
-
-    /**
      * Check is ReadOnly.
      */
     boolean isReadOnly();
@@ -76,11 +71,6 @@ public interface StateManager extends AutoCloseable {
     void forceToReadOnly();
 
     /**
-     * Turn state to not running, just the flag.
-     */
-    void forceToShutDown();
-
-    /**
      * Turn state to not registered, just the flag.
      */
     void forceToUnregistered();
@@ -88,12 +78,12 @@ public interface StateManager extends AutoCloseable {
     /**
      * Change the state of bookie to Writable mode.
      */
-    void transitionToWritableMode();
+    Future<Void> transitionToWritableMode();
 
     /**
      * Change the state of bookie to ReadOnly mode.
      */
-    void transitionToReadOnlyMode();
+    Future<Void> transitionToReadOnlyMode();
 
     /**
      * ShutdownHandler used to shutdown bookie.

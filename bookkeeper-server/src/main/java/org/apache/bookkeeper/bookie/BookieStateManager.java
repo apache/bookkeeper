@@ -21,6 +21,8 @@
 
 package org.apache.bookkeeper.bookie;
 
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_LEDGER_SCOPE;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SERVER_STATUS;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.IOException;
@@ -33,11 +35,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.discover.ZKRegistrationManager;
+import org.apache.bookkeeper.stats.Gauge;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.util.DiskChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A implementation of StateManager.
+ * An implementation of StateManager.
  */
 public class BookieStateManager implements StateManager {
     private static final Logger LOG = LoggerFactory.getLogger(BookieStateManager.class);
@@ -61,13 +67,45 @@ public class BookieStateManager implements StateManager {
     private final String bookieId;
     private ShutdownHandler shutdownHandler;
     private RegistrationManager registrationManager;
+    // Expose Stats
+    private final StatsLogger statsLogger;
 
 
-    public BookieStateManager(ServerConfiguration conf, RegistrationManager registrationManager,
-                              LedgerDirsManager ledgerDirsManager) throws IOException {
+    public BookieStateManager(ServerConfiguration conf, StatsLogger statsLogger,
+           RegistrationManager registrationManager, LedgerDirsManager ledgerDirsManager) throws IOException {
         this.conf = conf;
+        this.statsLogger = statsLogger;
         this.registrationManager = registrationManager;
         this.ledgerDirsManager = ledgerDirsManager;
+        // ZK ephemeral node for this Bookie.
+        this.bookieId = getMyId();
+        // 1 : up, 0 : readonly, -1 : unregistered
+        statsLogger.registerGauge(SERVER_STATUS, new Gauge<Number>() {
+            @Override
+            public Number getDefaultValue() {
+                return 0;
+            }
+
+            @Override
+            public Number getSample() {
+                if (!rmRegistered.get()){
+                    return -1;
+                } else if (forceReadOnly.get() || bookieStatus.isInReadOnlyMode()) {
+                    return 0;
+                } else {
+                    return 1;
+                }
+            }
+        });
+    }
+
+    @VisibleForTesting
+    BookieStateManager(ServerConfiguration conf, RegistrationManager registrationManager) throws IOException {
+        this.conf = conf;
+        this.registrationManager = registrationManager;
+        this.statsLogger = null;
+        this.ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(), new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()),
+                NullStatsLogger.INSTANCE);
         // ZK ephemeral node for this Bookie.
         this.bookieId = getMyId();
     }
@@ -94,25 +132,8 @@ public class BookieStateManager implements StateManager {
     }
 
     @Override
-    public void forceToShutDown(){
-        this.running = false;
-    }
-
-    @Override
     public void forceToUnregistered(){
         this.rmRegistered.set(false);
-    }
-
-    // 1 : up, 0 : readonly, -1 : unregistered, used for stats
-    @Override
-    public int getState(){
-        if (!rmRegistered.get()){
-            return -1;
-        } else if (forceReadOnly.get() || bookieStatus.isInReadOnlyMode()) {
-            return 0;
-        } else {
-            return 1;
-        }
     }
 
     @Override
@@ -128,9 +149,14 @@ public class BookieStateManager implements StateManager {
     public boolean isShuttingDown(){
         return shuttingdown;
     }
+    @VisibleForTesting
+    boolean isRegistered(){
+        return rmRegistered.get();
+    }
 
     @Override
     public void close() {
+        this.running = false;
         stateService.shutdown();
     }
 
@@ -155,13 +181,25 @@ public class BookieStateManager implements StateManager {
     }
 
     @Override
-    public void transitionToWritableMode() {
-        stateService.execute(() -> doTransitionToWritableMode());
+    public Future<Void> transitionToWritableMode() {
+        return stateService.submit(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception{
+                doTransitionToWritableMode();
+                return null;
+            }
+        });
     }
 
     @Override
-    public void transitionToReadOnlyMode() {
-        stateService.execute(() -> doTransitionToReadOnlyMode());
+    public Future<Void> transitionToReadOnlyMode() {
+        return stateService.submit(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception{
+                doTransitionToReadOnlyMode();
+                return null;
+            }
+        });
     }
 
     void doRegisterBookie() throws IOException {
@@ -262,6 +300,10 @@ public class BookieStateManager implements StateManager {
     @VisibleForTesting
     public void setRegistrationManager(RegistrationManager rm) {
         this.registrationManager = rm;
+    }
+    @VisibleForTesting
+    public ShutdownHandler getShutdownHandler(){
+        return shutdownHandler;
     }
     private String getMyId() throws UnknownHostException {
         return Bookie.getBookieAddress(conf).toString();

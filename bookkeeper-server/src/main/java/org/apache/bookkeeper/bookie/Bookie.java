@@ -30,7 +30,6 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_INDEX_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.LD_LEDGER_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.READ_BYTES;
-import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SERVER_STATUS;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.WRITE_BYTES;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -77,7 +76,6 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNS;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.Counter;
-import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -229,13 +227,13 @@ public class Bookie extends BookieCriticalThread {
     }
 
     @VisibleForTesting
-    public synchronized void setRegistrationManager(RegistrationManager rm) {
+    public void setRegistrationManager(RegistrationManager rm) {
             this.registrationManager = rm;
             this.getStateManager().setRegistrationManager(rm);
     }
 
     @VisibleForTesting
-    public synchronized RegistrationManager getRegistrationManager() {
+    public RegistrationManager getRegistrationManager() {
         return this.registrationManager;
     }
 
@@ -651,7 +649,7 @@ public class Bookie extends BookieCriticalThread {
         } catch (KeeperException e) {
             throw new MetadataStoreException("Failed to initialize ledger manager", e);
         }
-        stateManager = new BookieStateManager(conf, registrationManager, ledgerDirsManager);
+        stateManager = new BookieStateManager(conf, statsLogger, registrationManager, ledgerDirsManager);
         // register shutdown handler using trigger mode
         stateManager.setShutdownHandler(exitCode -> triggerBookieShutdown(exitCode));
         // Initialise ledgerDirMonitor. This would look through all the
@@ -722,18 +720,6 @@ public class Bookie extends BookieCriticalThread {
         readEntryStats = statsLogger.getOpStatsLogger(BOOKIE_READ_ENTRY);
         addBytesStats = statsLogger.getOpStatsLogger(BOOKIE_ADD_ENTRY_BYTES);
         readBytesStats = statsLogger.getOpStatsLogger(BOOKIE_READ_ENTRY_BYTES);
-        // 1 : up, 0 : readonly, -1 : unregistered
-        statsLogger.registerGauge(SERVER_STATUS, new Gauge<Number>() {
-            @Override
-            public Number getDefaultValue() {
-                return 0;
-            }
-
-            @Override
-            public Number getSample() {
-               return stateManager.getState();
-            }
-        });
     }
 
     void readJournal() throws IOException, BookieException {
@@ -1046,8 +1032,6 @@ public class Bookie extends BookieCriticalThread {
                     idxMonitor.shutdown();
                 }
 
-                // close the stateManager
-                stateManager.close();
             }
             // Shutdown the ZK client
             if (registrationManager != null) {
@@ -1058,7 +1042,7 @@ public class Bookie extends BookieCriticalThread {
         } finally {
             // setting running to false here, so watch thread
             // in bookie server know it only after bookie shut down
-            stateManager.forceToShutDown();
+            stateManager.close();
         }
         return this.exitCode;
     }

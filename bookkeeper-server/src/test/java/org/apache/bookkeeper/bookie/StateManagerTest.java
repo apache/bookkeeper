@@ -20,7 +20,7 @@
  */
 package org.apache.bookkeeper.bookie;
 
-import static org.junit.Assert.assertEquals;
+import static org.apache.bookkeeper.bookie.BookieException.Code.MetadataStoreException;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import java.io.File;
@@ -47,13 +47,16 @@ public class StateManagerTest extends BookKeeperClusterTestCase {
 
     @Rule
     public final TestName runtime = new TestName();
+    final ServerConfiguration conf;
     MockZKRegistrationManager rm;
 
-    public StateManagerTest() {
+    public StateManagerTest(){
         super(0);
         String ledgersPath = "/" + "ledgers" + runtime.getMethodName();
         baseClientConf.setZkLedgersRootPath(ledgersPath);
         baseConf.setZkLedgersRootPath(ledgersPath);
+        conf = TestBKConfiguration.newServerConfiguration();
+
     }
 
     @Override
@@ -61,6 +64,11 @@ public class StateManagerTest extends BookKeeperClusterTestCase {
         super.setUp();
         zkUtil.createBKEnsemble("/" + runtime.getMethodName());
         rm = new MockZKRegistrationManager();
+        File tmpDir = createTempDir("stateManger", "test");
+        conf.setJournalDirName(tmpDir.getPath())
+                .setLedgerDirNames(new String[] { tmpDir.getPath() })
+                .setJournalDirName(tmpDir.toString())
+                .setZkServers(zkUtil.getZooKeeperConnectString());
     }
 
     @Override
@@ -79,7 +87,7 @@ public class StateManagerTest extends BookKeeperClusterTestCase {
         @Override
         public void registerBookie(String bookieId, boolean readOnly) throws BookieException {
             if (registerFailed) {
-                throw BookieException.create(-100);
+                throw BookieException.create(MetadataStoreException);
             }
             super.registerBookie(bookieId, readOnly);
         }
@@ -97,6 +105,7 @@ public class StateManagerTest extends BookKeeperClusterTestCase {
         final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(tmpDir.getPath())
             .setLedgerDirNames(new String[] { tmpDir.getPath() })
+            .setJournalDirName(tmpDir.toString())
             .setZkServers(zkUtil.getZooKeeperConnectString());
 
         BookieServer bkServer = new BookieServer(conf) {
@@ -106,7 +115,6 @@ public class StateManagerTest extends BookKeeperClusterTestCase {
                 Bookie bookie = new Bookie(conf);
                 rm.setRegisterFail(true);
                 rm.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
-                LOG.info(" is {} ", zkc == null);
                 bookie.setRegistrationManager(rm);
                 return bookie;
             }
@@ -121,50 +129,78 @@ public class StateManagerTest extends BookKeeperClusterTestCase {
      * StateManager can transition between writable mode and readOnly mode if it was not created with readOnly mode.
      */
     @Test
-    public void testBookieTransitions() throws Exception {
-        File tmpDir = createTempDir("stateManger", "test");
+    public void testNormalBookieTransitions() throws Exception {
+        BookieStateManager stateManager = new BookieStateManager(conf, rm);
+        rm.initialize(conf, () -> {
+            stateManager.forceToUnregistered();
+            // schedule a re-register operation
+            stateManager.registerBookie(false);
+        }, NullStatsLogger.INSTANCE);
 
-        final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
-        conf.setJournalDirName(tmpDir.getPath())
-                .setLedgerDirNames(new String[] { tmpDir.getPath() })
-                .setZkServers(zkUtil.getZooKeeperConnectString());
-        Bookie bookie = new Bookie(conf);
-        bookie.start();
-        assertTrue(bookie.isRunning());
+        stateManager.initState();
+        stateManager.registerBookie(true).get();
 
-        bookie.getStateManager().transitionToReadOnlyMode();
-        //sleep a little to wait transition finish
-        Thread.sleep(1000);
-        assertTrue(bookie.isRunning());
-        assertTrue(bookie.isReadOnly());
+        assertTrue(stateManager.isRunning());
+        assertTrue(stateManager.isRegistered());
 
-        bookie.getStateManager().transitionToWritableMode();
-        Thread.sleep(1000);
-        assertTrue(bookie.isRunning());
-        assertFalse(bookie.isReadOnly());
+        stateManager.transitionToReadOnlyMode().get();
+        assertTrue(stateManager.isReadOnly());
 
-        bookie.shutdown();
-        assertFalse(bookie.isRunning());
+        stateManager.transitionToWritableMode().get();
+        assertTrue(stateManager.isRunning());
+        assertFalse(stateManager.isReadOnly());
 
-        // readOnly disabled bk
+        stateManager.close();
+        assertFalse(stateManager.isRunning());
+    }
+
+    @Test
+    public void testReadOnlyDisableBookieTransitions() throws Exception {
         conf.setReadOnlyModeEnabled(false);
-        Bookie bookie2 = new Bookie(conf);
-        bookie2.start();
-        assertTrue(bookie2.isRunning());
+        // readOnly disabled bk stateManager
+        BookieStateManager stateManager = new BookieStateManager(conf, rm);
+        // simulate sync shutdown logic in bookie
+        stateManager.setShutdownHandler(new StateManager.ShutdownHandler() {
+            @Override
+            public void shutdown(int code) {
+                try {
+                    if (stateManager.isRunning()) {
+                        stateManager.forceToShuttingDown();
+                        stateManager.forceToReadOnly();
+                    }
 
-        bookie2.getStateManager().transitionToReadOnlyMode();
-        //sleep a little to wait transition finish
-        Thread.sleep(1000);
-        // bookie2 will shutdown
-        assertFalse(bookie2.isRunning());
+                } finally {
+                    stateManager.close();
+                }
+            }
+        });
+        rm.initialize(conf, () -> {
+            stateManager.forceToUnregistered();
+            // schedule a re-register operation
+            stateManager.registerBookie(false);
+        }, NullStatsLogger.INSTANCE);
+
+        stateManager.initState();
+        stateManager.registerBookie(true).get();
+        assertTrue(stateManager.isRunning());
+
+        stateManager.transitionToReadOnlyMode().get();
+        // stateManager2 will shutdown
+        assertFalse(stateManager.isRunning());
         // different dimension of bookie state: running <--> down, read <--> write, unregistered <--> registered
         // bookie2 is set to readOnly when shutdown
-        assertTrue(bookie2.isReadOnly());
+        assertTrue(stateManager.isReadOnly());
 
-        // readOnlybk
+    }
+
+    @Test
+    public void testReadOnlyBookieTransitions() throws Exception{
+        // readOnlybk, which use override stateManager impl
+        File tmpDir = createTempDir("stateManger", "test-readonly");
         final ServerConfiguration readOnlyConf = TestBKConfiguration.newServerConfiguration();
         readOnlyConf.setJournalDirName(tmpDir.getPath())
                 .setLedgerDirNames(new String[] { tmpDir.getPath() })
+                .setJournalDirName(tmpDir.toString())
                 .setZkServers(zkUtil.getZooKeeperConnectString())
                 .setForceReadOnlyBookie(true);
         ReadOnlyBookie readOnlyBookie = new ReadOnlyBookie(readOnlyConf, NullStatsLogger.INSTANCE);
@@ -173,8 +209,7 @@ public class StateManagerTest extends BookKeeperClusterTestCase {
         assertTrue(readOnlyBookie.isReadOnly());
 
         // transition has no effect if bookie start with readOnly mode
-        readOnlyBookie.getStateManager().transitionToWritableMode();
-        Thread.sleep(1000);
+        readOnlyBookie.getStateManager().transitionToWritableMode().get();
         assertTrue(readOnlyBookie.isRunning());
         assertTrue(readOnlyBookie.isReadOnly());
         readOnlyBookie.shutdown();
@@ -186,22 +221,39 @@ public class StateManagerTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testRegistration() throws Exception {
-        File tmpDir = createTempDir("stateManger", "test");
+        BookieStateManager stateManager = new BookieStateManager(conf, rm);
+        rm.initialize(conf, () -> {
+            stateManager.forceToUnregistered();
+            // schedule a re-register operation
+            stateManager.registerBookie(false);
+        }, NullStatsLogger.INSTANCE);
+        // simulate sync shutdown logic in bookie
+        stateManager.setShutdownHandler(new StateManager.ShutdownHandler() {
+            @Override
+            public void shutdown(int code) {
+                try {
+                    if (stateManager.isRunning()) {
+                        stateManager.forceToShuttingDown();
+                        stateManager.forceToReadOnly();
+                    }
 
-        final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
-        conf.setJournalDirName(tmpDir.getPath())
-                .setLedgerDirNames(new String[] { tmpDir.getPath() })
-                .setZkServers(zkUtil.getZooKeeperConnectString());
-        Bookie bookie = new Bookie(conf);
-        // -1: unregistered
-        assertEquals(-1, bookie.getStateManager().getState());
-        bookie.start();
-        assertTrue(bookie.isRunning());
-        // 1: up
-        assertEquals(1, bookie.getStateManager().getState());
-        bookie.shutdown();
-        // 0: readOnly
-        assertEquals(0, bookie.getStateManager().getState());
+                } finally {
+                    stateManager.close();
+                }
+            }
+        });
+        stateManager.initState();
+        // up
+        assertTrue(stateManager.isRunning());
+        // unregistered
+        assertFalse(stateManager.isRegistered());
+
+        stateManager.registerBookie(true).get();
+        // registered
+        assertTrue(stateManager.isRegistered());
+        stateManager.getShutdownHandler().shutdown(ExitCode.OK);
+        // readOnly
+        assertTrue(stateManager.isReadOnly());
     }
 
 }

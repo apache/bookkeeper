@@ -41,7 +41,7 @@ public class ReadOnlyBookie extends Bookie {
     public ReadOnlyBookie(ServerConfiguration conf, StatsLogger statsLogger)
             throws IOException, KeeperException, InterruptedException, BookieException {
         super(conf, statsLogger);
-        stateManager = new BookieStateManager(conf, registrationManager, getLedgerDirsManager()) {
+        stateManager = new BookieStateManager(conf, statsLogger, registrationManager, getLedgerDirsManager()) {
 
             @Override
             public void doTransitionToWritableMode() {
