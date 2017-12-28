@@ -30,6 +30,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 class FileInfoBackingCache {
+    static final int DEAD_REF = -0xdead;
+
     final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     final ConcurrentHashMap<Long, CachedFileInfo> fileInfos = new ConcurrentHashMap<>();
     final FileLoader fileLoader;
@@ -43,7 +45,14 @@ class FileInfoBackingCache {
         try {
             CachedFileInfo fi = fileInfos.get(ledgerId);
             if (fi != null) {
-                fi.retain();  // caller of loadFileInfo owns this reference
+                // tryRetain only fails if #markDead() has been called
+                // on fi. This is only called from within the write lock,
+                // and if it is called (and succeeds) the fi will have been
+                // removed from fileInfos at the same time, so we should not
+                // have been able to get a reference to it here.
+                // The caller of loadFileInfo owns the refence, and is
+                // responsible for calling the corresponding #release().
+                assert(fi.tryRetain());
                 return fi;
             }
         } finally {
@@ -57,7 +66,8 @@ class FileInfoBackingCache {
             CachedFileInfo fi = new CachedFileInfo(ledgerId, backingFile, masterKey);
             fileInfos.put(ledgerId, fi);
 
-            fi.retain(); // caller of loadFileInfo owns this reference
+            // see comment above for why we assert
+            assert(fi.tryRetain());
             return fi;
         } finally {
             lock.writeLock().unlock();
@@ -67,16 +77,7 @@ class FileInfoBackingCache {
     private void releaseFileInfo(long ledgerId, CachedFileInfo fileInfo) {
         lock.writeLock().lock();
         try {
-            /* RefCount may have been incremented between the call
-             * to decrementAndGet in CachedFileInfo#release and getting
-             * to this point in the code, so check it again.
-             * If the refCount for a fileInfo is 0, it means that the only
-             * object referencing it is the fileInfos map. Acquiring the
-             * fileInfo from the map is done under the lock, so if the
-             * refcount is 0 here, we'll be able to remove it from the
-             * map before anyone has a chance to increment it.
-             */
-            if (fileInfo.getRefCount() == 0) {
+            if (fileInfo.markDead()) {
                 fileInfo.close(true);
                 fileInfos.remove(ledgerId, fileInfo);
             }
@@ -104,8 +105,42 @@ class FileInfoBackingCache {
             this.refCount = new AtomicInteger(0);
         }
 
-        void retain() {
-            refCount.incrementAndGet();
+        /**
+         * Mark this fileinfo as dead. We can only mark a fileinfo as
+         * dead if noone currently holds a reference to it.
+         *
+         * @return true if we marked as dead, false otherwise
+         */
+        private boolean markDead() {
+            return refCount.compareAndSet(0, DEAD_REF);
+        }
+
+        /**
+         * Attempt to retain the file info.
+         * When a client obtains a fileinfo from a container object,
+         * but that container object may release the fileinfo before
+         * the client has a chance to call retain. In this case, the
+         * file info could be releases and the destroyed before we ever
+         * get a chance to use it.
+         *
+         * <p>tryRetain avoids this problem, by doing a compare-and-swap on
+         * the reference count. If the refCount is negative, it means that
+         * the fileinfo is being cleaned up, and this fileinfo object should
+         * not be used. This works in tandem with #markDead, which will only
+         * set the refCount to negative if noone currently has it retained
+         * (i.e. the refCount is 0).
+         *
+         * @return true if we managed to increment the refcount, false otherwise
+         */
+        boolean tryRetain() {
+            while (true) {
+                int count = refCount.get();
+                if (count < 0) {
+                    return false;
+                } else if (refCount.compareAndSet(count, count + 1)) {
+                    return true;
+                }
+            }
         }
 
         int getRefCount() {
@@ -116,6 +151,14 @@ class FileInfoBackingCache {
             if (refCount.decrementAndGet() == 0) {
                 releaseFileInfo(ledgerId, this);
             }
+        }
+
+        @Override
+        public String toString() {
+            return "CachedFileInfo(ledger=" + ledgerId
+                + ",refCount=" + refCount.get()
+                + ",closed=" + isClosed()
+                + ",id=" + System.identityHashCode(this) + ")";
         }
     }
 

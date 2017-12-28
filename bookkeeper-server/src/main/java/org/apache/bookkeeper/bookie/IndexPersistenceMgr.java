@@ -215,12 +215,14 @@ public class IndexPersistenceMgr {
                 activeLedgers.put(ledger, true);
                 return fileInfo;
             };
-            if (null != masterKey) {
-                fi = writeFileInfoCache.get(ledger, loader);
-            } else {
-                fi = readFileInfoCache.get(ledger, loader);
-            }
-            fi.retain();
+            do {
+                if (null != masterKey) {
+                    fi = writeFileInfoCache.get(ledger, loader);
+                } else {
+                    fi = readFileInfoCache.get(ledger, loader);
+                }
+            } while (!fi.tryRetain());
+
             return fi;
         } catch (ExecutionException | UncheckedExecutionException ee) {
             if (ee.getCause() instanceof IOException) {

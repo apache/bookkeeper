@@ -59,7 +59,7 @@ public class TestFileInfoBackingCache {
     final byte[] masterKey = new byte[0];
     final File baseDir;
     final ThreadFactory threadFactory = new ThreadFactoryBuilder()
-        .setNameFormat("backing-cache-test-").setDaemon(true).build();
+        .setNameFormat("backing-cache-test-%d").setDaemon(true).build();
     ExecutorService executor;
 
     public TestFileInfoBackingCache() throws Exception {
@@ -102,10 +102,10 @@ public class TestFileInfoBackingCache {
         fi.release();
         fi3.release();
 
-        Assert.assertEquals(fi.getRefCount(), 0);
+        Assert.assertEquals(fi.getRefCount(), FileInfoBackingCache.DEAD_REF);
         CachedFileInfo fi4 = cache.loadFileInfo(1, null);
         Assert.assertFalse(fi4 == fi);
-        Assert.assertEquals(fi.getRefCount(), 0);
+        Assert.assertEquals(fi.getRefCount(), FileInfoBackingCache.DEAD_REF);
         Assert.assertEquals(fi4.getRefCount(), 1);
         Assert.assertEquals(fi.getLf(), fi4.getLf());
     }
@@ -167,10 +167,15 @@ public class TestFileInfoBackingCache {
         Thread.sleep(TimeUnit.SECONDS.toMillis(10));
         done.set(true);
 
+        // ensure all threads are finished operating on cache, before checking any
+        for (Future<Set<CachedFileInfo>> f : futures) {
+            f.get();
+        }
+
         for (Future<Set<CachedFileInfo>> f : futures) {
             for (CachedFileInfo fi : f.get()) {
                 Assert.assertTrue(fi.isClosed());
-                Assert.assertEquals(0, fi.getRefCount());
+                Assert.assertEquals(FileInfoBackingCache.DEAD_REF, fi.getRefCount());
             }
         }
 
@@ -209,10 +214,15 @@ public class TestFileInfoBackingCache {
         Thread.sleep(TimeUnit.SECONDS.toMillis(10));
         done.set(true);
 
+        // ensure all threads are finished operating on cache, before checking any
+        for (Future<Set<CachedFileInfo>> f : futures) {
+            f.get();
+        }
+
         for (Future<Set<CachedFileInfo>> f : futures) {
             for (CachedFileInfo fi : f.get()) {
                 Assert.assertTrue(fi.isClosed());
-                Assert.assertEquals(0, fi.getRefCount());
+                Assert.assertEquals(FileInfoBackingCache.DEAD_REF, fi.getRefCount());
             }
         }
     }
@@ -242,12 +252,15 @@ public class TestFileInfoBackingCache {
                         Callable<Set<CachedFileInfo>> c = () -> {
                             Set<CachedFileInfo> allFileInfos = new HashSet<>();
                             while (!done.get()) {
-                                CachedFileInfo fi = guavaCache.get(
-                                        i, () -> cache.loadFileInfo(i, masterKey));
-                                allFileInfos.add(fi);
+                                CachedFileInfo fi = null;
 
-                                Thread.sleep(100);
-                                fi.retain();
+                                do {
+                                    fi = guavaCache.get(
+                                            i, () -> cache.loadFileInfo(i, masterKey));
+                                    allFileInfos.add(fi);
+                                    Thread.sleep(100);
+                                } while (!fi.tryRetain());
+
                                 Assert.assertFalse(fi.isClosed());
                                 fi.release();
                             }
@@ -258,12 +271,16 @@ public class TestFileInfoBackingCache {
         Thread.sleep(TimeUnit.SECONDS.toMillis(10));
         done.set(true);
 
+        // ensure all threads are finished operating on cache, before checking any
+        for (Future<Set<CachedFileInfo>> f : futures) {
+            f.get();
+        }
         guavaCache.invalidateAll();
 
         for (Future<Set<CachedFileInfo>> f : futures) {
             for (CachedFileInfo fi : f.get()) {
                 Assert.assertTrue(fi.isClosed());
-                Assert.assertEquals(0, fi.getRefCount());
+                Assert.assertEquals(FileInfoBackingCache.DEAD_REF, fi.getRefCount());
             }
         }
 
