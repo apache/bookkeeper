@@ -131,7 +131,7 @@ public class Bookie extends BookieCriticalThread {
 
     private final ConcurrentLongHashMap<byte[]> masterKeyCache = new ConcurrentLongHashMap<>();
 
-    StateManager stateManager;
+    protected StateManager stateManager;
 
     // Expose Stats
     private final StatsLogger statsLogger;

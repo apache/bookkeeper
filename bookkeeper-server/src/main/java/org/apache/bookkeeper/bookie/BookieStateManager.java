@@ -100,14 +100,9 @@ public class BookieStateManager implements StateManager {
 
     @VisibleForTesting
     BookieStateManager(ServerConfiguration conf, RegistrationManager registrationManager) throws IOException {
-        this.conf = conf;
-        this.registrationManager = registrationManager;
-        this.statsLogger = null;
-        this.ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+        this(conf, NullStatsLogger.INSTANCE, registrationManager, new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()),
-                NullStatsLogger.INSTANCE);
-        // ZK ephemeral node for this Bookie.
-        this.bookieId = getMyId();
+                NullStatsLogger.INSTANCE));
     }
 
     @Override
