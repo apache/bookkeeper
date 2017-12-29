@@ -22,23 +22,29 @@ package org.apache.bookkeeper.bookie;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.powermock.api.support.membermodification.MemberMatcher.method;
 import static org.powermock.api.support.membermodification.MemberModifier.replace;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-
 import java.io.File;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.bookie.Journal.ForceWriteRequest;
 
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -49,6 +55,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
@@ -162,6 +170,87 @@ public class BookieJournalForceTest {
         }, null);
         assertTrue(latch.await(20, TimeUnit.SECONDS));
         assertEquals(2, countForceWriteCallsBeforeAck.get());
+
+        journal.shutdown();
+    }
+
+    @Test
+    public void testAckBeforeSyncSuspendingJournal() throws Exception {
+        File journalDir = tempDir.newFolder();
+        Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
+
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setJournalDirName(journalDir.getPath())
+            .setZkServers(null);
+
+        LedgerDirsManager ledgerDirsManager = mock(LedgerDirsManager.class);
+        Journal journal = new Journal(journalDir, conf, ledgerDirsManager);
+
+        CountDownLatch forceWriteThreadSuspendedIsWaiting = new CountDownLatch(1);
+        LinkedBlockingQueue<ForceWriteRequest> supportQueue = new LinkedBlockingQueue<>();
+        @SuppressWarnings("unchecked")
+        BlockingQueue<ForceWriteRequest> forceWriteRequests = mock(BlockingQueue.class);
+        AtomicBoolean forceWriteThreadSuspended = new AtomicBoolean(true);
+
+        doAnswer((Answer) (InvocationOnMock iom) -> {
+            supportQueue.put(iom.getArgument(0));
+            return null;
+        }).when(forceWriteRequests).put(any(ForceWriteRequest.class));
+
+        when(forceWriteRequests.take()).thenAnswer(new Answer<ForceWriteRequest>() {
+            @Override
+            public ForceWriteRequest answer(InvocationOnMock iom) throws Throwable {
+                forceWriteThreadSuspendedIsWaiting.countDown();
+                while (forceWriteThreadSuspended.get()) {
+                    Thread.sleep(100);
+                }
+                ForceWriteRequest res =  supportQueue.take();
+                while (forceWriteThreadSuspended.get()) {
+                    Thread.sleep(100);
+                }
+                return res;
+            }
+        });
+        Whitebox.setInternalState(journal, "forceWriteRequests", forceWriteRequests);
+        journal.start();
+        assertTrue(forceWriteThreadSuspendedIsWaiting.await(10, TimeUnit.SECONDS));
+
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicInteger countForceWriteCallsBeforeAck = new AtomicInteger();
+        replace(method(JournalChannel.class, "forceWrite")).with(new InvocationHandler() {
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                log.info("{} called with arguments {} ", method.getName(), Arrays.toString(args));
+                if (latch.getCount() == 1) {
+                    countForceWriteCallsBeforeAck.incrementAndGet();
+                }
+                try {
+                    method.invoke(proxy, args);
+                } catch (InvocationTargetException err) {
+                    throw err.getCause();
+                }
+                return null;
+            }
+        });
+
+        // wait for first file to be created
+        while (countForceWriteCallsBeforeAck.get() == 0) {
+            Thread.sleep(100);
+        }
+
+        long ledgerId = 1;
+        long entryId = 0;
+        journal.logAddEntry(ledgerId, entryId, DATA, true /* ackBeforeSync */, new WriteCallback() {
+            @Override
+            public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
+                latch.countDown();
+            }
+        }, null);
+        assertTrue(latch.await(20, TimeUnit.SECONDS));
+        assertTrue(supportQueue.isEmpty());
+        // let the forceWriteThread exit
+        forceWriteThreadSuspended.set(false);
+        assertEquals(1, countForceWriteCallsBeforeAck.get());
 
         journal.shutdown();
     }

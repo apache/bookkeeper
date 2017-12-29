@@ -330,7 +330,11 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         }
     }
 
-    private class ForceWriteRequest {
+    /**
+     * Token which represents the need to force a write to the Journal.
+     */
+    @VisibleForTesting
+    public class ForceWriteRequest {
         private JournalChannel logFile;
         private RecyclableArrayList<QueueEntry> forceWriteWaiters;
         private boolean shouldClose;
@@ -1114,7 +1118,14 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         return total;
     }
 
-    // used for mocking journal, we can't mock final method of java.lang.Thread class
+    //
+    /**
+     * Wait for the Journal thread to exit.
+     * This is method is needed in order to mock the journal, we can't mock final method of java.lang.Thread class
+     *
+     * @throws InterruptedException
+     */
+    @VisibleForTesting
     public void joinThread() throws InterruptedException {
         join();
     }
