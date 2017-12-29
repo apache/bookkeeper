@@ -140,13 +140,10 @@ public class BookieStateManager implements StateManager {
     public boolean isRunning(){
         return running;
     }
+
     @Override
     public boolean isShuttingDown(){
         return shuttingdown;
-    }
-    @VisibleForTesting
-    boolean isRegistered(){
-        return rmRegistered.get();
     }
 
     @Override
@@ -253,6 +250,7 @@ public class BookieStateManager implements StateManager {
             return;
         }
     }
+
     @VisibleForTesting
     public void doTransitionToReadOnlyMode() {
         if (shuttingdown) {
@@ -292,6 +290,10 @@ public class BookieStateManager implements StateManager {
         shutdownHandler = handler;
     }
 
+    private String getMyId() throws UnknownHostException {
+        return Bookie.getBookieAddress(conf).toString();
+    }
+
     @VisibleForTesting
     public void setRegistrationManager(RegistrationManager rm) {
         this.registrationManager = rm;
@@ -300,9 +302,9 @@ public class BookieStateManager implements StateManager {
     public ShutdownHandler getShutdownHandler(){
         return shutdownHandler;
     }
-    private String getMyId() throws UnknownHostException {
-        return Bookie.getBookieAddress(conf).toString();
+    @VisibleForTesting
+    boolean isRegistered(){
+        return rmRegistered.get();
     }
-
 }
 
