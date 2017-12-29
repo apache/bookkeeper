@@ -75,7 +75,7 @@ public class BookieWriteToJournalTest {
             .setLedgerDirNames(new String[]{ledgerDir.getPath()})
             .setZkServers(null);
         BookieSocketAddress bookieAddress = Bookie.getBookieAddress(conf);
-
+        CountDownLatch journalJoinLatch = new CountDownLatch(1);
         Journal journal = mock(Journal.class);
         Boolean[] effectiveAckBeforeSync = new Boolean[1];
         doAnswer((Answer) (InvocationOnMock iom) -> {
@@ -90,6 +90,12 @@ public class BookieWriteToJournalTest {
             callback.writeComplete(BKException.Code.OK, ledgerId, entryId, bookieAddress, ctx);
             return null;
         }).when(journal).logAddEntry(any(ByteBuf.class), anyBoolean(), any(WriteCallback.class), any());
+
+        // bookie will continue to work as soon as the journal thread is alive
+        doAnswer((Answer) (InvocationOnMock iom) -> {
+            journalJoinLatch.await();
+            return null;
+        }).when(journal).joinThread();
 
         whenNew(Journal.class).withAnyArguments().thenReturn(journal);
 
@@ -117,6 +123,8 @@ public class BookieWriteToJournalTest {
             assertEquals(ackBeforeSync, effectiveAckBeforeSync[0]);
             entryId++;
         }
+        // let bookie exit main thread
+        journalJoinLatch.countDown();
         b.shutdown();
     }
 }

@@ -1130,7 +1130,7 @@ public class Bookie extends BookieCriticalThread {
             // wait until journal quits
             for (Journal journal: journals) {
 
-                journal.join();
+                journal.joinThread();
             }
             LOG.info("Journal thread(s) quit.");
         } catch (InterruptedException ie) {

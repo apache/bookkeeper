@@ -1113,4 +1113,9 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         }
         return total;
     }
+
+    // used for mocking journal, we can't mock final method of java.lang.Thread class
+    public void joinThread() throws InterruptedException {
+        join();
+    }
 }
