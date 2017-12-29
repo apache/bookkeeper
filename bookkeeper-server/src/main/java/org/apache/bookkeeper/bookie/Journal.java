@@ -869,7 +869,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         LOG.info("Starting journal on {}", journalDirectory);
 
         RecyclableArrayList<QueueEntry> toFlush = entryListRecycler.newInstance();
-        int waitingFlush = 0;
+        int numEntriesToFlush = 0;
         ByteBuf lenBuff = Unpooled.buffer(4);
         ByteBuf paddingBuff = Unpooled.buffer(2 * conf.getJournalAlignmentSize());
         paddingBuff.writeZero(paddingBuff.capacity());
@@ -915,7 +915,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                                 TimeUnit.NANOSECONDS);
                     }
 
-                    if (waitingFlush == 0) {
+                    if (numEntriesToFlush == 0) {
                         qe = queue.take();
                         dequeueStartTime = MathUtils.nowInNano();
                         journalQueueStats.registerSuccessfulEvent(MathUtils.elapsedNanos(qe.enqueueTime),
@@ -952,7 +952,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                             shouldFlush = true;
                             flushMaxWaitCounter.inc();
                         } else if (qe != null
-                                && ((bufferedEntriesThreshold > 0 && waitingFlush > bufferedEntriesThreshold)
+                                && ((bufferedEntriesThreshold > 0 && numEntriesToFlush > toFlush.size())
                                 || (bc.position() > lastFlushPosition + bufferedWritesThreshold))) {
                             // 2. If we have buffered more than the buffWriteThreshold or bufferedEntriesThreshold
                             shouldFlush = true;
@@ -978,7 +978,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                                 QueueEntry entry = toFlush.get(i);
                                 if (entry != null && (!syncData || entry.ackBeforeSync)) {
                                     toFlush.set(i, null);
-                                    waitingFlush--;
+                                    numEntriesToFlush--;
                                     cbThreadPool.execute(entry);
                                 }
                             }
@@ -997,7 +997,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                                 }
                             }
 
-                            forceWriteBatchEntriesStats.registerSuccessfulValue(waitingFlush);
+                            forceWriteBatchEntriesStats.registerSuccessfulValue(numEntriesToFlush);
                             forceWriteBatchBytesStats.registerSuccessfulValue(batchSize);
 
                             boolean shouldRolloverJournal = (lastFlushPosition > maxJournalSize);
@@ -1007,12 +1007,12 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                                 forceWriteRequests.put(createForceWriteRequest(logFile, logId, lastFlushPosition,
                                                                                toFlush, shouldRolloverJournal, false));
                                 toFlush = entryListRecycler.newInstance();
-                                waitingFlush = 0;
+                                numEntriesToFlush = 0;
                             } else {
                                 // Data is already written on the file (though it might still be in the OS page-cache)
                                 lastLogMark.setCurLogMark(logId, lastFlushPosition);
                                 toFlush.clear();
-                                waitingFlush = 0;
+                                numEntriesToFlush = 0;
                                 if (shouldRolloverJournal) {
                                     forceWriteRequests.put(
                                             createForceWriteRequest(
@@ -1057,7 +1057,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 qe.entry.release();
 
                 toFlush.add(qe);
-                waitingFlush++;
+                numEntriesToFlush++;
                 qe = null;
             }
             logFile.close();
