@@ -20,22 +20,22 @@
  */
 package org.apache.bookkeeper.bookie;
 
-
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
-import static org.powermock.api.support.membermodification.MemberMatcher.method;
-import static org.powermock.api.support.membermodification.MemberModifier.replace;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.File;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.client.api.BKException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -44,6 +44,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -51,15 +53,9 @@ import org.powermock.modules.junit4.PowerMockRunner;
  * Test the bookie journal.
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({Journal.class})
+@PrepareForTest({Bookie.class})
 @Slf4j
 public class BookieWriteToJournalTest {
-
-    private static final ByteBuf DATA = Unpooled.buffer();
-    static {
-        DATA.writeLong(1); // ledgerId
-        DATA.writeLong(1); // entryId
-    }
 
     @Rule
     public TemporaryFolder tempDir = new TemporaryFolder();
@@ -69,6 +65,7 @@ public class BookieWriteToJournalTest {
      */
     @Test
     public void testJournalLogAddEntryCalledCorrectly() throws Exception {
+
         File journalDir = tempDir.newFolder();
         Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
         File ledgerDir = tempDir.newFolder();
@@ -77,35 +74,48 @@ public class BookieWriteToJournalTest {
         conf.setJournalDirName(journalDir.getPath())
             .setLedgerDirNames(new String[]{ledgerDir.getPath()})
             .setZkServers(null);
+        BookieSocketAddress bookieAddress = Bookie.getBookieAddress(conf);
+
+        Journal journal = mock(Journal.class);
+        Boolean[] effectiveAckBeforeSync = new Boolean[1];
+        doAnswer((Answer) (InvocationOnMock iom) -> {
+            ByteBuf entry = iom.getArgument(0);
+            long ledgerId = entry.getLong(entry.readerIndex() + 0);
+            long entryId = entry.getLong(entry.readerIndex() + 8);
+            boolean ackBeforeSync = iom.getArgument(1);
+            WriteCallback callback = iom.getArgument(2);
+            Object ctx = iom.getArgument(3);
+
+            effectiveAckBeforeSync[0] = ackBeforeSync;
+            callback.writeComplete(BKException.Code.OK, ledgerId, entryId, bookieAddress, ctx);
+            return null;
+        }).when(journal).logAddEntry(any(ByteBuf.class), anyBoolean(), any(WriteCallback.class), any());
+
+        whenNew(Journal.class).withAnyArguments().thenReturn(journal);
+
         Bookie b = new Bookie(conf);
         b.start();
-        Boolean[] effectiveAckBeforeSync = new Boolean[1];
-        replace(method(Journal.class, "logAddEntry", ByteBuf.class, Boolean.TYPE, WriteCallback.class, Object.class))
-                .with(new InvocationHandler() {
-            @Override
-            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                log.info("{} called with arguments {} ", method.getName(), Arrays.toString(args));
-                effectiveAckBeforeSync[0] = (Boolean) args[1];
-                try {
-                    method.invoke(proxy, args);
-                } catch (InvocationTargetException err) {
-                    throw err.getCause();
-                }
-                return null;
-            }
-        });
 
+        long ledgerId = 1;
+        long entryId = 0;
+        Object expectedCtx = "foo";
+        byte[] masterKey = new byte[64];
         for (boolean ackBeforeSync : new boolean[]{true, false}) {
             CountDownLatch latch = new CountDownLatch(1);
-            DATA.retain();
-            b.addEntry(DATA, ackBeforeSync, new WriteCallback() {
-                @Override
-                public void writeComplete(int rc, long ledgerId, long entryId, BookieSocketAddress addr, Object ctx) {
-                    latch.countDown();
-                }
-            }, null, new byte[]{});
+            final ByteBuf data = Unpooled.buffer();
+            data.writeLong(ledgerId);
+            data.writeLong(entryId);
+            final long expectedEntryId = entryId;
+            b.addEntry(data, ackBeforeSync, (int rc, long ledgerId1, long entryId1,
+                                             BookieSocketAddress addr, Object ctx) -> {
+                assertSame(expectedCtx, ctx);
+                assertEquals(ledgerId, ledgerId1);
+                assertEquals(expectedEntryId, entryId1);
+                latch.countDown();
+            }, expectedCtx, masterKey);
             assertTrue(latch.await(30, TimeUnit.SECONDS));
             assertEquals(ackBeforeSync, effectiveAckBeforeSync[0]);
+            entryId++;
         }
         b.shutdown();
     }
