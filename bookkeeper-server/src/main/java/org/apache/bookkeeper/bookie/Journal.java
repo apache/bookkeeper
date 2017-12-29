@@ -952,7 +952,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                             shouldFlush = true;
                             flushMaxWaitCounter.inc();
                         } else if (qe != null
-                                && ((bufferedEntriesThreshold > 0 && numEntriesToFlush > toFlush.size())
+                                && ((bufferedEntriesThreshold > 0 && toFlush.size() > bufferedEntriesThreshold)
                                 || (bc.position() > lastFlushPosition + bufferedWritesThreshold))) {
                             // 2. If we have buffered more than the buffWriteThreshold or bufferedEntriesThreshold
                             shouldFlush = true;
