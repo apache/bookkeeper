@@ -28,7 +28,6 @@
   <name>Apache BookKeeper :: Shaded :: bookkeeper-server-tests-shaded</name>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.libdir>${basedir}/lib</project.libdir>
   </properties>
   <dependencies>
     <dependency>
@@ -129,10 +128,6 @@
         <version>2.5</version>
 	<configuration>
 	  <filesets>
-            <fileset>
-              <directory>${project.libdir}</directory>
-              <followSymlinks>false</followSymlinks>
-            </fileset>
             <fileset>
               <directory>${project.basedir}</directory>
               <includes>
