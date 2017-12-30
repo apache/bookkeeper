@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
     <artifactId>shaded-parent</artifactId>
-    <version>4.7.0-SNAPSHOT</version>
+    <version>4.6.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
   <artifactId>bookkeeper-server-tests-shaded</artifactId>
@@ -98,7 +98,7 @@
             </configuration>
           </execution>
         </executions>
-      </plugin> 
+      </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>license-maven-plugin</artifactId>
