@@ -45,6 +45,7 @@ message LedgerMetadataFormat {
     enum DigestType {
         CRC32 = 1;
         HMAC = 2;
+        CRC32C = 3;
     }
     optional DigestType digestType = 7;
     optional bytes password = 8;

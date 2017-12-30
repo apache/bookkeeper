@@ -636,10 +636,19 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * report fake bytes with a mathching MAC unless it knows the password
      */
     public enum DigestType {
-        MAC, CRC32;
+        MAC, CRC32, CRC32C;
 
         public static DigestType fromApiDigestType(org.apache.bookkeeper.client.api.DigestType digestType) {
-            return digestType == org.apache.bookkeeper.client.api.DigestType.MAC ? MAC : CRC32;
+            switch (digestType) {
+                case MAC:
+                    return DigestType.MAC;
+                case CRC32:
+                    return DigestType.CRC32;
+                case CRC32C:
+                    return DigestType.CRC32C;
+                default:
+                    throw new IllegalArgumentException("Unable to convert digest type " + digestType);
+            }
         }
     }
 

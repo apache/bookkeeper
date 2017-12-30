@@ -119,7 +119,7 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
         this.metadataFormatVersion = CURRENT_METADATA_FORMAT_VERSION;
 
         this.digestType = digestType.equals(BookKeeper.DigestType.MAC)
-            ? LedgerMetadataFormat.DigestType.HMAC : LedgerMetadataFormat.DigestType.CRC32;
+            ? LedgerMetadataFormat.DigestType.HMAC : LedgerMetadataFormat.DigestType.valueOf(digestType.toString());
         this.password = Arrays.copyOf(password, password.length);
         this.hasPassword = true;
         if (customMetadata != null) {
@@ -230,10 +230,15 @@ public class LedgerMetadata implements org.apache.bookkeeper.client.api.LedgerMe
 
     @Override
     public DigestType getDigestType() {
-        if (digestType.equals(LedgerMetadataFormat.DigestType.HMAC)) {
-            return DigestType.MAC;
-        } else {
-            return DigestType.CRC32;
+        switch (digestType) {
+            case HMAC:
+                return DigestType.MAC;
+            case CRC32:
+                return DigestType.CRC32;
+            case CRC32C:
+                return DigestType.CRC32C;
+            default:
+                throw new IllegalArgumentException("Unable to convert digest type " + digestType);
         }
     }
 

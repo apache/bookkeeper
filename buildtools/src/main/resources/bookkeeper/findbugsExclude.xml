@@ -33,6 +33,10 @@
     <Class name="~org\.apache\.bookkeeper\.tests\.generated.*" />
   </Match>
   <Match>
+    <!-- generated code -->
+    <Class name="~org\.apache\.bookkeeper\.client\.generated.*"/>
+  </Match>
+  <Match>
     <!-- it is safe to store external bytes reference here. since we are using
          bytes from a slab. //-->
     <Class name="org.apache.bookkeeper.bookie.EntryKeyValue" />
