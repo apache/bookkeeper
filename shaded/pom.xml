@@ -15,36 +15,20 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <packaging>pom</packaging>
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
     <artifactId>bookkeeper</artifactId>
-    <version>4.6.0-SNAPSHOT</version>
+    <version>4.7.0-SNAPSHOT</version>
   </parent>
-  <groupId>org.apache.bookkeeper.tests</groupId>
-  <artifactId>tests-parent</artifactId>
-  <name>Apache BookKeeper :: Tests</name>
+  <groupId>org.apache.bookkeeper</groupId>
+  <artifactId>shaded-parent</artifactId>
+  <name>Apache BookKeeper :: Shaded :: Parent</name>
   <modules>
-    <module>bookkeeper-server-compat-4.0.0</module>
-    <module>bookkeeper-server-compat-4.1.0</module>
-    <module>bookkeeper-server-compat-4.2.0</module>
-    <module>backward</module>
-    <module>bookkeeper-server-shaded-artifact-test</module>
-    <module>bookkeeper-server-shaded-test</module>
-    <module>bookkeeper-server-tests-shaded-test</module>
+    <module>bookkeeper-server-shaded</module>
+    <module>bookkeeper-server-tests-shaded</module>
   </modules>
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-deploy-plugin</artifactId>
-        <version>${maven-deploy-plugin.version}</version>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
 </project>

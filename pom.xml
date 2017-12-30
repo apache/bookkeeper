@@ -58,6 +58,7 @@
     <module>bookkeeper-benchmark</module>
     <module>bookkeeper-stats-providers</module>
     <module>bookkeeper-http</module>
+    <module>shaded</module>
     <module>tests</module>
     <module>bookkeeper-dist</module>
   </modules>
