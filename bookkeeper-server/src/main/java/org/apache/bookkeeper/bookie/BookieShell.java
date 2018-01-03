@@ -259,9 +259,7 @@ public class BookieShell implements Tool {
             boolean interactive = (!cmdLine.hasOption("n"));
             boolean force = cmdLine.hasOption("f");
 
-            ClientConfiguration adminConf = new ClientConfiguration(bkConf);
-            boolean result = BookKeeperAdmin.format(adminConf, interactive,
-                    force);
+            boolean result = BookKeeperAdmin.format(bkConf, interactive, force);
             return (result) ? 0 : 1;
         }
     }

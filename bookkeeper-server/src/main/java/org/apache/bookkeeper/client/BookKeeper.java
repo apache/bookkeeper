@@ -45,7 +45,6 @@ import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.AsyncCallback.IsClosedCallback;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
-import org.apache.bookkeeper.client.BKException.ZKException;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCreateAdvCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCreateCallback;
@@ -516,8 +515,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         try {
             this.ledgerManagerFactory =
                 LedgerManagerFactory.newLedgerManagerFactory(conf, regClient.getLayoutManager());
-        } catch (KeeperException ke) {
-            throw new ZKException();
         } catch (IOException | InterruptedException e) {
             throw e;
         }

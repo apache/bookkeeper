@@ -474,10 +474,10 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         } catch (Exception e) {
             // shouldn't be able to start
         }
-        ClientConfiguration clientConf = new ClientConfiguration();
-        clientConf.setZkServers(zkUtil.getZooKeeperConnectString());
-        clientConf.setZkLedgersRootPath(zkRoot);
-        BookKeeperAdmin.format(clientConf, false, false);
+        ServerConfiguration adminConf = new ServerConfiguration();
+        adminConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        adminConf.setZkLedgersRootPath(zkRoot);
+        BookKeeperAdmin.format(adminConf, false, false);
 
         Bookie b = new Bookie(conf);
         b.shutdown();

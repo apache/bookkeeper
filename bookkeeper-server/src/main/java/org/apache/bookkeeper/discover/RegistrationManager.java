@@ -127,5 +127,5 @@ public interface RegistrationManager extends LayoutManager, AutoCloseable {
      * @param conf the conf
      * @return Returns true if success do format, false if not.
      */
-    boolean doFormat(ServerConfiguration conf) throws Exception;
+    boolean format(ServerConfiguration conf) throws Exception;
 }

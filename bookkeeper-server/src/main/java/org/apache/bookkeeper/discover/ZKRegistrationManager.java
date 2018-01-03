@@ -472,7 +472,7 @@ public class ZKRegistrationManager implements RegistrationManager {
     }
 
     @Override
-    public boolean doFormat(ServerConfiguration conf) throws Exception {
+    public boolean format(ServerConfiguration conf) throws Exception {
         // Clear underreplicated ledgers
         try (ZooKeeper zk = ZooKeeperClient.newBuilder()
             .connectString(conf.getZkServers())

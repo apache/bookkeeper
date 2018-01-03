@@ -49,7 +49,6 @@ public class GetLedgerMetaService implements HttpEndpointService {
 
     protected ServerConfiguration conf;
     protected LayoutManager layoutManager;
-    // TODO: remove zk?
     public GetLedgerMetaService(ServerConfiguration conf, LayoutManager layoutManager) {
         checkNotNull(conf);
         this.conf = conf;

@@ -117,6 +117,10 @@ public interface RegistrationClient extends LayoutManager, AutoCloseable {
      */
     void unwatchReadOnlyBookies(RegistrationListener listener);
 
-    // TODO:
+    /**
+     * Gets layout manager.
+     *
+     * @return the layout manager
+     */
     LayoutManager getLayoutManager();
 }

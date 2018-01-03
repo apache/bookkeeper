@@ -106,7 +106,7 @@ public abstract class LedgerManagerFactory {
      */
     public static LedgerManagerFactory newLedgerManagerFactory(
         final AbstractConfiguration<?> conf, LayoutManager layoutManager)
-            throws IOException, KeeperException, InterruptedException {
+            throws IOException, InterruptedException {
         Class<? extends LedgerManagerFactory> factoryClass;
         try {
             factoryClass = conf.getLedgerManagerFactoryClass();
@@ -195,7 +195,7 @@ public abstract class LedgerManagerFactory {
     private static LedgerManagerFactory createNewLMFactory(
             final AbstractConfiguration conf, final LayoutManager layoutManager,
             Class<? extends LedgerManagerFactory> factoryClass)
-            throws IOException, KeeperException, InterruptedException {
+            throws IOException, InterruptedException {
 
         LedgerManagerFactory lmFactory;
         LedgerLayout layout;

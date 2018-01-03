@@ -1119,13 +1119,11 @@ public class BookKeeperAdmin implements AutoCloseable {
      *            removed without prompt.
      * @return Returns true if format succeeds else false.
      */
-    public static boolean format(ClientConfiguration conf,
+    public static boolean format(ServerConfiguration conf,
             boolean isInteractive, boolean force) throws Exception {
 
         try (RegistrationManager rm = new ZKRegistrationManager()) {
-            ServerConfiguration formatConf = new ServerConfiguration(conf);
-
-            boolean ledgerRootExists = rm.prepareFormat(formatConf);
+            boolean ledgerRootExists = rm.prepareFormat(conf);
 
             // If old data was there then confirm with admin.
             boolean doFormat = true;
@@ -1150,10 +1148,10 @@ public class BookKeeperAdmin implements AutoCloseable {
                 return false;
             }
 
-            BookKeeper bkc = new BookKeeper(conf);
-            bkc.ledgerManagerFactory.format(formatConf, bkc.regClient.getLayoutManager());
+            BookKeeper bkc = new BookKeeper(new ClientConfiguration(conf));
+            bkc.ledgerManagerFactory.format(conf, bkc.regClient.getLayoutManager());
 
-            return rm.doFormat(formatConf);
+            return rm.format(conf);
         }
     }
 

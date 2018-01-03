@@ -643,7 +643,7 @@ public class Bookie extends BookieCriticalThread {
                 ledgerManagerFactory = null;
                 ledgerManager = null;
             }
-        } catch (KeeperException e) {
+        } catch (IOException | InterruptedException e) {
             throw new MetadataStoreException("Failed to initialize ledger manager", e);
         }
         stateManager = new BookieStateManager(conf, statsLogger, registrationManager, ledgerDirsManager);
