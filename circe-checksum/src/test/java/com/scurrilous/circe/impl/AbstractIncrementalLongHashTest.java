@@ -15,37 +15,39 @@
  ******************************************************************************/
 package com.scurrilous.circe.impl;
 
-import static org.testng.Assert.*;
-
-import java.nio.ByteBuffer;
-
-import mockit.Expectations;
-import mockit.Mocked;
-
-import org.testng.annotations.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.scurrilous.circe.StatefulHash;
-import com.scurrilous.circe.impl.AbstractIncrementalLongHash;
+import java.nio.ByteBuffer;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
 
 @SuppressWarnings("javadoc")
 public class AbstractIncrementalLongHashTest {
 
-    @Mocked
     private AbstractIncrementalLongHash hash;
+
+    @Before
+    public void setup() {
+        this.hash = mock(AbstractIncrementalLongHash.class, Mockito.CALLS_REAL_METHODS);
+    }
 
     @Test
     public void testAsStateful() {
         final byte[] input = new byte[10];
-        new Expectations(hash) {
-            {
-                hash.algorithm();
-                hash.length();
-                hash.initial();
-                result = 0x4200000000L;
-                hash.resumeUnchecked(0x4200000000L, input, 2, 4);
-                result = 0x990000000000L;
-            }
-        };
+
+        when(hash.initial()).thenReturn(0x4200000000L);
+        when(hash.resumeUnchecked(eq(0x4200000000L), eq(input), eq(2), eq(4)))
+            .thenReturn(0x990000000000L);
+
         StatefulHash stateful = hash.createStateful();
         stateful.algorithm();
         stateful.length();
@@ -54,67 +56,65 @@ public class AbstractIncrementalLongHashTest {
         stateful.update(input, 2, 4);
         assertEquals(0, stateful.getInt());
         assertEquals(0x990000000000L, stateful.getLong());
+
+        verify(hash, times(1)).algorithm();
+        verify(hash, times(1)).length();
+        verify(hash, times(1)).initial();
+        verify(hash, times(1)).resumeUnchecked(
+            eq(0x4200000000L), eq(input), eq(2), eq(4));
     }
 
     @Test
     public void testCalculateByteArray() {
         final byte[] input = new byte[10];
-        new Expectations(hash) {
-            {
-                hash.initial();
-                result = 0x4200000000L;
-                hash.resume(0x4200000000L, input);
-            }
-        };
+
+        when(hash.initial()).thenReturn(0x4200000000L);
+
         hash.calculate(input);
+
+        verify(hash, times(1)).resume(eq(0x4200000000L), eq(input));
     }
 
     @Test
     public void testCalculateByteArrayIntInt() {
         final byte[] input = new byte[10];
-        new Expectations(hash) {
-            {
-                hash.initial();
-                result = 0x4200000000L;
-                hash.resume(0x4200000000L, input, 2, 4);
-            }
-        };
+
+        when(hash.initial()).thenReturn(0x4200000000L);
+
         hash.calculate(input, 2, 4);
+
+        verify(hash, times(1)).resume(eq(0x4200000000L), eq(input), eq(2), eq(4));
     }
 
     @Test
     public void testCalculateByteBuffer() {
         final ByteBuffer input = ByteBuffer.allocate(10);
-        new Expectations(hash) {
-            {
-                hash.initial();
-                result = 0x4200000000L;
-                hash.resume(0x4200000000L, input);
-            }
-        };
+
+        when(hash.initial()).thenReturn(0x4200000000L);
+
         hash.calculate(input);
+
+        verify(hash, times(1)).resume(eq(0x4200000000L), eq(input));
     }
 
     @Test
     public void testResumeLongByteArray() {
         final byte[] input = new byte[10];
-        new Expectations(hash) {
-            {
-                hash.resumeUnchecked(0x4200000000L, input, 0, input.length);
-            }
-        };
+
         hash.resume(0x4200000000L, input);
+
+        verify(hash, times(1))
+            .resumeUnchecked(eq(0x4200000000L), eq(input), eq(0), eq(input.length));
     }
 
     @Test
     public void testResumeLongByteArrayIntInt() {
         final byte[] input = new byte[10];
-        new Expectations(hash) {
-            {
-                hash.resumeUnchecked(0x4200000000L, input, 2, 4);
-            }
-        };
+
         hash.resume(0x4200000000L, input, 2, 4);
+
+        verify(hash, times(1))
+            .resumeUnchecked(eq(0x4200000000L), eq(input), eq(2), eq(4));
     }
 
     @Test
@@ -122,13 +122,12 @@ public class AbstractIncrementalLongHashTest {
         final ByteBuffer input = ByteBuffer.allocate(20);
         input.position(5);
         input.limit(15);
-        new Expectations(hash) {
-            {
-                hash.resumeUnchecked(0x4200000000L, input.array(), input.arrayOffset() + 5, 10);
-            }
-        };
+
         hash.resume(0x4200000000L, input);
         assertEquals(input.limit(), input.position());
+
+        verify(hash, times(1))
+            .resumeUnchecked(eq(0x4200000000L), eq(input.array()), eq(input.arrayOffset() + 5), eq(10));
     }
 
     @Test
@@ -136,12 +135,11 @@ public class AbstractIncrementalLongHashTest {
         final ByteBuffer input = ByteBuffer.allocate(20).asReadOnlyBuffer();
         input.position(5);
         input.limit(15);
-        new Expectations(hash) {
-            {
-                hash.resumeUnchecked(0x4200000000L, withInstanceOf(byte[].class), 0, 10);
-            }
-        };
+
         hash.resume(0x4200000000L, input);
         assertEquals(input.limit(), input.position());
+
+        verify(hash, times(1))
+            .resumeUnchecked(eq(0x4200000000L), any(byte[].class), eq(0), eq(10));
     }
 }

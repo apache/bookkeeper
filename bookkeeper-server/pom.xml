@@ -183,9 +183,9 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.pulsar</groupId>
-      <artifactId>pulsar-checksum</artifactId>
-      <version>1.20.0-incubating</version>
+      <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>circe-checksum</artifactId>
+      <version>${project.version}</version>
     </dependency>
   </dependencies>
   <build>
@@ -224,6 +224,7 @@
                   <include>com.google.protobuf:protobuf-java</include>
                   <include>org.apache.bookkeeper:bookkeeper-common</include>
                   <include>org.apache.bookkeeper:bookkeeper-proto</include>
+                  <include>org.apache.bookkeeper:circe-checksum</include>
                   <include>org.apache.bookkeeper.stats:bookkeeper-stats-api</include>
                 </includes>
               </artifactSet>

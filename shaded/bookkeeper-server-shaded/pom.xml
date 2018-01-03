@@ -69,6 +69,7 @@
                   <include>org.apache.bookkeeper:bookkeeper-common</include>
                   <include>org.apache.bookkeeper:bookkeeper-proto</include>
                   <include>org.apache.bookkeeper:bookkeeper-server</include>
+                  <include>org.apache.bookkeeper:circe-checksum</include>
                   <include>org.apache.bookkeeper.stats:bookkeeper-stats-api</include>
                 </includes>
               </artifactSet>

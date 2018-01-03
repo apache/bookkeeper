@@ -24,16 +24,14 @@ import static com.scurrilous.circe.params.CrcParameters.CRC32_BZIP2;
 import static com.scurrilous.circe.params.CrcParameters.CRC32_POSIX;
 import static com.scurrilous.circe.params.CrcParameters.CRC64;
 import static com.scurrilous.circe.params.CrcParameters.CRC64_XZ;
-import static org.testng.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 import com.scurrilous.circe.IncrementalLongHash;
-import java.nio.charset.Charset;
-
-import org.testng.annotations.Test;
-
 import com.scurrilous.circe.HashProvider;
 import com.scurrilous.circe.IncrementalIntHash;
 import com.scurrilous.circe.params.CrcParameters;
+import java.nio.charset.Charset;
+import org.junit.Test;
 
 /**
  * Tests the {@link StandardCrcProvider} with various CRC algorithms. See the <a
