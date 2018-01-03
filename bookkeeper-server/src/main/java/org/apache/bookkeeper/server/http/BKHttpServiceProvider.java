@@ -34,7 +34,6 @@ import org.apache.bookkeeper.http.service.ErrorHttpService;
 import org.apache.bookkeeper.http.service.HeartbeatService;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.meta.LayoutManager;
-import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
@@ -54,7 +53,6 @@ import org.apache.bookkeeper.server.http.service.ReadLedgerEntryService;
 import org.apache.bookkeeper.server.http.service.RecoveryBookieService;
 import org.apache.bookkeeper.server.http.service.TriggerAuditService;
 import org.apache.bookkeeper.server.http.service.WhoIsAuditorService;
-import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
@@ -83,13 +81,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
         this.bookieServer = bookieServer;
         this.autoRecovery = autoRecovery;
         this.serverConf = serverConf;
-        this.layoutManager = new ZkLayoutManager(
-            ZooKeeperClient.newBuilder()
-                .connectString(serverConf.getZkServers())
-                .sessionTimeoutMs(serverConf.getZkTimeout())
-                .build(),
-            serverConf.getZkLedgersRootPath(),
-            ZkUtils.getACLs(serverConf));
+        this.layoutManager = bookieServer.getBookie().getRegistrationManager().getLayoutManager();
         this.zk = ZooKeeperClient.newBuilder()
           .connectString(serverConf.getZkServers())
           .sessionTimeoutMs(serverConf.getZkTimeout())
@@ -182,9 +174,9 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
             case DELETE_LEDGER:
                 return new DeleteLedgerService(configuration);
             case LIST_LEDGER:
-                return new ListLedgerService(configuration, layoutManager);
+                return new ListLedgerService(configuration, bookieServer);
             case GET_LEDGER_META:
-                return new GetLedgerMetaService(configuration, layoutManager);
+                return new GetLedgerMetaService(configuration, bookieServer);
             case READ_LEDGER_ENTRY:
                 return new ReadLedgerEntryService(configuration, bka);
 
@@ -204,7 +196,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
             case RECOVERY_BOOKIE:
                 return new RecoveryBookieService(configuration, bka, executor);
             case LIST_UNDER_REPLICATED_LEDGER:
-                return new ListUnderReplicatedLedgerService(configuration, layoutManager);
+                return new ListUnderReplicatedLedgerService(configuration, bookieServer);
             case WHO_IS_AUDITOR:
                 return new WhoIsAuditorService(configuration, zk);
             case TRIGGER_AUDIT:

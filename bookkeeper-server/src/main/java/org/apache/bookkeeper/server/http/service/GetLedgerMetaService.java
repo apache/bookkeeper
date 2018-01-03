@@ -29,13 +29,10 @@ import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
-import org.apache.bookkeeper.meta.LayoutManager;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
-import org.apache.bookkeeper.meta.ZkLayoutManager;
+import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.util.JsonUtil;
-import org.apache.bookkeeper.util.ZkUtils;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,11 +45,11 @@ public class GetLedgerMetaService implements HttpEndpointService {
     static final Logger LOG = LoggerFactory.getLogger(GetLedgerMetaService.class);
 
     protected ServerConfiguration conf;
-    protected LayoutManager layoutManager;
-    public GetLedgerMetaService(ServerConfiguration conf, LayoutManager layoutManager) {
+    protected BookieServer bookieServer;
+    public GetLedgerMetaService(ServerConfiguration conf, BookieServer bookieServer) {
         checkNotNull(conf);
         this.conf = conf;
-        this.layoutManager = layoutManager;
+        this.bookieServer = bookieServer;
     }
 
     @Override
@@ -63,14 +60,7 @@ public class GetLedgerMetaService implements HttpEndpointService {
         if (HttpServer.Method.GET == request.getMethod() && (params != null) && params.containsKey("ledger_id")) {
             Long ledgerId = Long.parseLong(params.get("ledger_id"));
 
-            LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(conf,
-                new ZkLayoutManager(
-                ZooKeeperClient.newBuilder()
-                    .connectString(conf.getZkServers())
-                    .sessionTimeoutMs(conf.getZkTimeout())
-                    .build(),
-                conf.getZkLedgersRootPath(),
-                ZkUtils.getACLs(conf)));
+            LedgerManagerFactory mFactory = bookieServer.getBookie().getLedgerManagerFactory();
             LedgerManager manager = mFactory.newLedgerManager();
 
             // output <ledgerId: ledgerMetadata>
@@ -82,7 +72,6 @@ public class GetLedgerMetaService implements HttpEndpointService {
             output.put(ledgerId.toString(), new String(md.serialize(), UTF_8));
 
             manager.close();
-            mFactory.uninitialize();
 
             String jsonResponse = JsonUtil.toJson(output);
             LOG.debug("output body:" + jsonResponse);

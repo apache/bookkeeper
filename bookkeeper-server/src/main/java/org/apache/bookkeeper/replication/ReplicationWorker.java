@@ -50,7 +50,6 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
@@ -59,7 +58,6 @@ import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
@@ -126,19 +124,19 @@ public class ReplicationWorker implements Runnable {
             InterruptedException, IOException {
         this.zkc = zkc;
         this.conf = conf;
-        LedgerManagerFactory mFactory = LedgerManagerFactory
-                .newLedgerManagerFactory(
-                    this.conf,
-                    new ZkLayoutManager(zkc, conf.getZkLedgersRootPath(), ZkUtils.getACLs(conf)));
-        this.underreplicationManager = mFactory
-                .newLedgerUnderreplicationManager();
         try {
             this.bkc = BookKeeper.forConfig(new ClientConfiguration(conf))
-                    .statsLogger(statsLogger.scope(BK_CLIENT_SCOPE))
-                    .build();
+                .statsLogger(statsLogger.scope(BK_CLIENT_SCOPE))
+                .build();
         } catch (BKException e) {
             throw new IOException("Failed to instantiate replication worker", e);
         }
+        LedgerManagerFactory mFactory = LedgerManagerFactory
+                .newLedgerManagerFactory(
+                    this.conf,
+                    bkc.getRegClient().getLayoutManager());
+        this.underreplicationManager = mFactory
+                .newLedgerUnderreplicationManager();
         this.admin = new BookKeeperAdmin(bkc, statsLogger);
         this.ledgerChecker = new LedgerChecker(bkc);
         this.workerThread = new BookieThread(this, "ReplicationWorker");

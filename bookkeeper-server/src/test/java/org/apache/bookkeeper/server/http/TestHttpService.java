@@ -34,6 +34,7 @@ import org.apache.bookkeeper.client.LedgerHandleAdapter;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
@@ -41,13 +42,11 @@ import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.replication.AuditorElector;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestCallbacks;
 import org.apache.bookkeeper.util.JsonUtil;
-import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.Before;
@@ -83,8 +82,9 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         super.setUp();
         baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
         this.bkHttpServiceProvider = new BKHttpServiceProvider.Builder()
-          .setServerConfiguration(baseConf)
-          .build();
+            .setBookieServer(bs.get(numberOfBookies - 1))
+            .setServerConfiguration(baseConf)
+            .build();
     }
 
     @Test
@@ -665,10 +665,8 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         // first put ledger into rereplicate. then use api to list ur ledger.
         LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(
             bsConfs.get(0),
-            new ZkLayoutManager(
-                zkc,
-                bsConfs.get(0).getZkLedgersRootPath(),
-                ZkUtils.getACLs(bsConfs.get(0))));
+            RegistrationManager.instantiateRegistrationManager(bsConfs.get(0)).getLayoutManager());
+
         LedgerManager ledgerManager = mFactory.newLedgerManager();
         final LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
 

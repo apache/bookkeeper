@@ -39,10 +39,10 @@ import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.StateManager;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.SnapshotMap;
-import org.apache.bookkeeper.util.ZkUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
@@ -104,12 +104,11 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
     @Override
     public void setUp() throws Exception {
         super.setUp();
+        baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
         ledgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(
             baseConf,
-            new ZkLayoutManager(
-                zkc,
-                baseConf.getZkLedgersRootPath(),
-                ZkUtils.getACLs(baseConf)));
+            RegistrationManager
+                .instantiateRegistrationManager(baseConf).getLayoutManager());
     }
 
     @After

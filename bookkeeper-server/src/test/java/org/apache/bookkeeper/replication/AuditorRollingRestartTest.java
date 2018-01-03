@@ -25,13 +25,12 @@ import static org.junit.Assert.assertEquals;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestCallbacks;
-import org.apache.bookkeeper.util.ZkUtils;
 import org.junit.Test;
 
 /**
@@ -52,10 +51,8 @@ public class AuditorRollingRestartTest extends BookKeeperClusterTestCase {
     public void testAuditingDuringRollingRestart() throws Exception {
         LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(
             bsConfs.get(0),
-            new ZkLayoutManager(
-                zkc,
-                bsConfs.get(0).getZkLedgersRootPath(),
-                ZkUtils.getACLs(bsConfs.get(0))));
+            RegistrationManager.instantiateRegistrationManager(bsConfs.get(0)).getLayoutManager());
+
         final LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
 
         LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "passwd".getBytes());

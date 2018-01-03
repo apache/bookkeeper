@@ -23,9 +23,12 @@ import org.apache.bookkeeper.common.annotation.InterfaceAudience.LimitedPrivate;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LayoutManager;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.util.ReflectionUtils;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
+import org.apache.commons.configuration.ConfigurationException;
 
 /**
  * Registration manager interface, which a bookie server will use to do the registration process.
@@ -33,6 +36,22 @@ import org.apache.bookkeeper.versioning.Versioned;
 @LimitedPrivate
 @Evolving
 public interface RegistrationManager extends LayoutManager, AutoCloseable {
+
+    /**
+     * Instantiate a RegistrationManager based on config.
+     */
+    static RegistrationManager instantiateRegistrationManager(ServerConfiguration conf) throws BookieException {
+        // Create the registration manager instance
+        Class<? extends RegistrationManager> managerCls;
+        try {
+            managerCls = conf.getRegistrationManagerClass();
+        } catch (ConfigurationException e) {
+            throw new BookieException.BookieIllegalOpException(e);
+        }
+
+        RegistrationManager manager = ReflectionUtils.newInstance(managerCls);
+        return manager.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
+    }
 
     /**
      * Registration Listener on listening the registration state.

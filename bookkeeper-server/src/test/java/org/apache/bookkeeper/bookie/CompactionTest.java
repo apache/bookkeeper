@@ -45,9 +45,9 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
-import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
@@ -58,7 +58,6 @@ import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.HardLink;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.TestUtils;
-import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.zookeeper.AsyncCallback;
 import org.junit.Before;
@@ -246,10 +245,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             LedgerManagerFactory
                 .newLedgerManagerFactory(
                     conf,
-                    new ZkLayoutManager(
-                        zkc,
-                        conf.getZkLedgersRootPath(),
-                        ZkUtils.getACLs(conf)))
+                    RegistrationManager.instantiateRegistrationManager(conf).getLayoutManager())
                 .newLedgerManager(),
             dirManager,
             dirManager,
@@ -852,10 +848,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             LedgerManagerFactory
                 .newLedgerManagerFactory(
                     conf,
-                    new ZkLayoutManager(
-                        zkc,
-                        conf.getZkLedgersRootPath(),
-                        ZkUtils.getACLs(conf)))
+                    RegistrationManager.instantiateRegistrationManager(conf).getLayoutManager())
                 .newLedgerManager(),
             dirManager,
             dirManager,

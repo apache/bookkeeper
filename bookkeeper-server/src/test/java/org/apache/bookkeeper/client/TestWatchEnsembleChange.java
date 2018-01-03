@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.FlatLedgerManagerFactory;
 import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
@@ -37,14 +38,12 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.MSLedgerManagerFactory;
-import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.ReflectionUtils;
-import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.Version;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -113,12 +112,11 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
     @Test
     public void testWatchMetadataRemoval() throws Exception {
         LedgerManagerFactory factory = ReflectionUtils.newInstance(lmFactoryCls);
+        baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
         factory.initialize(baseConf,
-            new ZkLayoutManager(
-                super.zkc,
-                baseConf.getZkLedgersRootPath(),
-                ZkUtils.getACLs(baseConf)),
+            RegistrationManager.instantiateRegistrationManager(baseConf).getLayoutManager(),
             factory.getCurrentVersion());
+
         final LedgerManager manager = factory.newLedgerManager();
         LedgerIdGenerator idGenerator = factory.newLedgerIdGenerator();
 

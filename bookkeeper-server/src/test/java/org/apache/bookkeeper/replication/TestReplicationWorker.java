@@ -35,13 +35,12 @@ import org.apache.bookkeeper.client.LedgerEntry;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerHandleAdapter;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.BookKeeperConstants;
-import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.Test;
@@ -90,10 +89,8 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         // initialize urReplicationManager
         mFactory = LedgerManagerFactory.newLedgerManagerFactory(
             baseClientConf,
-            new ZkLayoutManager(
-                zkc,
-                baseClientConf.getZkLedgersRootPath(),
-                ZkUtils.getACLs(baseClientConf)));
+            RegistrationManager
+                .instantiateRegistrationManager(new ServerConfiguration(baseClientConf)).getLayoutManager());
         underReplicationManager = mFactory.newLedgerUnderreplicationManager();
     }
 
@@ -421,11 +418,11 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
         LedgerManagerFactory mFactory = LedgerManagerFactory
             .newLedgerManagerFactory(
-                    baseClientConf,
-                    new ZkLayoutManager(
-                        zkc,
-                        baseClientConf.getZkLedgersRootPath(),
-                        ZkUtils.getACLs(baseClientConf)));
+                baseClientConf,
+                RegistrationManager
+                    .instantiateRegistrationManager(new ServerConfiguration(baseClientConf))
+                    .getLayoutManager());
+
         LedgerUnderreplicationManager underReplicationManager = mFactory
                 .newLedgerUnderreplicationManager();
         rw.start();
@@ -485,13 +482,14 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
 
         ReplicationWorker rw = new ReplicationWorker(zkc, baseConf);
 
+        baseClientConf.setZkServers(zkUtil.getZooKeeperConnectString());
         LedgerManagerFactory mFactory = LedgerManagerFactory
             .newLedgerManagerFactory(
                 baseClientConf,
-                new ZkLayoutManager(
-                    zkc,
-                    baseClientConf.getZkLedgersRootPath(),
-                    ZkUtils.getACLs(baseClientConf)));
+                RegistrationManager
+                    .instantiateRegistrationManager(new ServerConfiguration(baseClientConf))
+                    .getLayoutManager());
+
         LedgerUnderreplicationManager underReplicationManager = mFactory
                 .newLedgerUnderreplicationManager();
 

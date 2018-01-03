@@ -48,9 +48,9 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
-import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
@@ -59,7 +59,6 @@ import org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -127,6 +126,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         rng = new Random(System.currentTimeMillis()); // Initialize the Random
         urLedgerList = new HashSet<Long>();
         ledgerList = new ArrayList<Long>(2);
+        baseClientConf.setZkServers(zkUtil.getZooKeeperConnectString());
     }
 
     @Override
@@ -535,11 +535,10 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
             metadata.addEnsemble(0, ensemble);
             LedgerManager ledgerManager = LedgerManagerFactory.newLedgerManagerFactory(
                 baseClientConf,
-                new ZkLayoutManager(
-                    zkc,
-                    baseClientConf.getZkLedgersRootPath(),
-                    ZkUtils.getACLs(baseClientConf)))
-                .newLedgerManager();
+                RegistrationManager
+                    .instantiateRegistrationManager(new ServerConfiguration(baseClientConf))
+                    .getLayoutManager()).newLedgerManager();
+
             MutableInt ledgerCreateRC = new MutableInt(-1);
             CountDownLatch latch = new CountDownLatch(1);
             long ledgerId = (Math.abs(rand.nextLong())) % 100000000;

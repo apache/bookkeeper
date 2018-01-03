@@ -57,7 +57,6 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
 import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.discover.ZKRegistrationManager;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
@@ -1122,7 +1121,7 @@ public class BookKeeperAdmin implements AutoCloseable {
     public static boolean format(ServerConfiguration conf,
             boolean isInteractive, boolean force) throws Exception {
 
-        try (RegistrationManager rm = new ZKRegistrationManager()) {
+        try (RegistrationManager rm = RegistrationManager.instantiateRegistrationManager(conf)) {
             boolean ledgerRootExists = rm.prepareFormat(conf);
 
             // If old data was there then confirm with admin.

@@ -630,6 +630,11 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         return reorderReadSequence;
     }
 
+    @VisibleForTesting
+    public RegistrationClient getRegClient() {
+        return regClient;
+    }
+
     /**
      * There are 2 digest types that can be used for verification. The CRC32 is
      * cheap to compute but does not protect against byzantine bookies (i.e., a
