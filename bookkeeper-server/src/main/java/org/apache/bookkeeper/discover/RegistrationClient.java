@@ -26,18 +26,18 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.LimitedPrivate;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.meta.LayoutManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.ZooKeeper;
-
 
 /**
  * A registration client, which the bookkeeper client will use to interact with registration service.
  */
 @LimitedPrivate
 @Evolving
-public interface RegistrationClient extends AutoCloseable {
+public interface RegistrationClient extends LayoutManager, AutoCloseable {
 
     /**
      * Listener to receive changes from the registration service.
@@ -116,4 +116,7 @@ public interface RegistrationClient extends AutoCloseable {
      * @param listener listener to receive the topology changes of bookies.
      */
     void unwatchReadOnlyBookies(RegistrationListener listener);
+
+    // TODO:
+    LayoutManager getLayoutManager();
 }

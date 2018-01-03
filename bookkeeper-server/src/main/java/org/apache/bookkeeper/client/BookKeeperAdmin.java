@@ -20,9 +20,7 @@
  */
 package org.apache.bookkeeper.client;
 
-import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.base.Preconditions.checkArgument;
-import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -44,7 +42,6 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.SortedMap;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ExecutionException;
@@ -59,11 +56,12 @@ import org.apache.bookkeeper.client.SyncCallbackUtils.SyncReadCallback;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
+import org.apache.bookkeeper.discover.RegistrationManager;
+import org.apache.bookkeeper.discover.ZKRegistrationManager;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.MultiCallback;
@@ -75,16 +73,9 @@ import org.apache.bookkeeper.replication.ReplicationException.CompatibilityExcep
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.IOUtils;
-import org.apache.bookkeeper.util.ZkUtils;
-import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.AsyncCallback;
-import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZKUtil;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1130,120 +1121,40 @@ public class BookKeeperAdmin implements AutoCloseable {
      */
     public static boolean format(ClientConfiguration conf,
             boolean isInteractive, boolean force) throws Exception {
-        ZooKeeper zkc = ZooKeeperClient.newBuilder()
-                .connectString(conf.getZkServers())
-                .sessionTimeoutMs(conf.getZkTimeout())
-                .build();
-        BookKeeper bkc = null;
-        try {
-            boolean ledgerRootExists = null != zkc.exists(
-                    conf.getZkLedgersRootPath(), false);
-            boolean availableNodeExists = null != zkc.exists(
-                    conf.getZkAvailableBookiesPath(), false);
-            List<ACL> zkAcls = ZkUtils.getACLs(conf);
-            // Create ledgers root node if not exists
-            if (!ledgerRootExists) {
-                zkc.create(conf.getZkLedgersRootPath(), "".getBytes(UTF_8),
-                        zkAcls, CreateMode.PERSISTENT);
-            }
-            // create available bookies node if not exists
-            if (!availableNodeExists) {
-                zkc.create(conf.getZkAvailableBookiesPath(), "".getBytes(UTF_8),
-                        zkAcls, CreateMode.PERSISTENT);
-            }
 
-            // create readonly bookies node if not exists
-            if (null == zkc.exists(conf.getZkAvailableBookiesPath() + "/" + READONLY, false)) {
-                zkc.create(
-                    conf.getZkAvailableBookiesPath() + "/" + READONLY,
-                    new byte[0],
-                    zkAcls,
-                    CreateMode.PERSISTENT);
-            }
+        try (RegistrationManager rm = new ZKRegistrationManager()) {
+            ServerConfiguration formatConf = new ServerConfiguration(conf);
+
+            boolean ledgerRootExists = rm.prepareFormat(formatConf);
 
             // If old data was there then confirm with admin.
+            boolean doFormat = true;
             if (ledgerRootExists) {
-                boolean confirm = false;
                 if (!isInteractive) {
-                    // If non interactive and force is set, then delete old
-                    // data.
+                    // If non interactive and force is set, then delete old data.
                     if (force) {
-                        confirm = true;
+                        doFormat = true;
                     } else {
-                        confirm = false;
+                        doFormat = false;
                     }
                 } else {
                     // Confirm with the admin.
-                    confirm = IOUtils
-                            .confirmPrompt("Ledger root already exists. "
-                                    + "Are you sure to format bookkeeper metadata? "
-                                    + "This may cause data loss.");
-                }
-                if (!confirm) {
-                    LOG.error("BookKeeper metadata Format aborted!!");
-                    return false;
-                }
-            }
-            bkc = new BookKeeper(conf, zkc);
-            // Format all ledger metadata layout
-            bkc.ledgerManagerFactory.format(conf, zkc);
-
-            // Clear underreplicated ledgers
-            try {
-                ZKUtil.deleteRecursive(zkc, ZkLedgerUnderreplicationManager.getBasePath(conf.getZkLedgersRootPath())
-                        + BookKeeperConstants.DEFAULT_ZK_LEDGERS_ROOT_PATH);
-            } catch (KeeperException.NoNodeException e) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("underreplicated ledgers root path node not exists in zookeeper to delete");
+                    doFormat = IOUtils
+                        .confirmPrompt("Ledger root already exists. "
+                            + "Are you sure to format bookkeeper metadata? "
+                            + "This may cause data loss.");
                 }
             }
 
-            // Clear underreplicatedledger locks
-            try {
-                ZKUtil.deleteRecursive(zkc, ZkLedgerUnderreplicationManager.getBasePath(conf.getZkLedgersRootPath())
-                        + '/' + BookKeeperConstants.UNDER_REPLICATION_LOCK);
-            } catch (KeeperException.NoNodeException e) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("underreplicatedledger locks node not exists in zookeeper to delete");
-                }
+            if (!doFormat) {
+                return false;
             }
 
-            // Clear the cookies
-            try {
-                ZKUtil.deleteRecursive(zkc, conf.getZkLedgersRootPath()
-                        + "/cookies");
-            } catch (KeeperException.NoNodeException e) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("cookies node not exists in zookeeper to delete");
-                }
-            }
+            BookKeeper bkc = new BookKeeper(conf);
+            bkc.ledgerManagerFactory.format(formatConf, bkc.regClient.getLayoutManager());
 
-            // Clear the INSTANCEID
-            try {
-                zkc.delete(conf.getZkLedgersRootPath() + "/"
-                        + BookKeeperConstants.INSTANCEID, -1);
-            } catch (KeeperException.NoNodeException e) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("INSTANCEID not exists in zookeeper to delete");
-                }
-            }
-
-            // create INSTANCEID
-            String instanceId = UUID.randomUUID().toString();
-            zkc.create(conf.getZkLedgersRootPath() + "/"
-                    + BookKeeperConstants.INSTANCEID, instanceId.getBytes(UTF_8),
-                    zkAcls, CreateMode.PERSISTENT);
-
-            LOG.info("Successfully formatted BookKeeper metadata");
-        } finally {
-            if (null != bkc) {
-                bkc.close();
-            }
-            if (null != zkc) {
-                zkc.close();
-            }
+            return rm.doFormat(formatConf);
         }
-        return true;
     }
 
     /**

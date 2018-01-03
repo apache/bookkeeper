@@ -29,10 +29,13 @@ import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
+import org.apache.bookkeeper.meta.LayoutManager;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.util.JsonUtil;
-import org.apache.zookeeper.ZooKeeper;
+import org.apache.bookkeeper.util.ZkUtils;
+import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,12 +48,12 @@ public class GetLedgerMetaService implements HttpEndpointService {
     static final Logger LOG = LoggerFactory.getLogger(GetLedgerMetaService.class);
 
     protected ServerConfiguration conf;
-    protected ZooKeeper zk;
-
-    public GetLedgerMetaService(ServerConfiguration conf, ZooKeeper zk) {
+    protected LayoutManager layoutManager;
+    // TODO: remove zk?
+    public GetLedgerMetaService(ServerConfiguration conf, LayoutManager layoutManager) {
         checkNotNull(conf);
         this.conf = conf;
-        this.zk = zk;
+        this.layoutManager = layoutManager;
     }
 
     @Override
@@ -61,7 +64,14 @@ public class GetLedgerMetaService implements HttpEndpointService {
         if (HttpServer.Method.GET == request.getMethod() && (params != null) && params.containsKey("ledger_id")) {
             Long ledgerId = Long.parseLong(params.get("ledger_id"));
 
-            LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(conf, zk);
+            LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(conf,
+                new ZkLayoutManager(
+                ZooKeeperClient.newBuilder()
+                    .connectString(conf.getZkServers())
+                    .sessionTimeoutMs(conf.getZkTimeout())
+                    .build(),
+                conf.getZkLedgersRootPath(),
+                ZkUtils.getACLs(conf)));
             LedgerManager manager = mFactory.newLedgerManager();
 
             // output <ledgerId: ledgerMetadata>

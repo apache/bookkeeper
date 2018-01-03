@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.SortedMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BookKeeperTestClient;
@@ -40,12 +39,14 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
@@ -94,11 +95,19 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         super.setUp();
         baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
         // initialize urReplicationManager
-        mFactory = LedgerManagerFactory.newLedgerManagerFactory(baseClientConf,
-                zkc);
+        ZkLayoutManager zkLayoutManager = new ZkLayoutManager(
+            zkc,
+            baseClientConf.getZkLedgersRootPath(),
+            ZkUtils.getACLs(baseClientConf));
+        mFactory = LedgerManagerFactory
+            .newLedgerManagerFactory(
+                baseClientConf,
+                zkLayoutManager);
         underReplicationManager = mFactory.newLedgerUnderreplicationManager();
         LedgerManagerFactory newLedgerManagerFactory = LedgerManagerFactory
-                .newLedgerManagerFactory(baseClientConf, zkc);
+            .newLedgerManagerFactory(
+                baseClientConf,
+                zkLayoutManager);
         ledgerManager = newLedgerManagerFactory.newLedgerManager();
     }
 

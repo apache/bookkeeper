@@ -17,12 +17,12 @@
  */
 package org.apache.bookkeeper.meta;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.bookkeeper.metastore.MetastoreTable.ALL_FIELDS;
 import static org.apache.bookkeeper.metastore.MetastoreTable.NON_FIELDS;
 
 import com.google.common.base.Optional;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -36,7 +36,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
@@ -94,13 +93,17 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
     }
 
     @Override
-    public LedgerManagerFactory initialize(final AbstractConfiguration conf, final ZooKeeper zk,
-            final int factoryVersion) throws IOException {
+    public LedgerManagerFactory initialize(final AbstractConfiguration conf,
+                                           final LayoutManager layoutManager,
+                                           final int factoryVersion) throws IOException {
+        checkArgument(layoutManager instanceof ZkLayoutManager);
+        ZkLayoutManager zkLayoutManager = (ZkLayoutManager) layoutManager;
+
         if (CUR_VERSION != factoryVersion) {
             throw new IOException("Incompatible layout version found : " + factoryVersion);
         }
         this.conf = conf;
-        this.zk = zk;
+        this.zk = zkLayoutManager.getZk();
 
         // load metadata store
         String msName = conf.getMetastoreImplClass();
@@ -698,8 +701,8 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
     }
 
     @Override
-    public void format(AbstractConfiguration conf, ZooKeeper zk) throws InterruptedException,
-            KeeperException, IOException {
+    public void format(AbstractConfiguration conf, LayoutManager layoutManager)
+        throws InterruptedException, KeeperException, IOException {
         MetastoreTable ledgerTable;
         try {
             ledgerTable = metastore.createScannableTable(TABLE_NAME);
@@ -714,7 +717,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
         }
         LOG.info("Finished cleaning up table {}.", TABLE_NAME);
         // Delete and recreate the LAYOUT information.
-        super.format(conf, zk);
+        super.format(conf, layoutManager);
     }
 
 }

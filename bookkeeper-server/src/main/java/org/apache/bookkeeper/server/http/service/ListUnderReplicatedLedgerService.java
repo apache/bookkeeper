@@ -21,22 +21,20 @@ package org.apache.bookkeeper.server.http.service;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.Lists;
-
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
-
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
+import org.apache.bookkeeper.meta.LayoutManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.util.JsonUtil;
 import org.apache.commons.lang.StringUtils;
-import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,12 +49,12 @@ public class ListUnderReplicatedLedgerService implements HttpEndpointService {
     static final Logger LOG = LoggerFactory.getLogger(ListUnderReplicatedLedgerService.class);
 
     protected ServerConfiguration conf;
-    protected ZooKeeper zk;
+    protected LayoutManager layoutManager;
 
-    public ListUnderReplicatedLedgerService(ServerConfiguration conf, ZooKeeper zk) {
+    public ListUnderReplicatedLedgerService(ServerConfiguration conf, LayoutManager layoutManager) {
         checkNotNull(conf);
         this.conf = conf;
-        this.zk = zk;
+        this.layoutManager = layoutManager;
     }
 
     /*
@@ -93,7 +91,7 @@ public class ListUnderReplicatedLedgerService implements HttpEndpointService {
 
             try {
                 List<Long> outputLedgers = Lists.newArrayList();
-                LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(conf, zk);
+                LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(conf, layoutManager);
                 LedgerUnderreplicationManager underreplicationManager = mFactory.newLedgerUnderreplicationManager();
                 Iterator<Long> iter = underreplicationManager.listLedgersToRereplicate(predicate);
 

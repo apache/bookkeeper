@@ -23,7 +23,6 @@ package org.apache.bookkeeper.replication;
 import static org.junit.Assert.assertEquals;
 
 import java.util.List;
-
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerHandleAdapter;
@@ -33,9 +32,11 @@ import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestCallbacks;
+import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.After;
@@ -95,7 +96,13 @@ public class AuditorPeriodicBookieCheckTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testPeriodicBookieCheckInterval() throws Exception {
-        LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(bsConfs.get(0), zkc);
+        LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(
+            bsConfs.get(0),
+            new ZkLayoutManager(
+                auditorZookeeper,
+                bsConfs.get(0).getZkLedgersRootPath(),
+                ZkUtils.getACLs(bsConfs.get(0))));
+
         LedgerManager ledgerManager = mFactory.newLedgerManager();
         final LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
         final int numLedgers = 1;

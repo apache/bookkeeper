@@ -25,7 +25,6 @@ import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATE_EXCEP
 import static org.apache.bookkeeper.replication.ReplicationStats.REREPLICATE_OP;
 
 import com.google.common.base.Stopwatch;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,7 +36,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.bookie.BookieThread;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
@@ -52,6 +50,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
@@ -60,6 +59,7 @@ import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
@@ -127,12 +127,13 @@ public class ReplicationWorker implements Runnable {
         this.zkc = zkc;
         this.conf = conf;
         LedgerManagerFactory mFactory = LedgerManagerFactory
-                .newLedgerManagerFactory(this.conf, this.zkc);
+                .newLedgerManagerFactory(
+                    this.conf,
+                    new ZkLayoutManager(zkc, conf.getZkLedgersRootPath(), ZkUtils.getACLs(conf)));
         this.underreplicationManager = mFactory
                 .newLedgerUnderreplicationManager();
         try {
             this.bkc = BookKeeper.forConfig(new ClientConfiguration(conf))
-                    .zk(zkc)
                     .statsLogger(statsLogger.scope(BK_CLIENT_SCOPE))
                     .build();
         } catch (BKException e) {

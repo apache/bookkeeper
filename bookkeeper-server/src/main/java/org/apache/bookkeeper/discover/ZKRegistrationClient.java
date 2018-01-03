@@ -20,6 +20,7 @@ package org.apache.bookkeeper.discover;
 
 import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import java.io.IOException;
 import java.util.HashSet;
@@ -40,6 +41,9 @@ import org.apache.bookkeeper.client.BKException.ZKException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.meta.LayoutManager;
+import org.apache.bookkeeper.meta.LedgerLayout;
+import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.ZkUtils;
@@ -186,6 +190,10 @@ public class ZKRegistrationClient implements RegistrationClient {
     private String bookieRegistrationPath;
     private String bookieReadonlyRegistrationPath;
 
+    // layout manager
+    private List<ACL> acls;
+    private LayoutManager layoutManager;
+
     @Override
     public RegistrationClient initialize(ClientConfiguration conf,
                                          ScheduledExecutorService scheduler,
@@ -197,6 +205,8 @@ public class ZKRegistrationClient implements RegistrationClient {
 
         this.bookieRegistrationPath = conf.getZkAvailableBookiesPath();
         this.bookieReadonlyRegistrationPath = this.bookieRegistrationPath + "/" + READONLY;
+
+        this.acls = ZkUtils.getACLs(conf);
 
         // construct the zookeeper
         if (zkOptional.isPresent()) {
@@ -214,10 +224,9 @@ public class ZKRegistrationClient implements RegistrationClient {
 
                 if (null == zk.exists(bookieReadonlyRegistrationPath, false)) {
                     try {
-                        List<ACL> zkAcls = ZkUtils.getACLs(conf);
                         zk.create(bookieReadonlyRegistrationPath,
                             new byte[0],
-                            zkAcls,
+                            acls,
                             CreateMode.PERSISTENT);
                     } catch (KeeperException.NodeExistsException e) {
                         // this node is just now created by someone.
@@ -233,6 +242,12 @@ public class ZKRegistrationClient implements RegistrationClient {
             }
             this.ownZKHandle = true;
         }
+
+        // layout manager
+        this.layoutManager = new ZkLayoutManager(
+            zk,
+            conf.getZkLedgersRootPath(),
+            acls);
 
         return this;
     }
@@ -352,6 +367,30 @@ public class ZKRegistrationClient implements RegistrationClient {
             newBookieAddrs.add(bookieAddr);
         }
         return newBookieAddrs;
+    }
+    @VisibleForTesting
+    public void setLayoutManager(LayoutManager layoutManager) {
+        this.layoutManager = layoutManager;
+    }
+
+    @Override
+    public LayoutManager getLayoutManager() {
+        return layoutManager;
+    }
+
+    @Override
+    public LedgerLayout readLedgerLayout() throws IOException {
+        return layoutManager.readLedgerLayout();
+    }
+
+    @Override
+    public void storeLedgerLayout(LedgerLayout layout) throws IOException {
+        layoutManager.storeLedgerLayout(layout);
+    }
+
+    @Override
+    public void deleteLedgerLayout() throws IOException {
+        layoutManager.deleteLedgerLayout();
     }
 
 }

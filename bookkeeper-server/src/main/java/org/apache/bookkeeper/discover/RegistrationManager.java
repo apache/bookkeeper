@@ -22,6 +22,7 @@ import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.LimitedPrivate;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.LayoutManager;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
@@ -31,7 +32,7 @@ import org.apache.bookkeeper.versioning.Versioned;
  */
 @LimitedPrivate
 @Evolving
-public interface RegistrationManager extends AutoCloseable {
+public interface RegistrationManager extends LayoutManager, AutoCloseable {
 
     /**
      * Registration Listener on listening the registration state.
@@ -104,4 +105,27 @@ public interface RegistrationManager extends AutoCloseable {
      * @throws BookieException when fail to remove cookie
      */
     void removeCookie(String bookieId, Version version) throws BookieException;
+
+    /**
+     * Gets layout manager.
+     *
+     * @return the layout manager
+     */
+    LayoutManager getLayoutManager();
+
+    /**
+     * Prepare ledgers root node, availableNode, readonly node..
+     *
+     * @param conf the conf
+     * @return Returns true if old data exists, false if not.
+     */
+    boolean prepareFormat(ServerConfiguration conf) throws Exception;
+
+    /**
+     * Do format boolean.
+     *
+     * @param conf the conf
+     * @return Returns true if success do format, false if not.
+     */
+    boolean doFormat(ServerConfiguration conf) throws Exception;
 }

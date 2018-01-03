@@ -85,6 +85,7 @@ import org.apache.bookkeeper.meta.LedgerManager.LedgerRange;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.replication.AuditorElector;
@@ -96,6 +97,7 @@ import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.Tool;
+import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
@@ -686,21 +688,25 @@ public class BookieShell implements Tool {
                 predicate = replicasList -> !replicasList.contains(excludingBookieId);
             }
 
-            ZooKeeper zk = null;
+            LedgerManagerFactory mFactory = null;
             try {
-                zk = ZooKeeperClient.newBuilder()
-                        .connectString(bkConf.getZkServers())
-                        .sessionTimeoutMs(bkConf.getZkTimeout())
-                        .build();
-                LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(bkConf, zk);
+                mFactory = LedgerManagerFactory.newLedgerManagerFactory(
+                    bkConf,
+                    new ZkLayoutManager(
+                        ZooKeeperClient.newBuilder()
+                            .connectString(bkConf.getZkServers())
+                            .sessionTimeoutMs(bkConf.getZkTimeout())
+                            .build(),
+                        bkConf.getZkLedgersRootPath(),
+                        ZkUtils.getACLs(bkConf)));
                 LedgerUnderreplicationManager underreplicationManager = mFactory.newLedgerUnderreplicationManager();
                 Iterator<Long> iter = underreplicationManager.listLedgersToRereplicate(predicate);
                 while (iter.hasNext()) {
                     System.out.println(ledgerIdFormatter.formatLedgerId(iter.next()));
                 }
             } finally {
-                if (zk != null) {
-                    zk.close();
+                if (mFactory != null) {
+                    mFactory.uninitialize();
                 }
             }
 
@@ -724,15 +730,18 @@ public class BookieShell implements Tool {
 
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
-            ZooKeeper zk = null;
             LedgerManagerFactory mFactory = null;
             LedgerManager m = null;
             try {
-                zk = ZooKeeperClient.newBuilder()
-                        .connectString(bkConf.getZkServers())
-                        .sessionTimeoutMs(bkConf.getZkTimeout())
-                        .build();
-                mFactory = LedgerManagerFactory.newLedgerManagerFactory(bkConf, zk);
+                mFactory = LedgerManagerFactory.newLedgerManagerFactory(
+                    bkConf,
+                    new ZkLayoutManager(
+                        ZooKeeperClient.newBuilder()
+                            .connectString(bkConf.getZkServers())
+                            .sessionTimeoutMs(bkConf.getZkTimeout())
+                            .build(),
+                        bkConf.getZkLedgersRootPath(),
+                        ZkUtils.getACLs(bkConf)));
                 m = mFactory.newLedgerManager();
                 LedgerRangeIterator iter = m.getLedgerRanges();
                 if (cmdLine.hasOption("m")) {
@@ -771,9 +780,6 @@ public class BookieShell implements Tool {
                     } catch (IOException ioe) {
                         LOG.error("Failed to close ledger manager : ", ioe);
                     }
-                }
-                if (zk != null) {
-                    zk.close();
                 }
             }
 
@@ -842,15 +848,18 @@ public class BookieShell implements Tool {
                 return -1;
             }
 
-            ZooKeeper zk = null;
             LedgerManagerFactory mFactory = null;
             LedgerManager m = null;
             try {
-                zk = ZooKeeperClient.newBuilder()
-                        .connectString(bkConf.getZkServers())
-                        .sessionTimeoutMs(bkConf.getZkTimeout())
-                        .build();
-                mFactory = LedgerManagerFactory.newLedgerManagerFactory(bkConf, zk);
+                mFactory = LedgerManagerFactory.newLedgerManagerFactory(
+                    bkConf,
+                    new ZkLayoutManager(
+                        ZooKeeperClient.newBuilder()
+                            .connectString(bkConf.getZkServers())
+                            .sessionTimeoutMs(bkConf.getZkTimeout())
+                            .build(),
+                        bkConf.getZkLedgersRootPath(),
+                        ZkUtils.getACLs(bkConf)));
                 m = mFactory.newLedgerManager();
                 ReadMetadataCallback cb = new ReadMetadataCallback(lid);
                 m.readLedgerMetadata(lid, cb);
@@ -863,9 +872,6 @@ public class BookieShell implements Tool {
                     } catch (IOException ioe) {
                         LOG.error("Failed to close ledger manager : ", ioe);
                     }
-                }
-                if (zk != null) {
-                    zk.close();
                 }
             }
 
@@ -1512,13 +1518,17 @@ public class BookieShell implements Tool {
                 printUsage();
                 return 1;
             }
-            ZooKeeper zk = null;
+            LedgerManagerFactory mFactory = null;
             try {
-                zk = ZooKeeperClient.newBuilder()
-                        .connectString(bkConf.getZkServers())
-                        .sessionTimeoutMs(bkConf.getZkTimeout())
-                        .build();
-                LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(bkConf, zk);
+                mFactory = LedgerManagerFactory.newLedgerManagerFactory(
+                    bkConf,
+                    new ZkLayoutManager(
+                        ZooKeeperClient.newBuilder()
+                            .connectString(bkConf.getZkServers())
+                            .sessionTimeoutMs(bkConf.getZkTimeout())
+                            .build(),
+                        bkConf.getZkLedgersRootPath(),
+                        ZkUtils.getACLs(bkConf)));
                 LedgerUnderreplicationManager underreplicationManager = mFactory.newLedgerUnderreplicationManager();
                 if (!enable && !disable) {
                     boolean enabled = underreplicationManager.isLedgerReplicationEnabled();
@@ -1539,8 +1549,12 @@ public class BookieShell implements Tool {
                     }
                 }
             } finally {
-                if (zk != null) {
-                    zk.close();
+                if (mFactory != null) {
+                    try {
+                        mFactory.uninitialize();
+                    } catch (IOException ioe) {
+                        LOG.error("Failed to close ledger manager factory: ", ioe);
+                    }
                 }
             }
 

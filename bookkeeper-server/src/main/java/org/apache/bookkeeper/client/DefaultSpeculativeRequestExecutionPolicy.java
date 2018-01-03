@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
  * are between {@code firstSpeculativeRequestTimeout} and {@code maxSpeculativeRequestTimeout}.
  */
 public class DefaultSpeculativeRequestExecutionPolicy implements SpeculativeRequestExecutionPolicy {
-    private static final Logger LOG = LoggerFactory.getLogger(DefaultSpeculativeRequestExecutionPolicy.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PendingReadOp.class);
     final int firstSpeculativeRequestTimeout;
     final int maxSpeculativeRequestTimeout;
     final float backoffMultiplier;

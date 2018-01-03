@@ -385,9 +385,6 @@ public class BookieProtoEncoding {
 
         @Override
         protected void encode(ChannelHandlerContext ctx, Object msg, List<Object> out) throws Exception {
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("Encode request {} to channel {}.", msg, ctx.channel());
-            }
             if (msg instanceof BookkeeperProtocol.Request) {
                 out.add(reqV3.encode(msg, ctx.alloc()));
             } else if (msg instanceof BookieProtocol.Request) {
@@ -416,8 +413,8 @@ public class BookieProtoEncoding {
 
         @Override
         protected void decode(ChannelHandlerContext ctx, Object msg, List<Object> out) throws Exception {
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("Received request {} from channel {} to decode.", msg, ctx.channel());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Received request {} from channel {} to decode.", msg, ctx.channel());
             }
             if (!(msg instanceof ByteBuf)) {
                 out.add(msg);
@@ -456,8 +453,8 @@ public class BookieProtoEncoding {
         @Override
         protected void encode(ChannelHandlerContext ctx, Object msg, List<Object> out)
                 throws Exception {
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("Encode response {} to channel {}.", msg, ctx.channel());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Encode response {} to channel {}.", msg, ctx.channel());
             }
             if (msg instanceof BookkeeperProtocol.Response) {
                 out.add(repV3.encode(msg, ctx.alloc()));
@@ -487,8 +484,8 @@ public class BookieProtoEncoding {
 
         @Override
         protected void decode(ChannelHandlerContext ctx, Object msg, List<Object> out) throws Exception {
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("Received response {} from channel {} to decode.", msg, ctx.channel());
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Received response {} from channel {} to decode.", msg, ctx.channel());
             }
             if (!(msg instanceof ByteBuf)) {
                 out.add(msg);

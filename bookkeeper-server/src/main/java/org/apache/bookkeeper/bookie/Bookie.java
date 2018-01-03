@@ -92,7 +92,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -633,13 +632,11 @@ public class Bookie extends BookieCriticalThread {
         this.registrationManager = instantiateRegistrationManager(conf);
         checkEnvironment(this.registrationManager);
         try {
-            ZooKeeper zooKeeper = null;  // ZooKeeper is null existing only for testing
             if (registrationManager != null) {
-                zooKeeper = ((ZKRegistrationManager) this.registrationManager).getZk();
                 // current the registration manager is zookeeper only
                 ledgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(
                     conf,
-                    zooKeeper);
+                    registrationManager.getLayoutManager());
                 LOG.info("instantiate ledger manager {}", ledgerManagerFactory.getClass().getName());
                 ledgerManager = ledgerManagerFactory.newLedgerManager();
             } else {

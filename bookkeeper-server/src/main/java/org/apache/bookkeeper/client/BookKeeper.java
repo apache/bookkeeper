@@ -30,7 +30,6 @@ import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.DefaultThreadFactory;
-
 import java.io.IOException;
 import java.util.EnumSet;
 import java.util.List;
@@ -238,6 +237,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
          * @return client builder.
          * @since 4.5
          */
+        @Deprecated
         public Builder zk(ZooKeeper zk) {
             this.zk = zk;
             return this;
@@ -444,6 +444,9 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         } catch (ConfigurationException ce) {
             LOG.error("Failed to initialize registration client", ce);
             throw new IOException("Failed to initialize registration client", ce);
+        } catch (BKException be) {
+            LOG.error("Failed to initialize registration client", be);
+            throw new IOException("Failed to initialize registration client", be);
         }
 
         // initialize event loop group
@@ -512,9 +515,11 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         // initialize ledger manager
         try {
             this.ledgerManagerFactory =
-                LedgerManagerFactory.newLedgerManagerFactory(conf, ((ZKRegistrationClient) regClient).getZk());
+                LedgerManagerFactory.newLedgerManagerFactory(conf, regClient.getLayoutManager());
         } catch (KeeperException ke) {
             throw new ZKException();
+        } catch (IOException | InterruptedException e) {
+            throw e;
         }
         this.ledgerManager = new CleanupLedgerManager(ledgerManagerFactory.newLedgerManager());
         this.ledgerIdGenerator = ledgerManagerFactory.newLedgerIdGenerator();
