@@ -120,7 +120,7 @@ class FileInfoBackingCache {
          * When a client obtains a fileinfo from a container object,
          * but that container object may release the fileinfo before
          * the client has a chance to call retain. In this case, the
-         * file info could be releases and the destroyed before we ever
+         * file info could be released and the destroyed before we ever
          * get a chance to use it.
          *
          * <p>tryRetain avoids this problem, by doing a compare-and-swap on
