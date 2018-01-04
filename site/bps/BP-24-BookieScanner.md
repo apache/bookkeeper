@@ -1,6 +1,6 @@
 ﻿---
 title: "BP-24: BookieScanner: Enhance Data Integrity"
-issue: https://github.com/apache/bookkeeper/<issue-number>
+issue: https://github.com/apache/bookkeeper/issues/942
 state: "Under Discussion"
 release: "N/A"
 ---
