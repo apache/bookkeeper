@@ -98,7 +98,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
     public void tearDown() throws Exception {
         super.tearDown();
         if (null != mFactory){
-            mFactory.uninitialize();
+            mFactory.close();
             mFactory = null;
         }
         if (null != underReplicationManager){

@@ -144,11 +144,11 @@ public class TestLedgerUnderreplicationManager {
             zkc2 = null;
         }
         if (lmf1 != null) {
-            lmf1.uninitialize();
+            lmf1.close();
             lmf1 = null;
         }
         if (lmf2 != null) {
-            lmf2.uninitialize();
+            lmf2.close();
             lmf2 = null;
         }
     }

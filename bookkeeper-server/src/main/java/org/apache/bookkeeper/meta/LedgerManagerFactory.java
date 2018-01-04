@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 /**
  * A factory for creating ledger managers.
  */
-public abstract class LedgerManagerFactory {
+public abstract class LedgerManagerFactory implements AutoCloseable {
 
     static final Logger LOG = LoggerFactory.getLogger(LedgerManagerFactory.class);
     // v1 layout
@@ -65,7 +65,9 @@ public abstract class LedgerManagerFactory {
      *
      * @throws IOException when fail to uninitialize the factory.
      */
-    public abstract void uninitialize() throws IOException;
+    @Override
+    public void close() throws IOException {
+    }
 
     /**
      * Return the ledger id generator, which is used for global unique ledger id

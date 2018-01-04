@@ -101,7 +101,7 @@ public class BookieLedgerIndexTest extends BookKeeperClusterTestCase {
     public void tearDown() throws Exception {
         super.tearDown();
         if (null != newLedgerManagerFactory) {
-            newLedgerManagerFactory.uninitialize();
+            newLedgerManagerFactory.close();
             newLedgerManagerFactory = null;
         }
         if (null != ledgerManager) {

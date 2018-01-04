@@ -89,7 +89,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
             zkLayoutManager);
         assertTrue("Ledger manager is unexpected type",
                    (m instanceof FlatLedgerManagerFactory));
-        m.uninitialize();
+        m.close();
 
         // mismatching conf
         conf.setLedgerManagerFactoryClass(HierarchicalLedgerManagerFactory.class);
@@ -148,14 +148,14 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
 
         assertTrue("Ledger manager is unexpected type",
                    (m instanceof FlatLedgerManagerFactory));
-        m.uninitialize();
+        m.close();
 
         // v2 setting doesn't effect v1
         conf.setLedgerManagerFactoryClass(HierarchicalLedgerManagerFactory.class);
         m = LedgerManagerFactory.newLedgerManagerFactory(conf, zkLayoutManager);
         assertTrue("Ledger manager is unexpected type",
                    (m instanceof FlatLedgerManagerFactory));
-        m.uninitialize();
+        m.close();
 
         // mismatching conf
         conf.setLedgerManagerType(HierarchicalLedgerManagerFactory.NAME);
@@ -247,7 +247,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
                     conf,
                     RegistrationManager
                         .instantiateRegistrationManager(new ServerConfiguration(conf)).getLayoutManager());
-                factory.uninitialize();
+                factory.close();
 
                 success = true;
             } catch (Exception e) {

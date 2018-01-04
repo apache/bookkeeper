@@ -65,7 +65,7 @@ public class LegacyHierarchicalLedgerManagerFactory extends LedgerManagerFactory
     }
 
     @Override
-    public void uninitialize() throws IOException {
+    public void close() throws IOException {
         // since zookeeper instance is passed from outside
         // we don't need to close it here
     }

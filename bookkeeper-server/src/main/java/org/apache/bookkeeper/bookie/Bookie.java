@@ -1016,7 +1016,7 @@ public class Bookie extends BookieCriticalThread {
                         ledgerManager.close();
                     }
                     if (null != ledgerManagerFactory) {
-                        ledgerManagerFactory.uninitialize();
+                        ledgerManagerFactory.close();
                     }
                 } catch (IOException ie) {
                     LOG.error("Failed to close active ledger manager : ", ie);

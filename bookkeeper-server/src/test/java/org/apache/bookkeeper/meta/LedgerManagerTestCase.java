@@ -117,7 +117,7 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
         if (null != ledgerManager) {
             ledgerManager.close();
         }
-        ledgerManagerFactory.uninitialize();
+        ledgerManagerFactory.close();
         super.tearDown();
     }
 

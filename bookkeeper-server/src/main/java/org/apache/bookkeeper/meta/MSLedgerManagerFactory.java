@@ -122,7 +122,7 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
     }
 
     @Override
-    public void uninitialize() throws IOException {
+    public void close() throws IOException {
         metastore.close();
     }
 

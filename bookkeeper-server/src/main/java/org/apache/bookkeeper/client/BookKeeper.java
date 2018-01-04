@@ -1370,7 +1370,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             // which will reject any incoming metadata requests.
             ledgerManager.close();
             ledgerIdGenerator.close();
-            ledgerManagerFactory.uninitialize();
+            ledgerManagerFactory.close();
         } catch (IOException ie) {
             LOG.error("Failed to close ledger manager : ", ie);
         }

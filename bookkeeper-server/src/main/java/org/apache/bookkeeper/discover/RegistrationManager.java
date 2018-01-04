@@ -18,11 +18,13 @@
 
 package org.apache.bookkeeper.discover;
 
+import java.io.IOException;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.LimitedPrivate;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LayoutManager;
+import org.apache.bookkeeper.meta.LedgerLayout;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.ReflectionUtils;
@@ -35,7 +37,7 @@ import org.apache.commons.configuration.ConfigurationException;
  */
 @LimitedPrivate
 @Evolving
-public interface RegistrationManager extends LayoutManager, AutoCloseable {
+public interface RegistrationManager extends AutoCloseable {
 
     /**
      * Instantiate a RegistrationManager based on config.
@@ -131,6 +133,29 @@ public interface RegistrationManager extends LayoutManager, AutoCloseable {
      * @return the layout manager
      */
     LayoutManager getLayoutManager();
+
+    /**
+     * Read ledger layout ledger layout.
+     *
+     * @return the ledger layout
+     * @throws IOException the io exception
+     */
+    LedgerLayout readLedgerLayout() throws IOException;
+
+    /**
+     * Store ledger layout.
+     *
+     * @param layout the layout
+     * @throws IOException the io exception
+     */
+    void storeLedgerLayout(LedgerLayout layout) throws IOException;
+
+    /**
+     * Delete ledger layout.
+     *
+     * @throws IOException the io exception
+     */
+    void deleteLedgerLayout() throws IOException;
 
     /**
      * Prepare ledgers root node, availableNode, readonly node..

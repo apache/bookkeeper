@@ -683,17 +683,15 @@ public class BookieShell implements Tool {
                 predicate = replicasList -> !replicasList.contains(excludingBookieId);
             }
 
-            LedgerManagerFactory mFactory = null;
             try (RegistrationManager rm = RegistrationManager.instantiateRegistrationManager(bkConf)) {
-                mFactory = LedgerManagerFactory.newLedgerManagerFactory(bkConf, rm.getLayoutManager());
-                LedgerUnderreplicationManager underreplicationManager = mFactory.newLedgerUnderreplicationManager();
-                Iterator<Long> iter = underreplicationManager.listLedgersToRereplicate(predicate);
-                while (iter.hasNext()) {
-                    System.out.println(ledgerIdFormatter.formatLedgerId(iter.next()));
-                }
-            } finally {
-                if (mFactory != null) {
-                    mFactory.uninitialize();
+                try (LedgerManagerFactory mFactory =
+                         LedgerManagerFactory.newLedgerManagerFactory(bkConf, rm.getLayoutManager())) {
+                    LedgerUnderreplicationManager underreplicationManager =
+                        mFactory.newLedgerUnderreplicationManager();
+                    Iterator<Long> iter = underreplicationManager.listLedgersToRereplicate(predicate);
+                    while (iter.hasNext()) {
+                        System.out.println(ledgerIdFormatter.formatLedgerId(iter.next()));
+                    }
                 }
             }
 
@@ -717,49 +715,38 @@ public class BookieShell implements Tool {
 
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
-            LedgerManagerFactory mFactory = null;
-            LedgerManager m = null;
-            try {
-                mFactory = LedgerManagerFactory.newLedgerManagerFactory(
+            try (LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(
                     bkConf,
-                    RegistrationManager.instantiateRegistrationManager(bkConf).getLayoutManager());
-                m = mFactory.newLedgerManager();
-                LedgerRangeIterator iter = m.getLedgerRanges();
-                if (cmdLine.hasOption("m")) {
-                    List<ReadMetadataCallback> futures = new ArrayList<ReadMetadataCallback>(LIST_BATCH_SIZE);
-                    while (iter.hasNext()) {
-                        LedgerRange r = iter.next();
-                        for (Long lid : r.getLedgers()) {
-                            ReadMetadataCallback cb = new ReadMetadataCallback(lid);
-                            m.readLedgerMetadata(lid, cb);
-                            futures.add(cb);
-                        }
-                        if (futures.size() >= LIST_BATCH_SIZE) {
-                            while (futures.size() > 0) {
-                                ReadMetadataCallback cb = futures.remove(0);
-                                printLedgerMetadata(cb);
+                    RegistrationManager.instantiateRegistrationManager(bkConf).getLayoutManager())) {
+                try (LedgerManager m = mFactory.newLedgerManager()) {
+                    LedgerRangeIterator iter = m.getLedgerRanges();
+                    if (cmdLine.hasOption("m")) {
+                        List<ReadMetadataCallback> futures = new ArrayList<ReadMetadataCallback>(LIST_BATCH_SIZE);
+                        while (iter.hasNext()) {
+                            LedgerRange r = iter.next();
+                            for (Long lid : r.getLedgers()) {
+                                ReadMetadataCallback cb = new ReadMetadataCallback(lid);
+                                m.readLedgerMetadata(lid, cb);
+                                futures.add(cb);
+                            }
+                            if (futures.size() >= LIST_BATCH_SIZE) {
+                                while (futures.size() > 0) {
+                                    ReadMetadataCallback cb = futures.remove(0);
+                                    printLedgerMetadata(cb);
+                                }
                             }
                         }
-                    }
-                    while (futures.size() > 0) {
-                        ReadMetadataCallback cb = futures.remove(0);
-                        printLedgerMetadata(cb);
-                    }
-                } else {
-                    while (iter.hasNext()) {
-                        LedgerRange r = iter.next();
-                        for (Long lid : r.getLedgers()) {
-                            System.out.println(ledgerIdFormatter.formatLedgerId(lid));
+                        while (futures.size() > 0) {
+                            ReadMetadataCallback cb = futures.remove(0);
+                            printLedgerMetadata(cb);
                         }
-                    }
-                }
-            } finally {
-                if (m != null) {
-                    try {
-                        m.close();
-                        mFactory.uninitialize();
-                    } catch (IOException ioe) {
-                        LOG.error("Failed to close ledger manager : ", ioe);
+                    } else {
+                        while (iter.hasNext()) {
+                            LedgerRange r = iter.next();
+                            for (Long lid : r.getLedgers()) {
+                                System.out.println(ledgerIdFormatter.formatLedgerId(lid));
+                            }
+                        }
                     }
                 }
             }
@@ -829,18 +816,14 @@ public class BookieShell implements Tool {
                 return -1;
             }
 
-
-            LedgerManagerFactory mFactory = null;
             try (RegistrationManager rm = RegistrationManager.instantiateRegistrationManager(bkConf)) {
-                mFactory = LedgerManagerFactory.newLedgerManagerFactory(bkConf, rm.getLayoutManager());
-                try (LedgerManager m = mFactory.newLedgerManager()) {
-                    ReadMetadataCallback cb = new ReadMetadataCallback(lid);
-                    m.readLedgerMetadata(lid, cb);
-                    printLedgerMetadata(cb);
-                }
-            } finally {
-                if (mFactory != null) {
-                    mFactory.uninitialize();
+                try (LedgerManagerFactory mFactory =
+                         LedgerManagerFactory.newLedgerManagerFactory(bkConf, rm.getLayoutManager())){
+                    try (LedgerManager m = mFactory.newLedgerManager()) {
+                        ReadMetadataCallback cb = new ReadMetadataCallback(lid);
+                        m.readLedgerMetadata(lid, cb);
+                        printLedgerMetadata(cb);
+                    }
                 }
             }
 
@@ -1487,11 +1470,10 @@ public class BookieShell implements Tool {
                 printUsage();
                 return 1;
             }
-            LedgerManagerFactory mFactory = null;
-            try {
-                mFactory = LedgerManagerFactory.newLedgerManagerFactory(
+
+            try (LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(
                     bkConf,
-                    RegistrationManager.instantiateRegistrationManager(bkConf).getLayoutManager());
+                    RegistrationManager.instantiateRegistrationManager(bkConf).getLayoutManager())) {
                 LedgerUnderreplicationManager underreplicationManager = mFactory.newLedgerUnderreplicationManager();
                 if (!enable && !disable) {
                     boolean enabled = underreplicationManager.isLedgerReplicationEnabled();
@@ -1509,14 +1491,6 @@ public class BookieShell implements Tool {
                     } else {
                         LOG.info("Disabling autorecovery");
                         underreplicationManager.disableLedgerReplication();
-                    }
-                }
-            } finally {
-                if (mFactory != null) {
-                    try {
-                        mFactory.uninitialize();
-                    } catch (IOException ioe) {
-                        LOG.error("Failed to close ledger manager factory: ", ioe);
                     }
                 }
             }
