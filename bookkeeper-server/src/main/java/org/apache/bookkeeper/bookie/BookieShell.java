@@ -2559,7 +2559,7 @@ public class BookieShell implements Tool {
     }
 
     private void printShellUsage() {
-        System.err.println("Usage: bookkeeper shell [-ledgeridformat <hex/long/uuid>] "
+        System.err.println("Usage: bookkeeper shell [-localbookie [<host:port>]] [-ledgeridformat <hex/long/uuid>] "
                 + "[-entryformat <hex/string>] [-conf configuration] <command>");
         System.err.println("where command is one of:");
         List<String> commandNames = new ArrayList<String>();

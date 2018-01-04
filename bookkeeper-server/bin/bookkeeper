@@ -56,6 +56,8 @@ DEFAULT_LOG_CONF=$BK_HOME/conf/log4j.properties
 
 source $BK_HOME/conf/bkenv.sh
 
+LOCALBOOKIES_CONFIG_DIR="${LOCALBOOKIES_CONFIG_DIR:-/tmp/localbookies-config}"
+
 # Check for the java to use
 if [[ -z $JAVA_HOME ]]; then
   JAVA=$(which java)
@@ -184,6 +186,16 @@ shift
 
 if [ $COMMAND == "shell" ]; then
   DEFAULT_LOG_CONF=$BK_HOME/conf/log4j.shell.properties
+    if [[ $1 == "-localbookie"  ]]; then
+        if [[ $2 == *:* ]];
+        then
+            BOOKIE_CONF=$LOCALBOOKIES_CONFIG_DIR/$2.conf
+            shift 2
+        else
+            BOOKIE_CONF=$LOCALBOOKIES_CONFIG_DIR/baseconf.conf
+            shift
+        fi
+    fi
 fi
 
 if [ -z "$BOOKIE_CONF" ]; then
