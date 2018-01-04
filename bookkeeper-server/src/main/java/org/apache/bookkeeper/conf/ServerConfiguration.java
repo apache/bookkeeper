@@ -240,7 +240,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * get ReadChannelCache expire time.
+     * Get ReadChannelCache expire time.
      *
      * @return server configuration object.
      */
@@ -249,8 +249,8 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * set ReadChannelCache expire time. Default value is 1h.
-     *
+     * Set ReadChannelCache expire time. Default value is 1h.
+     * After ReadChannel expire from cache, its corresponding fileChannel will be closed.
      * @param millis
      *          expire time.
      * @return server configuration object.

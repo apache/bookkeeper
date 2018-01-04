@@ -27,7 +27,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.google.common.base.Ticker;
 import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Sets;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -40,6 +42,9 @@ import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.util.DiskChecker;
@@ -368,9 +373,10 @@ public class EntryLogTest {
             assertTrue(logFile.exists());
         }
 
+        FakeTicker t = new FakeTicker();
+        FakeEntryLogger logger = new FakeEntryLogger(conf, bookie.getLedgerDirsManager(), t);
         // create some read for the entry log
-        EntryLogger logger = ((InterleavedLedgerStorage) bookie.ledgerStorage).entryLogger;
-        ThreadLocal<Cache<Long, BufferedReadChannel>>  cacheThreadLocal = logger.getLogid2Channel();
+        ThreadLocal<Cache<Long, BufferedReadChannel>>  cacheThreadLocal = logger.logid2Channel;
         ConcurrentMap<Long, EntryLogger.ReferenceCountedFileChannel> logid2FileChannel = logger.getLogid2FileChannel();
         for (int j = 0; j < numEntries; j++) {
             logger.readEntry(0, j, positions[0][j]);
@@ -386,8 +392,12 @@ public class EntryLogTest {
                 cacheThreadLocal.get().asMap().toString());
         // the cache has readChannel for 2.log
         assertNotNull(cacheThreadLocal.get().getIfPresent(2L));
-        // expire time
-        Thread.sleep(expireTime);
+
+        // advance expire time
+        t.advance(expireTime, TimeUnit.SECONDS);
+
+        LOG.info("cache size is {}, content is {}", cacheThreadLocal.get().size(),
+                cacheThreadLocal.get().asMap().toString());
         // read to new entry log, the old values in logid2Channel should has been invalidated
         for (int j = 0; j < numEntries; j++) {
             logger.readEntry(2, j, positions[2][j]);
@@ -494,5 +504,54 @@ public class EntryLogTest {
         logger.flushRotatedLogs();
 
         assertEquals(Sets.newHashSet(0L, 1L, 2L, 3L), logger.getEntryLogsSet());
+    }
+
+    /**
+     * Fake Ticker to advance ticker as expected.
+     */
+    class FakeTicker extends Ticker {
+
+        private final AtomicLong nanos = new AtomicLong();
+
+        /** Advances the ticker value by {@code time} in {@code timeUnit}. */
+        public FakeTicker advance(long time, TimeUnit timeUnit) {
+            nanos.addAndGet(timeUnit.toNanos(time));
+            return this;
+        }
+
+        @Override
+        public long read() {
+            long value = nanos.getAndAdd(0);
+            return value;
+        }
+    }
+
+    /**
+     * Fake EntryLogger using customized cache to hide superclass'.
+     */
+    class FakeEntryLogger extends EntryLogger {
+        private Ticker ticker;
+        FakeEntryLogger(ServerConfiguration conf, LedgerDirsManager ledgerDirsManager,
+                        Ticker ticker) throws IOException{
+            super(conf, ledgerDirsManager);
+            this.ticker = ticker;
+        }
+
+        private final ThreadLocal<Cache<Long, BufferedReadChannel>> logid2Channel =
+                new ThreadLocal<Cache<Long, BufferedReadChannel>>() {
+                    @Override
+                    public Cache<Long, BufferedReadChannel> initialValue() {
+                        return CacheBuilder.newBuilder().concurrencyLevel(1)
+                                .expireAfterAccess(getReadChannelCacheExpireTimeMs(), TimeUnit.MILLISECONDS)
+                                .removalListener(removal -> getLogid2FileChannel().get(removal.getKey()).release())
+                                .ticker(ticker).build(getReadChannelLoader());
+                    }
+                };
+
+        public void putInReadChannels(long logId, BufferedReadChannel bc) {
+            Cache<Long, BufferedReadChannel> threadCahe = logid2Channel.get();
+            threadCahe.put(logId, bc);
+        }
+
     }
 }

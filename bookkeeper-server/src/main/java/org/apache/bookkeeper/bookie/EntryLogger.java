@@ -203,7 +203,7 @@ public class EntryLogger {
     private final boolean doRegularFlushes;
     private long bytesWrittenSinceLastFlush = 0;
     private final int maxSaneEntrySize;
-    private final long expireReadChannelCache;
+    private final long readChannelCacheExpireTimeMs;
 
     final ServerConfiguration conf;
     /**
@@ -293,7 +293,7 @@ public class EntryLogger {
         flushIntervalInBytes = conf.getFlushIntervalInBytes();
         doRegularFlushes = flushIntervalInBytes > 0;
 
-        expireReadChannelCache = conf.getReadChannelCacheExpireTimeMs();
+        readChannelCacheExpireTimeMs = conf.getReadChannelCacheExpireTimeMs();
         initialize();
     }
 
@@ -346,7 +346,7 @@ public class EntryLogger {
             // We dont really need the concurrency, but we need to use
             // the weak values. Therefore using the concurrency level of 1
             return CacheBuilder.newBuilder().concurrencyLevel(1)
-                    .expireAfterAccess(expireReadChannelCache, TimeUnit.MILLISECONDS)
+                    .expireAfterAccess(readChannelCacheExpireTimeMs, TimeUnit.MILLISECONDS)
                     //decrease the refCnt
                     .removalListener(removal -> logid2FileChannel.get(removal.getKey()).release())
                     .build(readChannelLoader);
@@ -354,8 +354,13 @@ public class EntryLogger {
     };
 
     @VisibleForTesting
-    ThreadLocal<Cache<Long, BufferedReadChannel>> getLogid2Channel() {
-        return logid2Channel;
+    long getReadChannelCacheExpireTimeMs() {
+        return readChannelCacheExpireTimeMs;
+    }
+
+    @VisibleForTesting
+    CacheLoader<Long, BufferedReadChannel> getReadChannelLoader() {
+        return readChannelLoader;
     }
 
     private final  CacheLoader<Long, BufferedReadChannel> readChannelLoader =
@@ -366,7 +371,6 @@ public class EntryLogger {
 
         }
     };
-
 
     static class ReferenceCountedFileChannel extends AbstractReferenceCounted {
         private final FileChannel fc;
