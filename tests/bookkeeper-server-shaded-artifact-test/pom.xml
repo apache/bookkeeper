@@ -42,6 +42,10 @@
           <groupId>org.apache.bookkeeper</groupId>
           <artifactId>bookkeeper-proto</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.apache.pulsar</groupId>
+          <artifactId>pulsar-checksum</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
   </dependencies>
