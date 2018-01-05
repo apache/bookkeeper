@@ -189,6 +189,7 @@ public class BookieRequestProcessor implements RequestProcessor {
     public void close() {
         shutdownExecutor(writeThreadPool);
         shutdownExecutor(readThreadPool);
+        shutdownExecutor(longPollThreadPool);
     }
 
     private OrderedSafeExecutor createExecutor(
