@@ -63,6 +63,7 @@
     <module>tests</module>
     <module>bookkeeper-dist</module>
     <module>microbenchmarks</module>
+    <module>docker</module>
   </modules>
   <mailingLists>
     <mailingList>
