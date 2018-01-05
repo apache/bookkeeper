@@ -64,7 +64,6 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 /**
  * This class tests the entry log compaction functionality.
  */
