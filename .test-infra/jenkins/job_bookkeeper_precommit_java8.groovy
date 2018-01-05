@@ -33,7 +33,7 @@ mavenJob('bookkeeper_precommit_pullrequest_java8') {
     120)
 
   // Sets that this is a PreCommit job.
-  common_job_properties.setPreCommit(delegate, 'Maven clean install')
+  common_job_properties.setPreCommit(delegate, 'Maven clean install (Java 8)')
 
   // Set Maven parameters.
   common_job_properties.setMavenConfig(delegate)
