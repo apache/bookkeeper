@@ -154,7 +154,9 @@ public class OrderedScheduler {
 
         @Override
         public void safeRun() {
-            taskPendingStats.registerSuccessfulEvent(initNanos, TimeUnit.NANOSECONDS);
+            taskPendingStats.registerSuccessfulEvent(
+                    MathUtils.elapsedNanos(initNanos),
+                    TimeUnit.NANOSECONDS);
             long startNanos = MathUtils.nowInNano();
             this.runnable.safeRun();
             long elapsedMicroSec = MathUtils.elapsedMicroSec(startNanos);
@@ -325,7 +327,7 @@ public class OrderedScheduler {
      * @param r
      */
     public void submitOrdered(long orderingKey, SafeRunnable r) {
-        chooseThread(orderingKey).execute(r);
+        chooseThread(orderingKey).execute(timedRunnable(r));
     }
 
     /**
@@ -335,7 +337,7 @@ public class OrderedScheduler {
      * @param r
      */
     public void submitOrdered(int orderingKey, SafeRunnable r) {
-        chooseThread(orderingKey).execute(r);
+        chooseThread(orderingKey).execute(timedRunnable(r));
     }
 
     /**
