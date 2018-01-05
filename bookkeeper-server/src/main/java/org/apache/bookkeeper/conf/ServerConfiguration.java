@@ -185,6 +185,9 @@ public class ServerConfiguration extends AbstractConfiguration {
     // Registration
     protected final static String REGISTRATION_MANAGER_CLASS = "registrationManagerClass";
 
+    // Stats
+    protected static final String ENABLE_TASK_EXECUTION_STATS = "enableTaskExecutionStats";
+
     /**
      * Construct a default configuration object
      */
@@ -2414,6 +2417,28 @@ public class ServerConfiguration extends AbstractConfiguration {
      */
     public ServerConfiguration setTLSTrustStorePasswordPath(String arg) {
         setProperty(TLS_TRUSTSTORE_PASSWORD_PATH, arg);
+        return this;
+    }
+
+
+    /**
+     * Whether to enable recording task execution stats.
+     *
+     * @return flag to enable/disable recording task execution stats.
+     */
+    public boolean getEnableTaskExecutionStats() {
+        return getBoolean(ENABLE_TASK_EXECUTION_STATS, false);
+    }
+
+    /**
+     * Enable/Disable recording task execution stats.
+     *
+     * @param enabled
+     *          flag to enable/disable recording task execution stats.
+     * @return client configuration.
+     */
+    public ServerConfiguration setEnableTaskExecutionStats(boolean enabled) {
+        setProperty(ENABLE_TASK_EXECUTION_STATS, enabled);
         return this;
     }
 
