@@ -82,8 +82,7 @@ public class GarbageCollectorThread extends SafeRunnable {
     long lastMinorCompactionTime;
 
     boolean enableMajorCompaction = false;
-    final double originalMajorCompactionThreshold;
-    double majorCompactionThreshold;
+    final double majorCompactionThreshold;
 
     final double medianMajorCompactionThreshold;
     final double highMajorCompactionThreshold;
@@ -202,7 +201,7 @@ public class GarbageCollectorThread extends SafeRunnable {
         // compaction parameters
         minorCompactionThreshold = conf.getMinorCompactionThreshold();
         minorCompactionInterval = conf.getMinorCompactionInterval() * SECOND;
-        originalMajorCompactionThreshold = majorCompactionThreshold = conf.getMajorCompactionThreshold();
+        majorCompactionThreshold = conf.getMajorCompactionThreshold();
         majorCompactionInterval = conf.getMajorCompactionInterval() * SECOND;
         medianMajorCompactionThreshold = conf.getMedianMajorCompactionThreshold();
         highMajorCompactionThreshold = conf.getHighMajorCompactionThreshold();
@@ -342,40 +341,20 @@ public class GarbageCollectorThread extends SafeRunnable {
     }
 
     /**
-     * increase the threshold when the system in low load status.
-     */
-    private void activateMedianThreshold(){
-        majorCompactionThreshold = medianMajorCompactionThreshold;
-    }
-    /**
-     * increase the threshold when the system in a very low load status.
-     */
-    private void activateHighThreshold(){
-        majorCompactionThreshold = highMajorCompactionThreshold;
-    }
-
-    /**
      * Check whether the configured cron is met and activate threshold.
      */
-    private void changeMajorCompactionThreshold(){
+    private double getCurrentMajorCompactionThreshold(){
         // next fire time is in the interval
         if (medianMajorCron.nextTimeAfter(ZonedDateTime.now()).toInstant().toEpochMilli()
                 <= (majorCompactionInterval + lastChangeThresholdTime)) {
-            activateMedianThreshold();
+            return medianMajorCompactionThreshold;
         }
         if (highMajorCron.nextTimeAfter(ZonedDateTime.now()).toInstant().toEpochMilli()
                 <= (majorCompactionInterval + lastChangeThresholdTime)) {
-            activateHighThreshold();
+            return highMajorCompactionThreshold;
         }
         lastChangeThresholdTime = ZonedDateTime.now().toInstant().toEpochMilli();
-    }
-
-    /**
-     * restore the threshold to normal value.
-     */
-    private void restoreThreshold(){
-        majorCompactionThreshold = originalMajorCompactionThreshold;
-
+        return majorCompactionThreshold;
     }
 
     public void runWithFlags(boolean force, boolean suspendMajor, boolean suspendMinor) {
@@ -384,7 +363,7 @@ public class GarbageCollectorThread extends SafeRunnable {
             LOG.info("Garbage collector thread forced to perform GC before expiry of wait time.");
         }
 
-        changeMajorCompactionThreshold();
+        double currentMajorCompactionThreshold = getCurrentMajorCompactionThreshold();
 
         // Recover and clean up previous state if using transactional compaction
         compactor.cleanUpAndRecover();
@@ -411,7 +390,7 @@ public class GarbageCollectorThread extends SafeRunnable {
             && (force || curTime - lastMajorCompactionTime > majorCompactionInterval)) {
             // enter major compaction
             LOG.info("Enter major compaction, suspendMajor {}", suspendMajor);
-            doCompactEntryLogs(majorCompactionThreshold);
+            doCompactEntryLogs(currentMajorCompactionThreshold);
             lastMajorCompactionTime = MathUtils.now();
             // and also move minor compaction time
             lastMinorCompactionTime = lastMajorCompactionTime;
@@ -426,8 +405,7 @@ public class GarbageCollectorThread extends SafeRunnable {
         }
         this.gcThreadRuntime.registerSuccessfulEvent(
                 MathUtils.nowInNano() - threadStart, TimeUnit.NANOSECONDS);
-        // restore to normal threshold
-        restoreThreshold();
+
     }
 
     /**

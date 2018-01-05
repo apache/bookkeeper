@@ -40,6 +40,7 @@ import org.junit.Test;
 
 /**
  * A test for CronExpression.
+ * learned from https://github.com/frode-carlsen/cron
  */
 public class CronExpressionTest {
     TimeZone original;

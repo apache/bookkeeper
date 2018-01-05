@@ -1124,8 +1124,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     /**
      * Get threshold of median major compaction.
      *
-     * <p>same with the @see #getMajorCompactionThreshold()
-     * the high threshold is used when the system is on a low load status
+     * the median threshold is used when the system is
+     * in a specific schedule time interval which is expressed by cronExpression
+     * @see #getMedianMajorCompactionCron()
      *
      * @return threshold of median major compaction
      */
@@ -1150,8 +1151,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     /**
      * Get threshold of high major compaction.
      *
-     * <p>same with the @see #getMajorCompactionThreshold()
-     * the high threshold is used when the system is on a very low load status
+     * the high threshold is used when the system is
+     * in a specific schedule time interval which is expressed by cronExpression
+     * @see #getHighMajorCompactionCron()
      *
      * @return threshold of high major compaction
      */
@@ -1182,11 +1184,13 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Set median major compaction cron expression.
+     * Set median major compaction cron expression,
+     * set this value to a time intervals in which system load is low,
+     * where deeper compaction is better.
      *
      *
      * @param medianMajorCompactionCron
-     *          specified cron expression indicates median major compaction.
+     *          specified cron expression indicates median major compaction intervals.
      * @return server configuration
      */
     public ServerConfiguration setMedianMajorCompactionCron(String medianMajorCompactionCron) {
@@ -1203,15 +1207,15 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Set high major compaction cron expression.
+     * Set high major compaction cron expression,
+     * set this value to a time intervals in which system load is very low.
      *
-     *
-     * @param medianMajorCompactionCron
-     *          specified cron expression indicates median major compaction.
+     * @param highMajorCompactionCron
+     *          specified cron expression indicates high major compaction intervals.
      * @return server configuration
      */
-    public ServerConfiguration setHighMajorCompactionCron(String medianMajorCompactionCron) {
-        setProperty(HIGH_MAJOR_COMPACTION_CRON, medianMajorCompactionCron);
+    public ServerConfiguration setHighMajorCompactionCron(String highMajorCompactionCron) {
+        setProperty(HIGH_MAJOR_COMPACTION_CRON, highMajorCompactionCron);
         return this;
     }
 
