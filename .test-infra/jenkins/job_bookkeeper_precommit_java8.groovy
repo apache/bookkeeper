@@ -19,8 +19,8 @@
 import common_job_properties
 
 // This is the Java precommit which runs a maven install, and the current set of precommit tests.
-mavenJob('bookkeeper_precommit_pullrequest_java9') {
-  description('precommit verification for pull requests of <a href="http://bookkeeper.apache.org">Apache BookKeeper</a> in Java 9.')
+mavenJob('bookkeeper_precommit_pullrequest_java8') {
+  description('precommit verification for pull requests of <a href="http://bookkeeper.apache.org">Apache BookKeeper</a> in Java 8.')
 
   // Execute concurrent builds if necessary.
   concurrentBuild()
@@ -29,7 +29,7 @@ mavenJob('bookkeeper_precommit_pullrequest_java9') {
   common_job_properties.setTopLevelMainJobProperties(
     delegate,
     'master',
-    'JDK 1.9 (latest)',
+    'JDK 1.8 (latest)',
     120)
 
   // Sets that this is a PreCommit job.

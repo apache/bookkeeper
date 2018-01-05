@@ -18,26 +18,29 @@
 
 import common_job_properties
 
-// This is the Java precommit which runs a maven install, and the current set of precommit tests.
-mavenJob('bookkeeper_precommit_pullrequest_java9') {
-  description('precommit verification for pull requests of <a href="http://bookkeeper.apache.org">Apache BookKeeper</a> in Java 9.')
-
-  // Execute concurrent builds if necessary.
-  concurrentBuild()
+// This job runs the Java postcommit tests on Java 9
+mavenJob('bookkeeper_postcommit_master_java9') {
+  description('Runs nightly build for bookkeeper in Java 9.')
 
   // Set common parameters.
   common_job_properties.setTopLevelMainJobProperties(
-    delegate,
-    'master',
-    'JDK 1.9 (latest)',
-    120)
+    delegate, 'master', 'JDK 1.9 (latest)')
 
-  // Sets that this is a PreCommit job.
-  common_job_properties.setPreCommit(delegate, 'Maven clean install')
+  // Sets that this is a PostCommit job.
+  common_job_properties.setPostCommit(
+      delegate,
+      'H 12 * * *',
+      false)
 
-  // Set Maven parameters.
+  // Allows triggering this build against pull requests.
+  common_job_properties.enablePhraseTriggeringFromPullRequest(
+      delegate,
+      'Java 9 Test',
+      '/test-java9')
+
+  // Set maven parameters.
   common_job_properties.setMavenConfig(delegate)
 
-  // Maven build project
+  // Maven build project.
   goals('clean apache-rat:check package spotbugs:check')
 }
