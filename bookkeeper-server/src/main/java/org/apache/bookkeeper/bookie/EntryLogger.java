@@ -1339,7 +1339,7 @@ public class EntryLogger {
 
             @Override
             public boolean accept(long ledgerId) {
-                return ledgerId > 0;
+                return ledgerId >= 0;
             }
         });
 
