@@ -18,19 +18,13 @@
 
 import common_job_properties
 
-// This job runs the Java postcommit tests cross multiple JDK versions.
-matrixJob('bookkeeper_postcommit_master_jdkversions') {
-  description('Runs nightly build for bookkeeper in multiple Jdk versions.')
+// This job runs the Java postcommit tests on Java 8
+mavenJob('bookkeeper_postcommit_master_java8') {
+  description('Runs nightly build for bookkeeper in Java 8.')
 
   // Set common parameters.
-  common_job_properties.setTopLevelMainJobProperties(delegate)
-
-  // Set JDK versions.
-  axes {
-    label('label', 'ubuntu')
-    jdk('JDK 1.8 (latest)',
-        'JDK 1.9 (latest)')
-  }
+  common_job_properties.setTopLevelMainJobProperties(
+    delegate, 'master', 'JDK 1.8 (latest)')
 
   // Sets that this is a PostCommit job.
   common_job_properties.setPostCommit(
@@ -41,17 +35,12 @@ matrixJob('bookkeeper_postcommit_master_jdkversions') {
   // Allows triggering this build against pull requests.
   common_job_properties.enablePhraseTriggeringFromPullRequest(
       delegate,
-      'JDK Version Test',
-      '/test-jdks')
+      'Java 8 Test',
+      '/test-java8')
 
-  // Maven build for this job.
-  steps {
-    maven {
-      // Set maven parameters.
-      common_job_properties.setMavenConfig(delegate)
+  // Set maven parameters.
+  common_job_properties.setMavenConfig(delegate)
 
-      // Maven build project.
-      goals('clean apache-rat:check package spotbugs:check')
-    }
-  }
+  // Maven build project.
+  goals('clean apache-rat:check package spotbugs:check')
 }

@@ -19,8 +19,8 @@
 import common_job_properties
 
 // This is the Java precommit which runs a maven install, and the current set of precommit tests.
-matrixJob('bookkeeper_precommit_pullrequest') {
-  description('precommit verification for pull requests of <a href="http://bookkeeper.apache.org">Apache BookKeeper</a>.')
+mavenJob('bookkeeper_precommit_pullrequest_java8') {
+  description('precommit verification for pull requests of <a href="http://bookkeeper.apache.org">Apache BookKeeper</a> in Java 8.')
 
   // Execute concurrent builds if necessary.
   concurrentBuild()
@@ -29,26 +29,15 @@ matrixJob('bookkeeper_precommit_pullrequest') {
   common_job_properties.setTopLevelMainJobProperties(
     delegate,
     'master',
+    'JDK 1.8 (latest)',
     120)
-
-  // Set JDK versions.
-  axes {
-    label('label', 'ubuntu')
-    jdk('JDK 1.8 (latest)',
-        'JDK 1.9 (latest)')
-  }
 
   // Sets that this is a PreCommit job.
   common_job_properties.setPreCommit(delegate, 'Maven clean install')
 
-  // Maven build for this job.
-  steps {
-    maven {
-      // Set Maven parameters.
-      common_job_properties.setMavenConfig(delegate)
+  // Set Maven parameters.
+  common_job_properties.setMavenConfig(delegate)
 
-      // Maven build project
-      goals('clean apache-rat:check package spotbugs:check')
-    }
-  }
+  // Maven build project
+  goals('clean apache-rat:check package spotbugs:check')
 }
