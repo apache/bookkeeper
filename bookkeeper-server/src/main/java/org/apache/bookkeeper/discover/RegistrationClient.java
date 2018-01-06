@@ -18,7 +18,6 @@
 
 package org.apache.bookkeeper.discover;
 
-import java.io.IOException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -28,7 +27,6 @@ import org.apache.bookkeeper.common.annotation.InterfaceAudience.LimitedPrivate;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.LayoutManager;
-import org.apache.bookkeeper.meta.LedgerLayout;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.versioning.Versioned;
@@ -126,26 +124,4 @@ public interface RegistrationClient extends AutoCloseable {
      */
     LayoutManager getLayoutManager();
 
-    /**
-     * Read ledger layout ledger layout.
-     *
-     * @return the ledger layout
-     * @throws IOException the io exception
-     */
-    LedgerLayout readLedgerLayout() throws IOException;
-
-    /**
-     * Store ledger layout.
-     *
-     * @param layout the layout
-     * @throws IOException the io exception
-     */
-    void storeLedgerLayout(LedgerLayout layout) throws IOException;
-
-    /**
-     * Delete ledger layout.
-     *
-     * @throws IOException the io exception
-     */
-    void deleteLedgerLayout() throws IOException;
 }

@@ -52,12 +52,12 @@ public class TestZkRegistrationClient {
     @Test
     public void testReadLedgerLayout() throws Exception {
         when(layoutManager.readLedgerLayout()).thenReturn(ledgerLayout);
-        assertEquals(ledgerLayout, zkRegistrationClient.readLedgerLayout());
+        assertEquals(ledgerLayout, zkRegistrationClient.getLayoutManager().readLedgerLayout());
     }
 
     @Test
     public void testStoreLedgerLayout() throws Exception {
-        zkRegistrationClient.storeLedgerLayout(ledgerLayout);
+        zkRegistrationClient.getLayoutManager().storeLedgerLayout(ledgerLayout);
 
         verify(layoutManager, times(1))
             .storeLedgerLayout(eq(ledgerLayout));
@@ -65,7 +65,7 @@ public class TestZkRegistrationClient {
 
     @Test
     public void testDeleteLedgerLayout() throws Exception {
-        zkRegistrationClient.deleteLedgerLayout();
+        zkRegistrationClient.getLayoutManager().deleteLedgerLayout();
 
         verify(layoutManager, times(1))
             .deleteLedgerLayout();

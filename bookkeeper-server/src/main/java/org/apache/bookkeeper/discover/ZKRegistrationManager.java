@@ -40,7 +40,6 @@ import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.bookie.BookieException.MetadataStoreException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LayoutManager;
-import org.apache.bookkeeper.meta.LedgerLayout;
 import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -419,21 +418,6 @@ public class ZKRegistrationManager implements RegistrationManager {
     @Override
     public LayoutManager getLayoutManager(){
         return layoutManager;
-    }
-
-    @Override
-    public LedgerLayout readLedgerLayout() throws IOException {
-        return layoutManager.readLedgerLayout();
-    }
-
-    @Override
-    public void storeLedgerLayout(LedgerLayout layout) throws IOException {
-        layoutManager.storeLedgerLayout(layout);
-    }
-
-    @Override
-    public void deleteLedgerLayout() throws IOException {
-        layoutManager.deleteLedgerLayout();
     }
 
     @Override
