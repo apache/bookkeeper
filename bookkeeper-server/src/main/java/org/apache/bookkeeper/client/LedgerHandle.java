@@ -193,7 +193,7 @@ public class LedgerHandle implements WriteHandle {
             }
         };
 
-        maxNumEnsembleChanges = bk.getConf().getMaxEnsembleChangesNum();
+        maxNumEnsembleChanges = bk.getConf().getMaxNumEnsembleChanges();
         ensembleChangeCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.ENSEMBLE_CHANGES);
         lacUpdateHitsCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.LAC_UPDATE_HITS);
         lacUpdateMissesCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.LAC_UPDATE_MISSES);
@@ -1555,7 +1555,6 @@ public class LedgerHandle implements WriteHandle {
 
     void handleBookieFailure(final Map<Integer, BookieSocketAddress> failedBookies) {
         int curBlockAddCompletions = blockAddCompletions.incrementAndGet();
-
         if (bk.disableEnsembleChangeFeature.isAvailable()) {
             blockAddCompletions.decrementAndGet();
             if (LOG.isDebugEnabled()) {
@@ -1571,7 +1570,7 @@ public class LedgerHandle implements WriteHandle {
         // when the ensemble changes are too frequent, close handle
         if (curNumEnsembleChanges > maxNumEnsembleChanges){
             if (LOG.isDebugEnabled()) {
-                  LOG.debug("touch maxNumEnsembleChanges");
+                LOG.debug("Ledger {} reaches max num ensemble changes {}", ledgerId, maxNumEnsembleChanges);
             }
             handleUnrecoverableErrorDuringAdd(WriteException);
             return;

@@ -79,7 +79,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String REORDER_READ_SEQUENCE_ENABLED = "reorderReadSequenceEnabled";
     // Add Parameters
     protected static final String DELAY_ENSEMBLE_CHANGE = "delayEnsembleChange";
-    protected static final String MAX_ENSEMBLE_CHANGES_NUM = "maxEnsembleChangesNum";
+    protected static final String MAX_NUM_ENSEMBLE_CHANGES = "maxNumEnsembleChanges";
     // Timeout Setting
     protected static final String ADD_ENTRY_TIMEOUT_SEC = "addEntryTimeoutSec";
     protected static final String ADD_ENTRY_QUORUM_TIMEOUT_SEC = "addEntryQuorumTimeoutSec";
@@ -1624,8 +1624,8 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      *
      * @return value of MaxNumEnsembleChanges, default 100.
      */
-    public int getMaxEnsembleChangesNum() {
-        return getInt(MAX_ENSEMBLE_CHANGES_NUM, 100);
+    public int getMaxNumEnsembleChanges() {
+        return getInt(MAX_NUM_ENSEMBLE_CHANGES, 100);
     }
 
     /**
@@ -1635,8 +1635,8 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      *          value of MaxNumEnsembleChanges
      * @return client configuration.
      */
-    public ClientConfiguration setMaxEnsembleChangesNum(int num) {
-        setProperty(MAX_ENSEMBLE_CHANGES_NUM, num);
+    public ClientConfiguration setMaxNumEnsembleChanges(int num) {
+        setProperty(MAX_NUM_ENSEMBLE_CHANGES, num);
         return this;
     }
 

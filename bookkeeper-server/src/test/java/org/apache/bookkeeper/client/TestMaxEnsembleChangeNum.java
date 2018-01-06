@@ -21,75 +21,80 @@
 package org.apache.bookkeeper.client;
 
 import static org.apache.bookkeeper.client.api.BKException.Code.WriteException;
+import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+
+import java.nio.ByteBuffer;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
-import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.junit.Before;
+import org.apache.bookkeeper.client.api.WriteHandle;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.junit.Test;
+
 
 /**
  * Test ensemble change has a max num.
  */
-public class TestMaxEnsembleChangeNum extends BookKeeperClusterTestCase {
+public class TestMaxEnsembleChangeNum extends MockBookKeeperTestCase {
 
     final DigestType digestType;
-    final byte[] testPasswd = "".getBytes();
-    final byte[] data = "foobar".getBytes();
+    private static final byte[] password = new byte[5];
+    private static final byte[] data = new byte[5];
 
 
     public TestMaxEnsembleChangeNum() {
-        super(3);
         this.digestType = DigestType.CRC32;
     }
 
-    @Before
-    @Override
-    public void setUp() throws Exception {
-        baseClientConf.setDelayEnsembleChange(false);
-        baseClientConf.setMaxEnsembleChangesNum(5);
-        super.setUp();
-    }
-
     @Test
-    public void testChangeEnsembleMaxNum() throws Exception {
-        LedgerHandle lh = bkc.createLedger(3, 3, 2, digestType, testPasswd);
+    public void testChangeEnsembleMaxNumWithWriter() throws Exception {
+        long lId;
         int numEntries = 5;
         int changeNum = 5;
-        //first fragment
-        for (int i = 0; i < numEntries; i++) {
-            lh.addEntry(data);
-        }
-        simulateEnsembleChange(changeNum, numEntries, lh);
+        setBookkeeperConfig(new ClientConfiguration().setDelayEnsembleChange(false).setMaxNumEnsembleChanges(5));
+        try (WriteHandle writer = result(newCreateLedgerOp()
+                .withAckQuorumSize(3)
+                .withWriteQuorumSize(3)
+                .withEnsembleSize(3)
+                .withPassword(password)
+                .execute())) {
+            lId = writer.getId();
+            //first fragment
+            for (int i = 0; i < numEntries; i++) {
+                result(writer.append(ByteBuffer.wrap(data)));
+            }
+            assertEquals("There should be zero ensemble change",
+                    1, getLedgerMetadata(lId).getEnsembles().size());
 
-        // one more ensemble change
-        startNewBookie();
-        killBookie(lh.getLedgerMetadata().currentEnsemble.get(0));
-        // add failure
-        try {
-            lh.addEntry(data);
-            fail("should not come to here");
-        } catch (BKException exception){
-            assertEquals(exception.getCode(), WriteException);
-        }
+            simulateEnsembleChangeWithWriter(changeNum, numEntries, writer);
 
+            // one more ensemble change
+            startNewBookie();
+            killBookie(writer.getLedgerMetadata().getEnsembleAt(writer.getLastAddConfirmed()).get(0));
+            // add failure
+            try {
+                result(writer.append(ByteBuffer.wrap(data)));
+                fail("should not come to here");
+            } catch (BKException exception){
+                assertEquals(exception.getCode(), WriteException);
+            }
+        }
     }
 
+    private void simulateEnsembleChangeWithWriter(int changeNum, int numEntries, WriteHandle writer) throws Exception{
 
-    private void simulateEnsembleChange(int changeNum, int numEntries, LedgerHandle lh) throws Exception{
-
-        int expectedSize = lh.getLedgerMetadata().getEnsembles().size() + 1;
+        int expectedSize = writer.getLedgerMetadata().getAllEnsembles().size() + 1;
         //kill bookie and add again
         for (int num = 0; num < changeNum; num++){
             startNewBookie();
 
-            killBookie(lh.getLedgerMetadata().currentEnsemble.get(0));
+            killBookie(writer.getLedgerMetadata().getEnsembleAt(writer.getLastAddConfirmed()).get(0));
             for (int i = 0; i < numEntries; i++) {
-                lh.addEntry(data);
+                result(writer.append(ByteBuffer.wrap(data)));
             }
             // ensure there is a ensemble changed
             assertEquals("There should be one ensemble change",
-                    expectedSize + num, lh.getLedgerMetadata().getEnsembles().size());
+                    expectedSize + num, writer.getLedgerMetadata().getAllEnsembles().size());
         }
     }
 }
