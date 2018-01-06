@@ -20,13 +20,11 @@
  */
 package org.apache.bookkeeper.client.api;
 
-import com.google.common.util.concurrent.UncheckedExecutionException;
 import static org.apache.bookkeeper.client.api.WriteFlag.DEFERRED_SYNC;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
