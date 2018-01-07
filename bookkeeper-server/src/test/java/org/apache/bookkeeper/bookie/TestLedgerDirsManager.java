@@ -28,16 +28,20 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
+import org.apache.bookkeeper.common.testing.executors.MockExecutorController;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.stats.Gauge;
@@ -48,14 +52,17 @@ import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.junit.runner.RunWith;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  * Test LedgerDirsManager.
  */
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(LedgerDirsMonitor.class)
 public class TestLedgerDirsManager {
-    private static final Logger LOG = LoggerFactory.getLogger(TestLedgerDirsManager.class);
 
     ServerConfiguration conf;
     File curDir;
@@ -70,6 +77,10 @@ public class TestLedgerDirsManager {
 
     final List<File> tempDirs = new ArrayList<File>();
 
+    // Thread used by monitor
+    ScheduledExecutorService executor;
+    MockExecutorController executorController;
+
     File createTempDir(String prefix, String suffix) throws IOException {
         File dir = IOUtils.createTempDir(prefix, suffix);
         tempDirs.add(dir);
@@ -78,6 +89,8 @@ public class TestLedgerDirsManager {
 
     @Before
     public void setUp() throws Exception {
+        PowerMockito.mockStatic(Executors.class);
+
         File tmpDir = createTempDir("bkTest", ".dir");
         curDir = Bookie.getCurrentDirectory(tmpDir);
         Bookie.checkDirectoryStructure(curDir);
@@ -87,6 +100,12 @@ public class TestLedgerDirsManager {
         conf.setDiskLowWaterMarkUsageThreshold(conf.getDiskUsageThreshold());
         conf.setDiskCheckInterval(diskCheckInterval);
         conf.setIsForceGCAllowWhenNoSpace(true);
+
+        executor = PowerMockito.mock(ScheduledExecutorService.class);
+        executorController = new MockExecutorController()
+            .controlScheduleAtFixedRate(executor, 10);
+        PowerMockito.when(Executors.newSingleThreadScheduledExecutor(any()))
+            .thenReturn(executor);
 
         mockDiskChecker = new MockDiskChecker(threshold, warnThreshold);
         statsProvider = new TestStatsProvider();
@@ -162,7 +181,6 @@ public class TestLedgerDirsManager {
 
     @Test
     public void testLedgerDirsMonitorDuringTransition() throws Exception {
-
         MockLedgerDirsListener mockLedgerDirsListener = new MockLedgerDirsListener();
         dirsManager.addLedgerDirsListener(mockLedgerDirsListener);
         ledgerMonitor.start();
@@ -170,12 +188,11 @@ public class TestLedgerDirsManager {
         assertFalse(mockLedgerDirsListener.readOnly);
         mockDiskChecker.setUsage(threshold + 0.05f);
 
-        Thread.sleep((diskCheckInterval * 2) + 100);
-
+        executorController.advance(Duration.ofMillis(diskCheckInterval));
         assertTrue(mockLedgerDirsListener.readOnly);
-        mockDiskChecker.setUsage(threshold - 0.05f);
 
-        Thread.sleep(diskCheckInterval + 100);
+        mockDiskChecker.setUsage(threshold - 0.05f);
+        executorController.advance(Duration.ofMillis(diskCheckInterval));
 
         assertFalse(mockLedgerDirsListener.readOnly);
     }
@@ -205,36 +222,36 @@ public class TestLedgerDirsManager {
         dirsManager.addLedgerDirsListener(mockLedgerDirsListener);
         ledgerMonitor.start();
 
-        Thread.sleep((diskCheckInterval * 2) + 100);
+        executorController.advance(Duration.ofMillis(diskCheckInterval));
         assertFalse(mockLedgerDirsListener.readOnly);
 
         // go above LWM but below threshold
         // should still be writable
         mockDiskChecker.setUsage(lwm2nospace);
-        Thread.sleep((diskCheckInterval * 2) + 100);
+        executorController.advance(Duration.ofMillis(diskCheckInterval));
         assertFalse(mockLedgerDirsListener.readOnly);
 
         // exceed the threshold, should go to readonly
         mockDiskChecker.setUsage(nospaceExceeded);
-        Thread.sleep(diskCheckInterval + 100);
+        executorController.advance(Duration.ofMillis(diskCheckInterval));
         assertTrue(mockLedgerDirsListener.readOnly);
 
         // drop below threshold but above LWM
         // should stay read-only
         mockDiskChecker.setUsage(lwm2nospace);
-        Thread.sleep((diskCheckInterval * 2) + 100);
+        executorController.advance(Duration.ofMillis(diskCheckInterval));
         assertTrue(mockLedgerDirsListener.readOnly);
 
         // drop below LWM
         // should become writable
         mockDiskChecker.setUsage(lwm2warn);
-        Thread.sleep((diskCheckInterval * 2) + 100);
+        executorController.advance(Duration.ofMillis(diskCheckInterval));
         assertFalse(mockLedgerDirsListener.readOnly);
 
         // go above LWM but below threshold
         // should still be writable
         mockDiskChecker.setUsage(lwm2nospace);
-        Thread.sleep((diskCheckInterval * 2) + 100);
+        executorController.advance(Duration.ofMillis(diskCheckInterval));
         assertFalse(mockLedgerDirsListener.readOnly);
     }
 
@@ -330,7 +347,7 @@ public class TestLedgerDirsManager {
         usageMap.put(dir1, dir1Usage);
         usageMap.put(dir2, dir2Usage);
         mockDiskChecker.setUsageMap(usageMap);
-        Thread.sleep((diskCheckInterval * 2) + 100);
+        executorController.advance(Duration.ofMillis(diskCheckInterval));
 
         float sample1 = getGauge(dir1.getParent()).getSample().floatValue();
         float sample2 = getGauge(dir2.getParent()).getSample().floatValue();
