@@ -15,43 +15,47 @@
  ******************************************************************************/
 package com.scurrilous.circe.impl;
 
-import static org.testng.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import java.nio.ByteBuffer;
 
-import mockit.Expectations;
-import mockit.Mocked;
-
-import org.testng.annotations.Test;
-
-import com.scurrilous.circe.impl.AbstractStatelessLongHash;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
 
 @SuppressWarnings("javadoc")
 public class AbstractStatelessLongHashTest {
 
-    @Mocked
     private AbstractStatelessLongHash hash;
+
+    @Before
+    public void setup() {
+        this.hash = mock(AbstractStatelessLongHash.class, Mockito.CALLS_REAL_METHODS);
+    }
 
     @Test
     public void testCalculateByteArray() {
         final byte[] input = new byte[10];
-        new Expectations(hash) {
-            {
-                hash.calculateUnchecked(input, 0, input.length);
-            }
-        };
+
         hash.calculate(input);
+
+        verify(hash, times(1))
+            .calculateUnchecked(eq(input), eq(0), eq(input.length));
     }
 
     @Test
     public void testCalculateByteArrayIntInt() {
         final byte[] input = new byte[10];
-        new Expectations(hash) {
-            {
-                hash.calculateUnchecked(input, 2, 4);
-            }
-        };
+
         hash.calculate(input, 2, 4);
+
+        verify(hash, times(1))
+            .calculateUnchecked(eq(input), eq(2), eq(4));
     }
 
     @Test
@@ -59,13 +63,12 @@ public class AbstractStatelessLongHashTest {
         final ByteBuffer input = ByteBuffer.allocate(20);
         input.position(5);
         input.limit(15);
-        new Expectations(hash) {
-            {
-                hash.calculateUnchecked(input.array(), input.arrayOffset() + 5, 10);
-            }
-        };
+
         hash.calculate(input);
         assertEquals(input.limit(), input.position());
+
+        verify(hash, times(1))
+            .calculateUnchecked(eq(input.array()), eq(input.arrayOffset() + 5), eq(10));
     }
 
     @Test
@@ -73,12 +76,11 @@ public class AbstractStatelessLongHashTest {
         final ByteBuffer input = ByteBuffer.allocate(20).asReadOnlyBuffer();
         input.position(5);
         input.limit(15);
-        new Expectations(hash) {
-            {
-                hash.calculateUnchecked(withInstanceOf(byte[].class), 0, 10);
-            }
-        };
+
         hash.calculate(input);
         assertEquals(input.limit(), input.position());
+
+        verify(hash, times(1))
+            .calculateUnchecked(any(byte[].class), eq(0), eq(10));
     }
 }

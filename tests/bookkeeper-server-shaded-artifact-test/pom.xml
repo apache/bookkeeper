@@ -42,6 +42,10 @@
           <groupId>org.apache.bookkeeper</groupId>
           <artifactId>bookkeeper-proto</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.apache.bookkeeper</groupId>
+          <artifactId>circe-checksum</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
   </dependencies>

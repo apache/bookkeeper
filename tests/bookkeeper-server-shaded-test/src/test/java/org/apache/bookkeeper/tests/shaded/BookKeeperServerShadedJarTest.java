@@ -59,4 +59,10 @@ public class BookKeeperServerShadedJarTest {
         Class.forName("org.apache.bookkeeper.proto.BookkeeperProtocol");
         assertTrue(true);
     }
+
+    @Test
+    public void testCirceChecksum() throws Exception {
+        Class.forName("com.scurrilous.circe.checksum.Crc32cIntChecksum");
+        assertTrue(true);
+    }
 }

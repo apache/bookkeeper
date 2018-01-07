@@ -19,14 +19,14 @@
 package com.scurrilous.circe.checksum;
 
 import static com.scurrilous.circe.params.CrcParameters.CRC32C;
-import static org.testng.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 import com.scurrilous.circe.IncrementalIntHash;
 import com.scurrilous.circe.IncrementalLongHash;
 import com.scurrilous.circe.crc.StandardCrcProvider;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 /**
  * Verify circe checksum.
