@@ -10,7 +10,6 @@ twitter_url: https://twitter.com/asfbookkeeper
 livereload: true
 
 versions:
-- "4.6.1"
 - "4.6.0"
 # [next_version_placehodler]
 
