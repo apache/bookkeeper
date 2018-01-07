@@ -72,9 +72,9 @@ public class LedgerDirsManager {
         this.forceGCAllowWhenNoSpace = conf.getIsForceGCAllowWhenNoSpace();
         this.entryLogSize = conf.getEntryLogSizeLimit();
         this.minUsableSizeForIndexFileCreation = conf.getMinUsableSizeForIndexFileCreation();
-        for (File dir : dirs) {
+        for (File dir : ledgerDirectories) {
             diskUsages.put(dir, 0f);
-            String statName = "dir_" + dir.getPath().replace('/', '_') + "_usage";
+            String statName = "dir_" + dir.getParent().replace('/', '_') + "_usage";
             final File targetDir = dir;
             statsLogger.registerGauge(statName, new Gauge<Number>() {
                 @Override
