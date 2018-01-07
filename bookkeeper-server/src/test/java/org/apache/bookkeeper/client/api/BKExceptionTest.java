@@ -17,6 +17,7 @@ package org.apache.bookkeeper.client.api;
 
 import static org.apache.bookkeeper.client.api.BKException.Code.UnexpectedConditionException;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 
@@ -31,6 +32,7 @@ public class BKExceptionTest {
     @Test
     public void testGetMessage() throws Exception {
         Field[] fields = BKException.Code.class.getFields();
+        int count = 0;
         for (Field f : fields) {
             if (f.getType() == Integer.TYPE && !f.getName().equals("UNINITIALIZED")) {
                 int code = f.getInt(null);
@@ -41,7 +43,10 @@ public class BKExceptionTest {
                     assertThat("failure on code " + f.getName(), msg,
                                not(equalTo("Unexpected condition")));
                 }
+                count++;
             }
         }
+        // assert that we found at least 1 code other than UnexpectedConditionException
+        assertThat(count, greaterThan(2));
     }
 }
