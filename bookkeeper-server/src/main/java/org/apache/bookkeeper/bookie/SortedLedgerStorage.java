@@ -237,7 +237,6 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
         // flushed to the entry log file.
     }
 
-    @VisibleForTesting
     BookieStateManager getStateManager(){
         return (BookieStateManager) stateManager;
     }
