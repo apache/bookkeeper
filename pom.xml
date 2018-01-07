@@ -52,9 +52,10 @@
   </ciManagement>
   <modules>
     <module>buildtools</module>
-    <module>bookkeeper-proto</module>
+    <module>circe-checksum</module>
     <module>bookkeeper-common</module>
     <module>bookkeeper-stats</module>
+    <module>bookkeeper-proto</module>
     <module>bookkeeper-server</module>
     <module>bookkeeper-benchmark</module>
     <module>bookkeeper-stats-providers</module>
