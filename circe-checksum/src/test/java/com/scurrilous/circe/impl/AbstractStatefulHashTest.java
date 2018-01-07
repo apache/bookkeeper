@@ -15,67 +15,71 @@
  ******************************************************************************/
 package com.scurrilous.circe.impl;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import mockit.Expectations;
-import mockit.Mocked;
-import mockit.NonStrictExpectations;
-
-import org.testng.annotations.Test;
+import org.junit.Test;
+import org.mockito.Mockito;
 
 @SuppressWarnings("javadoc")
 public class AbstractStatefulHashTest {
 
-    @Mocked
     private AbstractStatefulHash hash;
+
+    public AbstractStatefulHashTest() {
+        this.hash = mock(AbstractStatefulHash.class, Mockito.CALLS_REAL_METHODS);
+    }
 
     @Test
     public void testUpdateByteArray() {
         final byte[] input = new byte[42];
-        new Expectations(hash) {
-            {
-                hash.updateUnchecked(input, 0, input.length);
-            }
-        };
+
         hash.update(input);
+
+        verify(hash, times(1))
+            .updateUnchecked(eq(input), eq(0), eq(input.length));
     }
 
     @Test
     public void testUpdateByteArrayIntInt() {
         final byte[] input = new byte[42];
-        new Expectations(hash) {
-            {
-                hash.updateUnchecked(input, 5, 10);
-            }
-        };
+
         hash.update(input, 5, 10);
+
+        verify(hash, times(1))
+            .updateUnchecked(eq(input), eq(5), eq(10));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testUpdateByteArrayIntNegInt() {
         final byte[] input = new byte[42];
-        new Expectations(hash) {
-        };
+
         hash.update(input, 1, -1);
     }
 
-    @Test(expectedExceptions = IndexOutOfBoundsException.class)
+    @Test(expected = IndexOutOfBoundsException.class)
     public void testUpdateByteArrayNegIntInt() {
         final byte[] input = new byte[42];
-        new Expectations(hash) {
-        };
+
         hash.update(input, -1, 10);
     }
 
-    @Test(expectedExceptions = IndexOutOfBoundsException.class)
+    @Test(expected = IndexOutOfBoundsException.class)
     public void testUpdateByteArrayIntIntOverflow() {
         final byte[] input = new byte[42];
-        new Expectations(hash) {
-        };
+
         hash.update(input, 40, 3);
     }
 
@@ -84,13 +88,12 @@ public class AbstractStatefulHashTest {
         final ByteBuffer input = ByteBuffer.allocate(20);
         input.position(5);
         input.limit(15);
-        new Expectations(hash) {
-            {
-                hash.updateUnchecked(input.array(), input.arrayOffset() + 5, 10);
-            }
-        };
+
         hash.update(input);
         assertEquals(input.limit(), input.position());
+
+        verify(hash, times(1))
+            .updateUnchecked(eq(input.array()), eq(input.arrayOffset() + 5), eq(10));
     }
 
     @Test
@@ -98,25 +101,25 @@ public class AbstractStatefulHashTest {
         final ByteBuffer input = ByteBuffer.allocate(20).asReadOnlyBuffer();
         input.position(5);
         input.limit(15);
-        new Expectations(hash) {
-            {
-                hash.updateUnchecked(withInstanceOf(byte[].class), 0, 10);
-            }
-        };
+
         hash.update(input);
         assertEquals(input.limit(), input.position());
+
+        verify(hash, times(1))
+            .updateUnchecked(any(byte[].class), eq(0), eq(10));
     }
 
     @Test
     public void testGetBytes() {
         final List<byte[]> captures = new ArrayList<>();
-        new Expectations(hash) {
-            {
-                hash.length();
-                result = 5;
-                hash.writeBytes(withCapture(captures), 0, 5);
-            }
-        };
+
+        when(hash.length()).thenReturn(5);
+
+        doAnswer(invocationOnMock -> {
+            captures.add(invocationOnMock.getArgument(0));
+            return invocationOnMock.callRealMethod();
+        }).when(hash).writeBytes(any(byte[].class), eq(0), eq(5));
+
         hash.getBytes();
         assertEquals(5, captures.get(0).length);
     }
@@ -124,70 +127,54 @@ public class AbstractStatefulHashTest {
     @Test
     public void testGetBytesByteArrayInt() {
         final byte[] output = new byte[5];
-        new Expectations(hash) {
-            {
-                hash.length();
-                result = output.length;
-                hash.getLong();
-                result = 0x1234567890L;
-            }
-        };
+
+        when(hash.length()).thenReturn(output.length);
+        when(hash.getLong()).thenReturn(0x1234567890L);
+
         hash.getBytes(output, 0, output.length);
-        assertEquals(new byte[] { (byte) 0x90, 0x78, 0x56, 0x34, 0x12 }, output);
+        assertArrayEquals(new byte[] { (byte) 0x90, 0x78, 0x56, 0x34, 0x12 }, output);
     }
 
-    @Test(expectedExceptions = IndexOutOfBoundsException.class)
+    @Test(expected = IndexOutOfBoundsException.class)
     public void testGetBytesByteArrayNegInt() {
         final byte[] output = new byte[5];
-        new NonStrictExpectations(hash) {
-            {
-                hash.length();
-                result = output.length;
-            }
-        };
+
+        when(hash.length()).thenReturn(output.length);
+
         hash.getBytes(output, -1, output.length);
+
+        verify(hash, atLeast(0)).length();
     }
 
-    @Test(expectedExceptions = IndexOutOfBoundsException.class)
+    @Test(expected = IndexOutOfBoundsException.class)
     public void testGetBytesByteArrayIntOverflow() {
         final byte[] output = new byte[5];
-        new Expectations(hash) {
-        };
+
         hash.getBytes(output, 0, output.length + 1);
     }
 
     @Test
     public void testGetBytesByteArrayIntPartial() {
         final byte[] output = new byte[5];
-        new Expectations(hash) {
-            {
-                hash.length();
-                result = output.length + 1;
-                hash.writeBytes(output, 0, output.length);
-            }
-        };
+
+        when(hash.length()).thenReturn(output.length + 1);
+
         hash.getBytes(output, 0, output.length);
+
+        verify(hash, times(1)).writeBytes(eq(output), eq(0), eq(output.length));
     }
 
     @Test
     public void testGetByte() {
-        new Expectations(hash) {
-            {
-                hash.getInt();
-                result = 0x12345678;
-            }
-        };
+        when(hash.getInt()).thenReturn(0x12345678);
+
         assertEquals(0x78, hash.getByte());
     }
 
     @Test
     public void testGetShort() {
-        new Expectations(hash) {
-            {
-                hash.getInt();
-                result = 0x12345678;
-            }
-        };
+        when(hash.getInt()).thenReturn(0x12345678);
+
         assertEquals(0x5678, hash.getShort());
     }
 }

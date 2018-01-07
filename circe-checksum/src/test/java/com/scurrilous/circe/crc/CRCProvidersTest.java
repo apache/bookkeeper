@@ -24,21 +24,20 @@ import static com.scurrilous.circe.HashSupport.STATEFUL;
 import static com.scurrilous.circe.HashSupport.STATELESS_INCREMENTAL;
 import static com.scurrilous.circe.params.CrcParameters.CRC32;
 import static com.scurrilous.circe.params.CrcParameters.CRC64;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 
-import org.testng.annotations.Test;
-
 import com.scurrilous.circe.HashProvider;
 import com.scurrilous.circe.HashProviders;
 import com.scurrilous.circe.HashSupport;
 import com.scurrilous.circe.IncrementalLongHash;
+import org.junit.Test;
 
 @SuppressWarnings("javadoc")
 public class CRCProvidersTest {

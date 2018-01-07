@@ -19,8 +19,8 @@
 package com.scurrilous.circe.utils;
 
 import java.io.FileNotFoundException;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Unit test of {@link NativeUtils}.

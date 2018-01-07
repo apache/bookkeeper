@@ -15,11 +15,10 @@
  ******************************************************************************/
 package com.scurrilous.circe;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 import java.nio.charset.Charset;
-
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 @SuppressWarnings("javadoc")
 public class CommonHashesTest {

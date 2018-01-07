@@ -18,11 +18,11 @@ package org.apache.bookkeeper.client;
 * limitations under the License.
 */
 
+import com.scurrilous.circe.checksum.Crc32cIntChecksum;
 import com.scurrilous.circe.crc.Sse42Crc32C;
 import io.netty.buffer.ByteBuf;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableInt;
-import org.apache.pulsar.checksum.utils.Crc32cChecksum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,10 +56,10 @@ class CRC32CDigestManager extends DigestManager {
     void update(ByteBuf data) {
         if (isNewCrc.get().isTrue()) {
             isNewCrc.get().setFalse();
-            currentCrc.get().setValue(Crc32cChecksum.computeChecksum(data));
+            currentCrc.get().setValue(Crc32cIntChecksum.computeChecksum(data));
         } else {
             final int lastCrc = currentCrc.get().intValue();
-            currentCrc.get().setValue(Crc32cChecksum.resumeChecksum(lastCrc, data));
+            currentCrc.get().setValue(Crc32cIntChecksum.resumeChecksum(lastCrc, data));
         }
     }
 }
