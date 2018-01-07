@@ -20,8 +20,12 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -36,6 +40,8 @@ import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.stats.Gauge;
+import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.commons.io.FileUtils;
@@ -56,6 +62,8 @@ public class TestLedgerDirsManager {
     LedgerDirsManager dirsManager;
     LedgerDirsMonitor ledgerMonitor;
     MockDiskChecker mockDiskChecker;
+    private TestStatsProvider statsProvider;
+    private TestStatsProvider.TestStatsLogger statsLogger;
     int diskCheckInterval = 1000;
     float threshold = 0.5f;
     float warnThreshold = 0.5f;
@@ -81,8 +89,10 @@ public class TestLedgerDirsManager {
         conf.setIsForceGCAllowWhenNoSpace(true);
 
         mockDiskChecker = new MockDiskChecker(threshold, warnThreshold);
+        statsProvider = new TestStatsProvider();
+        statsLogger = statsProvider.getStatsLogger("test");
         dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
-                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()), statsLogger);
         ledgerMonitor = new LedgerDirsMonitor(conf,
                 mockDiskChecker, dirsManager);
         ledgerMonitor.init();
@@ -103,7 +113,7 @@ public class TestLedgerDirsManager {
             List<File> writeDirs = dirsManager.getWritableLedgerDirs();
             assertTrue("Must have a writable ledgerDir", writeDirs.size() > 0);
         } catch (NoWritableLedgerDirException nwlde) {
-            fail("We should have a writeble ledgerDir");
+            fail("We should have a writable ledgerDir");
         }
     }
 
@@ -251,7 +261,8 @@ public class TestLedgerDirsManager {
 
         mockDiskChecker = new MockDiskChecker(nospace, warnThreshold);
         dirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
-                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()),
+                statsLogger);
         ledgerMonitor = new LedgerDirsMonitor(conf, mockDiskChecker, dirsManager);
         usageMap = new HashMap<File, Float>();
         usageMap.put(curDir1, 0.1f);
@@ -320,11 +331,30 @@ public class TestLedgerDirsManager {
         usageMap.put(dir2, dir2Usage);
         mockDiskChecker.setUsageMap(usageMap);
         Thread.sleep((diskCheckInterval * 2) + 100);
+
+        float sample1 = getGauge(dir1.getParent()).getSample().floatValue();
+        float sample2 = getGauge(dir2.getParent()).getSample().floatValue();
+
         if (verifyReadOnly) {
             assertTrue(mockLedgerDirsListener.readOnly);
+
+            // LedgerDirsMonitor stops updating diskUsages when the bookie is in the readonly mode,
+            // so the stats will reflect an older value at the time when the bookie became readonly
+            assertThat(sample1, greaterThan(90f));
+            assertThat(sample1, lessThan(100f));
+            assertThat(sample2, greaterThan(90f));
+            assertThat(sample2, lessThan(100f));
         } else {
             assertFalse(mockLedgerDirsListener.readOnly);
+
+            assertThat(sample1, equalTo(dir1Usage * 100f));
+            assertThat(sample2, equalTo(dir2Usage * 100f));
         }
+    }
+
+    private Gauge<? extends Number> getGauge(String path) {
+        String gaugeName = String.format("test.dir_%s_usage", path.replace('/', '_'));
+        return statsProvider.getGauge(gaugeName);
     }
 
     private class MockDiskChecker extends DiskChecker {
