@@ -192,7 +192,7 @@ public class TestStatsProvider implements StatsProvider {
     private Map<String, Gauge<? extends Number>> gaugeMap = new ConcurrentHashMap<>();
 
     @Override
-    public StatsLogger getStatsLogger(String scope) {
+    public TestStatsLogger getStatsLogger(String scope) {
         return new TestStatsLogger(scope);
     }
 

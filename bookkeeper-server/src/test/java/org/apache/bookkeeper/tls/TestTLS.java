@@ -178,6 +178,21 @@ public class TestTLS extends BookKeeperClusterTestCase {
         testClient(clientConf, numBookies);
     }
 
+    /**
+     * Verify the basic use of TLS. TLS client, TLS servers with LocalTransport.
+     */
+    @Test
+    public void testConnectToLocalTLSClusterTLSClient() throws Exception {
+        ServerConfiguration serverConf = new ServerConfiguration();
+        for (ServerConfiguration conf : bsConfs) {
+            conf.setDisableServerSocketBind(true);
+            conf.setEnableLocalTransport(true);
+        }
+        restartBookies(serverConf);
+
+        ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
+        testClient(clientConf, numBookies);
+    }
 
     /**
      * Multiple clients, some with TLS, and some without TLS.
@@ -327,6 +342,30 @@ public class TestTLS extends BookKeeperClusterTestCase {
     }
 
     /**
+     * Verify that a bookie-side Auth plugin can access server certificates over LocalTransport.
+     */
+    @Test
+    public void testBookieAuthPluginRequireClientTLSAuthenticationLocal() throws Exception {
+        ServerConfiguration serverConf = new ServerConfiguration(baseConf);
+        serverConf.setBookieAuthProviderFactoryClass(AllowOnlyClientsWithX509Certificates.class.getName());
+        serverConf.setDisableServerSocketBind(true);
+        serverConf.setEnableLocalTransport(true);
+        restartBookies(serverConf);
+
+        secureBookieSideChannel = false;
+        secureBookieSideChannelPrincipals = null;
+        ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
+
+        testClient(clientConf, numBookies);
+        assertTrue(secureBookieSideChannel);
+        assertNotNull(secureBookieSideChannelPrincipals);
+        assertTrue(!secureBookieSideChannelPrincipals.isEmpty());
+        assertTrue(secureBookieSideChannelPrincipals.iterator().next() instanceof Certificate);
+        Certificate cert = (Certificate) secureBookieSideChannelPrincipals.iterator().next();
+        assertTrue(cert instanceof X509Certificate);
+    }
+
+    /**
      * Verify that a bookie-side Auth plugin can access server certificates.
      */
     @Test
@@ -334,6 +373,34 @@ public class TestTLS extends BookKeeperClusterTestCase {
         ServerConfiguration serverConf = new ServerConfiguration(baseConf);
         serverConf.setTLSClientAuthentication(false);
         serverConf.setBookieAuthProviderFactoryClass(AllowOnlyClientsWithX509Certificates.class.getName());
+        restartBookies(serverConf);
+
+        secureBookieSideChannel = false;
+        secureBookieSideChannelPrincipals = null;
+        ClientConfiguration clientConf = new ClientConfiguration(baseClientConf);
+        clientConf.setTLSClientAuthentication(false);
+
+        try {
+            testClient(clientConf, numBookies);
+            fail("Shouldn't be able to connect");
+        } catch (BKException.BKUnauthorizedAccessException authFailed) {
+        }
+
+        assertTrue(secureBookieSideChannel);
+        assertNotNull(secureBookieSideChannelPrincipals);
+        assertTrue(secureBookieSideChannelPrincipals.isEmpty());
+    }
+
+    /**
+     * Verify that a bookie-side Auth plugin can access server certificates over LocalTransport.
+     */
+    @Test
+    public void testBookieAuthPluginDenyAccessToClientWithoutTLSAuthenticationLocal() throws Exception {
+        ServerConfiguration serverConf = new ServerConfiguration(baseConf);
+        serverConf.setTLSClientAuthentication(false);
+        serverConf.setBookieAuthProviderFactoryClass(AllowOnlyClientsWithX509Certificates.class.getName());
+        serverConf.setDisableServerSocketBind(true);
+        serverConf.setEnableLocalTransport(true);
         restartBookies(serverConf);
 
         secureBookieSideChannel = false;
