@@ -189,6 +189,8 @@
             <exclude>.repository/**</exclude>
             <!-- Grafana -->
             <exclude>docker/grafana/dashboards/*.json</exclude>
+            <!-- Travis -->
+            <exclude>*.log</exclude>
           </excludes>
           <consoleOutput>true</consoleOutput>
         </configuration>
