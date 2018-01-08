@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.common.coder;
+package org.apache.distributedlog.statestore.api.coder;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;

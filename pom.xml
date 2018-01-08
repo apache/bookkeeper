@@ -22,7 +22,6 @@
     <artifactId>distributedlog</artifactId>
     <groupId>org.apache.distributedlog</groupId>
     <version>0.6.0-SNAPSHOT</version>
-    <relativePath>../..</relativePath>
   </parent>
   <groupId>org.apache.distributedlog</groupId>
   <artifactId>state-store</artifactId>
@@ -31,6 +30,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.libdir>${basedir}/lib</project.libdir>
+    <distributedlog.version>0.5.0</distributedlog.version>
   </properties>
   <dependencies>
     <dependency>
@@ -47,7 +47,7 @@
     <dependency>
       <groupId>org.apache.distributedlog</groupId>
       <artifactId>distributedlog-core</artifactId>
-      <version>${project.parent.version}</version>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.rocksdb</groupId>
@@ -68,7 +68,7 @@
     <dependency>
       <groupId>org.apache.distributedlog</groupId>
       <artifactId>distributedlog-core</artifactId>
-      <version>${project.parent.version}</version>
+      <version>${project.version}</version>
       <classifier>tests</classifier>
       <scope>test</scope>
     </dependency>

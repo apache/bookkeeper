@@ -22,4 +22,4 @@
  *
  * <p>Most of the coder implementations are basically borrowed from Apache Beam.
  */
-package org.apache.distributedlog.common.coder;
+package org.apache.distributedlog.statestore.api.coder;

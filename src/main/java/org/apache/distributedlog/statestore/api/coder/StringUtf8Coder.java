@@ -16,13 +16,14 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.common.coder;
+package org.apache.distributedlog.statestore.api.coder;
 
 import static com.google.common.base.Charsets.UTF_8;
 
 import io.netty.buffer.ByteBuf;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.apache.distributedlog.common.coder.Coder;
 import org.apache.distributedlog.common.util.ByteBufUtils;
 
 /**
