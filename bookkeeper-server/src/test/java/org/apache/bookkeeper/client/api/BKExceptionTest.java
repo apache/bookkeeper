@@ -16,10 +16,9 @@
 package org.apache.bookkeeper.client.api;
 
 import static org.apache.bookkeeper.client.api.BKException.Code.UnexpectedConditionException;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.lang.reflect.Field;
 import org.junit.Test;
@@ -38,15 +37,14 @@ public class BKExceptionTest {
                 int code = f.getInt(null);
                 String msg = BKException.getMessage(code);
                 if (code == UnexpectedConditionException) {
-                    assertThat(msg, equalTo("Unexpected condition"));
+                    assertEquals(msg, "Unexpected condition");
                 } else {
-                    assertThat("failure on code " + f.getName(), msg,
-                               not(equalTo("Unexpected condition")));
+                    assertNotEquals("failure on code " + f.getName(), msg, "Unexpected condition");
                 }
                 count++;
             }
         }
         // assert that we found at least 1 code other than UnexpectedConditionException
-        assertThat(count, greaterThan(2));
+        assertTrue(count > 2);
     }
 }
