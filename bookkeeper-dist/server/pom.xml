@@ -78,7 +78,7 @@
         <version>${maven-assembly-plugin.version}</version>
         <configuration>
           <finalName>bookkeeper-server-${project.version}</finalName>
-          <attach>false</attach>
+          <attach>true</attach>
           <descriptors>
             <descriptor>../src/assemble/bin-server.xml</descriptor>
           </descriptors>

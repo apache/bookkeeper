@@ -35,6 +35,7 @@
     <module>bookkeeper-server-shaded-artifact-test</module>
     <module>bookkeeper-server-shaded-test</module>
     <module>bookkeeper-server-tests-shaded-test</module>
+    <module>docker-all-version-image</module>
   </modules>
   <build>
     <plugins>
