@@ -56,6 +56,7 @@ import org.apache.bookkeeper.bookie.GarbageCollector;
 import org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.ScanAndCompareGarbageCollector;
+import org.apache.bookkeeper.bookie.StateManager;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerMetadata;
@@ -547,6 +548,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
             LedgerManager ledgerManager,
             LedgerDirsManager ledgerDirsManager,
             LedgerDirsManager indexDirsManager,
+            StateManager stateManager,
             CheckpointSource checkpointSource,
             Checkpointer checkpointer,
             StatsLogger statsLogger) throws IOException {

@@ -22,7 +22,6 @@
 package org.apache.bookkeeper.bookie;
 
 import java.io.IOException;
-
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.zookeeper.KeeperException;
@@ -42,25 +41,27 @@ public class ReadOnlyBookie extends Bookie {
     public ReadOnlyBookie(ServerConfiguration conf, StatsLogger statsLogger)
             throws IOException, KeeperException, InterruptedException, BookieException {
         super(conf, statsLogger);
+        stateManager = new BookieStateManager(conf, statsLogger, registrationManager, getLedgerDirsManager()) {
+
+            @Override
+            public void doTransitionToWritableMode() {
+                // no-op
+                LOG.info("Skip transition to writable mode for readonly bookie");
+            }
+
+            @Override
+            public void doTransitionToReadOnlyMode() {
+                // no-op
+                LOG.info("Skip transition to readonly mode for readonly bookie");
+            }
+        };
         if (conf.isReadOnlyModeEnabled()) {
-            forceReadOnly.set(true);
+            stateManager.forceToReadOnly();
         } else {
             String err = "Try to init ReadOnly Bookie, while ReadOnly mode is not enabled";
             LOG.error(err);
             throw new IOException(err);
         }
         LOG.info("Running bookie in force readonly mode.");
-    }
-
-    @Override
-    public void doTransitionToWritableMode() {
-        // no-op
-        LOG.info("Skip transition to writable mode for readonly bookie");
-    }
-
-    @Override
-    public void doTransitionToReadOnlyMode() {
-        // no-op
-        LOG.info("Skip transition to readonly mode for readonly bookie");
     }
 }
