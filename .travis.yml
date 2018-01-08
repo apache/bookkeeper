@@ -26,15 +26,6 @@ matrix:
       dist: trusty
       env: CUSTOM_JDK="openjdk8"
 
-matrix:
-  include:
-    - os: osx
-      osx_image: xcode8
-      env: SCALA_VERSION="2.10"
-    - os: osx
-      osx_image: xcode8
-      env: SCALA_VERSION="2.11"
-
 # Upgrade to maven 3.5.0
 before_install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then jdk_switcher use "$CUSTOM_JDK"; fi
