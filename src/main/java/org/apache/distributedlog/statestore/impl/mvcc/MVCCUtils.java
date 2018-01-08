@@ -23,7 +23,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.UnsafeByteOperations;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
-import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.Unpooled;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -59,7 +59,7 @@ import org.apache.distributedlog.statestore.proto.TxnRequest;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class MVCCUtils {
 
-    static Command NOP_CMD = Command.newBuilder()
+    static final Command NOP_CMD = Command.newBuilder()
         .setNopReq(NopRequest.newBuilder().build())
         .build();
 
@@ -211,7 +211,7 @@ public final class MVCCUtils {
     }
 
     static ByteBuf newLogRecordBuf(Command command) {
-        ByteBuf buf = PooledByteBufAllocator.DEFAULT.buffer(command.getSerializedSize());
+        ByteBuf buf = Unpooled.buffer(command.getSerializedSize());
         try {
             command.writeTo(new ByteBufOutputStream(buf));
         } catch (IOException e) {

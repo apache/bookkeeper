@@ -16,10 +16,32 @@
  * limitations under the License.
  */
 
+package org.apache.distributedlog.common.coder;
+
+import io.netty.buffer.ByteBuf;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+import org.apache.distributedlog.common.util.ByteBufUtils;
+
 /**
- * Defines {@link org.apache.distributedlog.common.coder.Coder} to specify
- * how data is encoded to and decoded from byte buffer.
- *
- * <p>Most of the coder implementations are basically borrowed from Apache Beam.
+ * A byte array {@link Coder}.
  */
-package org.apache.distributedlog.statestore.api.coder;
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+public class ByteArrayCoder implements Coder<byte[]> {
+
+    public static ByteArrayCoder of() {
+        return INSTANCE;
+    }
+
+    private static final ByteArrayCoder INSTANCE = new ByteArrayCoder();
+
+    @Override
+    public byte[] encode(byte[] value) {
+        return value;
+    }
+
+    @Override
+    public byte[] decode(ByteBuf data) {
+        return ByteBufUtils.getArray(data);
+    }
+}

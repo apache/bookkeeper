@@ -180,3 +180,15 @@ message Command {
         TxnRequest txn_req = 4;
     }
 }
+
+//
+// Checkpoint related
+//
+
+message CheckpointMetadata {
+
+    repeated string files = 1;
+    bytes txid = 2;
+    uint64 created_at = 3;
+
+}

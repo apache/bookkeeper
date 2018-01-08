@@ -18,6 +18,7 @@
 
 package org.apache.distributedlog.statestore.impl.rocksdb;
 
+import java.io.File;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.rocksdb.AbstractImmutableNativeReference;
@@ -33,6 +34,28 @@ public final class RocksUtils {
             return;
         }
         ref.close();
+    }
+
+    public static boolean isSstFile(File file) {
+        return file.getName().endsWith(".sst");
+    }
+
+    public static String getDestCheckpointMetadataPath(String dbPrefix, String checkpointId) {
+        return String.format("%s/checkpoints/%s/metadata", dbPrefix, checkpointId);
+    }
+
+    public static String getDestSstPath(String dbPrefix, File file) {
+        return String.format("%s/ssts/%s", dbPrefix, file.getName());
+    }
+
+    public static String getDestTempSstPath(String dbPrefix, String checkpointId, File file) {
+        return String.format("%s/checkpoints/%s/%s", dbPrefix, checkpointId, file.getName());
+    }
+
+    public static String getDestPath(String dbPrefix,
+                                     String checkpointId,
+                                     File file) {
+        return String.format("%s/checkpoints/%s/%s", dbPrefix, checkpointId, file.getName());
     }
 
 }

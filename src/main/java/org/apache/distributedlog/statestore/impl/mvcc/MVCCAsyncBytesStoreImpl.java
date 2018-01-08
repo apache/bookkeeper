@@ -161,7 +161,7 @@ class MVCCAsyncBytesStoreImpl implements MVCCAsyncStore<byte[], byte[]> {
         synchronized (this) {
             long txId = ++nextRevision;
             return FutureUtils.ensure(
-                writer.write(new LogRecord(txId, recordBuf)),
+                writer.write(new LogRecord(txId, recordBuf.nioBuffer())),
                 () -> recordBuf.release());
         }
     }
@@ -171,7 +171,7 @@ class MVCCAsyncBytesStoreImpl implements MVCCAsyncStore<byte[], byte[]> {
         synchronized (this) {
             long txId = ++nextRevision;
             return FutureUtils.ensure(
-                writer.write(new LogRecord(txId, recordBuf))
+                writer.write(new LogRecord(txId, recordBuf.nioBuffer()))
                     .thenApply(dlsn -> txId),
                 () -> recordBuf.release());
         }

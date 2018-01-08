@@ -30,9 +30,24 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.libdir>${basedir}/lib</project.libdir>
+    <!-- dependencies -->
+    <bookkeeper.version>4.6.0</bookkeeper.version>
     <distributedlog.version>0.5.0</distributedlog.version>
+    <freebuilder.version>1.12.3</freebuilder.version>
+    <guava.version>21.0</guava.version>
+    <lombok.version>1.16.18</lombok.version>
+    <protobuf.version>3.4.0</protobuf.version>
+    <rocksdb.version>5.8.6</rocksdb.version>
+    <slf4j.version>1.7.25</slf4j.version>
+    <!-- test dependencies -->
+    <junit.version>4.12</junit.version>
   </properties>
   <dependencies>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j.version}</version>
+    </dependency>
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
@@ -47,7 +62,27 @@
     <dependency>
       <groupId>org.apache.distributedlog</groupId>
       <artifactId>distributedlog-core</artifactId>
-      <version>${project.version}</version>
+      <version>${distributedlog.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.bookkeeper</groupId>
+          <artifactId>bookkeeper-common</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>bookkeeper-common</artifactId>
+      <version>${bookkeeper.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>${guava.version}</version>
     </dependency>
     <dependency>
       <groupId>org.rocksdb</groupId>
@@ -68,7 +103,7 @@
     <dependency>
       <groupId>org.apache.distributedlog</groupId>
       <artifactId>distributedlog-core</artifactId>
-      <version>${project.version}</version>
+      <version>${distributedlog.version}</version>
       <classifier>tests</classifier>
       <scope>test</scope>
     </dependency>
@@ -105,7 +140,7 @@
           <dependency>
             <groupId>org.apache.distributedlog</groupId>
             <artifactId>distributedlog-build-tools</artifactId>
-            <version>${project.version}</version>
+            <version>${distributedlog.version}</version>
           </dependency>
         </dependencies>
         <configuration>
