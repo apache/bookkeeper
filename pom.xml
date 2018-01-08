@@ -39,6 +39,7 @@
     <!-- test dependencies -->
     <junit.version>4.12</junit.version>
     <!-- plugin dependencies -->
+    <apache-rat-plugin.version>0.12</apache-rat-plugin.version>
     <findbugs-maven-plugin.version>3.0.3</findbugs-maven-plugin.version>
     <maven-checkstyle-plugin.version>2.17</maven-checkstyle-plugin.version>
     <maven-compiler-plugin.version>3.1</maven-compiler-plugin.version>
@@ -152,6 +153,46 @@
   </dependencies>
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <version>${apache-rat-plugin.version}</version>
+        <configuration>
+          <excludes>
+            <exclude>ChangeLog</exclude>
+            <exclude>CONFIG.ini</exclude>
+            <exclude>GROUPS</exclude>
+            <exclude>OWNERS</exclude>
+            <exclude>dist/**/*</exclude>
+            <exclude>docs/**/*</exclude>
+            <exclude>scripts/dev/reviewers</exclude>
+            <exclude>website/**/*</exclude>
+            <exclude>**/*.md</exclude>
+            <exclude>**/apidocs/*</exclude>
+            <exclude>**/dependency-reduced-pom.xml</exclude>
+            <exclude>**/org/apache/distributedlog/thrift/*</exclude>
+            <exclude>**/logs/*.log</exclude>
+            <exclude>**/target/**/*</exclude>
+            <!-- Git -->
+            <exclude>.git/**/*</exclude>
+            <exclude>.github/**/*</exclude>
+            <exclude>.gitignore</exclude>
+            <exclude>docker/.gitignore</exclude>
+            <exclude>.idea/**/*</exclude>
+            <!-- Intellij -->
+            <exclude>**/*.iml</exclude>
+            <exclude>**/*.iws</exclude>
+            <exclude>**/*.ipr</exclude>
+            <!-- SVN -->
+            <exclude>**/.svn/**/*</exclude>
+            <!-- Maven -->
+            <exclude>.repository/**</exclude>
+            <!-- Grafana -->
+            <exclude>docker/grafana/dashboards/*.json</exclude>
+          </excludes>
+          <consoleOutput>true</consoleOutput>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>findbugs-maven-plugin</artifactId>
