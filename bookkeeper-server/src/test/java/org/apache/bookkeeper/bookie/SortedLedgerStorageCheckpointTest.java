@@ -119,11 +119,13 @@ public class SortedLedgerStorageCheckpointTest extends LedgerStorageTestBase {
                 log.error("Failed to checkpoint at {}", checkpoint, e);
             }
         });
+        // if the SortedLedgerStorage need not to change bookie's state, pass StateManager==null is ok
         this.storage.initialize(
             conf,
             mock(LedgerManager.class),
             ledgerDirsManager,
             ledgerDirsManager,
+            null,
             checkpointSrc,
             checkpointer,
             NullStatsLogger.INSTANCE);

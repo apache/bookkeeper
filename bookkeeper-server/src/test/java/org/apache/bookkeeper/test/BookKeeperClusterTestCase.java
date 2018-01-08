@@ -326,7 +326,7 @@ public abstract class BookKeeperClusterTestCase {
     public void setBookieToReadOnly(BookieSocketAddress addr) throws InterruptedException, UnknownHostException {
         for (BookieServer server : bs) {
             if (server.getLocalAddress().equals(addr)) {
-                server.getBookie().doTransitionToReadOnlyMode();
+                server.getBookie().getStateManager().doTransitionToReadOnlyMode();
                 break;
             }
         }
