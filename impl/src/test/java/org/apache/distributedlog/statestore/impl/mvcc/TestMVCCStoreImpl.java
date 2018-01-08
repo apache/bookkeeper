@@ -29,22 +29,22 @@ import java.io.File;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.apache.distributedlog.api.statestore.KV;
+import org.apache.distributedlog.api.statestore.KVIterator;
+import org.apache.distributedlog.api.statestore.StateStoreSpec;
+import org.apache.distributedlog.api.statestore.exceptions.MVCCStoreException;
+import org.apache.distributedlog.api.statestore.mvcc.KVRecord;
+import org.apache.distributedlog.api.statestore.mvcc.op.CompareResult;
+import org.apache.distributedlog.api.statestore.mvcc.op.OpType;
+import org.apache.distributedlog.api.statestore.mvcc.op.RangeOp;
+import org.apache.distributedlog.api.statestore.mvcc.op.TxnOp;
+import org.apache.distributedlog.api.statestore.mvcc.result.Code;
+import org.apache.distributedlog.api.statestore.mvcc.result.DeleteResult;
+import org.apache.distributedlog.api.statestore.mvcc.result.PutResult;
+import org.apache.distributedlog.api.statestore.mvcc.result.RangeResult;
+import org.apache.distributedlog.api.statestore.mvcc.result.Result;
+import org.apache.distributedlog.api.statestore.mvcc.result.TxnResult;
 import org.apache.distributedlog.common.coder.StringUtf8Coder;
-import org.apache.distributedlog.statestore.api.KV;
-import org.apache.distributedlog.statestore.api.KVIterator;
-import org.apache.distributedlog.statestore.api.StateStoreSpec;
-import org.apache.distributedlog.statestore.api.mvcc.KVRecord;
-import org.apache.distributedlog.statestore.api.mvcc.op.CompareResult;
-import org.apache.distributedlog.statestore.api.mvcc.op.OpType;
-import org.apache.distributedlog.statestore.api.mvcc.op.RangeOp;
-import org.apache.distributedlog.statestore.api.mvcc.op.TxnOp;
-import org.apache.distributedlog.statestore.api.mvcc.result.Code;
-import org.apache.distributedlog.statestore.api.mvcc.result.DeleteResult;
-import org.apache.distributedlog.statestore.api.mvcc.result.PutResult;
-import org.apache.distributedlog.statestore.api.mvcc.result.RangeResult;
-import org.apache.distributedlog.statestore.api.mvcc.result.Result;
-import org.apache.distributedlog.statestore.api.mvcc.result.TxnResult;
-import org.apache.distributedlog.statestore.exceptions.MVCCStoreException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -67,7 +67,7 @@ public class TestMVCCStoreImpl {
     @Before
     public void setUp() {
         tempDir = Files.createTempDir();
-        spec = StateStoreSpec.newBuilder()
+        spec = StateStoreSpec.builder()
             .name(runtime.getMethodName())
             .keyCoder(StringUtf8Coder.of())
             .valCoder(StringUtf8Coder.of())

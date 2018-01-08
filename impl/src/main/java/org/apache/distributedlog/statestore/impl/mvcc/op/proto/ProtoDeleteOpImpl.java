@@ -24,9 +24,9 @@ import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.apache.distributedlog.api.statestore.mvcc.op.DeleteOp;
+import org.apache.distributedlog.api.statestore.mvcc.op.OpType;
 import org.apache.distributedlog.common.util.Recycled;
-import org.apache.distributedlog.statestore.api.mvcc.op.DeleteOp;
-import org.apache.distributedlog.statestore.api.mvcc.op.OpType;
 import org.apache.distributedlog.statestore.proto.DeleteRequest;
 
 /**

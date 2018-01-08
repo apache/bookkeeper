@@ -22,9 +22,9 @@ import static org.apache.distributedlog.statestore.impl.Constants.INVALID_REVISI
 
 import io.netty.util.Recycler.Handle;
 import lombok.Setter;
-import org.apache.distributedlog.statestore.api.mvcc.op.OpType;
-import org.apache.distributedlog.statestore.api.mvcc.result.Code;
-import org.apache.distributedlog.statestore.api.mvcc.result.Result;
+import org.apache.distributedlog.api.statestore.mvcc.op.OpType;
+import org.apache.distributedlog.api.statestore.mvcc.result.Code;
+import org.apache.distributedlog.api.statestore.mvcc.result.Result;
 
 /**
  * A base implementation of {@link Result}.

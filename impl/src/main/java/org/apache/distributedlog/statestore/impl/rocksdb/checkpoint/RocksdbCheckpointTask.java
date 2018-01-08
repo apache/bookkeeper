@@ -29,7 +29,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.distributedlog.statestore.exceptions.StateStoreException;
+import org.apache.distributedlog.api.statestore.exceptions.StateStoreException;
 import org.apache.distributedlog.statestore.impl.rocksdb.RocksUtils;
 import org.apache.distributedlog.statestore.proto.CheckpointMetadata;
 import org.rocksdb.Checkpoint;

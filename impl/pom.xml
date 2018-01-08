@@ -30,8 +30,9 @@
   <name>Apache DistributedLog :: IO :: State Store :: Impl</name>
   <dependencies>
     <dependency>
-      <groupId>org.inferred</groupId>
-      <artifactId>freebuilder</artifactId>
+      <groupId>org.apache.distributedlog</groupId>
+      <artifactId>state-store-api</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.distributedlog</groupId>

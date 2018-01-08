@@ -20,9 +20,9 @@ package org.apache.distributedlog.statestore.impl.mvcc.result;
 
 import io.netty.util.Recycler.Handle;
 import lombok.Setter;
-import org.apache.distributedlog.statestore.api.mvcc.KVRecord;
-import org.apache.distributedlog.statestore.api.mvcc.op.OpType;
-import org.apache.distributedlog.statestore.api.mvcc.result.PutResult;
+import org.apache.distributedlog.api.statestore.mvcc.KVRecord;
+import org.apache.distributedlog.api.statestore.mvcc.op.OpType;
+import org.apache.distributedlog.api.statestore.mvcc.result.PutResult;
 
 /**
  * An implementation of {@link PutResult}.

@@ -21,9 +21,9 @@ package org.apache.distributedlog.statestore.impl.mvcc.op;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.function.Predicate;
-import org.apache.distributedlog.statestore.api.mvcc.op.OpType;
-import org.apache.distributedlog.statestore.api.mvcc.op.RangeOp;
-import org.apache.distributedlog.statestore.api.mvcc.op.RangeOpBuilder;
+import org.apache.distributedlog.api.statestore.mvcc.op.OpType;
+import org.apache.distributedlog.api.statestore.mvcc.op.RangeOp;
+import org.apache.distributedlog.api.statestore.mvcc.op.RangeOpBuilder;
 import org.apache.distributedlog.statestore.impl.mvcc.MVCCRecord;
 import org.inferred.freebuilder.FreeBuilder;
 

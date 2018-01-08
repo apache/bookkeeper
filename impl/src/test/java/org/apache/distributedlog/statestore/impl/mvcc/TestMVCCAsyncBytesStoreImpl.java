@@ -35,19 +35,19 @@ import java.net.URI;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.distributedlog.DLMTestUtil;
 import org.apache.distributedlog.TestDistributedLogBase;
 import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.api.namespace.NamespaceBuilder;
+import org.apache.distributedlog.api.statestore.StateStoreSpec;
+import org.apache.distributedlog.api.statestore.exceptions.MVCCStoreException;
+import org.apache.distributedlog.api.statestore.mvcc.KVRecord;
+import org.apache.distributedlog.api.statestore.mvcc.op.PutOp;
+import org.apache.distributedlog.api.statestore.mvcc.result.Code;
+import org.apache.distributedlog.api.statestore.mvcc.result.PutResult;
 import org.apache.distributedlog.common.coder.ByteArrayCoder;
-import org.apache.distributedlog.common.concurrent.FutureUtils;
-import org.apache.distributedlog.statestore.api.StateStoreSpec;
-import org.apache.distributedlog.statestore.api.mvcc.KVRecord;
-import org.apache.distributedlog.statestore.api.mvcc.op.PutOp;
-import org.apache.distributedlog.statestore.api.mvcc.result.Code;
-import org.apache.distributedlog.statestore.api.mvcc.result.PutResult;
-import org.apache.distributedlog.statestore.exceptions.MVCCStoreException;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -102,7 +102,7 @@ public class TestMVCCAsyncBytesStoreImpl extends TestDistributedLogBase {
     }
 
     private StateStoreSpec initSpec(String streamName) {
-        return StateStoreSpec.newBuilder()
+        return StateStoreSpec.builder()
             .name(streamName)
             .keyCoder(ByteArrayCoder.of())
             .valCoder(ByteArrayCoder.of())
@@ -127,10 +127,10 @@ public class TestMVCCAsyncBytesStoreImpl extends TestDistributedLogBase {
         super.teardown();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = NullPointerException.class)
     public void testInitMissingStreamName() throws Exception {
         this.streamName = "test-init-missing-stream-name";
-        StateStoreSpec spec = StateStoreSpec.newBuilder()
+        StateStoreSpec spec = StateStoreSpec.builder()
             .name(streamName)
             .keyCoder(ByteArrayCoder.of())
             .valCoder(ByteArrayCoder.of())

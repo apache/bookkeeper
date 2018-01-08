@@ -18,7 +18,6 @@
 
 package org.apache.distributedlog.statestore.impl.rocksdb;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.distributedlog.statestore.impl.rocksdb.RocksConstants.BLOCK_CACHE_SIZE;
 import static org.apache.distributedlog.statestore.impl.rocksdb.RocksConstants.BLOCK_SIZE;
@@ -42,15 +41,15 @@ import java.util.Set;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.distributedlog.api.statestore.KV;
+import org.apache.distributedlog.api.statestore.KVIterator;
+import org.apache.distributedlog.api.statestore.KVMulti;
+import org.apache.distributedlog.api.statestore.KVStore;
+import org.apache.distributedlog.api.statestore.StateStoreSpec;
+import org.apache.distributedlog.api.statestore.exceptions.InvalidStateStoreException;
+import org.apache.distributedlog.api.statestore.exceptions.StateStoreException;
+import org.apache.distributedlog.api.statestore.exceptions.StateStoreRuntimeException;
 import org.apache.distributedlog.common.coder.Coder;
-import org.apache.distributedlog.statestore.api.KV;
-import org.apache.distributedlog.statestore.api.KVIterator;
-import org.apache.distributedlog.statestore.api.KVMulti;
-import org.apache.distributedlog.statestore.api.KVStore;
-import org.apache.distributedlog.statestore.api.StateStoreSpec;
-import org.apache.distributedlog.statestore.exceptions.InvalidStateStoreException;
-import org.apache.distributedlog.statestore.exceptions.StateStoreException;
-import org.apache.distributedlog.statestore.exceptions.StateStoreRuntimeException;
 import org.apache.distributedlog.statestore.impl.KVImpl;
 import org.rocksdb.BlockBasedTableConfig;
 import org.rocksdb.FlushOptions;
@@ -116,14 +115,14 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
 
     @Override
     public synchronized void init(StateStoreSpec spec) throws StateStoreException {
-        checkArgument(spec.localStateStoreDir().isPresent(),
+        checkNotNull(spec,
             "local state store directory is not configured");
 
-        this.name = spec.name();
+        this.name = spec.getName();
 
         // initialize the coders
-        this.keyCoder = (Coder<K>) spec.keyCoder();
-        this.valCoder = (Coder<V>) spec.valCoder();
+        this.keyCoder = (Coder<K>) spec.getKeyCoder();
+        this.valCoder = (Coder<V>) spec.getValCoder();
 
         // open the rocksdb
         openRocksdb(spec);
@@ -163,7 +162,7 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
 
         // open the rocksdb
 
-        this.dbDir = spec.localStateStoreDir().get();
+        this.dbDir = spec.getLocalStateStoreDir();
         this.db = openLocalDB(dbDir, opts);
     }
 

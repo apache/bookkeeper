@@ -21,9 +21,9 @@ package org.apache.distributedlog.statestore.impl.mvcc.op;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import org.apache.distributedlog.statestore.api.mvcc.op.OpType;
-import org.apache.distributedlog.statestore.api.mvcc.op.PutOp;
-import org.apache.distributedlog.statestore.api.mvcc.op.PutOpBuilder;
+import org.apache.distributedlog.api.statestore.mvcc.op.OpType;
+import org.apache.distributedlog.api.statestore.mvcc.op.PutOp;
+import org.apache.distributedlog.api.statestore.mvcc.op.PutOpBuilder;
 import org.inferred.freebuilder.FreeBuilder;
 
 @FreeBuilder

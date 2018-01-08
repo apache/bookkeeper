@@ -26,7 +26,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.distributedlog.statestore.exceptions.StateStoreException;
+import org.apache.distributedlog.api.statestore.exceptions.StateStoreException;
 import org.apache.distributedlog.statestore.impl.rocksdb.RocksUtils;
 import org.apache.distributedlog.statestore.proto.CheckpointMetadata;
 

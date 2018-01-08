@@ -23,7 +23,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.apache.distributedlog.statestore.api.mvcc.KVRecord;
+import org.apache.distributedlog.api.statestore.mvcc.KVRecord;
 
 /**
  * The implementation of {@link KVRecord}.

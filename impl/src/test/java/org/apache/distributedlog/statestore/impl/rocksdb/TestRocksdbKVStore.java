@@ -25,13 +25,13 @@ import static org.junit.Assert.fail;
 import com.google.common.io.Files;
 import java.io.File;
 import org.apache.commons.io.FileUtils;
+import org.apache.distributedlog.api.statestore.KV;
+import org.apache.distributedlog.api.statestore.KVIterator;
+import org.apache.distributedlog.api.statestore.KVMulti;
+import org.apache.distributedlog.api.statestore.StateStoreSpec;
+import org.apache.distributedlog.api.statestore.exceptions.InvalidStateStoreException;
+import org.apache.distributedlog.api.statestore.exceptions.StateStoreRuntimeException;
 import org.apache.distributedlog.common.coder.StringUtf8Coder;
-import org.apache.distributedlog.statestore.api.KV;
-import org.apache.distributedlog.statestore.api.KVIterator;
-import org.apache.distributedlog.statestore.api.KVMulti;
-import org.apache.distributedlog.statestore.api.StateStoreSpec;
-import org.apache.distributedlog.statestore.exceptions.InvalidStateStoreException;
-import org.apache.distributedlog.statestore.exceptions.StateStoreRuntimeException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -54,7 +54,7 @@ public class TestRocksdbKVStore {
     @Before
     public void setUp() {
         tempDir = Files.createTempDir();
-        spec = StateStoreSpec.newBuilder()
+        spec = StateStoreSpec.builder()
             .name(runtime.getMethodName())
             .keyCoder(StringUtf8Coder.of())
             .valCoder(StringUtf8Coder.of())

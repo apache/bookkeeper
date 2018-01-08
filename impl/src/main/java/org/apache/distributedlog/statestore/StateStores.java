@@ -25,8 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.distributedlog.api.namespace.Namespace;
-import org.apache.distributedlog.statestore.api.KVStore;
-import org.apache.distributedlog.statestore.api.mvcc.MVCCAsyncStore;
+import org.apache.distributedlog.api.statestore.KVStore;
+import org.apache.distributedlog.api.statestore.mvcc.MVCCAsyncStore;
 import org.apache.distributedlog.statestore.impl.mvcc.MVCCStores;
 import org.apache.distributedlog.statestore.impl.rocksdb.RocksdbKVStore;
 

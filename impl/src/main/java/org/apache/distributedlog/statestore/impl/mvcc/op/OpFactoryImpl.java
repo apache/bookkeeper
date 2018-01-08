@@ -19,14 +19,14 @@
 package org.apache.distributedlog.statestore.impl.mvcc.op;
 
 import java.util.Optional;
-import org.apache.distributedlog.statestore.api.mvcc.op.CompareOp;
-import org.apache.distributedlog.statestore.api.mvcc.op.CompareResult;
-import org.apache.distributedlog.statestore.api.mvcc.op.CompareTarget;
-import org.apache.distributedlog.statestore.api.mvcc.op.DeleteOpBuilder;
-import org.apache.distributedlog.statestore.api.mvcc.op.OpFactory;
-import org.apache.distributedlog.statestore.api.mvcc.op.PutOpBuilder;
-import org.apache.distributedlog.statestore.api.mvcc.op.RangeOpBuilder;
-import org.apache.distributedlog.statestore.api.mvcc.op.TxnOpBuilder;
+import org.apache.distributedlog.api.statestore.mvcc.op.CompareOp;
+import org.apache.distributedlog.api.statestore.mvcc.op.CompareResult;
+import org.apache.distributedlog.api.statestore.mvcc.op.CompareTarget;
+import org.apache.distributedlog.api.statestore.mvcc.op.DeleteOpBuilder;
+import org.apache.distributedlog.api.statestore.mvcc.op.OpFactory;
+import org.apache.distributedlog.api.statestore.mvcc.op.PutOpBuilder;
+import org.apache.distributedlog.api.statestore.mvcc.op.RangeOpBuilder;
+import org.apache.distributedlog.api.statestore.mvcc.op.TxnOpBuilder;
 
 /**
  * A default implementation of {@link OpFactory} to create operators.

@@ -22,9 +22,9 @@ import io.netty.util.Recycler.Handle;
 import java.util.Collections;
 import java.util.List;
 import lombok.Setter;
-import org.apache.distributedlog.statestore.api.mvcc.KVRecord;
-import org.apache.distributedlog.statestore.api.mvcc.op.OpType;
-import org.apache.distributedlog.statestore.api.mvcc.result.DeleteResult;
+import org.apache.distributedlog.api.statestore.mvcc.KVRecord;
+import org.apache.distributedlog.api.statestore.mvcc.op.OpType;
+import org.apache.distributedlog.api.statestore.mvcc.result.DeleteResult;
 
 /**
  * An implementation of {@link DeleteResult}.

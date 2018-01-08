@@ -22,9 +22,9 @@ import java.util.Optional;
 import lombok.Data;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.apache.distributedlog.statestore.api.mvcc.op.CompareOp;
-import org.apache.distributedlog.statestore.api.mvcc.op.CompareResult;
-import org.apache.distributedlog.statestore.api.mvcc.op.CompareTarget;
+import org.apache.distributedlog.api.statestore.mvcc.op.CompareOp;
+import org.apache.distributedlog.api.statestore.mvcc.op.CompareResult;
+import org.apache.distributedlog.api.statestore.mvcc.op.CompareTarget;
 
 @Data
 @Getter

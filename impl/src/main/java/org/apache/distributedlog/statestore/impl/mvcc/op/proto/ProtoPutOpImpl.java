@@ -23,9 +23,9 @@ import static org.apache.distributedlog.statestore.impl.Constants.INVALID_REVISI
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import lombok.RequiredArgsConstructor;
+import org.apache.distributedlog.api.statestore.mvcc.op.OpType;
+import org.apache.distributedlog.api.statestore.mvcc.op.PutOp;
 import org.apache.distributedlog.common.util.Recycled;
-import org.apache.distributedlog.statestore.api.mvcc.op.OpType;
-import org.apache.distributedlog.statestore.api.mvcc.op.PutOp;
 import org.apache.distributedlog.statestore.proto.Command;
 import org.apache.distributedlog.statestore.proto.PutRequest;
 

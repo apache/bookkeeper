@@ -22,7 +22,7 @@ import java.util.function.Supplier;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.apache.distributedlog.api.namespace.Namespace;
-import org.apache.distributedlog.statestore.api.mvcc.MVCCAsyncStore;
+import org.apache.distributedlog.api.statestore.mvcc.MVCCAsyncStore;
 
 /**
  * A central place for creating and managing mvcc stores.

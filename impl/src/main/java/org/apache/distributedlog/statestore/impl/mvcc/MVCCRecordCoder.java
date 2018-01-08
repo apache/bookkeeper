@@ -26,8 +26,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.apache.distributedlog.api.statestore.exceptions.StateStoreRuntimeException;
 import org.apache.distributedlog.common.coder.Coder;
-import org.apache.distributedlog.statestore.exceptions.StateStoreRuntimeException;
 import org.apache.distributedlog.statestore.proto.KeyMeta;
 
 /**

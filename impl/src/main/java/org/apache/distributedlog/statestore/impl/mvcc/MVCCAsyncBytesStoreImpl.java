@@ -18,7 +18,7 @@
 
 package org.apache.distributedlog.statestore.impl.mvcc;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.distributedlog.statestore.impl.mvcc.MVCCUtils.NOP_CMD;
 import static org.apache.distributedlog.statestore.impl.mvcc.MVCCUtils.newCommand;
 import static org.apache.distributedlog.statestore.impl.mvcc.MVCCUtils.toCommand;
@@ -43,23 +43,23 @@ import org.apache.distributedlog.api.AsyncLogReader;
 import org.apache.distributedlog.api.AsyncLogWriter;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.namespace.Namespace;
-import org.apache.distributedlog.statestore.api.StateStoreSpec;
-import org.apache.distributedlog.statestore.api.mvcc.MVCCAsyncStore;
-import org.apache.distributedlog.statestore.api.mvcc.op.DeleteOp;
-import org.apache.distributedlog.statestore.api.mvcc.op.OpFactory;
-import org.apache.distributedlog.statestore.api.mvcc.op.PutOp;
-import org.apache.distributedlog.statestore.api.mvcc.op.RangeOp;
-import org.apache.distributedlog.statestore.api.mvcc.op.TxnOp;
-import org.apache.distributedlog.statestore.api.mvcc.result.Code;
-import org.apache.distributedlog.statestore.api.mvcc.result.DeleteResult;
-import org.apache.distributedlog.statestore.api.mvcc.result.PutResult;
-import org.apache.distributedlog.statestore.api.mvcc.result.RangeResult;
-import org.apache.distributedlog.statestore.api.mvcc.result.TxnResult;
-import org.apache.distributedlog.statestore.exceptions.InvalidStateStoreException;
-import org.apache.distributedlog.statestore.exceptions.MVCCStoreException;
-import org.apache.distributedlog.statestore.exceptions.StateStoreClosedException;
-import org.apache.distributedlog.statestore.exceptions.StateStoreException;
-import org.apache.distributedlog.statestore.exceptions.StateStoreRuntimeException;
+import org.apache.distributedlog.api.statestore.StateStoreSpec;
+import org.apache.distributedlog.api.statestore.exceptions.InvalidStateStoreException;
+import org.apache.distributedlog.api.statestore.exceptions.MVCCStoreException;
+import org.apache.distributedlog.api.statestore.exceptions.StateStoreClosedException;
+import org.apache.distributedlog.api.statestore.exceptions.StateStoreException;
+import org.apache.distributedlog.api.statestore.exceptions.StateStoreRuntimeException;
+import org.apache.distributedlog.api.statestore.mvcc.MVCCAsyncStore;
+import org.apache.distributedlog.api.statestore.mvcc.op.DeleteOp;
+import org.apache.distributedlog.api.statestore.mvcc.op.OpFactory;
+import org.apache.distributedlog.api.statestore.mvcc.op.PutOp;
+import org.apache.distributedlog.api.statestore.mvcc.op.RangeOp;
+import org.apache.distributedlog.api.statestore.mvcc.op.TxnOp;
+import org.apache.distributedlog.api.statestore.mvcc.result.Code;
+import org.apache.distributedlog.api.statestore.mvcc.result.DeleteResult;
+import org.apache.distributedlog.api.statestore.mvcc.result.PutResult;
+import org.apache.distributedlog.api.statestore.mvcc.result.RangeResult;
+import org.apache.distributedlog.api.statestore.mvcc.result.TxnResult;
 import org.apache.distributedlog.statestore.impl.mvcc.op.proto.ProtoPutOpImpl;
 import org.apache.distributedlog.statestore.proto.Command;
 import org.apache.distributedlog.util.Utils;
@@ -178,7 +178,9 @@ class MVCCAsyncBytesStoreImpl implements MVCCAsyncStore<byte[], byte[]> {
     }
 
     private void validateStoreSpec(StateStoreSpec spec) {
-        checkArgument(spec.stream().isPresent(), "No log stream is specified for state store " + spec.name());
+        checkNotNull(
+            spec.getStream(),
+            "No log stream is specified for state store %s", spec.getName());
     }
 
     @Override
@@ -189,27 +191,27 @@ class MVCCAsyncBytesStoreImpl implements MVCCAsyncStore<byte[], byte[]> {
             log.error("Fail to init state store due to : ", e);
             return FutureUtils.exception(e);
         }
-        name = spec.name();
+        name = spec.getName();
 
-        if (spec.writeIOScheduler().isPresent()) {
-            writeIOScheduler = spec.writeIOScheduler().get();
+        if (null != spec.getWriteIOScheduler()) {
+            writeIOScheduler = spec.getWriteIOScheduler();
             ownWriteScheduler = false;
         } else {
             ThreadFactory threadFactory = new ThreadFactoryBuilder()
-                .setNameFormat("statestore-" + spec.name() + "-write-io-scheduler-%d")
+                .setNameFormat("statestore-" + spec.getName() + "-write-io-scheduler-%d")
                 .build();
             writeIOScheduler = Executors.newSingleThreadScheduledExecutor(threadFactory);
             ownWriteScheduler = true;
         }
 
-        if (spec.readIOScheduler().isPresent()) {
-            readIOScheduler = spec.readIOScheduler().get();
+        if (null != spec.getReadIOScheduler()) {
+            readIOScheduler = spec.getReadIOScheduler();
         } else if (ownWriteScheduler) {
             readIOScheduler = writeIOScheduler;
             ownReadScheduler = false;
         } else {
             ThreadFactory threadFactory = new ThreadFactoryBuilder()
-                .setNameFormat("statestore-" + spec.name() + "-read-io-scheduler-%d")
+                .setNameFormat("statestore-" + spec.getName() + "-read-io-scheduler-%d")
                 .build();
             readIOScheduler = Executors.newSingleThreadScheduledExecutor(threadFactory);
             ownReadScheduler = true;
@@ -240,7 +242,7 @@ class MVCCAsyncBytesStoreImpl implements MVCCAsyncStore<byte[], byte[]> {
         }
 
         try {
-            logManager = logNamespace.openLog(spec.stream().get());
+            logManager = logNamespace.openLog(spec.getStream());
         } catch (IOException e) {
             return FutureUtils.exception(e);
         }

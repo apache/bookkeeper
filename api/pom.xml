@@ -27,4 +27,14 @@
   <groupId>org.apache.distributedlog</groupId>
   <artifactId>state-store-api</artifactId>
   <name>Apache DistributedLog :: IO :: State Store :: API</name>
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>bookkeeper-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-buffer</artifactId>
+    </dependency>
+  </dependencies>
 </project>

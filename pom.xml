@@ -34,9 +34,9 @@
     <!-- dependencies -->
     <bookkeeper.version>4.6.0</bookkeeper.version>
     <distributedlog.version>0.5.0</distributedlog.version>
-    <freebuilder.version>1.12.3</freebuilder.version>
     <guava.version>21.0</guava.version>
     <lombok.version>1.16.18</lombok.version>
+    <netty.version>4.1.12.Final</netty.version>
     <protobuf.version>3.4.0</protobuf.version>
     <rocksdb.version>5.8.6</rocksdb.version>
     <slf4j.version>1.7.25</slf4j.version>
@@ -62,11 +62,6 @@
         <version>${lombok.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.inferred</groupId>
-        <artifactId>freebuilder</artifactId>
-        <version>${freebuilder.version}</version>
-      </dependency>
-      <dependency>
         <groupId>org.apache.distributedlog</groupId>
         <artifactId>distributedlog-core</artifactId>
         <version>${distributedlog.version}</version>
@@ -90,6 +85,11 @@
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
         <version>${guava.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.netty</groupId>
+        <artifactId>netty-buffer</artifactId>
+        <version>${netty.version}</version>
       </dependency>
       <dependency>
         <groupId>org.rocksdb</groupId>

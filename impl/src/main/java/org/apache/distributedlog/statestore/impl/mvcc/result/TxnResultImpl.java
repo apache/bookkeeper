@@ -22,9 +22,9 @@ import io.netty.util.Recycler.Handle;
 import java.util.Collections;
 import java.util.List;
 import lombok.Setter;
-import org.apache.distributedlog.statestore.api.mvcc.op.OpType;
-import org.apache.distributedlog.statestore.api.mvcc.result.Result;
-import org.apache.distributedlog.statestore.api.mvcc.result.TxnResult;
+import org.apache.distributedlog.api.statestore.mvcc.op.OpType;
+import org.apache.distributedlog.api.statestore.mvcc.result.Result;
+import org.apache.distributedlog.api.statestore.mvcc.result.TxnResult;
 
 /**
  * A implementation of {@link TxnResult}.

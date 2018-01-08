@@ -24,8 +24,8 @@ import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.apache.distributedlog.api.statestore.mvcc.op.OpType;
 import org.apache.distributedlog.common.util.Recycled;
-import org.apache.distributedlog.statestore.api.mvcc.op.OpType;
 import org.apache.distributedlog.statestore.impl.mvcc.op.RangeOpImpl;
 import org.apache.distributedlog.statestore.proto.RangeRequest;
 
