@@ -269,6 +269,7 @@ Apache Software License, Version 2.
 - lib/org.eclipse.jetty-jetty-server-9.4.5.v20170502.jar [34]
 - lib/org.eclipse.jetty-jetty-servlet-9.4.5.v20170502.jar [34]
 - lib/org.eclipse.jetty-jetty-util-9.4.5.v20170502.jar [34]
+- lib/org.rocksdb-rocksdbjni-5.8.6.jar [35]
 
 [1] Source available at https://github.com/FasterXML/jackson-annotations/tree/jackson-annotations-2.8.9
 [2] Source available at https://github.com/FasterXML/jackson-core/tree/jackson-core-2.8.9
@@ -304,6 +305,7 @@ Apache Software License, Version 2.
 [32] Source available at https://git-wip-us.apache.org/repos/asf?p=commons-lang.git;a=tag;h=3ad2e8
 [33] Source available at https://github.com/apache/zookeeper/tree/release-3.5.3
 [34] Source available at https://github.com/eclipse/jetty.project/tree/jetty-9.4.5.v20170502
+[35] Source available at https://github.com/facebook/rocksdb/tree/v5.8.6
 
 ------------------------------------------------------------------------------------
 lib/io.netty-netty-3.10.1.Final.jar contains the extensions to Java Collections Framework which has
@@ -409,10 +411,41 @@ interchange format, which can be obtained at:
     * https://github.com/google/protobuf
 
 ------------------------------------------------------------------------------------
+lib/org.rocksdb-rocksdbjni-5.8.6.jar is derived from leveldb, which is under the following license.
+
+Copyright (c) 2011 The LevelDB Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+   * Redistributions of source code must retain the above copyright
+     notice, this list of conditions and the following disclaimer.
+   * Redistributions in binary form must reproduce the above
+     copyright notice, this list of conditions and the following disclaimer
+     in the documentation and/or other materials provided with the
+     distribution.
+   * Neither the name of Google Inc. nor the names of its
+     contributors may be used to endorse or promote products derived from
+     this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+------------------------------------------------------------------------------------
 This product bundles the JSR-305 reference implementation, which is available under
 a "3-clause BSD" license.  For details, see deps/jsr-305/LICENSE.
 
-Bundled as lib/com.google.code.findbugs-jsr305-2.0.1.jar
+Bundled as lib/com.google.code.findbugs-jsr305-3.0.2.jar
 Source available at https://storage.googleapis.com/google-code-archive-source/v2/code.google.com/jsr-305/source-archive.zip
 ------------------------------------------------------------------------------------
 This product bundles Google Protocal Buffers, which is available under a "3-clause BSD"
