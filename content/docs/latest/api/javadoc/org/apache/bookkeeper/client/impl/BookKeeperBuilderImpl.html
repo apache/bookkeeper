@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -192,12 +192,6 @@ implements <a href="../../../../../org/apache/bookkeeper/client/api/BookKeeperBu
 <div class="block">Configure the bookkeeper client with a provided <a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats"><code>StatsLogger</code></a>.</div>
 </td>
 </tr>
-<tr id="i6" class="altColor">
-<td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/api/BookKeeperBuilder.html" title="interface in org.apache.bookkeeper.client.api">BookKeeperBuilder</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/impl/BookKeeperBuilderImpl.html#zk-org.apache.zookeeper.ZooKeeper-">zk</a></span>(org.apache.zookeeper.ZooKeeper&nbsp;zk)</code>
-<div class="block">Configure the bookkeeper client with a provided ZooKeeper client.</div>
-</td>
-</tr>
 </table>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.java.lang.Object">
@@ -251,25 +245,6 @@ implements <a href="../../../../../org/apache/bookkeeper/client/api/BookKeeperBu
 <dd><code><a href="../../../../../org/apache/bookkeeper/client/api/BookKeeperBuilder.html#eventLoopGroup-io.netty.channel.EventLoopGroup-">eventLoopGroup</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../../org/apache/bookkeeper/client/api/BookKeeperBuilder.html" title="interface in org.apache.bookkeeper.client.api">BookKeeperBuilder</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>eventLoopGroup</code> - an external <code>EventLoopGroup</code> to use by the bookkeeper client.</dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>client builder.</dd>
-</dl>
-</li>
-</ul>
-<a name="zk-org.apache.zookeeper.ZooKeeper-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>zk</h4>
-<pre>public&nbsp;<a href="../../../../../org/apache/bookkeeper/client/api/BookKeeperBuilder.html" title="interface in org.apache.bookkeeper.client.api">BookKeeperBuilder</a>&nbsp;zk(org.apache.zookeeper.ZooKeeper&nbsp;zk)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../../../../../org/apache/bookkeeper/client/api/BookKeeperBuilder.html#zk-org.apache.zookeeper.ZooKeeper-">BookKeeperBuilder</a></code></span></div>
-<div class="block">Configure the bookkeeper client with a provided ZooKeeper client.</div>
-<dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../../../../../org/apache/bookkeeper/client/api/BookKeeperBuilder.html#zk-org.apache.zookeeper.ZooKeeper-">zk</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../../org/apache/bookkeeper/client/api/BookKeeperBuilder.html" title="interface in org.apache.bookkeeper.client.api">BookKeeperBuilder</a></code></dd>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>zk</code> - an external <code>ZooKeeper</code> client to use by the bookkeeper client.</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>client builder.</dd>
 </dl>
