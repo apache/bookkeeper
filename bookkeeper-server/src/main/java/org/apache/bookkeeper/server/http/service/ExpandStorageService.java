@@ -21,11 +21,9 @@ package org.apache.bookkeeper.server.http.service;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.Lists;
-
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
-
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -36,7 +34,6 @@ import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,12 +48,10 @@ public class ExpandStorageService implements HttpEndpointService {
     static final Logger LOG = LoggerFactory.getLogger(ExpandStorageService.class);
 
     protected ServerConfiguration conf;
-    private ZooKeeper zk;
 
-    public ExpandStorageService(ServerConfiguration conf, ZooKeeper zk) {
+    public ExpandStorageService(ServerConfiguration conf) {
         checkNotNull(conf);
         this.conf = conf;
-        this.zk = zk;
     }
 
     /*

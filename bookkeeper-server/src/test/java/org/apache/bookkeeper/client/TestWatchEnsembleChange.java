@@ -29,8 +29,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.FlatLedgerManagerFactory;
 import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
@@ -112,7 +112,11 @@ public class TestWatchEnsembleChange extends BookKeeperClusterTestCase {
     @Test
     public void testWatchMetadataRemoval() throws Exception {
         LedgerManagerFactory factory = ReflectionUtils.newInstance(lmFactoryCls);
-        factory.initialize(baseConf, super.zkc, factory.getCurrentVersion());
+        baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        factory.initialize(baseConf,
+            RegistrationManager.instantiateRegistrationManager(baseConf).getLayoutManager(),
+            factory.getCurrentVersion());
+
         final LedgerManager manager = factory.newLedgerManager();
         LedgerIdGenerator idGenerator = factory.newLedgerIdGenerator();
 

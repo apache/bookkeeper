@@ -100,7 +100,7 @@ public class LedgerCacheTest {
             flushThread.join();
         }
         bookie.ledgerStorage.shutdown();
-        ledgerManagerFactory.uninitialize();
+        ledgerManagerFactory.close();
         FileUtils.deleteDirectory(txnDir);
         FileUtils.deleteDirectory(ledgerDir);
         for (File dir : tempDirs) {
@@ -530,7 +530,6 @@ public class LedgerCacheTest {
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setGcWaitTime(gcWaitTime);
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
-        conf.setJournalDirName(tmpDir.toString());
         conf.setLedgerStorageClass(FlushTestSortedLedgerStorage.class.getName());
 
         Bookie bookie = new Bookie(conf);

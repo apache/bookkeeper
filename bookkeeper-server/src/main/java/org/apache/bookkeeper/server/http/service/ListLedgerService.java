@@ -36,9 +36,9 @@ import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
+import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.util.JsonUtil;
-import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,12 +53,12 @@ public class ListLedgerService implements HttpEndpointService {
     static final Logger LOG = LoggerFactory.getLogger(ListLedgerService.class);
 
     protected ServerConfiguration conf;
-    protected ZooKeeper zk;
+    protected BookieServer bookieServer;
 
-    public ListLedgerService(ServerConfiguration conf, ZooKeeper zk) {
+    public ListLedgerService(ServerConfiguration conf, BookieServer bookieServer) {
         checkNotNull(conf);
         this.conf = conf;
-        this.zk = zk;
+        this.bookieServer = bookieServer;
     }
 
     // Number of LedgerMetadata contains in each page
@@ -109,7 +109,7 @@ public class ListLedgerService implements HttpEndpointService {
             int pageIndex = (printMeta && params.containsKey("page"))
                 ? Integer.parseInt(params.get("page")) : -1;
 
-            LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(conf, zk);
+            LedgerManagerFactory mFactory = bookieServer.getBookie().getLedgerManagerFactory();
             LedgerManager manager = mFactory.newLedgerManager();
             LedgerManager.LedgerRangeIterator iter = manager.getLedgerRanges();
 
@@ -162,7 +162,6 @@ public class ListLedgerService implements HttpEndpointService {
             }
 
             manager.close();
-            mFactory.uninitialize();
 
             String jsonResponse = JsonUtil.toJson(output);
             LOG.debug("output body:" + jsonResponse);

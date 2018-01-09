@@ -28,9 +28,11 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CyclicBarrier;
-
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
@@ -60,7 +62,8 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
         f.setAccessible(true);
         f.set(layout, layoutVersion);
 
-        layout.store(zkc, ledgersRootPath, ZooDefs.Ids.OPEN_ACL_UNSAFE);
+        ZkLayoutManager zkLayoutManager = new ZkLayoutManager(zkc, ledgersRootPath, ZooDefs.Ids.OPEN_ACL_UNSAFE);
+        zkLayoutManager.storeLedgerLayout(layout);
     }
 
     /**
@@ -76,15 +79,22 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
                    Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         conf.setZkLedgersRootPath(root0);
 
-        LedgerManagerFactory m = LedgerManagerFactory.newLedgerManagerFactory(conf, zkc);
+        ZkLayoutManager zkLayoutManager = new ZkLayoutManager(
+            zkc,
+            conf.getZkLedgersRootPath(),
+            ZkUtils.getACLs(conf));
+
+        LedgerManagerFactory m = LedgerManagerFactory.newLedgerManagerFactory(
+            conf,
+            zkLayoutManager);
         assertTrue("Ledger manager is unexpected type",
                    (m instanceof FlatLedgerManagerFactory));
-        m.uninitialize();
+        m.close();
 
         // mismatching conf
         conf.setLedgerManagerFactoryClass(HierarchicalLedgerManagerFactory.class);
         try {
-            LedgerManagerFactory.newLedgerManagerFactory(conf, zkc);
+            LedgerManagerFactory.newLedgerManagerFactory(conf, zkLayoutManager);
             fail("Shouldn't reach here");
         } catch (Exception e) {
             LOG.error("Received exception", e);
@@ -100,7 +110,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
 
         conf.setLedgerManagerFactoryClassName("DoesNotExist");
         try {
-            LedgerManagerFactory f = LedgerManagerFactory.newLedgerManagerFactory(conf, zkc);
+            LedgerManagerFactory f = LedgerManagerFactory.newLedgerManagerFactory(conf, zkLayoutManager);
             fail("Shouldn't reach here");
         } catch (Exception e) {
             LOG.error("Received exception", e);
@@ -127,22 +137,30 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
 
         conf.setLedgerManagerFactoryClass(FlatLedgerManagerFactory.class);
 
-        LedgerManagerFactory m = LedgerManagerFactory.newLedgerManagerFactory(conf, zkc);
+        ZkLayoutManager zkLayoutManager = new ZkLayoutManager(
+            zkc,
+            conf.getZkLedgersRootPath(),
+            ZkUtils.getACLs(conf));
+
+        LedgerManagerFactory m = LedgerManagerFactory.newLedgerManagerFactory(
+            conf,
+            zkLayoutManager);
+
         assertTrue("Ledger manager is unexpected type",
                    (m instanceof FlatLedgerManagerFactory));
-        m.uninitialize();
+        m.close();
 
         // v2 setting doesn't effect v1
         conf.setLedgerManagerFactoryClass(HierarchicalLedgerManagerFactory.class);
-        m = LedgerManagerFactory.newLedgerManagerFactory(conf, zkc);
+        m = LedgerManagerFactory.newLedgerManagerFactory(conf, zkLayoutManager);
         assertTrue("Ledger manager is unexpected type",
                    (m instanceof FlatLedgerManagerFactory));
-        m.uninitialize();
+        m.close();
 
         // mismatching conf
         conf.setLedgerManagerType(HierarchicalLedgerManagerFactory.NAME);
         try {
-            LedgerManagerFactory.newLedgerManagerFactory(conf, zkc);
+            LedgerManagerFactory.newLedgerManagerFactory(conf, zkLayoutManager);
             fail("Shouldn't reach here");
         } catch (Exception e) {
             LOG.error("Received exception", e);
@@ -164,11 +182,14 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
                    Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         conf.setZkLedgersRootPath(root0);
 
-        new LedgerLayout("DoesNotExist",
-                         0xdeadbeef).store(zkc, root0, ZooDefs.Ids.OPEN_ACL_UNSAFE);
+        LedgerLayout layout = new LedgerLayout("DoesNotExist",
+                         0xdeadbeef);
+
+        ZkLayoutManager zkLayoutManager = new ZkLayoutManager(zkc, root0, ZooDefs.Ids.OPEN_ACL_UNSAFE);
+        zkLayoutManager.storeLedgerLayout(layout);
 
         try {
-            LedgerManagerFactory.newLedgerManagerFactory(conf, zkc);
+            LedgerManagerFactory.newLedgerManagerFactory(conf, zkLayoutManager);
             fail("Shouldn't reach here");
         } catch (Exception e) {
             LOG.error("Received exception", e);
@@ -182,11 +203,13 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
                    Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         conf.setZkLedgersRootPath(root1);
 
-        new LedgerLayout(FlatLedgerManagerFactory.class.getName(),
-                         0xdeadbeef).store(zkc, root1, ZooDefs.Ids.OPEN_ACL_UNSAFE);
+        LedgerLayout layout1 = new LedgerLayout(FlatLedgerManagerFactory.class.getName(),
+                         0xdeadbeef);
+        ZkLayoutManager zkLayoutManager1 = new ZkLayoutManager(zkc, root1, ZooDefs.Ids.OPEN_ACL_UNSAFE);
+        zkLayoutManager1.storeLedgerLayout(layout1);
 
         try {
-            LedgerManagerFactory.newLedgerManagerFactory(conf, zkc);
+            LedgerManagerFactory.newLedgerManagerFactory(conf, zkLayoutManager1);
             fail("Shouldn't reach here");
         } catch (Exception e) {
             LOG.error("Received exception", e);
@@ -201,6 +224,7 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
         private final String root;
         private final CyclicBarrier barrier;
         private ZooKeeper zkc;
+        private ClientConfiguration conf;
 
         CreateLMThread(String zkConnectString, String root,
                        String factoryCls, CyclicBarrier barrier) throws Exception {
@@ -210,17 +234,20 @@ public class TestLedgerManager extends BookKeeperClusterTestCase {
             zkc = ZooKeeperClient.newBuilder()
                     .connectString(zkConnectString)
                     .build();
+            this.conf = new ClientConfiguration();
+            conf.setZkServers(zkConnectString);
         }
 
         public void run() {
-            ClientConfiguration conf = new ClientConfiguration();
             conf.setLedgerManagerFactoryClassName(factoryCls);
 
             try {
                 barrier.await();
-                LedgerManagerFactory factory =
-                    LedgerManagerFactory.newLedgerManagerFactory(conf, zkc);
-                factory.uninitialize();
+                LedgerManagerFactory factory = LedgerManagerFactory.newLedgerManagerFactory(
+                    conf,
+                    RegistrationManager
+                        .instantiateRegistrationManager(new ServerConfiguration(conf)).getLayoutManager());
+                factory.close();
 
                 success = true;
             } catch (Exception e) {

@@ -48,6 +48,7 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
@@ -125,6 +126,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         rng = new Random(System.currentTimeMillis()); // Initialize the Random
         urLedgerList = new HashSet<Long>();
         ledgerList = new ArrayList<Long>(2);
+        baseClientConf.setZkServers(zkUtil.getZooKeeperConnectString());
     }
 
     @Override
@@ -531,8 +533,12 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
             ensemble.add(new BookieSocketAddress("11.11.11.11:1111"));
             ensemble.add(new BookieSocketAddress("88.88.88.88:8888"));
             metadata.addEnsemble(0, ensemble);
-            LedgerManager ledgerManager = LedgerManagerFactory.newLedgerManagerFactory(baseClientConf, zkc)
-                    .newLedgerManager();
+            LedgerManager ledgerManager = LedgerManagerFactory.newLedgerManagerFactory(
+                baseClientConf,
+                RegistrationManager
+                    .instantiateRegistrationManager(new ServerConfiguration(baseClientConf))
+                    .getLayoutManager()).newLedgerManager();
+
             MutableInt ledgerCreateRC = new MutableInt(-1);
             CountDownLatch latch = new CountDownLatch(1);
             long ledgerId = (Math.abs(rand.nextLong())) % 100000000;

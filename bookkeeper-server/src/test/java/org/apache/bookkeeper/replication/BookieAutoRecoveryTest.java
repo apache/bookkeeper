@@ -30,13 +30,14 @@ import java.util.List;
 import java.util.SortedMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BookKeeperTestClient;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerHandleAdapter;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.RegistrationManager;
+import org.apache.bookkeeper.meta.LayoutManager;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
@@ -93,12 +94,20 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
     public void setUp() throws Exception {
         super.setUp();
         baseConf.setZkServers(zkUtil.getZooKeeperConnectString());
+        baseClientConf.setZkServers(zkUtil.getZooKeeperConnectString());
         // initialize urReplicationManager
-        mFactory = LedgerManagerFactory.newLedgerManagerFactory(baseClientConf,
-                zkc);
+        LayoutManager layoutManager = RegistrationManager
+            .instantiateRegistrationManager(new ServerConfiguration(baseClientConf)).getLayoutManager();
+
+        mFactory = LedgerManagerFactory
+            .newLedgerManagerFactory(
+                baseClientConf,
+                layoutManager);
         underReplicationManager = mFactory.newLedgerUnderreplicationManager();
         LedgerManagerFactory newLedgerManagerFactory = LedgerManagerFactory
-                .newLedgerManagerFactory(baseClientConf, zkc);
+            .newLedgerManagerFactory(
+                baseClientConf,
+                layoutManager);
         ledgerManager = newLedgerManagerFactory.newLedgerManager();
     }
 
@@ -106,7 +115,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
     public void tearDown() throws Exception {
         super.tearDown();
         if (null != mFactory) {
-            mFactory.uninitialize();
+            mFactory.close();
             mFactory = null;
         }
         if (null != underReplicationManager) {
