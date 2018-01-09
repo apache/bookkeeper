@@ -30,7 +30,6 @@ import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.junit.Test;
 
-
 /**
  * Test ensemble change has a max num.
  */

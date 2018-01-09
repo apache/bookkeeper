@@ -95,7 +95,6 @@ public abstract class MockBookKeeperTestCase {
     Set<BookieSocketAddress> availableBookies;
     private int lastIndexForBK;
 
-
     private Map<BookieSocketAddress, Map<Long, MockEntry>> getMockLedgerContents(long ledgerId) {
         return mockLedgerData.computeIfAbsent(ledgerId, (id) -> new ConcurrentHashMap<>());
     }

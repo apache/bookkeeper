@@ -343,7 +343,6 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
                 } catch (BKException bke) {
                     fail("Add entry fail for in testOpenLedgerNoRecovery");
                 }
-
             });
         });
 
