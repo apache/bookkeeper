@@ -37,9 +37,9 @@ public class BKExceptionTest {
                 int code = f.getInt(null);
                 String msg = BKException.getMessage(code);
                 if (code == UnexpectedConditionException) {
-                    assertEquals(msg, "Unexpected condition");
+                    assertEquals("Unexpected condition", msg);
                 } else {
-                    assertNotEquals("failure on code " + f.getName(), msg, "Unexpected condition");
+                    assertNotEquals("failure on code " + f.getName(), "Unexpected condition", msg);
                 }
                 count++;
             }
