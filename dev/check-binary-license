@@ -41,13 +41,16 @@ NOTICE=$(tar --wildcards -O -xf $TARBALL $NOTICEPATH)
 LICENSEJARS=$(echo "$LICENSE" | sed -nE 's!.*lib/(.*\.jar).*!\1!gp')
 NOTICEJARS=$(echo "$NOTICE" | sed -nE 's!.*lib/(.*\.jar).*!\1!gp')
 
-BUNDLEDLICENSES=$(tar --wildcards -tf $TARBALL '*/deps/*' | sed 's!^[^/]*/!!' | grep -v /$)
 LINKEDINLICENSE=$(echo "$LICENSE" | sed -nE 's!.*(deps/[[:graph:]]*).*!\1!gp' | sed 's!\.$!!')
-
-EXIT=0
 
 # errors not fatal
 set +e
+
+# this can error if there's no deps directory in tarball, we still want to continue with checks
+BUNDLEDLICENSES=$(tar --wildcards -tf $TARBALL '*/deps/*' | sed 's!^[^/]*/!!' | grep -v /$)
+
+EXIT=0
+
 
 # Check all bundled jars are mentioned in LICENSE
 for J in $JARS; do
