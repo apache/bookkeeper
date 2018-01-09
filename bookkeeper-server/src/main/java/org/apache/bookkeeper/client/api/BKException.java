@@ -111,6 +111,8 @@ public abstract class BKException extends Exception {
             return "Attempting to use an unclosed fragment; This is not safe";
         case Code.WriteOnReadOnlyBookieException:
             return "Attempting to write on ReadOnly bookie";
+        case Code.TooManyRequestsException:
+            return "Too many requests to the same Bookie";
         case Code.LedgerIdOverflowException:
             return "Next ledgerID is too large.";
         case Code.ReplicationException:
