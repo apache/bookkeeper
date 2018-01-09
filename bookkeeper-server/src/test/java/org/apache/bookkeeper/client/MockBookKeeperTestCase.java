@@ -107,7 +107,7 @@ public abstract class MockBookKeeperTestCase {
     private MockEntry getMockLedgerEntry(long ledgerId,
                                          BookieSocketAddress bookieSocketAddress, long entryId) throws BKException{
         if (failedBookies.contains(bookieSocketAddress)) {
-            throw  BKException.create(NoBookieAvailableException);
+            throw BKException.create(NoBookieAvailableException);
         }
         return getMockLedgerContentsInBookie(ledgerId, bookieSocketAddress).get(entryId);
     }
@@ -160,8 +160,7 @@ public abstract class MockBookKeeperTestCase {
         when(bk.getLedgerManager()).thenReturn(ledgerManager);
         when(bk.getLedgerIdGenerator()).thenReturn(ledgerIdGenerator);
         when(bk.getReturnRc(anyInt())).thenAnswer(invocationOnMock -> invocationOnMock.getArgument(0));
-//        doReturn(null).when(bk).bookieWatcher; //(bookieWatcher);
-//        when(bk.featureProvider).thenReturn(mock(FeatureProvider.class));
+
         setupLedgerIdGenerator();
         setupCreateLedgerMetadata();
         setupReadLedgerMetadata();
@@ -296,7 +295,7 @@ public abstract class MockBookKeeperTestCase {
         setupLedgerIdGenerator();
     }
 
-   protected LedgerMetadata getLedgerMetadata(long ledgerId) {
+    protected LedgerMetadata getLedgerMetadata(long ledgerId) {
         return mockLedgerMetadataRegistry.get(ledgerId);
     }
 

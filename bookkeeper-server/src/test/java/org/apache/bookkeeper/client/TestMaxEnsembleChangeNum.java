@@ -26,7 +26,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.nio.ByteBuffer;
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.junit.Test;
@@ -37,14 +36,8 @@ import org.junit.Test;
  */
 public class TestMaxEnsembleChangeNum extends MockBookKeeperTestCase {
 
-    final DigestType digestType;
     private static final byte[] password = new byte[5];
     private static final byte[] data = new byte[5];
-
-
-    public TestMaxEnsembleChangeNum() {
-        this.digestType = DigestType.CRC32;
-    }
 
     @Test
     public void testChangeEnsembleMaxNumWithWriter() throws Exception {
