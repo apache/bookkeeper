@@ -33,12 +33,13 @@ import java.util.Set;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
-import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.MSLedgerManagerFactory;
+import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.zookeeper.KeeperException;
 import org.junit.After;
@@ -92,7 +93,7 @@ public class BookieLedgerIndexTest extends BookKeeperClusterTestCase {
         // initialize ledger manager
         newLedgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(
             baseConf,
-            RegistrationManager.instantiateRegistrationManager(baseConf).getLayoutManager());
+            new ZkLayoutManager(zkc, baseConf.getZkLedgersRootPath(), ZkUtils.getACLs(baseConf)));
 
         ledgerManager = newLedgerManagerFactory.newLedgerManager();
     }

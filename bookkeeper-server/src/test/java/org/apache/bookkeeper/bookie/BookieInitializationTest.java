@@ -252,9 +252,9 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
         final String bkRegPath = conf.getZkAvailableBookiesPath() + "/"
                 + InetAddress.getLocalHost().getCanonicalHostName() + ":" + conf.getBookiePort();
+        conf.setZkServers(zkUtil.getZooKeeperConnectString());
 
         MockBookie bWithFQDNHostname = new MockBookie(conf);
-        conf.setZkServers(zkUtil.getZooKeeperConnectString());
         rm.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
         bWithFQDNHostname.registrationManager = rm;
 
@@ -273,9 +273,9 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
         final String bkRegPath = conf.getZkAvailableBookiesPath() + "/"
                 + (InetAddress.getLocalHost().getCanonicalHostName().split("\\.", 2)[0]) + ":" + conf.getBookiePort();
+        conf.setZkServers(zkUtil.getZooKeeperConnectString());
 
         MockBookie bWithShortHostname = new MockBookie(conf);
-        conf.setZkServers(zkUtil.getZooKeeperConnectString());
         rm.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
         bWithShortHostname.registrationManager = rm;
 
@@ -296,7 +296,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         final ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
         conf.setJournalDirName(tmpDir.getPath())
             .setLedgerDirNames(new String[] { tmpDir.getPath() })
-            .setZkServers(null);
+            .setZkServers(zkUtil.getZooKeeperConnectString());
 
         String bkRegPath = conf.getZkAvailableBookiesPath() + "/"
                 + InetAddress.getLocalHost().getHostAddress() + ":"
@@ -304,7 +304,6 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
 
         MockBookie b = new MockBookie(conf);
 
-        conf.setZkServers(zkUtil.getZooKeeperConnectString());
         rm.initialize(conf, () -> {}, NullStatsLogger.INSTANCE);
         b.setRegistrationManager(rm);
         b.testRegisterBookie(conf);
