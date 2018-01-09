@@ -1,43 +1,122 @@
 Apache BookKeeper
-Copyright 2011-2017 The Apache Software Foundation
+Copyright 2011-2018 The Apache Software Foundation
 
-Licensed under the Apache License, Version 2.0 (the
-"License"); you may not use this file except in compliance
-with the License. You may obtain a copy of the License at:
-
-http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing,
-software distributed under the License is distributed on
-an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, either express or implied. See the License for the
-specific language governing permissions and limitations
-under the License.
-
-This project includes:
-  Apache Log4j under The Apache Software License, Version 2.0
-  Commons CLI under The Apache Software License, Version 2.0
-  Commons Codec under The Apache Software License, Version 2.0
-  Commons Collections under The Apache Software License, Version 2.0
-  Commons Configuration under The Apache Software License, Version 2.0
-  Commons IO under The Apache Software License, Version 2.0
-  Commons Lang under The Apache Software License, Version 2.0
-  Commons Logging under The Apache Software License, Version 2.0
-  Guava under The Apache Software License, Version 2.0
-  Jackson under The Apache Software License, Version 2.0
-  Java Native Access under The Apache Software License, Version 2.0
-  Java Servlet API under Common Development and Distribution License 1.0
-  Jetty under The Apache Software License, Version 2.0
-  Prometheus under The Apache Software License, Version 2.0
-  Protocol Buffer Java API under New BSD license
-  SLF4J API Module under MIT License
-  SLF4J LOG4J-12 Binding under MIT License
-  The Netty Project under The Apache Software License, Version 2.0
-  Vertx under The Apache Software License, Version 2.0
-  ZooKeeper under Apache License, Version 2.0
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
 
 This product contains a modified version of 'Circe', a high-performance
 hash algorithm framework & library from Trevor Robinson:
 
   * LICENSE: Apache License 2.0
   * HOMEPAGE: https://github.com/trevorr/circe
+
+------------------------------------------------------------------------------------
+- lib/commons-lang-commons-lang-2.6.jar
+- lib/org.apache.commons-commons-lang3-3.3.2.jar
+include software from the Spring Framework, under the Apache License 2.0
+(see: StringUtils.containsWhitespace())
+------------------------------------------------------------------------------------
+- lib/io.netty-netty-all-4.1.12.Final.jar
+
+                            The Netty Project
+                            =================
+
+Please visit the Netty web site for more information:
+
+  * http://netty.io/
+
+Copyright 2014 The Netty Project
+
+The Netty Project licenses this file to you under the Apache License,
+version 2.0 (the "License"); you may not use this file except in compliance
+with the License. You may obtain a copy of the License at:
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+License for the specific language governing permissions and limitations
+under the License.
+
+lib/io.netty-netty-all-4.1.12.Final.jar contains a modified portion of 'Apache Harmony', an open source
+Java SE, which can be obtained at http://archive.apache.org/dist/harmony/
+
+Portions of Apache Harmony were originally developed by
+Intel Corporation and are licensed to the Apache Software
+Foundation under the "Software Grant and Corporate Contribution
+License Agreement" and for which the following copyright notices
+apply
+  (C) Copyright 2005 Intel Corporation
+  (C) Copyright 2005-2006 Intel Corporation
+  (C) Copyright 2006 Intel Corporation
+                           
+lib/io.netty-netty-all-4.1.12.Final.jar contains a modified portion of Nitsan Wakart's 'JCTools',
+Java Concurrency Tools for the JVM, which can be obtained at:
+
+  * LICENSE: Apache Software License, Version 2
+  * HOMEPAGE: https://github.com/JCTools/JCTools
+
+lib/io.netty-netty-all-4.1.12.Final.jar contains a modified version of 'HPACK', a Java implementation of
+the HTTP/2 HPACK algorithm written by Twitter. It can be obtained at:
+
+  * LICENSE: Apache Software License, Version 2
+  * HOMEPAGE: https://github.com/twitter/hpack
+
+lib/io.netty-netty-all-4.1.12.Final.jar contains a modified portion of 'Apache Commons Lang',
+a Java library provides utilities for the java.lang API. See elsewhere in this NOTICE for the
+notices for commons-lang.
+------------------------------------------------------------------------------------
+- lib/io.prometheus-simpleclient-0.0.21.jar
+- lib/io.prometheus-simpleclient_common-0.0.21.jar
+- lib/io.prometheus-simpleclient_hotspot-0.0.21.jar
+- lib/io.prometheus-simpleclient_servlet-0.0.21.jar
+
+Prometheus instrumentation library for JVM applications
+Copyright 2012-2015 The Prometheus Authors
+
+This product includes software developed at
+Boxever Ltd. (http://www.boxever.com/).
+
+This product includes software developed at
+SoundCloud Ltd. (http://soundcloud.com/).
+
+This product includes software developed as part of the
+Ocelli project by Netflix Inc. (https://github.com/Netflix/ocelli/).
+------------------------------------------------------------------------------------
+- lib/org.eclipse.jetty-jetty-http-9.4.5.v20170502.jar
+- lib/org.eclipse.jetty-jetty-io-9.4.5.v20170502.jar
+- lib/org.eclipse.jetty-jetty-security-9.4.5.v20170502.jar
+- lib/org.eclipse.jetty-jetty-server-9.4.5.v20170502.jar
+- lib/org.eclipse.jetty-jetty-servlet-9.4.5.v20170502.jar
+- lib/org.eclipse.jetty-jetty-util-9.4.5.v20170502.jar
+
+==============================================================
+ Jetty Web Container
+ Copyright 1995-2017 Mort Bay Consulting Pty Ltd.
+==============================================================
+
+The Jetty Web Container is Copyright Mort Bay Consulting Pty Ltd
+unless otherwise noted.
+
+Jetty is dual licensed under both
+
+  * The Apache 2.0 License
+    http://www.apache.org/licenses/LICENSE-2.0.html
+
+      and
+
+  * The Eclipse Public 1.0 License
+    http://www.eclipse.org/legal/epl-v10.html
+
+Jetty may be distributed under either license.
+
+lib/org.eclipse.jetty-jetty-util-9.4.5.v20170502.jar bundles UnixCrypt
+
+The UnixCrypt.java code implements the one way cryptography used by
+Unix systems for simple password protection.  Copyright 1996 Aki Yoshida,
+modified April 2001  by Iris Van den Broeke, Daniel Deville.
+Permission to use, copy, modify and distribute UnixCrypt
+for non-commercial or commercial purposes and without fee is
+granted provided that the copyright notice appears in all copies.
+------------------------------------------------------------------------------------
