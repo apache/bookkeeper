@@ -518,9 +518,8 @@ public abstract class MockBookKeeperTestCase {
                             registerMockEntryForRead(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, bookieSocketAddress,
                                     new byte[0], BookieProtocol.INVALID_ENTRY_ID);
                         } catch (BKException bke) {
-
+                            callback.writeComplete(bke.getCode(), ledgerId, entryId, bookieSocketAddress, ctx);
                         }
-
                     }
                     try {
                         registerMockEntryForRead(ledgerId, entryId, bookieSocketAddress, entry, ledgerId);
