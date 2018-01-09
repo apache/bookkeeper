@@ -1471,26 +1471,29 @@ public class BookieShell implements Tool {
                 return 1;
             }
 
-            try (LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(
+            try (RegistrationManager rm =
+                     RegistrationManager.instantiateRegistrationManager(bkConf)){
+                try (LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(
                     bkConf,
-                    RegistrationManager.instantiateRegistrationManager(bkConf).getLayoutManager())) {
-                LedgerUnderreplicationManager underreplicationManager = mFactory.newLedgerUnderreplicationManager();
-                if (!enable && !disable) {
-                    boolean enabled = underreplicationManager.isLedgerReplicationEnabled();
-                    System.out.println("Autorecovery is " + (enabled ? "enabled." : "disabled."));
-                } else if (enable) {
-                    if (underreplicationManager.isLedgerReplicationEnabled()) {
-                        LOG.warn("Autorecovery already enabled. Doing nothing");
+                    rm.getLayoutManager())) {
+                    LedgerUnderreplicationManager underreplicationManager = mFactory.newLedgerUnderreplicationManager();
+                    if (!enable && !disable) {
+                        boolean enabled = underreplicationManager.isLedgerReplicationEnabled();
+                        System.out.println("Autorecovery is " + (enabled ? "enabled." : "disabled."));
+                    } else if (enable) {
+                        if (underreplicationManager.isLedgerReplicationEnabled()) {
+                            LOG.warn("Autorecovery already enabled. Doing nothing");
+                        } else {
+                            LOG.info("Enabling autorecovery");
+                            underreplicationManager.enableLedgerReplication();
+                        }
                     } else {
-                        LOG.info("Enabling autorecovery");
-                        underreplicationManager.enableLedgerReplication();
-                    }
-                } else {
-                    if (!underreplicationManager.isLedgerReplicationEnabled()) {
-                        LOG.warn("Autorecovery already disabled. Doing nothing");
-                    } else {
-                        LOG.info("Disabling autorecovery");
-                        underreplicationManager.disableLedgerReplication();
+                        if (!underreplicationManager.isLedgerReplicationEnabled()) {
+                            LOG.warn("Autorecovery already disabled. Doing nothing");
+                        } else {
+                            LOG.info("Disabling autorecovery");
+                            underreplicationManager.disableLedgerReplication();
+                        }
                     }
                 }
             }
