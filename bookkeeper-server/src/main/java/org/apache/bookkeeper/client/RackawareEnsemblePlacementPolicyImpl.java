@@ -18,7 +18,11 @@
 package org.apache.bookkeeper.client;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.bookkeeper.client.RegionAwareEnsemblePlacementPolicy.UNKNOWN_REGION;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
@@ -27,7 +31,6 @@ import io.netty.util.HashedWheelTimer;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,6 +40,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 
@@ -87,7 +91,8 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
     static final int REMOTE_MASK      = 0x04 << 24;
     static final int REMOTE_FAIL_MASK = 0x08 << 24;
     static final int READ_ONLY_MASK   = 0x10 << 24;
-    static final int UNAVAIL_MASK     = 0x20 << 24;
+    static final int SLOW_MASK        = 0x20 << 24;
+    static final int UNAVAIL_MASK     = 0x40 << 24;
     static final int MASK_BITS        = 0xFFF << 20;
 
     static class DefaultResolver implements DNSToSwitchMapping {
@@ -183,6 +188,8 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
     protected DNSToSwitchMapping dnsResolver;
     protected HashedWheelTimer timer;
     protected final Map<BookieSocketAddress, BookieNode> knownBookies;
+    // Use a loading cache so slow bookies are expired. Use entryId as values.
+    protected Cache<BookieSocketAddress, Long> slowBookies;
     protected BookieNode localNode;
     protected final ReentrantReadWriteLock rwLock;
     protected ImmutableSet<BookieSocketAddress> readOnlyBookies = null;
@@ -302,6 +309,14 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
                 dnsResolver = new DefaultResolver(() -> this.getDefaultRack());
             }
         }
+        slowBookies = CacheBuilder.newBuilder()
+            .expireAfterWrite(conf.getBookieFailureHistoryExpirationMSec(), TimeUnit.MILLISECONDS)
+            .build(new CacheLoader<BookieSocketAddress, Long>() {
+                @Override
+                public Long load(BookieSocketAddress key) throws Exception {
+                    return -1L;
+                }
+            });
         return initialize(
                 dnsResolver,
                 timer,
@@ -419,6 +434,14 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
         return nodes;
     }
 
+    private static Set<String> getNetworkLocations(Set<Node> bookieNodes) {
+        Set<String> networkLocs = new HashSet<>();
+        for (Node bookieNode : bookieNodes) {
+            networkLocs.add(bookieNode.getNetworkLocation());
+        }
+        return networkLocs;
+    }
+
     @Override
     public ArrayList<BookieSocketAddress> newEnsemble(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
             Map<String, byte[]> customMetadata, Set<BookieSocketAddress> excludeBookies)
@@ -516,7 +539,7 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
 
     @Override
     public BookieSocketAddress replaceBookie(int ensembleSize, int writeQuorumSize, int ackQuorumSize,
-            Map<String, byte[]> customMetadata, Collection<BookieSocketAddress> currentEnsemble,
+            Map<String, byte[]> customMetadata, Set<BookieSocketAddress> currentEnsemble,
             BookieSocketAddress bookieToReplace, Set<BookieSocketAddress> excludeBookies)
             throws BKNotEnoughBookiesException {
         rwLock.readLock().lock();
@@ -527,16 +550,23 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
                 bn = createBookieNode(bookieToReplace);
             }
 
+            Set<Node> ensembleNodes = convertBookiesToNodes(currentEnsemble);
             Set<Node> excludeNodes = convertBookiesToNodes(excludeBookies);
-            // add the bookie to replace in exclude set
+
+            excludeNodes.addAll(ensembleNodes);
             excludeNodes.add(bn);
+            ensembleNodes.remove(bn);
+
+            Set<String> networkLocationsToBeExcluded = getNetworkLocations(ensembleNodes);
+
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Try to choose a new bookie to replace {}, excluding {}.", bookieToReplace,
-                        excludeNodes);
+                LOG.debug("Try to choose a new bookie to replace {} from ensemble {}, excluding {}.",
+                    bookieToReplace, ensembleNodes, excludeNodes);
             }
             // pick a candidate from same rack to replace
             BookieNode candidate = selectFromNetworkLocation(
                     bn.getNetworkLocation(),
+                    networkLocationsToBeExcluded,
                     excludeNodes,
                     TruePredicate.INSTANCE,
                     EnsembleForReplacementWithNoConstraints.INSTANCE);
@@ -594,8 +624,57 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
         }
     }
 
-    protected String getRemoteRack(BookieNode node) {
-        return "~" + node.getNetworkLocation();
+    protected BookieNode selectFromNetworkLocation(String networkLoc,
+                                                   Set<String> excludeRacks,
+                                                   Set<Node> excludeBookies,
+                                                   Predicate<BookieNode> predicate,
+                                                   Ensemble<BookieNode> ensemble)
+            throws BKNotEnoughBookiesException {
+        // first attempt to select one from local rack
+        try {
+            return selectRandomFromRack(networkLoc, excludeBookies, predicate, ensemble);
+        } catch (BKNotEnoughBookiesException e) {
+            if (isWeighted) {
+                // if weight based selection is enabled, randomly select one from the whole cluster
+                // based on weights and ignore the provided <tt>excludeRacks</tt>.
+                // randomly choose one from whole cluster, ignore the provided predicate.
+                return selectRandom(1, excludeBookies, predicate, ensemble).get(0);
+            } else {
+                // if weight based selection is disabled, and there is no enough bookie from local rack,
+                // select bookies from the whole cluster and exclude the racks specified at <tt>excludeRacks</tt>.
+                return selectFromNetworkLocation(excludeRacks, excludeBookies, predicate, ensemble);
+            }
+        }
+
+    }
+
+
+    /**
+     * It randomly selects a {@link BookieNode} that is not on the <i>excludeRacks</i> set, excluding the nodes in
+     * <i>excludeBookies</i> set. If it fails to find one, it selects a random {@link BookieNode} from the whole
+     * cluster.
+     */
+    protected BookieNode selectFromNetworkLocation(Set<String> excludeRacks,
+                                                   Set<Node> excludeBookies,
+                                                   Predicate<BookieNode> predicate,
+                                                   Ensemble<BookieNode> ensemble)
+            throws BKNotEnoughBookiesException {
+        List<BookieNode> knownNodes = new ArrayList<>(knownBookies.values());
+        Collections.shuffle(knownNodes);
+
+        for (BookieNode knownNode : knownNodes) {
+            if (excludeBookies.contains(knownNode)) {
+                continue;
+            }
+            if (excludeRacks.contains(knownNode.getNetworkLocation())) {
+                continue;
+            }
+            return knownNode;
+        }
+        LOG.warn("Failed to choose a bookie: excluded {}, fallback to choose bookie randomly from the cluster.",
+                excludeBookies);
+        // randomly choose one from whole cluster
+        return selectRandom(1, excludeBookies, predicate, ensemble).get(0);
     }
 
     private WeightedRandomSelection<BookieNode> prepareForWeightedSelection(List<Node> leaves) {
@@ -790,34 +869,104 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
     }
 
     @Override
+    public void registerSlowBookie(BookieSocketAddress bookieSocketAddress, long entryId) {
+        slowBookies.put(bookieSocketAddress, entryId);
+    }
+
+    @Override
     public DistributionSchedule.WriteSet reorderReadSequence(
             ArrayList<BookieSocketAddress> ensemble,
-            Map<BookieSocketAddress, Long> bookieFailureHistory,
+            BookiesHealthInfo bookiesHealthInfo,
             DistributionSchedule.WriteSet writeSet) {
+        Map<Integer, String> writeSetWithRegion = new HashMap<>();
+        for (int i = 0; i < writeSet.size(); i++) {
+            writeSetWithRegion.put(writeSet.get(i), "");
+        }
+        return reorderReadSequenceWithRegion(
+            ensemble, writeSet, writeSetWithRegion, bookiesHealthInfo, false, "", writeSet.size());
+    }
+
+    /**
+     * This function orders the read sequence with a given region. For region-unaware policies (e.g.
+     * RackAware), we pass in false for regionAware and an empty myRegion. When this happens, any
+     * remote list will stay empty. The ordering is as follows (the R* at the beginning of each list item
+     * is only present for region aware policies).
+     *      1. available (local) bookies
+     *      2. R* a remote bookie (based on remoteNodeInReorderSequence
+     *      3. R* remaining (local) bookies
+     *      4. R* remaining remote bookies
+     *      5. read only bookies
+     *      6. slow bookies
+     *      7. unavailable bookies
+     *
+     * @param ensemble
+     *          ensemble of bookies
+     * @param writeSet
+     *          write set
+     * @param writeSetWithRegion
+     *          write set with region information
+     * @param bookiesHealthInfo
+     *          heuristics about health of boookies
+     * @param regionAware
+     *          whether or not a region-aware policy is used
+     * @param myRegion
+     *          current region of policy
+     * @param remoteNodeInReorderSequence
+     *          number of local bookies to try before trying a remote bookie
+     * @return ordering of bookies to send read to
+     */
+    DistributionSchedule.WriteSet reorderReadSequenceWithRegion(
+        ArrayList<BookieSocketAddress> ensemble,
+        DistributionSchedule.WriteSet writeSet,
+        Map<Integer, String> writeSetWithRegion,
+        BookiesHealthInfo bookiesHealthInfo,
+        boolean regionAware,
+        String myRegion,
+        int remoteNodeInReorderSequence) {
+        boolean useRegionAware = regionAware && (!myRegion.equals(UNKNOWN_REGION));
         int ensembleSize = ensemble.size();
 
         for (int i = 0; i < writeSet.size(); i++) {
             int idx = writeSet.get(i);
             BookieSocketAddress address = ensemble.get(idx);
-            Long lastFailedEntryOnBookie = bookieFailureHistory.get(address);
+            String region = writeSetWithRegion.get(idx);
+            Long lastFailedEntryOnBookie = bookiesHealthInfo.getBookieFailureHistory(address);
             if (null == knownBookies.get(address)) {
                 // there isn't too much differences between readonly bookies
                 // from unavailable bookies. since there
                 // is no write requests to them, so we shouldn't try reading
-                // from readonly bookie in prior to writable
-                // bookies.
+                // from readonly bookie prior to writable bookies.
                 if ((null == readOnlyBookies)
-                        || !readOnlyBookies.contains(address)) {
+                    || !readOnlyBookies.contains(address)) {
                     writeSet.set(i, idx | UNAVAIL_MASK);
                 } else {
-                    writeSet.set(i, idx | READ_ONLY_MASK);
+                    if (slowBookies.getIfPresent(address) != null) {
+                        long numPendingReqs = bookiesHealthInfo.getBookiePendingRequests(address);
+                        // use slow bookies with less pending requests first
+                        long slowIdx = numPendingReqs * ensembleSize + idx;
+                        writeSet.set(i, (int) (slowIdx & ~MASK_BITS) | SLOW_MASK);
+                    } else {
+                        writeSet.set(i, idx | READ_ONLY_MASK);
+                    }
+                }
+            } else if (lastFailedEntryOnBookie < 0) {
+                if (slowBookies.getIfPresent(address) != null) {
+                    long numPendingReqs = bookiesHealthInfo.getBookiePendingRequests(address);
+                    long slowIdx = numPendingReqs * ensembleSize + idx;
+                    writeSet.set(i, (int) (slowIdx & ~MASK_BITS) | SLOW_MASK);
+                } else {
+                    if (useRegionAware && !myRegion.equals(region)) {
+                        writeSet.set(i, idx | REMOTE_MASK);
+                    } else {
+                        writeSet.set(i, idx | LOCAL_MASK);
+                    }
                 }
             } else {
-                if ((lastFailedEntryOnBookie == null)
-                        || (lastFailedEntryOnBookie < 0)) {
-                    writeSet.set(i, idx | LOCAL_MASK);
+                // use bookies with earlier failed entryIds first
+                long failIdx = lastFailedEntryOnBookie * ensembleSize + idx;
+                if (useRegionAware && !myRegion.equals(region)) {
+                    writeSet.set(i, (int) (failIdx & ~MASK_BITS) | REMOTE_FAIL_MASK);
                 } else {
-                    long failIdx = lastFailedEntryOnBookie * ensembleSize + idx;
                     writeSet.set(i, (int) (failIdx & ~MASK_BITS) | LOCAL_FAIL_MASK);
                 }
             }
@@ -836,15 +985,54 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
 
         if (reorderReadsRandom) {
             shuffleWithMask(writeSet, LOCAL_MASK, MASK_BITS);
+            shuffleWithMask(writeSet, REMOTE_MASK, MASK_BITS);
             shuffleWithMask(writeSet, READ_ONLY_MASK, MASK_BITS);
             shuffleWithMask(writeSet, UNAVAIL_MASK, MASK_BITS);
         }
 
-        // remove all masks
+        // nodes within a region are ordered as follows
+        // (Random?) list of nodes that have no history of failure
+        // Nodes with Failure history are ordered in the reverse
+        // order of the most recent entry that generated an error
+        // The sort will have put them in correct order,
+        // so remove the bits that sort by age.
         for (int i = 0; i < writeSet.size(); i++) {
-            writeSet.set(i, (writeSet.get(i) & ~MASK_BITS) % ensembleSize);
+            int mask = writeSet.get(i) & MASK_BITS;
+            int idx = (writeSet.get(i) & ~MASK_BITS) % ensembleSize;
+            if (mask == LOCAL_FAIL_MASK) {
+                writeSet.set(i, LOCAL_MASK | idx);
+            } else if (mask == REMOTE_FAIL_MASK) {
+                writeSet.set(i, REMOTE_MASK | idx);
+            } else if (mask == SLOW_MASK) {
+                writeSet.set(i, SLOW_MASK | idx);
+            }
         }
 
+        // Insert a node from the remote region at the specified location so
+        // we try more than one region within the max allowed latency
+        int firstRemote = -1;
+        for (int i = 0; i < writeSet.size(); i++) {
+            if ((writeSet.get(i) & MASK_BITS) == REMOTE_MASK) {
+                firstRemote = i;
+                break;
+            }
+        }
+        if (firstRemote != -1) {
+            int i = 0;
+            for (; i < remoteNodeInReorderSequence
+                && i < writeSet.size(); i++) {
+                if ((writeSet.get(i) & MASK_BITS) != LOCAL_MASK) {
+                    break;
+                }
+            }
+            writeSet.moveAndShift(firstRemote, i);
+        }
+
+
+        // remove all masks
+        for (int i = 0; i < writeSet.size(); i++) {
+            writeSet.set(i, writeSet.get(i) & ~MASK_BITS);
+        }
         return writeSet;
     }
 

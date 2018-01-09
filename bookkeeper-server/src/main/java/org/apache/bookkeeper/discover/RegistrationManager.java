@@ -104,5 +104,4 @@ public interface RegistrationManager extends AutoCloseable {
      * @throws BookieException when fail to remove cookie
      */
     void removeCookie(String bookieId, Version version) throws BookieException;
-
 }

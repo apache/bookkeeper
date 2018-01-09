@@ -349,7 +349,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             .withPassword(ledgerMetadata.getPassword())
             .withDigestType(DigestType.CRC32)
             .withLedgerId(ledgerId)
-            .withRecovery(true)
+            .withRecovery(false)
             .execute());
     }
 
@@ -369,7 +369,7 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             .withPassword(ledgerMetadata.getPassword())
             .withDigestType(DigestType.CRC32)
             .withLedgerId(ledgerId)
-            .withRecovery(false)
+            .withRecovery(true)
             .execute());
     }
 

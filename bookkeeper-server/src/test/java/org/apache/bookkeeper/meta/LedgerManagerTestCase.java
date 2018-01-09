@@ -36,6 +36,7 @@ import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.EntryLogger;
 import org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
+import org.apache.bookkeeper.bookie.StateManager;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -69,6 +70,10 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
         baseClientConf.setLedgerManagerFactoryClass(lmFactoryCls);
     }
 
+    public LedgerManager getIndependentLedgerManager() {
+        return ledgerManagerFactory.newLedgerManager();
+    }
+
     public LedgerManager getLedgerManager() {
         if (null == ledgerManager) {
             ledgerManager = ledgerManagerFactory.newLedgerManager();
@@ -88,6 +93,7 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
         return Arrays.asList(new Object[][] {
             { FlatLedgerManagerFactory.class },
             { HierarchicalLedgerManagerFactory.class },
+            { LegacyHierarchicalLedgerManagerFactory.class },
             { LongHierarchicalLedgerManagerFactory.class },
             { MSLedgerManagerFactory.class },
         });
@@ -121,6 +127,7 @@ public abstract class LedgerManagerTestCase extends BookKeeperClusterTestCase {
             LedgerManager ledgerManager,
             LedgerDirsManager ledgerDirsManager,
             LedgerDirsManager indexDirsManager,
+            StateManager stateManager,
             CheckpointSource checkpointSource,
             Checkpointer checkpointer,
             StatsLogger statsLogger) throws IOException {

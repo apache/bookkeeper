@@ -41,6 +41,7 @@ class common_job_properties {
   // Sets common top-level job properties for main repository jobs.
   static void setTopLevelMainJobProperties(context,
                                            String branch = 'master',
+                                           String jdkVersion = 'JDK 1.8 (latest)',
                                            int timeout = 100,
                                            String jenkinsExecutorLabel = 'ubuntu') {
     // GitHub project.
@@ -63,9 +64,10 @@ class common_job_properties {
                                                String scmUrl,
                                                String defaultBranch,
                                                String jenkinsExecutorLabel,
-                                               int defaultTimeout) {
+                                               int defaultTimeout,
+                                               String jdkVersion = 'JDK 1.8 (latest)') {
     // Set JDK version.
-    context.jdk('JDK 1.8 (latest)')
+    context.jdk(jdkVersion)
 
     // Restrict this project to run only on Jenkins executors as specified
     context.label(jenkinsExecutorLabel)

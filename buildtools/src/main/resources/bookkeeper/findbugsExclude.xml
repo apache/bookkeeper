@@ -16,6 +16,12 @@
    limitations under the License.
 //-->
 <FindBugsFilter>
+  <!-- circe-checksum -->
+  <Match>
+    <!-- imported code -->
+    <Class name="~com\.scurrilous\.circe.*" />
+  </Match>
+  <!-- bookkeeper-proto -->
   <Match>
     <!-- generated code, we can't be held responsible for findbugs in it //-->
     <Class name="~org\.apache\.bookkeeper\.proto\.DataFormats.*" />
@@ -31,6 +37,10 @@
   <Match>
     <!-- generated code, we can't be held responsible for findbugs in it //-->
     <Class name="~org\.apache\.bookkeeper\.tests\.generated.*" />
+  </Match>
+  <Match>
+    <!-- generated code -->
+    <Class name="~org\.apache\.bookkeeper\.client\.generated.*"/>
   </Match>
   <Match>
     <!-- it is safe to store external bytes reference here. since we are using

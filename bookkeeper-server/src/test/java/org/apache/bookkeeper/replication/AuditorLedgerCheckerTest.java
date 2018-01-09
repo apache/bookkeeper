@@ -25,7 +25,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -68,6 +67,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 /**
  * Tests publishing of under replicated ledgers by the Auditor bookie node when
@@ -295,7 +295,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         ServerConfiguration bookieConf = bsConfs.get(2);
         BookieServer bk = bs.get(2);
         bookieConf.setReadOnlyModeEnabled(true);
-        bk.getBookie().doTransitionToReadOnlyMode();
+        bk.getBookie().getStateManager().doTransitionToReadOnlyMode();
 
         // grace period for publishing the bk-ledger
         LOG.debug("Waiting for Auditor to finish ledger check.");
@@ -321,7 +321,7 @@ public class AuditorLedgerCheckerTest extends BookKeeperClusterTestCase {
         ServerConfiguration bookieConf = bsConfs.get(bkIndex);
         BookieServer bk = bs.get(bkIndex);
         bookieConf.setReadOnlyModeEnabled(true);
-        bk.getBookie().doTransitionToReadOnlyMode();
+        bk.getBookie().getStateManager().doTransitionToReadOnlyMode();
 
         // grace period for publishing the bk-ledger
         LOG.debug("Waiting for Auditor to finish ledger check.");

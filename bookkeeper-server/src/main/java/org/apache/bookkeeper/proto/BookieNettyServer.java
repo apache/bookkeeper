@@ -372,6 +372,7 @@ class BookieNettyServer {
                             : new RejectRequestHandler();
                     pipeline.addLast("bookieRequestHandler", requestHandler);
 
+                    pipeline.addLast("contextHandler", contextHandler);
                 }
             });
 

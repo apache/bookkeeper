@@ -90,6 +90,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                            LedgerManager ledgerManager,
                            LedgerDirsManager ledgerDirsManager,
                            LedgerDirsManager indexDirsManager,
+                           StateManager stateManager,
                            CheckpointSource checkpointSource,
                            Checkpointer checkpointer,
                            StatsLogger statsLogger)

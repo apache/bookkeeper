@@ -53,6 +53,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String IS_FORCE_GC_ALLOW_WHEN_NO_SPACE = "isForceGCAllowWhenNoSpace";
     protected static final String GC_OVERREPLICATED_LEDGER_WAIT_TIME = "gcOverreplicatedLedgerWaitTime";
     protected static final String USE_TRANSACTIONAL_COMPACTION = "useTransactionalCompaction";
+    protected static final String VERIFY_METADATA_ON_GC = "verifyMetadataOnGC";
     // Sync Parameters
     protected static final String FLUSH_INTERVAL = "flushInterval";
     protected static final String FLUSH_ENTRYLOG_INTERVAL_BYTES = "flushEntrylogBytes";
@@ -135,6 +136,7 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     // Whether the bookie should use its hostname or ipaddress for the
     // registration.
     protected static final String USE_HOST_NAME_AS_BOOKIE_ID = "useHostNameAsBookieID";
+    protected static final String USE_SHORT_HOST_NAME = "useShortHostName";
     protected static final String ENABLE_LOCAL_TRANSPORT = "enableLocalTransport";
     protected static final String DISABLE_SERVER_SOCKET_BIND = "disableServerSocketBind";
 
@@ -179,6 +181,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     // Registration
     protected static final String REGISTRATION_MANAGER_CLASS = "registrationManagerClass";
+
+    // Stats
+    protected static final String ENABLE_TASK_EXECUTION_STATS = "enableTaskExecutionStats";
 
     /**
      * Construct a default configuration object.
@@ -306,6 +311,25 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setUseTransactionalCompaction(boolean useTransactionalCompaction) {
         this.setProperty(USE_TRANSACTIONAL_COMPACTION, useTransactionalCompaction);
+        return this;
+    }
+
+    /**
+     * Get whether the bookie is configured to double check prior to gc.
+     *
+     * @return use transactional compaction
+     */
+    public boolean getVerifyMetadataOnGC() {
+        return this.getBoolean(VERIFY_METADATA_ON_GC, false);
+    }
+
+    /**
+     * Set whether the bookie is configured to double check prior to gc.
+     * @param verifyMetadataOnGC
+     * @return server configuration
+     */
+    public ServerConfiguration setVerifyMetadataOnGc(boolean verifyMetadataOnGC) {
+        this.setProperty(VERIFY_METADATA_ON_GC, verifyMetadataOnGC);
         return this;
     }
 
@@ -2069,6 +2093,34 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
+     * If bookie is using hostname for registration and in ledger metadata then
+     * whether to use short hostname or FQDN hostname. Defaults to false.
+     *
+     * @return true, then bookie will be registered with its short hostname and
+     *         short hostname will be used in ledger metadata. Otherwise bookie
+     *         will use its FQDN hostname
+     */
+    public boolean getUseShortHostName() {
+        return getBoolean(USE_SHORT_HOST_NAME, false);
+    }
+
+    /**
+     * Configure the bookie to use its short hostname or FQDN hostname to
+     * register with the co-ordination service(eg: zookeeper) and in ledger
+     * metadata.
+     *
+     * @see #getUseShortHostName
+     * @param useShortHostName
+     *            whether to use short hostname for registration and in
+     *            ledgermetadata
+     * @return server configuration
+     */
+    public ServerConfiguration setUseShortHostName(boolean useShortHostName) {
+        setProperty(USE_SHORT_HOST_NAME, useShortHostName);
+        return this;
+    }
+
+    /**
      * Get whether to listen for local JVM clients. Defaults to false.
      *
      * @return true, then bookie will be listen for local JVM clients
@@ -2360,6 +2412,28 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      */
     public ServerConfiguration setTLSTrustStorePasswordPath(String arg) {
         setProperty(TLS_TRUSTSTORE_PASSWORD_PATH, arg);
+        return this;
+    }
+
+
+    /**
+     * Whether to enable recording task execution stats.
+     *
+     * @return flag to enable/disable recording task execution stats.
+     */
+    public boolean getEnableTaskExecutionStats() {
+        return getBoolean(ENABLE_TASK_EXECUTION_STATS, false);
+    }
+
+    /**
+     * Enable/Disable recording task execution stats.
+     *
+     * @param enabled
+     *          flag to enable/disable recording task execution stats.
+     * @return client configuration.
+     */
+    public ServerConfiguration setEnableTaskExecutionStats(boolean enabled) {
+        setProperty(ENABLE_TASK_EXECUTION_STATS, enabled);
         return this;
     }
 
