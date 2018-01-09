@@ -25,7 +25,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import io.netty.buffer.ByteBuf;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
@@ -38,7 +37,6 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieAccessor;
 import org.apache.bookkeeper.bookie.IndexPersistenceMgr;
@@ -47,6 +45,7 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -121,7 +120,9 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testEntryLogCorruption() throws Exception {
-        LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(bsConfs.get(0), zkc);
+        LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(
+            bsConfs.get(0),
+            RegistrationManager.instantiateRegistrationManager(bsConfs.get(0)).getLayoutManager());
         LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
         underReplicationManager.disableLedgerReplication();
 
@@ -170,7 +171,10 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testIndexCorruption() throws Exception {
-        LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(bsConfs.get(0), zkc);
+        LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(
+            bsConfs.get(0),
+            RegistrationManager.instantiateRegistrationManager(bsConfs.get(0)).getLayoutManager());
+
         LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
 
         LedgerHandle lh = bkc.createLedger(3, 3, DigestType.CRC32, "passwd".getBytes());
@@ -217,7 +221,9 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testPeriodicCheckWhenDisabled() throws Exception {
-        LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(bsConfs.get(0), zkc);
+        LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(
+            bsConfs.get(0),
+            RegistrationManager.instantiateRegistrationManager(bsConfs.get(0)).getLayoutManager());
         final LedgerUnderreplicationManager underReplicationManager = mFactory.newLedgerUnderreplicationManager();
         final int numLedgers = 10;
         final int numMsgs = 2;

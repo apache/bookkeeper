@@ -69,7 +69,6 @@ import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirExcepti
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.discover.ZKRegistrationManager;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -92,7 +91,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZooKeeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -633,20 +631,18 @@ public class Bookie extends BookieCriticalThread {
         this.registrationManager = instantiateRegistrationManager(conf);
         checkEnvironment(this.registrationManager);
         try {
-            ZooKeeper zooKeeper = null;  // ZooKeeper is null existing only for testing
             if (registrationManager != null) {
-                zooKeeper = ((ZKRegistrationManager) this.registrationManager).getZk();
                 // current the registration manager is zookeeper only
                 ledgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(
                     conf,
-                    zooKeeper);
+                    registrationManager.getLayoutManager());
                 LOG.info("instantiate ledger manager {}", ledgerManagerFactory.getClass().getName());
                 ledgerManager = ledgerManagerFactory.newLedgerManager();
             } else {
                 ledgerManagerFactory = null;
                 ledgerManager = null;
             }
-        } catch (KeeperException e) {
+        } catch (IOException | InterruptedException e) {
             throw new MetadataStoreException("Failed to initialize ledger manager", e);
         }
         stateManager = new BookieStateManager(conf, statsLogger, registrationManager, ledgerDirsManager);
@@ -1020,7 +1016,7 @@ public class Bookie extends BookieCriticalThread {
                         ledgerManager.close();
                     }
                     if (null != ledgerManagerFactory) {
-                        ledgerManagerFactory.uninitialize();
+                        ledgerManagerFactory.close();
                     }
                 } catch (IOException ie) {
                     LOG.error("Failed to close active ledger manager : ", ie);
@@ -1272,6 +1268,11 @@ public class Bookie extends BookieCriticalThread {
     @VisibleForTesting
     public BookieStateManager getStateManager() {
         return (BookieStateManager) this.stateManager;
+    }
+
+    @VisibleForTesting
+    public LedgerManagerFactory getLedgerManagerFactory() {
+        return ledgerManagerFactory;
     }
 
     // The rest of the code is test stuff

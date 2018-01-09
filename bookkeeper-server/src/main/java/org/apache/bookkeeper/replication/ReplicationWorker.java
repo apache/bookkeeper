@@ -25,7 +25,6 @@ import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATE_EXCEP
 import static org.apache.bookkeeper.replication.ReplicationStats.REREPLICATE_OP;
 
 import com.google.common.base.Stopwatch;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,7 +36,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.bookkeeper.bookie.BookieThread;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsException;
@@ -126,18 +124,19 @@ public class ReplicationWorker implements Runnable {
             InterruptedException, IOException {
         this.zkc = zkc;
         this.conf = conf;
-        LedgerManagerFactory mFactory = LedgerManagerFactory
-                .newLedgerManagerFactory(this.conf, this.zkc);
-        this.underreplicationManager = mFactory
-                .newLedgerUnderreplicationManager();
         try {
             this.bkc = BookKeeper.forConfig(new ClientConfiguration(conf))
-                    .zk(zkc)
-                    .statsLogger(statsLogger.scope(BK_CLIENT_SCOPE))
-                    .build();
+                .statsLogger(statsLogger.scope(BK_CLIENT_SCOPE))
+                .build();
         } catch (BKException e) {
             throw new IOException("Failed to instantiate replication worker", e);
         }
+        LedgerManagerFactory mFactory = LedgerManagerFactory
+                .newLedgerManagerFactory(
+                    this.conf,
+                    bkc.getRegClient().getLayoutManager());
+        this.underreplicationManager = mFactory
+                .newLedgerUnderreplicationManager();
         this.admin = new BookKeeperAdmin(bkc, statsLogger);
         this.ledgerChecker = new LedgerChecker(bkc);
         this.workerThread = new BookieThread(this, "ReplicationWorker");

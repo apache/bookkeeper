@@ -24,7 +24,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.SettableFuture;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,7 +37,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -133,19 +131,21 @@ public class Auditor {
     private void initialize(ServerConfiguration conf, ZooKeeper zkc)
             throws UnavailableException {
         try {
+            ClientConfiguration clientConfiguration = new ClientConfiguration(conf);
+            clientConfiguration.setClientRole(ClientConfiguration.CLIENT_ROLE_SYSTEM);
+            LOG.info("AuthProvider used by the Auditor is {}",
+                clientConfiguration.getClientAuthProviderFactoryClass());
+            this.bkc = new BookKeeper(clientConfiguration, zkc);
+
             LedgerManagerFactory ledgerManagerFactory = LedgerManagerFactory
-                    .newLedgerManagerFactory(conf, zkc);
+                    .newLedgerManagerFactory(
+                        conf,
+                        bkc.getRegClient().getLayoutManager());
             ledgerManager = ledgerManagerFactory.newLedgerManager();
             this.bookieLedgerIndexer = new BookieLedgerIndexer(ledgerManager);
 
             this.ledgerUnderreplicationManager = ledgerManagerFactory
                     .newLedgerUnderreplicationManager();
-
-            ClientConfiguration clientConfiguration = new ClientConfiguration(conf);
-            clientConfiguration.setClientRole(ClientConfiguration.CLIENT_ROLE_SYSTEM);
-            LOG.info("AuthProvider used by the Auditor is {}",
-                    clientConfiguration.getClientAuthProviderFactoryClass());
-            this.bkc = new BookKeeper(clientConfiguration, zkc);
             this.admin = new BookKeeperAdmin(bkc, statsLogger);
             if (this.ledgerUnderreplicationManager
                     .initializeLostBookieRecoveryDelay(conf.getLostBookieRecoveryDelay())) {

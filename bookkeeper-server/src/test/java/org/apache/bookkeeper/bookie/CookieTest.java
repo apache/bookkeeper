@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.Set;
 import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
-import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
@@ -505,7 +504,7 @@ public class CookieTest extends BookKeeperClusterTestCase {
      */
     @Test
     public void testVerifyCookieWithFormat() throws Exception {
-        ClientConfiguration adminConf = new ClientConfiguration();
+        ServerConfiguration adminConf = new ServerConfiguration();
         adminConf.setZkServers(zkUtil.getZooKeeperConnectString());
 
         adminConf.setProperty("bookkeeper.format", true);
