@@ -41,7 +41,7 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then jdk_switcher use "$CUSTOM_JDK"; fi
 
 script:
-  - travis_retry mvn --batch-mode clean apache-rat:check compile spotbugs:check
+  - travis_retry mvn --batch-mode clean apache-rat:check compile spotbugs:check package -DskipTests
   - dev/check-binary-license ./bookkeeper-dist/all/target/bookkeeper-all-4.7.0-SNAPSHOT-bin.tar.gz
   - dev/check-binary-license ./bookkeeper-dist/server/target/bookkeeper-server-4.7.0-SNAPSHOT-bin.tar.gz
 # Disabled the tests here. Since tests are running much slower on Travis than on Jenkins
