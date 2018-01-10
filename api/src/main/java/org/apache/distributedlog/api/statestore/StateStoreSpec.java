@@ -19,11 +19,14 @@
 package org.apache.distributedlog.api.statestore;
 
 import java.io.File;
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 import lombok.Builder;
+import lombok.Builder.Default;
 import lombok.Getter;
 import lombok.Singular;
+import org.apache.distributedlog.api.statestore.checkpoint.CheckpointManager;
 import org.apache.distributedlog.common.coder.Coder;
 
 /**
@@ -40,6 +43,8 @@ public class StateStoreSpec {
     private String stream;
     private ScheduledExecutorService writeIOScheduler;
     private ScheduledExecutorService readIOScheduler;
+    private CheckpointManager checkpointManager;
+    @Default private Duration checkpointDuration = Duration.ofMinutes(1);
     @Singular private Map<String, Object> configs;
 
 }
