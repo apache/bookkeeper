@@ -33,6 +33,7 @@ import org.apache.bookkeeper.http.HttpServiceProvider;
 import org.apache.bookkeeper.http.service.ErrorHttpService;
 import org.apache.bookkeeper.http.service.HeartbeatService;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
+import org.apache.bookkeeper.meta.LayoutManager;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
@@ -67,6 +68,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
     private final BookieServer bookieServer;
     private final AutoRecoveryMain autoRecovery;
     private final ServerConfiguration serverConf;
+    private final LayoutManager layoutManager;
     private final ZooKeeper zk;
     private final BookKeeperAdmin bka;
     private final ExecutorService executor;
@@ -79,6 +81,7 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
         this.bookieServer = bookieServer;
         this.autoRecovery = autoRecovery;
         this.serverConf = serverConf;
+        this.layoutManager = bookieServer.getBookie().getRegistrationManager().getLayoutManager();
         this.zk = ZooKeeperClient.newBuilder()
           .connectString(serverConf.getZkServers())
           .sessionTimeoutMs(serverConf.getZkTimeout())
@@ -171,9 +174,9 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
             case DELETE_LEDGER:
                 return new DeleteLedgerService(configuration);
             case LIST_LEDGER:
-                return new ListLedgerService(configuration, zk);
+                return new ListLedgerService(configuration, bookieServer);
             case GET_LEDGER_META:
-                return new GetLedgerMetaService(configuration, zk);
+                return new GetLedgerMetaService(configuration, bookieServer);
             case READ_LEDGER_ENTRY:
                 return new ReadLedgerEntryService(configuration, bka);
 
@@ -187,13 +190,13 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
             case LIST_DISK_FILE:
                 return new ListDiskFilesService(configuration);
             case EXPAND_STORAGE:
-                return new ExpandStorageService(configuration, zk);
+                return new ExpandStorageService(configuration);
 
             // autorecovery
             case RECOVERY_BOOKIE:
                 return new RecoveryBookieService(configuration, bka, executor);
             case LIST_UNDER_REPLICATED_LEDGER:
-                return new ListUnderReplicatedLedgerService(configuration, zk);
+                return new ListUnderReplicatedLedgerService(configuration, bookieServer);
             case WHO_IS_AUDITOR:
                 return new WhoIsAuditorService(configuration, zk);
             case TRIGGER_AUDIT:

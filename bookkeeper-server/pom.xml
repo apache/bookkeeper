@@ -33,6 +33,13 @@
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-common</artifactId>
       <version>${project.parent.version}</version>
+      <exclusions>
+        <!-- exclude "netty-common" since "netty-all" already introduces it -->
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty-common</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
@@ -70,7 +77,7 @@
         <exclusion>
           <groupId>log4j</groupId>
           <artifactId>log4j</artifactId>
-		</exclusion>
+	    </exclusion>
         <exclusion>
           <groupId>io.netty</groupId>
           <artifactId>netty</artifactId>
@@ -78,27 +85,29 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>org.apache.zookeeper</groupId>
-      <artifactId>zookeeper</artifactId>
-      <version>${zookeeper.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-all</artifactId>
+      <version>${netty.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-tcnative-boringssl-static</artifactId>
+      <version>${netty-boringssl.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.bookkeeper.http</groupId>
+      <artifactId>http-server</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>circe-checksum</artifactId>
+      <version>${project.version}</version>
       <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-log4j12</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-api</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>log4j</groupId>
-          <artifactId>log4j</artifactId>
-        </exclusion>
+        <!-- exclude "netty-buffer" since "netty-all" already introduces it -->
         <exclusion>
           <groupId>io.netty</groupId>
-          <artifactId>netty</artifactId>
+          <artifactId>netty-buffer</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -161,10 +170,13 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <!-- testing dependencies -->
     <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-all</artifactId>
-      <version>${netty.version}</version>
+      <groupId>org.apache.bookkeeper</groupId>
+      <artifactId>bookkeeper-common</artifactId>
+      <version>${project.parent.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.hadoop</groupId>
@@ -173,14 +185,29 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-tcnative-boringssl-static</artifactId>
-      <version>${netty-boringssl.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.bookkeeper.http</groupId>
-      <artifactId>http-server</artifactId>
-      <version>${project.version}</version>
+      <groupId>org.apache.zookeeper</groupId>
+      <artifactId>zookeeper</artifactId>
+      <version>${zookeeper.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-log4j12</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>log4j</groupId>
+          <artifactId>log4j</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>io.netty</groupId>
+          <artifactId>netty</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
   <build>
@@ -208,52 +235,27 @@
             </goals>
             <configuration>
               <createDependencyReducedPom>true</createDependencyReducedPom>
-              <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+              <promoteTransitiveDependencies>false</promoteTransitiveDependencies>
               <shadedArtifactAttached>true</shadedArtifactAttached>
               <shadedClassifierName>shaded</shadedClassifierName>
               <minimizeJar>true</minimizeJar>
               <shadeTestJar>true</shadeTestJar>
               <artifactSet>
                 <includes>
-                  <include>org.apache.bookkeeper:bookkeeper-proto</include>
-                  <include>com.google.protobuf:protobuf-java</include>
                   <include>com.google.guava:guava</include>
+                  <include>com.google.protobuf:protobuf-java</include>
+                  <include>org.apache.bookkeeper:bookkeeper-common</include>
+                  <include>org.apache.bookkeeper:bookkeeper-proto</include>
+                  <include>org.apache.bookkeeper:circe-checksum</include>
+                  <include>org.apache.bookkeeper.stats:bookkeeper-stats-api</include>
                 </includes>
               </artifactSet>
               <relocations>
                 <relocation>
-                  <pattern>com.google.protobuf</pattern>
-                  <shadedPattern>bk-shade.com.google.proto_${protobuf.version}</shadedPattern>
-                </relocation>
-                <relocation>
                   <pattern>com.google</pattern>
-                  <shadedPattern>bk-shade.com.google</shadedPattern>
+                  <shadedPattern>org.apache.bookkeeper.shaded.com.google</shadedPattern>
                 </relocation>
               </relocations>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>license-maven-plugin</artifactId>
-        <version>1.6</version>
-        <configuration>
-          <canUpdateCopyright>false</canUpdateCopyright>
-          <roots><root>${project.basedir}</root></roots>
-        </configuration>
-        <executions>
-          <execution>
-            <id>update-pom-license</id>
-            <goals>
-              <goal>update-file-header</goal>
-            </goals>
-            <phase>package</phase>
-            <configuration>
-              <licenseName>apache_v2</licenseName>
-              <includes>
-                <include>dependency-reduced-pom.xml</include>
-              </includes>
             </configuration>
           </execution>
         </executions>
@@ -319,12 +321,6 @@
             <fileset>
               <directory>${project.libdir}</directory>
               <followSymlinks>false</followSymlinks>
-            </fileset>
-            <fileset>
-              <directory>${project.basedir}</directory>
-              <includes>
-                <include>dependency-reduced-pom.xml</include>
-              </includes>
             </fileset>
           </filesets>
 	</configuration>

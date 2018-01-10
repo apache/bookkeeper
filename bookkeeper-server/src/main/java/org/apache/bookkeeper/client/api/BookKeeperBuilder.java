@@ -28,7 +28,6 @@ import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.zookeeper.ZooKeeper;
 
 /**
  * BookKeeper Client Builder to build client instances.
@@ -47,15 +46,6 @@ public interface BookKeeperBuilder {
      * @return client builder.
      */
     BookKeeperBuilder eventLoopGroup(EventLoopGroup eventLoopGroup);
-
-    /**
-     * Configure the bookkeeper client with a provided ZooKeeper client.
-     *
-     * @param zk an external {@link ZooKeeper} client to use by the bookkeeper client.
-     *
-     * @return client builder.
-     */
-    BookKeeperBuilder zk(ZooKeeper zk);
 
     /**
      * Configure the bookkeeper client with a provided {@link StatsLogger}.

@@ -271,6 +271,7 @@ public class TestSyncThread {
             LedgerManager ledgerManager,
             LedgerDirsManager ledgerDirsManager,
             LedgerDirsManager indexDirsManager,
+            StateManager stateManager,
             CheckpointSource checkpointSource,
             Checkpointer checkpointer,
             StatsLogger statsLogger)

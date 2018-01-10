@@ -30,7 +30,6 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.zookeeper.ZooKeeper;
 
 /**
  * Internal builder for {@link org.apache.bookkeeper.client.api.BookKeeper} client.
@@ -48,12 +47,6 @@ public class BookKeeperBuilderImpl implements BookKeeperBuilder {
     @Override
     public BookKeeperBuilder eventLoopGroup(EventLoopGroup eventLoopGroup) {
         builder.eventLoopGroup(eventLoopGroup);
-        return this;
-    }
-
-    @Override
-    public BookKeeperBuilder zk(ZooKeeper zk) {
-        builder.zk(zk);
         return this;
     }
 

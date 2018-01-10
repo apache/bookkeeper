@@ -25,10 +25,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -40,7 +38,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerEntry;
@@ -48,6 +45,7 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.proto.BookieServer;
@@ -235,7 +233,6 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
                 // Do nothing.
             }
         };
-
         for (File journalDir : conf.getJournalDirs()) {
             Bookie.checkDirectoryStructure(journalDir);
         }
@@ -245,9 +242,14 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         InterleavedLedgerStorage storage = new InterleavedLedgerStorage();
         storage.initialize(
             conf,
-            LedgerManagerFactory.newLedgerManagerFactory(conf, zkc).newLedgerManager(),
+            LedgerManagerFactory
+                .newLedgerManagerFactory(
+                    conf,
+                    RegistrationManager.instantiateRegistrationManager(conf).getLayoutManager())
+                .newLedgerManager(),
             dirManager,
             dirManager,
+            null,
             cp,
             Checkpointer.NULL,
             NullStatsLogger.INSTANCE);
@@ -636,6 +638,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             manager,
             dirs,
             dirs,
+            null,
             checkpointSource,
             Checkpointer.NULL,
             NullStatsLogger.INSTANCE);
@@ -660,7 +663,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         storage.initialize(
             conf,
             manager,
-            dirs, dirs,
+            dirs, dirs, null,
             checkpointSource,
             Checkpointer.NULL,
             NullStatsLogger.INSTANCE);
@@ -684,6 +687,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             manager,
             dirs,
             dirs,
+            null,
             checkpointSource,
             Checkpointer.NULL,
             NullStatsLogger.INSTANCE);
@@ -788,6 +792,7 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
             manager,
             dirs,
             dirs,
+            null,
             checkpointSource,
             Checkpointer.NULL,
             NullStatsLogger.INSTANCE);
@@ -840,9 +845,14 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
         InterleavedLedgerStorage storage = new InterleavedLedgerStorage();
         storage.initialize(
             conf,
-            LedgerManagerFactory.newLedgerManagerFactory(conf, zkc).newLedgerManager(),
+            LedgerManagerFactory
+                .newLedgerManagerFactory(
+                    conf,
+                    RegistrationManager.instantiateRegistrationManager(conf).getLayoutManager())
+                .newLedgerManager(),
             dirManager,
             dirManager,
+            null,
             cp,
             Checkpointer.NULL,
             NullStatsLogger.INSTANCE);

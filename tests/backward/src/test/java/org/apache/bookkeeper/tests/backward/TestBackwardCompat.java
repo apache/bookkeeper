@@ -412,7 +412,7 @@ public class TestBackwardCompat {
         // Format the metadata using current version
         ServerCurrent currentServer = new ServerCurrent(journalDir, ledgerDir,
                 port, false);
-        BookKeeperAdmin.format(new ClientConfiguration(currentServer.conf),
+        BookKeeperAdmin.format(currentServer.conf,
                 false, true);
         // start the current version server with old version cookie
         try {

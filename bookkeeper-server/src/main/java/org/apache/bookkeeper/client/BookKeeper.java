@@ -30,7 +30,6 @@ import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.util.HashedWheelTimer;
 import io.netty.util.concurrent.DefaultThreadFactory;
-
 import java.io.IOException;
 import java.util.EnumSet;
 import java.util.List;
@@ -46,7 +45,6 @@ import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.AsyncCallback.IsClosedCallback;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
-import org.apache.bookkeeper.client.BKException.ZKException;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCreateAdvCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncCreateCallback;
@@ -238,6 +236,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
          * @return client builder.
          * @since 4.5
          */
+        @Deprecated
         public Builder zk(ZooKeeper zk) {
             this.zk = zk;
             return this;
@@ -444,6 +443,9 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         } catch (ConfigurationException ce) {
             LOG.error("Failed to initialize registration client", ce);
             throw new IOException("Failed to initialize registration client", ce);
+        } catch (BKException be) {
+            LOG.error("Failed to initialize registration client", be);
+            throw new IOException("Failed to initialize registration client", be);
         }
 
         // initialize event loop group
@@ -512,9 +514,9 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         // initialize ledger manager
         try {
             this.ledgerManagerFactory =
-                LedgerManagerFactory.newLedgerManagerFactory(conf, ((ZKRegistrationClient) regClient).getZk());
-        } catch (KeeperException ke) {
-            throw new ZKException();
+                LedgerManagerFactory.newLedgerManagerFactory(conf, regClient.getLayoutManager());
+        } catch (IOException | InterruptedException e) {
+            throw e;
         }
         this.ledgerManager = new CleanupLedgerManager(ledgerManagerFactory.newLedgerManager());
         this.ledgerIdGenerator = ledgerManagerFactory.newLedgerIdGenerator();
@@ -628,6 +630,11 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         return reorderReadSequence;
     }
 
+    @VisibleForTesting
+    public RegistrationClient getRegClient() {
+        return regClient;
+    }
+
     /**
      * There are 2 digest types that can be used for verification. The CRC32 is
      * cheap to compute but does not protect against byzantine bookies (i.e., a
@@ -636,10 +643,19 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
      * report fake bytes with a mathching MAC unless it knows the password
      */
     public enum DigestType {
-        MAC, CRC32;
+        MAC, CRC32, CRC32C;
 
         public static DigestType fromApiDigestType(org.apache.bookkeeper.client.api.DigestType digestType) {
-            return digestType == org.apache.bookkeeper.client.api.DigestType.MAC ? MAC : CRC32;
+            switch (digestType) {
+                case MAC:
+                    return DigestType.MAC;
+                case CRC32:
+                    return DigestType.CRC32;
+                case CRC32C:
+                    return DigestType.CRC32C;
+                default:
+                    throw new IllegalArgumentException("Unable to convert digest type " + digestType);
+            }
         }
     }
 
@@ -1354,7 +1370,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             // which will reject any incoming metadata requests.
             ledgerManager.close();
             ledgerIdGenerator.close();
-            ledgerManagerFactory.uninitialize();
+            ledgerManagerFactory.close();
         } catch (IOException ie) {
             LOG.error("Failed to close ledger manager : ", ie);
         }

@@ -28,6 +28,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
+import org.apache.bookkeeper.bookie.FileInfoBackingCache.CachedFileInfo;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -151,12 +152,12 @@ public class IndexPersistenceMgrTest {
             assertEquals(0, indexPersistenceMgr.writeFileInfoCache.size());
             assertEquals(0, indexPersistenceMgr.readFileInfoCache.size());
 
-            FileInfo writeFileInfo = indexPersistenceMgr.getFileInfo(lid, masterKey);
-            assertEquals(3, writeFileInfo.getUseCount());
+            CachedFileInfo writeFileInfo = indexPersistenceMgr.getFileInfo(lid, masterKey);
+            assertEquals(2, writeFileInfo.getRefCount());
             assertEquals(1, indexPersistenceMgr.writeFileInfoCache.size());
-            assertEquals(1, indexPersistenceMgr.readFileInfoCache.size());
+            assertEquals(0, indexPersistenceMgr.readFileInfoCache.size());
             writeFileInfo.release();
-            assertEquals(2, writeFileInfo.getUseCount());
+            assertEquals(1, writeFileInfo.getRefCount());
         } finally {
             if (null != indexPersistenceMgr) {
                 indexPersistenceMgr.close();
@@ -170,19 +171,19 @@ public class IndexPersistenceMgrTest {
         try {
             indexPersistenceMgr = createIndexPersistenceManager(1);
 
-            FileInfo writeFileInfo = indexPersistenceMgr.getFileInfo(lid, masterKey);
-            assertEquals(3, writeFileInfo.getUseCount());
+            CachedFileInfo writeFileInfo = indexPersistenceMgr.getFileInfo(lid, masterKey);
+            assertEquals(2, writeFileInfo.getRefCount());
             assertEquals(1, indexPersistenceMgr.writeFileInfoCache.size());
-            assertEquals(1, indexPersistenceMgr.readFileInfoCache.size());
+            assertEquals(0, indexPersistenceMgr.readFileInfoCache.size());
             writeFileInfo.release();
 
-            FileInfo readFileInfo = indexPersistenceMgr.getFileInfo(lid, null);
-            assertEquals(3, readFileInfo.getUseCount());
+            CachedFileInfo readFileInfo = indexPersistenceMgr.getFileInfo(lid, null);
+            assertEquals(3, readFileInfo.getRefCount());
             assertEquals(1, indexPersistenceMgr.writeFileInfoCache.size());
             assertEquals(1, indexPersistenceMgr.readFileInfoCache.size());
             readFileInfo.release();
-            assertEquals(2, writeFileInfo.getUseCount());
-            assertEquals(2, readFileInfo.getUseCount());
+            assertEquals(2, writeFileInfo.getRefCount());
+            assertEquals(2, readFileInfo.getRefCount());
         } finally {
             if (null != indexPersistenceMgr) {
                 indexPersistenceMgr.close();
@@ -196,9 +197,13 @@ public class IndexPersistenceMgrTest {
         try {
             indexPersistenceMgr = createIndexPersistenceManager(1);
             for (int i = 0; i < 3; i++) {
-                FileInfo fileInfo = indexPersistenceMgr.getFileInfo(lid + i, masterKey);
+                CachedFileInfo fileInfo = indexPersistenceMgr.getFileInfo(lid + i, masterKey);
                 // We need to make sure index file is created, otherwise the test case can be flaky
                 fileInfo.checkOpen(true);
+                fileInfo.release();
+
+                // load into read cache also
+                indexPersistenceMgr.getFileInfo(lid + i, null).release();
             }
 
             indexPersistenceMgr.getFileInfo(lid, masterKey);
@@ -212,9 +217,9 @@ public class IndexPersistenceMgrTest {
             assertEquals(1, indexPersistenceMgr.writeFileInfoCache.size());
             assertEquals(2, indexPersistenceMgr.readFileInfoCache.size());
 
-            FileInfo fileInfo = indexPersistenceMgr.writeFileInfoCache.asMap().get(lid);
+            CachedFileInfo fileInfo = indexPersistenceMgr.writeFileInfoCache.asMap().get(lid);
             assertNotNull(fileInfo);
-            assertEquals(2, fileInfo.getUseCount());
+            assertEquals(2, fileInfo.getRefCount());
             fileInfo = indexPersistenceMgr.writeFileInfoCache.asMap().get(lid + 1);
             assertNull(fileInfo);
             fileInfo = indexPersistenceMgr.writeFileInfoCache.asMap().get(lid + 2);
@@ -223,10 +228,10 @@ public class IndexPersistenceMgrTest {
             assertNull(fileInfo);
             fileInfo = indexPersistenceMgr.readFileInfoCache.asMap().get(lid + 1);
             assertNotNull(fileInfo);
-            assertEquals(2, fileInfo.getUseCount());
+            assertEquals(2, fileInfo.getRefCount());
             fileInfo = indexPersistenceMgr.readFileInfoCache.asMap().get(lid + 2);
             assertNotNull(fileInfo);
-            assertEquals(2, fileInfo.getUseCount());
+            assertEquals(2, fileInfo.getRefCount());
         } finally {
             if (null != indexPersistenceMgr) {
                 indexPersistenceMgr.close();
@@ -258,6 +263,38 @@ public class IndexPersistenceMgrTest {
             // will create a new FileInfo when cache miss
             assertTrue(
                 indexPersistenceMgr.waitForLastAddConfirmedUpdate(lid, 1, watcher));
+        } finally {
+            if (null != indexPersistenceMgr) {
+                indexPersistenceMgr.close();
+            }
+        }
+    }
+
+    @Test
+    public void testEvictBeforeReleaseRace() throws Exception {
+        IndexPersistenceMgr indexPersistenceMgr = null;
+        Watcher<LastAddConfirmedUpdateNotification> watcher = notification -> notification.recycle();
+        try {
+            indexPersistenceMgr = createIndexPersistenceManager(1);
+
+            indexPersistenceMgr.getFileInfo(1L, masterKey);
+            indexPersistenceMgr.getFileInfo(2L, masterKey);
+            indexPersistenceMgr.getFileInfo(3L, masterKey);
+            indexPersistenceMgr.getFileInfo(4L, masterKey);
+
+            CachedFileInfo fi = indexPersistenceMgr.getFileInfo(1L, masterKey);
+
+            // trigger eviction
+            indexPersistenceMgr.getFileInfo(2L, masterKey);
+            indexPersistenceMgr.getFileInfo(3L, null);
+            indexPersistenceMgr.getFileInfo(4L, null);
+
+            Thread.sleep(1000);
+
+            fi.setFenced();
+            fi.release();
+
+            assertTrue(indexPersistenceMgr.isFenced(1));
         } finally {
             if (null != indexPersistenceMgr) {
                 indexPersistenceMgr.close();

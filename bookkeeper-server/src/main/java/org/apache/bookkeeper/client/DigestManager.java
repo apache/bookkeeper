@@ -69,6 +69,8 @@ abstract class DigestManager {
             return new MacDigestManager(ledgerId, passwd);
         case CRC32:
             return new CRC32DigestManager(ledgerId);
+        case CRC32C:
+            return new CRC32CDigestManager(ledgerId);
         default:
             throw new GeneralSecurityException("Unknown checksum type: " + digestType);
         }

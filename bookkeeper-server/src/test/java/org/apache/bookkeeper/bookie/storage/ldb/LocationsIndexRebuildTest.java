@@ -86,7 +86,7 @@ public class LocationsIndexRebuildTest {
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
 
         DbLedgerStorage ledgerStorage = new DbLedgerStorage();
-        ledgerStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager, checkpointSource, checkpointer,
+        ledgerStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager, null, checkpointSource, checkpointer,
                 NullStatsLogger.INSTANCE);
 
         // Insert some ledger & entries in the storage
@@ -116,7 +116,7 @@ public class LocationsIndexRebuildTest {
 
         // Verify that db index has the same entries
         ledgerStorage = new DbLedgerStorage();
-        ledgerStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager, checkpointSource, checkpointer,
+        ledgerStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager, null, checkpointSource, checkpointer,
                 NullStatsLogger.INSTANCE);
 
         Set<Long> ledgers = Sets.newTreeSet(ledgerStorage.getActiveLedgersInRange(0, Long.MAX_VALUE));

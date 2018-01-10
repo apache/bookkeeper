@@ -53,7 +53,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -257,9 +256,7 @@ public class BookieShell implements Tool {
             boolean interactive = (!cmdLine.hasOption("n"));
             boolean force = cmdLine.hasOption("f");
 
-            ClientConfiguration adminConf = new ClientConfiguration(bkConf);
-            boolean result = BookKeeperAdmin.format(adminConf, interactive,
-                    force);
+            boolean result = BookKeeperAdmin.format(bkConf, interactive, force);
             return (result) ? 0 : 1;
         }
     }
@@ -686,21 +683,15 @@ public class BookieShell implements Tool {
                 predicate = replicasList -> !replicasList.contains(excludingBookieId);
             }
 
-            ZooKeeper zk = null;
-            try {
-                zk = ZooKeeperClient.newBuilder()
-                        .connectString(bkConf.getZkServers())
-                        .sessionTimeoutMs(bkConf.getZkTimeout())
-                        .build();
-                LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(bkConf, zk);
-                LedgerUnderreplicationManager underreplicationManager = mFactory.newLedgerUnderreplicationManager();
-                Iterator<Long> iter = underreplicationManager.listLedgersToRereplicate(predicate);
-                while (iter.hasNext()) {
-                    System.out.println(ledgerIdFormatter.formatLedgerId(iter.next()));
-                }
-            } finally {
-                if (zk != null) {
-                    zk.close();
+            try (RegistrationManager rm = RegistrationManager.instantiateRegistrationManager(bkConf)) {
+                try (LedgerManagerFactory mFactory =
+                         LedgerManagerFactory.newLedgerManagerFactory(bkConf, rm.getLayoutManager())) {
+                    LedgerUnderreplicationManager underreplicationManager =
+                        mFactory.newLedgerUnderreplicationManager();
+                    Iterator<Long> iter = underreplicationManager.listLedgersToRereplicate(predicate);
+                    while (iter.hasNext()) {
+                        System.out.println(ledgerIdFormatter.formatLedgerId(iter.next()));
+                    }
                 }
             }
 
@@ -724,56 +715,39 @@ public class BookieShell implements Tool {
 
         @Override
         public int runCmd(CommandLine cmdLine) throws Exception {
-            ZooKeeper zk = null;
-            LedgerManagerFactory mFactory = null;
-            LedgerManager m = null;
-            try {
-                zk = ZooKeeperClient.newBuilder()
-                        .connectString(bkConf.getZkServers())
-                        .sessionTimeoutMs(bkConf.getZkTimeout())
-                        .build();
-                mFactory = LedgerManagerFactory.newLedgerManagerFactory(bkConf, zk);
-                m = mFactory.newLedgerManager();
-                LedgerRangeIterator iter = m.getLedgerRanges();
-                if (cmdLine.hasOption("m")) {
-                    List<ReadMetadataCallback> futures = new ArrayList<ReadMetadataCallback>(LIST_BATCH_SIZE);
-                    while (iter.hasNext()) {
-                        LedgerRange r = iter.next();
-                        for (Long lid : r.getLedgers()) {
-                            ReadMetadataCallback cb = new ReadMetadataCallback(lid);
-                            m.readLedgerMetadata(lid, cb);
-                            futures.add(cb);
+            try (LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(
+                    bkConf,
+                    RegistrationManager.instantiateRegistrationManager(bkConf).getLayoutManager())) {
+                try (LedgerManager m = mFactory.newLedgerManager()) {
+                    LedgerRangeIterator iter = m.getLedgerRanges();
+                    if (cmdLine.hasOption("m")) {
+                        List<ReadMetadataCallback> futures = new ArrayList<ReadMetadataCallback>(LIST_BATCH_SIZE);
+                        while (iter.hasNext()) {
+                            LedgerRange r = iter.next();
+                            for (Long lid : r.getLedgers()) {
+                                ReadMetadataCallback cb = new ReadMetadataCallback(lid);
+                                m.readLedgerMetadata(lid, cb);
+                                futures.add(cb);
+                            }
+                            if (futures.size() >= LIST_BATCH_SIZE) {
+                                while (futures.size() > 0) {
+                                    ReadMetadataCallback cb = futures.remove(0);
+                                    printLedgerMetadata(cb);
+                                }
+                            }
                         }
-                        if (futures.size() >= LIST_BATCH_SIZE) {
-                            while (futures.size() > 0) {
-                                ReadMetadataCallback cb = futures.remove(0);
-                                printLedgerMetadata(cb);
+                        while (futures.size() > 0) {
+                            ReadMetadataCallback cb = futures.remove(0);
+                            printLedgerMetadata(cb);
+                        }
+                    } else {
+                        while (iter.hasNext()) {
+                            LedgerRange r = iter.next();
+                            for (Long lid : r.getLedgers()) {
+                                System.out.println(ledgerIdFormatter.formatLedgerId(lid));
                             }
                         }
                     }
-                    while (futures.size() > 0) {
-                        ReadMetadataCallback cb = futures.remove(0);
-                        printLedgerMetadata(cb);
-                    }
-                } else {
-                    while (iter.hasNext()) {
-                        LedgerRange r = iter.next();
-                        for (Long lid : r.getLedgers()) {
-                            System.out.println(ledgerIdFormatter.formatLedgerId(lid));
-                        }
-                    }
-                }
-            } finally {
-                if (m != null) {
-                    try {
-                        m.close();
-                        mFactory.uninitialize();
-                    } catch (IOException ioe) {
-                        LOG.error("Failed to close ledger manager : ", ioe);
-                    }
-                }
-                if (zk != null) {
-                    zk.close();
                 }
             }
 
@@ -842,30 +816,14 @@ public class BookieShell implements Tool {
                 return -1;
             }
 
-            ZooKeeper zk = null;
-            LedgerManagerFactory mFactory = null;
-            LedgerManager m = null;
-            try {
-                zk = ZooKeeperClient.newBuilder()
-                        .connectString(bkConf.getZkServers())
-                        .sessionTimeoutMs(bkConf.getZkTimeout())
-                        .build();
-                mFactory = LedgerManagerFactory.newLedgerManagerFactory(bkConf, zk);
-                m = mFactory.newLedgerManager();
-                ReadMetadataCallback cb = new ReadMetadataCallback(lid);
-                m.readLedgerMetadata(lid, cb);
-                printLedgerMetadata(cb);
-            } finally {
-                if (m != null) {
-                    try {
-                        m.close();
-                        mFactory.uninitialize();
-                    } catch (IOException ioe) {
-                        LOG.error("Failed to close ledger manager : ", ioe);
+            try (RegistrationManager rm = RegistrationManager.instantiateRegistrationManager(bkConf)) {
+                try (LedgerManagerFactory mFactory =
+                         LedgerManagerFactory.newLedgerManagerFactory(bkConf, rm.getLayoutManager())){
+                    try (LedgerManager m = mFactory.newLedgerManager()) {
+                        ReadMetadataCallback cb = new ReadMetadataCallback(lid);
+                        m.readLedgerMetadata(lid, cb);
+                        printLedgerMetadata(cb);
                     }
-                }
-                if (zk != null) {
-                    zk.close();
                 }
             }
 
@@ -1512,35 +1470,31 @@ public class BookieShell implements Tool {
                 printUsage();
                 return 1;
             }
-            ZooKeeper zk = null;
-            try {
-                zk = ZooKeeperClient.newBuilder()
-                        .connectString(bkConf.getZkServers())
-                        .sessionTimeoutMs(bkConf.getZkTimeout())
-                        .build();
-                LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(bkConf, zk);
-                LedgerUnderreplicationManager underreplicationManager = mFactory.newLedgerUnderreplicationManager();
-                if (!enable && !disable) {
-                    boolean enabled = underreplicationManager.isLedgerReplicationEnabled();
-                    System.out.println("Autorecovery is " + (enabled ? "enabled." : "disabled."));
-                } else if (enable) {
-                    if (underreplicationManager.isLedgerReplicationEnabled()) {
-                        LOG.warn("Autorecovery already enabled. Doing nothing");
+
+            try (RegistrationManager rm =
+                     RegistrationManager.instantiateRegistrationManager(bkConf)){
+                try (LedgerManagerFactory mFactory = LedgerManagerFactory.newLedgerManagerFactory(
+                    bkConf,
+                    rm.getLayoutManager())) {
+                    LedgerUnderreplicationManager underreplicationManager = mFactory.newLedgerUnderreplicationManager();
+                    if (!enable && !disable) {
+                        boolean enabled = underreplicationManager.isLedgerReplicationEnabled();
+                        System.out.println("Autorecovery is " + (enabled ? "enabled." : "disabled."));
+                    } else if (enable) {
+                        if (underreplicationManager.isLedgerReplicationEnabled()) {
+                            LOG.warn("Autorecovery already enabled. Doing nothing");
+                        } else {
+                            LOG.info("Enabling autorecovery");
+                            underreplicationManager.enableLedgerReplication();
+                        }
                     } else {
-                        LOG.info("Enabling autorecovery");
-                        underreplicationManager.enableLedgerReplication();
+                        if (!underreplicationManager.isLedgerReplicationEnabled()) {
+                            LOG.warn("Autorecovery already disabled. Doing nothing");
+                        } else {
+                            LOG.info("Disabling autorecovery");
+                            underreplicationManager.disableLedgerReplication();
+                        }
                     }
-                } else {
-                    if (!underreplicationManager.isLedgerReplicationEnabled()) {
-                        LOG.warn("Autorecovery already disabled. Doing nothing");
-                    } else {
-                        LOG.info("Disabling autorecovery");
-                        underreplicationManager.disableLedgerReplication();
-                    }
-                }
-            } finally {
-                if (zk != null) {
-                    zk.close();
                 }
             }
 
@@ -2331,8 +2285,8 @@ public class BookieShell implements Tool {
             };
 
             interleavedStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager,
-                    checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
-            dbStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager,
+                    null, checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
+            dbStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager, null,
                     checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
 
             int convertedLedgers = 0;
@@ -2420,10 +2374,10 @@ public class BookieShell implements Tool {
                 }
             };
 
-            dbStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager,
+            dbStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager, null,
                         checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
             interleavedStorage.initialize(conf, null, ledgerDirsManager, ledgerIndexManager,
-                    checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
+                    null, checkpointSource, checkpointer, NullStatsLogger.INSTANCE);
             LedgerCache interleavedLedgerCache = interleavedStorage.ledgerCache;
 
             EntryLocationIndex dbEntryLocationIndex = dbStorage.getEntryLocationIndex();

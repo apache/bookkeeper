@@ -289,8 +289,8 @@ public class BookieProtoEncoding {
                 entryId = buffer.readLong();
 
                 if (rc == BookieProtocol.EOK) {
-                    ByteBuf content = buffer.slice();
-                    return new BookieProtocol.ReadResponse(version, rc, ledgerId, entryId, content.retain());
+                    return new BookieProtocol.ReadResponse(version, rc,
+                                                           ledgerId, entryId, buffer.retainedSlice());
                 } else {
                     return new BookieProtocol.ReadResponse(version, rc, ledgerId, entryId);
                 }

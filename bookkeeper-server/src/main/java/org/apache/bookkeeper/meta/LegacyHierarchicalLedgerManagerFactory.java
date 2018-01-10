@@ -17,6 +17,8 @@
  */
 package org.apache.bookkeeper.meta;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -46,20 +48,24 @@ public class LegacyHierarchicalLedgerManagerFactory extends LedgerManagerFactory
 
     @Override
     public LedgerManagerFactory initialize(final AbstractConfiguration conf,
-                                           final ZooKeeper zk,
+                                           final LayoutManager lm,
                                            final int factoryVersion)
-    throws IOException {
+            throws IOException {
+        checkArgument(lm instanceof ZkLayoutManager);
+
+        ZkLayoutManager zkLayoutManager = (ZkLayoutManager) lm;
+
         if (CUR_VERSION != factoryVersion) {
             throw new IOException("Incompatible layout version found : "
                                 + factoryVersion);
         }
         this.conf = conf;
-        this.zk = zk;
+        this.zk = zkLayoutManager.getZk();
         return this;
     }
 
     @Override
-    public void uninitialize() throws IOException {
+    public void close() throws IOException {
         // since zookeeper instance is passed from outside
         // we don't need to close it here
     }
@@ -83,7 +89,7 @@ public class LegacyHierarchicalLedgerManagerFactory extends LedgerManagerFactory
     }
 
     @Override
-    public void format(AbstractConfiguration conf, ZooKeeper zk)
+    public void format(AbstractConfiguration conf, LayoutManager layoutManager)
             throws InterruptedException, KeeperException, IOException {
         String ledgersRootPath = conf.getZkLedgersRootPath();
         List<String> children = zk.getChildren(ledgersRootPath, false);
@@ -94,7 +100,7 @@ public class LegacyHierarchicalLedgerManagerFactory extends LedgerManagerFactory
             ZKUtil.deleteRecursive(zk, ledgersRootPath + "/" + child);
         }
         // Delete and recreate the LAYOUT information.
-        super.format(conf, zk);
+        super.format(conf, layoutManager);
     }
 
 }

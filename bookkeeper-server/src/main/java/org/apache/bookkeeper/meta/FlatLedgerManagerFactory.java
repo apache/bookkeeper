@@ -17,9 +17,10 @@
  */
 package org.apache.bookkeeper.meta;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.io.IOException;
 import java.util.List;
-
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.util.ZkUtils;
@@ -46,20 +47,23 @@ public class FlatLedgerManagerFactory extends LedgerManagerFactory {
 
     @Override
     public LedgerManagerFactory initialize(final AbstractConfiguration conf,
-                                           final ZooKeeper zk,
+                                           final LayoutManager layoutManager,
                                            final int factoryVersion)
     throws IOException {
+        checkArgument(layoutManager == null || layoutManager instanceof ZkLayoutManager);
+
         if (CUR_VERSION != factoryVersion) {
             throw new IOException("Incompatible layout version found : "
                                 + factoryVersion);
         }
         this.conf = conf;
-        this.zk = zk;
+
+        this.zk = layoutManager == null ? null : ((ZkLayoutManager) layoutManager).getZk();
         return this;
     }
 
     @Override
-    public void uninitialize() throws IOException {
+    public void close() throws IOException {
         // since zookeeper instance is passed from outside
         // we don't need to close it here
     }
@@ -82,19 +86,17 @@ public class FlatLedgerManagerFactory extends LedgerManagerFactory {
     }
 
     @Override
-    public void format(AbstractConfiguration conf, ZooKeeper zk)
+    public void format(AbstractConfiguration conf, LayoutManager layoutManager)
             throws InterruptedException, KeeperException, IOException {
-        try (FlatLedgerManager ledgerManager = (FlatLedgerManager) newLedgerManager()) {
-            String ledgersRootPath = conf.getZkLedgersRootPath();
-            List<String> children = zk.getChildren(ledgersRootPath, false);
-            for (String child : children) {
-                if (FlatLedgerManager.isSpecialZnode(child)) {
-                    continue;
-                }
-                ZKUtil.deleteRecursive(zk, ledgersRootPath + "/" + child);
+        String ledgersRootPath = conf.getZkLedgersRootPath();
+        List<String> children = zk.getChildren(ledgersRootPath, false);
+        for (String child : children) {
+            if (FlatLedgerManager.isSpecialZnode(child)) {
+                continue;
             }
+            ZKUtil.deleteRecursive(zk, ledgersRootPath + "/" + child);
         }
         // Delete and recreate the LAYOUT information.
-        super.format(conf, zk);
+        super.format(conf, layoutManager);
     }
 }
