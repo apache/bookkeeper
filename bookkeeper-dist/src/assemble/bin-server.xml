@@ -50,14 +50,7 @@
       <outputDirectory>/deps</outputDirectory>
       <includes>
         <include>javax.servlet-api-3.1.0/CDDL+GPL-1.1</include>
-        <include>netty-4.1.12.Final/LICENSE.base64.txt</include>
-        <include>netty-4.1.12.Final/LICENSE.jbzip2.txt</include>
-        <include>netty-4.1.12.Final/LICENSE.jfastlz.txt</include>
-        <include>netty-4.1.12.Final/LICENSE.jsr166y.txt</include>
-        <include>netty-4.1.12.Final/LICENSE.libdivsufsort.txt</include>
-        <include>netty-4.1.12.Final/LICENSE.protobuf.txt</include>
-        <include>netty-4.1.12.Final/LICENSE.slf4j.txt</include>
-        <include>netty-4.1.12.Final/LICENSE.webbit.txt</include>
+        <include>netty-4.1.12.Final/*</include>
         <include>protobuf-3.4.0/LICENSE</include>
         <include>slf4j-1.7.25/LICENSE.txt</include>
       </includes>
