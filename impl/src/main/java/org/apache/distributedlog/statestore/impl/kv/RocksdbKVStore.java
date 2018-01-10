@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.statestore.impl.rocksdb;
+package org.apache.distributedlog.statestore.impl.kv;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.distributedlog.statestore.impl.rocksdb.RocksConstants.BLOCK_CACHE_SIZE;
@@ -41,16 +41,16 @@ import java.util.Set;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.distributedlog.api.statestore.KV;
-import org.apache.distributedlog.api.statestore.KVIterator;
-import org.apache.distributedlog.api.statestore.KVMulti;
-import org.apache.distributedlog.api.statestore.KVStore;
 import org.apache.distributedlog.api.statestore.StateStoreSpec;
 import org.apache.distributedlog.api.statestore.exceptions.InvalidStateStoreException;
 import org.apache.distributedlog.api.statestore.exceptions.StateStoreException;
 import org.apache.distributedlog.api.statestore.exceptions.StateStoreRuntimeException;
+import org.apache.distributedlog.api.statestore.kv.KV;
+import org.apache.distributedlog.api.statestore.kv.KVIterator;
+import org.apache.distributedlog.api.statestore.kv.KVMulti;
+import org.apache.distributedlog.api.statestore.kv.KVStore;
 import org.apache.distributedlog.common.coder.Coder;
-import org.apache.distributedlog.statestore.impl.KVImpl;
+import org.apache.distributedlog.statestore.impl.rocksdb.RocksUtils;
 import org.rocksdb.BlockBasedTableConfig;
 import org.rocksdb.FlushOptions;
 import org.rocksdb.Options;

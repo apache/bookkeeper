@@ -16,37 +16,16 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.statestore.impl;
+package org.apache.distributedlog.api.statestore.kv;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
-import org.apache.distributedlog.api.statestore.KV;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
+import org.apache.distributedlog.api.statestore.StateStore;
 
 /**
- * A Key/Value pair.
- *
- * @param <K> key type
- * @param <V> value type
+ * A key/value state store that supports put/get/delete/range operations.
  */
-@AllArgsConstructor(access = AccessLevel.PUBLIC)
-@ToString
-@EqualsAndHashCode
-@Getter
-public class KVImpl<K, V> implements KV<K, V> {
-
-    private final K key;
-    private final V value;
-
-    @Override
-    public K key() {
-        return key;
-    }
-
-    @Override
-    public V value() {
-        return value;
-    }
+@Public
+@Evolving
+public interface KVStore<K, V> extends StateStore, KVStoreWriteView<K, V>, KVStoreReadView<K, V> {
 }

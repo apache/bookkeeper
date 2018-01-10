@@ -16,36 +16,37 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.api.statestore;
+package org.apache.distributedlog.statestore.impl.kv;
 
-import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
-import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
+import org.apache.distributedlog.api.statestore.kv.KV;
 
 /**
- * A read-only view of a key/value store. It only supports read-only operations.
+ * A Key/Value pair.
  *
- * <p>The implementation of this class should be thread-safe.
+ * @param <K> key type
+ * @param <V> value type
  */
-@Public
-@Evolving
-public interface KVStoreReadView<K, V> {
+@AllArgsConstructor(access = AccessLevel.PUBLIC)
+@ToString
+@EqualsAndHashCode
+@Getter
+public class KVImpl<K, V> implements KV<K, V> {
 
-    /**
-     * Return the value associated with this key.
-     *
-     * @param key key to retrieve the value
-     * @return the value associated with this key.
-     */
-    V get(K key);
+    private final K key;
+    private final V value;
 
-    /**
-     * Return an {@link KVIterator} to iterate a range of keys.
-     *
-     * @param from the first key
-     * @param to the last key
-     * @return a k/v iterator
-     */
-    KVIterator<K, V> range(K from, K to);
+    @Override
+    public K key() {
+        return key;
+    }
 
-
+    @Override
+    public V value() {
+        return value;
+    }
 }

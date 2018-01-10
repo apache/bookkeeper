@@ -16,15 +16,44 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.api.statestore;
+package org.apache.distributedlog.api.statestore.kv;
 
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 
 /**
- * A key/value state store that supports put/get/delete/range operations.
+ * A multi operation that modify the key/value state store.
  */
 @Public
 @Evolving
-public interface KVStore<K, V> extends StateStore, KVStoreWriteView<K, V>, KVStoreReadView<K, V> {
+public interface KVMulti<K, V> {
+
+    /**
+     * Update the value associated with the provided key.
+     *
+     * @param key the key to update
+     * @param value the new value to associate with the key.
+     */
+    void put(K key, V value);
+
+    /**
+     * Delete the value associated with the provided key.
+     *
+     * @param key the key to delete.
+     */
+    void delete(K key);
+
+    /**
+     * Delete the range from <code>key</code> to <code>value</code>.
+     *
+     * @param from the begin key to delete (inclusive)
+     * @param to the end key to delete (exclusive)
+     */
+    void deleteRange(K from, K to);
+
+    /**
+     * Execute the multi operation.
+     */
+    void execute();
+
 }

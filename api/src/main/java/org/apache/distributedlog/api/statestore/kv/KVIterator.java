@@ -16,23 +16,25 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.api.statestore;
+package org.apache.distributedlog.api.statestore.kv;
 
+import java.util.Iterator;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 
 /**
- * A class represents a key value pair.
- *
- * @param <K> key type
- * @param <V> value type
+ * Iterator to iterate key/value pairs of the read-view of a k/v store.
  */
 @Public
 @Evolving
-public interface KV<K, V> {
+public interface KVIterator<K, V> extends Iterator<KV<K, V>>, AutoCloseable {
 
-    K key();
-
-    V value();
+    /**
+     * Close the iterator to release resources held by this iterator.
+     *
+     * <p>The users of this interface should be responsible for closing the iterator.
+     */
+    @Override
+    void close();
 
 }
