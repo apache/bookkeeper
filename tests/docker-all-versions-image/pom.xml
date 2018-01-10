@@ -51,8 +51,17 @@
                 <id>default</id>
                 <goals>
                   <goal>build</goal>
-                  <goal>push</goal>
                 </goals>
+              </execution>
+              <execution>
+                <id>add-latest-tag</id>
+                <goals>
+                  <goal>tag</goal>
+                </goals>
+                <configuration>
+                  <repository>apachebookkeeper/bookkeeper-all-versions</repository>
+                  <tag>latest</tag>
+                </configuration>
               </execution>
             </executions>
             <configuration>
