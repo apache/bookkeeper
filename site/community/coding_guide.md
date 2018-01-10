@@ -26,6 +26,8 @@ Apache BookKeeper uses following libraries a lot:
 
 Please use these libraries whenever possible rather than introducing more dependencies. 
 
+Dependencies are bundled with our binary distributions, so we need to attach the relevant licenses. See [Third party dependencies and licensing](/community/licensing) for a guide on how to do this correctly.
+
 #### Future
 
 We prefer Java-8 Future over Guava's Listenable Future. Please use Java-8 Future whenever possible.
@@ -42,7 +44,7 @@ We prefer using netty _ByteBuf_ over java nio _ByteBuffer_ for internal usage. A
 
 #### Logging levels
 
-- _INFO_ is the level you should assume the software will be run in. INFo messages are things which are not bad but which the user will definitely want to know about every time they occur.
+- _INFO_ is the level you should assume the software will be run in. INFO messages are things which are not bad but which the user will definitely want to know about every time they occur.
 - _TRACE_ and _DEBUG_ are both things you turn on when something is wrong and you want to figure out what is going on. _DEBUG_ should not be so fine grained that it will seriously affect performance of the program. _TRACE_ can be anything. Both _DEBUG_ and _TRACE_ statements should be considered to be wrapped in an _if (logger.isDebugEnabled)_ or _if (logger.isTraceEnabled)_ check to avoid performance degradation.
 - _WARN_ and _ERROR_ indicate something that is **BAD**. Use _WARN_ if you aren't totally sure it is bad, and _ERROR_ if you are.
 

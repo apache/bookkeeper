@@ -65,8 +65,6 @@ groups:
   docs:
   - name: BookKeeper protocol
     endpoint: protocol
-  - name: Third party dependencies
-    endpoint: licensing
   #- name: Codebase
   #  endpoint: codebase
 - name: Reference
