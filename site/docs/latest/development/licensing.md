@@ -2,12 +2,52 @@
 title: Third party dependencies and licensing
 ---
 
-The bookkeeper project ships two binary distributions.
+The bookkeeper project ships one source distribution and two binary distributions.
 
+- ```bookkeeper-<version>-src.tar.gz```, which contains the source code to build bookkeeper.
 - ```bookkeeper-all-<version>-bin.tar.gz```, which contains the bookkeeper server and all optional dependencies.
 - ```bookkeeper-server-<version>-bin.tar.gz```, which contains the bare minimum to run a bookkeeper server.
 
-These binaries ship with third party dependencies in jar file form. As the ASF does not own the copyright on the contents of these third party jars, we need to account for them in the LICENSE file, and possibly in our NOTICE file.
+The source distribution can contain source code copied from third parties. The binaries ship with third party dependencies in jar file form. 
+
+As the ASF may not own the copyright on the contents of this copied source code or third party jars, we may need to account for them in the LICENSE and/or NOTICE file of the distribution.
+
+The LICENSE and NOTICE files for the source distribution are found at:
+- [bookkeeper/LICENSE](https://github.com/apache/bookkeeper/blob/master/LICENSE)
+- [bookkeeper/NOTICE](https://github.com/apache/bookkeeper/blob/master/NOTICE)
+
+The LICENSE and NOTICE files for the binary distribution are found at:
+- [bookkeeper/bookkeeper-dist/src/main/resources/LICENSE-all.bin.txt (for -all package)](https://github.com/apache/bookkeeper/blob/master/bookkeeper-dist/src/main/resources/LICENSE-all.bin.txt)
+- [bookkeeper/bookkeeper-dist/src/main/resources/NOTICE-all.bin.txt (for -all package)](https://github.com/apache/bookkeeper/blob/master/bookkeeper-dist/src/main/resources/NOTICE-all.bin.txt)
+- [bookkeeper/bookkeeper-dist/src/main/resources/LICENSE-server.bin.txt (for -server package)](https://github.com/apache/bookkeeper/blob/master/bookkeeper-dist/src/main/resources/LICENSE-server.bin.txt)
+- [bookkeeper/bookkeeper-dist/src/main/resources/NOTICE-server.bin.txt (for -server package)](https://github.com/apache/bookkeeper/blob/master/bookkeeper-dist/src/main/resources/NOTICE-server.bin.txt)
+
+When updating these files, use the following rules of thumb:
+- BSD/MIT style dependencies should be covered LICENSE.
+- Apache Software License dependences should be covered in NOTICE, but only if they themselves contain a NOTICE file.
+- NOTICE should be kept to a minimum, and only contain what is legally required.
+- The LICENSE and NOTICE files for the binary packages should contains everything in source LICENSE and NOTICE packages, unless the source code being referred to does not ship in the binary packages (for example, if it was copied in only for tests).
+- All shipped dependencies should be mentioned in LICENSE for completeness, along with a link to their source code if available.
+- Any license other than BSD/MIT style or ASL should be discussed on [the dev list](/community/mailing-lists).
+- If you have any doubts, raise them on [the dev list](/community/mailing-lists).
+
+# Handling new/updated source dependencies
+
+For bookkeeper, a source dependency is any code which has been copied in code form into our source tree. An example of this is [circe-checksum](https://github.com/apache/bookkeeper/tree/master/circe-checksum) which was copied into our codebase and modified. Depending on the license of source code, you may need to update the source distribution LICENSE and NOTICE files.
+
+In the case of circe-checksum, the original code is under the Apache Software License, Version 2 (ASLv2), and there is no NOTICE file, so neither LICENSE nor NOTICE need to be updated.
+
+If, for example, we were to copy code from [hadoop](https://github.com/apache/hadoop), and the code in question was originally written for hadoop, then we would not need to update LICENSE or NOTICE, as hadoop is also licensed under the ASLv2, and while it has a NOTICE file, the part covering code originally written for hadoop so is covered by the "This product includes software developed by The Apache Software Foundation (http://www.apache.org/).", which already exists in our NOTICE. However, if we were to copy code from hadoop that originally originated elsewhere, such as their [pure java CRC library](https://github.com/apache/hadoop/blob/f67237cbe7bc48a1b9088e990800b37529f1db2a/hadoop-common-project/hadoop-common/src/main/java/org/apache/hadoop/util/PureJavaCrc32C.java), this code is originally from Intel, under a BSD style license, so you would have to track down the original license, add it to [deps/](https://github.com/apache/bookkeeper/blob/master/bookkeeper-dist/src/main/resources/) and link it from our LICENSE file.
+
+If we were to copy code from netty, and the code in question was originally written for netty, then we would need to update NOTICE with the relevant portions (i.e. the first section) from the [netty NOTICE file](https://github.com/netty/netty/blob/4.1/NOTICE.txt), as netty is licensed under the ASLv2 and it _does_ contain a NOTICE file. If we were to copy code from netty which originally originated elsewhere, but had also been modified by netty, for example [their SLF4J modifications](https://github.com/netty/netty/blob/b60e0b6a51d59fb9a98918c8783265b30531de57/common/src/main/java/io/netty/logging/CommonsLogger.java), we would need to update our NOTICE with the relevant portions (i.e. the first section) from netty's NOTICE, and also add the SLF4J license to [deps/](https://github.com/apache/bookkeeper/blob/master/bookkeeper-dist/src/main/resources/) and link it from our LICENSE file (as it has an MIT style license).
+
+If we were to copy code from protobuf or SLF4J into our code base, then we would have to copy their license to [deps/](https://github.com/apache/bookkeeper/blob/master/bookkeeper-dist/src/main/resources/) and link it from our LICENSE file, as these projects are under an BSD-style and MIT-style license respectively.
+
+# Handling new/updated binary dependencies
+
+When a new binary dependency is added, or a dependency version is updated, we need to update the LICENSE and NOTICE files for our binary packages. There is a separate version of each of these files for both the -all tarball and the -server tarball. The files can be found at ```bookkeeper-dist/src/main/resources```.
+
+How you update the files depends on the licensing of the dependency. Most dependencies come under either the Apache Software License, Version 2, or an MIT/BSD style license. If the software comes under anything else, it's best to ask for advice on the [dev@ list](/community/mailing-lists).
 
 ## dev/check-binary-license script
 
@@ -34,13 +74,7 @@ The script checks the following:
 
 This script will fail the check even if only the version of the dependency has changed. This is intentional. The licensing requirements of a dependency can change between versions, so if a dependency version changes, we should check that the entries for that dependency are correct in our LICENSE and NOTICE files.
 
-# Handling new/updated binary dependencies
-
-When a new dependency is added, or a dependency version is updated, we need to update the LICENSE and NOTICE files for our binary packages. There is a separate version of each of these files for both the -all tarball and the -server tarball. The files can be found at ```bookkeeper-dist/src/main/resources```.
-
-How you update the files depends on the licensing of the dependency. Most dependencies come under either the Apache Software License, Version 2, or an MIT/BSD style license. If the software comes under anything else, it's best to ask for advice on the [dev@ list](/community/mailing-lists).
-
-## Apache Software License, Version 2 dependencies
+## Apache Software License, Version 2 binary dependencies
 
 1. Add the jar under "The following bundled 3rd party jars are distributed under the Apache Software License, Version 2."
 2. Add a link to the source code of this dependency if available. This will help anyone updating the license in the future.
@@ -51,7 +85,7 @@ How you update the files depends on the licensing of the dependency. Most depend
   - Copy any copyright notices to our NOTICE, unless they are for Apache Software Foundation (already covered by our own copyright notice), or they are refer to code covered by a BSD/MIT style license (some projects mistakenly put these in the NOTICE file, but these should be noted in the _LICENSE_ file).
   - Ensure that anything copies from the NOTICE file refers to code which is actually shipped with our tarball. Some projects put optional dependencies in their NOTICE, which are not actually pulled into our distribution, so we should not include these.
 
-## BSD/MIT style license dependencies
+## BSD/MIT style license binary dependencies
 
 1. Add a section to the LICENSE file, stating that "This product bundles X, which is available under X".
 2. Add the license to ```bookkeeper-dist/src/main/resources/deps/``` and add a link to this file from the LICENSE file.
