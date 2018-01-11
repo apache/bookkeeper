@@ -18,18 +18,8 @@
 
 package org.apache.distributedlog.statestore.impl.mvcc;
 
-import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.distributedlog.statestore.impl.Constants.NULL_END_KEY;
 import static org.apache.distributedlog.statestore.impl.Constants.NULL_START_KEY;
-import static org.apache.distributedlog.statestore.impl.rocksdb.RocksConstants.BLOCK_CACHE_SIZE;
-import static org.apache.distributedlog.statestore.impl.rocksdb.RocksConstants.BLOCK_SIZE;
-import static org.apache.distributedlog.statestore.impl.rocksdb.RocksConstants.DEFAULT_CHECKSUM_TYPE;
-import static org.apache.distributedlog.statestore.impl.rocksdb.RocksConstants.DEFAULT_COMPACTION_STYLE;
-import static org.apache.distributedlog.statestore.impl.rocksdb.RocksConstants.DEFAULT_COMPRESSION_TYPE;
-import static org.apache.distributedlog.statestore.impl.rocksdb.RocksConstants.DEFAULT_LOG_LEVEL;
-import static org.apache.distributedlog.statestore.impl.rocksdb.RocksConstants.DEFAULT_PARALLELISM;
-import static org.apache.distributedlog.statestore.impl.rocksdb.RocksConstants.MAX_WRITE_BUFFERS;
-import static org.apache.distributedlog.statestore.impl.rocksdb.RocksConstants.WRITE_BUFFER_SIZE;
 
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
@@ -37,9 +27,6 @@ import com.google.common.collect.PeekingIterator;
 import com.google.common.primitives.SignedBytes;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -51,7 +38,6 @@ import org.apache.commons.lang.mutable.MutableLong;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.distributedlog.api.statestore.exceptions.InvalidStateStoreException;
 import org.apache.distributedlog.api.statestore.exceptions.MVCCStoreException;
-import org.apache.distributedlog.api.statestore.exceptions.StateStoreException;
 import org.apache.distributedlog.api.statestore.exceptions.StateStoreRuntimeException;
 import org.apache.distributedlog.api.statestore.kv.KV;
 import org.apache.distributedlog.api.statestore.kv.KVIterator;
@@ -85,13 +71,6 @@ import org.apache.distributedlog.statestore.impl.mvcc.result.RangeResultImpl;
 import org.apache.distributedlog.statestore.impl.mvcc.result.ResultFactory;
 import org.apache.distributedlog.statestore.impl.mvcc.result.TxnResultImpl;
 import org.apache.distributedlog.statestore.impl.rocksdb.RocksUtils;
-import org.rocksdb.BlockBasedTableConfig;
-import org.rocksdb.ColumnFamilyDescriptor;
-import org.rocksdb.ColumnFamilyHandle;
-import org.rocksdb.ColumnFamilyOptions;
-import org.rocksdb.DBOptions;
-import org.rocksdb.Options;
-import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
 import org.rocksdb.WriteBatch;
@@ -105,19 +84,12 @@ import org.rocksdb.WriteBatch;
 @Slf4j
 class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V> {
 
-    private static final String DATA_CF_NAME = "default";
-    private static final byte[] DATA_CF_NAME_BYTES = DATA_CF_NAME.getBytes(UTF_8);
     private static final Comparator<byte[]> COMPARATOR = SignedBytes.lexicographicalComparator();
 
     private final ResultFactory<K, V> resultFactory;
     private final KVRecordFactory<K, V> recordFactory;
     private final OpFactory<K, V> opFactory;
     private final Coder<MVCCRecord> recordCoder = MVCCRecordCoder.of();
-
-    private DBOptions dbOpts;
-    private ColumnFamilyOptions dataCfOpts;
-    private ColumnFamilyDescriptor dataCfDesc;
-    private ColumnFamilyHandle dataCfHandle;
 
     MVCCStoreImpl() {
         this.resultFactory = new ResultFactory<>();
@@ -128,55 +100,6 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
     @Override
     public OpFactory<K, V> getOpFactory() {
         return opFactory;
-    }
-
-    @Override
-    protected RocksDB openLocalDB(File dir, Options options) throws StateStoreException {
-        dbOpts = new DBOptions();
-        dbOpts.setCreateIfMissing(true);
-        dbOpts.setErrorIfExists(false);
-        dbOpts.setInfoLogLevel(DEFAULT_LOG_LEVEL);
-        dbOpts.setIncreaseParallelism(DEFAULT_PARALLELISM);
-
-        final BlockBasedTableConfig tableConfig = new BlockBasedTableConfig();
-        tableConfig.setBlockCacheSize(BLOCK_CACHE_SIZE);
-        tableConfig.setBlockSize(BLOCK_SIZE);
-        tableConfig.setChecksumType(DEFAULT_CHECKSUM_TYPE);
-        dataCfOpts = new ColumnFamilyOptions();
-        dataCfOpts.setTableFormatConfig(tableConfig);
-        dataCfOpts.setWriteBufferSize(WRITE_BUFFER_SIZE);
-        dataCfOpts.setCompressionType(DEFAULT_COMPRESSION_TYPE);
-        dataCfOpts.setCompactionStyle(DEFAULT_COMPACTION_STYLE);
-        dataCfOpts.setMaxWriteBufferNumber(MAX_WRITE_BUFFERS);
-
-        // make sure the db directory's parent dir is created
-        try {
-            Files.createDirectories(dir.getParentFile().toPath());
-            dataCfDesc = new ColumnFamilyDescriptor(DATA_CF_NAME_BYTES, dataCfOpts);
-            final List<ColumnFamilyHandle> handles = Lists.newArrayListWithExpectedSize(1);
-            RocksDB rocksDB = RocksDB.open(
-                dbOpts,
-                dir.getAbsolutePath(),
-                Lists.newArrayList(dataCfDesc),
-                handles);
-            dataCfHandle = handles.get(0);
-            return rocksDB;
-        } catch (IOException ioe) {
-            log.error("Failed to create parent directory {} for opening rocksdb", dir.getParentFile().toPath(), ioe);
-            throw new StateStoreException(ioe);
-        } catch (RocksDBException dbe) {
-            log.error("Failed to open rocksdb at dir {}", dir.getAbsolutePath(), dbe);
-            throw new StateStoreException(dbe);
-        }
-    }
-
-    @Override
-    protected void closeLocalDB() {
-        RocksUtils.close(dataCfHandle);
-        super.closeLocalDB();
-        // release options
-        RocksUtils.close(dataCfOpts);
-        RocksUtils.close(dbOpts);
     }
 
     @Override

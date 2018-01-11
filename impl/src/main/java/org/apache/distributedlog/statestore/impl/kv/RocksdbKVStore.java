@@ -18,6 +18,7 @@
 
 package org.apache.distributedlog.statestore.impl.kv;
 
+import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.distributedlog.statestore.impl.rocksdb.RocksConstants.BLOCK_CACHE_SIZE;
 import static org.apache.distributedlog.statestore.impl.rocksdb.RocksConstants.BLOCK_SIZE;
@@ -36,11 +37,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.distributedlog.api.statestore.StateStoreSpec;
 import org.apache.distributedlog.api.statestore.exceptions.InvalidStateStoreException;
 import org.apache.distributedlog.api.statestore.exceptions.StateStoreException;
@@ -51,9 +54,13 @@ import org.apache.distributedlog.api.statestore.kv.KVMulti;
 import org.apache.distributedlog.api.statestore.kv.KVStore;
 import org.apache.distributedlog.common.coder.Coder;
 import org.apache.distributedlog.statestore.impl.rocksdb.RocksUtils;
+import org.inferred.freebuilder.shaded.com.google.common.collect.Lists;
 import org.rocksdb.BlockBasedTableConfig;
+import org.rocksdb.ColumnFamilyDescriptor;
+import org.rocksdb.ColumnFamilyHandle;
+import org.rocksdb.ColumnFamilyOptions;
+import org.rocksdb.DBOptions;
 import org.rocksdb.FlushOptions;
-import org.rocksdb.Options;
 import org.rocksdb.RocksDB;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
@@ -69,6 +76,9 @@ import org.rocksdb.WriteOptions;
 @Slf4j
 public class RocksdbKVStore<K, V> implements KVStore<K, V> {
 
+    private static final byte[] METADATA_CF = ".meta".getBytes(UTF_8);
+    private static final byte[] DATA_CF = "default".getBytes(UTF_8);
+
     // parameters for the store
     protected String name;
     protected Coder<K> keyCoder;
@@ -77,12 +87,15 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
     // rocksdb state
     protected File dbDir;
     protected RocksDB db;
+    protected ColumnFamilyHandle metaCfHandle;
+    protected ColumnFamilyHandle dataCfHandle;
 
     // iterators
     protected final Set<KVIterator<K, V>> kvIters;
 
     // options used by rocksdb
-    protected Options opts;
+    protected DBOptions dbOpts;
+    protected ColumnFamilyOptions cfOpts;
     protected WriteOptions writeOpts;
     protected FlushOptions flushOpts;
 
@@ -139,16 +152,19 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         tableConfig.setBlockSize(BLOCK_SIZE);
         tableConfig.setChecksumType(DEFAULT_CHECKSUM_TYPE);
 
-        opts = new Options();
-        opts.setTableFormatConfig(tableConfig);
-        opts.setWriteBufferSize(WRITE_BUFFER_SIZE);
-        opts.setCompressionType(DEFAULT_COMPRESSION_TYPE);
-        opts.setCompactionStyle(DEFAULT_COMPACTION_STYLE);
-        opts.setMaxWriteBufferNumber(MAX_WRITE_BUFFERS);
-        opts.setCreateIfMissing(true);
-        opts.setErrorIfExists(false);
-        opts.setInfoLogLevel(DEFAULT_LOG_LEVEL);
-        opts.setIncreaseParallelism(DEFAULT_PARALLELISM);
+        dbOpts = new DBOptions();
+        dbOpts.setCreateIfMissing(true);
+        dbOpts.setErrorIfExists(false);
+        dbOpts.setInfoLogLevel(DEFAULT_LOG_LEVEL);
+        dbOpts.setIncreaseParallelism(DEFAULT_PARALLELISM);
+        dbOpts.setCreateMissingColumnFamilies(true);
+
+        cfOpts = new ColumnFamilyOptions();
+        cfOpts.setTableFormatConfig(tableConfig);
+        cfOpts.setWriteBufferSize(WRITE_BUFFER_SIZE);
+        cfOpts.setCompressionType(DEFAULT_COMPRESSION_TYPE);
+        cfOpts.setCompactionStyle(DEFAULT_COMPACTION_STYLE);
+        cfOpts.setMaxWriteBufferNumber(MAX_WRITE_BUFFERS);
 
         // initialize the write options
 
@@ -163,18 +179,36 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         // open the rocksdb
 
         this.dbDir = spec.getLocalStateStoreDir();
-        this.db = openLocalDB(dbDir, opts);
+        Pair<RocksDB, List<ColumnFamilyHandle>> dbPair = openLocalDB(dbDir, dbOpts, cfOpts);
+        this.db = dbPair.getLeft();
+        this.metaCfHandle = dbPair.getRight().get(0);
+        this.dataCfHandle = dbPair.getRight().get(1);
     }
 
-    protected RocksDB openLocalDB(File dir, Options options) throws StateStoreException {
-        return openRocksdb(dir, options);
+    protected Pair<RocksDB, List<ColumnFamilyHandle>> openLocalDB(File dir,
+                                                                  DBOptions options,
+                                                                  ColumnFamilyOptions cfOpts)
+            throws StateStoreException {
+        return openRocksdb(dir, options, cfOpts);
     }
 
-    protected static RocksDB openRocksdb(File dir, Options options) throws StateStoreException {
+    protected static Pair<RocksDB, List<ColumnFamilyHandle>> openRocksdb(
+        File dir, DBOptions options, ColumnFamilyOptions cfOpts)
+            throws StateStoreException {
         // make sure the db directory's parent dir is created
+        ColumnFamilyDescriptor metaDesc = new ColumnFamilyDescriptor(METADATA_CF, cfOpts);
+        ColumnFamilyDescriptor dataDesc = new ColumnFamilyDescriptor(DATA_CF, cfOpts);
+
         try {
             Files.createDirectories(dir.getParentFile().toPath());
-            return RocksDB.open(options, dir.getAbsolutePath());
+
+            List<ColumnFamilyHandle> cfHandles = Lists.newArrayListWithExpectedSize(2);
+            RocksDB db = RocksDB.open(
+                options,
+                dir.getAbsolutePath(),
+                Lists.newArrayList(metaDesc, dataDesc),
+                cfHandles);
+            return Pair.of(db, cfHandles);
         } catch (IOException ioe) {
             log.error("Failed to create parent directory {} for opening rocksdb", dir.getParentFile().toPath(), ioe);
             throw new StateStoreException(ioe);
@@ -210,12 +244,21 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         closeLocalDB();
 
         // release options
-        RocksUtils.close(opts);
+        RocksUtils.close(dbOpts);
         RocksUtils.close(writeOpts);
         RocksUtils.close(flushOpts);
+        RocksUtils.close(cfOpts);
     }
 
     protected void closeLocalDB() {
+        try {
+            flush();
+        } catch (StateStoreException e) {
+            // flush() already logs this exception.
+        }
+
+        RocksUtils.close(metaCfHandle);
+        RocksUtils.close(dataCfHandle);
         RocksUtils.close(db);
     }
 
@@ -246,7 +289,7 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
 
     protected byte[] getRawBytes(K key, byte[] keyBytes) {
         try {
-            return this.db.get(keyBytes);
+            return this.db.get(dataCfHandle, keyBytes);
         } catch (RocksDBException e) {
             throw new StateStoreRuntimeException("Error while getting value for key " + key + " from store " + name, e);
         }
@@ -256,7 +299,7 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
     public synchronized KVIterator<K, V> range(K from, K to) {
         checkStoreOpen();
 
-        RocksIterator rocksIter = db.newIterator();
+        RocksIterator rocksIter = db.newIterator(dataCfHandle);
         if (null == from) {
             rocksIter.seekToFirst();
         } else {
@@ -286,10 +329,10 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         try {
             if (null == value) {
                 // delete a key if value is null
-                db.delete(keyBytes);
+                db.delete(dataCfHandle, keyBytes);
             } else {
                 byte[] valBytes = valCoder.encode(value);
-                db.put(writeOpts, keyBytes, valBytes);
+                db.put(dataCfHandle, writeOpts, keyBytes, valBytes);
             }
         } catch (RocksDBException e) {
             throw new StateStoreRuntimeException("Error while updating key " + key
@@ -367,7 +410,7 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         }
 
         private void putRaw(byte[] keyBytes, V value) {
-            batch.put(keyBytes, valCoder.encode(value));
+            batch.put(dataCfHandle, keyBytes, valCoder.encode(value));
         }
 
         @Override
@@ -380,7 +423,7 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         }
 
         private void deleteRaw(byte[] keyBytes) {
-            batch.remove(keyBytes);
+            batch.remove(dataCfHandle, keyBytes);
         }
 
         @Override
@@ -391,7 +434,7 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
 
             byte[] fromBytes = keyCoder.encode(from);
             byte[] toBytes = keyCoder.encode(to);
-            batch.deleteRange(fromBytes, toBytes);
+            batch.deleteRange(dataCfHandle, fromBytes, toBytes);
         }
 
         @Override
