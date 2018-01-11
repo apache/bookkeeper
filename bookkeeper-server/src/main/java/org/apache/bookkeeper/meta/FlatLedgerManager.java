@@ -88,9 +88,10 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
         asyncProcessLedgersInSingleNode(ledgerRootPath, processor, finalCb, ctx, successRc, failureRc);
     }
 
-    protected static boolean isSpecialZnode(String znode) {
+    @Override
+    public boolean isSpecialZnode(String znode) {
         return znode.startsWith(ZkLedgerIdGenerator.LEDGER_ID_GEN_PREFIX)
-            || AbstractZkLedgerManager.isSpecialZnode(znode);
+            || super.isSpecialZnode(znode);
     }
 
     @Override
@@ -133,5 +134,10 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
                 return nextRange;
             }
         };
+    }
+
+    @Override
+    protected String getLedgerParentNodeRegex() {
+        return StringUtils.FLAT_LEDGER_NODE_REGEX;
     }
 }

@@ -87,6 +87,12 @@ class HierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
     }
 
     @Override
+    public boolean isSpecialZnode(String znode) {
+        return LegacyHierarchicalLedgerManager.IDGEN_ZNODE.equals(znode)
+                || LongHierarchicalLedgerManager.IDGEN_ZNODE.equals(znode) || super.isSpecialZnode(znode);
+    }
+
+    @Override
     public LedgerRangeIterator getLedgerRanges() {
         LedgerRangeIterator legacyLedgerRangeIterator = legacyLM.getLedgerRanges();
         LedgerRangeIterator longLedgerRangeIterator = longLM.getLedgerRanges();
@@ -117,5 +123,10 @@ class HierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
             return longLedgerRangeIterator.next();
         }
 
+    }
+
+    @Override
+    protected String getLedgerParentNodeRegex() {
+        return StringUtils.HIERARCHICAL_LEDGER_PARENT_NODE_REGEX;
     }
 }

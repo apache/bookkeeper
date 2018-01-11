@@ -30,6 +30,8 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Random;
@@ -50,8 +52,9 @@ import org.apache.bookkeeper.versioning.Version;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
 import org.junit.After;
+import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
-
 
 /**
  * Test the ledger manager iterator.
@@ -434,5 +437,84 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
         for (Thread thread: threads) {
             thread.join();
         }
+    }
+
+    @Test(timeout = 30000)
+    public void testLedgerParentNode() throws Throwable {
+        /*
+         * this testcase applies only ZK based ledgermanager so it doesnt work
+         * for MSLedgerManager
+         */
+        Assume.assumeTrue(!baseConf.getLedgerManagerFactoryClass().equals(MSLedgerManagerFactory.class));
+        AbstractZkLedgerManager lm = (AbstractZkLedgerManager) getLedgerManager();
+        List<Long> ledgerIds;
+        if (baseConf.getLedgerManagerFactoryClass().equals(HierarchicalLedgerManagerFactory.class)
+                || baseConf.getLedgerManagerFactoryClass().equals(LongHierarchicalLedgerManagerFactory.class)) {
+            ledgerIds = Arrays.asList(100L, (Integer.MAX_VALUE * 10L));
+        } else {
+            ledgerIds = Arrays.asList(100L, (Integer.MAX_VALUE - 10L));
+        }
+        for (long ledgerId : ledgerIds) {
+            String fullLedgerPath = lm.getLedgerPath(ledgerId);
+            String ledgerPath = fullLedgerPath.replaceAll(baseConf.getZkLedgersRootPath() + "/", "");
+            String[] znodesOfLedger = ledgerPath.split("/");
+            Assert.assertTrue(znodesOfLedger[0] + " is supposed to be valid parent ",
+                    lm.isLedgerParentNode(znodesOfLedger[0]));
+        }
+    }
+
+    @Test(timeout = 30000)
+    public void testLedgerManagerFormat() throws Throwable {
+        /*
+         * this testcase applies only ZK based ledgermanager so it doesnt work
+         * for MSLedgerManager
+         */
+        Assume.assumeTrue(!baseConf.getLedgerManagerFactoryClass().equals(MSLedgerManagerFactory.class));
+        AbstractZkLedgerManager lm = (AbstractZkLedgerManager) getLedgerManager();
+        Collection<Long> ids = Arrays.asList(1234567890L, 2L, 32345L, 23456789L);
+        if (baseConf.getLedgerManagerFactoryClass().equals(HierarchicalLedgerManagerFactory.class)
+                || baseConf.getLedgerManagerFactoryClass().equals(LongHierarchicalLedgerManagerFactory.class)) {
+            ids = new ArrayList<Long>(ids);
+            ids.add(Integer.MAX_VALUE * 2L);
+            ids.add(1234567891234L);
+        }
+        for (Long id : ids) {
+            createLedger(lm, id, Optional.of(BKException.Code.OK));
+        }
+
+        // create some invalid nodes under zkLedgersRootPath
+        Collection<String> invalidZnodes = Arrays.asList("12345", "12345678901L", "abc", "123d");
+        for (String invalidZnode : invalidZnodes) {
+            ZkUtils.createFullPathOptimistic(zkc, baseConf.getZkLedgersRootPath() + "/" + invalidZnode,
+                    "data".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        }
+
+        /*
+         * get the count of total children under zkLedgersRootPath and also
+         * count of the parent nodes of ledgers under zkLedgersRootPath
+         */
+        List<String> childrenOfLedgersRootPath = zkc.getChildren(baseConf.getZkLedgersRootPath(), false);
+        int totalChildrenOfLedgersRootPath = childrenOfLedgersRootPath.size();
+        int totalParentNodesOfLedgers = 0;
+        for (String childOfLedgersRootPath : childrenOfLedgersRootPath) {
+            if (lm.isLedgerParentNode(childOfLedgersRootPath)) {
+                totalParentNodesOfLedgers++;
+            }
+        }
+
+        /*
+         * after ledgermanagerfactory format only the znodes of created ledgers
+         * under zkLedgersRootPath should be deleted recursively but not
+         * specialnode or invalid nodes created above
+         */
+        ledgerManagerFactory.format(baseConf,
+                new ZkLayoutManager(zkc, baseConf.getZkLedgersRootPath(), ZkUtils.getACLs(baseConf)));
+        List<String> childrenOfLedgersRootPathAfterFormat = zkc.getChildren(baseConf.getZkLedgersRootPath(), false);
+        int totalChildrenOfLedgersRootPathAfterFormat = childrenOfLedgersRootPathAfterFormat.size();
+        Assert.assertEquals("totalChildrenOfLedgersRootPathAfterFormat",
+                totalChildrenOfLedgersRootPath - totalParentNodesOfLedgers, totalChildrenOfLedgersRootPathAfterFormat);
+
+        Assert.assertTrue("ChildrenOfLedgersRootPathAfterFormat should contain all the invalid znodes created",
+                childrenOfLedgersRootPathAfterFormat.containsAll(invalidZnodes));
     }
 }

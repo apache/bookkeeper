@@ -147,9 +147,14 @@ class LegacyHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager 
         }, finalCb, context, successRc, failureRc);
     }
 
-    protected static boolean isSpecialZnode(String znode) {
-        return IDGEN_ZNODE.equals(znode) || LongHierarchicalLedgerManager.IDGEN_ZNODE.equals(znode)
-            || AbstractHierarchicalLedgerManager.isSpecialZnode(znode);
+    @Override
+    public boolean isSpecialZnode(String znode) {
+        return IDGEN_ZNODE.equals(znode) || super.isSpecialZnode(znode);
+    }
+
+    @Override
+    protected String getLedgerParentNodeRegex() {
+        return StringUtils.LEGACYHIERARCHICAL_LEDGER_PARENT_NODE_REGEX;
     }
 
     @Override

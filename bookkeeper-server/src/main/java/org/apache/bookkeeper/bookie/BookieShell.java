@@ -140,6 +140,8 @@ public class BookieShell implements Tool {
 
     static final String CMD_METAFORMAT = "metaformat";
     static final String CMD_INITBOOKIE = "initbookie";
+    static final String CMD_INITNEWCLUSTER = "initnewcluster";
+    static final String CMD_NUKEEXISTINGCLUSTER = "nukeexistingcluster";
     static final String CMD_BOOKIEFORMAT = "bookieformat";
     static final String CMD_RECOVER = "recover";
     static final String CMD_LEDGER = "ledger";
@@ -148,6 +150,7 @@ public class BookieShell implements Tool {
     static final String CMD_LEDGERMETADATA = "ledgermetadata";
     static final String CMD_LISTUNDERREPLICATED = "listunderreplicated";
     static final String CMD_WHOISAUDITOR = "whoisauditor";
+    static final String CMD_WHATISINSTANCEID = "whatisinstanceid";
     static final String CMD_SIMPLETEST = "simpletest";
     static final String CMD_BOOKIESANITYTEST = "bookiesanity";
     static final String CMD_READLOG = "readlog";
@@ -268,6 +271,91 @@ public class BookieShell implements Tool {
             boolean force = cmdLine.hasOption("f");
 
             boolean result = BookKeeperAdmin.format(bkConf, interactive, force);
+            return (result) ? 0 : 1;
+        }
+    }
+
+    /**
+     * Intializes new cluster by creating required znodes for the cluster.
+     */
+    class InitNewCluster extends MyCommand {
+        Options opts = new Options();
+
+        InitNewCluster() {
+            super(CMD_INITNEWCLUSTER);
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Initialize a new bookkeeper cluster";
+        }
+
+        @Override
+        String getUsage() {
+            return "initnewcluster";
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            boolean result = BookKeeperAdmin.initNewCluster(bkConf);
+            return (result) ? 0 : 1;
+        }
+    }
+
+    /**
+     * Nuke bookkeeper metadata of existing cluster in zookeeper.
+     */
+    class NukeExistingCluster extends MyCommand {
+        Options opts = new Options();
+
+        NukeExistingCluster() {
+            super(CMD_NUKEEXISTINGCLUSTER);
+            opts.addOption("p", "zkledgersrootpath", true, "zookeeper ledgers rootpath");
+            opts.addOption("i", "instanceid", true, "instanceid");
+            opts.addOption("f", "force", false,
+                    "If instanceid is not specified, "
+                    + "then whether to force nuke the metadata without validating instanceid");
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Nuke bookkeeper cluster by deleting metadata";
+        }
+
+        @Override
+        String getUsage() {
+            return "nukeexistingcluster -zkledgersrootpath <zkledgersrootpath> [-instanceid <instanceid> | -force]";
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            boolean force = cmdLine.hasOption("f");
+            String zkledgersrootpath = cmdLine.getOptionValue("zkledgersrootpath");
+            String instanceid = cmdLine.getOptionValue("instanceid");
+
+            /*
+             * for NukeExistingCluster command 'zkledgersrootpath' should be provided and either force option or
+             * instanceid should be provided.
+             */
+            if ((zkledgersrootpath == null) || (force == (instanceid != null))) {
+                LOG.error(
+                        "zkledgersrootpath should be specified and either force option "
+                        + "or instanceid should be specified (but not both)");
+                printUsage();
+                return -1;
+            }
+
+            boolean result = BookKeeperAdmin.nukeExistingCluster(bkConf, zkledgersrootpath, instanceid, force);
             return (result) ? 0 : 1;
         }
     }
@@ -1704,6 +1792,42 @@ public class BookieShell implements Tool {
     }
 
     /**
+     * Prints the instanceid of the cluster.
+     */
+    class WhatIsInstanceId extends MyCommand {
+        Options opts = new Options();
+
+        public WhatIsInstanceId() {
+            super(CMD_WHATISINSTANCEID);
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Print the instanceid of the cluster";
+        }
+
+        @Override
+        String getUsage() {
+            return "whatisinstanceid";
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            try (RegistrationManager rm = RegistrationManager.instantiateRegistrationManager(bkConf)) {
+                String readInstanceId = rm.getClusterInstanceId();
+                LOG.info("ZKServers: {} ZkLedgersRootPath: {} InstanceId: {}", bkConf.getZkServers(),
+                        bkConf.getZkLedgersRootPath(), readInstanceId);
+            }
+            return 0;
+        }
+    }
+
+    /**
      * Update cookie command.
      */
     class UpdateCookieCmd extends MyCommand {
@@ -2019,7 +2143,7 @@ public class BookieShell implements Tool {
 
         @Override
         String getUsage() {
-            return "updateledger -bookieId <hostname|ip> [-updatespersec N] [-limit N] [-verbose true/false] "
+            return "updateledgers -bookieId <hostname|ip> [-updatespersec N] [-limit N] [-verbose true/false] "
                     + "[-printprogress N]";
         }
 
@@ -2562,6 +2686,8 @@ public class BookieShell implements Tool {
     {
         commands.put(CMD_METAFORMAT, new MetaFormatCmd());
         commands.put(CMD_INITBOOKIE, new InitBookieCmd());
+        commands.put(CMD_INITNEWCLUSTER, new InitNewCluster());
+        commands.put(CMD_NUKEEXISTINGCLUSTER, new NukeExistingCluster());
         commands.put(CMD_BOOKIEFORMAT, new BookieFormatCmd());
         commands.put(CMD_RECOVER, new RecoverCmd());
         commands.put(CMD_LEDGER, new LedgerCmd());
@@ -2569,6 +2695,7 @@ public class BookieShell implements Tool {
         commands.put(CMD_LISTLEDGERS, new ListLedgersCmd());
         commands.put(CMD_LISTUNDERREPLICATED, new ListUnderreplicatedCmd());
         commands.put(CMD_WHOISAUDITOR, new WhoIsAuditorCmd());
+        commands.put(CMD_WHATISINSTANCEID, new WhatIsInstanceId());
         commands.put(CMD_LEDGERMETADATA, new LedgerMetadataCmd());
         commands.put(CMD_SIMPLETEST, new SimpleTestCmd());
         commands.put(CMD_BOOKIESANITYTEST, new BookieSanityTestCmd());

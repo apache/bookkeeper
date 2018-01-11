@@ -63,7 +63,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Abstract ledger manager based on zookeeper, which provides common methods such as query zk nodes.
  */
-abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
+public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractZkLedgerManager.class);
 
@@ -79,6 +79,9 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
     // we use this to prevent long stack chains from building up in callbacks
     protected ScheduledExecutorService scheduler;
 
+    /**
+     * ReadLedgerMetadataTask class.
+     */
     protected class ReadLedgerMetadataTask implements Runnable, GenericCallback<LedgerMetadata> {
 
         final long ledgerId;
@@ -496,7 +499,7 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
      *          Znode Name
      * @return true  if the znode is a special znode otherwise false
      */
-     protected static boolean isSpecialZnode(String znode) {
+     public boolean isSpecialZnode(String znode) {
         if (BookKeeperConstants.AVAILABLE_NODE.equals(znode)
                 || BookKeeperConstants.COOKIE_NODE.equals(znode)
                 || BookKeeperConstants.LAYOUT_ZNODE.equals(znode)
@@ -505,6 +508,27 @@ abstract class AbstractZkLedgerManager implements LedgerManager, Watcher {
             return true;
         }
         return false;
+    }
+
+    /**
+     * regex expression for name of top level parent znode for ledgers (in
+     * HierarchicalLedgerManager) or znode of a ledger (in FlatLedgerManager).
+     *
+     * @return
+     */
+    protected abstract String getLedgerParentNodeRegex();
+
+    /**
+     * whether the child of ledgersRootPath is a top level parent znode for
+     * ledgers (in HierarchicalLedgerManager) or znode of a ledger (in
+     * FlatLedgerManager).
+     *
+     * @param znode
+     *            Znode Name
+     * @return
+     */
+    public boolean isLedgerParentNode(String znode) {
+        return znode.matches(getLedgerParentNodeRegex());
     }
 
     /**

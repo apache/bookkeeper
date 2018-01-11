@@ -88,13 +88,14 @@ public class FlatLedgerManagerFactory extends LedgerManagerFactory {
     @Override
     public void format(AbstractConfiguration conf, LayoutManager layoutManager)
             throws InterruptedException, KeeperException, IOException {
-        String ledgersRootPath = conf.getZkLedgersRootPath();
-        List<String> children = zk.getChildren(ledgersRootPath, false);
-        for (String child : children) {
-            if (FlatLedgerManager.isSpecialZnode(child)) {
-                continue;
+        try (FlatLedgerManager ledgerManager = (FlatLedgerManager) newLedgerManager()) {
+            String ledgersRootPath = conf.getZkLedgersRootPath();
+            List<String> children = zk.getChildren(ledgersRootPath, false);
+            for (String child : children) {
+                if (!ledgerManager.isSpecialZnode(child) && ledgerManager.isLedgerParentNode(child)) {
+                    ZKUtil.deleteRecursive(zk, ledgersRootPath + "/" + child);
+                }
             }
-            ZKUtil.deleteRecursive(zk, ledgersRootPath + "/" + child);
         }
         // Delete and recreate the LAYOUT information.
         super.format(conf, layoutManager);

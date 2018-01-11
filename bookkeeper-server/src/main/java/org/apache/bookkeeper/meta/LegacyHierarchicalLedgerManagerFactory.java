@@ -79,7 +79,7 @@ public class LegacyHierarchicalLedgerManagerFactory extends LedgerManagerFactory
 
     @Override
     public LedgerManager newLedgerManager() {
-        return new HierarchicalLedgerManager(conf, zk);
+        return new LegacyHierarchicalLedgerManager(conf, zk);
     }
 
     @Override
@@ -91,13 +91,14 @@ public class LegacyHierarchicalLedgerManagerFactory extends LedgerManagerFactory
     @Override
     public void format(AbstractConfiguration conf, LayoutManager layoutManager)
             throws InterruptedException, KeeperException, IOException {
-        String ledgersRootPath = conf.getZkLedgersRootPath();
-        List<String> children = zk.getChildren(ledgersRootPath, false);
-        for (String child : children) {
-            if (HierarchicalLedgerManager.isSpecialZnode(child)) {
-                continue;
+        try (AbstractHierarchicalLedgerManager ledgerManager = (AbstractHierarchicalLedgerManager) newLedgerManager()) {
+            String ledgersRootPath = conf.getZkLedgersRootPath();
+            List<String> children = zk.getChildren(ledgersRootPath, false);
+            for (String child : children) {
+                if (!ledgerManager.isSpecialZnode(child) && ledgerManager.isLedgerParentNode(child)) {
+                    ZKUtil.deleteRecursive(zk, ledgersRootPath + "/" + child);
+                }
             }
-            ZKUtil.deleteRecursive(zk, ledgersRootPath + "/" + child);
         }
         // Delete and recreate the LAYOUT information.
         super.format(conf, layoutManager);
