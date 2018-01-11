@@ -26,7 +26,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.distributedlog.api.statestore.checkpoint.CheckpointManager;
+import org.apache.distributedlog.api.statestore.checkpoint.CheckpointStore;
 import org.apache.distributedlog.api.statestore.exceptions.StateStoreException;
 import org.apache.distributedlog.statestore.impl.rocksdb.RocksUtils;
 import org.apache.distributedlog.statestore.proto.CheckpointMetadata;
@@ -39,15 +39,15 @@ public class RocksdbRestoreTask {
 
     private final String dbName;
     private final File checkpointDir;
-    private final CheckpointManager checkpointManager;
+    private final CheckpointStore checkpointStore;
     private final String dbPrefix;
 
     public RocksdbRestoreTask(String dbName,
                               File checkpointDir,
-                              CheckpointManager checkpointManager) {
+                              CheckpointStore checkpointStore) {
         this.dbName = dbName;
         this.checkpointDir = checkpointDir;
-        this.checkpointManager = checkpointManager;
+        this.checkpointStore = checkpointStore;
         this.dbPrefix = String.format("%s", dbName);
     }
 
@@ -89,7 +89,7 @@ public class RocksdbRestoreTask {
                 srcFile = RocksUtils.getDestPath(dbPrefix, checkpointId, localFile);
             }
 
-            long srcFileLength = checkpointManager.getFileLength(srcFile);
+            long srcFileLength = checkpointStore.getFileLength(srcFile);
             long localFileLength = localFile.length();
             if (srcFileLength != localFileLength) {
                 filesToCopy.add(fileName);
@@ -119,7 +119,7 @@ public class RocksdbRestoreTask {
         }
 
         byte[] data = new byte[128 * 1024];
-        try (InputStream is = checkpointManager.openInputStream(remoteFilePath)) {
+        try (InputStream is = checkpointStore.openInputStream(remoteFilePath)) {
             Files.copy(
                 is,
                 Paths.get(localFile.getAbsolutePath()),

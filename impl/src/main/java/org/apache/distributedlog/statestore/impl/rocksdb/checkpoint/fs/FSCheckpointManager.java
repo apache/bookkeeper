@@ -28,12 +28,12 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
-import org.apache.distributedlog.api.statestore.checkpoint.CheckpointManager;
+import org.apache.distributedlog.api.statestore.checkpoint.CheckpointStore;
 
 /**
  * Filesystem based checkpoint factory.
  */
-public class FSCheckpointManager implements CheckpointManager {
+public class FSCheckpointManager implements CheckpointStore {
 
     @Override
     public List<String> listFiles(String filePath) throws IOException {

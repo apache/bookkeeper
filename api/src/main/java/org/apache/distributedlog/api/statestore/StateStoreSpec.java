@@ -26,7 +26,7 @@ import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Getter;
 import lombok.Singular;
-import org.apache.distributedlog.api.statestore.checkpoint.CheckpointManager;
+import org.apache.distributedlog.api.statestore.checkpoint.CheckpointStore;
 import org.apache.distributedlog.common.coder.Coder;
 
 /**
@@ -43,7 +43,7 @@ public class StateStoreSpec {
     private String stream;
     private ScheduledExecutorService writeIOScheduler;
     private ScheduledExecutorService readIOScheduler;
-    private CheckpointManager checkpointManager;
+    private CheckpointStore checkpointStore;
     @Default private Duration checkpointDuration = Duration.ofMinutes(1);
     @Singular private Map<String, Object> configs;
 

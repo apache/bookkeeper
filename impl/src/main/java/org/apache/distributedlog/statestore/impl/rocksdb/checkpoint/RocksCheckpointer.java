@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.distributedlog.api.statestore.checkpoint.CheckpointManager;
+import org.apache.distributedlog.api.statestore.checkpoint.CheckpointStore;
 import org.apache.distributedlog.api.statestore.exceptions.StateStoreException;
 import org.apache.distributedlog.statestore.impl.rocksdb.RocksUtils;
 import org.apache.distributedlog.statestore.proto.CheckpointMetadata;
@@ -41,13 +41,13 @@ public class RocksCheckpointer implements AutoCloseable {
 
     public static CheckpointMetadata restore(String dbName,
                                              File dbPath,
-                                             CheckpointManager checkpointManager)
+                                             CheckpointStore checkpointStore)
             throws StateStoreException {
         try {
             String dbPrefix = String.format("%s", dbName);
 
             Pair<String, CheckpointMetadata> latestCheckpoint = getLatestCheckpoint(
-                dbPrefix, checkpointManager);
+                dbPrefix, checkpointStore);
             File checkpointsDir = new File(dbPath, "checkpoints");
             String checkpointId = latestCheckpoint.getLeft();
             CheckpointMetadata checkpointMetadata = latestCheckpoint.getRight();
@@ -55,7 +55,7 @@ public class RocksCheckpointer implements AutoCloseable {
                 RocksdbRestoreTask task = new RocksdbRestoreTask(
                     dbName,
                     checkpointsDir,
-                    checkpointManager);
+                    checkpointStore);
                 task.restore(checkpointId, checkpointMetadata);
             } else {
                 // no checkpoints available, create an empty directory
@@ -77,8 +77,8 @@ public class RocksCheckpointer implements AutoCloseable {
     }
 
     private static Pair<String, CheckpointMetadata > getLatestCheckpoint(
-            String dbPrefix, CheckpointManager checkpointManager) throws IOException {
-        List<String> files = checkpointManager.listFiles(dbPrefix);
+            String dbPrefix, CheckpointStore checkpointStore) throws IOException {
+        List<String> files = checkpointStore.listFiles(dbPrefix);
         CheckpointMetadata latestCheckpoint = null;
         String latestCheckpointId = null;
 
@@ -91,7 +91,7 @@ public class RocksCheckpointer implements AutoCloseable {
                 dbPrefix,
                 checkpointId);
 
-            try (InputStream is = checkpointManager.openInputStream(metadataPath)) {
+            try (InputStream is = checkpointStore.openInputStream(metadataPath)) {
                 CheckpointMetadata ckpt = CheckpointMetadata.parseFrom(is);
                 if (null == latestCheckpoint) {
                     latestCheckpointId = checkpointId;
@@ -108,16 +108,16 @@ public class RocksCheckpointer implements AutoCloseable {
     private final String dbName;
     private final File dbPath;
     private final Checkpoint checkpoint;
-    private final CheckpointManager checkpointManager;
+    private final CheckpointStore checkpointStore;
 
     public RocksCheckpointer(String dbName,
                              File dbPath,
                              RocksDB rocksDB,
-                             CheckpointManager checkpointManager) {
+                             CheckpointStore checkpointStore) {
         this.dbName = dbName;
         this.dbPath = dbPath;
         this.checkpoint = Checkpoint.create(rocksDB);
-        this.checkpointManager = checkpointManager;
+        this.checkpointStore = checkpointStore;
     }
 
     void checkpointAtTxid(byte[] txid) throws StateStoreException {
@@ -126,7 +126,7 @@ public class RocksCheckpointer implements AutoCloseable {
             dbName,
             checkpoint,
             new File(dbPath, "checkpoints"),
-            checkpointManager);
+            checkpointStore);
         task.checkpoint(txid);
 
     }

@@ -29,7 +29,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.distributedlog.api.statestore.checkpoint.CheckpointManager;
+import org.apache.distributedlog.api.statestore.checkpoint.CheckpointStore;
 import org.apache.distributedlog.api.statestore.exceptions.StateStoreException;
 import org.apache.distributedlog.statestore.impl.rocksdb.RocksUtils;
 import org.apache.distributedlog.statestore.proto.CheckpointMetadata;
@@ -45,17 +45,17 @@ public class RocksdbCheckpointTask {
     private final String dbName;
     private final Checkpoint checkpoint;
     private final File checkpointDir;
-    private final CheckpointManager checkpointManager;
+    private final CheckpointStore checkpointStore;
     private final String dbPrefix;
 
     public RocksdbCheckpointTask(String dbName,
                                  Checkpoint checkpoint,
                                  File checkpointDir,
-                                 CheckpointManager checkpointManager) {
+                                 CheckpointStore checkpointStore) {
         this.dbName = dbName;
         this.checkpoint = checkpoint;
         this.checkpointDir = checkpointDir;
-        this.checkpointManager = checkpointManager;
+        this.checkpointStore = checkpointStore;
         this.dbPrefix = String.format("%s", dbName);
     }
 
@@ -110,7 +110,7 @@ public class RocksdbCheckpointTask {
                 // sst files
                 String destSstPath = RocksUtils.getDestSstPath(dbPrefix, file);
                 // TODO: do more validation on the file
-                if (!checkpointManager.fileExists(destSstPath)) {
+                if (!checkpointStore.fileExists(destSstPath)) {
                     fileToCopy.add(file);
                 }
             } else {
@@ -132,7 +132,7 @@ public class RocksdbCheckpointTask {
      */
     private void copyFileToDest(String checkpointId, File file) throws IOException {
         String destPath = RocksUtils.getDestPath(dbPrefix, checkpointId, file);
-        try (OutputStream os = checkpointManager.openOutputStream(destPath)) {
+        try (OutputStream os = checkpointStore.openOutputStream(destPath)) {
             Files.copy(file, os);
         }
     }
@@ -146,7 +146,7 @@ public class RocksdbCheckpointTask {
                 String destSstTempPath = RocksUtils.getDestTempSstPath(
                     dbPrefix, checkpointId, file);
                 String destSstPath = RocksUtils.getDestSstPath(dbPrefix, file);
-                checkpointManager.rename(destSstTempPath, destSstPath);
+                checkpointStore.rename(destSstTempPath, destSstPath);
             }
         }
     }
@@ -166,7 +166,7 @@ public class RocksdbCheckpointTask {
         metadataBuilder.setCreatedAt(System.currentTimeMillis());
 
         String destCheckpointPath = RocksUtils.getDestCheckpointMetadataPath(dbPrefix, checkpointId);
-        try (OutputStream os = checkpointManager.openOutputStream(destCheckpointPath)) {
+        try (OutputStream os = checkpointStore.openOutputStream(destCheckpointPath)) {
             os.write(metadataBuilder.build().toByteArray());
         }
     }

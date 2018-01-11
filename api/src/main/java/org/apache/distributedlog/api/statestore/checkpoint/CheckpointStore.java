@@ -25,7 +25,7 @@ import java.util.List;
 /**
  * A checkpoint factory that provides inputstream and outputstream for reading checkpoints.
  */
-public interface CheckpointManager {
+public interface CheckpointStore {
 
     List<String> listFiles(String filePath) throws IOException;
 
