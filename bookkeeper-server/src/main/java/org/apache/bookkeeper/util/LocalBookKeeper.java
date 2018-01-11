@@ -24,11 +24,14 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
+import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
@@ -61,12 +64,13 @@ public class LocalBookKeeper {
     }
 
     public LocalBookKeeper(int numberOfBookies) {
-        this(numberOfBookies, 5000);
+        this(numberOfBookies, 5000, defaultLocalBookiesConfigDir);
     }
 
-    public LocalBookKeeper(int numberOfBookies, int initialPort) {
+    public LocalBookKeeper(int numberOfBookies, int initialPort, String localBookiesConfigDirName) {
         this.numberOfBookies = numberOfBookies;
         this.initialPort = initialPort;
+        this.localBookiesConfigDir = new File(localBookiesConfigDirName);
         LOG.info("Running {} bookie(s) on zkServer {}.", this.numberOfBookies);
     }
 
@@ -74,6 +78,7 @@ public class LocalBookKeeper {
     private static int zooKeeperDefaultPort = 2181;
     private static int zkSessionTimeOut = 5000;
     private static Integer bookieDefaultInitialPort = 5000;
+    private static String defaultLocalBookiesConfigDir = "/tmp/localbookies-config";
 
     //BookKeeper variables
     File journalDirs[];
@@ -81,6 +86,7 @@ public class LocalBookKeeper {
     ServerConfiguration bsConfs[];
     Integer initialPort = 5000;
 
+    File localBookiesConfigDir;
     /**
      * @param maxCC
      *          Max Concurrency of Client
@@ -172,6 +178,15 @@ public class LocalBookKeeper {
         bs = new BookieServer[numberOfBookies];
         bsConfs = new ServerConfiguration[numberOfBookies];
 
+        if (localBookiesConfigDir.exists() && localBookiesConfigDir.isFile()) {
+            throw new IOException("Unable to create LocalBookiesConfigDir, since there is a file at "
+                    + localBookiesConfigDir.getAbsolutePath());
+        }
+        if (!localBookiesConfigDir.exists() && !localBookiesConfigDir.mkdirs()) {
+            throw new IOException(
+                    "Unable to create LocalBookiesConfigDir - " + localBookiesConfigDir.getAbsolutePath());
+        }
+
         for (int i = 0; i < numberOfBookies; i++) {
             if (null == baseConf.getJournalDirNameWithoutDefault()) {
                 journalDirs[i] = IOUtils.createTempDir("localbookkeeper" + Integer.toString(i), dirSuffix);
@@ -210,7 +225,7 @@ public class LocalBookKeeper {
                 }
             }
 
-            bsConfs[i] = new ServerConfiguration(baseConf);
+            bsConfs[i] = new ServerConfiguration((ServerConfiguration) baseConf.clone());
 
             // If the caller specified ephemeral ports then use ephemeral ports for all
             // the bookies else use numBookie ports starting at initialPort
@@ -225,13 +240,35 @@ public class LocalBookKeeper {
                                   + zooKeeperDefaultPort);
             }
 
-
             bsConfs[i].setJournalDirName(journalDirs[i].getPath());
             bsConfs[i].setLedgerDirNames(ledgerDirs);
+
+            // write config into file before start so we can know what's wrong if start failed
+            String fileName = Bookie.getBookieAddress(bsConfs[i]).toString() + ".conf";
+            serializeLocalBookieConfig(bsConfs[i], fileName);
 
             bs[i] = new BookieServer(bsConfs[i]);
             bs[i].start();
         }
+
+        /*
+         * baseconf.conf is needed because for executing any BookieShell command
+         * of Metadata/Zookeeper Operation nature we need a valid conf file
+         * having correct zk details and this could be used for running any such
+         * bookieshell commands if bookieid is not provided as parameter to
+         * bookkeeper shell operation. for eg:
+         * "./bookkeeper shell localbookie listbookies -rw". But for execution
+         * shell command of bookie Operation nature we need to provide bookieid,
+         * for eg "./bookkeeper shell -localbookie 10.3.27.190:5000 lastmark",
+         * so this shell command would use '10.3.27.190:5000.conf' file
+         */
+        ServerConfiguration baseConfWithCorrectZKServers = new ServerConfiguration(
+                (ServerConfiguration) baseConf.clone());
+        if (null == baseConf.getZkServers()) {
+            baseConfWithCorrectZKServers
+                    .setZkServers(InetAddress.getLocalHost().getHostAddress() + ":" + zooKeeperDefaultPort);
+        }
+        serializeLocalBookieConfig(baseConfWithCorrectZKServers, "baseconf.conf");
     }
 
     public static void startLocalBookies(String zkHost,
@@ -243,7 +280,7 @@ public class LocalBookKeeper {
         ServerConfiguration conf = new ServerConfiguration();
         startLocalBookiesInternal(
                 conf, zkHost, zkPort, numBookies, shouldStartZK,
-                initialBookiePort, true, "test", null);
+                initialBookiePort, true, "test", null, defaultLocalBookiesConfigDir);
     }
 
     public static void startLocalBookies(String zkHost,
@@ -255,7 +292,7 @@ public class LocalBookKeeper {
             throws Exception {
         startLocalBookiesInternal(
                 conf, zkHost, zkPort, numBookies, shouldStartZK,
-                initialBookiePort, true, "test", null);
+                initialBookiePort, true, "test", null, defaultLocalBookiesConfigDir);
     }
 
     public static void startLocalBookies(String zkHost,
@@ -268,7 +305,7 @@ public class LocalBookKeeper {
         ServerConfiguration conf = new ServerConfiguration();
         startLocalBookiesInternal(
                 conf, zkHost, zkPort, numBookies, shouldStartZK,
-                initialBookiePort, true, dirSuffix, null);
+                initialBookiePort, true, dirSuffix, null, defaultLocalBookiesConfigDir);
     }
 
     static void startLocalBookiesInternal(ServerConfiguration conf,
@@ -279,9 +316,10 @@ public class LocalBookKeeper {
                                           int initialBookiePort,
                                           boolean stopOnExit,
                                           String dirSuffix,
-                                          String zkDataDir)
+                                          String zkDataDir,
+                                          String localBookiesConfigDirName)
             throws Exception {
-        LocalBookKeeper lb = new LocalBookKeeper(numBookies, initialBookiePort);
+        LocalBookKeeper lb = new LocalBookKeeper(numBookies, initialBookiePort, localBookiesConfigDirName);
 
         ZooKeeperServerShim zks = null;
         File zkTmpDir = null;
@@ -291,6 +329,13 @@ public class LocalBookKeeper {
                 File zkDataDirFile = null;
                 if (zkDataDir != null) {
                     zkDataDirFile = new File(zkDataDir);
+                    if (zkDataDirFile.exists() && zkDataDirFile.isFile()) {
+                        throw new IOException("Unable to create zkDataDir, since there is a file at "
+                                + zkDataDirFile.getAbsolutePath());
+                    }
+                    if (!zkDataDirFile.exists() && !zkDataDirFile.mkdirs()) {
+                        throw new IOException("Unable to create zkDataDir - " + zkDataDirFile.getAbsolutePath());
+                    }
                 }
                 zkTmpDir = IOUtils.createTempDir("zookeeper", dirSuffix, zkDataDirFile);
                 zkTmpDir.deleteOnExit();
@@ -329,6 +374,38 @@ public class LocalBookKeeper {
         }
     }
 
+    /**
+     * Serializes the config object to the specified file in localBookiesConfigDir.
+     *
+     * @param localBookieConfig
+     *         config object which has to be serialized
+     * @param fileName
+     *         name of the file
+     * @throws IOException
+     */
+    private void serializeLocalBookieConfig(ServerConfiguration localBookieConfig, String fileName) throws IOException {
+        File localBookieConfFile = new File(localBookiesConfigDir, fileName);
+        if (localBookieConfFile.exists() && !localBookieConfFile.delete()) {
+            throw new IOException(
+                    "Unable to delete the existing LocalBookieConfigFile - " + localBookieConfFile.getAbsolutePath());
+        }
+        if (!localBookieConfFile.createNewFile()) {
+            throw new IOException("Unable to create new File - " + localBookieConfFile.getAbsolutePath());
+        }
+        Iterator<String> keys = localBookieConfig.getKeys();
+        try (PrintWriter writer = new PrintWriter(localBookieConfFile, "UTF-8")) {
+            while (keys.hasNext()) {
+                String key = keys.next().toString();
+                String[] values = localBookieConfig.getStringArray(key);
+                StringBuilder concatenatedValue = new StringBuilder(values[0]);
+                for (int i = 1; i < values.length; i++) {
+                    concatenatedValue.append("," + values[i]);
+                }
+                writer.println(key + "=" + concatenatedValue.toString());
+            }
+        }
+    }
+
     public static void main(String[] args) throws Exception, SecurityException {
         if (args.length < 1) {
             usage();
@@ -355,17 +432,22 @@ public class LocalBookKeeper {
             zkDataDir = args[2];
         }
 
+        String localBookiesConfigDirName = defaultLocalBookiesConfigDir;
+        if (args.length >= 4) {
+            localBookiesConfigDirName = args[3];
+        }
+
         startLocalBookiesInternal(
                 conf, zooKeeperDefaultHost, zooKeeperDefaultPort,
                 numBookies, true, bookieDefaultInitialPort,
                 false, "test",
-                zkDataDir);
+                zkDataDir, localBookiesConfigDirName);
     }
 
     private static void usage() {
         System.err.println(
                 "Usage: LocalBookKeeper number-of-bookies [path to bookie config] "
-                + "[path to create ZK data directory at]");
+                + "[path to create ZK data directory at] [path to LocalBookiesConfigDir]");
     }
 
     public static boolean waitForServerUp(String hp, long timeout) {
