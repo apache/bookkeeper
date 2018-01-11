@@ -79,6 +79,27 @@ final class MVCCRecordCoder implements Coder<MVCCRecord> {
     }
 
     @Override
+    public void encode(MVCCRecord value, ByteBuf destBuf) {
+        destBuf.writeBytes(encode(value));
+    }
+
+    @Override
+    public int getSerializedSize(MVCCRecord record) {
+        KeyMeta meta = KeyMeta.newBuilder()
+            .setCreateRevision(record.getCreateRev())
+            .setModRevision(record.getModRev())
+            .setVersion(record.getVersion())
+            .build();
+        int metaLen = meta.getSerializedSize();
+        int valLen = record.getValue().readableBytes();
+
+        return Integer.BYTES    // meta len
+            + metaLen           // meta bytes
+            + Integer.BYTES     // val len
+            + valLen;           // val bytes
+    }
+
+    @Override
     public MVCCRecord decode(ByteBuf data) {
         ByteBuf copy = data.slice();
 
@@ -101,4 +122,6 @@ final class MVCCRecordCoder implements Coder<MVCCRecord> {
         record.setVersion(meta.getVersion());
         return record;
     }
+
+
 }

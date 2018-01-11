@@ -41,6 +41,16 @@ public class ByteArrayCoder implements Coder<byte[]> {
     }
 
     @Override
+    public void encode(byte[] value, ByteBuf destBuf) {
+        destBuf.writeBytes(value);
+    }
+
+    @Override
+    public int getSerializedSize(byte[] value) {
+        return value.length;
+    }
+
+    @Override
     public byte[] decode(ByteBuf data) {
         return ByteBufUtil.getBytes(data);
     }

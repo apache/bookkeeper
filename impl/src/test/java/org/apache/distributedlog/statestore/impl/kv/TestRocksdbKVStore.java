@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.statestore.impl.rocksdb;
+package org.apache.distributedlog.statestore.impl.kv;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -32,7 +32,6 @@ import org.apache.distributedlog.api.statestore.kv.KV;
 import org.apache.distributedlog.api.statestore.kv.KVIterator;
 import org.apache.distributedlog.api.statestore.kv.KVMulti;
 import org.apache.distributedlog.common.coder.StringUtf8Coder;
-import org.apache.distributedlog.statestore.impl.kv.RocksdbKVStore;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;

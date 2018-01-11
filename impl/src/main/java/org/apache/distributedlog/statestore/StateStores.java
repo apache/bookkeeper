@@ -28,7 +28,7 @@ import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.api.statestore.kv.KVAsyncStore;
 import org.apache.distributedlog.api.statestore.kv.KVStore;
 import org.apache.distributedlog.api.statestore.mvcc.MVCCAsyncStore;
-import org.apache.distributedlog.statestore.impl.kv.RocksdbKVAsyncStoreImpl;
+import org.apache.distributedlog.statestore.impl.kv.RocksdbKVAsyncStore;
 import org.apache.distributedlog.statestore.impl.kv.RocksdbKVStore;
 import org.apache.distributedlog.statestore.impl.mvcc.MVCCStores;
 
@@ -59,7 +59,7 @@ public final class StateStores {
      */
     public static <K, V> Supplier<KVAsyncStore<K, V>> kvAsyncStoreSupplier(Supplier<Namespace> logNamespaceSupplier) {
         return () ->
-            new RocksdbKVAsyncStoreImpl<>(kvStoreSupplier(), logNamespaceSupplier);
+            new RocksdbKVAsyncStore<>(kvStoreSupplier(), logNamespaceSupplier);
     }
 
     /**

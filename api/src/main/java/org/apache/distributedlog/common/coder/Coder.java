@@ -44,9 +44,25 @@ public interface Coder<T> extends Serializable {
      * Encodes the given value of type {@code T} onto a bytes array.
      *
      * @param value value to encode
-     * @return the serialized bytes arrya.
+     * @return the serialized bytes bytes.
      */
     byte[] encode(T value);
+
+    /**
+     * Encodes the given value of type {@code T} into the <tt>destBuf</tt>.
+     *
+     * @param value value to encode
+     * @param destBuf the dest buffer to keep the serialized bytes.
+     */
+    void encode(T value, ByteBuf destBuf);
+
+    /**
+     * Returns the serialized size of type {@code T}.
+     *
+     * @param value value to serialize
+     * @return the serialized size of <tt>value</tt>.
+     */
+    int getSerializedSize(T value);
 
     /**
      * Decode a value of type {@code T} from the given input buffer.

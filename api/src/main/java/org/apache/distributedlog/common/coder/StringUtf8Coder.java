@@ -47,6 +47,16 @@ public final class StringUtf8Coder implements Coder<String> {
     }
 
     @Override
+    public void encode(String value, ByteBuf destBuf) {
+        destBuf.writeCharSequence(value, Charsets.UTF_8);
+    }
+
+    @Override
+    public int getSerializedSize(String value) {
+        return value.length();
+    }
+
+    @Override
     public String decode(byte[] data) {
         return new String(data, Charsets.UTF_8);
     }
