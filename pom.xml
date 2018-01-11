@@ -43,6 +43,7 @@
     <findbugs-maven-plugin.version>3.0.3</findbugs-maven-plugin.version>
     <maven-checkstyle-plugin.version>2.17</maven-checkstyle-plugin.version>
     <maven-compiler-plugin.version>3.1</maven-compiler-plugin.version>
+    <maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
     <puppycrawl.checkstyle.version>6.19</puppycrawl.checkstyle.version>
   </properties>
 
@@ -149,7 +150,6 @@
       <artifactId>slf4j-log4j12</artifactId>
       <scope>test</scope>
     </dependency>
-    
   </dependencies>
   <build>
     <plugins>
@@ -209,6 +209,17 @@
         <configuration>
           <source>1.8</source>
           <target>1.8</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${maven-surefire-plugin.version}</version>
+        <configuration>
+          <argLine>-Xmx2G -Djava.net.preferIPv4Stack=true</argLine>
+          <redirectTestOutputToFile>true</redirectTestOutputToFile>
+          <reuseForks>false</reuseForks>
+          <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
         </configuration>
       </plugin>
     </plugins>
