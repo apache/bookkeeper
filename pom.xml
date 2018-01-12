@@ -30,6 +30,7 @@
     <!-- dependencies -->
     <bookkeeper.version>4.6.0</bookkeeper.version>
     <distributedlog.version>0.5.0</distributedlog.version>
+    <grpc.version>1.5.0</grpc.version>
     <guava.version>21.0</guava.version>
     <lombok.version>1.16.18</lombok.version>
     <netty.version>4.1.12.Final</netty.version>
@@ -51,6 +52,7 @@
 
   <modules>
     <module>api</module>
+    <module>common</module>
     <module>impl</module>
   </modules>
 
@@ -113,7 +115,11 @@
         <artifactId>protobuf-java</artifactId>
         <version>${protobuf.version}</version>
       </dependency>
-      
+      <dependency>
+        <groupId>io.grpc</groupId>
+        <artifactId>grpc-all</artifactId>
+        <version>${grpc.version}</version>
+      </dependency>
 
       <!-- test depenencies -->
       <dependency>

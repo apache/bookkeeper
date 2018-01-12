@@ -70,16 +70,6 @@
       <version>${distributedlog.version}</version>
       <classifier>tests</classifier>
     </dependency>
-    <dependency>
-      <groupId>io.netty</groupId>
-      <artifactId>netty-buffer</artifactId>
-      <version>${netty-buffer.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.grpc</groupId>
-      <artifactId>grpc-all</artifactId>
-      <version>${grpc-all.version}</version>
-    </dependency>
   </dependencies>
   <build>
     <extensions>
