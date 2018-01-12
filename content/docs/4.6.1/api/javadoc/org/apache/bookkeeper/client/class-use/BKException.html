@@ -688,25 +688,36 @@
 </td>
 </tr>
 <tr class="rowColor">
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeper.html#BookKeeper-org.apache.bookkeeper.conf.ClientConfiguration-org.apache.zookeeper.ZooKeeper-io.netty.channel.EventLoopGroup-org.apache.bookkeeper.stats.StatsLogger-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-org.apache.bookkeeper.feature.FeatureProvider-">BookKeeper</a></span>(<a href="../../../../../org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
+          org.apache.zookeeper.ZooKeeper&nbsp;zkc,
+          io.netty.channel.EventLoopGroup&nbsp;eventLoopGroup,
+          <a href="../../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+          org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver,
+          io.netty.util.HashedWheelTimer&nbsp;requestTimer,
+          <a href="../../../../../org/apache/bookkeeper/feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider)</code>
+<div class="block">Constructor for use with the builder.</div>
+</td>
+</tr>
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeper.html#BookKeeper-java.lang.String-">BookKeeper</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;servers)</code>
 <div class="block">Create a bookkeeper client.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#BookKeeperAdmin-org.apache.bookkeeper.conf.ClientConfiguration-">BookKeeperAdmin</a></span>(<a href="../../../../../org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf)</code>
 <div class="block">Constructor that takes in a configuration object so we know
  how to connect to ZooKeeper to retrieve information about the BookKeeper
  cluster.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeperAdmin.html#BookKeeperAdmin-java.lang.String-">BookKeeperAdmin</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;zkServers)</code>
 <div class="block">Constructor that takes in a ZooKeeper servers connect string so we know
  how to connect to ZooKeeper to retrieve information about the BookKeeper
  cluster.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeperAdmin.LedgerEntriesIterator.html#LedgerEntriesIterator-long-long-long-">LedgerEntriesIterator</a></span>(long&nbsp;ledgerId,
                      long&nbsp;firstEntry,
                      long&nbsp;lastEntry)</code>&nbsp;</td>

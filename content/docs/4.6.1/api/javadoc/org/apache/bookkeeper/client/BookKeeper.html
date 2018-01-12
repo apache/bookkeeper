@@ -313,6 +313,17 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
 </td>
 </tr>
 <tr class="rowColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#BookKeeper-org.apache.bookkeeper.conf.ClientConfiguration-org.apache.zookeeper.ZooKeeper-io.netty.channel.EventLoopGroup-org.apache.bookkeeper.stats.StatsLogger-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-org.apache.bookkeeper.feature.FeatureProvider-">BookKeeper</a></span>(<a href="../../../../org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
+          org.apache.zookeeper.ZooKeeper&nbsp;zkc,
+          io.netty.channel.EventLoopGroup&nbsp;eventLoopGroup,
+          <a href="../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+          org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver,
+          io.netty.util.HashedWheelTimer&nbsp;requestTimer,
+          <a href="../../../../org/apache/bookkeeper/feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider)</code>
+<div class="block">Constructor for use with the builder.</div>
+</td>
+</tr>
+<tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.html#BookKeeper-java.lang.String-">BookKeeper</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;servers)</code>
 <div class="block">Create a bookkeeper client.</div>
 </td>
@@ -1053,7 +1064,7 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
 <a name="BookKeeper-org.apache.bookkeeper.conf.ClientConfiguration-org.apache.zookeeper.ZooKeeper-io.netty.channel.EventLoopGroup-">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>BookKeeper</h4>
 <pre>public&nbsp;BookKeeper(<a href="../../../../org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
@@ -1076,6 +1087,31 @@ implements <a href="../../../../org/apache/bookkeeper/client/api/BookKeeper.html
 <dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code></dd>
 <dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
 <dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code> - in the event of a bookkeeper connection error</dd>
+</dl>
+</li>
+</ul>
+<a name="BookKeeper-org.apache.bookkeeper.conf.ClientConfiguration-org.apache.zookeeper.ZooKeeper-io.netty.channel.EventLoopGroup-org.apache.bookkeeper.stats.StatsLogger-org.apache.bookkeeper.net.DNSToSwitchMapping-io.netty.util.HashedWheelTimer-org.apache.bookkeeper.feature.FeatureProvider-">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>BookKeeper</h4>
+<pre>BookKeeper(<a href="../../../../org/apache/bookkeeper/conf/ClientConfiguration.html" title="class in org.apache.bookkeeper.conf">ClientConfiguration</a>&nbsp;conf,
+           org.apache.zookeeper.ZooKeeper&nbsp;zkc,
+           io.netty.channel.EventLoopGroup&nbsp;eventLoopGroup,
+           <a href="../../../../org/apache/bookkeeper/stats/StatsLogger.html" title="interface in org.apache.bookkeeper.stats">StatsLogger</a>&nbsp;statsLogger,
+           org.apache.bookkeeper.net.DNSToSwitchMapping&nbsp;dnsResolver,
+           io.netty.util.HashedWheelTimer&nbsp;requestTimer,
+           <a href="../../../../org/apache/bookkeeper/feature/FeatureProvider.html" title="interface in org.apache.bookkeeper.feature">FeatureProvider</a>&nbsp;featureProvider)
+    throws <a href="http://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a>,
+           <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a>,
+           <a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></pre>
+<div class="block">Constructor for use with the builder. Other constructors also use it.</div>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code></dd>
+<dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/InterruptedException.html?is-external=true" title="class or interface in java.lang">InterruptedException</a></code></dd>
+<dd><code><a href="../../../../org/apache/bookkeeper/client/BKException.html" title="class in org.apache.bookkeeper.client">BKException</a></code></dd>
 </dl>
 </li>
 </ul>
