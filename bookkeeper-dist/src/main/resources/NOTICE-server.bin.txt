@@ -5,11 +5,6 @@ This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).
 
 ------------------------------------------------------------------------------------
-- lib/commons-lang-commons-lang-2.6.jar
-- lib/org.apache.commons-commons-lang3-3.3.2.jar
-include software from the Spring Framework, under the Apache License 2.0
-(see: StringUtils.containsWhitespace())
-------------------------------------------------------------------------------------
 - lib/io.netty-netty-all-4.1.12.Final.jar
 
                             The Netty Project
@@ -44,22 +39,6 @@ apply
   (C) Copyright 2005 Intel Corporation
   (C) Copyright 2005-2006 Intel Corporation
   (C) Copyright 2006 Intel Corporation
-                           
-lib/io.netty-netty-all-4.1.12.Final.jar contains a modified portion of Nitsan Wakart's 'JCTools',
-Java Concurrency Tools for the JVM, which can be obtained at:
-
-  * LICENSE: Apache Software License, Version 2
-  * HOMEPAGE: https://github.com/JCTools/JCTools
-
-lib/io.netty-netty-all-4.1.12.Final.jar contains a modified version of 'HPACK', a Java implementation of
-the HTTP/2 HPACK algorithm written by Twitter. It can be obtained at:
-
-  * LICENSE: Apache Software License, Version 2
-  * HOMEPAGE: https://github.com/twitter/hpack
-
-lib/io.netty-netty-all-4.1.12.Final.jar contains a modified portion of 'Apache Commons Lang',
-a Java library provides utilities for the java.lang API. See elsewhere in this NOTICE for the
-notices for commons-lang.
 ------------------------------------------------------------------------------------
 - lib/io.prometheus-simpleclient-0.0.21.jar
 - lib/io.prometheus-simpleclient_common-0.0.21.jar
