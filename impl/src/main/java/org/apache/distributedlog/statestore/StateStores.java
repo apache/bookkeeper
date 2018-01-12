@@ -59,7 +59,7 @@ public final class StateStores {
      */
     public static <K, V> Supplier<KVAsyncStore<K, V>> kvAsyncStoreSupplier(Supplier<Namespace> logNamespaceSupplier) {
         return () ->
-            new RocksdbKVAsyncStore<>(kvStoreSupplier(), logNamespaceSupplier);
+            new RocksdbKVAsyncStore<>(() -> new RocksdbKVStore<>(), logNamespaceSupplier);
     }
 
     /**

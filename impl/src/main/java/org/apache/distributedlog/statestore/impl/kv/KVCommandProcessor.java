@@ -27,7 +27,6 @@ import lombok.AccessLevel;
 import lombok.Cleanup;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.distributedlog.api.statestore.kv.KVStore;
 import org.apache.distributedlog.proto.statestore.kv.Command;
 import org.apache.distributedlog.proto.statestore.kv.DeleteRequest;
 import org.apache.distributedlog.proto.statestore.kv.PutRequest;
@@ -38,14 +37,14 @@ import org.apache.distributedlog.statestore.impl.journal.CommandProcessor;
  */
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-class KVCommandProcessor implements CommandProcessor<KVStore<byte[], byte[]>> {
+class KVCommandProcessor implements CommandProcessor<RocksdbKVStore<byte[], byte[]>> {
 
     public static KVCommandProcessor of() {
         return new KVCommandProcessor();
     }
 
     @Override
-    public void applyCommand(long revision, ByteBuf cmdBuf, KVStore<byte[], byte[]> store) {
+    public void applyCommand(long revision, ByteBuf cmdBuf, RocksdbKVStore<byte[], byte[]> store) {
         Command command;
         try {
             command = newCommand(cmdBuf);
@@ -58,6 +57,9 @@ class KVCommandProcessor implements CommandProcessor<KVStore<byte[], byte[]>> {
         switch (command.getReqCase()) {
             case NOP_REQ:
                 break;
+            case PUT_IF_ABSENT_REQ:
+                applyPutIfAbsentCommand(revision, command, store);
+                return;
             case PUT_REQ:
                 applyPutCommand(revision, command, store);
                 return;
@@ -69,18 +71,27 @@ class KVCommandProcessor implements CommandProcessor<KVStore<byte[], byte[]>> {
         }
     }
 
-    private void applyPutCommand(long revision, Command command, KVStore<byte[], byte[]> store) {
+    private void applyPutCommand(long revision, Command command, RocksdbKVStore<byte[], byte[]> store) {
         PutRequest putReq = command.getPutReq();
         byte[] keyBytes = putReq.getKey().toByteArray();
         byte[] valBytes = putReq.getValue().toByteArray();
         @Cleanup("release") ByteBuf serializedValBuf = KVUtils.serialize(valBytes, revision);
         byte[] serializedValBytes = ByteBufUtil.getBytes(serializedValBuf);
-        store.put(keyBytes, serializedValBytes);
+        store.put(keyBytes, serializedValBytes, revision);
     }
 
-    private void applyDeleteCommand(long revision, Command command, KVStore<byte[], byte[]> store) {
+    private void applyPutIfAbsentCommand(long revision, Command command, RocksdbKVStore<byte[], byte[]> store) {
+        PutRequest putReq = command.getPutReq();
+        byte[] keyBytes = putReq.getKey().toByteArray();
+        byte[] valBytes = putReq.getValue().toByteArray();
+        @Cleanup("release") ByteBuf serializedValBuf = KVUtils.serialize(valBytes, revision);
+        byte[] serializedValBytes = ByteBufUtil.getBytes(serializedValBuf);
+        store.putIfAbsent(keyBytes, serializedValBytes, revision);
+    }
+
+    private void applyDeleteCommand(long revision, Command command, RocksdbKVStore<byte[], byte[]> store) {
         DeleteRequest delReq = command.getDelReq();
         byte[] keyBytes = delReq.getKey().toByteArray();
-        store.delete(keyBytes);
+        store.delete(keyBytes, revision);
     }
 }

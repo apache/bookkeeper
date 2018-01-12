@@ -211,7 +211,8 @@ public class RocksdbCheckpointTask {
                 continue;
             }
             String remoteCheckpointPath = RocksUtils.getDestCheckpointPath(dbPrefix, checkpoint);
-            checkpointStore.deleteRecursively(remoteCheckpointPath);
+            checkpointStore.deleteRecursively(
+                remoteCheckpointPath);
             log.info("Delete remote checkpoint {} from checkpoint store at {}",
                 checkpoint, remoteCheckpointPath);
         }

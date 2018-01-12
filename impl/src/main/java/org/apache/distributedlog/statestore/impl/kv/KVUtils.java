@@ -31,6 +31,7 @@ import org.apache.distributedlog.common.coder.Coder;
 import org.apache.distributedlog.proto.statestore.kv.Command;
 import org.apache.distributedlog.proto.statestore.kv.DeleteRequest;
 import org.apache.distributedlog.proto.statestore.kv.NopRequest;
+import org.apache.distributedlog.proto.statestore.kv.PutIfAbsentRequest;
 import org.apache.distributedlog.proto.statestore.kv.PutRequest;
 
 /**
@@ -84,6 +85,14 @@ final class KVUtils {
     static PutRequest newPutRequest(byte[] keyBytes,
                                     byte[] valBytes) {
         return PutRequest.newBuilder()
+            .setKey(UnsafeByteOperations.unsafeWrap(keyBytes))
+            .setValue(UnsafeByteOperations.unsafeWrap(valBytes))
+            .build();
+    }
+
+    static PutIfAbsentRequest newPutIfAbsentRequest(byte[] keyBytes,
+                                                    byte[] valBytes) {
+        return PutIfAbsentRequest.newBuilder()
             .setKey(UnsafeByteOperations.unsafeWrap(keyBytes))
             .setValue(UnsafeByteOperations.unsafeWrap(valBytes))
             .build();

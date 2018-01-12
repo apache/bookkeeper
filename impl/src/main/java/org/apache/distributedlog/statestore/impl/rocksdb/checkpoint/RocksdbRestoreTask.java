@@ -71,7 +71,8 @@ public class RocksdbRestoreTask {
                                         File checkpointedDir,
                                         CheckpointMetadata metadata) throws IOException {
         if (!checkpointedDir.exists()) {
-            checkpointedDir.mkdir();
+            Files.createDirectories(
+                Paths.get(checkpointedDir.getAbsolutePath()));
         }
 
         List<String> filesToCopy = Lists.newArrayListWithExpectedSize(metadata.getFilesCount());

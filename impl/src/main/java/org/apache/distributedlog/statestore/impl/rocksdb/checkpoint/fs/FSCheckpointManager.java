@@ -19,6 +19,7 @@ package org.apache.distributedlog.statestore.impl.rocksdb.checkpoint.fs;
 
 import com.google.common.collect.Lists;
 import com.google.common.io.MoreFiles;
+import com.google.common.io.RecursiveDeleteOption;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -87,7 +88,8 @@ public class FSCheckpointManager implements CheckpointStore {
     @Override
     public void deleteRecursively(String srcPath) throws IOException {
         MoreFiles.deleteRecursively(
-            Paths.get(getFullyQualifiedPath(srcPath).getAbsolutePath()));
+            Paths.get(getFullyQualifiedPath(srcPath).getAbsolutePath()),
+            RecursiveDeleteOption.ALLOW_INSECURE);
     }
 
     @Override

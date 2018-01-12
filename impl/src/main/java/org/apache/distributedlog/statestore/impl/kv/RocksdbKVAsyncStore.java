@@ -29,7 +29,6 @@ import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.api.statestore.StateStoreSpec;
 import org.apache.distributedlog.api.statestore.exceptions.InvalidStateStoreException;
 import org.apache.distributedlog.api.statestore.kv.KVAsyncStore;
-import org.apache.distributedlog.api.statestore.kv.KVStore;
 import org.apache.distributedlog.common.coder.Coder;
 import org.apache.distributedlog.proto.statestore.kv.Command;
 import org.apache.distributedlog.statestore.impl.journal.AbstractStateStoreWithJournal;
@@ -39,7 +38,7 @@ import org.apache.distributedlog.statestore.impl.journal.CommandProcessor;
  * A async kv store implementation.
  */
 public class RocksdbKVAsyncStore<K, V>
-        extends AbstractStateStoreWithJournal<KVStore<byte[], byte[]>>
+        extends AbstractStateStoreWithJournal<RocksdbKVStore<byte[], byte[]>>
         implements KVAsyncStore<K, V> {
 
     private static final byte[] CATCHUP_MARKER = new byte[0];
@@ -47,7 +46,7 @@ public class RocksdbKVAsyncStore<K, V>
     private Coder<K> keyCoder;
     private Coder<V> valCoder;
 
-    public RocksdbKVAsyncStore(Supplier<KVStore<byte[], byte[]>> localStateStoreSupplier,
+    public RocksdbKVAsyncStore(Supplier<RocksdbKVStore<byte[], byte[]>> localStateStoreSupplier,
                                Supplier<Namespace> namespaceSupplier) {
         super(localStateStoreSupplier, namespaceSupplier);
     }
@@ -97,7 +96,7 @@ public class RocksdbKVAsyncStore<K, V>
             ByteBuf serializedBuf = KVUtils.serialize(valBytes, revision);
             try {
                 byte[] serializedBytes = ByteBufUtil.getBytes(serializedBuf);
-                localStore.put(keyBytes, serializedBytes);
+                localStore.put(keyBytes, serializedBytes, revision);
             } finally {
                 serializedBuf.release();
             }
@@ -112,13 +111,13 @@ public class RocksdbKVAsyncStore<K, V>
         byte[] valBytes = valCoder.encode(value);
 
         Command command = Command.newBuilder()
-            .setPutReq(KVUtils.newPutRequest(keyBytes, valBytes))
+            .setPutIfAbsentReq(KVUtils.newPutIfAbsentRequest(keyBytes, valBytes))
             .build();
         return writeCommandReturnTxId(command).thenApplyAsync((revision) -> {
             ByteBuf serializedBuf = KVUtils.serialize(valBytes, revision);
             try {
                 byte[] serializedBytes = ByteBufUtil.getBytes(serializedBuf);
-                byte[] prevValue = localStore.putIfAbsent(keyBytes, serializedBytes);
+                byte[] prevValue = localStore.putIfAbsent(keyBytes, serializedBytes, revision);
                 if (null == prevValue) {
                     return null;
                 } else {
@@ -138,7 +137,7 @@ public class RocksdbKVAsyncStore<K, V>
             .setDelReq(KVUtils.newDeleteRequest(keyBytes))
             .build();
         return writeCommandReturnTxId(command).thenApplyAsync((revision) -> {
-            byte[] prevValue = localStore.delete(keyBytes);
+            byte[] prevValue = localStore.delete(keyBytes, revision);
             if (null == prevValue) {
                 return null;
             } else {
@@ -162,7 +161,7 @@ public class RocksdbKVAsyncStore<K, V>
     }
 
     @Override
-    protected CommandProcessor<KVStore<byte[], byte[]>> newCommandProcessor(KVStore<byte[], byte[]> localStore) {
+    protected CommandProcessor<RocksdbKVStore<byte[], byte[]>> newCommandProcessor() {
         return KVCommandProcessor.of();
     }
 

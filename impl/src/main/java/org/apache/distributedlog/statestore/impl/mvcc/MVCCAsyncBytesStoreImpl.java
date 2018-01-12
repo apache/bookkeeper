@@ -61,8 +61,7 @@ class MVCCAsyncBytesStoreImpl
     }
 
     @Override
-    protected CommandProcessor<MVCCStoreImpl<byte[], byte[]>>
-            newCommandProcessor(MVCCStoreImpl<byte[], byte[]> localStore) {
+    protected CommandProcessor<MVCCStoreImpl<byte[], byte[]>> newCommandProcessor() {
         return MVCCCommandProcessor.of();
     }
 

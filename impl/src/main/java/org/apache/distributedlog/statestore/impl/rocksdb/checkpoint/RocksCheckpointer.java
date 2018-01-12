@@ -63,9 +63,10 @@ public class RocksCheckpointer implements AutoCloseable {
             } else {
                 // no checkpoints available, create an empty directory
                 checkpointId = UUID.randomUUID().toString();
-                new File(checkpointsDir, checkpointId).mkdir();
+                Files.createDirectories(
+                    Paths.get(checkpointsDir.getAbsolutePath(), checkpointId));
             }
-            Path restoredCheckpointPath = Paths.get(dbPath.getAbsolutePath(), "checkpoints", checkpointId);
+            Path restoredCheckpointPath = Paths.get(checkpointsDir.getAbsolutePath(), checkpointId);
             log.info("Successfully restore checkpoint {} to {}", checkpointId, restoredCheckpointPath);
 
             File currentDir = new File(dbPath, "current");
@@ -75,7 +76,7 @@ public class RocksCheckpointer implements AutoCloseable {
                 restoredCheckpointPath);
 
             // after successfully restore from remote checkpoints, cleanup other unused checkpoints
-            cleanupLocalCheckpoints(dbPath, checkpointId);
+            cleanupLocalCheckpoints(checkpointsDir, checkpointId);
 
             return checkpointMetadata;
         } catch (IOException ioe) {
@@ -84,19 +85,19 @@ public class RocksCheckpointer implements AutoCloseable {
         }
     }
 
-    private static void cleanupLocalCheckpoints(File dbPath, String checkpointToExclude) {
-        String[] checkpoints = new File(dbPath, "checkpoints").list();
+    private static void cleanupLocalCheckpoints(File checkpointsDir, String checkpointToExclude) {
+        String[] checkpoints = checkpointsDir.list();
         for (String checkpoint : checkpoints) {
             if (checkpoint.equals(checkpointToExclude)) {
                 continue;
             }
             try {
                 MoreFiles.deleteRecursively(
-                    Paths.get(dbPath.getAbsolutePath(), "checkpoints", checkpoint),
+                    Paths.get(checkpointsDir.getAbsolutePath(), checkpoint),
                     RecursiveDeleteOption.ALLOW_INSECURE);
             } catch (IOException ioe) {
                 log.warn("Failed to remove unused checkpoint {} from {}",
-                    checkpoint, dbPath, ioe);
+                    checkpoint, checkpointsDir, ioe);
             }
         }
     }

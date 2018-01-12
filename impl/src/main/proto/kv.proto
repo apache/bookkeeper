@@ -35,6 +35,11 @@ message PutRequest {
     bytes value     = 2;
 }
 
+message PutIfAbsentRequest {
+    bytes key       = 1;
+    bytes value     = 2;
+}
+
 message DeleteRequest {
     bytes key   = 1;
 }
@@ -43,6 +48,7 @@ message Command {
     oneof req {
         NopRequest nop_req = 11;
         PutRequest put_req = 12;
-        DeleteRequest del_req = 13;
+        PutIfAbsentRequest put_if_absent_req = 13;
+        DeleteRequest del_req = 14;
     }
 }

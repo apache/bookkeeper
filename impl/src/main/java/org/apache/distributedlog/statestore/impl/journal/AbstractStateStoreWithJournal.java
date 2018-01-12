@@ -23,12 +23,16 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -54,6 +58,7 @@ import org.apache.distributedlog.util.Utils;
 public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends StateStore> implements AsyncStateStore {
 
     // local state store instance
+    @Getter
     protected final LocalStateStoreT localStore;
 
     // parameters
@@ -70,6 +75,10 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
     private AsyncLogWriter writer;
     private long nextRevision;
     private CommandProcessor<LocalStateStoreT> commandProcessor;
+
+    // checkpoint
+    private ScheduledFuture<?> checkpointTask;
+    private Duration checkpointInterval;
 
     // close state
     protected boolean isInitialized = false;
@@ -101,6 +110,17 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
 
     private synchronized void markInitialized() {
         isInitialized = true;
+        // schedule periodical checkpoint
+        if (null != checkpointInterval) {
+            long checkpointIntervalMs = checkpointInterval.toMillis();
+            log.info("Schedule checkpoint task for state store {} every {} ms",
+                name, checkpointIntervalMs);
+            checkpointTask =  writeIOScheduler.scheduleAtFixedRate(
+                () -> localStore.checkpoint(),
+                checkpointIntervalMs,
+                checkpointIntervalMs,
+                TimeUnit.MILLISECONDS);
+        }
     }
 
     @Override
@@ -142,6 +162,12 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
             ownReadScheduler = true;
         }
 
+        if (null != spec.getCheckpointStore()) {
+            this.checkpointInterval = spec.getCheckpointDuration();
+        } else {
+            this.checkpointInterval = null;
+        }
+
         return initializeLocalStore(spec)
             .thenComposeAsync(ignored -> initializeJournalWriter(spec), writeIOScheduler)
             .thenComposeAsync(endDLSN -> {
@@ -155,7 +181,7 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
             log.info("Initializing the local state for mvcc store {}", name());
             localStore.init(spec);
             log.info("Initialized the local state for mvcc store {}", name());
-            commandProcessor = newCommandProcessor(localStore);
+            commandProcessor = newCommandProcessor();
             return null;
         });
     }
@@ -187,7 +213,8 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
     }
 
     private CompletableFuture<Void> replayJournal(DLSN endDLSN) {
-        return logManager.openAsyncLogReader(DLSN.InitialDLSN)
+        long lastRevision = localStore.getLastRevision();
+        return logManager.openAsyncLogReader(lastRevision)
             .thenComposeAsync(r -> {
                 CompletableFuture<Void> replayFuture = FutureUtils.createFuture();
                 FutureUtils.ensure(replayFuture, () -> r.asyncClose());
@@ -248,34 +275,47 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
             closeFuture = future = FutureUtils.createFuture();
         }
 
-        FutureUtils.ensure(
-            // close the log streams
-            Utils.closeSequence(
-                writeIOScheduler,
-                true,
-                getWriter(),
-                logManager
-            ),
-            // close the local state store
-            () -> {
-                if (null == writeIOScheduler) {
-                    closeLocalStore();
-                    FutureUtils.complete(future, null);
-                    return;
-                }
-                writeIOScheduler.submit(() -> {
-                    closeLocalStore();
-
-                    if (ownReadScheduler) {
-                        readIOScheduler.shutdown();
-                    }
-                    if (ownWriteScheduler) {
-                        writeIOScheduler.shutdown();
-                    }
-                    FutureUtils.complete(future, null);
-                });
+        // cancel checkpoint task
+        if (null != checkpointTask) {
+            if (!checkpointTask.cancel(true)) {
+                log.warn("Fail to cancel checkpoint task of state store {}", name());
             }
-        );
+        }
+        // wait until last checkpoint task completed
+        writeIOScheduler.submit(() -> {
+            log.info("closing async state store {}", name);
+            FutureUtils.ensure(
+                // close the log streams
+                Utils.closeSequence(
+                    readIOScheduler,
+                    true,
+                    getWriter(),
+                    logManager
+                ).thenRun(() -> {
+                    log.info("Successfully close the log stream of state store {}", name);
+                }),
+                // close the local state store
+                () -> {
+                    log.info("");
+                    if (null == readIOScheduler) {
+                        closeLocalStore();
+                        FutureUtils.complete(future, null);
+                        return;
+                    }
+                    readIOScheduler.submit(() -> {
+                        closeLocalStore();
+
+                        if (ownReadScheduler) {
+                            readIOScheduler.shutdown();
+                        }
+                        if (ownWriteScheduler) {
+                            writeIOScheduler.shutdown();
+                        }
+                        FutureUtils.complete(future, null);
+                    });
+                }
+            );
+        });
         return future;
     }
 
@@ -358,8 +398,7 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
     /**
      * Create a new command processor for processing the commands replayed from the journal.
      *
-     * @param localStore local state store instance
      * @return a new command processor.
      */
-    protected abstract CommandProcessor<LocalStateStoreT> newCommandProcessor(LocalStateStoreT localStore);
+    protected abstract CommandProcessor<LocalStateStoreT> newCommandProcessor();
 }

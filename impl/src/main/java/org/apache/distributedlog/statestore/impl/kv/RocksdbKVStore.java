@@ -44,14 +44,14 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import lombok.AccessLevel;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.distributedlog.api.statestore.StateStoreSpec;
+import org.apache.distributedlog.api.statestore.checkpoint.CheckpointStore;
 import org.apache.distributedlog.api.statestore.exceptions.InvalidStateStoreException;
 import org.apache.distributedlog.api.statestore.exceptions.StateStoreException;
 import org.apache.distributedlog.api.statestore.exceptions.StateStoreRuntimeException;
@@ -60,9 +60,9 @@ import org.apache.distributedlog.api.statestore.kv.KVIterator;
 import org.apache.distributedlog.api.statestore.kv.KVMulti;
 import org.apache.distributedlog.api.statestore.kv.KVStore;
 import org.apache.distributedlog.common.coder.Coder;
+import org.apache.distributedlog.statestore.impl.Bytes;
 import org.apache.distributedlog.statestore.impl.rocksdb.RocksUtils;
 import org.apache.distributedlog.statestore.impl.rocksdb.checkpoint.RocksCheckpointer;
-import org.apache.distributedlog.statestore.proto.CheckpointMetadata;
 import org.inferred.freebuilder.shaded.com.google.common.collect.Lists;
 import org.rocksdb.BlockBasedTableConfig;
 import org.rocksdb.ColumnFamilyDescriptor;
@@ -87,6 +87,10 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
 
     private static final byte[] METADATA_CF = ".meta".getBytes(UTF_8);
     private static final byte[] DATA_CF = "default".getBytes(UTF_8);
+    private static final byte[] LAST_REVISION = ".lrev".getBytes(UTF_8);
+
+    private static final AtomicLongFieldUpdater<RocksdbKVStore> lastRevisionUpdater =
+        AtomicLongFieldUpdater.newUpdater(RocksdbKVStore.class, "lastRevision");
 
     // parameters for the store
     protected String name;
@@ -111,11 +115,14 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
     // states of the store
     protected volatile boolean isInitialized = false;
     protected volatile boolean closed = false;
+    protected volatile long lastRevision = -1L;
+    private final byte[] lastRevisionBytes = new byte[Long.BYTES];
 
+    // checkpointer store
+    private CheckpointStore checkpointStore;
+    private ScheduledExecutorService checkpointScheduler;
+    // rocksdb checkpointer
     private RocksCheckpointer checkpointer;
-    private ScheduledFuture<?> checkpointTask;
-    @Getter
-    CheckpointMetadata checkpointMetadata = null;
 
     public RocksdbKVStore() {
         // initialize the iterators set
@@ -141,51 +148,78 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         return this.name;
     }
 
-    @Override
-    public void prepareInit(StateStoreSpec spec) throws StateStoreException {
-        checkNotNull(spec,
-            "local state store directory is not configured");
-
-        if (spec.getCheckpointStore() != null) {
-            loadRocksdbFromCheckpointStore(spec);
-        }
-    }
-
     private void loadRocksdbFromCheckpointStore(StateStoreSpec spec) throws StateStoreException {
-        String dbName = spec.getName();
-        File localStorePath = spec.getLocalStateStoreDir();
-
-        checkpointMetadata = RocksCheckpointer.restore(dbName, localStorePath, spec.getCheckpointStore());
-    }
-
-    private void scheduleCheckpointTask(StateStoreSpec spec) {
         checkNotNull(spec.getCheckpointIOScheduler(),
             "checkpoint io scheduler is not configured");
         checkNotNull(spec.getCheckpointDuration(),
             "checkpoint duration is not configured");
 
-        checkpointer = new RocksCheckpointer(
-            spec.getName(),
-            spec.getLocalStateStoreDir(),
-            db,
-            spec.getCheckpointStore(),
-            true,
-            true);
+        String dbName = spec.getName();
+        File localStorePath = spec.getLocalStateStoreDir();
 
-        long checkpointIntervalMs = spec.getCheckpointDuration().toMillis();
-        checkpointTask = spec.getCheckpointIOScheduler().scheduleAtFixedRate(() -> {
+        RocksCheckpointer.restore(dbName, localStorePath, spec.getCheckpointStore());
+    }
+
+    @Override
+    public synchronized void checkpoint() {
+        log.info("Checkpoint local state store {} at revision {}", name, getLastRevision());
+        byte[] checkpointAtRevisionBytes = new byte[Long.BYTES];
+        System.arraycopy(lastRevisionBytes, 0, checkpointAtRevisionBytes, 0, checkpointAtRevisionBytes.length);
+        checkpointScheduler.submit(() -> {
             try {
-                checkpointer.checkpointAtTxid(new byte[0]);
+                // TODO: move create checkpoint to the checkpoint method
+                checkpointer.checkpointAtTxid(checkpointAtRevisionBytes);
             } catch (StateStoreException e) {
-                log.error("Failed to create a checkpoint for db {}", name(), e);
+                log.error("Failed to checkpoint state store {} at revision {}",
+                    name, Bytes.toLong(checkpointAtRevisionBytes, 0), e);
             }
-        }, checkpointIntervalMs, checkpointIntervalMs, TimeUnit.MILLISECONDS);
+        });
+    }
+
+    private void readLastRevision() throws StateStoreException {
+        byte[] revisionBytes;
+        try {
+            revisionBytes = db.get(metaCfHandle, LAST_REVISION);
+        } catch (RocksDBException e) {
+            throw new StateStoreException("Failed to read last revision from state store " + name(), e);
+        }
+        if (null == revisionBytes) {
+            return;
+        }
+        long revision = Bytes.toLong(revisionBytes, 0);
+        lastRevisionUpdater.set(this, revision);
+    }
+
+    @Override
+    public long getLastRevision() {
+        return lastRevisionUpdater.get(this);
+    }
+
+    private void setLastRevision(long lastRevision) {
+        lastRevisionUpdater.set(this, lastRevision);
+        Bytes.toBytes(lastRevision, lastRevisionBytes, 0);
+    }
+
+    private void updateLastRevision(long revision) {
+        if (revision >= 0) { // k/v comes from log stream
+            if (getLastRevision() >= revision) { // these k/v pairs are duplicates
+                return;
+            }
+            // update revision
+            setLastRevision(revision);
+        }
     }
 
     @Override
     public synchronized void init(StateStoreSpec spec) throws StateStoreException {
         checkNotNull(spec.getLocalStateStoreDir(),
             "local state store directory is not configured");
+
+        checkpointStore = spec.getCheckpointStore();
+        if (null != checkpointStore) {
+            // load checkpoint from checkpoint store
+            loadRocksdbFromCheckpointStore(spec);
+        }
 
         this.name = spec.getName();
 
@@ -196,9 +230,18 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         // open the rocksdb
         openRocksdb(spec);
 
-        // after the rocksdb is open, schedule the periodical checkpoint task
-        if (null != spec.getCheckpointStore()) {
-            scheduleCheckpointTask(spec);
+        // once the rocksdb is opened, read the last revision
+        readLastRevision();
+
+        if (null != checkpointStore) {
+            checkpointer = new RocksCheckpointer(
+                name(),
+                dbDir,
+                db,
+                checkpointStore,
+                true,
+                true);
+            checkpointScheduler = spec.getCheckpointIOScheduler();
         }
 
         this.isInitialized = true;
@@ -309,11 +352,6 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         }
         closed = true;
 
-        if (null != checkpointTask) {
-            if (!checkpointTask.cancel(true)) {
-                log.warn("Fail to cancel checkpoint task of state store {}", name());
-            }
-        }
         if (null != checkpointer) {
             checkpointer.close();
         }
@@ -399,22 +437,34 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
 
     @Override
     public synchronized void put(K key, V value) {
+        put(key, value, -1);
+    }
+
+    synchronized void put(K key, V value, long revision) {
         checkNotNull(key, "key cannot be null");
         checkStoreOpen();
 
+        updateLastRevision(revision);
+
         byte[] keyBytes = keyCoder.encode(key);
-        putRaw(key, keyBytes, value);
+        putRaw(key, keyBytes, value, revision);
     }
 
-    private void putRaw(K key, byte[] keyBytes, V value) {
+    private void putRaw(K key, byte[] keyBytes, V value, long revision) {
+        WriteBatch batch = new WriteBatch();
+        if (revision > 0) {
+            // last revision has been set to revision bytes
+            batch.put(metaCfHandle, LAST_REVISION, lastRevisionBytes);
+        }
+        if (null == value) {
+            // delete a key if value is null
+            batch.remove(dataCfHandle, keyBytes);
+        } else {
+            byte[] valBytes = valCoder.encode(value);
+            batch.put(dataCfHandle, keyBytes, valBytes);
+        }
         try {
-            if (null == value) {
-                // delete a key if value is null
-                db.delete(dataCfHandle, keyBytes);
-            } else {
-                byte[] valBytes = valCoder.encode(value);
-                db.put(dataCfHandle, writeOpts, keyBytes, valBytes);
-            }
+            db.write(writeOpts, batch);
         } catch (RocksDBException e) {
             throw new StateStoreRuntimeException("Error while updating key " + key
                 + " to value " + value + " from store " + name, e);
@@ -422,9 +472,15 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
     }
 
     @Override
-    public synchronized V putIfAbsent(K key, V value) {
+    public V putIfAbsent(K key, V value) {
+        return putIfAbsent(key, value, -1L);
+    }
+
+    synchronized V putIfAbsent(K key, V value, long revision) {
         checkNotNull(key, "key cannot be null");
         checkStoreOpen();
+
+        updateLastRevision(revision);
 
         byte[] keyBytes = keyCoder.encode(key);
         V oldVal = getRaw(key, keyBytes);
@@ -436,7 +492,7 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
             return null;
         }
 
-        putRaw(key, keyBytes, value);
+        putRaw(key, keyBytes, value, revision);
         return null;
     }
 
@@ -449,12 +505,18 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
 
     @Override
     public synchronized V delete(K key) {
+        return delete(key, -1L);
+    }
+
+    synchronized V delete(K key, long revision) {
         checkNotNull(key, "key cannot be null");
         checkStoreOpen();
 
+        updateLastRevision(revision);
+
         byte[] keyBytes = keyCoder.encode(key);
         V val = getRaw(key, keyBytes);
-        putRaw(key, keyBytes, null);
+        putRaw(key, keyBytes, null, revision);
 
         return val;
     }
