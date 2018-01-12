@@ -37,9 +37,9 @@ GEM
       rb-fsevent (~> 0.9, >= 0.9.4)
       rb-inotify (~> 0.9, >= 0.9.7)
     mercenary (0.3.6)
-    mini_portile2 (2.2.0)
-    nokogiri (1.8.0)
-      mini_portile2 (~> 2.2.0)
+    mini_portile2 (2.3.0)
+    nokogiri (1.8.1)
+      mini_portile2 (~> 2.3.0)
     pathutil (0.14.0)
       forwardable-extended (~> 2.6)
     public_suffix (2.0.5)
@@ -57,6 +57,7 @@ DEPENDENCIES
   jekyll (= 3.4.3)
   jekyll-livereload (= 0.2.2)
   jekyll-toc
+  nokogiri (= 1.8.1)
 
 RUBY VERSION
    ruby 2.4.1p111
