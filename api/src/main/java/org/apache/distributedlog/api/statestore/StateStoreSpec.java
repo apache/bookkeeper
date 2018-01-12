@@ -43,6 +43,7 @@ public class StateStoreSpec {
     private String stream;
     private ScheduledExecutorService writeIOScheduler;
     private ScheduledExecutorService readIOScheduler;
+    private ScheduledExecutorService checkpointIOScheduler;
     private CheckpointStore checkpointStore;
     @Default private Duration checkpointDuration = Duration.ofMinutes(1);
     @Singular private Map<String, Object> configs;

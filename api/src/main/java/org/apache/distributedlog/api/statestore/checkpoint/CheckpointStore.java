@@ -25,7 +25,7 @@ import java.util.List;
 /**
  * A checkpoint factory that provides inputstream and outputstream for reading checkpoints.
  */
-public interface CheckpointStore {
+public interface CheckpointStore extends AutoCloseable {
 
     List<String> listFiles(String filePath) throws IOException;
 
@@ -38,4 +38,16 @@ public interface CheckpointStore {
     OutputStream openOutputStream(String filePath) throws IOException;
 
     void rename(String srcPath, String destPath) throws IOException;
+
+    void deleteRecursively(String srcPath) throws IOException;
+
+    void delete(String srcPath) throws IOException;
+
+    void createDirectories(String srcPath) throws IOException;
+
+    /**
+     * Close the checkpoint store.
+     */
+    @Override
+    void close();
 }

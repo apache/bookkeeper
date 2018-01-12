@@ -50,7 +50,6 @@ public class TestRocksdbKVStore {
     private StateStoreSpec spec;
     private RocksdbKVStore<String, String> store;
 
-
     @Before
     public void setUp() {
         tempDir = Files.createTempDir();

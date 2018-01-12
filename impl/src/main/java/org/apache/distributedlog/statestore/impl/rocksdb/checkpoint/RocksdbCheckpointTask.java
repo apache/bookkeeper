@@ -18,6 +18,7 @@
 package org.apache.distributedlog.statestore.impl.rocksdb.checkpoint;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 import com.google.common.io.MoreFiles;
 import com.google.common.io.RecursiveDeleteOption;
@@ -27,6 +28,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.distributedlog.api.statestore.checkpoint.CheckpointStore;
@@ -47,27 +49,44 @@ public class RocksdbCheckpointTask {
     private final File checkpointDir;
     private final CheckpointStore checkpointStore;
     private final String dbPrefix;
+    private final boolean removeLocalCheckpointAfterSuccessfulCheckpoint;
+    private final boolean removeRemoteCheckpointsAfterSuccessfulCheckpoint;
 
     public RocksdbCheckpointTask(String dbName,
                                  Checkpoint checkpoint,
                                  File checkpointDir,
-                                 CheckpointStore checkpointStore) {
+                                 CheckpointStore checkpointStore,
+                                 boolean removeLocalCheckpoint,
+                                 boolean removeRemoteCheckpoints) {
         this.dbName = dbName;
         this.checkpoint = checkpoint;
         this.checkpointDir = checkpointDir;
         this.checkpointStore = checkpointStore;
         this.dbPrefix = String.format("%s", dbName);
+        this.removeLocalCheckpointAfterSuccessfulCheckpoint = removeLocalCheckpoint;
+        this.removeRemoteCheckpointsAfterSuccessfulCheckpoint = removeRemoteCheckpoints;
     }
 
     public String checkpoint(byte[] txid) throws StateStoreException {
         String checkpointId = UUID.randomUUID().toString();
 
         File tempDir = new File(checkpointDir, checkpointId);
+        log.info("Create a local checkpoint of state store {} at {}",
+            dbName, tempDir);
         try {
             try {
                 checkpoint.createCheckpoint(tempDir.getAbsolutePath());
             } catch (RocksDBException e) {
                 throw new StateStoreException("Failed to create a checkpoint at " + tempDir, e);
+            }
+
+            String remoteCheckpointPath = RocksUtils.getDestCheckpointPath(dbPrefix, checkpointId);
+            if (!checkpointStore.fileExists(remoteCheckpointPath)) {
+                checkpointStore.createDirectories(remoteCheckpointPath);
+            }
+            String sstsPath = RocksUtils.getDestSstsPath(dbPrefix);
+            if (!checkpointStore.fileExists(sstsPath)) {
+                checkpointStore.createDirectories(sstsPath);
             }
 
             // get the files to copy
@@ -82,6 +101,11 @@ public class RocksdbCheckpointTask {
             // dump the file list to checkpoint file
             finalizeCheckpoint(checkpointId, tempDir, txid);
 
+            // clean up the remote checkpoints
+            if (removeRemoteCheckpointsAfterSuccessfulCheckpoint) {
+                cleanupRemoteCheckpoints(tempDir, checkpointId);
+            }
+
             return checkpointId;
         } catch (IOException ioe) {
             log.error("Failed to checkpoint db {} to dir {}", new Object[] { dbName, tempDir, ioe });
@@ -89,7 +113,7 @@ public class RocksdbCheckpointTask {
                 "Failed to checkpoint db " + dbName + " to dir " + tempDir,
                 ioe);
         } finally {
-            if (tempDir.exists()) {
+            if (removeLocalCheckpointAfterSuccessfulCheckpoint && tempDir.exists()) {
                 try {
                     MoreFiles.deleteRecursively(
                         Paths.get(tempDir.getAbsolutePath()),
@@ -168,6 +192,43 @@ public class RocksdbCheckpointTask {
         String destCheckpointPath = RocksUtils.getDestCheckpointMetadataPath(dbPrefix, checkpointId);
         try (OutputStream os = checkpointStore.openOutputStream(destCheckpointPath)) {
             os.write(metadataBuilder.build().toByteArray());
+        }
+    }
+
+    /**
+     * Cleanup.
+     *
+     * <p>1) remove unneeded checkpoints
+     * 2) remove unreferenced sst files.
+     */
+    private void cleanupRemoteCheckpoints(File checkpointedDir, String checkpointToExclude) throws IOException {
+        String checkpointsPath = RocksUtils.getDestCheckpointsPath(dbPrefix);
+        List<String> checkpoints = checkpointStore.listFiles(checkpointsPath);
+
+        // delete checkpoints
+        for (String checkpoint : checkpoints) {
+            if (checkpoint.equals(checkpointToExclude)) {
+                continue;
+            }
+            String remoteCheckpointPath = RocksUtils.getDestCheckpointPath(dbPrefix, checkpoint);
+            checkpointStore.deleteRecursively(remoteCheckpointPath);
+            log.info("Delete remote checkpoint {} from checkpoint store at {}",
+                checkpoint, remoteCheckpointPath);
+        }
+
+        // delete unused ssts
+        Set<String> checkpointedFileSet = Sets.newHashSet();
+        String[] checkpointedFiles = checkpointedDir.list();
+        for (String file : checkpointedFiles) {
+            checkpointedFileSet.add(file);
+        }
+
+        List<String> allSsts = checkpointStore.listFiles(RocksUtils.getDestSstsPath(dbPrefix));
+        for (String sst : allSsts) {
+            if (checkpointedFileSet.contains(sst)) {
+                continue;
+            }
+            checkpointStore.delete(RocksUtils.getDestSstPath(dbPrefix, sst));
         }
     }
 

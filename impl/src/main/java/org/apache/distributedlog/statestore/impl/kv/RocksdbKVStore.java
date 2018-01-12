@@ -30,17 +30,24 @@ import static org.apache.distributedlog.statestore.impl.rocksdb.RocksConstants.D
 import static org.apache.distributedlog.statestore.impl.rocksdb.RocksConstants.MAX_WRITE_BUFFERS;
 import static org.apache.distributedlog.statestore.impl.rocksdb.RocksConstants.WRITE_BUFFER_SIZE;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.SignedBytes;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -54,6 +61,8 @@ import org.apache.distributedlog.api.statestore.kv.KVMulti;
 import org.apache.distributedlog.api.statestore.kv.KVStore;
 import org.apache.distributedlog.common.coder.Coder;
 import org.apache.distributedlog.statestore.impl.rocksdb.RocksUtils;
+import org.apache.distributedlog.statestore.impl.rocksdb.checkpoint.RocksCheckpointer;
+import org.apache.distributedlog.statestore.proto.CheckpointMetadata;
 import org.inferred.freebuilder.shaded.com.google.common.collect.Lists;
 import org.rocksdb.BlockBasedTableConfig;
 import org.rocksdb.ColumnFamilyDescriptor;
@@ -103,6 +112,11 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
     protected volatile boolean isInitialized = false;
     protected volatile boolean closed = false;
 
+    private RocksCheckpointer checkpointer;
+    private ScheduledFuture<?> checkpointTask;
+    @Getter
+    CheckpointMetadata checkpointMetadata = null;
+
     public RocksdbKVStore() {
         // initialize the iterators set
         this.kvIters = Collections.synchronizedSet(Sets.newHashSet());
@@ -117,7 +131,8 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         }
     }
 
-    synchronized RocksDB getDb() {
+    @VisibleForTesting
+    public synchronized RocksDB getDb() {
         return db;
     }
 
@@ -127,8 +142,49 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
     }
 
     @Override
-    public synchronized void init(StateStoreSpec spec) throws StateStoreException {
+    public void prepareInit(StateStoreSpec spec) throws StateStoreException {
         checkNotNull(spec,
+            "local state store directory is not configured");
+
+        if (spec.getCheckpointStore() != null) {
+            loadRocksdbFromCheckpointStore(spec);
+        }
+    }
+
+    private void loadRocksdbFromCheckpointStore(StateStoreSpec spec) throws StateStoreException {
+        String dbName = spec.getName();
+        File localStorePath = spec.getLocalStateStoreDir();
+
+        checkpointMetadata = RocksCheckpointer.restore(dbName, localStorePath, spec.getCheckpointStore());
+    }
+
+    private void scheduleCheckpointTask(StateStoreSpec spec) {
+        checkNotNull(spec.getCheckpointIOScheduler(),
+            "checkpoint io scheduler is not configured");
+        checkNotNull(spec.getCheckpointDuration(),
+            "checkpoint duration is not configured");
+
+        checkpointer = new RocksCheckpointer(
+            spec.getName(),
+            spec.getLocalStateStoreDir(),
+            db,
+            spec.getCheckpointStore(),
+            true,
+            true);
+
+        long checkpointIntervalMs = spec.getCheckpointDuration().toMillis();
+        checkpointTask = spec.getCheckpointIOScheduler().scheduleAtFixedRate(() -> {
+            try {
+                checkpointer.checkpointAtTxid(new byte[0]);
+            } catch (StateStoreException e) {
+                log.error("Failed to create a checkpoint for db {}", name(), e);
+            }
+        }, checkpointIntervalMs, checkpointIntervalMs, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public synchronized void init(StateStoreSpec spec) throws StateStoreException {
+        checkNotNull(spec.getLocalStateStoreDir(),
             "local state store directory is not configured");
 
         this.name = spec.getName();
@@ -139,6 +195,11 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
 
         // open the rocksdb
         openRocksdb(spec);
+
+        // after the rocksdb is open, schedule the periodical checkpoint task
+        if (null != spec.getCheckpointStore()) {
+            scheduleCheckpointTask(spec);
+        }
 
         this.isInitialized = true;
     }
@@ -200,12 +261,23 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
         ColumnFamilyDescriptor dataDesc = new ColumnFamilyDescriptor(DATA_CF, cfOpts);
 
         try {
-            Files.createDirectories(dir.getParentFile().toPath());
+            Files.createDirectories(dir.toPath());
+            File dbDir = new File(dir, "current");
+
+            if (!dbDir.exists()) {
+                // empty state
+                String uuid = UUID.randomUUID().toString();
+                Path checkpointPath = Paths.get(dir.getAbsolutePath(), "checkpoints", uuid);
+                Files.createDirectories(checkpointPath);
+                Files.createSymbolicLink(
+                    Paths.get(dbDir.getAbsolutePath()),
+                    checkpointPath);
+            }
 
             List<ColumnFamilyHandle> cfHandles = Lists.newArrayListWithExpectedSize(2);
             RocksDB db = RocksDB.open(
                 options,
-                dir.getAbsolutePath(),
+                dbDir.getAbsolutePath(),
                 Lists.newArrayList(metaDesc, dataDesc),
                 cfHandles);
             return Pair.of(db, cfHandles);
@@ -236,6 +308,15 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
             return;
         }
         closed = true;
+
+        if (null != checkpointTask) {
+            if (!checkpointTask.cancel(true)) {
+                log.warn("Fail to cancel checkpoint task of state store {}", name());
+            }
+        }
+        if (null != checkpointer) {
+            checkpointer.close();
+        }
 
         // close iterators
         closeIters();

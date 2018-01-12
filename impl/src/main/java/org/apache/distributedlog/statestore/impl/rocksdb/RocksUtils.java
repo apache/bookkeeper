@@ -40,12 +40,28 @@ public final class RocksUtils {
         return file.getName().endsWith(".sst");
     }
 
+    public static String getDestCheckpointsPath(String dbPrefix) {
+        return String.format("%s/checkpoints", dbPrefix);
+    }
+
+    public static String getDestCheckpointPath(String dbPrefix, String checkpointId) {
+        return String.format("%s/checkpoints/%s", dbPrefix, checkpointId);
+    }
+
     public static String getDestCheckpointMetadataPath(String dbPrefix, String checkpointId) {
         return String.format("%s/checkpoints/%s/metadata", dbPrefix, checkpointId);
     }
 
+    public static String getDestSstsPath(String dbPrefix) {
+        return String.format("%s/ssts", dbPrefix);
+    }
+
     public static String getDestSstPath(String dbPrefix, File file) {
         return String.format("%s/ssts/%s", dbPrefix, file.getName());
+    }
+
+    public static String getDestSstPath(String dbPrefix, String fileName) {
+        return String.format("%s/ssts/%s", dbPrefix, fileName);
     }
 
     public static String getDestTempSstPath(String dbPrefix, String checkpointId, File file) {

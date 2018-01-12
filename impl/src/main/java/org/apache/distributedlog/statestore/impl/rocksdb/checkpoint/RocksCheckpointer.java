@@ -17,10 +17,13 @@
  */
 package org.apache.distributedlog.statestore.impl.rocksdb.checkpoint;
 
+import com.google.common.io.MoreFiles;
+import com.google.common.io.RecursiveDeleteOption;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
@@ -62,13 +65,18 @@ public class RocksCheckpointer implements AutoCloseable {
                 checkpointId = UUID.randomUUID().toString();
                 new File(checkpointsDir, checkpointId).mkdir();
             }
+            Path restoredCheckpointPath = Paths.get(dbPath.getAbsolutePath(), "checkpoints", checkpointId);
+            log.info("Successfully restore checkpoint {} to {}", checkpointId, restoredCheckpointPath);
+
             File currentDir = new File(dbPath, "current");
-            if (currentDir.exists()) {
-                currentDir.delete();
-            }
+            Files.deleteIfExists(Paths.get(currentDir.getAbsolutePath()));
             Files.createSymbolicLink(
                 Paths.get(currentDir.getAbsolutePath()),
-                Paths.get(dbPath.getAbsolutePath(), "checkpoints", checkpointId));
+                restoredCheckpointPath);
+
+            // after successfully restore from remote checkpoints, cleanup other unused checkpoints
+            cleanupLocalCheckpoints(dbPath, checkpointId);
+
             return checkpointMetadata;
         } catch (IOException ioe) {
             log.error("Failed to restore rocksdb {}", dbName, ioe);
@@ -76,17 +84,31 @@ public class RocksCheckpointer implements AutoCloseable {
         }
     }
 
+    private static void cleanupLocalCheckpoints(File dbPath, String checkpointToExclude) {
+        String[] checkpoints = new File(dbPath, "checkpoints").list();
+        for (String checkpoint : checkpoints) {
+            if (checkpoint.equals(checkpointToExclude)) {
+                continue;
+            }
+            try {
+                MoreFiles.deleteRecursively(
+                    Paths.get(dbPath.getAbsolutePath(), "checkpoints", checkpoint),
+                    RecursiveDeleteOption.ALLOW_INSECURE);
+            } catch (IOException ioe) {
+                log.warn("Failed to remove unused checkpoint {} from {}",
+                    checkpoint, dbPath, ioe);
+            }
+        }
+    }
+
     private static Pair<String, CheckpointMetadata > getLatestCheckpoint(
             String dbPrefix, CheckpointStore checkpointStore) throws IOException {
-        List<String> files = checkpointStore.listFiles(dbPrefix);
+        String remoteCheckpointsPath = RocksUtils.getDestCheckpointsPath(dbPrefix);
+        List<String> files = checkpointStore.listFiles(remoteCheckpointsPath);
         CheckpointMetadata latestCheckpoint = null;
         String latestCheckpointId = null;
 
         for (String checkpointId : files) {
-            if ("ssts".equals(checkpointId)) {
-                continue;
-            }
-
             String metadataPath = RocksUtils.getDestCheckpointMetadataPath(
                 dbPrefix,
                 checkpointId);
@@ -109,26 +131,32 @@ public class RocksCheckpointer implements AutoCloseable {
     private final File dbPath;
     private final Checkpoint checkpoint;
     private final CheckpointStore checkpointStore;
+    private final boolean removeLocalCheckpointAfterSuccessfulCheckpoint;
+    private final boolean removeRemoteCheckpointsAfterSuccessfulCheckpoint;
 
     public RocksCheckpointer(String dbName,
                              File dbPath,
                              RocksDB rocksDB,
-                             CheckpointStore checkpointStore) {
+                             CheckpointStore checkpointStore,
+                             boolean removeLocalCheckpointAfterSuccessfulCheckpoint,
+                             boolean removeRemoteCheckpointsAfterSuccessfulCheckpoint) {
         this.dbName = dbName;
         this.dbPath = dbPath;
         this.checkpoint = Checkpoint.create(rocksDB);
         this.checkpointStore = checkpointStore;
+        this.removeLocalCheckpointAfterSuccessfulCheckpoint = removeLocalCheckpointAfterSuccessfulCheckpoint;
+        this.removeRemoteCheckpointsAfterSuccessfulCheckpoint = removeRemoteCheckpointsAfterSuccessfulCheckpoint;
     }
 
-    void checkpointAtTxid(byte[] txid) throws StateStoreException {
-
+    public String checkpointAtTxid(byte[] txid) throws StateStoreException {
         RocksdbCheckpointTask task = new RocksdbCheckpointTask(
             dbName,
             checkpoint,
             new File(dbPath, "checkpoints"),
-            checkpointStore);
-        task.checkpoint(txid);
-
+            checkpointStore,
+            removeLocalCheckpointAfterSuccessfulCheckpoint,
+            removeRemoteCheckpointsAfterSuccessfulCheckpoint);
+        return task.checkpoint(txid);
     }
 
 

@@ -41,6 +41,17 @@ public interface StateStore extends AutoCloseable {
     String name();
 
     /**
+     * This is a method called before calling {@link #init(StateStoreSpec)}. The implementation
+     * can use this method to prepare environment for initialization. For example, loading
+     * checkpoints from a {@link org.apache.distributedlog.api.statestore.checkpoint.CheckpointStore}.
+     *
+     * @param spec state store spec.
+     * @throws StateStoreException
+     */
+    default void prepareInit(StateStoreSpec spec) throws StateStoreException {
+    }
+
+    /**
      * Initialize the state store.
      */
     void init(StateStoreSpec spec) throws StateStoreException;

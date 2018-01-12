@@ -18,6 +18,7 @@
 package org.apache.distributedlog.statestore.impl.rocksdb.checkpoint.fs;
 
 import com.google.common.collect.Lists;
+import com.google.common.io.MoreFiles;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -27,6 +28,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Collections;
 import java.util.List;
 import org.apache.distributedlog.api.statestore.checkpoint.CheckpointStore;
 
@@ -35,36 +37,72 @@ import org.apache.distributedlog.api.statestore.checkpoint.CheckpointStore;
  */
 public class FSCheckpointManager implements CheckpointStore {
 
+    private final File rootPath;
+
+    public FSCheckpointManager(File rootPath) {
+        this.rootPath = rootPath;
+    }
+
+    private File getFullyQualifiedPath(String filePath) {
+        return new File(rootPath, filePath);
+    }
+
     @Override
     public List<String> listFiles(String filePath) throws IOException {
-        return Lists.newArrayList(new File(filePath).list());
+        String[] files = getFullyQualifiedPath(filePath).list();
+        if (null == files) {
+            return Collections.emptyList();
+        }
+        return Lists.newArrayList(files);
     }
 
     @Override
     public boolean fileExists(String filePath) throws IOException {
-        return new File(filePath).exists();
+        return getFullyQualifiedPath(filePath).exists();
     }
 
     @Override
     public long getFileLength(String filePath) throws IOException {
-        return new File(filePath).length();
+        return getFullyQualifiedPath(filePath).length();
     }
 
     @Override
     public InputStream openInputStream(String filePath) throws IOException {
-        return new FileInputStream(filePath);
+        return new FileInputStream(getFullyQualifiedPath(filePath));
     }
 
     @Override
     public OutputStream openOutputStream(String filePath) throws IOException {
-        return new FileOutputStream(filePath);
+        return new FileOutputStream(getFullyQualifiedPath(filePath));
     }
 
     @Override
     public void rename(String srcPath, String destPath) throws IOException {
         Files.move(
-            Paths.get(srcPath),
-            Paths.get(destPath),
+            Paths.get(getFullyQualifiedPath(srcPath).getAbsolutePath()),
+            Paths.get(getFullyQualifiedPath(destPath).getAbsolutePath()),
             StandardCopyOption.ATOMIC_MOVE);
+    }
+
+    @Override
+    public void deleteRecursively(String srcPath) throws IOException {
+        MoreFiles.deleteRecursively(
+            Paths.get(getFullyQualifiedPath(srcPath).getAbsolutePath()));
+    }
+
+    @Override
+    public void delete(String srcPath) throws IOException {
+        Files.delete(Paths.get(getFullyQualifiedPath(srcPath).getAbsolutePath()));
+    }
+
+    @Override
+    public void createDirectories(String srcPath) throws IOException {
+        Files.createDirectories(
+            Paths.get(getFullyQualifiedPath(srcPath).getAbsolutePath()));
+    }
+
+    @Override
+    public void close() {
+        // no-op
     }
 }
