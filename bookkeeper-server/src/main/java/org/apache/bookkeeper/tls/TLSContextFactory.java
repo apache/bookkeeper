@@ -57,7 +57,7 @@ public class TLSContextFactory implements SecurityHandlerFactory {
     /**
      * Supported Key File Types.
      */
-    public enum KeyFileType {
+    public enum KeyStoreType {
         PKCS12, JKS, PEM;
     }
 
@@ -80,12 +80,12 @@ public class TLSContextFactory implements SecurityHandlerFactory {
     @SuppressFBWarnings(
         value = "OBL_UNSATISFIED_OBLIGATION",
         justification = "work around for java 9: https://github.com/spotbugs/spotbugs/issues/493")
-    private KeyStore loadKeyFile(String keyFileType, String keyFileLocation, String keyFilePassword)
+    private KeyStore loadKeyStore(String keyStoreType, String keyStoreLocation, String keyStorePassword)
             throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException {
-        KeyStore ks = KeyStore.getInstance(keyFileType);
-        FileInputStream ksin = new FileInputStream(keyFileLocation);
+        KeyStore ks = KeyStore.getInstance(keyStoreType);
+        FileInputStream ksin = new FileInputStream(keyStoreLocation);
         try {
-            ks.load(ksin, keyFilePassword.trim().toCharArray());
+            ks.load(ksin, keyStorePassword.trim().toCharArray());
         } finally {
             ksin.close();
         }
@@ -96,46 +96,46 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         return TLSCONTEXT_HANDLER_NAME;
     }
 
-    private KeyManagerFactory initKeyManagerFactory(String keyFileType, String keyFileLocation,
-            String keyFilePasswordPath) throws SecurityException, KeyStoreException, NoSuchAlgorithmException,
+    private KeyManagerFactory initKeyManagerFactory(String keyStoreType, String keyStoreLocation,
+            String keyStorePasswordPath) throws SecurityException, KeyStoreException, NoSuchAlgorithmException,
             CertificateException, IOException, UnrecoverableKeyException, InvalidKeySpecException {
         KeyManagerFactory kmf = null;
 
-        if (Strings.isNullOrEmpty(keyFileLocation)) {
+        if (Strings.isNullOrEmpty(keyStoreLocation)) {
             LOG.error("Key store location cannot be empty when Mutual Authentication is enabled!");
             throw new SecurityException("Key store location cannot be empty when Mutual Authentication is enabled!");
         }
 
-        String keyFilePassword = "";
-        if (!Strings.isNullOrEmpty(keyFilePasswordPath)) {
-            keyFilePassword = getPasswordFromFile(keyFilePasswordPath);
+        String keyStorePassword = "";
+        if (!Strings.isNullOrEmpty(keyStorePasswordPath)) {
+            keyStorePassword = getPasswordFromFile(keyStorePasswordPath);
         }
 
         // Initialize key file
-        KeyStore ks = loadKeyFile(keyFileType, keyFileLocation, keyFilePassword);
+        KeyStore ks = loadKeyStore(keyStoreType, keyStoreLocation, keyStorePassword);
         kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-        kmf.init(ks, keyFilePassword.trim().toCharArray());
+        kmf.init(ks, keyStorePassword.trim().toCharArray());
 
         return kmf;
     }
 
-    private TrustManagerFactory initTrustManagerFactory(String trustFileType, String trustFileLocation,
-            String trustFilePasswordPath)
+    private TrustManagerFactory initTrustManagerFactory(String trustStoreType, String trustStoreLocation,
+            String trustStorePasswordPath)
             throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException, SecurityException {
         TrustManagerFactory tmf;
 
-        if (Strings.isNullOrEmpty(trustFileLocation)) {
+        if (Strings.isNullOrEmpty(trustStoreLocation)) {
             LOG.error("Trust Store location cannot be empty!");
             throw new SecurityException("Trust Store location cannot be empty!");
         }
 
-        String trustFilePassword = "";
-        if (!Strings.isNullOrEmpty(trustFilePasswordPath)) {
-            trustFilePassword = getPasswordFromFile(trustFilePasswordPath);
+        String trustStorePassword = "";
+        if (!Strings.isNullOrEmpty(trustStorePasswordPath)) {
+            trustStorePassword = getPasswordFromFile(trustStorePasswordPath);
         }
 
         // Initialize trust file
-        KeyStore ts = loadKeyFile(trustFileType, trustFileLocation, trustFilePassword);
+        KeyStore ts = loadKeyStore(trustStoreType, trustStoreLocation, trustStorePassword);
         tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         tmf.init(ts);
 
@@ -177,14 +177,14 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         provider = getTLSProvider(clientConf.getTLSProvider());
         clientAuthentication = clientConf.getTLSClientAuthentication();
 
-        switch (KeyFileType.valueOf(clientConf.getTLSTrustFileType())) {
+        switch (KeyStoreType.valueOf(clientConf.getTLSTrustStoreType())) {
         case PEM:
-            if (Strings.isNullOrEmpty(clientConf.getTLSTrustFilePath())) {
+            if (Strings.isNullOrEmpty(clientConf.getTLSTrustStore())) {
                 throw new SecurityException("CA Certificate required");
             }
 
             sslContextBuilder = SslContextBuilder.forClient()
-                    .trustManager(new File(clientConf.getTLSTrustFilePath()))
+                    .trustManager(new File(clientConf.getTLSTrustStore()))
                     .ciphers(null)
                     .sessionCacheSize(0)
                     .sessionTimeout(0)
@@ -195,8 +195,8 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         case JKS:
             // falling thru, same as PKCS12
         case PKCS12:
-            TrustManagerFactory tmf = initTrustManagerFactory(clientConf.getTLSTrustFileType(),
-                    clientConf.getTLSTrustFilePath(), clientConf.getTLSTrustFilePasswordPath());
+            TrustManagerFactory tmf = initTrustManagerFactory(clientConf.getTLSTrustStoreType(),
+                    clientConf.getTLSTrustStore(), clientConf.getTLSTrustStorePasswordPath());
 
             sslContextBuilder = SslContextBuilder.forClient()
                     .trustManager(tmf)
@@ -208,11 +208,11 @@ public class TLSContextFactory implements SecurityHandlerFactory {
 
             break;
         default:
-            throw new SecurityException("Invalid Trustfile type: " + clientConf.getTLSTrustFileType());
+            throw new SecurityException("Invalid Truststore type: " + clientConf.getTLSTrustStoreType());
         }
 
         if (clientAuthentication) {
-            switch (KeyFileType.valueOf(clientConf.getTLSKeyFileType())) {
+            switch (KeyStoreType.valueOf(clientConf.getTLSKeyStoreType())) {
             case PEM:
                 final String keyPassword;
 
@@ -220,29 +220,29 @@ public class TLSContextFactory implements SecurityHandlerFactory {
                     throw new SecurityException("Valid Certificate is missing");
                 }
 
-                if (Strings.isNullOrEmpty(clientConf.getTLSKeyFilePath())) {
+                if (Strings.isNullOrEmpty(clientConf.getTLSKeyStore())) {
                     throw new SecurityException("Valid Key is missing");
                 }
 
-                if (!Strings.isNullOrEmpty(clientConf.getTLSKeyFilePasswordPath())) {
-                    keyPassword = getPasswordFromFile(clientConf.getTLSKeyFilePasswordPath());
+                if (!Strings.isNullOrEmpty(clientConf.getTLSKeyStorePasswordPath())) {
+                    keyPassword = getPasswordFromFile(clientConf.getTLSKeyStorePasswordPath());
                 } else {
                     keyPassword = null;
                 }
 
                 sslContextBuilder.keyManager(new File(clientConf.getTLSCertificatePath()),
-                        new File(clientConf.getTLSKeyFilePath()), keyPassword);
+                        new File(clientConf.getTLSKeyStore()), keyPassword);
                 break;
             case JKS:
                 // falling thru, same as PKCS12
             case PKCS12:
-                KeyManagerFactory kmf = initKeyManagerFactory(clientConf.getTLSKeyFileType(),
-                        clientConf.getTLSKeyFilePath(), clientConf.getTLSKeyFilePasswordPath());
+                KeyManagerFactory kmf = initKeyManagerFactory(clientConf.getTLSKeyStoreType(),
+                        clientConf.getTLSKeyStore(), clientConf.getTLSKeyStorePasswordPath());
 
                 sslContextBuilder.keyManager(kmf);
                 break;
             default:
-                throw new SecurityException("Invalid Keyfile type" + clientConf.getTLSKeyFileType());
+                throw new SecurityException("Invalid Keyfile type" + clientConf.getTLSKeyStoreType());
             }
         }
 
@@ -266,11 +266,11 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         provider = getTLSProvider(serverConf.getTLSProvider());
         clientAuthentication = serverConf.getTLSClientAuthentication();
 
-        switch (KeyFileType.valueOf(serverConf.getTLSKeyFileType())) {
+        switch (KeyStoreType.valueOf(serverConf.getTLSKeyStoreType())) {
         case PEM:
             final String keyPassword;
 
-            if (Strings.isNullOrEmpty(serverConf.getTLSKeyFilePath())) {
+            if (Strings.isNullOrEmpty(serverConf.getTLSKeyStore())) {
                 throw new SecurityException("Key path is required");
             }
 
@@ -278,15 +278,15 @@ public class TLSContextFactory implements SecurityHandlerFactory {
                 throw new SecurityException("Certificate path is required");
             }
 
-            if (!Strings.isNullOrEmpty(serverConf.getTLSKeyFilePasswordPath())) {
-                keyPassword = getPasswordFromFile(serverConf.getTLSKeyFilePasswordPath());
+            if (!Strings.isNullOrEmpty(serverConf.getTLSKeyStorePasswordPath())) {
+                keyPassword = getPasswordFromFile(serverConf.getTLSKeyStorePasswordPath());
             } else {
                 keyPassword = null;
             }
 
             sslContextBuilder = SslContextBuilder
                                 .forServer(new File(serverConf.getTLSCertificatePath()),
-                            new File(serverConf.getTLSKeyFilePath()), keyPassword)
+                            new File(serverConf.getTLSKeyStore()), keyPassword)
                                 .ciphers(null)
                                 .sessionCacheSize(0)
                                 .sessionTimeout(0)
@@ -297,9 +297,9 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         case JKS:
             // falling thru, same as PKCS12
         case PKCS12:
-            KeyManagerFactory kmf = initKeyManagerFactory(serverConf.getTLSKeyFileType(),
-                    serverConf.getTLSKeyFilePath(),
-                    serverConf.getTLSKeyFilePasswordPath());
+            KeyManagerFactory kmf = initKeyManagerFactory(serverConf.getTLSKeyStoreType(),
+                    serverConf.getTLSKeyStore(),
+                    serverConf.getTLSKeyStorePasswordPath());
 
             sslContextBuilder = SslContextBuilder.forServer(kmf)
                                 .ciphers(null)
@@ -310,28 +310,28 @@ public class TLSContextFactory implements SecurityHandlerFactory {
 
             break;
         default:
-            throw new SecurityException("Invalid Keyfile type" + serverConf.getTLSKeyFileType());
+            throw new SecurityException("Invalid Keyfile type" + serverConf.getTLSKeyStoreType());
         }
 
         if (clientAuthentication) {
             sslContextBuilder.clientAuth(ClientAuth.REQUIRE);
 
-            switch (KeyFileType.valueOf(serverConf.getTLSTrustFileType())) {
+            switch (KeyStoreType.valueOf(serverConf.getTLSTrustStoreType())) {
             case PEM:
-                if (Strings.isNullOrEmpty(serverConf.getTLSTrustFilePath())) {
+                if (Strings.isNullOrEmpty(serverConf.getTLSTrustStore())) {
                     throw new SecurityException("CA Certificate chain is required");
                 }
-                sslContextBuilder.trustManager(new File(serverConf.getTLSTrustFilePath()));
+                sslContextBuilder.trustManager(new File(serverConf.getTLSTrustStore()));
                 break;
             case JKS:
                 // falling thru, same as PKCS12
             case PKCS12:
-                TrustManagerFactory tmf = initTrustManagerFactory(serverConf.getTLSTrustFileType(),
-                        serverConf.getTLSTrustFilePath(), serverConf.getTLSTrustFilePasswordPath());
+                TrustManagerFactory tmf = initTrustManagerFactory(serverConf.getTLSTrustStoreType(),
+                        serverConf.getTLSTrustStore(), serverConf.getTLSTrustStorePasswordPath());
                 sslContextBuilder.trustManager(tmf);
                 break;
             default:
-                throw new SecurityException("Invalid Trustfile type" + serverConf.getTLSTrustFileType());
+                throw new SecurityException("Invalid Truststore type" + serverConf.getTLSTrustStoreType());
             }
         }
 
@@ -366,11 +366,11 @@ public class TLSContextFactory implements SecurityHandlerFactory {
                 ciphers = enabledCiphers.split(",");
             }
         } catch (KeyStoreException e) {
-            throw new RuntimeException("Standard keyfile type missing", e);
+            throw new RuntimeException("Standard keystore type missing", e);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Standard algorithm missing", e);
         } catch (CertificateException e) {
-            throw new SecurityException("Unable to load keyfile", e);
+            throw new SecurityException("Unable to load keystore", e);
         } catch (IOException e) {
             throw new SecurityException("Error initializing SSLContext", e);
         } catch (UnrecoverableKeyException e) {

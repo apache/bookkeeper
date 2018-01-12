@@ -168,14 +168,6 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     protected static final String HTTP_SERVER_ENABLED = "httpServerEnabled";
     protected static final String HTTP_SERVER_PORT = "httpServerPort";
 
-    // TLS parameters
-    protected static final String TLS_KEYSTORE_TYPE = "tlsKeyStoreType";
-    protected static final String TLS_KEYSTORE = "tlsKeyStore";
-    protected static final String TLS_KEYSTORE_PASSWORD_PATH = "tlsKeyStorePasswordPath";
-    protected static final String TLS_TRUSTSTORE_TYPE = "tlsTrustStoreType";
-    protected static final String TLS_TRUSTSTORE = "tlsTrustStore";
-    protected static final String TLS_TRUSTSTORE_PASSWORD_PATH = "tlsTrustStorePasswordPath";
-
     // Lifecycle Components
     protected static final String EXTRA_SERVER_COMPONENTS = "extraServerComponents";
 
@@ -2301,117 +2293,117 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     }
 
     /**
-     * Get the trustfile type for client. Default is JKS.
+     * Get the truststore type for client. Default is JKS.
      *
      * @return
      */
-    public String getTLSTrustFileType() {
-        return getString(TLS_TRUSTFILE_TYPE, "JKS");
+    public String getTLSTrustStoreType() {
+        return getString(TLS_TRUSTSTORE_TYPE, "JKS");
     }
 
     /**
-     * Set the keyfile type for client.
+     * Set the keystore type for client.
      *
      * @return
      */
-    public ServerConfiguration setTLSKeyFileType(String arg) {
-        setProperty(TLS_KEYFILE_TYPE, arg);
+    public ServerConfiguration setTLSKeyStoreType(String arg) {
+        setProperty(TLS_KEYSTORE_TYPE, arg);
         return this;
     }
 
     /**
-     * Get the keyfile path for the client.
+     * Get the keystore path for the client.
      *
      * @return
      */
-    public String getTLSKeyFilePath() {
-        return getString(TLS_KEYFILE_PATH, null);
+    public String getTLSKeyStore() {
+        return getString(TLS_KEYSTORE, null);
     }
 
     /**
-     * Set the keyfile path for the client.
+     * Set the keystore path for the client.
      *
      * @return
      */
-    public ServerConfiguration setTLSKeyFilePath(String arg) {
-        setProperty(TLS_KEYFILE_PATH, arg);
+    public ServerConfiguration setTLSKeyStore(String arg) {
+        setProperty(TLS_KEYSTORE, arg);
         return this;
     }
 
     /**
-     * Get the path to file containing keyfile password if the client keyfile is password protected. Default is null.
+     * Get the path to file containing keystore password if the client keystore is password protected. Default is null.
      *
      * @return
      */
-    public String getTLSKeyFilePasswordPath() {
-        return getString(TLS_KEYFILE_PASSWORD_PATH, null);
+    public String getTLSKeyStorePasswordPath() {
+        return getString(TLS_KEYSTORE_PASSWORD_PATH, null);
     }
 
     /**
-     * Set the path to file containing keyfile password, if the client keyfile is password protected.
+     * Set the path to file containing keystore password, if the client keystore is password protected.
      *
      * @return
      */
-    public ServerConfiguration setTLSKeyFilePasswordPath(String arg) {
-        setProperty(TLS_KEYFILE_PASSWORD_PATH, arg);
+    public ServerConfiguration setTLSKeyStorePasswordPath(String arg) {
+        setProperty(TLS_KEYSTORE_PASSWORD_PATH, arg);
         return this;
     }
 
     /**
-     * Get the keyfile type for client. Default is JKS.
+     * Get the keystore type for client. Default is JKS.
      *
      * @return
      */
-    public String getTLSKeyFileType() {
-        return getString(TLS_KEYFILE_TYPE, "JKS");
+    public String getTLSKeyStoreType() {
+        return getString(TLS_KEYSTORE_TYPE, "JKS");
     }
 
     /**
-     * Set the trustfile type for client.
+     * Set the truststore type for client.
      *
      * @return
      */
-    public ServerConfiguration setTLSTrustFileType(String arg) {
-        setProperty(TLS_TRUSTFILE_TYPE, arg);
+    public ServerConfiguration setTLSTrustStoreType(String arg) {
+        setProperty(TLS_TRUSTSTORE_TYPE, arg);
         return this;
     }
 
     /**
-     * Get the trustfile path for the client.
+     * Get the truststore path for the client.
      *
      * @return
      */
-    public String getTLSTrustFilePath() {
-        return getString(TLS_TRUSTFILE_PATH, null);
+    public String getTLSTrustStore() {
+        return getString(TLS_TRUSTSTORE, null);
     }
 
     /**
-     * Set the trustfile path for the client.
+     * Set the truststore path for the client.
      *
      * @return
      */
-    public ServerConfiguration setTLSTrustFilePath(String arg) {
-        setProperty(TLS_TRUSTFILE_PATH, arg);
+    public ServerConfiguration setTLSTrustStore(String arg) {
+        setProperty(TLS_TRUSTSTORE, arg);
         return this;
     }
 
     /**
-     * Get the path to file containing trustfile password if the client trustfile is password protected. Default is
+     * Get the path to file containing truststore password if the client truststore is password protected. Default is
      * null.
      *
      * @return
      */
-    public String getTLSTrustFilePasswordPath() {
-        return getString(TLS_TRUSTFILE_PASSWORD_PATH, null);
+    public String getTLSTrustStorePasswordPath() {
+        return getString(TLS_TRUSTSTORE_PASSWORD_PATH, null);
     }
 
     /**
-     * Set the path to file containing trustfile password, if the client trustfile is password protected.
+     * Set the path to file containing truststore password, if the client truststore is password protected.
      *
      * @return
      */
-    public ServerConfiguration setTLSTrustFilePasswordPath(String arg) {
-        setProperty(TLS_TRUSTFILE_PASSWORD_PATH, arg);
+    public ServerConfiguration setTLSTrustStorePasswordPath(String arg) {
+        setProperty(TLS_TRUSTSTORE_PASSWORD_PATH, arg);
         return this;
     }
 

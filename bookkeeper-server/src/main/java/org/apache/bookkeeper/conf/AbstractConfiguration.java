@@ -101,14 +101,14 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     protected static final String TLS_ENABLED_PROTOCOLS = "tlsEnabledProtocols";
 
     /**
-     * TLS KeyFile, TrustFile, Password files and Certificate Paths.
+     * TLS KeyStore, TrustStore, Password files and Certificate Paths.
      */
-    protected static final String TLS_KEYFILE_TYPE = "tlsKeyFileType";
-    protected static final String TLS_KEYFILE_PATH = "tlsKeyFilePath";
-    protected static final String TLS_KEYFILE_PASSWORD_PATH = "tlsKeyFilePasswordPath";
-    protected static final String TLS_TRUSTFILE_TYPE = "tlsTrustFileType";
-    protected static final String TLS_TRUSTFILE_PATH = "tlsTrustFilePath";
-    protected static final String TLS_TRUSTFILE_PASSWORD_PATH = "tlsTrustFilePasswordPath";
+    protected static final String TLS_KEYSTORE_TYPE = "tlsKeyStoreType";
+    protected static final String TLS_KEYSTORE = "tlsKeyStore";
+    protected static final String TLS_KEYSTORE_PASSWORD_PATH = "tlsKeyStorePasswordPath";
+    protected static final String TLS_TRUSTSTORE_TYPE = "tlsTrustStoreType";
+    protected static final String TLS_TRUSTSTORE = "tlsTrustStore";
+    protected static final String TLS_TRUSTSTORE_PASSWORD_PATH = "tlsTrustStorePasswordPath";
     protected static final String TLS_CERTIFICATE_PATH = "tlsCertificatePath";
 
     //Netty configuration
