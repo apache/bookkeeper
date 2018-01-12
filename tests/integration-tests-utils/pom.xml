@@ -34,6 +34,7 @@
   <name>Apache BookKeeper :: Tests :: Utility module for Arquillian based integration tests</name>
 
   <properties>
+    <shrinkwrap.version>3.0.1</shrinkwrap.version>
     <arquillian-cube.version>1.12.1-SNAPSHOT</arquillian-cube.version>
   </properties>
 
@@ -42,6 +43,17 @@
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-compress</artifactId>
       <version>1.15</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.jboss.shrinkwrap.resolver</groupId>
+      <artifactId>shrinkwrap-resolver-impl-maven</artifactId>
+      <version>${shrinkwrap.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jboss.shrinkwrap.resolver</groupId>
+      <artifactId>shrinkwrap-resolver-api</artifactId>
+      <version>${shrinkwrap.version}</version>
     </dependency>
 
     <dependency>
