@@ -29,9 +29,11 @@
     <project.libdir>${basedir}/lib</project.libdir>
     <!-- dependencies -->
     <bookkeeper.version>4.6.0</bookkeeper.version>
+    <commons-lang3.version>3.3.2</commons-lang3.version>
     <distributedlog.version>0.5.0</distributedlog.version>
     <grpc.version>1.5.0</grpc.version>
     <guava.version>21.0</guava.version>
+    <helix-core.version>0.6.7</helix-core.version>
     <lombok.version>1.16.18</lombok.version>
     <netty.version>4.1.12.Final</netty.version>
     <protobuf.version>3.4.0</protobuf.version>
@@ -46,6 +48,7 @@
     <findbugs-maven-plugin.version>3.0.3</findbugs-maven-plugin.version>
     <maven-checkstyle-plugin.version>2.17</maven-checkstyle-plugin.version>
     <maven-compiler-plugin.version>3.1</maven-compiler-plugin.version>
+    <maven-jar-plugin.version>2.2</maven-jar-plugin.version>
     <maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
     <puppycrawl.checkstyle.version>6.19</puppycrawl.checkstyle.version>
   </properties>
@@ -54,6 +57,7 @@
     <module>api</module>
     <module>common</module>
     <module>impl</module>
+    <module>streamstore</module>
   </modules>
 
   <dependencyManagement>
@@ -74,6 +78,11 @@
         <groupId>org.projectlombok</groupId>
         <artifactId>lombok</artifactId>
         <version>${lombok.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-lang3</artifactId>
+        <version>${commons-lang3.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.distributedlog</groupId>
@@ -119,6 +128,21 @@
         <groupId>io.grpc</groupId>
         <artifactId>grpc-all</artifactId>
         <version>${grpc.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.helix</groupId>
+        <artifactId>helix-core</artifactId>
+        <version>${helix-core.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
 
       <!-- test depenencies -->
@@ -274,6 +298,42 @@
           <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
         </configuration>
       </plugin>
+      <!--
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>${maven-checkstyle-plugin.version}</version>
+        <dependencies>
+          <dependency>
+            <groupId>com.puppycrawl.tools</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>${puppycrawl.checkstyle.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.apache.bookkeeper</groupId>
+            <artifactId>buildtools</artifactId>
+            <version>${bookkeeper.version}</version>
+          </dependency>
+        </dependencies>
+        <configuration>
+          <configLocation>bookkeeper/checkstyle.xml</configLocation>
+          <suppressionsLocation>bookkeeper/suppressions.xml</suppressionsLocation>
+          <consoleOutput>true</consoleOutput>
+          <failOnViolation>true</failOnViolation>
+          <includeResources>false</includeResources>
+          <includeTestSourceDirectory>true</includeTestSourceDirectory>
+        </configuration>
+        <executions>
+          <execution>
+            <id>checkstyle</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      -->
     </plugins>
   </build>
 </project>

@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
     <artifactId>stream-parent</artifactId>
-    <version>4.6.0-SNAPSHOT</version>
+    <version>0.6.0-SNAPSHOT</version>
   </parent>
   <artifactId>stream-storage-parent</artifactId>
   <name>Apache BookKeeper :: Stream Store :: Storage</name>

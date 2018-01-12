@@ -18,7 +18,7 @@
 
 package org.apache.distributedlog.stream.client.impl.internal;
 
-import static org.apache.bookkeeper.common.concurrent.FutureUtils.fromListenableFuture;
+import static org.apache.bookkeeper.common.util.ListenableFutures.fromListenableFuture;
 import static org.apache.distributedlog.stream.client.impl.internal.ProtocolInternalUtils.GetStorageContainerEndpointsFunction;
 import static org.apache.distributedlog.stream.client.utils.ClientConstants.DEFAULT_BACKOFF_MAX_MS;
 import static org.apache.distributedlog.stream.client.utils.ClientConstants.DEFAULT_BACKOFF_MULTIPLIER;
