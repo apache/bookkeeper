@@ -36,6 +36,7 @@
     <module>bookkeeper-server-shaded-test</module>
     <module>bookkeeper-server-tests-shaded-test</module>
     <module>docker-all-versions-image</module>
+    <module>integration-tests-utils</module>
   </modules>
   <build>
     <plugins>
