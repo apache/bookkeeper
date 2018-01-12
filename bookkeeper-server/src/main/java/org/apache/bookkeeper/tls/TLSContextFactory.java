@@ -83,11 +83,9 @@ public class TLSContextFactory implements SecurityHandlerFactory {
     private KeyStore loadKeyStore(String keyStoreType, String keyStoreLocation, String keyStorePassword)
             throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException {
         KeyStore ks = KeyStore.getInstance(keyStoreType);
-        FileInputStream ksin = new FileInputStream(keyStoreLocation);
-        try {
+
+        try (FileInputStream ksin = new FileInputStream(keyStoreLocation)) {
             ks.load(ksin, keyStorePassword.trim().toCharArray());
-        } finally {
-            ksin.close();
         }
         return ks;
     }
@@ -389,12 +387,16 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         if (protocols != null && protocols.length != 0) {
             sslHandler.engine().setEnabledProtocols(protocols);
         }
-        LOG.info("Enabled cipher protocols: {} ", Arrays.toString(sslHandler.engine().getEnabledProtocols()));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Enabled cipher protocols: {} ", Arrays.toString(sslHandler.engine().getEnabledProtocols()));
+        }
 
         if (ciphers != null && ciphers.length != 0) {
             sslHandler.engine().setEnabledCipherSuites(ciphers);
         }
-        LOG.info("Enabled cipher suites: {} ", Arrays.toString(sslHandler.engine().getEnabledCipherSuites()));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Enabled cipher suites: {} ", Arrays.toString(sslHandler.engine().getEnabledCipherSuites()));
+        }
 
         return sslHandler;
     }
