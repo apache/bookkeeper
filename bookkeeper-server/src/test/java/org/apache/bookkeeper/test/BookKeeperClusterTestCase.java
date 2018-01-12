@@ -169,7 +169,7 @@ public abstract class BookKeeperClusterTestCase {
     protected void startBKCluster() throws Exception {
         baseClientConf.setZkServers(zkUtil.getZooKeeperConnectString());
         if (numBookies > 0) {
-            bkc = new BookKeeperTestClient(baseClientConf);
+            bkc = new BookKeeperTestClient(baseClientConf, new TestStatsProvider());
         }
 
         // Create Bookie Servers (B1, B2, B3)
@@ -567,7 +567,7 @@ public abstract class BookKeeperClusterTestCase {
         bsLoggers.put(address, provider);
 
         if (bkc == null) {
-            bkc = new BookKeeperTestClient(baseClientConf);
+            bkc = new BookKeeperTestClient(baseClientConf, new TestStatsProvider());
         }
 
         Future<?> waitForBookie = conf.isForceReadOnlyBookie()
@@ -605,7 +605,7 @@ public abstract class BookKeeperClusterTestCase {
 
         BookieSocketAddress address = Bookie.getBookieAddress(conf);
         if (bkc == null) {
-            bkc = new BookKeeperTestClient(baseClientConf);
+            bkc = new BookKeeperTestClient(baseClientConf, new TestStatsProvider());
         }
         Future<?> waitForBookie = conf.isForceReadOnlyBookie()
             ? bkc.waitForReadOnlyBookie(address)

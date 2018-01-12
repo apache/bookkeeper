@@ -30,6 +30,8 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
+import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.zookeeper.ZooKeeper;
 
 /**
@@ -38,9 +40,19 @@ import org.apache.zookeeper.ZooKeeper;
  */
 @Slf4j
 public class BookKeeperTestClient extends BookKeeper {
-    public BookKeeperTestClient(ClientConfiguration conf)
+    TestStatsProvider statsProvider;
+
+    public BookKeeperTestClient(ClientConfiguration conf, TestStatsProvider statsProvider)
             throws IOException, InterruptedException, BKException {
-        super(conf);
+        super(conf, null, null,
+              statsProvider == null ? NullStatsLogger.INSTANCE : statsProvider.getStatsLogger(""),
+              null, null, null);
+        this.statsProvider = statsProvider;
+    }
+
+    public BookKeeperTestClient(ClientConfiguration conf)
+            throws InterruptedException, BKException, IOException {
+        this(conf, null);
     }
 
     public ZooKeeper getZkHandle() {
@@ -94,5 +106,9 @@ public class BookKeeperTestClient extends BookKeeper {
         regClient.watchWritableBookies(writableListener);
         regClient.watchReadOnlyBookies(readOnlyListener);
         return CompletableFuture.allOf(writableFuture, readOnlyFuture);
+    }
+
+    public TestStatsProvider getTestStatsProvider() {
+        return statsProvider;
     }
 }
