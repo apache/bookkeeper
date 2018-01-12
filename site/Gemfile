@@ -3,6 +3,7 @@ source 'https://rubygems.org'
 ruby '2.4.1'
 
 gem 'jekyll', '3.4.3'
+gem 'nokogiri', '1.8.1'
 gem 'jekyll-toc'
 
 group :jekyll_plugins do
