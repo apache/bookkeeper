@@ -127,6 +127,7 @@ public class MurmurHash {
 
         int rem = length & 0x7;
 
+        // CHECKSTYLE.OFF: FallThrough
         switch (rem) {
             case 0:
                 break;
@@ -146,6 +147,7 @@ public class MurmurHash {
                 h64 ^= (long) key.getByte(offset + length - rem);
                 h64 *= m64;
         }
+        // CHECKSTYLE.ON: FallThrough
 
         h64 ^= h64 >>> r64;
         h64 *= m64;

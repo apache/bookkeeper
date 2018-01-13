@@ -29,7 +29,7 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.distributedlog</groupId>
-      <artifactId>state-store-proto</artifactId>
+      <artifactId>stream-storage-proto</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
     <dependency>

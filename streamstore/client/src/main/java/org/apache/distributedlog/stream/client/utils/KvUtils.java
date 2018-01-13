@@ -18,7 +18,6 @@ import static org.apache.distributedlog.stream.proto.rangeservice.StorageContain
 import static org.apache.distributedlog.stream.proto.rangeservice.StorageContainerRequest.Type.KV_PUT;
 import static org.apache.distributedlog.stream.proto.rangeservice.StorageContainerRequest.Type.KV_RANGE;
 
-import com.google.common.base.Function;
 import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
@@ -26,8 +25,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.List;
 import java.util.Optional;
-import javax.annotation.Nullable;
-import org.apache.distributedlog.api.kv.KV;
+import org.apache.bookkeeper.common.kv.KV;
 import org.apache.distributedlog.api.kv.options.DeleteOption;
 import org.apache.distributedlog.api.kv.options.GetOption;
 import org.apache.distributedlog.api.kv.options.PutOption;

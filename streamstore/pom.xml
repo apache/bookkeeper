@@ -20,7 +20,7 @@
   <packaging>pom</packaging>
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <artifactId>state-store-parent</artifactId>
+    <artifactId>stream-storage-parent</artifactId>
     <groupId>org.apache.distributedlog</groupId>
     <version>0.6.0-SNAPSHOT</version>
     <relativePath>..</relativePath>

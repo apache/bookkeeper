@@ -20,17 +20,17 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.apache.distributedlog</groupId>
-    <artifactId>storage-parent</artifactId>
+    <artifactId>stream-storage-service-parent</artifactId>
     <version>0.6.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
-  <artifactId>storage-impl</artifactId>
-  <name>Apache DistributedLog :: IO :: State Store :: Storage :: Impl</name>
+  <artifactId>stream-storage-service-impl</artifactId>
+  <name>Apache DistributedLog :: Stream Storage :: Service :: Impl</name>
 
   <dependencies>
     <dependency>
-      <groupId>org.apache.bookkeeper</groupId>
-      <artifactId>stream-storage-api</artifactId>
+      <groupId>org.apache.distributedlog</groupId>
+      <artifactId>stream-storage-service-api</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
     <dependency>

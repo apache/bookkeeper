@@ -16,7 +16,7 @@ package org.apache.distributedlog.api.kv.result;
 import io.netty.buffer.ByteBuf;
 import java.util.List;
 import lombok.Data;
-import org.apache.distributedlog.api.kv.KV;
+import org.apache.bookkeeper.common.kv.KV;
 
 /**
  * Get result.

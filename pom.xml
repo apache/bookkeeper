@@ -20,9 +20,9 @@
   <modelVersion>4.0.0</modelVersion>
   <packaging>pom</packaging>
   <groupId>org.apache.distributedlog</groupId>
-  <artifactId>state-store-parent</artifactId>
+  <artifactId>stream-storage-parent</artifactId>
   <version>0.6.0-SNAPSHOT</version>
-  <name>Apache DistributedLog :: IO :: State Store :: Parent</name>
+  <name>Apache DistributedLog :: Stream Storage :: Parent</name>
   <url>http://maven.apache.org</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -55,9 +55,10 @@
 
   <modules>
     <module>common</module>
+    <module>statelib</module>
     <module>api</module>
     <module>proto</module>
-    <module>impl</module>
+    <module>storage</module>
     <module>streamstore</module>
   </modules>
 
@@ -299,7 +300,6 @@
           <forkedProcessTimeoutInSeconds>1800</forkedProcessTimeoutInSeconds>
         </configuration>
       </plugin>
-      <!--
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
@@ -334,7 +334,6 @@
           </execution>
         </executions>
       </plugin>
-      -->
     </plugins>
   </build>
 </project>

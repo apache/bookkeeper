@@ -38,12 +38,12 @@
     </dependency>
     <dependency>
       <groupId>org.apache.distributedlog</groupId>
-      <artifactId>state-store-api</artifactId>
+      <artifactId>stream-storage-api</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.distributedlog</groupId>
-      <artifactId>state-store-proto</artifactId>
+      <artifactId>stream-storage-proto</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
   </dependencies>

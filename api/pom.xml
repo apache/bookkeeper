@@ -19,14 +19,14 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <artifactId>state-store-parent</artifactId>
+    <artifactId>stream-storage-parent</artifactId>
     <groupId>org.apache.distributedlog</groupId>
     <version>0.6.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
   <groupId>org.apache.distributedlog</groupId>
-  <artifactId>state-store-api</artifactId>
-  <name>Apache DistributedLog :: IO :: State Store :: API</name>
+  <artifactId>stream-storage-api</artifactId>
+  <name>Apache DistributedLog :: Stream Storage :: API</name>
   <properties>
     <freebuilder.version>1.12.3</freebuilder.version>
   </properties>
@@ -34,6 +34,11 @@
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
       <artifactId>bookkeeper-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.distributedlog</groupId>
+      <artifactId>stream-storage-common</artifactId>
+      <version>${project.parent.version}</version>
     </dependency>
     <dependency>
       <groupId>io.netty</groupId>

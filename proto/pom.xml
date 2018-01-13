@@ -20,17 +20,17 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>org.apache.distributedlog</groupId>
-    <artifactId>state-store-parent</artifactId>
+    <artifactId>stream-storage-parent</artifactId>
     <version>0.6.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
-  <artifactId>state-store-proto</artifactId>
-  <name>Apache DistributedLog :: IO :: State Store :: Proto</name>
+  <artifactId>stream-storage-proto</artifactId>
+  <name>Apache DistributedLog :: Stream Storage :: Proto</name>
 
   <dependencies>
     <dependency>
       <groupId>org.apache.distributedlog</groupId>
-      <artifactId>state-store-common</artifactId>
+      <artifactId>stream-storage-common</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
     <dependency>
