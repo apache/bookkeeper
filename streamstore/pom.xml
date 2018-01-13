@@ -29,7 +29,6 @@
   <artifactId>stream-parent</artifactId>
   <name>Apache BookKeeper :: Stream Store</name>
   <modules>
-    <module>protocol</module>
     <module>api</module>
     <module>client</module>
     <module>storage</module>
