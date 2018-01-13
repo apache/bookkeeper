@@ -42,8 +42,8 @@
       <version>${project.parent.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.bookkeeper</groupId>
-      <artifactId>stream-protocol</artifactId>
+      <groupId>org.apache.distributedlog</groupId>
+      <artifactId>state-store-proto</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
   </dependencies>

@@ -31,7 +31,6 @@
   <modules>
     <module>api</module>
     <module>client</module>
-    <module>storage</module>
   </modules>
   <build>
     <plugins>

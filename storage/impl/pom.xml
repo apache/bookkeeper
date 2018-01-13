@@ -19,26 +19,42 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <parent>
-    <groupId>org.apache.bookkeeper</groupId>
-    <artifactId>stream-storage-parent</artifactId>
+    <groupId>org.apache.distributedlog</groupId>
+    <artifactId>storage-parent</artifactId>
     <version>0.6.0-SNAPSHOT</version>
+    <relativePath>..</relativePath>
   </parent>
-  <artifactId>stream-storage-api</artifactId>
-  <name>Apache BookKeeper :: Stream Store :: Storage :: Api</name>
+  <artifactId>storage-impl</artifactId>
+  <name>Apache DistributedLog :: IO :: State Store :: Storage :: Impl</name>
 
   <dependencies>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
-      <artifactId>bookkeeper-common</artifactId>
-      <version>${bookkeeper.version}</version>
+      <artifactId>stream-storage-api</artifactId>
+      <version>${project.parent.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.bookkeeper</groupId>
-      <artifactId>stream-protocol</artifactId>
+      <artifactId>stream-client</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.distributedlog</groupId>
+      <artifactId>distributedlog-core</artifactId>
+      <version>${distributedlog.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.helix</groupId>
+      <artifactId>helix-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.distributedlog</groupId>
+      <artifactId>distributedlog-core</artifactId>
+      <version>${distributedlog.version}</version>
+      <classifier>tests</classifier>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
-
   <build>
     <plugins>
       <plugin>
