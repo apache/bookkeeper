@@ -58,8 +58,8 @@
     <module>statelib</module>
     <module>api</module>
     <module>proto</module>
+    <module>clients/java</module>
     <module>storage</module>
-    <module>streamstore</module>
   </modules>
 
   <dependencyManagement>
