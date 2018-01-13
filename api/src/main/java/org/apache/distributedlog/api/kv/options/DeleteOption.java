@@ -12,7 +12,35 @@
  * limitations under the License.
  */
 
+package org.apache.distributedlog.api.kv.options;
+
+import io.netty.buffer.ByteBuf;
+import java.util.Optional;
+import org.inferred.freebuilder.FreeBuilder;
+
 /**
- * Table Operation Options.
+ * Delete Option.
  */
-package org.apache.distributedlog.stream.api.view.kv.options;
+@FreeBuilder
+public interface DeleteOption {
+
+  Optional<ByteBuf> endKey();
+
+  boolean prevKv();
+
+  /**
+   * Builder to build delete option.
+   */
+  class Builder extends DeleteOption_Builder {
+
+    private Builder() {
+      prevKv(false);
+    }
+
+  }
+
+  static Builder newBuilder() {
+    return new Builder();
+  }
+
+}

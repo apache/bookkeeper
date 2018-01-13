@@ -11,21 +11,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.distributedlog.stream.api.view.kv.result;
 
-import lombok.Data;
+package org.apache.distributedlog.api.kv.options;
+
+import org.inferred.freebuilder.FreeBuilder;
 
 /**
- * Header carried along with the responses.
+ * Put option.
  */
-@Data
-public class Header {
+@FreeBuilder
+public interface PutOption {
 
-  // stream id
-  private final long streamId;
-  // range id
-  private final long rangeId;
-  // revision
-  private final long revision;
+  boolean prevKv();
+
+  long leaseId();
+
+  long expectedVersion();
+
+  /**
+   * Builder to build put option.
+   */
+  class Builder extends PutOption_Builder {
+
+    Builder() {
+      prevKv(false);
+      leaseId(0L);
+      expectedVersion(-1);
+    }
+
+  }
+
+  static Builder newBuilder() {
+    return new Builder();
+  }
 
 }

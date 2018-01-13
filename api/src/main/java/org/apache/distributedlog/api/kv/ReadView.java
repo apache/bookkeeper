@@ -12,27 +12,23 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.stream.api.view.kv;
+package org.apache.distributedlog.api.kv;
 
 import io.netty.buffer.ByteBuf;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience;
 import org.apache.bookkeeper.common.annotation.InterfaceStability;
-import org.apache.distributedlog.stream.api.view.kv.options.DeleteOption;
-import org.apache.distributedlog.stream.api.view.kv.options.PutOption;
-import org.apache.distributedlog.stream.api.view.kv.result.DeleteResult;
-import org.apache.distributedlog.stream.api.view.kv.result.PutResult;
+import org.apache.distributedlog.api.kv.options.GetOption;
+import org.apache.distributedlog.api.kv.result.GetResult;
 
 /**
- * Write view of a given key space.
+ * A review view of a key/value space.
  */
 @InterfaceAudience.Public
 @InterfaceStability.Evolving
-public interface WriteView extends AutoCloseable {
+public interface ReadView extends AutoCloseable {
 
-  CompletableFuture<PutResult> put(ByteBuf pKey, ByteBuf lKey, ByteBuf value, PutOption option);
-
-  CompletableFuture<DeleteResult> delete(ByteBuf pKey, ByteBuf lKey, DeleteOption option);
+  CompletableFuture<GetResult> get(ByteBuf pKey, ByteBuf lKey, GetOption option);
 
   void close();
 

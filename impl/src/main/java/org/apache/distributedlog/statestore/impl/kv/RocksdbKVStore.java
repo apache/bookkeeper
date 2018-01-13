@@ -55,7 +55,7 @@ import org.apache.distributedlog.api.statestore.checkpoint.CheckpointStore;
 import org.apache.distributedlog.api.statestore.exceptions.InvalidStateStoreException;
 import org.apache.distributedlog.api.statestore.exceptions.StateStoreException;
 import org.apache.distributedlog.api.statestore.exceptions.StateStoreRuntimeException;
-import org.apache.distributedlog.api.statestore.kv.KV;
+import org.apache.distributedlog.api.kv.KV;
 import org.apache.distributedlog.api.statestore.kv.KVIterator;
 import org.apache.distributedlog.api.statestore.kv.KVMulti;
 import org.apache.distributedlog.api.statestore.kv.KVStore;

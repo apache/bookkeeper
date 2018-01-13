@@ -19,6 +19,7 @@ import com.google.common.collect.Sets;
 import io.netty.buffer.ByteBuf;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -28,13 +29,13 @@ import java.util.concurrent.ScheduledExecutorService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.router.ByteBufHashRouter;
-import org.apache.distributedlog.stream.api.view.kv.Table;
-import org.apache.distributedlog.stream.api.view.kv.options.DeleteOption;
-import org.apache.distributedlog.stream.api.view.kv.options.GetOption;
-import org.apache.distributedlog.stream.api.view.kv.options.PutOption;
-import org.apache.distributedlog.stream.api.view.kv.result.DeleteResult;
-import org.apache.distributedlog.stream.api.view.kv.result.GetResult;
-import org.apache.distributedlog.stream.api.view.kv.result.PutResult;
+import org.apache.distributedlog.api.kv.Table;
+import org.apache.distributedlog.api.kv.options.DeleteOption;
+import org.apache.distributedlog.api.kv.options.GetOption;
+import org.apache.distributedlog.api.kv.options.PutOption;
+import org.apache.distributedlog.api.kv.result.DeleteResult;
+import org.apache.distributedlog.api.kv.result.GetResult;
+import org.apache.distributedlog.api.kv.result.PutResult;
 import org.apache.distributedlog.stream.client.impl.RangeRouter;
 import org.apache.distributedlog.stream.client.internal.api.HashStreamRanges;
 import org.apache.distributedlog.stream.client.internal.api.RangeServerClientManager;
@@ -174,7 +175,7 @@ public class TableImpl implements Table {
       this.tableRanges.put(range.getRangeId(), tableRange);
     });
     // remove old ranges
-    Iterator<Map.Entry<Long, Table>> rsIter = tableRanges.entrySet().iterator();
+    Iterator<Entry<Long, Table>> rsIter = tableRanges.entrySet().iterator();
     while (rsIter.hasNext()) {
       Map.Entry<Long, Table> entry = rsIter.next();
       Long rid = entry.getKey();

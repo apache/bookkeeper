@@ -12,15 +12,7 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.stream.api.view.kv;
-
-import org.apache.bookkeeper.common.annotation.InterfaceAudience;
-import org.apache.bookkeeper.common.annotation.InterfaceStability;
-
 /**
- * Interface of kv client talking to kv spaces.
+ * Table Operation Options.
  */
-@InterfaceAudience.Public
-@InterfaceStability.Evolving
-public interface Table extends ReadView, WriteView {
-}
+package org.apache.distributedlog.api.kv.options;

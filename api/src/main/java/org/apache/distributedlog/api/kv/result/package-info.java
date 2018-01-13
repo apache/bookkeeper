@@ -11,22 +11,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.distributedlog.stream.api.view.kv.result;
-
-import com.google.protobuf.ByteString;
-import java.util.List;
-import lombok.Data;
-import org.apache.distributedlog.stream.proto.kv.KeyValue;
 
 /**
- * Delete result.
+ * Table Operation Results.
  */
-@Data
-public class DeleteResult {
-
-  private final Header header;
-  private final long numDeleted;
-  private final ByteString pKey;
-  private final List<KeyValue> prevKvs;
-
-}
+package org.apache.distributedlog.api.kv.result;

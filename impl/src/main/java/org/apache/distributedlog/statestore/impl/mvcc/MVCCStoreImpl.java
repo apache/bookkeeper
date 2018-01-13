@@ -39,7 +39,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.distributedlog.api.statestore.exceptions.InvalidStateStoreException;
 import org.apache.distributedlog.api.statestore.exceptions.MVCCStoreException;
 import org.apache.distributedlog.api.statestore.exceptions.StateStoreRuntimeException;
-import org.apache.distributedlog.api.statestore.kv.KV;
+import org.apache.distributedlog.api.kv.KV;
 import org.apache.distributedlog.api.statestore.kv.KVIterator;
 import org.apache.distributedlog.api.statestore.kv.KVMulti;
 import org.apache.distributedlog.api.statestore.mvcc.KVRecord;

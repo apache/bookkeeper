@@ -11,36 +11,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.apache.distributedlog.stream.api.view.kv.options;
+package org.apache.distributedlog.api.kv.result;
 
 import io.netty.buffer.ByteBuf;
-import java.util.Optional;
-import org.inferred.freebuilder.FreeBuilder;
+import java.util.List;
+import lombok.Data;
+import org.apache.distributedlog.api.kv.KV;
 
 /**
- * Delete Option.
+ * Get result.
  */
-@FreeBuilder
-public interface DeleteOption {
+@Data
+public class GetResult {
 
-  Optional<ByteBuf> endKey();
-
-  boolean prevKv();
-
-  /**
-   * Builder to build delete option.
-   */
-  class Builder extends DeleteOption_Builder {
-
-    private Builder() {
-      prevKv(false);
-    }
-
-  }
-
-  static Builder newBuilder() {
-    return new Builder();
-  }
+  private final Header header;
+  private final ByteBuf pKey;
+  private final List<KV<ByteBuf, ByteBuf>> kvs;
+  private final boolean more;
+  private final long count;
 
 }

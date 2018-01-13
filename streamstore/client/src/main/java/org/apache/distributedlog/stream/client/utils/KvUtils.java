@@ -18,16 +18,25 @@ import static org.apache.distributedlog.stream.proto.rangeservice.StorageContain
 import static org.apache.distributedlog.stream.proto.rangeservice.StorageContainerRequest.Type.KV_PUT;
 import static org.apache.distributedlog.stream.proto.rangeservice.StorageContainerRequest.Type.KV_RANGE;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import java.util.List;
 import java.util.Optional;
-import org.apache.distributedlog.stream.api.view.kv.options.DeleteOption;
-import org.apache.distributedlog.stream.api.view.kv.options.GetOption;
-import org.apache.distributedlog.stream.api.view.kv.options.PutOption;
-import org.apache.distributedlog.stream.api.view.kv.result.DeleteResult;
-import org.apache.distributedlog.stream.api.view.kv.result.GetResult;
-import org.apache.distributedlog.stream.api.view.kv.result.Header;
-import org.apache.distributedlog.stream.api.view.kv.result.PutResult;
+import javax.annotation.Nullable;
+import org.apache.distributedlog.api.kv.KV;
+import org.apache.distributedlog.api.kv.options.DeleteOption;
+import org.apache.distributedlog.api.kv.options.GetOption;
+import org.apache.distributedlog.api.kv.options.PutOption;
+import org.apache.distributedlog.api.kv.result.DeleteResult;
+import org.apache.distributedlog.api.kv.result.GetResult;
+import org.apache.distributedlog.api.kv.result.Header;
+import org.apache.distributedlog.api.kv.result.PutResult;
+import org.apache.distributedlog.stream.client.impl.view.kv.KVImpl;
+import org.apache.distributedlog.stream.proto.kv.KeyValue;
 import org.apache.distributedlog.stream.proto.kv.rpc.DeleteRangeRequest;
 import org.apache.distributedlog.stream.proto.kv.rpc.DeleteRangeResponse;
 import org.apache.distributedlog.stream.proto.kv.rpc.PutRequest;
@@ -43,6 +52,24 @@ import org.apache.distributedlog.stream.proto.rangeservice.StorageContainerReque
 public final class KvUtils {
 
   private KvUtils() {}
+
+  public static ByteBuf fromProtoKey(ByteString key) {
+    return Unpooled.wrappedBuffer(key.asReadOnlyByteBuffer());
+  }
+
+  public static ByteString toProtoKey(ByteBuf key) {
+    return UnsafeByteOperations.unsafeWrap(key.nioBuffer());
+  }
+
+  public static KV<ByteBuf, ByteBuf> fromProtoKeyValue(KeyValue kv) {
+    return new KVImpl<>(
+        Unpooled.wrappedBuffer(kv.getKey().asReadOnlyByteBuffer()),
+        Unpooled.wrappedBuffer(kv.getValue().asReadOnlyByteBuffer()));
+  }
+
+  public static List<KV<ByteBuf, ByteBuf>> fromProtoKeyValues(List<KeyValue> kvs) {
+    return Lists.transform(kvs, kv -> fromProtoKeyValue(kv));
+  }
 
   public static Header newHeader(RoutingHeader header, long revision) {
     return new Header(
@@ -63,13 +90,13 @@ public final class KvUtils {
 
   public static RangeRequest.Builder newRangeRequest(ByteBuf key, GetOption option) {
     RangeRequest.Builder builder = RangeRequest.newBuilder()
-      .setKey(UnsafeByteOperations.unsafeWrap(key.nioBuffer()))
+      .setKey(toProtoKey(key))
       .setCountOnly(option.countOnly())
       .setKeysOnly(option.keysOnly())
       .setLimit(option.limit())
       .setRevision(option.revision());
     if (option.endKey().isPresent()) {
-      builder = builder.setRangeEnd(UnsafeByteOperations.unsafeWrap(option.endKey().get().nioBuffer()));
+      builder = builder.setRangeEnd(toProtoKey(option.endKey().get()));
     }
     return builder;
   }
@@ -77,8 +104,8 @@ public final class KvUtils {
   public static GetResult newGetResult(RangeResponse response) {
     return new GetResult(
       newHeader(response.getHeader().getRoutingHeader(), response.getHeader().getRevision()),
-      response.getHeader().getRoutingHeader().getRKey(),
-      response.getKvsList(),
+      fromProtoKey(response.getHeader().getRoutingHeader().getRKey()),
+      fromProtoKeyValues(response.getKvsList()),
       response.getMore(),
       response.getCount());
   }
@@ -105,8 +132,8 @@ public final class KvUtils {
   public static PutResult newPutResult(PutResponse response) {
     return new PutResult(
       newHeader(response.getHeader().getRoutingHeader(), response.getHeader().getRevision()),
-      response.getHeader().getRoutingHeader().getRKey(),
-      response.hasPrevKv() ? Optional.of(response.getPrevKv()) : Optional.empty());
+      fromProtoKey(response.getHeader().getRoutingHeader().getRKey()),
+      response.hasPrevKv() ? Optional.of(fromProtoKeyValue(response.getPrevKv())) : Optional.empty());
   }
 
   public static StorageContainerRequest newKvDeleteRequest(
@@ -133,8 +160,8 @@ public final class KvUtils {
     return new DeleteResult(
       newHeader(response.getHeader().getRoutingHeader(), response.getHeader().getRevision()),
       response.getDeleted(),
-      response.getHeader().getRoutingHeader().getRKey(),
-      response.getPrevKvsList());
+      fromProtoKey(response.getHeader().getRoutingHeader().getRKey()),
+      fromProtoKeyValues(response.getPrevKvsList()));
   }
 
 }

@@ -18,4 +18,4 @@
 /**
  * Table related classes.
  */
-package org.apache.distributedlog.stream.api.view.kv;
+package org.apache.distributedlog.api.kv;

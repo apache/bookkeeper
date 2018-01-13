@@ -31,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.distributedlog.api.statestore.StateStoreSpec;
 import org.apache.distributedlog.api.statestore.exceptions.MVCCStoreException;
-import org.apache.distributedlog.api.statestore.kv.KV;
+import org.apache.distributedlog.api.kv.KV;
 import org.apache.distributedlog.api.statestore.kv.KVIterator;
 import org.apache.distributedlog.api.statestore.mvcc.KVRecord;
 import org.apache.distributedlog.api.statestore.mvcc.op.CompareResult;

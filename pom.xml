@@ -54,8 +54,8 @@
   </properties>
 
   <modules>
-    <module>api</module>
     <module>common</module>
+    <module>api</module>
     <module>impl</module>
     <module>streamstore</module>
   </modules>

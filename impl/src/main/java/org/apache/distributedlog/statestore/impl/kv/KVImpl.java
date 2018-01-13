@@ -23,7 +23,7 @@ import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
-import org.apache.distributedlog.api.statestore.kv.KV;
+import org.apache.distributedlog.api.kv.KV;
 
 /**
  * A Key/Value pair.

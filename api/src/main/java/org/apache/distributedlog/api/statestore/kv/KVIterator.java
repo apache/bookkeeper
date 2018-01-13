@@ -21,6 +21,7 @@ package org.apache.distributedlog.api.statestore.kv;
 import java.util.Iterator;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
+import org.apache.distributedlog.api.kv.KV;
 
 /**
  * Iterator to iterate key/value pairs of the read-view of a k/v store.

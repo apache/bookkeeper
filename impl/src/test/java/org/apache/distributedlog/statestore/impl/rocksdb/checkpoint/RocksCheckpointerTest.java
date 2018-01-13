@@ -40,7 +40,7 @@ import lombok.Cleanup;
 import org.apache.distributedlog.api.statestore.StateStoreSpec;
 import org.apache.distributedlog.api.statestore.checkpoint.CheckpointStore;
 import org.apache.distributedlog.api.statestore.exceptions.StateStoreException;
-import org.apache.distributedlog.api.statestore.kv.KV;
+import org.apache.distributedlog.api.kv.KV;
 import org.apache.distributedlog.api.statestore.kv.KVIterator;
 import org.apache.distributedlog.common.coder.StringUtf8Coder;
 import org.apache.distributedlog.statestore.impl.kv.RocksdbKVStore;

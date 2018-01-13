@@ -20,7 +20,7 @@ package org.apache.distributedlog.stream.api;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience;
 import org.apache.bookkeeper.common.annotation.InterfaceStability;
-import org.apache.distributedlog.stream.api.view.kv.Table;
+import org.apache.distributedlog.api.kv.Table;
 
 /**
  * StreamClient is the client that application uses to open streams and tables,

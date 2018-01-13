@@ -11,21 +11,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.distributedlog.stream.api.view.kv.result;
+package org.apache.distributedlog.api.kv.options;
 
-import com.google.protobuf.ByteString;
+import io.netty.buffer.ByteBuf;
 import java.util.Optional;
-import lombok.Data;
-import org.apache.distributedlog.stream.proto.kv.KeyValue;
+import org.inferred.freebuilder.FreeBuilder;
 
 /**
- * Put response.
+ * Get Option.
  */
-@Data
-public class PutResult {
+@FreeBuilder
+public interface GetOption {
 
-  private final Header header;
-  private final ByteString pKey;
-  private final Optional<KeyValue> prevKv;
+  long limit();
+
+  long revision();
+
+  boolean keysOnly();
+
+  boolean countOnly();
+
+  Optional<ByteBuf> endKey();
+
+  /**
+   * Builder to build get option.
+   */
+  class Builder extends GetOption_Builder {
+
+    private Builder() {
+      limit(0L);
+      revision(0L);
+      keysOnly(false);
+      countOnly(false);
+    }
+
+  }
+
+  static Builder newBuilder() {
+    return new Builder();
+  }
 
 }

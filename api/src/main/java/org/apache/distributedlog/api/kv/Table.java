@@ -11,23 +11,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.distributedlog.stream.api.view.kv.result;
 
-import com.google.protobuf.ByteString;
-import java.util.List;
-import lombok.Data;
-import org.apache.distributedlog.stream.proto.kv.KeyValue;
+package org.apache.distributedlog.api.kv;
+
+import org.apache.bookkeeper.common.annotation.InterfaceAudience;
+import org.apache.bookkeeper.common.annotation.InterfaceStability;
 
 /**
- * Get result.
+ * Interface of kv client talking to kv spaces.
  */
-@Data
-public class GetResult {
-
-  private final Header header;
-  private final ByteString pKey;
-  private final List<KeyValue> kvs;
-  private final boolean more;
-  private final long count;
-
+@InterfaceAudience.Public
+@InterfaceStability.Evolving
+public interface Table extends ReadView, WriteView {
 }

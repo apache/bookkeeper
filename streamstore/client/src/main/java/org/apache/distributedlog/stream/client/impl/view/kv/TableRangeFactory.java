@@ -15,7 +15,7 @@
 package org.apache.distributedlog.stream.client.impl.view.kv;
 
 import java.util.concurrent.ScheduledExecutorService;
-import org.apache.distributedlog.stream.api.view.kv.Table;
+import org.apache.distributedlog.api.kv.Table;
 import org.apache.distributedlog.stream.proto.RangeProperties;
 import org.apache.distributedlog.stream.proto.StreamProperties;
 

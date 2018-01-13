@@ -16,23 +16,37 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.api.statestore.kv;
+package org.apache.distributedlog.stream.client.impl.view.kv;
 
-import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
-import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
+import org.apache.distributedlog.api.kv.KV;
 
 /**
- * A class represents a key value pair.
+ * A Key/Value pair.
  *
  * @param <K> key type
  * @param <V> value type
  */
-@Public
-@Evolving
-public interface KV<K, V> {
+@AllArgsConstructor(access = AccessLevel.PUBLIC)
+@ToString
+@EqualsAndHashCode
+@Getter
+public class KVImpl<K, V> implements KV<K, V> {
 
-    K key();
+    private final K key;
+    private final V value;
 
-    V value();
+    @Override
+    public K key() {
+        return key;
+    }
 
+    @Override
+    public V value() {
+        return value;
+    }
 }

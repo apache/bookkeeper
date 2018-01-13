@@ -11,8 +11,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.distributedlog.api.kv.result;
+
+import io.netty.buffer.ByteBuf;
+import java.util.Optional;
+import lombok.Data;
+import org.apache.distributedlog.api.kv.KV;
 
 /**
- * Table Operation Results.
+ * Put response.
  */
-package org.apache.distributedlog.stream.api.view.kv.result;
+@Data
+public class PutResult {
+
+  private final Header header;
+  private final ByteBuf pKey;
+  private final Optional<KV<ByteBuf, ByteBuf>> prevKv;
+
+}
