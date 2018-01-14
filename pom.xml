@@ -58,7 +58,7 @@
     <module>statelib</module>
     <module>api</module>
     <module>proto</module>
-    <module>clients/java</module>
+    <module>clients</module>
     <module>storage</module>
   </modules>
 

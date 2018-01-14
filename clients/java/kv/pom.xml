@@ -24,7 +24,7 @@
     <version>0.6.0-SNAPSHOT</version>
   </parent>
   <artifactId>stream-storage-java-kv-client</artifactId>
-  <name>Apache DistributedLog :: Stream Storage :: Java Client :: KV</name>
+  <name>Apache DistributedLog :: Stream Storage :: Clients :: Java Client :: KV</name>
 
   <dependencies>
     <dependency>
