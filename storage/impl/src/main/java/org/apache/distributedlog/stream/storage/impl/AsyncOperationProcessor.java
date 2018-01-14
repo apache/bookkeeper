@@ -21,7 +21,7 @@ package org.apache.distributedlog.stream.storage.impl;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import org.apache.distributedlog.common.concurrent.FutureUtils;
-import org.apache.distributedlog.stream.proto.rangeservice.StatusCode;
+import org.apache.distributedlog.stream.proto.storage.StatusCode;
 
 /**
  * Operation Processor.

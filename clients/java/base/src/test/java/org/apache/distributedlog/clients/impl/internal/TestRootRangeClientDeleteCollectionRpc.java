@@ -32,10 +32,10 @@ import java.util.concurrent.ExecutionException;
 import org.apache.distributedlog.clients.exceptions.ClientException;
 import org.apache.distributedlog.clients.exceptions.CollectionNotFoundException;
 import org.apache.distributedlog.clients.impl.internal.api.RootRangeClient;
-import org.apache.distributedlog.stream.proto.rangeservice.DeleteCollectionRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.DeleteCollectionResponse;
-import org.apache.distributedlog.stream.proto.rangeservice.RootRangeServiceGrpc.RootRangeServiceImplBase;
-import org.apache.distributedlog.stream.proto.rangeservice.StatusCode;
+import org.apache.distributedlog.stream.proto.storage.DeleteCollectionRequest;
+import org.apache.distributedlog.stream.proto.storage.DeleteCollectionResponse;
+import org.apache.distributedlog.stream.proto.storage.RootRangeServiceGrpc.RootRangeServiceImplBase;
+import org.apache.distributedlog.stream.proto.storage.StatusCode;
 
 /**
  * Test Case for {@link RootRangeClientImpl}: DeleteCollection.

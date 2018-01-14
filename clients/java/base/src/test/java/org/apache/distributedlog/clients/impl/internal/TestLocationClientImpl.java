@@ -47,13 +47,13 @@ import org.apache.distributedlog.clients.exceptions.ClientException;
 import org.apache.distributedlog.clients.exceptions.StorageContainerException;
 import org.apache.distributedlog.clients.grpc.GrpcClientTestBase;
 import org.apache.distributedlog.clients.utils.NetUtils;
-import org.apache.distributedlog.stream.proto.rangeservice.GetStorageContainerEndpointRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.GetStorageContainerEndpointResponse;
-import org.apache.distributedlog.stream.proto.rangeservice.OneStorageContainerEndpointRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.OneStorageContainerEndpointResponse;
-import org.apache.distributedlog.stream.proto.rangeservice.StatusCode;
-import org.apache.distributedlog.stream.proto.rangeservice.StorageContainerEndpoint;
-import org.apache.distributedlog.stream.proto.rangeservice.StorageContainerServiceGrpc.StorageContainerServiceImplBase;
+import org.apache.distributedlog.stream.proto.storage.GetStorageContainerEndpointRequest;
+import org.apache.distributedlog.stream.proto.storage.GetStorageContainerEndpointResponse;
+import org.apache.distributedlog.stream.proto.storage.OneStorageContainerEndpointRequest;
+import org.apache.distributedlog.stream.proto.storage.OneStorageContainerEndpointResponse;
+import org.apache.distributedlog.stream.proto.storage.StatusCode;
+import org.apache.distributedlog.stream.proto.storage.StorageContainerEndpoint;
+import org.apache.distributedlog.stream.proto.storage.StorageContainerServiceGrpc.StorageContainerServiceImplBase;
 import org.junit.Test;
 
 /**

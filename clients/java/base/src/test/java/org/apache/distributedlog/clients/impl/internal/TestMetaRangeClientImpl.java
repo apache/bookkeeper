@@ -45,13 +45,13 @@ import org.apache.distributedlog.clients.impl.internal.api.LocationClient;
 import org.apache.distributedlog.stream.proto.RangeProperties;
 import org.apache.distributedlog.stream.proto.StreamConfiguration;
 import org.apache.distributedlog.stream.proto.StreamProperties;
-import org.apache.distributedlog.stream.proto.rangeservice.GetActiveRangesResponse;
-import org.apache.distributedlog.stream.proto.rangeservice.MetaRangeServiceGrpc.MetaRangeServiceImplBase;
-import org.apache.distributedlog.stream.proto.rangeservice.RelatedRanges;
-import org.apache.distributedlog.stream.proto.rangeservice.RelationType;
-import org.apache.distributedlog.stream.proto.rangeservice.StatusCode;
-import org.apache.distributedlog.stream.proto.rangeservice.StorageContainerRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.StorageContainerResponse;
+import org.apache.distributedlog.stream.proto.storage.GetActiveRangesResponse;
+import org.apache.distributedlog.stream.proto.storage.MetaRangeServiceGrpc.MetaRangeServiceImplBase;
+import org.apache.distributedlog.stream.proto.storage.RelatedRanges;
+import org.apache.distributedlog.stream.proto.storage.RelationType;
+import org.apache.distributedlog.stream.proto.storage.StatusCode;
+import org.apache.distributedlog.stream.proto.storage.StorageContainerRequest;
+import org.apache.distributedlog.stream.proto.storage.StorageContainerResponse;
 import org.junit.Test;
 
 /**

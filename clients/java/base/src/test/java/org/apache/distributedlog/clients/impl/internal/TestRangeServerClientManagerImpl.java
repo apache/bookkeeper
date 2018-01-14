@@ -31,11 +31,11 @@ import org.apache.distributedlog.clients.impl.internal.api.LocationClient;
 import org.apache.distributedlog.clients.impl.internal.api.MetaRangeClient;
 import org.apache.distributedlog.stream.proto.StreamConfiguration;
 import org.apache.distributedlog.stream.proto.StreamProperties;
-import org.apache.distributedlog.stream.proto.rangeservice.GetStreamRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.GetStreamResponse;
-import org.apache.distributedlog.stream.proto.rangeservice.OneStorageContainerEndpointResponse;
-import org.apache.distributedlog.stream.proto.rangeservice.RootRangeServiceGrpc.RootRangeServiceImplBase;
-import org.apache.distributedlog.stream.proto.rangeservice.StatusCode;
+import org.apache.distributedlog.stream.proto.storage.GetStreamRequest;
+import org.apache.distributedlog.stream.proto.storage.GetStreamResponse;
+import org.apache.distributedlog.stream.proto.storage.OneStorageContainerEndpointResponse;
+import org.apache.distributedlog.stream.proto.storage.RootRangeServiceGrpc.RootRangeServiceImplBase;
+import org.apache.distributedlog.stream.proto.storage.StatusCode;
 import org.inferred.freebuilder.shaded.com.google.common.collect.Lists;
 import org.junit.Test;
 

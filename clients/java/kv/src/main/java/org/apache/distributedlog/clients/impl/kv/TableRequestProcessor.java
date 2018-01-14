@@ -22,9 +22,9 @@ import org.apache.distributedlog.clients.exceptions.InternalServerException;
 import org.apache.distributedlog.clients.impl.StorageContainerChannel;
 import org.apache.distributedlog.clients.impl.channel.RangeServerChannel;
 import org.apache.distributedlog.clients.utils.ListenableFutureRpcProcessor;
-import org.apache.distributedlog.stream.proto.rangeservice.StatusCode;
-import org.apache.distributedlog.stream.proto.rangeservice.StorageContainerRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.StorageContainerResponse;
+import org.apache.distributedlog.stream.proto.storage.StatusCode;
+import org.apache.distributedlog.stream.proto.storage.StorageContainerRequest;
+import org.apache.distributedlog.stream.proto.storage.StorageContainerResponse;
 
 /**
  * Request Processor processing table request.

@@ -30,21 +30,21 @@ import org.apache.distributedlog.stream.proto.StreamConfiguration;
 import org.apache.distributedlog.stream.proto.StreamMetadata.LifecycleState;
 import org.apache.distributedlog.stream.proto.StreamMetadata.ServingState;
 import org.apache.distributedlog.stream.proto.StreamName;
-import org.apache.distributedlog.stream.proto.rangeservice.CreateCollectionRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.CreateStreamRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.DeleteCollectionRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.DeleteStreamRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.GetActiveRangesRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.GetCollectionRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.GetStorageContainerEndpointRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.GetStorageContainerEndpointResponse;
-import org.apache.distributedlog.stream.proto.rangeservice.GetStreamRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.OneStorageContainerEndpointRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.OneStorageContainerEndpointResponse;
-import org.apache.distributedlog.stream.proto.rangeservice.StatusCode;
-import org.apache.distributedlog.stream.proto.rangeservice.StorageContainerEndpoint;
-import org.apache.distributedlog.stream.proto.rangeservice.StorageContainerRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.StorageContainerRequest.Type;
+import org.apache.distributedlog.stream.proto.storage.CreateCollectionRequest;
+import org.apache.distributedlog.stream.proto.storage.CreateStreamRequest;
+import org.apache.distributedlog.stream.proto.storage.DeleteCollectionRequest;
+import org.apache.distributedlog.stream.proto.storage.DeleteStreamRequest;
+import org.apache.distributedlog.stream.proto.storage.GetActiveRangesRequest;
+import org.apache.distributedlog.stream.proto.storage.GetCollectionRequest;
+import org.apache.distributedlog.stream.proto.storage.GetStorageContainerEndpointRequest;
+import org.apache.distributedlog.stream.proto.storage.GetStorageContainerEndpointResponse;
+import org.apache.distributedlog.stream.proto.storage.GetStreamRequest;
+import org.apache.distributedlog.stream.proto.storage.OneStorageContainerEndpointRequest;
+import org.apache.distributedlog.stream.proto.storage.OneStorageContainerEndpointResponse;
+import org.apache.distributedlog.stream.proto.storage.StatusCode;
+import org.apache.distributedlog.stream.proto.storage.StorageContainerEndpoint;
+import org.apache.distributedlog.stream.proto.storage.StorageContainerRequest;
+import org.apache.distributedlog.stream.proto.storage.StorageContainerRequest.Type;
 
 /**
  * Protocol related utils.

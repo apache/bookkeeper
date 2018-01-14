@@ -14,7 +14,7 @@
 
 package org.apache.distributedlog.clients.exceptions;
 
-import org.apache.distributedlog.stream.proto.rangeservice.StatusCode;
+import org.apache.distributedlog.stream.proto.storage.StatusCode;
 
 /**
  * Exception is thrown when the client encounters storage container error.

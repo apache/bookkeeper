@@ -19,8 +19,8 @@
 package org.apache.distributedlog.stream.storage.api.metadata;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.distributedlog.stream.proto.rangeservice.StorageContainerRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.StorageContainerResponse;
+import org.apache.distributedlog.stream.proto.storage.StorageContainerRequest;
+import org.apache.distributedlog.stream.proto.storage.StorageContainerResponse;
 
 /**
  * The metadata store that store ranges.

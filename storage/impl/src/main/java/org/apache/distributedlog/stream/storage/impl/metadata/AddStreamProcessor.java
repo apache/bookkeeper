@@ -19,9 +19,9 @@
 package org.apache.distributedlog.stream.storage.impl.metadata;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.distributedlog.stream.proto.rangeservice.AddStreamRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.StatusCode;
-import org.apache.distributedlog.stream.proto.rangeservice.StorageContainerResponse;
+import org.apache.distributedlog.stream.proto.storage.AddStreamRequest;
+import org.apache.distributedlog.stream.proto.storage.StatusCode;
+import org.apache.distributedlog.stream.proto.storage.StorageContainerResponse;
 import org.apache.distributedlog.stream.storage.impl.AsyncOperationProcessor;
 
 /**

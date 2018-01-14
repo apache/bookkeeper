@@ -34,10 +34,10 @@ import org.apache.distributedlog.clients.exceptions.ClientException;
 import org.apache.distributedlog.clients.exceptions.StreamNotFoundException;
 import org.apache.distributedlog.clients.impl.internal.api.RootRangeClient;
 import org.apache.distributedlog.stream.proto.StreamProperties;
-import org.apache.distributedlog.stream.proto.rangeservice.GetStreamRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.GetStreamResponse;
-import org.apache.distributedlog.stream.proto.rangeservice.RootRangeServiceGrpc.RootRangeServiceImplBase;
-import org.apache.distributedlog.stream.proto.rangeservice.StatusCode;
+import org.apache.distributedlog.stream.proto.storage.GetStreamRequest;
+import org.apache.distributedlog.stream.proto.storage.GetStreamResponse;
+import org.apache.distributedlog.stream.proto.storage.RootRangeServiceGrpc.RootRangeServiceImplBase;
+import org.apache.distributedlog.stream.proto.storage.StatusCode;
 
 /**
  * Test Case for {@link RootRangeClientImpl}: CreateStream.

@@ -22,9 +22,9 @@ import static org.apache.distributedlog.clients.impl.kv.KvUtils.newKvPutRequest;
 import static org.apache.distributedlog.clients.impl.kv.KvUtils.newKvRangeRequest;
 import static org.apache.distributedlog.clients.impl.kv.KvUtils.newPutRequest;
 import static org.apache.distributedlog.clients.impl.kv.KvUtils.newRangeRequest;
-import static org.apache.distributedlog.stream.proto.rangeservice.StorageContainerRequest.Type.KV_DELETE;
-import static org.apache.distributedlog.stream.proto.rangeservice.StorageContainerRequest.Type.KV_PUT;
-import static org.apache.distributedlog.stream.proto.rangeservice.StorageContainerRequest.Type.KV_RANGE;
+import static org.apache.distributedlog.stream.proto.storage.StorageContainerRequest.Type.KV_DELETE;
+import static org.apache.distributedlog.stream.proto.storage.StorageContainerRequest.Type.KV_PUT;
+import static org.apache.distributedlog.stream.proto.storage.StorageContainerRequest.Type.KV_RANGE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -40,7 +40,7 @@ import org.apache.distributedlog.stream.proto.kv.rpc.DeleteRangeRequest;
 import org.apache.distributedlog.stream.proto.kv.rpc.PutRequest;
 import org.apache.distributedlog.stream.proto.kv.rpc.RangeRequest;
 import org.apache.distributedlog.stream.proto.kv.rpc.RoutingHeader;
-import org.apache.distributedlog.stream.proto.rangeservice.StorageContainerRequest;
+import org.apache.distributedlog.stream.proto.storage.StorageContainerRequest;
 import org.junit.Test;
 
 /**

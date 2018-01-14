@@ -15,9 +15,9 @@
 package org.apache.distributedlog.stream.storage.impl.metadata;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.distributedlog.stream.proto.rangeservice.DeleteCollectionRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.DeleteCollectionResponse;
-import org.apache.distributedlog.stream.proto.rangeservice.StatusCode;
+import org.apache.distributedlog.stream.proto.storage.DeleteCollectionRequest;
+import org.apache.distributedlog.stream.proto.storage.DeleteCollectionResponse;
+import org.apache.distributedlog.stream.proto.storage.StatusCode;
 import org.apache.distributedlog.stream.storage.impl.AsyncOperationProcessor;
 
 /**

@@ -43,10 +43,10 @@ import org.apache.distributedlog.clients.impl.internal.api.LocationClient;
 import org.apache.distributedlog.clients.resolver.SimpleStreamResolverFactory;
 import org.apache.distributedlog.clients.utils.ClientConstants;
 import org.apache.distributedlog.clients.utils.GrpcUtils;
-import org.apache.distributedlog.stream.proto.rangeservice.GetStorageContainerEndpointRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.OneStorageContainerEndpointResponse;
-import org.apache.distributedlog.stream.proto.rangeservice.StorageContainerServiceGrpc;
-import org.apache.distributedlog.stream.proto.rangeservice.StorageContainerServiceGrpc.StorageContainerServiceFutureStub;
+import org.apache.distributedlog.stream.proto.storage.GetStorageContainerEndpointRequest;
+import org.apache.distributedlog.stream.proto.storage.OneStorageContainerEndpointResponse;
+import org.apache.distributedlog.stream.proto.storage.StorageContainerServiceGrpc;
+import org.apache.distributedlog.stream.proto.storage.StorageContainerServiceGrpc.StorageContainerServiceFutureStub;
 
 /**
  * Default Implementation of {@link LocationClient}.

@@ -26,14 +26,14 @@ import java.util.function.Function;
 import javax.annotation.concurrent.GuardedBy;
 import org.apache.distributedlog.clients.utils.GrpcUtils;
 import org.apache.distributedlog.stream.proto.common.Endpoint;
-import org.apache.distributedlog.stream.proto.rangeservice.MetaRangeServiceGrpc;
-import org.apache.distributedlog.stream.proto.rangeservice.MetaRangeServiceGrpc.MetaRangeServiceFutureStub;
-import org.apache.distributedlog.stream.proto.rangeservice.RootRangeServiceGrpc;
-import org.apache.distributedlog.stream.proto.rangeservice.RootRangeServiceGrpc.RootRangeServiceFutureStub;
-import org.apache.distributedlog.stream.proto.rangeservice.StorageContainerServiceGrpc;
-import org.apache.distributedlog.stream.proto.rangeservice.StorageContainerServiceGrpc.StorageContainerServiceFutureStub;
-import org.apache.distributedlog.stream.proto.rangeservice.TableServiceGrpc;
-import org.apache.distributedlog.stream.proto.rangeservice.TableServiceGrpc.TableServiceFutureStub;
+import org.apache.distributedlog.stream.proto.storage.MetaRangeServiceGrpc;
+import org.apache.distributedlog.stream.proto.storage.MetaRangeServiceGrpc.MetaRangeServiceFutureStub;
+import org.apache.distributedlog.stream.proto.storage.RootRangeServiceGrpc;
+import org.apache.distributedlog.stream.proto.storage.RootRangeServiceGrpc.RootRangeServiceFutureStub;
+import org.apache.distributedlog.stream.proto.storage.StorageContainerServiceGrpc;
+import org.apache.distributedlog.stream.proto.storage.StorageContainerServiceGrpc.StorageContainerServiceFutureStub;
+import org.apache.distributedlog.stream.proto.storage.TableServiceGrpc;
+import org.apache.distributedlog.stream.proto.storage.TableServiceGrpc.TableServiceFutureStub;
 
 /**
  * A channel connected to a range server.

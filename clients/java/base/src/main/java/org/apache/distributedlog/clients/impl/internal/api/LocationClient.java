@@ -21,7 +21,7 @@ package org.apache.distributedlog.clients.impl.internal.api;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.util.Revisioned;
-import org.apache.distributedlog.stream.proto.rangeservice.OneStorageContainerEndpointResponse;
+import org.apache.distributedlog.stream.proto.storage.OneStorageContainerEndpointResponse;
 
 /**
  * A client that talks to location servers to find locations of ranges and storage containers.

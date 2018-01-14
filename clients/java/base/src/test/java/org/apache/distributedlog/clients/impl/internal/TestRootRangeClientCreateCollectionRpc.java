@@ -35,10 +35,10 @@ import org.apache.distributedlog.clients.exceptions.CollectionNotFoundException;
 import org.apache.distributedlog.clients.impl.internal.api.RootRangeClient;
 import org.apache.distributedlog.stream.proto.CollectionConfiguration;
 import org.apache.distributedlog.stream.proto.CollectionProperties;
-import org.apache.distributedlog.stream.proto.rangeservice.CreateCollectionRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.CreateCollectionResponse;
-import org.apache.distributedlog.stream.proto.rangeservice.RootRangeServiceGrpc.RootRangeServiceImplBase;
-import org.apache.distributedlog.stream.proto.rangeservice.StatusCode;
+import org.apache.distributedlog.stream.proto.storage.CreateCollectionRequest;
+import org.apache.distributedlog.stream.proto.storage.CreateCollectionResponse;
+import org.apache.distributedlog.stream.proto.storage.RootRangeServiceGrpc.RootRangeServiceImplBase;
+import org.apache.distributedlog.stream.proto.storage.StatusCode;
 
 /**
  * Test Case for {@link RootRangeClientImpl}: CreateCollection.

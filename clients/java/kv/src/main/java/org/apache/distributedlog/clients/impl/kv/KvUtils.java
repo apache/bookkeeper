@@ -14,9 +14,9 @@
 
 package org.apache.distributedlog.clients.impl.kv;
 
-import static org.apache.distributedlog.stream.proto.rangeservice.StorageContainerRequest.Type.KV_DELETE;
-import static org.apache.distributedlog.stream.proto.rangeservice.StorageContainerRequest.Type.KV_PUT;
-import static org.apache.distributedlog.stream.proto.rangeservice.StorageContainerRequest.Type.KV_RANGE;
+import static org.apache.distributedlog.stream.proto.storage.StorageContainerRequest.Type.KV_DELETE;
+import static org.apache.distributedlog.stream.proto.storage.StorageContainerRequest.Type.KV_PUT;
+import static org.apache.distributedlog.stream.proto.storage.StorageContainerRequest.Type.KV_RANGE;
 
 import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
@@ -41,7 +41,7 @@ import org.apache.distributedlog.stream.proto.kv.rpc.PutResponse;
 import org.apache.distributedlog.stream.proto.kv.rpc.RangeRequest;
 import org.apache.distributedlog.stream.proto.kv.rpc.RangeResponse;
 import org.apache.distributedlog.stream.proto.kv.rpc.RoutingHeader;
-import org.apache.distributedlog.stream.proto.rangeservice.StorageContainerRequest;
+import org.apache.distributedlog.stream.proto.storage.StorageContainerRequest;
 
 /**
  * K/V related utils.

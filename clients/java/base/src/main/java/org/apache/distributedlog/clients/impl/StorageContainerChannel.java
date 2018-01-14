@@ -37,9 +37,9 @@ import org.apache.distributedlog.clients.impl.channel.RangeServerChannelManager;
 import org.apache.distributedlog.clients.impl.internal.api.LocationClient;
 import org.apache.distributedlog.clients.utils.ClientConstants;
 import org.apache.distributedlog.stream.proto.common.Endpoint;
-import org.apache.distributedlog.stream.proto.rangeservice.OneStorageContainerEndpointResponse;
-import org.apache.distributedlog.stream.proto.rangeservice.StatusCode;
-import org.apache.distributedlog.stream.proto.rangeservice.StorageContainerEndpoint;
+import org.apache.distributedlog.stream.proto.storage.OneStorageContainerEndpointResponse;
+import org.apache.distributedlog.stream.proto.storage.StatusCode;
+import org.apache.distributedlog.stream.proto.storage.StorageContainerEndpoint;
 
 /**
  * A client place holder for managing information of storage containers.

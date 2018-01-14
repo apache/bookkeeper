@@ -19,18 +19,18 @@
 package org.apache.distributedlog.stream.storage.api.metadata;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.distributedlog.stream.proto.rangeservice.CreateCollectionRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.CreateCollectionResponse;
-import org.apache.distributedlog.stream.proto.rangeservice.CreateStreamRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.CreateStreamResponse;
-import org.apache.distributedlog.stream.proto.rangeservice.DeleteCollectionRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.DeleteCollectionResponse;
-import org.apache.distributedlog.stream.proto.rangeservice.DeleteStreamRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.DeleteStreamResponse;
-import org.apache.distributedlog.stream.proto.rangeservice.GetCollectionRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.GetCollectionResponse;
-import org.apache.distributedlog.stream.proto.rangeservice.GetStreamRequest;
-import org.apache.distributedlog.stream.proto.rangeservice.GetStreamResponse;
+import org.apache.distributedlog.stream.proto.storage.CreateCollectionRequest;
+import org.apache.distributedlog.stream.proto.storage.CreateCollectionResponse;
+import org.apache.distributedlog.stream.proto.storage.CreateStreamRequest;
+import org.apache.distributedlog.stream.proto.storage.CreateStreamResponse;
+import org.apache.distributedlog.stream.proto.storage.DeleteCollectionRequest;
+import org.apache.distributedlog.stream.proto.storage.DeleteCollectionResponse;
+import org.apache.distributedlog.stream.proto.storage.DeleteStreamRequest;
+import org.apache.distributedlog.stream.proto.storage.DeleteStreamResponse;
+import org.apache.distributedlog.stream.proto.storage.GetCollectionRequest;
+import org.apache.distributedlog.stream.proto.storage.GetCollectionResponse;
+import org.apache.distributedlog.stream.proto.storage.GetStreamRequest;
+import org.apache.distributedlog.stream.proto.storage.GetStreamResponse;
 
 /**
  * The metadata store that stores root range information.

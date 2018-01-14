@@ -45,14 +45,14 @@ import org.apache.distributedlog.stream.proto.CollectionConfiguration;
 import org.apache.distributedlog.stream.proto.CollectionProperties;
 import org.apache.distributedlog.stream.proto.StreamConfiguration;
 import org.apache.distributedlog.stream.proto.StreamProperties;
-import org.apache.distributedlog.stream.proto.rangeservice.CreateCollectionResponse;
-import org.apache.distributedlog.stream.proto.rangeservice.CreateStreamResponse;
-import org.apache.distributedlog.stream.proto.rangeservice.DeleteCollectionResponse;
-import org.apache.distributedlog.stream.proto.rangeservice.DeleteStreamResponse;
-import org.apache.distributedlog.stream.proto.rangeservice.GetCollectionResponse;
-import org.apache.distributedlog.stream.proto.rangeservice.GetStreamResponse;
-import org.apache.distributedlog.stream.proto.rangeservice.RootRangeServiceGrpc.RootRangeServiceFutureStub;
-import org.apache.distributedlog.stream.proto.rangeservice.StatusCode;
+import org.apache.distributedlog.stream.proto.storage.CreateCollectionResponse;
+import org.apache.distributedlog.stream.proto.storage.CreateStreamResponse;
+import org.apache.distributedlog.stream.proto.storage.DeleteCollectionResponse;
+import org.apache.distributedlog.stream.proto.storage.DeleteStreamResponse;
+import org.apache.distributedlog.stream.proto.storage.GetCollectionResponse;
+import org.apache.distributedlog.stream.proto.storage.GetStreamResponse;
+import org.apache.distributedlog.stream.proto.storage.RootRangeServiceGrpc.RootRangeServiceFutureStub;
+import org.apache.distributedlog.stream.proto.storage.StatusCode;
 
 /**
  * A default implementation for {@link RootRangeClient}.

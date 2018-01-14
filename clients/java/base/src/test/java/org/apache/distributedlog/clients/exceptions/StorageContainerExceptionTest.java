@@ -21,7 +21,7 @@ package org.apache.distributedlog.clients.exceptions;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-import org.apache.distributedlog.stream.proto.rangeservice.StatusCode;
+import org.apache.distributedlog.stream.proto.storage.StatusCode;
 import org.junit.Test;
 
 /**

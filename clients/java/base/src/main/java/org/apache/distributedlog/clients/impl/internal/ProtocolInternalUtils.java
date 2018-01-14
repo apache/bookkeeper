@@ -35,11 +35,11 @@ import org.apache.distributedlog.clients.exceptions.StreamNotFoundException;
 import org.apache.distributedlog.clients.impl.internal.api.HashStreamRanges;
 import org.apache.distributedlog.stream.proto.RangeKeyType;
 import org.apache.distributedlog.stream.proto.RangeProperties;
-import org.apache.distributedlog.stream.proto.rangeservice.GetActiveRangesResponse;
-import org.apache.distributedlog.stream.proto.rangeservice.GetStorageContainerEndpointResponse;
-import org.apache.distributedlog.stream.proto.rangeservice.OneStorageContainerEndpointResponse;
-import org.apache.distributedlog.stream.proto.rangeservice.RelatedRanges;
-import org.apache.distributedlog.stream.proto.rangeservice.StatusCode;
+import org.apache.distributedlog.stream.proto.storage.GetActiveRangesResponse;
+import org.apache.distributedlog.stream.proto.storage.GetStorageContainerEndpointResponse;
+import org.apache.distributedlog.stream.proto.storage.OneStorageContainerEndpointResponse;
+import org.apache.distributedlog.stream.proto.storage.RelatedRanges;
+import org.apache.distributedlog.stream.proto.storage.StatusCode;
 
 /**
  * Utils for converting protocol related data structures to internal data structures.
