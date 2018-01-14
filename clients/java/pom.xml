@@ -23,10 +23,10 @@
     <groupId>org.apache.distributedlog</groupId>
     <artifactId>stream-storage-parent</artifactId>
     <version>0.6.0-SNAPSHOT</version>
-    <relativePath>..</relativePath>
+    <relativePath>../..</relativePath>
   </parent>
-  <artifactId>stream-storage-clients-parent</artifactId>
-  <name>Apache DistributedLog :: Stream Storage :: Clients :: Parent</name>
+  <artifactId>stream-storage-java-client-parent</artifactId>
+  <name>Apache DistributedLog :: Stream Storage :: Java Client :: Parent</name>
   <modules>
     <module>base</module>
     <module>kv</module>
