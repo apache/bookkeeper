@@ -31,33 +31,33 @@ import org.junit.After;
 import org.junit.Test;
 
 /**
- * Unit test for {@link RangeServerChannelManager}.
+ * Unit test for {@link StorageServerChannelManager}.
  */
-public class TestRangeServerChannelManager {
+public class TestStorageServerChannelManager {
 
   private final Endpoint endpoint1 = Endpoint.newBuilder()
     .setHostname("127.0.0.1")
     .setPort(80)
     .build();
-  private final RangeServerChannel channel1 = mock(RangeServerChannel.class);
+  private final StorageServerChannel channel1 = mock(StorageServerChannel.class);
   private final Endpoint endpoint2 = Endpoint.newBuilder()
     .setHostname("127.0.0.2")
     .setPort(8080)
     .build();
-  private final RangeServerChannel channel2 = mock(RangeServerChannel.class);
+  private final StorageServerChannel channel2 = mock(StorageServerChannel.class);
   private final Endpoint endpoint3 = Endpoint.newBuilder()
     .setHostname("127.0.0.3")
     .setPort(8181)
     .build();
 
-  private final RangeServerChannelManager channelManager =
-    new RangeServerChannelManager((endpoint) -> {
+  private final StorageServerChannelManager channelManager =
+    new StorageServerChannelManager((endpoint) -> {
       if (endpoint == endpoint1) {
         return channel1;
       } else if (endpoint == endpoint2) {
         return channel2;
       } else {
-        return mock(RangeServerChannel.class);
+        return mock(StorageServerChannel.class);
       }
     });
 
@@ -73,7 +73,7 @@ public class TestRangeServerChannelManager {
 
   @Test
   public void testGetOrCreateChannel() {
-    RangeServerChannel channel = channelManager.getOrCreateChannel(endpoint1);
+    StorageServerChannel channel = channelManager.getOrCreateChannel(endpoint1);
     assertTrue(channel == channel1);
     channel = channelManager.getOrCreateChannel(endpoint2);
     assertTrue(channel == channel2);
@@ -97,13 +97,13 @@ public class TestRangeServerChannelManager {
 
   @Test
   public void testAddRangeServer() {
-    RangeServerChannel ch1 = mock(RangeServerChannel.class);
-    RangeServerChannel ch2 = mock(RangeServerChannel.class);
+    StorageServerChannel ch1 = mock(StorageServerChannel.class);
+    StorageServerChannel ch2 = mock(StorageServerChannel.class);
     assertNull(channelManager.getChannel(endpoint1));
-    assertTrue(channelManager.addRangeServer(endpoint1, ch1));
+    assertTrue(channelManager.addStorageServer(endpoint1, ch1));
     assertTrue(ch1 == channelManager.getChannel(endpoint1));
     assertEquals(1, channelManager.getNumChannels());
-    assertFalse(channelManager.addRangeServer(endpoint1, ch2));
+    assertFalse(channelManager.addStorageServer(endpoint1, ch2));
     assertTrue(ch1 == channelManager.getChannel(endpoint1));
     assertEquals(1, channelManager.getNumChannels());
     verify(ch2, times(1)).close();
@@ -112,9 +112,9 @@ public class TestRangeServerChannelManager {
   @Test
   public void testAddRangeServerAfterClosed() {
     channelManager.close();
-    RangeServerChannel ch1 = mock(RangeServerChannel.class);
+    StorageServerChannel ch1 = mock(StorageServerChannel.class);
     assertNull(channelManager.getChannel(endpoint1));
-    assertFalse(channelManager.addRangeServer(endpoint1, ch1));
+    assertFalse(channelManager.addStorageServer(endpoint1, ch1));
     assertNull(channelManager.getChannel(endpoint1));
     assertEquals(0, channelManager.getNumChannels());
     verify(ch1, times(1)).close();
@@ -122,9 +122,9 @@ public class TestRangeServerChannelManager {
 
   @Test
   public void testRemoveChannel() {
-    RangeServerChannel ch = mock(RangeServerChannel.class);
+    StorageServerChannel ch = mock(StorageServerChannel.class);
     assertNull(channelManager.getChannel(endpoint1));
-    assertTrue(channelManager.addRangeServer(endpoint1, ch));
+    assertTrue(channelManager.addStorageServer(endpoint1, ch));
     assertTrue(ch == channelManager.getChannel(endpoint1));
     assertEquals(1, channelManager.getNumChannels());
     assertTrue(ch == channelManager.removeChannel(endpoint1, null));
@@ -140,9 +140,9 @@ public class TestRangeServerChannelManager {
 
   @Test
   public void testConditionalRemoveChannelSuccess() {
-    RangeServerChannel ch1 = mock(RangeServerChannel.class);
+    StorageServerChannel ch1 = mock(StorageServerChannel.class);
     assertNull(channelManager.getChannel(endpoint1));
-    assertTrue(channelManager.addRangeServer(endpoint1, ch1));
+    assertTrue(channelManager.addStorageServer(endpoint1, ch1));
     assertTrue(ch1 == channelManager.getChannel(endpoint1));
     assertEquals(1, channelManager.getNumChannels());
     assertTrue(ch1 == channelManager.removeChannel(endpoint1, ch1));
@@ -152,10 +152,10 @@ public class TestRangeServerChannelManager {
 
   @Test
   public void testConditionalRemoveChannelFailure() {
-    RangeServerChannel ch1 = mock(RangeServerChannel.class);
-    RangeServerChannel ch2 = mock(RangeServerChannel.class);
+    StorageServerChannel ch1 = mock(StorageServerChannel.class);
+    StorageServerChannel ch2 = mock(StorageServerChannel.class);
     assertNull(channelManager.getChannel(endpoint1));
-    assertTrue(channelManager.addRangeServer(endpoint1, ch1));
+    assertTrue(channelManager.addStorageServer(endpoint1, ch1));
     assertTrue(ch1 == channelManager.getChannel(endpoint1));
     assertEquals(1, channelManager.getNumChannels());
     assertNull(channelManager.removeChannel(endpoint1, ch2));

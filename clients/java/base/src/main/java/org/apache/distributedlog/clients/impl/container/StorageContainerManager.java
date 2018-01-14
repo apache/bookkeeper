@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.clients.impl;
+package org.apache.distributedlog.clients.impl.container;
 
 import com.google.common.collect.Maps;
 import java.util.Map;

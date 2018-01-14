@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.clients.impl;
+package org.apache.distributedlog.clients.impl.container;
 
 /**
  * A factory to create storage container channel.

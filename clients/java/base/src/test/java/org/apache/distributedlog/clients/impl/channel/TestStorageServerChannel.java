@@ -31,9 +31,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * Unit test for {@link RangeServerChannel}.
+ * Unit test for {@link StorageServerChannel}.
  */
-public class TestRangeServerChannel {
+public class TestStorageServerChannel {
 
   private final String serverName = "fake server for " + getClass();
   private final MutableHandlerRegistry serviceRegistry = new MutableHandlerRegistry();
@@ -60,7 +60,7 @@ public class TestRangeServerChannel {
   public void testBasic() {
     ManagedChannel managedChannel = InProcessChannelBuilder.forName(serverName).directExecutor().build();
     Optional<String> token = Optional.empty();
-    RangeServerChannel channel = new RangeServerChannel(managedChannel, token);
+    StorageServerChannel channel = new StorageServerChannel(managedChannel, token);
     assertNotNull(channel.getRootRangeService());
     assertNotNull(channel.getMetaRangeService());
     assertNotNull(channel.getStorageContainerService());

@@ -32,15 +32,15 @@ import java.util.function.BiConsumer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.Backoff;
-import org.apache.distributedlog.clients.impl.StorageContainerChannel;
-import org.apache.distributedlog.clients.impl.channel.RangeServerChannel;
+import org.apache.distributedlog.clients.impl.channel.StorageServerChannel;
+import org.apache.distributedlog.clients.impl.container.StorageContainerChannel;
 
 /**
  * A process for processing rpc request on storage container channel.
  */
 @Slf4j
 public abstract class ListenableFutureRpcProcessor<RequestT, ResponseT, ResultT>
-    implements BiConsumer<RangeServerChannel, Throwable>,
+    implements BiConsumer<StorageServerChannel, Throwable>,
                FutureCallback<ResponseT>,
                Runnable {
 
@@ -77,7 +77,7 @@ public abstract class ListenableFutureRpcProcessor<RequestT, ResponseT, ResultT>
    *
    * @return rpc service.
    */
-  protected abstract ListenableFuture<ResponseT> sendRPC(RangeServerChannel rsChannel, RequestT requestT);
+  protected abstract ListenableFuture<ResponseT> sendRPC(StorageServerChannel rsChannel, RequestT requestT);
 
   /**
    * Process the response and convert it back to a result.
@@ -100,21 +100,21 @@ public abstract class ListenableFutureRpcProcessor<RequestT, ResponseT, ResultT>
   /**
    * Logic on handling channel exceptions.
    *
-   * @param rangeServerChannel server channel
+   * @param storageServerChannel server channel
    * @param cause exception on establishing channel.
    */
   @Override
-  public void accept(RangeServerChannel rangeServerChannel, Throwable cause) {
+  public void accept(StorageServerChannel storageServerChannel, Throwable cause) {
     if (null != cause) {
       // failure to retrieve a channel to the server that hosts this storage container
       resultFuture.completeExceptionally(cause);
       return;
     }
 
-    sendRpcToServerChannel(rangeServerChannel);
+    sendRpcToServerChannel(storageServerChannel);
   }
 
-  private void sendRpcToServerChannel(RangeServerChannel rsChannel) {
+  private void sendRpcToServerChannel(StorageServerChannel rsChannel) {
     RequestT request;
     try {
       request = createRequest();

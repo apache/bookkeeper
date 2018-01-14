@@ -25,7 +25,7 @@ import org.apache.distributedlog.api.kv.options.PutOption;
 import org.apache.distributedlog.api.kv.result.DeleteResult;
 import org.apache.distributedlog.api.kv.result.GetResult;
 import org.apache.distributedlog.api.kv.result.PutResult;
-import org.apache.distributedlog.clients.impl.StorageContainerChannel;
+import org.apache.distributedlog.clients.impl.container.StorageContainerChannel;
 import org.apache.distributedlog.stream.proto.RangeProperties;
 import org.apache.distributedlog.stream.proto.kv.rpc.RoutingHeader;
 

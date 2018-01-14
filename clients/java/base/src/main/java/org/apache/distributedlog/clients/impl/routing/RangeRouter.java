@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.clients.impl;
+package org.apache.distributedlog.clients.impl.routing;
 
 import static com.google.common.base.Preconditions.checkState;
 

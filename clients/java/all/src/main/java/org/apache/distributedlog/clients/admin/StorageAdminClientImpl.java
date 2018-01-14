@@ -27,9 +27,9 @@ import org.apache.bookkeeper.common.util.AbstractAutoAsyncCloseable;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.common.util.SharedResourceManager.Resource;
 import org.apache.distributedlog.clients.config.StorageClientSettings;
-import org.apache.distributedlog.clients.impl.internal.RangeServerClientManagerImpl;
-import org.apache.distributedlog.clients.impl.internal.api.RangeServerClientManager;
+import org.apache.distributedlog.clients.impl.internal.StorageServerClientManagerImpl;
 import org.apache.distributedlog.clients.impl.internal.api.RootRangeClient;
+import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.distributedlog.clients.utils.ClientResources;
 import org.apache.distributedlog.stream.proto.CollectionConfiguration;
 import org.apache.distributedlog.stream.proto.CollectionProperties;
@@ -43,7 +43,7 @@ import org.apache.distributedlog.stream.proto.StreamProperties;
 public class StorageAdminClientImpl extends AbstractAutoAsyncCloseable {
 
   // clients
-  private final RangeServerClientManager clientManager;
+  private final StorageServerClientManager clientManager;
   private final RootRangeClient rootRangeClient;
 
   /**
@@ -65,11 +65,11 @@ public class StorageAdminClientImpl extends AbstractAutoAsyncCloseable {
    */
   public StorageAdminClientImpl(StorageClientSettings settings,
                                 Resource<OrderedScheduler> schedulerResource) {
-    this(() -> new RangeServerClientManagerImpl(settings, schedulerResource));
+    this(() -> new StorageServerClientManagerImpl(settings, schedulerResource));
   }
 
   @VisibleForTesting
-  StorageAdminClientImpl(Supplier<RangeServerClientManager> factory) {
+  StorageAdminClientImpl(Supplier<StorageServerClientManager> factory) {
     this.clientManager = factory.get();
     this.rootRangeClient = this.clientManager.getRootRangeClient();
   }

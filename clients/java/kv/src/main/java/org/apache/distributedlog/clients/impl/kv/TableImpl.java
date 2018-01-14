@@ -36,9 +36,9 @@ import org.apache.distributedlog.api.kv.options.PutOption;
 import org.apache.distributedlog.api.kv.result.DeleteResult;
 import org.apache.distributedlog.api.kv.result.GetResult;
 import org.apache.distributedlog.api.kv.result.PutResult;
-import org.apache.distributedlog.clients.impl.RangeRouter;
 import org.apache.distributedlog.clients.impl.internal.api.HashStreamRanges;
-import org.apache.distributedlog.clients.impl.internal.api.RangeServerClientManager;
+import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
+import org.apache.distributedlog.clients.impl.routing.RangeRouter;
 import org.apache.distributedlog.stream.proto.StreamProperties;
 
 /**
@@ -87,7 +87,7 @@ public class TableImpl implements Table {
 
   private final String streamName;
   private final StreamProperties props;
-  private final RangeServerClientManager clientManager;
+  private final StorageServerClientManager clientManager;
   private final ScheduledExecutorService executor;
   private final TableRangeFactory trFactory;
 
@@ -98,7 +98,7 @@ public class TableImpl implements Table {
 
   public TableImpl(String streamName,
                    StreamProperties props,
-                   RangeServerClientManager clientManager,
+                   StorageServerClientManager clientManager,
                    ScheduledExecutorService executor) {
     this(
       streamName,
@@ -115,7 +115,7 @@ public class TableImpl implements Table {
 
   public TableImpl(String streamName,
                    StreamProperties props,
-                   RangeServerClientManager clientManager,
+                   StorageServerClientManager clientManager,
                    ScheduledExecutorService executor,
                    TableRangeFactory factory,
                    Optional<RangeRouter<ByteBuf>> rangeRouterOverride) {

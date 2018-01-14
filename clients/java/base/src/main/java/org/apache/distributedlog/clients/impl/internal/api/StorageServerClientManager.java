@@ -20,7 +20,7 @@ package org.apache.distributedlog.clients.impl.internal.api;
 
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.util.AutoAsyncCloseable;
-import org.apache.distributedlog.clients.impl.StorageContainerChannel;
+import org.apache.distributedlog.clients.impl.container.StorageContainerChannel;
 import org.apache.distributedlog.stream.proto.StreamProperties;
 
 /**
@@ -28,7 +28,7 @@ import org.apache.distributedlog.stream.proto.StreamProperties;
  *
  * <p>All connections/errors should be handled in this class and its related subclasses.
  */
-public interface RangeServerClientManager extends AutoAsyncCloseable {
+public interface StorageServerClientManager extends AutoAsyncCloseable {
 
   /**
    * Get the channel connected to a storage container <i>scId</i>.

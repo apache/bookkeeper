@@ -30,28 +30,28 @@ import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.common.util.SharedResourceManager;
 import org.apache.bookkeeper.common.util.SharedResourceManager.Resource;
 import org.apache.distributedlog.clients.config.StorageClientSettings;
-import org.apache.distributedlog.clients.impl.StorageContainerChannel;
-import org.apache.distributedlog.clients.impl.StorageContainerChannelManager;
-import org.apache.distributedlog.clients.impl.channel.RangeServerChannel;
-import org.apache.distributedlog.clients.impl.channel.RangeServerChannelManager;
+import org.apache.distributedlog.clients.impl.channel.StorageServerChannel;
+import org.apache.distributedlog.clients.impl.channel.StorageServerChannelManager;
+import org.apache.distributedlog.clients.impl.container.StorageContainerChannel;
+import org.apache.distributedlog.clients.impl.container.StorageContainerChannelManager;
 import org.apache.distributedlog.clients.impl.internal.api.LocationClient;
 import org.apache.distributedlog.clients.impl.internal.api.MetaRangeClient;
-import org.apache.distributedlog.clients.impl.internal.api.RangeServerClientManager;
 import org.apache.distributedlog.clients.impl.internal.api.RootRangeClient;
+import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.distributedlog.stream.proto.StreamProperties;
 import org.apache.distributedlog.stream.proto.common.Endpoint;
 
 /**
- * A gRPC based {@link RangeServerClientManager} implementation.
+ * A gRPC based {@link StorageServerClientManager} implementation.
  */
 @Slf4j
-public class RangeServerClientManagerImpl
+public class StorageServerClientManagerImpl
     extends AbstractAutoAsyncCloseable
-    implements RangeServerClientManager {
+    implements StorageServerClientManager {
 
   private final Resource<OrderedScheduler> schedulerResource;
   private final OrderedScheduler scheduler;
-  private final RangeServerChannelManager channelManager;
+  private final StorageServerChannelManager channelManager;
   private final StorageContainerChannelManager scChannelManager;
 
   // clients
@@ -60,21 +60,21 @@ public class RangeServerClientManagerImpl
   private final StreamMetadataCache streamMetadataCache;
   private final ConcurrentMap<Long, MetaRangeClientImpl> metaRangeClients;
 
-  public RangeServerClientManagerImpl(StorageClientSettings settings,
-                                      Resource<OrderedScheduler> schedulerResource) {
+  public StorageServerClientManagerImpl(StorageClientSettings settings,
+                                        Resource<OrderedScheduler> schedulerResource) {
      this(
        settings,
        schedulerResource,
-       RangeServerChannel.factory(settings.usePlaintext()));
+       StorageServerChannel.factory(settings.usePlaintext()));
   }
 
-  public RangeServerClientManagerImpl(StorageClientSettings settings,
-                                      Resource<OrderedScheduler> schedulerResource,
-                                      Function<Endpoint, RangeServerChannel> channelFactory) {
+  public StorageServerClientManagerImpl(StorageClientSettings settings,
+                                        Resource<OrderedScheduler> schedulerResource,
+                                        Function<Endpoint, StorageServerChannel> channelFactory) {
     this.schedulerResource = schedulerResource;
     this.scheduler = SharedResourceManager.shared().get(schedulerResource);
     this.locationClient = new LocationClientImpl(settings, scheduler);
-    this.channelManager = new RangeServerChannelManager(channelFactory);
+    this.channelManager = new StorageServerChannelManager(channelFactory);
     this.scChannelManager = new StorageContainerChannelManager(
       this.channelManager,
       this.locationClient,

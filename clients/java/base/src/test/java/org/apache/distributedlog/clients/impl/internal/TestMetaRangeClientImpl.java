@@ -37,9 +37,9 @@ import java.util.concurrent.ExecutionException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.distributedlog.clients.grpc.GrpcClientTestBase;
-import org.apache.distributedlog.clients.impl.StorageContainerChannelManager;
-import org.apache.distributedlog.clients.impl.channel.RangeServerChannel;
-import org.apache.distributedlog.clients.impl.channel.RangeServerChannelManager;
+import org.apache.distributedlog.clients.impl.channel.StorageServerChannel;
+import org.apache.distributedlog.clients.impl.channel.StorageServerChannelManager;
+import org.apache.distributedlog.clients.impl.container.StorageContainerChannelManager;
 import org.apache.distributedlog.clients.impl.internal.api.HashStreamRanges;
 import org.apache.distributedlog.clients.impl.internal.api.LocationClient;
 import org.apache.distributedlog.stream.proto.RangeProperties;
@@ -69,8 +69,8 @@ public class TestMetaRangeClientImpl extends GrpcClientTestBase {
     .build();
   private final LocationClient locationClient = mock(LocationClient.class);
   private MetaRangeClientImpl metaRangeClient;
-  private final RangeServerChannel rsChannel = mock(RangeServerChannel.class);
-  private final RangeServerChannelManager channelManager = new RangeServerChannelManager(
+  private final StorageServerChannel rsChannel = mock(StorageServerChannel.class);
+  private final StorageServerChannelManager channelManager = new StorageServerChannelManager(
     ep -> rsChannel);
 
   @Override
@@ -124,8 +124,8 @@ public class TestMetaRangeClientImpl extends GrpcClientTestBase {
 
   @Test
   public void testGetActiveStreamRanges() throws Exception {
-    CompletableFuture<RangeServerChannel> serviceFuture = FutureUtils.createFuture();
-    metaRangeClient.getStorageContainerClient().setRangeServerChannelFuture(serviceFuture);
+    CompletableFuture<StorageServerChannel> serviceFuture = FutureUtils.createFuture();
+    metaRangeClient.getStorageContainerClient().setStorageServerChannelFuture(serviceFuture);
 
     // create response
     GetActiveRangesResponse getActiveRangesResponse = GetActiveRangesResponse.newBuilder()
@@ -149,7 +149,7 @@ public class TestMetaRangeClientImpl extends GrpcClientTestBase {
     };
     serviceRegistry.addService(metaRangeService.bindService());
 
-    RangeServerChannel rsChannel = new RangeServerChannel(
+    StorageServerChannel rsChannel = new StorageServerChannel(
       InProcessChannelBuilder.forName(serverName).directExecutor().build(),
       Optional.empty());
     serviceFuture.complete(rsChannel);
@@ -161,8 +161,8 @@ public class TestMetaRangeClientImpl extends GrpcClientTestBase {
 
   @Test
   public void testGetActiveStreamRangesFailure() throws Exception {
-    CompletableFuture<RangeServerChannel> serviceFuture = FutureUtils.createFuture();
-    metaRangeClient.getStorageContainerClient().setRangeServerChannelFuture(serviceFuture);
+    CompletableFuture<StorageServerChannel> serviceFuture = FutureUtils.createFuture();
+    metaRangeClient.getStorageContainerClient().setStorageServerChannelFuture(serviceFuture);
 
     MetaRangeServiceImplBase metaRangeService = new MetaRangeServiceImplBase() {
       @Override
@@ -173,7 +173,7 @@ public class TestMetaRangeClientImpl extends GrpcClientTestBase {
     };
     serviceRegistry.addService(metaRangeService.bindService());
 
-    RangeServerChannel rsChannel = new RangeServerChannel(
+    StorageServerChannel rsChannel = new StorageServerChannel(
       InProcessChannelBuilder.forName(serverName).directExecutor().build(),
       Optional.empty());
     serviceFuture.complete(rsChannel);

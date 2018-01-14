@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.clients.impl;
+package org.apache.distributedlog.clients.impl.container;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
@@ -32,8 +32,8 @@ import org.apache.bookkeeper.common.exceptions.ObjectClosedException;
 import org.apache.bookkeeper.common.util.IRevisioned;
 import org.apache.bookkeeper.common.util.Revisioned;
 import org.apache.distributedlog.clients.exceptions.StorageContainerException;
-import org.apache.distributedlog.clients.impl.channel.RangeServerChannel;
-import org.apache.distributedlog.clients.impl.channel.RangeServerChannelManager;
+import org.apache.distributedlog.clients.impl.channel.StorageServerChannel;
+import org.apache.distributedlog.clients.impl.channel.StorageServerChannelManager;
 import org.apache.distributedlog.clients.impl.internal.api.LocationClient;
 import org.apache.distributedlog.clients.utils.ClientConstants;
 import org.apache.distributedlog.stream.proto.common.Endpoint;
@@ -48,17 +48,17 @@ import org.apache.distributedlog.stream.proto.storage.StorageContainerEndpoint;
 public class StorageContainerChannel {
 
   private final long scId;
-  private final RangeServerChannelManager channelManager;
+  private final StorageServerChannelManager channelManager;
   private final LocationClient locationClient;
   private final ScheduledExecutorService executor;
 
   @GuardedBy("this")
   private StorageContainerInfo scInfo = null;
   @GuardedBy("this")
-  private CompletableFuture<RangeServerChannel> rsChannelFuture = null;
+  private CompletableFuture<StorageServerChannel> rsChannelFuture = null;
 
   public StorageContainerChannel(long scId,
-                           RangeServerChannelManager channelManager,
+                           StorageServerChannelManager channelManager,
                            LocationClient locationClient,
                            ScheduledExecutorService executor) {
     this.scId = scId;
@@ -75,22 +75,22 @@ public class StorageContainerChannel {
     return scInfo;
   }
 
-  public synchronized CompletableFuture<RangeServerChannel> getRangeServerChannelFuture() {
+  public synchronized CompletableFuture<StorageServerChannel> getStorageServerChannelFuture() {
     return rsChannelFuture;
   }
 
   @VisibleForTesting
-  synchronized void resetRangeServerChannelFuture() {
+  synchronized void resetStorageServerChannelFuture() {
     rsChannelFuture = null;
   }
 
   @VisibleForTesting
-  public synchronized void setRangeServerChannelFuture(CompletableFuture<RangeServerChannel> rsChannelFuture) {
+  public synchronized void setStorageServerChannelFuture(CompletableFuture<StorageServerChannel> rsChannelFuture) {
     this.rsChannelFuture = rsChannelFuture;
   }
 
-  public CompletableFuture<RangeServerChannel> getStorageContainerChannelFuture() {
-    CompletableFuture<RangeServerChannel> channelFuture;
+  public CompletableFuture<StorageServerChannel> getStorageContainerChannelFuture() {
+    CompletableFuture<StorageServerChannel> channelFuture;
     synchronized (this) {
       if (null != rsChannelFuture) {
         return rsChannelFuture;
@@ -168,12 +168,12 @@ public class StorageContainerChannel {
       endpoint.getRwEndpoint(),
       readEndpoints);
     // get the channel from channel manager (if it doesn't exist create one)
-    RangeServerChannel serverChannel = channelManager.getOrCreateChannel(endpoint.getRwEndpoint());
+    StorageServerChannel serverChannel = channelManager.getOrCreateChannel(endpoint.getRwEndpoint());
     if (null == serverChannel) {
       log.info("No channel found/created for range server {}. The channel manager must be shutting down."
         + " Stop the process of fetching storage container ({}).", endpoint.getRwEndpoint(), scId);
       synchronized (this) {
-        rsChannelFuture.completeExceptionally(new ObjectClosedException("RangeServerChannelManager is closed"));
+        rsChannelFuture.completeExceptionally(new ObjectClosedException("StorageServerChannelManager is closed"));
       }
       return;
     }

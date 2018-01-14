@@ -26,8 +26,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
-import org.apache.distributedlog.clients.impl.internal.api.RangeServerClientManager;
 import org.apache.distributedlog.clients.impl.internal.api.RootRangeClient;
+import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.distributedlog.stream.proto.CollectionConfiguration;
 import org.apache.distributedlog.stream.proto.CollectionProperties;
 import org.apache.distributedlog.stream.proto.StreamProperties;
@@ -60,7 +60,7 @@ public class TestStorageAdminClientImpl {
   public TestName testName = new TestName();
 
   private RootRangeClient mockRootRangeClient = mock(RootRangeClient.class);
-  private RangeServerClientManager mockManager = mock(RangeServerClientManager.class);
+  private StorageServerClientManager mockManager = mock(StorageServerClientManager.class);
   private StorageAdminClientImpl adminClient;
 
   @Before

@@ -40,10 +40,10 @@ import org.apache.distributedlog.stream.proto.storage.TableServiceGrpc.TableServ
  *
  * <p>The channel is multiplexed for different rpc usage.
  */
-public class RangeServerChannel implements AutoCloseable {
+public class StorageServerChannel implements AutoCloseable {
 
-  public static Function<Endpoint, RangeServerChannel> factory(boolean usePlaintext) {
-    return (endpoint) -> new RangeServerChannel(endpoint, Optional.empty(), usePlaintext);
+  public static Function<Endpoint, StorageServerChannel> factory(boolean usePlaintext) {
+    return (endpoint) -> new StorageServerChannel(endpoint, Optional.empty(), usePlaintext);
   }
 
   private final Optional<String> token;
@@ -64,9 +64,9 @@ public class RangeServerChannel implements AutoCloseable {
    * @param endpoint range server endpoint.
    * @param token token used to access range server
    */
-  public RangeServerChannel(Endpoint endpoint,
-                            Optional<String> token,
-                            boolean usePlainText) {
+  public StorageServerChannel(Endpoint endpoint,
+                              Optional<String> token,
+                              boolean usePlainText) {
     this.token = token;
     this.channel = ManagedChannelBuilder.forAddress(
       endpoint.getHostname(),
@@ -76,8 +76,8 @@ public class RangeServerChannel implements AutoCloseable {
   }
 
   @VisibleForTesting
-  public RangeServerChannel(ManagedChannel channel,
-                            Optional<String> token) {
+  public StorageServerChannel(ManagedChannel channel,
+                              Optional<String> token) {
     this.token = token;
     this.channel = channel;
   }

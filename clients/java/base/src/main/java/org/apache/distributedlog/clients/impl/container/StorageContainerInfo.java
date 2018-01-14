@@ -16,36 +16,46 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.clients.impl;
-
-import static org.junit.Assert.assertEquals;
+package org.apache.distributedlog.clients.impl.container;
 
 import com.google.common.collect.Lists;
+import java.util.List;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+import org.apache.bookkeeper.common.util.IRevisioned;
 import org.apache.distributedlog.stream.proto.common.Endpoint;
-import org.junit.Test;
 
 /**
- * Unit test for {@link StorageContainerInfo}.
+ * Represents the information of a storage container.
  */
-public class TestStorageContainerInfo {
+@Data(staticConstructor = "of")
+@EqualsAndHashCode
+@ToString
+public class StorageContainerInfo implements IRevisioned {
 
-  @Test
-  public void testBasic() {
-    long groupId = 1234L;
-    long revision = 4468L;
-    Endpoint endpoint = Endpoint.newBuilder()
-      .setHostname("123.46.78.96")
-      .setPort(3181)
-      .build();
-    StorageContainerInfo sc = StorageContainerInfo.of(
-      groupId,
-      revision,
-      endpoint,
-      Lists.newArrayList(endpoint));
-    assertEquals(groupId, sc.getGroupId());
-    assertEquals(revision, sc.getRevision());
-    assertEquals(endpoint, sc.getWriteEndpoint());
-    assertEquals(Lists.newArrayList(endpoint), sc.getReadEndpoints());
+  public static StorageContainerInfo of(long groupId, long revision, Endpoint endpoint) {
+    return of(groupId, revision, endpoint, Lists.newArrayList(endpoint));
   }
+
+  /**
+   * KeyStorage Container Id.
+   */
+  private final long groupId;
+
+  /**
+   * The revision of storage container info.
+   */
+  private final long revision;
+
+  /**
+   * Endpoint for write service.
+   */
+  private final Endpoint writeEndpoint;
+
+  /**
+   * Endpoints for read service.
+   */
+  private final List<Endpoint> readEndpoints;
 
 }

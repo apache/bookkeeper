@@ -40,9 +40,9 @@ import org.inferred.freebuilder.shaded.com.google.common.collect.Lists;
 import org.junit.Test;
 
 /**
- * Test Case for {@link RangeServerClientManagerImpl}.
+ * Test Case for {@link StorageServerClientManagerImpl}.
  */
-public class TestRangeServerClientManagerImpl extends GrpcClientTestBase {
+public class TestStorageServerClientManagerImpl extends GrpcClientTestBase {
 
   @Override
   protected void doSetup() throws Exception {}

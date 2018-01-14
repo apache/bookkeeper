@@ -36,9 +36,9 @@ import org.apache.distributedlog.clients.exceptions.InvalidCollectionNameExcepti
 import org.apache.distributedlog.clients.exceptions.StreamExistsException;
 import org.apache.distributedlog.clients.exceptions.StreamNotFoundException;
 import org.apache.distributedlog.clients.grpc.GrpcClientTestBase;
-import org.apache.distributedlog.clients.impl.StorageContainerChannelManager;
-import org.apache.distributedlog.clients.impl.channel.RangeServerChannel;
-import org.apache.distributedlog.clients.impl.channel.RangeServerChannelManager;
+import org.apache.distributedlog.clients.impl.channel.StorageServerChannel;
+import org.apache.distributedlog.clients.impl.channel.StorageServerChannelManager;
+import org.apache.distributedlog.clients.impl.container.StorageContainerChannelManager;
 import org.apache.distributedlog.clients.impl.internal.api.LocationClient;
 import org.apache.distributedlog.clients.impl.internal.api.RootRangeClient;
 import org.apache.distributedlog.stream.proto.common.Endpoint;
@@ -60,9 +60,9 @@ public abstract class RootRangeClientImplTestBase extends GrpcClientTestBase {
   private RootRangeClientImpl rootRangeClient;
   private final LocationClient locationClient = mock(LocationClient.class);
 
-  private RangeServerChannel mockChannel = mock(RangeServerChannel.class);
-  private RangeServerChannel mockChannel2 = mock(RangeServerChannel.class);
-  private RangeServerChannel mockChannel3 = mock(RangeServerChannel.class);
+  private StorageServerChannel mockChannel = mock(StorageServerChannel.class);
+  private StorageServerChannel mockChannel2 = mock(StorageServerChannel.class);
+  private StorageServerChannel mockChannel3 = mock(StorageServerChannel.class);
   private final Endpoint endpoint = Endpoint.newBuilder()
     .setHostname("127.0.0.1")
     .setPort(8181)
@@ -75,7 +75,7 @@ public abstract class RootRangeClientImplTestBase extends GrpcClientTestBase {
     .setHostname("127.0.0.3")
     .setPort(8383)
     .build();
-  private final RangeServerChannelManager channelManager = new RangeServerChannelManager(
+  private final StorageServerChannelManager channelManager = new StorageServerChannelManager(
     ep -> {
       if (endpoint2 == ep) {
         return mockChannel2;
@@ -113,12 +113,12 @@ public abstract class RootRangeClientImplTestBase extends GrpcClientTestBase {
 
   @Test
   public void testRequestSuccess() throws Exception {
-    CompletableFuture<RangeServerChannel> serviceFuture = FutureUtils.createFuture();
-    rootRangeClient.getStorageContainerClient().setRangeServerChannelFuture(serviceFuture);
+    CompletableFuture<StorageServerChannel> serviceFuture = FutureUtils.createFuture();
+    rootRangeClient.getStorageContainerClient().setStorageServerChannelFuture(serviceFuture);
 
     RootRangeServiceImplBase rootRangeService = createRootRangeServiceForSuccess();
     serviceRegistry.addService(rootRangeService.bindService());
-    RangeServerChannel rsChannel = new RangeServerChannel(
+    StorageServerChannel rsChannel = new StorageServerChannel(
       InProcessChannelBuilder.forName(serverName).directExecutor().build(),
       Optional.empty());
     serviceFuture.complete(rsChannel);
@@ -133,12 +133,12 @@ public abstract class RootRangeClientImplTestBase extends GrpcClientTestBase {
 
   @Test
   public void testRequestFailure() throws Exception {
-    CompletableFuture<RangeServerChannel> serviceFuture = FutureUtils.createFuture();
-    rootRangeClient.getStorageContainerClient().setRangeServerChannelFuture(serviceFuture);
+    CompletableFuture<StorageServerChannel> serviceFuture = FutureUtils.createFuture();
+    rootRangeClient.getStorageContainerClient().setStorageServerChannelFuture(serviceFuture);
 
     RootRangeServiceImplBase rootRangeService = createRootRangeServiceForRequestFailure();
     serviceRegistry.addService(rootRangeService.bindService());
-    RangeServerChannel rsChannel = new RangeServerChannel(
+    StorageServerChannel rsChannel = new StorageServerChannel(
       InProcessChannelBuilder.forName(serverName).directExecutor().build(),
       Optional.empty());
     serviceFuture.complete(rsChannel);
@@ -153,12 +153,12 @@ public abstract class RootRangeClientImplTestBase extends GrpcClientTestBase {
 
   @Test
   public void testRpcFailure() throws Exception {
-    CompletableFuture<RangeServerChannel> serviceFuture = FutureUtils.createFuture();
-    rootRangeClient.getStorageContainerClient().setRangeServerChannelFuture(serviceFuture);
+    CompletableFuture<StorageServerChannel> serviceFuture = FutureUtils.createFuture();
+    rootRangeClient.getStorageContainerClient().setStorageServerChannelFuture(serviceFuture);
 
     RootRangeServiceImplBase rootRangeService = createRootRangeServiceForRpcFailure();
     serviceRegistry.addService(rootRangeService.bindService());
-    RangeServerChannel rsChannel = new RangeServerChannel(
+    StorageServerChannel rsChannel = new StorageServerChannel(
       InProcessChannelBuilder.forName(serverName).directExecutor().build(),
       Optional.empty());
     serviceFuture.complete(rsChannel);
@@ -171,8 +171,8 @@ public abstract class RootRangeClientImplTestBase extends GrpcClientTestBase {
 
   @Test
   public void testChannelFailure() throws Exception {
-    CompletableFuture<RangeServerChannel> serviceFuture = FutureUtils.createFuture();
-    rootRangeClient.getStorageContainerClient().setRangeServerChannelFuture(serviceFuture);
+    CompletableFuture<StorageServerChannel> serviceFuture = FutureUtils.createFuture();
+    rootRangeClient.getStorageContainerClient().setStorageServerChannelFuture(serviceFuture);
 
     IOException ioe = new IOException(testName.getMethodName());
     serviceFuture.completeExceptionally(ioe);

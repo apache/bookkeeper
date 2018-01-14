@@ -17,6 +17,6 @@
  */
 
 /**
- * The implementation of zstream clients.
+ * The implementation of clients talking to storage containers.
  */
-package org.apache.distributedlog.clients.impl;
+package org.apache.distributedlog.clients.impl.container;

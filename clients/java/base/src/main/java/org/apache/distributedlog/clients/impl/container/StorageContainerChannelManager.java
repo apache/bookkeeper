@@ -16,13 +16,13 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.clients.impl;
+package org.apache.distributedlog.clients.impl.container;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Maps;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
-import org.apache.distributedlog.clients.impl.channel.RangeServerChannelManager;
+import org.apache.distributedlog.clients.impl.channel.StorageServerChannelManager;
 import org.apache.distributedlog.clients.impl.internal.api.LocationClient;
 
 /**
@@ -33,7 +33,7 @@ public class StorageContainerChannelManager implements AutoCloseable {
   private final StorageContainerChannelFactory factory;
   private final ConcurrentMap<Long, StorageContainerChannel> scChannels;
 
-  public StorageContainerChannelManager(RangeServerChannelManager channelManager,
+  public StorageContainerChannelManager(StorageServerChannelManager channelManager,
                                   LocationClient locationClient,
                                   OrderedScheduler scheduler) {
     this((scId) -> new StorageContainerChannel(

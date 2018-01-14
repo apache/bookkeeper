@@ -29,8 +29,8 @@ import org.apache.bookkeeper.common.util.SharedResourceManager;
 import org.apache.distributedlog.api.StorageClient;
 import org.apache.distributedlog.api.kv.Table;
 import org.apache.distributedlog.clients.config.StorageClientSettings;
-import org.apache.distributedlog.clients.impl.internal.RangeServerClientManagerImpl;
-import org.apache.distributedlog.clients.impl.internal.api.RangeServerClientManager;
+import org.apache.distributedlog.clients.impl.internal.StorageServerClientManagerImpl;
+import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.distributedlog.clients.impl.kv.TableImpl;
 import org.apache.distributedlog.clients.utils.ClientResources;
 import org.apache.distributedlog.stream.proto.StreamProperties;
@@ -49,7 +49,7 @@ class StorageClientImpl extends AbstractAutoAsyncCloseable implements StorageCli
   private final OrderedScheduler scheduler;
 
   // clients
-  private final RangeServerClientManager serverManager;
+  private final StorageServerClientManager serverManager;
 
   public StorageClientImpl(String collectionName,
                            StorageClientSettings settings,
@@ -57,7 +57,7 @@ class StorageClientImpl extends AbstractAutoAsyncCloseable implements StorageCli
     this.collectionName = collectionName;
     this.settings = settings;
     this.resources = resources;
-    this.serverManager = new RangeServerClientManagerImpl(settings, resources.scheduler());
+    this.serverManager = new StorageServerClientManagerImpl(settings, resources.scheduler());
     this.scheduler = SharedResourceManager.shared().get(resources.scheduler());
 
   }

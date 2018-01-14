@@ -26,8 +26,8 @@ import io.grpc.util.MutableHandlerRegistry;
 import java.util.Optional;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.distributedlog.clients.config.StorageClientSettings;
-import org.apache.distributedlog.clients.impl.channel.RangeServerChannel;
-import org.apache.distributedlog.clients.impl.internal.RangeServerClientManagerImpl;
+import org.apache.distributedlog.clients.impl.channel.StorageServerChannel;
+import org.apache.distributedlog.clients.impl.internal.StorageServerClientManagerImpl;
 import org.apache.distributedlog.clients.utils.ClientResources;
 import org.apache.distributedlog.stream.proto.common.Endpoint;
 import org.apache.distributedlog.stream.proto.storage.GetStorageContainerEndpointRequest;
@@ -57,7 +57,7 @@ public abstract class GrpcClientTestBase {
 
   protected StorageClientSettings settings;
   protected final ClientResources resources = ClientResources.create();
-  protected RangeServerClientManagerImpl serverManager;
+  protected StorageServerClientManagerImpl serverManager;
 
   @Before
   public void setUp() throws Exception {
@@ -75,10 +75,10 @@ public abstract class GrpcClientTestBase {
       .managedChannelBuilder(InProcessChannelBuilder.forName(serverName).directExecutor())
       .usePlaintext(true)
       .build();
-    serverManager = new RangeServerClientManagerImpl(
+    serverManager = new StorageServerClientManagerImpl(
       settings,
       resources.scheduler(),
-      endpoint -> new RangeServerChannel(
+      endpoint -> new StorageServerChannel(
         InProcessChannelBuilder.forName(serverName).directExecutor().build(),
         Optional.empty()));
     StorageContainerServiceImplBase scService = new StorageContainerServiceImplBase() {

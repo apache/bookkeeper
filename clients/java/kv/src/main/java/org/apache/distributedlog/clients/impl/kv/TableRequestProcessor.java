@@ -19,8 +19,8 @@ import com.google.common.util.concurrent.SettableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 import org.apache.distributedlog.clients.exceptions.InternalServerException;
-import org.apache.distributedlog.clients.impl.StorageContainerChannel;
-import org.apache.distributedlog.clients.impl.channel.RangeServerChannel;
+import org.apache.distributedlog.clients.impl.channel.StorageServerChannel;
+import org.apache.distributedlog.clients.impl.container.StorageContainerChannel;
 import org.apache.distributedlog.clients.utils.ListenableFutureRpcProcessor;
 import org.apache.distributedlog.stream.proto.storage.StatusCode;
 import org.apache.distributedlog.stream.proto.storage.StorageContainerRequest;
@@ -58,7 +58,7 @@ public class TableRequestProcessor<RespT>
   }
 
   @Override
-  protected ListenableFuture<StorageContainerResponse> sendRPC(RangeServerChannel rsChannel,
+  protected ListenableFuture<StorageContainerResponse> sendRPC(StorageServerChannel rsChannel,
                                                                StorageContainerRequest request) {
     switch (request.getType()) {
       case KV_RANGE:

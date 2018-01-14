@@ -44,10 +44,10 @@ import org.apache.distributedlog.api.kv.options.DeleteOption;
 import org.apache.distributedlog.api.kv.options.GetOption;
 import org.apache.distributedlog.api.kv.options.PutOption;
 import org.apache.distributedlog.clients.exceptions.ClientException;
-import org.apache.distributedlog.clients.impl.RangeRouter;
 import org.apache.distributedlog.clients.impl.internal.api.HashStreamRanges;
 import org.apache.distributedlog.clients.impl.internal.api.MetaRangeClient;
-import org.apache.distributedlog.clients.impl.internal.api.RangeServerClientManager;
+import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
+import org.apache.distributedlog.clients.impl.routing.RangeRouter;
 import org.apache.distributedlog.stream.proto.RangeKeyType;
 import org.apache.distributedlog.stream.proto.RangeProperties;
 import org.apache.distributedlog.stream.proto.StreamProperties;
@@ -94,7 +94,7 @@ public class TestTableImpl {
     .setStreamName("test-stream")
     .build();
   private final MetaRangeClient mockMetaRangeClient = mock(MetaRangeClient.class);
-  private final RangeServerClientManager mockClientManager = mock(RangeServerClientManager.class);
+  private final StorageServerClientManager mockClientManager = mock(StorageServerClientManager.class);
 
   private OrderedScheduler scheduler;
 

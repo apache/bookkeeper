@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.clients.impl;
+package org.apache.distributedlog.clients.impl.container;
 
 import static org.apache.distributedlog.stream.protocol.ProtocolConstants.ROOT_STORAGE_CONTAINER_ID;
 import static org.junit.Assert.assertEquals;
@@ -41,8 +41,8 @@ import org.apache.bookkeeper.common.exceptions.ObjectClosedException;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.distributedlog.clients.exceptions.ClientException;
 import org.apache.distributedlog.clients.grpc.GrpcClientTestBase;
-import org.apache.distributedlog.clients.impl.channel.RangeServerChannel;
-import org.apache.distributedlog.clients.impl.channel.RangeServerChannelManager;
+import org.apache.distributedlog.clients.impl.channel.StorageServerChannel;
+import org.apache.distributedlog.clients.impl.channel.StorageServerChannelManager;
 import org.apache.distributedlog.clients.impl.internal.api.LocationClient;
 import org.apache.distributedlog.stream.proto.common.Endpoint;
 import org.apache.distributedlog.stream.proto.storage.OneStorageContainerEndpointResponse;
@@ -58,9 +58,9 @@ public class TestStorageContainerChannel extends GrpcClientTestBase {
   private OrderedScheduler scheduler;
   private final LocationClient locationClient = mock(LocationClient.class);
 
-  private RangeServerChannel mockChannel = mock(RangeServerChannel.class);
-  private RangeServerChannel mockChannel2 = mock(RangeServerChannel.class);
-  private RangeServerChannel mockChannel3 = mock(RangeServerChannel.class);
+  private StorageServerChannel mockChannel = mock(StorageServerChannel.class);
+  private StorageServerChannel mockChannel2 = mock(StorageServerChannel.class);
+  private StorageServerChannel mockChannel3 = mock(StorageServerChannel.class);
   private final Endpoint endpoint = Endpoint.newBuilder()
     .setHostname("127.0.0.1")
     .setPort(8181)
@@ -73,7 +73,7 @@ public class TestStorageContainerChannel extends GrpcClientTestBase {
     .setHostname("127.0.0.3")
     .setPort(8383)
     .build();
-  private final RangeServerChannelManager channelManager = new RangeServerChannelManager(
+  private final StorageServerChannelManager channelManager = new StorageServerChannelManager(
     ep -> {
       if (endpoint2 == ep) {
         return mockChannel2;
@@ -118,16 +118,16 @@ public class TestStorageContainerChannel extends GrpcClientTestBase {
     when(locationClient.locateStorageContainers(anyList())).thenReturn(locateResponses);
 
     // the future is not set before #getRootRangeService
-    assertNull(scClient.getRangeServerChannelFuture());
+    assertNull(scClient.getStorageServerChannelFuture());
     assertNull(scClient.getStorageContainerInfo());
     // call #getRootRangeService
-    CompletableFuture<RangeServerChannel> rsChannelFuture = scClient.getStorageContainerChannelFuture();
+    CompletableFuture<StorageServerChannel> rsChannelFuture = scClient.getStorageContainerChannelFuture();
     // the future is set and the locationClient#locateStorageContainers is called
-    assertNotNull(scClient.getRangeServerChannelFuture());
+    assertNotNull(scClient.getStorageServerChannelFuture());
     assertNull(scClient.getStorageContainerInfo());
     verify(locationClient, times(1)).locateStorageContainers(anyList());
     // if the request is outstanding, a second call will not call locationClient#locateStorageContainers
-    CompletableFuture<RangeServerChannel> rsChannelFuture1 = scClient.getStorageContainerChannelFuture();
+    CompletableFuture<StorageServerChannel> rsChannelFuture1 = scClient.getStorageContainerChannelFuture();
     assertTrue(rsChannelFuture == rsChannelFuture1);
     assertNull(scClient.getStorageContainerInfo());
     verify(locationClient, times(1)).locateStorageContainers(anyList());
@@ -144,7 +144,7 @@ public class TestStorageContainerChannel extends GrpcClientTestBase {
       .build();
     locateResponses.complete(Lists.newArrayList(oneResp));
     // get the service
-    RangeServerChannel rsChannel = rsChannelFuture.get();
+    StorageServerChannel rsChannel = rsChannelFuture.get();
     assertTrue(rsChannel == mockChannel);
     // verify storage container info
     StorageContainerInfo scInfo = scClient.getStorageContainerInfo();
@@ -164,16 +164,16 @@ public class TestStorageContainerChannel extends GrpcClientTestBase {
     when(locationClient.locateStorageContainers(anyList())).thenReturn(locateResponses);
 
     // the future is not set before #getRootRangeService
-    assertNull(scClient.getRangeServerChannelFuture());
+    assertNull(scClient.getStorageServerChannelFuture());
     assertNull(scClient.getStorageContainerInfo());
     // call #getRootRangeService
-    CompletableFuture<RangeServerChannel> rsChannelFuture = scClient.getStorageContainerChannelFuture();
+    CompletableFuture<StorageServerChannel> rsChannelFuture = scClient.getStorageContainerChannelFuture();
     // the future is set and the locationClient#locateStorageContainers is called
-    assertNotNull(scClient.getRangeServerChannelFuture());
+    assertNotNull(scClient.getStorageServerChannelFuture());
     assertNull(scClient.getStorageContainerInfo());
     verify(locationClient, times(1)).locateStorageContainers(anyList());
     // if the request is outstanding, a second call will not call locationClient#locateStorageContainers
-    CompletableFuture<RangeServerChannel> rsChannelFuture1 = scClient.getStorageContainerChannelFuture();
+    CompletableFuture<StorageServerChannel> rsChannelFuture1 = scClient.getStorageContainerChannelFuture();
     assertTrue(rsChannelFuture == rsChannelFuture1);
     assertNull(scClient.getStorageContainerInfo());
     verify(locationClient, times(1)).locateStorageContainers(anyList());
@@ -221,16 +221,16 @@ public class TestStorageContainerChannel extends GrpcClientTestBase {
       .thenReturn(locateResponses3);
 
     // the future is not set before #getRootRangeService
-    assertNull(scClient.getRangeServerChannelFuture());
+    assertNull(scClient.getStorageServerChannelFuture());
     assertNull(scClient.getStorageContainerInfo());
     // call #getRootRangeService
-    CompletableFuture<RangeServerChannel> rsChannelFuture = scClient.getStorageContainerChannelFuture();
+    CompletableFuture<StorageServerChannel> rsChannelFuture = scClient.getStorageContainerChannelFuture();
     // the future is set and the locationClient#locateStorageContainers is called
-    assertNotNull(scClient.getRangeServerChannelFuture());
+    assertNotNull(scClient.getStorageServerChannelFuture());
     assertNull(scClient.getStorageContainerInfo());
     verify(locationClient, times(1)).locateStorageContainers(anyList());
     // if the request is outstanding, a second call will not call locationClient#locateStorageContainers
-    CompletableFuture<RangeServerChannel> rsChannelFuture1 = scClient.getStorageContainerChannelFuture();
+    CompletableFuture<StorageServerChannel> rsChannelFuture1 = scClient.getStorageContainerChannelFuture();
     assertTrue(rsChannelFuture == rsChannelFuture1);
     assertNull(scClient.getStorageContainerInfo());
     verify(locationClient, times(1)).locateStorageContainers(anyList());
@@ -252,7 +252,7 @@ public class TestStorageContainerChannel extends GrpcClientTestBase {
       .build();
     locateResponses1.complete(Lists.newArrayList(oneResp1));
     // get the service
-    RangeServerChannel rsChannel = rsChannelFuture.get();
+    StorageServerChannel rsChannel = rsChannelFuture.get();
     assertTrue(rsChannel == mockChannel);
     // verify storage container info
     StorageContainerInfo scInfo = scClient.getStorageContainerInfo();
@@ -267,7 +267,7 @@ public class TestStorageContainerChannel extends GrpcClientTestBase {
     // Reset and complete the second response
     //
 
-    scClient.resetRangeServerChannelFuture();
+    scClient.resetStorageServerChannelFuture();
     rsChannelFuture = scClient.getStorageContainerChannelFuture();
 
     OneStorageContainerEndpointResponse oneResp2 = OneStorageContainerEndpointResponse.newBuilder()
@@ -296,7 +296,7 @@ public class TestStorageContainerChannel extends GrpcClientTestBase {
     // complete the third response
     //
 
-    scClient.resetRangeServerChannelFuture();
+    scClient.resetStorageServerChannelFuture();
     rsChannelFuture = scClient.getStorageContainerChannelFuture();
 
     OneStorageContainerEndpointResponse oneResp3 = OneStorageContainerEndpointResponse.newBuilder()
@@ -312,7 +312,7 @@ public class TestStorageContainerChannel extends GrpcClientTestBase {
     locateResponses3.complete(Lists.newArrayList(oneResp3));
     ensureCallbackExecuted();
 
-    RangeServerChannel rsChannel3 = rsChannelFuture.get();
+    StorageServerChannel rsChannel3 = rsChannelFuture.get();
     assertTrue(rsChannel3 == mockChannel3);
     // verify storage container info : group info will not be updated
     scInfo = scClient.getStorageContainerInfo();
@@ -333,16 +333,16 @@ public class TestStorageContainerChannel extends GrpcClientTestBase {
       .thenReturn(locateResponses2);
 
     // the future is not set before #getRootRangeService
-    assertNull(scClient.getRangeServerChannelFuture());
+    assertNull(scClient.getStorageServerChannelFuture());
     assertNull(scClient.getStorageContainerInfo());
     // call #getRootRangeService
-    CompletableFuture<RangeServerChannel> rsChannelFuture = scClient.getStorageContainerChannelFuture();
+    CompletableFuture<StorageServerChannel> rsChannelFuture = scClient.getStorageContainerChannelFuture();
     // the future is set and the locationClient#locateStorageContainers is called
-    assertNotNull(scClient.getRangeServerChannelFuture());
+    assertNotNull(scClient.getStorageServerChannelFuture());
     assertNull(scClient.getStorageContainerInfo());
     verify(locationClient, times(1)).locateStorageContainers(anyList());
     // if the request is outstanding, a second call will not call locationClient#locateStorageContainers
-    CompletableFuture<RangeServerChannel> rsChannelFuture1 = scClient.getStorageContainerChannelFuture();
+    CompletableFuture<StorageServerChannel> rsChannelFuture1 = scClient.getStorageContainerChannelFuture();
     assertTrue(rsChannelFuture == rsChannelFuture1);
     assertNull(scClient.getStorageContainerInfo());
     verify(locationClient, times(1)).locateStorageContainers(anyList());
@@ -369,7 +369,7 @@ public class TestStorageContainerChannel extends GrpcClientTestBase {
     locateResponses2.complete(Lists.newArrayList(oneResp));
 
     // get the service
-    RangeServerChannel rsChannel = rsChannelFuture.get();
+    StorageServerChannel rsChannel = rsChannelFuture.get();
     assertTrue(rsChannel == mockChannel);
     // verify storage container info
     StorageContainerInfo scInfo = scClient.getStorageContainerInfo();
@@ -392,16 +392,16 @@ public class TestStorageContainerChannel extends GrpcClientTestBase {
       .thenReturn(locateResponses2);
 
     // the future is not set before #getRootRangeService
-    assertNull(scClient.getRangeServerChannelFuture());
+    assertNull(scClient.getStorageServerChannelFuture());
     assertNull(scClient.getStorageContainerInfo());
     // call #getRootRangeService
-    CompletableFuture<RangeServerChannel> rsChannelFuture = scClient.getStorageContainerChannelFuture();
+    CompletableFuture<StorageServerChannel> rsChannelFuture = scClient.getStorageContainerChannelFuture();
     // the future is set and the locationClient#locateStorageContainers is called
-    assertNotNull(scClient.getRangeServerChannelFuture());
+    assertNotNull(scClient.getStorageServerChannelFuture());
     assertNull(scClient.getStorageContainerInfo());
     verify(locationClient, times(1)).locateStorageContainers(anyList());
     // if the request is outstanding, a second call will not call locationClient#locateStorageContainers
-    CompletableFuture<RangeServerChannel> rsChannelFuture1 = scClient.getStorageContainerChannelFuture();
+    CompletableFuture<StorageServerChannel> rsChannelFuture1 = scClient.getStorageContainerChannelFuture();
     assertTrue(rsChannelFuture == rsChannelFuture1);
     assertNull(scClient.getStorageContainerInfo());
     verify(locationClient, times(1)).locateStorageContainers(anyList());
@@ -428,7 +428,7 @@ public class TestStorageContainerChannel extends GrpcClientTestBase {
     locateResponses2.complete(Lists.newArrayList(oneResp));
 
     // get the service
-    RangeServerChannel rsChannel = rsChannelFuture.get();
+    StorageServerChannel rsChannel = rsChannelFuture.get();
     assertTrue(rsChannel == mockChannel);
     // verify storage container info
     StorageContainerInfo scInfo = scClient.getStorageContainerInfo();

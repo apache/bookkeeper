@@ -32,19 +32,19 @@ import org.apache.distributedlog.stream.proto.common.Endpoint;
  * A manager manages channels to range servers.
  */
 @Slf4j
-public class RangeServerChannelManager implements AutoCloseable {
+public class StorageServerChannelManager implements AutoCloseable {
 
   private final ReentrantReadWriteLock lock;
   private boolean closed = false;
-  private final ConcurrentMap<Endpoint, RangeServerChannel> channels;
-  private final Function<Endpoint, RangeServerChannel> channelFactory;
+  private final ConcurrentMap<Endpoint, StorageServerChannel> channels;
+  private final Function<Endpoint, StorageServerChannel> channelFactory;
 
-  public RangeServerChannelManager(StorageClientSettings settings) {
-    this(RangeServerChannel.factory(settings.usePlaintext()));
+  public StorageServerChannelManager(StorageClientSettings settings) {
+    this(StorageServerChannel.factory(settings.usePlaintext()));
   }
 
   @VisibleForTesting
-  public RangeServerChannelManager(Function<Endpoint, RangeServerChannel> channelFactory) {
+  public StorageServerChannelManager(Function<Endpoint, StorageServerChannel> channelFactory) {
     this.channels = new ConcurrentHashMap<>();
     this.lock = new ReentrantReadWriteLock();
     this.channelFactory = channelFactory;
@@ -65,7 +65,7 @@ public class RangeServerChannelManager implements AutoCloseable {
     }
   }
 
-  public boolean addRangeServer(Endpoint endpoint, RangeServerChannel channel) {
+  public boolean addStorageServer(Endpoint endpoint, StorageServerChannel channel) {
     lock.readLock().lock();
     try {
       if (closed) {
@@ -75,7 +75,7 @@ public class RangeServerChannelManager implements AutoCloseable {
         return false;
       }
 
-      RangeServerChannel oldChannel = channels.putIfAbsent(endpoint, channel);
+      StorageServerChannel oldChannel = channels.putIfAbsent(endpoint, channel);
       if (null != oldChannel) {
         log.debug("KeyRange server ({}) already existed in the channel manager.");
         channel.close();
@@ -89,19 +89,19 @@ public class RangeServerChannelManager implements AutoCloseable {
     }
   }
 
-  public RangeServerChannel getOrCreateChannel(Endpoint endpoint) {
-    RangeServerChannel channel = getChannel(endpoint);
+  public StorageServerChannel getOrCreateChannel(Endpoint endpoint) {
+    StorageServerChannel channel = getChannel(endpoint);
     if (null != channel) {
       return channel;
     }
     // no channel exists
-    RangeServerChannel newChannel = channelFactory.apply(endpoint);
-    addRangeServer(endpoint, newChannel);
+    StorageServerChannel newChannel = channelFactory.apply(endpoint);
+    addStorageServer(endpoint, newChannel);
     return getChannel(endpoint);
   }
 
   @Nullable
-  public RangeServerChannel getChannel(Endpoint endpoint) {
+  public StorageServerChannel getChannel(Endpoint endpoint) {
     lock.readLock().lock();
     try {
       return channels.get(endpoint);
@@ -111,7 +111,7 @@ public class RangeServerChannelManager implements AutoCloseable {
   }
 
   @Nullable
-  public RangeServerChannel removeChannel(Endpoint endpoint, RangeServerChannel channel) {
+  public StorageServerChannel removeChannel(Endpoint endpoint, StorageServerChannel channel) {
     lock.readLock().lock();
     try {
       if (closed) {
@@ -120,7 +120,7 @@ public class RangeServerChannelManager implements AutoCloseable {
         return null;
       }
 
-      RangeServerChannel channelRemoved;
+      StorageServerChannel channelRemoved;
       if (null == channel) {
         channelRemoved = channels.remove(endpoint);
       } else {
@@ -157,7 +157,7 @@ public class RangeServerChannelManager implements AutoCloseable {
       lock.writeLock().unlock();
     }
     // close the channels
-    channels.values().forEach(RangeServerChannel::close);
+    channels.values().forEach(StorageServerChannel::close);
     channels.clear();
   }
 }
