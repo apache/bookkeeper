@@ -407,41 +407,49 @@ public class LocalBookKeeper {
     }
 
     public static void main(String[] args) throws Exception, SecurityException {
-        if (args.length < 1) {
-            usage();
+        try {
+            if (args.length < 1) {
+                usage();
+                System.exit(-1);
+            }
+
+            int numBookies = Integer.parseInt(args[0]);
+
+            ServerConfiguration conf = new ServerConfiguration();
+            conf.setAllowLoopback(true);
+            if (args.length >= 2) {
+                String confFile = args[1];
+                try {
+                    conf.loadConf(new File(confFile).toURI().toURL());
+                    LOG.info("Using configuration file " + confFile);
+                } catch (Exception e) {
+                    // load conf failed
+                    LOG.warn("Error loading configuration file " + confFile, e);
+                }
+            }
+
+            String zkDataDir = null;
+            if (args.length >= 3) {
+                zkDataDir = args[2];
+            }
+
+            String localBookiesConfigDirName = defaultLocalBookiesConfigDir;
+            if (args.length >= 4) {
+                localBookiesConfigDirName = args[3];
+            }
+
+            startLocalBookiesInternal(conf, zooKeeperDefaultHost, zooKeeperDefaultPort, numBookies, true,
+                    bookieDefaultInitialPort, false, "test", zkDataDir, localBookiesConfigDirName);
+        } catch (Exception e) {
+            LOG.error("Exiting LocalBookKeeper because of exception in main method", e);
+            e.printStackTrace();
+            /*
+             * This is needed because, some non-daemon thread (probably in ZK or
+             * some other dependent service) is preventing the JVM from exiting, though
+             * there is exception in main thread.
+             */
             System.exit(-1);
         }
-
-        int numBookies = Integer.parseInt(args[0]);
-
-        ServerConfiguration conf = new ServerConfiguration();
-        conf.setAllowLoopback(true);
-        if (args.length >= 2) {
-            String confFile = args[1];
-            try {
-                conf.loadConf(new File(confFile).toURI().toURL());
-                LOG.info("Using configuration file " + confFile);
-            } catch (Exception e) {
-                // load conf failed
-                LOG.warn("Error loading configuration file " + confFile, e);
-            }
-        }
-
-        String zkDataDir = null;
-        if (args.length >= 3) {
-            zkDataDir = args[2];
-        }
-
-        String localBookiesConfigDirName = defaultLocalBookiesConfigDir;
-        if (args.length >= 4) {
-            localBookiesConfigDirName = args[3];
-        }
-
-        startLocalBookiesInternal(
-                conf, zooKeeperDefaultHost, zooKeeperDefaultPort,
-                numBookies, true, bookieDefaultInitialPort,
-                false, "test",
-                zkDataDir, localBookiesConfigDirName);
     }
 
     private static void usage() {
