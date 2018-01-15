@@ -15,7 +15,7 @@
 package org.apache.distributedlog.stream.storage.impl.sc;
 
 import org.apache.bookkeeper.common.util.OrderedScheduler;
-import org.apache.distributedlog.stream.client.internal.api.RangeServerClientManager;
+import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.distributedlog.stream.protocol.util.StorageContainerPlacementPolicy;
 import org.apache.distributedlog.stream.storage.api.sc.StorageContainer;
 import org.apache.distributedlog.stream.storage.api.sc.StorageContainerFactory;
@@ -29,12 +29,12 @@ public class DefaultStorageContainerFactory implements StorageContainerFactory {
   private final StorageConfiguration storageConf;
   private final StorageContainerPlacementPolicy rangePlacementPolicy;
   private final OrderedScheduler scheduler;
-  private final RangeServerClientManager clientManager;
+  private final StorageServerClientManager clientManager;
 
   public DefaultStorageContainerFactory(StorageConfiguration storageConf,
                                         StorageContainerPlacementPolicy rangePlacementPolicy,
                                         OrderedScheduler scheduler,
-                                        RangeServerClientManager clientManager) {
+                                        StorageServerClientManager clientManager) {
     this.storageConf = storageConf;
     this.rangePlacementPolicy = rangePlacementPolicy;
     this.scheduler = scheduler;

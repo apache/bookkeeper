@@ -17,7 +17,7 @@ package org.apache.distributedlog.stream.storage;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-import org.apache.distributedlog.stream.client.internal.api.RangeServerClientManager;
+import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.distributedlog.stream.storage.api.RangeStore;
 import org.apache.distributedlog.stream.storage.api.sc.StorageContainerManagerFactory;
 import org.apache.distributedlog.stream.storage.conf.StorageConfiguration;
@@ -35,7 +35,7 @@ public class TestRangeStoreBuilder {
       .withStorageConfiguration(null)
       .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
       .withStorageResources(StorageResources.create())
-      .withClientManagerSupplier(() -> mock(RangeServerClientManager.class))
+      .withClientManagerSupplier(() -> mock(StorageServerClientManager.class))
       .build();
   }
 
@@ -45,7 +45,7 @@ public class TestRangeStoreBuilder {
       .withStorageConfiguration(mock(StorageConfiguration.class))
       .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
       .withStorageResources(null)
-      .withClientManagerSupplier(() -> mock(RangeServerClientManager.class))
+      .withClientManagerSupplier(() -> mock(StorageServerClientManager.class))
       .build();
   }
 
@@ -55,7 +55,7 @@ public class TestRangeStoreBuilder {
       .withStorageConfiguration(mock(StorageConfiguration.class))
       .withStorageContainerManagerFactory(null)
       .withStorageResources(StorageResources.create())
-      .withClientManagerSupplier(() -> mock(RangeServerClientManager.class))
+      .withClientManagerSupplier(() -> mock(StorageServerClientManager.class))
       .build();
   }
 
@@ -75,7 +75,7 @@ public class TestRangeStoreBuilder {
       .withStorageConfiguration(mock(StorageConfiguration.class))
       .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
       .withStorageResources(StorageResources.create())
-      .withClientManagerSupplier(() -> mock(RangeServerClientManager.class))
+      .withClientManagerSupplier(() -> mock(StorageServerClientManager.class))
       .build();
     assertTrue(rangeStore instanceof RangeStoreImpl);
   }

@@ -51,7 +51,7 @@ import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.distributedlog.stream.client.utils.NetUtils;
+import org.apache.distributedlog.clients.utils.NetUtils;
 import org.apache.distributedlog.stream.proto.common.Endpoint;
 import org.apache.distributedlog.stream.storage.api.sc.StorageContainerManager;
 import org.apache.distributedlog.stream.storage.api.sc.StorageContainerRegistry;

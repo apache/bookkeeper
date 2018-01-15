@@ -26,7 +26,7 @@ import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.common.util.SharedResourceManager;
 import org.apache.bookkeeper.common.util.SharedResourceManager.Resource;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.distributedlog.stream.client.internal.api.RangeServerClientManager;
+import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.distributedlog.stream.proto.storage.CreateCollectionRequest;
 import org.apache.distributedlog.stream.proto.storage.CreateCollectionResponse;
 import org.apache.distributedlog.stream.proto.storage.CreateStreamRequest;
@@ -64,12 +64,12 @@ public class RangeStoreImpl
   private final StorageContainerManagerFactory scmFactory;
   private final StorageContainerRegistryImpl scRegistry;
   private final StorageContainerManager scManager;
-  private final RangeServerClientManager clientManager;
+  private final StorageServerClientManager clientManager;
 
   public RangeStoreImpl(StorageConfiguration conf,
                         Resource<OrderedScheduler> schedulerResource,
                         StorageContainerManagerFactory factory,
-                        Supplier<RangeServerClientManager> clientManagerSupplier,
+                        Supplier<StorageServerClientManager> clientManagerSupplier,
                         int numStorageContainers,
                         StatsLogger statsLogger) {
     super("range-service", conf, statsLogger);

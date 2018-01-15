@@ -25,7 +25,7 @@
     <relativePath>..</relativePath>
   </parent>
   <artifactId>stream-storage-service-impl</artifactId>
-  <name>Apache DistributedLog :: Stream Storage :: Service :: Impl</name>
+  <name>Apache DistributedLog :: Stream Storage :: Storage :: Impl</name>
 
   <dependencies>
     <dependency>
@@ -34,8 +34,8 @@
       <version>${project.parent.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.bookkeeper</groupId>
-      <artifactId>stream-client</artifactId>
+      <groupId>org.apache.distributedlog</groupId>
+      <artifactId>stream-storage-java-client</artifactId>
       <version>${project.parent.version}</version>
     </dependency>
     <dependency>

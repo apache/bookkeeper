@@ -37,8 +37,8 @@ import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.distributedlog.stream.client.internal.api.RangeServerClientManager;
-import org.apache.distributedlog.stream.client.utils.NetUtils;
+import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
+import org.apache.distributedlog.clients.utils.NetUtils;
 import org.apache.distributedlog.stream.proto.CollectionConfiguration;
 import org.apache.distributedlog.stream.proto.StreamName;
 import org.apache.distributedlog.stream.proto.StreamProperties;
@@ -105,7 +105,7 @@ public class TestRangeStoreImpl {
     Endpoint endpoint = NetUtils.getLocalEndpoint(0, false);
 
     // create the client manager
-    RangeServerClientManager clientManager = mock(RangeServerClientManager.class);
+    StorageServerClientManager clientManager = mock(StorageServerClientManager.class);
 
     rangeStore = (RangeStoreImpl) RangeStoreBuilder.newBuilder()
       .withStorageConfiguration(storageConf)

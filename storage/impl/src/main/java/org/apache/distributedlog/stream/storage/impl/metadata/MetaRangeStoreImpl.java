@@ -28,7 +28,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.annotation.OrderedBy;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
-import org.apache.distributedlog.stream.client.internal.api.RangeServerClientManager;
+import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.distributedlog.stream.proto.RangeMetadata;
 import org.apache.distributedlog.stream.proto.storage.AddStreamRequest;
 import org.apache.distributedlog.stream.proto.storage.AddStreamResponse;
@@ -52,7 +52,7 @@ import org.apache.distributedlog.stream.storage.impl.metadata.stream.MetaRangeIm
 public class MetaRangeStoreImpl
     implements MetaRangeStore {
 
-  private final RangeServerClientManager clientManager;
+  private final StorageServerClientManager clientManager;
   private final ScheduledExecutorService executor;
   private final StorageContainerPlacementPolicy rangePlacementPolicy;
 
@@ -61,7 +61,7 @@ public class MetaRangeStoreImpl
 
   public MetaRangeStoreImpl(StorageConfiguration storageConf,
                             long scId,
-                            RangeServerClientManager clientManager,
+                            StorageServerClientManager clientManager,
                             StorageContainerPlacementPolicy rangePlacementPolicy,
                             ScheduledExecutorService executor) {
     this.clientManager = clientManager;

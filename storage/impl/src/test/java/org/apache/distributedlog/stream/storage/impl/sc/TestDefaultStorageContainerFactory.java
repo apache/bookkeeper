@@ -41,7 +41,7 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.distributedlog.stream.client.internal.api.RangeServerClientManager;
+import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.distributedlog.stream.storage.api.sc.StorageContainer;
 import org.apache.distributedlog.stream.storage.conf.StorageConfiguration;
 import org.junit.Test;
@@ -56,7 +56,7 @@ public class TestDefaultStorageContainerFactory {
   public void testCreate() throws Exception {
     OrderedScheduler scheduler = mock(OrderedScheduler.class);
     OrderedScheduler snapshotScheduler = mock(OrderedScheduler.class);
-    RangeServerClientManager clientManager = mock(RangeServerClientManager.class);
+    StorageServerClientManager clientManager = mock(StorageServerClientManager.class);
     ListeningScheduledExecutorService snapshotExecutor = mock(ListeningScheduledExecutorService.class);
     when(snapshotScheduler.chooseThread(anyLong())).thenReturn(snapshotExecutor);
     Mockito.doReturn(mock(ListenableScheduledFuture.class))

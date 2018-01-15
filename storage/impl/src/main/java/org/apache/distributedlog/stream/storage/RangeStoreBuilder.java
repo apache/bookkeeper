@@ -19,7 +19,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.function.Supplier;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.distributedlog.stream.client.internal.api.RangeServerClientManager;
+import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.distributedlog.stream.storage.api.RangeStore;
 import org.apache.distributedlog.stream.storage.api.sc.StorageContainerManagerFactory;
 import org.apache.distributedlog.stream.storage.conf.StorageConfiguration;
@@ -38,7 +38,7 @@ public final class RangeStoreBuilder {
   private StorageConfiguration storeConf = null;
   private StorageResources storeResources = null;
   private StorageContainerManagerFactory scmFactory = null;
-  private Supplier<RangeServerClientManager> clientManagerSupplier = null;
+  private Supplier<StorageServerClientManager> clientManagerSupplier = null;
   private int numStorageContainers = 1024;
 
   private RangeStoreBuilder() {}
@@ -102,12 +102,12 @@ public final class RangeStoreBuilder {
   }
 
   /**
-   * Build the range store with provided {@link RangeServerClientManager}.
+   * Build the range store with provided {@link StorageServerClientManager}.
    *
-   * @param supplier supplier to provide {@link RangeServerClientManager}.
+   * @param supplier supplier to provide {@link StorageServerClientManager}.
    * @return range store builder.
    */
-  public RangeStoreBuilder withClientManagerSupplier(Supplier<RangeServerClientManager> supplier) {
+  public RangeStoreBuilder withClientManagerSupplier(Supplier<StorageServerClientManager> supplier) {
     this.clientManagerSupplier = supplier;
     return this;
   }

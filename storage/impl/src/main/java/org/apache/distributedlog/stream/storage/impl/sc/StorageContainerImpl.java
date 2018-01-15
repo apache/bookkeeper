@@ -25,7 +25,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
-import org.apache.distributedlog.stream.client.internal.api.RangeServerClientManager;
+import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.distributedlog.stream.proto.storage.CreateCollectionRequest;
 import org.apache.distributedlog.stream.proto.storage.CreateCollectionResponse;
 import org.apache.distributedlog.stream.proto.storage.CreateStreamRequest;
@@ -68,7 +68,7 @@ public class StorageContainerImpl
                               long scId,
                               StorageContainerPlacementPolicy rangePlacementPolicy,
                               OrderedScheduler scheduler,
-                              RangeServerClientManager clientManager) {
+                              StorageServerClientManager clientManager) {
     this.scId = scId;
     this.scExecutor = scheduler.chooseThread(scId);
     this.failRequestStorageContainer = FailRequestStorageContainer.of(scheduler);

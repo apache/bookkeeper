@@ -19,11 +19,15 @@
 package org.apache.distributedlog.api;
 
 import java.util.concurrent.CompletableFuture;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.distributedlog.api.kv.Table;
 
 /**
  * The stream storage client.
  */
+@Public
+@Evolving
 public interface StorageClient {
 
     CompletableFuture<Table> openTable(String table);
