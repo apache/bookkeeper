@@ -42,6 +42,14 @@ public final class ProtocolConstants {
 
   // the root storage container id
   public static final long ROOT_STORAGE_CONTAINER_ID = 0L;
+  // the stream hosts root range
+  public static final long ROOT_STREAM_ID = 0L;
+  // the root range
+  public static final long ROOT_RANGE_ID = 0L;
+  // the stream used by each container to store metadata
+  public static final long CONTAINER_META_STREAM_ID = 1L;
+  // the range used by each container to store metadata
+  public static final long CONTAINER_META_RANGE_ID = 0L;
   // the default number of storage containers
   public static final int DEFAULT_NUM_STORAGE_CONTAINERS = 1024;
   // invalid storage container id

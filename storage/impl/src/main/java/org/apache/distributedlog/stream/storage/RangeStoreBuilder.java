@@ -16,14 +16,13 @@ package org.apache.distributedlog.stream.storage;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.util.function.Supplier;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.distributedlog.stream.storage.api.RangeStore;
 import org.apache.distributedlog.stream.storage.api.sc.StorageContainerManagerFactory;
 import org.apache.distributedlog.stream.storage.conf.StorageConfiguration;
 import org.apache.distributedlog.stream.storage.impl.RangeStoreImpl;
+import org.apache.distributedlog.stream.storage.impl.store.RangeStoreFactory;
 
 /**
  * Builder to build the storage component.
@@ -38,7 +37,7 @@ public final class RangeStoreBuilder {
   private StorageConfiguration storeConf = null;
   private StorageResources storeResources = null;
   private StorageContainerManagerFactory scmFactory = null;
-  private Supplier<StorageServerClientManager> clientManagerSupplier = null;
+  private RangeStoreFactory rangeStoreFactory = null;
   private int numStorageContainers = 1024;
 
   private RangeStoreBuilder() {}
@@ -102,26 +101,26 @@ public final class RangeStoreBuilder {
   }
 
   /**
-   * Build the range store with provided {@link StorageServerClientManager}.
+   * Build the range store with provided {@link RangeStoreFactory}.
    *
-   * @param supplier supplier to provide {@link StorageServerClientManager}.
+   * @param storeFactory factory to create range stores.
    * @return range store builder.
    */
-  public RangeStoreBuilder withClientManagerSupplier(Supplier<StorageServerClientManager> supplier) {
-    this.clientManagerSupplier = supplier;
+  public RangeStoreBuilder withRangeStoreFactory(RangeStoreFactory storeFactory) {
+    this.rangeStoreFactory = storeFactory;
     return this;
   }
 
   public RangeStore build() {
     checkNotNull(scmFactory, "StorageContainerManagerFactory is not provided");
     checkNotNull(storeConf, "StorageConfiguration is not provided");
-    checkNotNull(clientManagerSupplier, "Peer client settings are not provided");
+    checkNotNull(rangeStoreFactory, "RangeStoreFactory is not provided");
 
     return new RangeStoreImpl(
       storeConf,
       storeResources.scheduler(),
       scmFactory,
-      clientManagerSupplier,
+      rangeStoreFactory,
       numStorageContainers,
       statsLogger);
   }

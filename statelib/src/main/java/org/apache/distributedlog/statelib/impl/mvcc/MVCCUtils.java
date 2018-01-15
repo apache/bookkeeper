@@ -59,7 +59,7 @@ import org.apache.distributedlog.statestore.proto.TxnRequest;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class MVCCUtils {
 
-    static final Command NOP_CMD = Command.newBuilder()
+    public static final Command NOP_CMD = Command.newBuilder()
         .setNopReq(NopRequest.newBuilder().build())
         .build();
 

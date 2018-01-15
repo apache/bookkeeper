@@ -25,6 +25,7 @@ import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createGe
 import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createGetStreamRequest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -37,8 +38,7 @@ import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
-import org.apache.distributedlog.clients.utils.NetUtils;
+import org.apache.distributedlog.statelib.api.mvcc.MVCCAsyncStore;
 import org.apache.distributedlog.stream.proto.NamespaceConfiguration;
 import org.apache.distributedlog.stream.proto.StreamName;
 import org.apache.distributedlog.stream.proto.StreamProperties;
@@ -63,6 +63,7 @@ import org.apache.distributedlog.stream.storage.StorageResources;
 import org.apache.distributedlog.stream.storage.api.sc.StorageContainer;
 import org.apache.distributedlog.stream.storage.conf.StorageConfiguration;
 import org.apache.distributedlog.stream.storage.impl.sc.LocalStorageContainerManager;
+import org.apache.distributedlog.stream.storage.impl.store.RangeStoreFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -87,6 +88,14 @@ public class TestRangeStoreImpl {
       .build();
   }
 
+  private static Endpoint createEndpoint(String hostname,
+                                         int port) {
+    return Endpoint.newBuilder()
+        .setHostname(hostname)
+        .setPort(port)
+        .build();
+  }
+
   private final CompositeConfiguration compConf =
     new CompositeConfiguration();
   private final StorageConfiguration storageConf =
@@ -102,17 +111,22 @@ public class TestRangeStoreImpl {
   public void setUp() throws Exception {
     storageResources = StorageResources.create();
 
-    Endpoint endpoint = NetUtils.getLocalEndpoint(0, false);
+    Endpoint endpoint = createEndpoint("127.0.0.1", 0);
 
     // create the client manager
-    StorageServerClientManager clientManager = mock(StorageServerClientManager.class);
+    RangeStoreFactory storeFactory = mock(RangeStoreFactory.class);
+    MVCCAsyncStore<byte[], byte[]> store = mock(MVCCAsyncStore.class);
+    when(storeFactory.openStore(anyLong(), anyLong(), anyLong()))
+        .thenReturn(FutureUtils.value(store));
+    when(storeFactory.closeStores(anyLong()))
+        .thenReturn(FutureUtils.Void());
 
     rangeStore = (RangeStoreImpl) RangeStoreBuilder.newBuilder()
       .withStorageConfiguration(storageConf)
       .withStorageResources(storageResources)
       .withStorageContainerManagerFactory((numScs, storeConf, rgRegistry)
         -> new LocalStorageContainerManager(endpoint, storeConf, rgRegistry, 2))
-      .withClientManagerSupplier(() -> clientManager)
+      .withRangeStoreFactory(storeFactory)
       .build();
     rangeStore.start();
   }

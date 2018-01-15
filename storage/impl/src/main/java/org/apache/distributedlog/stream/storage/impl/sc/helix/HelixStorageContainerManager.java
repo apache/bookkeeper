@@ -12,34 +12,6 @@
  * limitations under the License.
  */
 
-/*
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/*
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.apache.distributedlog.stream.storage.impl.sc.helix;
 
 import static org.apache.distributedlog.stream.storage.impl.sc.helix.HelixStorageController.RESOURCE_NAME;
@@ -51,7 +23,6 @@ import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.distributedlog.clients.utils.NetUtils;
 import org.apache.distributedlog.stream.proto.common.Endpoint;
 import org.apache.distributedlog.stream.storage.api.sc.StorageContainerManager;
 import org.apache.distributedlog.stream.storage.api.sc.StorageContainerRegistry;
@@ -112,9 +83,10 @@ public class HelixStorageContainerManager
       return null;
     } else {
       InstanceConfig instance = instances.get(0);
-      return NetUtils.createEndpoint(
-        instance.getHostName(),
-        Integer.parseInt(instance.getPort()));
+      return Endpoint.newBuilder()
+          .setHostname(instance.getHostName())
+          .setPort(Integer.parseInt(instance.getPort()))
+          .build();
     }
   }
 

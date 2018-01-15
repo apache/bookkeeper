@@ -20,13 +20,11 @@ import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.function.Supplier;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.common.util.SharedResourceManager;
 import org.apache.bookkeeper.common.util.SharedResourceManager.Resource;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.distributedlog.stream.proto.storage.CreateNamespaceRequest;
 import org.apache.distributedlog.stream.proto.storage.CreateNamespaceResponse;
 import org.apache.distributedlog.stream.proto.storage.CreateStreamRequest;
@@ -51,6 +49,7 @@ import org.apache.distributedlog.stream.storage.conf.StorageConfiguration;
 import org.apache.distributedlog.stream.storage.impl.sc.DefaultStorageContainerFactory;
 import org.apache.distributedlog.stream.storage.impl.sc.StorageContainerPlacementPolicyImpl;
 import org.apache.distributedlog.stream.storage.impl.sc.StorageContainerRegistryImpl;
+import org.apache.distributedlog.stream.storage.impl.store.RangeStoreFactory;
 
 /**
  * KeyRange Service.
@@ -64,12 +63,12 @@ public class RangeStoreImpl
   private final StorageContainerManagerFactory scmFactory;
   private final StorageContainerRegistryImpl scRegistry;
   private final StorageContainerManager scManager;
-  private final StorageServerClientManager clientManager;
+  private final RangeStoreFactory storeFactory;
 
   public RangeStoreImpl(StorageConfiguration conf,
                         Resource<OrderedScheduler> schedulerResource,
                         StorageContainerManagerFactory factory,
-                        Supplier<StorageServerClientManager> clientManagerSupplier,
+                        RangeStoreFactory rangeStoreFactory,
                         int numStorageContainers,
                         StatsLogger statsLogger) {
     super("range-service", conf, statsLogger);
@@ -78,13 +77,13 @@ public class RangeStoreImpl
     this.scmFactory = factory;
     StorageContainerPlacementPolicy placementPolicy =
       StorageContainerPlacementPolicyImpl.of(numStorageContainers);
-    this.clientManager = clientManagerSupplier.get();
+    this.storeFactory = rangeStoreFactory;
     this.scRegistry = new StorageContainerRegistryImpl(
       new DefaultStorageContainerFactory(
         conf,
         placementPolicy,
         scheduler,
-        clientManager),
+        storeFactory),
       scheduler);
     this.scManager = scmFactory.create(numStorageContainers, conf, scRegistry);
   }

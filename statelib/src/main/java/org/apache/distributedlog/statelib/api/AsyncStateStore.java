@@ -38,6 +38,13 @@ public interface AsyncStateStore extends AutoCloseable {
     String name();
 
     /**
+     * Returns the spec of the state store.
+     *
+     * @return the spec of the state store.
+     */
+    StateStoreSpec spec();
+
+    /**
      * Initialize the state store.
      */
     CompletableFuture<Void> init(StateStoreSpec spec);

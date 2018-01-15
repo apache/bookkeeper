@@ -29,7 +29,6 @@ import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.distributedlog.ZooKeeperClusterTestCase;
-import org.apache.distributedlog.clients.utils.NetUtils;
 import org.apache.distributedlog.stream.proto.common.Endpoint;
 import org.apache.distributedlog.stream.storage.api.sc.StorageContainer;
 import org.apache.distributedlog.stream.storage.conf.StorageConfiguration;
@@ -72,6 +71,14 @@ public class TestHelixStorageContainerManager extends ZooKeeperClusterTestCase {
     }
   }
 
+  private static Endpoint createEndpoint(String hostname,
+                                         int port) {
+    return Endpoint.newBuilder()
+        .setHostname(hostname)
+        .setPort(port)
+        .build();
+  }
+
   @Test
   public void testCreateCluster() {
     String clusterName = runtime.getMethodName();
@@ -93,7 +100,7 @@ public class TestHelixStorageContainerManager extends ZooKeeperClusterTestCase {
     List<String> instances = controller.getAdmin().getInstancesInCluster(clusterName);
     assertEquals(0, instances.size());
 
-    Endpoint endpoint = NetUtils.createEndpoint("127.0.0.1", 4181);
+    Endpoint endpoint = createEndpoint("127.0.0.1", 4181);
     controller.addNode(clusterName, endpoint, Optional.empty());
     instances = controller.getAdmin().getInstancesInCluster(clusterName);
     assertEquals(1, instances.size());
@@ -106,7 +113,7 @@ public class TestHelixStorageContainerManager extends ZooKeeperClusterTestCase {
     assertTrue(instances.contains(HelixStorageController.getEndpointName(endpoint)));
 
     // add a different instance
-    Endpoint endpoint2 = NetUtils.createEndpoint("127.0.0.1", 4481);
+    Endpoint endpoint2 = createEndpoint("127.0.0.1", 4481);
     controller.addNode(clusterName, endpoint2, Optional.empty());
     instances = controller.getAdmin().getInstancesInCluster(clusterName);
     assertEquals(2, instances.size());
@@ -155,7 +162,7 @@ public class TestHelixStorageContainerManager extends ZooKeeperClusterTestCase {
 
     int basePort = 80;
     for (int i = 0; i < numHosts; i++) {
-      endpoints[i] = NetUtils.createEndpoint("127.0.0.1", basePort + i);
+      endpoints[i] = createEndpoint("127.0.0.1", basePort + i);
       registries[i] = createRegistry();
       managers[i] = createManager(
         clusterName, conf, registries[i], endpoints[i]);

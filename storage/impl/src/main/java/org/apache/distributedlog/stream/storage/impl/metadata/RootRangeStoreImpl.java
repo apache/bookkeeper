@@ -31,7 +31,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.annotation.OrderedBy;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
-import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
+import org.apache.distributedlog.statelib.api.mvcc.MVCCAsyncStore;
 import org.apache.distributedlog.stream.proto.NamespaceMetadata;
 import org.apache.distributedlog.stream.proto.NamespaceProperties;
 import org.apache.distributedlog.stream.proto.StreamName;
@@ -59,7 +59,7 @@ import org.apache.distributedlog.stream.storage.api.metadata.RootRangeStore;
 public class RootRangeStoreImpl
     implements RootRangeStore {
 
-  private final StorageServerClientManager clientManager;
+  private final MVCCAsyncStore<byte[], byte[]> store;
   private final StorageContainerPlacementPolicy placementPolicy;
   private final ScheduledExecutorService executor;
 
@@ -77,10 +77,10 @@ public class RootRangeStoreImpl
   @OrderedBy(key = "ROOT_STORAGE_CONTAINER_ID")
   private long nextStreamId = MIN_DATA_STREAM_ID;
 
-  public RootRangeStoreImpl(StorageServerClientManager clientManager,
+  public RootRangeStoreImpl(MVCCAsyncStore<byte[], byte[]> store,
                             StorageContainerPlacementPolicy placementPolicy,
                             ScheduledExecutorService executor) {
-    this.clientManager = clientManager;
+    this.store = store;
     this.placementPolicy = placementPolicy;
     this.executor = executor;
   }

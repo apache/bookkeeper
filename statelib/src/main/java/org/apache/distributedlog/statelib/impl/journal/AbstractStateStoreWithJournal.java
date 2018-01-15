@@ -64,6 +64,9 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
     // parameters
     protected String name = "UNINITIALIZED";
 
+    // spec
+    protected StateStoreSpec spec;
+
     protected boolean ownWriteScheduler = false;
     protected boolean ownReadScheduler = false;
     protected ScheduledExecutorService writeIOScheduler;
@@ -129,6 +132,11 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
     }
 
     @Override
+    public StateStoreSpec spec() {
+        return spec;
+    }
+
+    @Override
     public CompletableFuture<Void> init(StateStoreSpec spec) {
         try {
             validateStoreSpec(spec);
@@ -136,7 +144,8 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
             log.error("Fail to init state store due to : ", e);
             return FutureUtils.exception(e);
         }
-        name = spec.getName();
+        this.spec = spec;
+        this.name = spec.getName();
 
         if (null != spec.getWriteIOScheduler()) {
             writeIOScheduler = spec.getWriteIOScheduler();
@@ -296,7 +305,6 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
                 }),
                 // close the local state store
                 () -> {
-                    log.info("");
                     if (null == readIOScheduler) {
                         closeLocalStore();
                         FutureUtils.complete(future, null);

@@ -15,11 +15,11 @@
 package org.apache.distributedlog.stream.storage.impl.sc;
 
 import org.apache.bookkeeper.common.util.OrderedScheduler;
-import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.distributedlog.stream.protocol.util.StorageContainerPlacementPolicy;
 import org.apache.distributedlog.stream.storage.api.sc.StorageContainer;
 import org.apache.distributedlog.stream.storage.api.sc.StorageContainerFactory;
 import org.apache.distributedlog.stream.storage.conf.StorageConfiguration;
+import org.apache.distributedlog.stream.storage.impl.store.RangeStoreFactory;
 
 /**
  * The default storage container factory for creating {@link StorageContainer}s.
@@ -29,16 +29,16 @@ public class DefaultStorageContainerFactory implements StorageContainerFactory {
   private final StorageConfiguration storageConf;
   private final StorageContainerPlacementPolicy rangePlacementPolicy;
   private final OrderedScheduler scheduler;
-  private final StorageServerClientManager clientManager;
+  private final RangeStoreFactory storeFactory;
 
   public DefaultStorageContainerFactory(StorageConfiguration storageConf,
                                         StorageContainerPlacementPolicy rangePlacementPolicy,
                                         OrderedScheduler scheduler,
-                                        StorageServerClientManager clientManager) {
+                                        RangeStoreFactory storeFactory) {
     this.storageConf = storageConf;
     this.rangePlacementPolicy = rangePlacementPolicy;
     this.scheduler = scheduler;
-    this.clientManager = clientManager;
+    this.storeFactory = storeFactory;
   }
 
   @Override
@@ -48,6 +48,6 @@ public class DefaultStorageContainerFactory implements StorageContainerFactory {
       scId,
       rangePlacementPolicy,
       scheduler,
-      clientManager);
+      storeFactory);
   }
 }

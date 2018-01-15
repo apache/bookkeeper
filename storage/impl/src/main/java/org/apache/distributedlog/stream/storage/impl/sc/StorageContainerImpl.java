@@ -18,14 +18,19 @@
 
 package org.apache.distributedlog.stream.storage.impl.sc;
 
+import static org.apache.distributedlog.stream.protocol.ProtocolConstants.CONTAINER_META_RANGE_ID;
+import static org.apache.distributedlog.stream.protocol.ProtocolConstants.CONTAINER_META_STREAM_ID;
+import static org.apache.distributedlog.stream.protocol.ProtocolConstants.ROOT_RANGE_ID;
 import static org.apache.distributedlog.stream.protocol.ProtocolConstants.ROOT_STORAGE_CONTAINER_ID;
+import static org.apache.distributedlog.stream.protocol.ProtocolConstants.ROOT_STREAM_ID;
 
+import com.google.common.collect.Lists;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
-import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.distributedlog.stream.proto.storage.CreateNamespaceRequest;
 import org.apache.distributedlog.stream.proto.storage.CreateNamespaceResponse;
 import org.apache.distributedlog.stream.proto.storage.CreateStreamRequest;
@@ -41,11 +46,13 @@ import org.apache.distributedlog.stream.proto.storage.GetStreamResponse;
 import org.apache.distributedlog.stream.proto.storage.StorageContainerRequest;
 import org.apache.distributedlog.stream.proto.storage.StorageContainerResponse;
 import org.apache.distributedlog.stream.protocol.util.StorageContainerPlacementPolicy;
+import org.apache.distributedlog.stream.storage.api.metadata.MetaRangeStore;
 import org.apache.distributedlog.stream.storage.api.metadata.RootRangeStore;
 import org.apache.distributedlog.stream.storage.api.sc.StorageContainer;
 import org.apache.distributedlog.stream.storage.conf.StorageConfiguration;
 import org.apache.distributedlog.stream.storage.impl.metadata.MetaRangeStoreImpl;
 import org.apache.distributedlog.stream.storage.impl.metadata.RootRangeStoreImpl;
+import org.apache.distributedlog.stream.storage.impl.store.RangeStoreFactory;
 
 /**
  * The default implementation of {@link StorageContainer}.
@@ -56,38 +63,32 @@ public class StorageContainerImpl
 
   private final long scId;
   private final ScheduledExecutorService scExecutor;
+  private final StorageConfiguration storageConf;
 
+  // storage container placement policy
+  private final StorageContainerPlacementPolicy placementPolicy;
   // store container that used for fail requests.
   private final StorageContainer failRequestStorageContainer;
+  // store factory
+  private final RangeStoreFactory storeFactory;
   // storage container
-  private final MetaRangeStoreImpl mgStore;
+  private MetaRangeStore mgStore;
   // root range
-  private final RootRangeStore rootRange;
+  private RootRangeStore rootRange;
 
   public StorageContainerImpl(StorageConfiguration storageConf,
                               long scId,
                               StorageContainerPlacementPolicy rangePlacementPolicy,
                               OrderedScheduler scheduler,
-                              StorageServerClientManager clientManager) {
+                              RangeStoreFactory storeFactory) {
     this.scId = scId;
     this.scExecutor = scheduler.chooseThread(scId);
+    this.storageConf = storageConf;
     this.failRequestStorageContainer = FailRequestStorageContainer.of(scheduler);
-    // set the root range store
-    if (ROOT_STORAGE_CONTAINER_ID == scId) {
-      RootRangeStoreImpl rsImpl = new RootRangeStoreImpl(
-        clientManager,
-        rangePlacementPolicy,
-        scExecutor);
-      this.rootRange = rsImpl;
-    } else {
-      this.rootRange = failRequestStorageContainer;
-    }
-    this.mgStore = new MetaRangeStoreImpl(
-      storageConf,
-      scId,
-      clientManager,
-      rangePlacementPolicy,
-      scExecutor);
+    this.storeFactory = storeFactory;
+    this.rootRange = failRequestStorageContainer;
+    this.mgStore = failRequestStorageContainer;
+    this.placementPolicy = rangePlacementPolicy;
   }
 
   //
@@ -99,15 +100,61 @@ public class StorageContainerImpl
     return scId;
   }
 
+  private CompletableFuture<Void> startRootRangeStore() {
+    if (ROOT_STORAGE_CONTAINER_ID != scId) {
+      return FutureUtils.Void();
+    }
+    return storeFactory.openStore(
+        ROOT_STORAGE_CONTAINER_ID,
+        ROOT_STREAM_ID,
+        ROOT_RANGE_ID
+    ).thenApply(store -> {
+      rootRange = new RootRangeStoreImpl(
+          store,
+          placementPolicy,
+          scExecutor);
+      return null;
+    });
+  }
+
+  private CompletableFuture<Void> startMetaRangeStore(long scId) {
+    return storeFactory.openStore(
+        scId,
+        CONTAINER_META_STREAM_ID,
+        CONTAINER_META_RANGE_ID
+    ).thenApply(store -> {
+      mgStore = new MetaRangeStoreImpl(
+          storageConf,
+          scId,
+          store,
+          placementPolicy,
+          scExecutor);
+      return null;
+    });
+  }
+
   @Override
   public CompletableFuture<Void> start() {
     log.info("Starting storage container ({}) ...", getId());
-    return FutureUtils.value(null);
+
+    List<CompletableFuture<Void>> futures = Lists.newArrayList(
+        startRootRangeStore(),
+        startMetaRangeStore(scId));
+
+    return FutureUtils.collect(futures).thenApply(ignored -> {
+      log.info("Successfully started storage container ({}).", getId());
+      return null;
+    });
   }
 
   @Override
   public CompletableFuture<Void> stop() {
-    return FutureUtils.value(null);
+    log.info("Stopping storage container ({}) ...", getId());
+
+    return storeFactory.closeStores(scId).thenApply(ignored -> {
+      log.info("Successfully stopped storage container ({}).", getId());
+      return null;
+    });
   }
 
   @Override

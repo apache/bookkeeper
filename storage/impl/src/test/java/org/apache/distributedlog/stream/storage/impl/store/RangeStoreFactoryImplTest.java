@@ -1,0 +1,170 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.distributedlog.stream.storage.impl.store;
+
+import static org.apache.distributedlog.statelib.impl.mvcc.MVCCUtils.NOP_CMD;
+import static org.apache.distributedlog.stream.storage.impl.store.RangeStoreFactoryImpl.normalizedName;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.time.Duration;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.bookkeeper.common.coder.ByteArrayCoder;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
+import org.apache.distributedlog.DLSN;
+import org.apache.distributedlog.LogRecord;
+import org.apache.distributedlog.LogRecordWithDLSN;
+import org.apache.distributedlog.api.AsyncLogReader;
+import org.apache.distributedlog.api.AsyncLogWriter;
+import org.apache.distributedlog.api.DistributedLogManager;
+import org.apache.distributedlog.api.namespace.Namespace;
+import org.apache.distributedlog.statelib.api.mvcc.MVCCAsyncStore;
+import org.apache.distributedlog.statelib.impl.rocksdb.checkpoint.fs.FSCheckpointManager;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
+/**
+ * Unit test of {@link RangeStoreFactoryImpl}.
+ */
+@Slf4j
+public class RangeStoreFactoryImplTest {
+
+    @Rule
+    public final TemporaryFolder testDir = new TemporaryFolder();
+
+    private Namespace namespace;
+    private File[] storeDirs;
+    private OrderedScheduler writeIOScheduler;
+    private OrderedScheduler readIOScheduler;
+    private OrderedScheduler checkpointScheduler;
+    private RangeStoreFactoryImpl factory;
+
+    @Before
+    public void setup() throws IOException {
+        this.namespace = mock(Namespace.class);
+
+        DistributedLogManager dlm = mock(DistributedLogManager.class);
+        when(dlm.asyncClose()).thenReturn(FutureUtils.Void());
+        when(namespace.openLog(anyString())).thenReturn(dlm);
+        AsyncLogWriter logWriter = mock(AsyncLogWriter.class);
+        when(dlm.openAsyncLogWriter()).thenReturn(FutureUtils.value(logWriter));
+        when(logWriter.getLastTxId()).thenReturn(-1L);
+        DLSN dlsn = new DLSN(0L, 0L, 0L);
+        when(logWriter.write(any(LogRecord.class))).thenReturn(FutureUtils.value(dlsn));
+        when(logWriter.asyncClose()).thenReturn(FutureUtils.Void());
+        AsyncLogReader logReader = mock(AsyncLogReader.class);
+        when(dlm.openAsyncLogReader(anyLong())).thenReturn(FutureUtils.value(logReader));
+        when(logReader.asyncClose()).thenReturn(FutureUtils.Void());
+        LogRecordWithDLSN record = new LogRecordWithDLSN(
+            dlsn, 0L, NOP_CMD.toByteArray(), 0L);
+        when(logReader.readNext()).thenReturn(FutureUtils.value(record));
+
+        int numDirs = 3;
+        this.storeDirs = new File[numDirs];
+        for (int i = 0; i < numDirs; i++) {
+            storeDirs[i] = testDir.newFolder("test-" + i);
+        }
+        this.writeIOScheduler = OrderedScheduler.newSchedulerBuilder()
+            .name("test-io")
+            .numThreads(3)
+            .build();
+        this.readIOScheduler = OrderedScheduler.newSchedulerBuilder()
+            .name("test-io")
+            .numThreads(3)
+            .build();
+        this.checkpointScheduler = OrderedScheduler.newSchedulerBuilder()
+            .name("checkpoint-io")
+            .numThreads(3)
+            .build();
+
+        this.factory = new RangeStoreFactoryImpl(
+            namespace,
+            storeDirs,
+            writeIOScheduler,
+            readIOScheduler,
+            checkpointScheduler);
+    }
+
+    @After
+    public void teardown() throws IOException {
+        this.writeIOScheduler.shutdown();
+        this.readIOScheduler.shutdown();
+        this.checkpointScheduler.shutdown();
+    }
+
+    @Test
+    public void testOpenStore() throws Exception {
+        long scId = System.currentTimeMillis();
+        long streamId = scId + 1;
+        long rangeId = streamId + 1;
+
+        try (MVCCAsyncStore<byte[], byte[]> store = FutureUtils.result(
+            factory.openStore(scId, streamId, rangeId))) {
+
+            log.info("Open store (scId = {}, streamId = {}, rangeId = {}) to test",
+                scId, streamId, rangeId);
+
+            String storeName = String.format(
+                "%s/%s/%s",
+                normalizedName(scId),
+                normalizedName(streamId),
+                normalizedName(rangeId));
+            assertEquals(storeName, store.name());
+
+            File localStoreDir = Paths.get(
+                storeDirs[(int) (streamId % storeDirs.length)].getAbsolutePath(),
+                "ranges",
+                normalizedName(scId),
+                normalizedName(streamId),
+                normalizedName(rangeId)
+            ).toFile();
+            assertEquals(localStoreDir, store.spec().getLocalStateStoreDir());
+
+            String streamName = RangeStoreFactoryImpl.streamName(scId, streamId, rangeId);
+            assertEquals(streamName, store.spec().getStream());
+
+            assertTrue(store.spec().getKeyCoder() instanceof ByteArrayCoder);
+            assertTrue(store.spec().getValCoder() instanceof ByteArrayCoder);
+            assertSame(
+                writeIOScheduler.chooseThread(streamId % 3),
+                store.spec().getWriteIOScheduler());
+            assertSame(
+                readIOScheduler.chooseThread(streamId % 3),
+                store.spec().getReadIOScheduler());
+            assertSame(
+                checkpointScheduler.chooseThread(streamId % 3),
+                store.spec().getCheckpointIOScheduler());
+            assertTrue(store.spec().getCheckpointStore() instanceof FSCheckpointManager);
+            assertEquals(Duration.ofMinutes(15), store.spec().getCheckpointDuration());
+        }
+    }
+
+}

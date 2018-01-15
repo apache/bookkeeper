@@ -17,11 +17,12 @@ package org.apache.distributedlog.stream.storage;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.distributedlog.stream.storage.api.RangeStore;
 import org.apache.distributedlog.stream.storage.api.sc.StorageContainerManagerFactory;
 import org.apache.distributedlog.stream.storage.conf.StorageConfiguration;
 import org.apache.distributedlog.stream.storage.impl.RangeStoreImpl;
+import org.apache.distributedlog.stream.storage.impl.store.RangeStoreFactory;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -29,13 +30,20 @@ import org.junit.Test;
  */
 public class TestRangeStoreBuilder {
 
+  private RangeStoreFactory storeFactory;
+
+  @Before
+  public void setup() {
+    this.storeFactory = mock(RangeStoreFactory.class);
+  }
+
   @Test(expected = NullPointerException.class)
   public void testBuildNullConfiguration() {
     RangeStoreBuilder.newBuilder()
       .withStorageConfiguration(null)
       .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
       .withStorageResources(StorageResources.create())
-      .withClientManagerSupplier(() -> mock(StorageServerClientManager.class))
+      .withRangeStoreFactory(storeFactory)
       .build();
   }
 
@@ -45,7 +53,7 @@ public class TestRangeStoreBuilder {
       .withStorageConfiguration(mock(StorageConfiguration.class))
       .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
       .withStorageResources(null)
-      .withClientManagerSupplier(() -> mock(StorageServerClientManager.class))
+      .withRangeStoreFactory(storeFactory)
       .build();
   }
 
@@ -55,17 +63,17 @@ public class TestRangeStoreBuilder {
       .withStorageConfiguration(mock(StorageConfiguration.class))
       .withStorageContainerManagerFactory(null)
       .withStorageResources(StorageResources.create())
-      .withClientManagerSupplier(() -> mock(StorageServerClientManager.class))
+      .withRangeStoreFactory(storeFactory)
       .build();
   }
 
   @Test(expected = NullPointerException.class)
-  public void testBuildNullClientManager() {
+  public void testBuildNullStoreFactory() {
     RangeStoreBuilder.newBuilder()
       .withStorageConfiguration(mock(StorageConfiguration.class))
       .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
       .withStorageResources(StorageResources.create())
-      .withClientManagerSupplier(null)
+      .withRangeStoreFactory(null)
       .build();
   }
 
@@ -75,7 +83,7 @@ public class TestRangeStoreBuilder {
       .withStorageConfiguration(mock(StorageConfiguration.class))
       .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
       .withStorageResources(StorageResources.create())
-      .withClientManagerSupplier(() -> mock(StorageServerClientManager.class))
+      .withRangeStoreFactory(storeFactory)
       .build();
     assertTrue(rangeStore instanceof RangeStoreImpl);
   }

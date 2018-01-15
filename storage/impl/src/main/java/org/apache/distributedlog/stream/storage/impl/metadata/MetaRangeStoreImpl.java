@@ -28,7 +28,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.annotation.OrderedBy;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
-import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
+import org.apache.distributedlog.statelib.api.mvcc.MVCCAsyncStore;
 import org.apache.distributedlog.stream.proto.RangeMetadata;
 import org.apache.distributedlog.stream.proto.storage.AddStreamRequest;
 import org.apache.distributedlog.stream.proto.storage.AddStreamResponse;
@@ -52,7 +52,7 @@ import org.apache.distributedlog.stream.storage.impl.metadata.stream.MetaRangeIm
 public class MetaRangeStoreImpl
     implements MetaRangeStore {
 
-  private final StorageServerClientManager clientManager;
+  private final MVCCAsyncStore<byte[], byte[]> store;
   private final ScheduledExecutorService executor;
   private final StorageContainerPlacementPolicy rangePlacementPolicy;
 
@@ -61,10 +61,10 @@ public class MetaRangeStoreImpl
 
   public MetaRangeStoreImpl(StorageConfiguration storageConf,
                             long scId,
-                            StorageServerClientManager clientManager,
+                            MVCCAsyncStore<byte[], byte[]> store,
                             StorageContainerPlacementPolicy rangePlacementPolicy,
                             ScheduledExecutorService executor) {
-    this.clientManager = clientManager;
+    this.store = store;
     this.executor = executor;
     this.rangePlacementPolicy = rangePlacementPolicy;
     this.streams = Maps.newHashMap();
