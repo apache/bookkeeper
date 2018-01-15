@@ -44,7 +44,9 @@ public class DockerUtils {
     private static final Logger LOG = LoggerFactory.getLogger(DockerUtils.class);
 
     private static File getTargetDirectory(String containerId) {
-        File directory = new File("target/container-logs/" + containerId);
+        String mavenProjectDir = System.getenv("MAVEN_PROJECTBASEDIR");
+        String base = mavenProjectDir == null ? "" : mavenProjectDir + "/";
+        File directory = new File(base + "target/container-logs/" + containerId)
         if (!directory.exists() && !directory.mkdirs()) {
             LOG.error("Error creating directory for container logs.");
         }
