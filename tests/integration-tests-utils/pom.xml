@@ -34,7 +34,7 @@
   <name>Apache BookKeeper :: Tests :: Utility module for Arquillian based integration tests</name>
 
   <properties>
-    <arquillian-cube.version>1.12.1-SNAPSHOT</arquillian-cube.version>
+    <arquillian-cube.version>1.13.0</arquillian-cube.version>
     <commons-compress.version>1.15</commons-compress.version>
   </properties>
 
