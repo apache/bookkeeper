@@ -18,26 +18,14 @@
 
 package org.apache.distributedlog.clients.exceptions;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TestName;
-
 /**
- * Test Case of {@link InvalidCollectionNameException}.
+ * Exception thrown when a namespace is found to be existed already.
  */
-public class InvalidCollectionNameExceptionTest {
+public class NamespaceExistsException extends ClientException {
 
-  @Rule
-  public TestName name = new TestName();
+  private static final long serialVersionUID = -1607186521948277966L;
 
-  @Test
-  public void testGetMessage() {
-    InvalidCollectionNameException icne = new InvalidCollectionNameException(name.getMethodName());
-    assertEquals("Invalid collection name : " + name.getMethodName(), icne.getMessage());
-    assertNull(icne.getCause());
+  public NamespaceExistsException(String colName) {
+    super("Namespace '" + colName + "' already exists");
   }
-
 }

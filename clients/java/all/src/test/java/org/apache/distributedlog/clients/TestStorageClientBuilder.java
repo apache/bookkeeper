@@ -32,23 +32,23 @@ public class TestStorageClientBuilder {
   public void testBuildClientNullSettings() {
     StorageClientBuilder.newBuilder()
       .withSettings(null)
-      .withCollection("collection")
+      .withNamespace("namespace")
       .build();
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void testBuildClientNullCollectionName() {
+  public void testBuildClientNullNamespaceName() {
     StorageClientBuilder.newBuilder()
       .withSettings(mock(StorageClientSettings.class))
-      .withCollection(null)
+      .withNamespace(null)
       .build();
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void testBuildClientInvalidCollectionName() {
+  public void testBuildClientInvalidNamespaceName() {
     StorageClientBuilder.newBuilder()
       .withSettings(mock(StorageClientSettings.class))
-      .withCollection("invalid-collection")
+      .withNamespace("invalid-namespace")
       .build();
   }
 

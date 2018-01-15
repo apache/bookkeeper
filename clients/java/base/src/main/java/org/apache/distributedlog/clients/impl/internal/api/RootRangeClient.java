@@ -19,8 +19,8 @@
 package org.apache.distributedlog.clients.impl.internal.api;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.distributedlog.stream.proto.CollectionConfiguration;
-import org.apache.distributedlog.stream.proto.CollectionProperties;
+import org.apache.distributedlog.stream.proto.NamespaceConfiguration;
+import org.apache.distributedlog.stream.proto.NamespaceProperties;
 import org.apache.distributedlog.stream.proto.StreamConfiguration;
 import org.apache.distributedlog.stream.proto.StreamProperties;
 
@@ -32,35 +32,35 @@ import org.apache.distributedlog.stream.proto.StreamProperties;
 public interface RootRangeClient {
 
   /**
-   * Create a collection.
+   * Create a namespace.
    *
-   * @param collection collection
-   * @param colConf collection configuration
+   * @param namespace namespace
+   * @param colConf namespace configuration
    * @return a future represents the result of creation.
    */
-  CompletableFuture<CollectionProperties> createCollection(String collection,
-                                                           CollectionConfiguration colConf);
+  CompletableFuture<NamespaceProperties> createNamespace(String namespace,
+                                                           NamespaceConfiguration colConf);
 
   /**
-   * Delete a collection.
+   * Delete a namespace.
    *
-   * @param collection collection.
+   * @param namespace namespace.
    * @return a future represents the result of deletion.
    */
-  CompletableFuture<Boolean> deleteCollection(String collection);
+  CompletableFuture<Boolean> deleteNamespace(String namespace);
 
   /**
-   * Get the collection properties of the provided {@code collection}.
+   * Get the namespace properties of the provided {@code namespace}.
    *
-   * @param collection collection name
-   * @return a future represents collection properties.
+   * @param namespace namespace name
+   * @return a future represents namespace properties.
    */
-  CompletableFuture<CollectionProperties> getCollection(String collection);
+  CompletableFuture<NamespaceProperties> getNamespace(String namespace);
 
   /**
    * Create a stream.
    *
-   * @param colName collection name
+   * @param colName namespace name
    * @param streamName stream name
    * @param streamConf stream configuration
    * @return response of creating a stream.
@@ -72,7 +72,7 @@ public interface RootRangeClient {
   /**
    * Delete the stream {@code streamName}.
    *
-   * @param colName collection name
+   * @param colName namespace name
    * @param streamName stream name
    * @return a future represents the metadata of a stream.
    */
@@ -82,7 +82,7 @@ public interface RootRangeClient {
   /**
    * Get the stream metadata of a given stream {@code streamName}.
    *
-   * @param colName collection name
+   * @param colName namespace name
    * @param streamName stream name
    * @return a future represents the metadata of a stream.
    */

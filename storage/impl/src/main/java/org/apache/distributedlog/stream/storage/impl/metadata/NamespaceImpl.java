@@ -26,21 +26,21 @@ import java.util.Map;
 import java.util.Set;
 import javax.annotation.concurrent.GuardedBy;
 import lombok.Data;
-import org.apache.distributedlog.stream.proto.CollectionMetadata;
+import org.apache.distributedlog.stream.proto.NamespaceMetadata;
 import org.apache.distributedlog.stream.proto.StreamProperties;
-import org.apache.distributedlog.stream.storage.api.metadata.Collection;
+import org.apache.distributedlog.stream.storage.api.metadata.Namespace;
 
 /**
- * A default implementation of {@link Collection}.
+ * A default implementation of {@link Namespace}.
  */
 @Data(staticConstructor = "of")
-public class CollectionImpl implements Collection {
+public class NamespaceImpl implements Namespace {
 
-  private final long collectionId;
-  private final String collectionName;
+  private final long namespaceId;
+  private final String namespaceName;
 
   @GuardedBy("this")
-  private CollectionMetadata metadata = CollectionMetadata.getDefaultInstance();
+  private NamespaceMetadata metadata = NamespaceMetadata.getDefaultInstance();
   @GuardedBy("this")
   private final Map<String, StreamProperties> streamNames = Maps.newHashMap();
   @GuardedBy("this")
@@ -48,21 +48,21 @@ public class CollectionImpl implements Collection {
 
   @Override
   public long getId() {
-    return collectionId;
+    return namespaceId;
   }
 
   @Override
   public String getName() {
-    return collectionName;
+    return namespaceName;
   }
 
   @Override
-  public synchronized CollectionMetadata getMetadata() {
+  public synchronized NamespaceMetadata getMetadata() {
     return metadata;
   }
 
   @Override
-  public synchronized void setMetadata(CollectionMetadata metadata) {
+  public synchronized void setMetadata(NamespaceMetadata metadata) {
     this.metadata = metadata;
   }
 

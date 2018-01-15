@@ -28,8 +28,8 @@ import static org.mockito.Mockito.when;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.clients.impl.internal.api.RootRangeClient;
 import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
-import org.apache.distributedlog.stream.proto.CollectionConfiguration;
-import org.apache.distributedlog.stream.proto.CollectionProperties;
+import org.apache.distributedlog.stream.proto.NamespaceConfiguration;
+import org.apache.distributedlog.stream.proto.NamespaceProperties;
 import org.apache.distributedlog.stream.proto.StreamProperties;
 import org.junit.Before;
 import org.junit.Rule;
@@ -41,12 +41,12 @@ import org.junit.rules.TestName;
  */
 public class TestStorageAdminClientImpl {
 
-  private static final CollectionConfiguration colConf = CollectionConfiguration.newBuilder()
+  private static final NamespaceConfiguration colConf = NamespaceConfiguration.newBuilder()
     .setDefaultStreamConf(DEFAULT_STREAM_CONF)
     .build();
-  private static final CollectionProperties colProps = CollectionProperties.newBuilder()
-    .setCollectionId(System.currentTimeMillis())
-    .setCollectionName("collection")
+  private static final NamespaceProperties colProps = NamespaceProperties.newBuilder()
+    .setNamespaceId(System.currentTimeMillis())
+    .setNamespaceName("namespace")
     .setDefaultStreamConf(DEFAULT_STREAM_CONF)
     .build();
   private static final StreamProperties streamProps = StreamProperties.newBuilder()
@@ -70,30 +70,30 @@ public class TestStorageAdminClientImpl {
   }
 
   @Test
-  public void testCreateCollection() throws Exception {
+  public void testCreateNamespace() throws Exception {
     String colName = testName.getMethodName();
-    when(mockRootRangeClient.createCollection(colName, colConf))
+    when(mockRootRangeClient.createNamespace(colName, colConf))
       .thenReturn(FutureUtils.value(colProps));
-    assertEquals(colProps, FutureUtils.result(adminClient.createCollection(colName, colConf)));
-    verify(mockRootRangeClient, times(1)).createCollection(colName, colConf);
+    assertEquals(colProps, FutureUtils.result(adminClient.createNamespace(colName, colConf)));
+    verify(mockRootRangeClient, times(1)).createNamespace(colName, colConf);
   }
 
   @Test
-  public void testDeleteCollection() throws Exception {
+  public void testDeleteNamespace() throws Exception {
     String colName = testName.getMethodName();
-    when(mockRootRangeClient.deleteCollection(colName))
+    when(mockRootRangeClient.deleteNamespace(colName))
       .thenReturn(FutureUtils.value(true));
-    assertEquals(true, FutureUtils.result(adminClient.deleteCollection(colName)));
-    verify(mockRootRangeClient, times(1)).deleteCollection(colName);
+    assertEquals(true, FutureUtils.result(adminClient.deleteNamespace(colName)));
+    verify(mockRootRangeClient, times(1)).deleteNamespace(colName);
   }
 
   @Test
-  public void testGetCollection() throws Exception {
+  public void testGetNamespace() throws Exception {
     String colName = testName.getMethodName();
-    when(mockRootRangeClient.getCollection(colName))
+    when(mockRootRangeClient.getNamespace(colName))
       .thenReturn(FutureUtils.value(colProps));
-    assertEquals(colProps, FutureUtils.result(adminClient.getCollection(colName)));
-    verify(mockRootRangeClient, times(1)).getCollection(colName);
+    assertEquals(colProps, FutureUtils.result(adminClient.getNamespace(colName)));
+    verify(mockRootRangeClient, times(1)).getNamespace(colName);
   }
 
   @Test

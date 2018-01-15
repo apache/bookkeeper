@@ -43,7 +43,7 @@ class StorageClientImpl extends AbstractAutoAsyncCloseable implements StorageCli
 
   private static final String COMPONENT_NAME = StorageClientImpl.class.getSimpleName();
 
-  private final String collectionName;
+  private final String namespaceName;
   private final StorageClientSettings settings;
   private final ClientResources resources;
   private final OrderedScheduler scheduler;
@@ -51,10 +51,10 @@ class StorageClientImpl extends AbstractAutoAsyncCloseable implements StorageCli
   // clients
   private final StorageServerClientManager serverManager;
 
-  public StorageClientImpl(String collectionName,
+  public StorageClientImpl(String namespaceName,
                            StorageClientSettings settings,
                            ClientResources resources) {
-    this.collectionName = collectionName;
+    this.namespaceName = namespaceName;
     this.settings = settings;
     this.resources = resources;
     this.serverManager = new StorageServerClientManagerImpl(settings, resources.scheduler());
@@ -63,7 +63,7 @@ class StorageClientImpl extends AbstractAutoAsyncCloseable implements StorageCli
   }
 
   private CompletableFuture<StreamProperties> getStreamProperties(String streamName) {
-    return this.serverManager.getRootRangeClient().getStream(collectionName, streamName);
+    return this.serverManager.getRootRangeClient().getStream(namespaceName, streamName);
   }
 
   //

@@ -19,16 +19,16 @@
 package org.apache.distributedlog.stream.storage.api.metadata;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.distributedlog.stream.proto.storage.CreateCollectionRequest;
-import org.apache.distributedlog.stream.proto.storage.CreateCollectionResponse;
+import org.apache.distributedlog.stream.proto.storage.CreateNamespaceRequest;
+import org.apache.distributedlog.stream.proto.storage.CreateNamespaceResponse;
 import org.apache.distributedlog.stream.proto.storage.CreateStreamRequest;
 import org.apache.distributedlog.stream.proto.storage.CreateStreamResponse;
-import org.apache.distributedlog.stream.proto.storage.DeleteCollectionRequest;
-import org.apache.distributedlog.stream.proto.storage.DeleteCollectionResponse;
+import org.apache.distributedlog.stream.proto.storage.DeleteNamespaceRequest;
+import org.apache.distributedlog.stream.proto.storage.DeleteNamespaceResponse;
 import org.apache.distributedlog.stream.proto.storage.DeleteStreamRequest;
 import org.apache.distributedlog.stream.proto.storage.DeleteStreamResponse;
-import org.apache.distributedlog.stream.proto.storage.GetCollectionRequest;
-import org.apache.distributedlog.stream.proto.storage.GetCollectionResponse;
+import org.apache.distributedlog.stream.proto.storage.GetNamespaceRequest;
+import org.apache.distributedlog.stream.proto.storage.GetNamespaceResponse;
 import org.apache.distributedlog.stream.proto.storage.GetStreamRequest;
 import org.apache.distributedlog.stream.proto.storage.GetStreamResponse;
 
@@ -37,8 +37,8 @@ import org.apache.distributedlog.stream.proto.storage.GetStreamResponse;
  *
  * <p>These information includes:
  * <ul>
- *   <li>the list of collection</li>
- *   <li>the list of streams within each collection</li>
+ *   <li>the list of namespace</li>
+ *   <li>the list of streams within each namespace</li>
  *   <li>the list of transactions</li>
  *   <li>the list of read groups</li>
  * </ul>
@@ -46,32 +46,32 @@ import org.apache.distributedlog.stream.proto.storage.GetStreamResponse;
 public interface RootRangeStore {
 
   //
-  // Collection API
+  // Namespace API
   //
 
   /**
-   * Create a new collection with the provide <i>name</i> and configuration <i>colConf</i>.
+   * Create a new namespace with the provide <i>name</i> and configuration <i>colConf</i>.
    *
-   * @param request create collection request
-   * @return public collection properties on success or exception on failure.
+   * @param request create namespace request
+   * @return public namespace properties on success or exception on failure.
    */
-  CompletableFuture<CreateCollectionResponse> createCollection(CreateCollectionRequest request);
+  CompletableFuture<CreateNamespaceResponse> createNamespace(CreateNamespaceRequest request);
 
   /**
-   * Delete a collection named <i>colName</i>.
+   * Delete a namespace named <i>colName</i>.
    *
-   * @param request delete collection request
+   * @param request delete namespace request
    * @return null on success or exception on failure.
    */
-  CompletableFuture<DeleteCollectionResponse> deleteCollection(DeleteCollectionRequest request);
+  CompletableFuture<DeleteNamespaceResponse> deleteNamespace(DeleteNamespaceRequest request);
 
   /**
-   * Retrieve the configuration for collection <i>colName</i>.
+   * Retrieve the configuration for namespace <i>colName</i>.
    *
-   * @param request get collection request
-   * @return public collection properties on success or exception on failure.
+   * @param request get namespace request
+   * @return public namespace properties on success or exception on failure.
    */
-  CompletableFuture<GetCollectionResponse> getCollection(GetCollectionRequest request);
+  CompletableFuture<GetNamespaceResponse> getNamespace(GetNamespaceRequest request);
 
   //
   // Stream API

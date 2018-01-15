@@ -20,7 +20,7 @@ package org.apache.distributedlog.stream.storage.impl.metadata;
 
 import static org.apache.distributedlog.stream.protocol.ProtocolConstants.INVALID_COLLECTION_ID;
 import static org.apache.distributedlog.stream.protocol.ProtocolConstants.MIN_DATA_STREAM_ID;
-import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.validateCollectionName;
+import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.validateNamespaceName;
 import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.validateStreamName;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -32,20 +32,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.annotation.OrderedBy;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
-import org.apache.distributedlog.stream.proto.CollectionMetadata;
-import org.apache.distributedlog.stream.proto.CollectionProperties;
+import org.apache.distributedlog.stream.proto.NamespaceMetadata;
+import org.apache.distributedlog.stream.proto.NamespaceProperties;
 import org.apache.distributedlog.stream.proto.StreamName;
 import org.apache.distributedlog.stream.proto.StreamProperties;
-import org.apache.distributedlog.stream.proto.storage.CreateCollectionRequest;
-import org.apache.distributedlog.stream.proto.storage.CreateCollectionResponse;
+import org.apache.distributedlog.stream.proto.storage.CreateNamespaceRequest;
+import org.apache.distributedlog.stream.proto.storage.CreateNamespaceResponse;
 import org.apache.distributedlog.stream.proto.storage.CreateStreamRequest;
 import org.apache.distributedlog.stream.proto.storage.CreateStreamResponse;
-import org.apache.distributedlog.stream.proto.storage.DeleteCollectionRequest;
-import org.apache.distributedlog.stream.proto.storage.DeleteCollectionResponse;
+import org.apache.distributedlog.stream.proto.storage.DeleteNamespaceRequest;
+import org.apache.distributedlog.stream.proto.storage.DeleteNamespaceResponse;
 import org.apache.distributedlog.stream.proto.storage.DeleteStreamRequest;
 import org.apache.distributedlog.stream.proto.storage.DeleteStreamResponse;
-import org.apache.distributedlog.stream.proto.storage.GetCollectionRequest;
-import org.apache.distributedlog.stream.proto.storage.GetCollectionResponse;
+import org.apache.distributedlog.stream.proto.storage.GetNamespaceRequest;
+import org.apache.distributedlog.stream.proto.storage.GetNamespaceResponse;
 import org.apache.distributedlog.stream.proto.storage.GetStreamRequest;
 import org.apache.distributedlog.stream.proto.storage.GetStreamResponse;
 import org.apache.distributedlog.stream.proto.storage.StatusCode;
@@ -63,15 +63,15 @@ public class RootRangeStoreImpl
   private final StorageContainerPlacementPolicy placementPolicy;
   private final ScheduledExecutorService executor;
 
-  // Collections
+  // Namespaces
   @OrderedBy(key = "ROOT_STORAGE_CONTAINER_ID")
-  private long nextCollectionId = INVALID_COLLECTION_ID;
+  private long nextNamespaceId = INVALID_COLLECTION_ID;
   @OrderedBy(key = "ROOT_STORAGE_CONTAINER_ID")
-  private final Map<String, CollectionImpl> collectionNames = Maps.newHashMap();
+  private final Map<String, NamespaceImpl> namespaceNames = Maps.newHashMap();
   @OrderedBy(key = "ROOT_STORAGE_CONTAINER_ID")
-  private final Map<Long, CollectionImpl> collections = Maps.newHashMap();
+  private final Map<Long, NamespaceImpl> namespaces = Maps.newHashMap();
   @OrderedBy(key = "ROOT_STORAGE_CONTAINER_ID")
-  private final Map<Long, CollectionImpl> streamToCollections = Maps.newHashMap();
+  private final Map<Long, NamespaceImpl> streamToNamespaces = Maps.newHashMap();
 
   // Streams
   @OrderedBy(key = "ROOT_STORAGE_CONTAINER_ID")
@@ -90,8 +90,8 @@ public class RootRangeStoreImpl
   //
 
   @VisibleForTesting
-  long unsafeGetNextCollectionId() {
-    return nextCollectionId;
+  long unsafeGetNextNamespaceId() {
+    return nextNamespaceId;
   }
 
   @VisibleForTesting
@@ -100,53 +100,53 @@ public class RootRangeStoreImpl
   }
 
   @VisibleForTesting
-  Map<String, CollectionImpl> unsafeGetCollectionNames() {
-    return collectionNames;
+  Map<String, NamespaceImpl> unsafeGetNamespaceNames() {
+    return namespaceNames;
   }
 
   @VisibleForTesting
-  Map<Long, CollectionImpl> unsafeGetCollections() {
-    return collections;
+  Map<Long, NamespaceImpl> unsafeGetNamespaces() {
+    return namespaces;
   }
 
   //
-  // Collections API
+  // Namespaces API
   //
 
   @Override
-  public CompletableFuture<CreateCollectionResponse> createCollection(CreateCollectionRequest request) {
-    return CreateCollectionProcessor.of().process(
+  public CompletableFuture<CreateNamespaceResponse> createNamespace(CreateNamespaceRequest request) {
+    return CreateNamespaceProcessor.of().process(
       this,
       request,
       executor);
   }
 
-  StatusCode verifyCreateCollectionRequest(CreateCollectionRequest request) {
+  StatusCode verifyCreateNamespaceRequest(CreateNamespaceRequest request) {
     String colName = request.getName();
     StatusCode code = StatusCode.SUCCESS;
-    if (!validateCollectionName(colName)) {
-      log.error("Failed to create collection due to invalid collection name {}", colName);
+    if (!validateNamespaceName(colName)) {
+      log.error("Failed to create namespace due to invalid namespace name {}", colName);
       code = StatusCode.INVALID_COLLECTION_NAME;
-    } else if (collectionNames.containsKey(colName)) {
-      log.error("Failed to create collection due to collection {} already exists", colName);
+    } else if (namespaceNames.containsKey(colName)) {
+      log.error("Failed to create namespace due to namespace {} already exists", colName);
       code = StatusCode.COLLECTION_EXISTS;
     }
     return code;
   }
 
-  CompletableFuture<CreateCollectionResponse> doProcessCreateCollectionRequest(CreateCollectionRequest request) {
-    CompletableFuture<CreateCollectionResponse> future = FutureUtils.createFuture();
+  CompletableFuture<CreateNamespaceResponse> doProcessCreateNamespaceRequest(CreateNamespaceRequest request) {
+    CompletableFuture<CreateNamespaceResponse> future = FutureUtils.createFuture();
     executor.submit(() -> {
-      long collectionId = nextCollectionId++;
+      long namespaceId = nextNamespaceId++;
       String colName = request.getName();
-      CollectionMetadata metadata = CollectionMetadata.newBuilder()
-        .setProps(CollectionProperties.newBuilder()
-          .setCollectionId(collectionId)
-          .setCollectionName(colName)
+      NamespaceMetadata metadata = NamespaceMetadata.newBuilder()
+        .setProps(NamespaceProperties.newBuilder()
+          .setNamespaceId(namespaceId)
+          .setNamespaceName(colName)
           .setDefaultStreamConf(request.getColConf().getDefaultStreamConf()))
         .build();
-      CreateCollectionResponse.Builder respBuilder = CreateCollectionResponse.newBuilder();
-      if (processCreateCollectionCommand(metadata)) {
+      CreateNamespaceResponse.Builder respBuilder = CreateNamespaceResponse.newBuilder();
+      if (processCreateNamespaceCommand(metadata)) {
         respBuilder.setCode(StatusCode.SUCCESS);
         respBuilder.setColProps(metadata.getProps());
       } else {
@@ -157,13 +157,13 @@ public class RootRangeStoreImpl
     return future;
   }
 
-  boolean processCreateCollectionCommand(CollectionMetadata metadata) {
-    long collectionId = metadata.getProps().getCollectionId();
-    String colName  = metadata.getProps().getCollectionName();
-    CollectionImpl collection = CollectionImpl.of(collectionId, colName);
-    collection.setMetadata(metadata);
-    if (null == collections.putIfAbsent(collectionId, collection)) {
-      collectionNames.putIfAbsent(colName, collection);
+  boolean processCreateNamespaceCommand(NamespaceMetadata metadata) {
+    long namespaceId = metadata.getProps().getNamespaceId();
+    String colName  = metadata.getProps().getNamespaceName();
+    NamespaceImpl namespace = NamespaceImpl.of(namespaceId, colName);
+    namespace.setMetadata(metadata);
+    if (null == namespaces.putIfAbsent(namespaceId, namespace)) {
+      namespaceNames.putIfAbsent(colName, namespace);
       return true;
     } else {
       return false;
@@ -171,70 +171,70 @@ public class RootRangeStoreImpl
   }
 
   @Override
-  public CompletableFuture<DeleteCollectionResponse> deleteCollection(DeleteCollectionRequest request) {
-    return DeleteCollectionProcessor.of().process(
+  public CompletableFuture<DeleteNamespaceResponse> deleteNamespace(DeleteNamespaceRequest request) {
+    return DeleteNamespaceProcessor.of().process(
       this,
       request,
       executor);
   }
 
-  StatusCode verifyDeleteCollectionRequest(DeleteCollectionRequest request) {
+  StatusCode verifyDeleteNamespaceRequest(DeleteNamespaceRequest request) {
     String colName = request.getName();
     StatusCode code = StatusCode.SUCCESS;
-    if (!validateCollectionName(colName)) {
-      log.error("Failed to delete collection due to invalid collection name {}", colName);
+    if (!validateNamespaceName(colName)) {
+      log.error("Failed to delete namespace due to invalid namespace name {}", colName);
       code = StatusCode.INVALID_COLLECTION_NAME;
-    } else if (!collectionNames.containsKey(colName)) {
-      log.error("Failed to delete collection due to collection {} is not found", colName);
+    } else if (!namespaceNames.containsKey(colName)) {
+      log.error("Failed to delete namespace due to namespace {} is not found", colName);
       code = StatusCode.COLLECTION_NOT_FOUND;
     }
     return code;
   }
 
-  CompletableFuture<DeleteCollectionResponse> doProcessDeleteCollectionRequest(DeleteCollectionRequest request) {
-    CompletableFuture<DeleteCollectionResponse> future = FutureUtils.createFuture();
+  CompletableFuture<DeleteNamespaceResponse> doProcessDeleteNamespaceRequest(DeleteNamespaceRequest request) {
+    CompletableFuture<DeleteNamespaceResponse> future = FutureUtils.createFuture();
     executor.submit(() -> {
-      DeleteCollectionResponse.Builder respBuilder = DeleteCollectionResponse.newBuilder();
-      StatusCode code = processDeleteCollectionCommand(request);
+      DeleteNamespaceResponse.Builder respBuilder = DeleteNamespaceResponse.newBuilder();
+      StatusCode code = processDeleteNamespaceCommand(request);
       respBuilder.setCode(code);
       future.complete(respBuilder.build());
     });
     return future;
   }
 
-  StatusCode processDeleteCollectionCommand(DeleteCollectionRequest request) {
-    CollectionImpl collection = collectionNames.get(request.getName());
-    if (null == collection) {
+  StatusCode processDeleteNamespaceCommand(DeleteNamespaceRequest request) {
+    NamespaceImpl namespace = namespaceNames.get(request.getName());
+    if (null == namespace) {
       return StatusCode.COLLECTION_NOT_FOUND;
     } else {
-      String colName = collection.getName();
-      collectionNames.remove(colName, collection);
+      String colName = namespace.getName();
+      namespaceNames.remove(colName, namespace);
       return StatusCode.SUCCESS;
     }
   }
 
   @Override
-  public CompletableFuture<GetCollectionResponse> getCollection(GetCollectionRequest request) {
-    CompletableFuture<GetCollectionResponse> getFuture = FutureUtils.createFuture();
-    executor.submit(() -> unsafeGetCollection(getFuture, request.getName()));
+  public CompletableFuture<GetNamespaceResponse> getNamespace(GetNamespaceRequest request) {
+    CompletableFuture<GetNamespaceResponse> getFuture = FutureUtils.createFuture();
+    executor.submit(() -> unsafeGetNamespace(getFuture, request.getName()));
     return getFuture;
   }
 
   @OrderedBy(key = "ROOT_STORAGE_CONTAINER_ID")
-  private void unsafeGetCollection(CompletableFuture<GetCollectionResponse> getFuture,
+  private void unsafeGetNamespace(CompletableFuture<GetNamespaceResponse> getFuture,
                                    String colName) {
-    GetCollectionResponse.Builder respBuilder = GetCollectionResponse.newBuilder();
+    GetNamespaceResponse.Builder respBuilder = GetNamespaceResponse.newBuilder();
     StatusCode code;
-    if (!validateCollectionName(colName)) {
-      log.error("Failed to get collection due to invalid collection name {}", colName);
+    if (!validateNamespaceName(colName)) {
+      log.error("Failed to get namespace due to invalid namespace name {}", colName);
       code = StatusCode.INVALID_COLLECTION_NAME;
     } else {
-      CollectionImpl collection = collectionNames.get(colName);
-      if (null == collection) {
+      NamespaceImpl namespace = namespaceNames.get(colName);
+      if (null == namespace) {
         code = StatusCode.COLLECTION_NOT_FOUND;
       } else {
         code = StatusCode.SUCCESS;
-        respBuilder.setColProps(collection.getMetadata().getProps());
+        respBuilder.setColProps(namespace.getMetadata().getProps());
       }
     }
     respBuilder.setCode(code);
@@ -282,11 +282,11 @@ public class RootRangeStoreImpl
                                long streamId) {
     GetStreamResponse.Builder respBuilder = GetStreamResponse.newBuilder();
     StatusCode code;
-    CollectionImpl collection = streamToCollections.get(streamId);
-    if (null == collection) {
+    NamespaceImpl namespace = streamToNamespaces.get(streamId);
+    if (null == namespace) {
       code = StatusCode.STREAM_NOT_FOUND;
     } else {
-      StreamProperties streamProps = collection.getStream(streamId);
+      StreamProperties streamProps = namespace.getStream(streamId);
       if (null == streamProps) {
         code = StatusCode.STREAM_NOT_FOUND;
       } else {
@@ -308,11 +308,11 @@ public class RootRangeStoreImpl
       log.error("Failed to get stream due to invalid stream name {}", streamName);
       code = StatusCode.INVALID_STREAM_NAME;
     } else {
-      CollectionImpl collection = collectionNames.get(colName);
-      if (null == collection) {
+      NamespaceImpl namespace = namespaceNames.get(colName);
+      if (null == namespace) {
         code = StatusCode.COLLECTION_NOT_FOUND;
       } else {
-        StreamProperties streamProps = collection.getStream(streamName);
+        StreamProperties streamProps = namespace.getStream(streamName);
         if (null == streamProps) {
           code = StatusCode.STREAM_NOT_FOUND;
         } else {

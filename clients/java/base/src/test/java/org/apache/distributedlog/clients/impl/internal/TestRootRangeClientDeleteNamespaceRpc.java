@@ -30,17 +30,17 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import org.apache.distributedlog.clients.exceptions.ClientException;
-import org.apache.distributedlog.clients.exceptions.CollectionNotFoundException;
+import org.apache.distributedlog.clients.exceptions.NamespaceNotFoundException;
 import org.apache.distributedlog.clients.impl.internal.api.RootRangeClient;
-import org.apache.distributedlog.stream.proto.storage.DeleteCollectionRequest;
-import org.apache.distributedlog.stream.proto.storage.DeleteCollectionResponse;
+import org.apache.distributedlog.stream.proto.storage.DeleteNamespaceRequest;
+import org.apache.distributedlog.stream.proto.storage.DeleteNamespaceResponse;
 import org.apache.distributedlog.stream.proto.storage.RootRangeServiceGrpc.RootRangeServiceImplBase;
 import org.apache.distributedlog.stream.proto.storage.StatusCode;
 
 /**
- * Test Case for {@link RootRangeClientImpl}: DeleteCollection.
+ * Test Case for {@link RootRangeClientImpl}: DeleteNamespace.
  */
-public class TestRootRangeClientDeleteCollectionRpc extends RootRangeClientImplTestBase {
+public class TestRootRangeClientDeleteNamespaceRpc extends RootRangeClientImplTestBase {
 
   private String colName;
 
@@ -55,9 +55,9 @@ public class TestRootRangeClientDeleteCollectionRpc extends RootRangeClientImplT
   protected RootRangeServiceImplBase createRootRangeServiceForSuccess() {
     return new RootRangeServiceImplBase() {
       @Override
-      public void deleteCollection(DeleteCollectionRequest request,
-                                   StreamObserver<DeleteCollectionResponse> responseObserver) {
-        responseObserver.onNext(DeleteCollectionResponse.newBuilder()
+      public void deleteNamespace(DeleteNamespaceRequest request,
+                                   StreamObserver<DeleteNamespaceResponse> responseObserver) {
+        responseObserver.onNext(DeleteNamespaceResponse.newBuilder()
           .setCode(StatusCode.SUCCESS)
           .build());
         responseObserver.onCompleted();
@@ -67,16 +67,16 @@ public class TestRootRangeClientDeleteCollectionRpc extends RootRangeClientImplT
 
   @Override
   protected void verifySuccess(RootRangeClient rootRangeClient) throws Exception {
-    rootRangeClient.deleteCollection(colName).get();
+    rootRangeClient.deleteNamespace(colName).get();
   }
 
   @Override
   protected RootRangeServiceImplBase createRootRangeServiceForRequestFailure() {
     return new RootRangeServiceImplBase() {
       @Override
-      public void deleteCollection(DeleteCollectionRequest request,
-                                   StreamObserver<DeleteCollectionResponse> responseObserver) {
-        responseObserver.onNext(DeleteCollectionResponse.newBuilder()
+      public void deleteNamespace(DeleteNamespaceRequest request,
+                                   StreamObserver<DeleteNamespaceResponse> responseObserver) {
+        responseObserver.onNext(DeleteNamespaceResponse.newBuilder()
           .setCode(StatusCode.COLLECTION_NOT_FOUND)
           .build());
         responseObserver.onCompleted();
@@ -86,13 +86,13 @@ public class TestRootRangeClientDeleteCollectionRpc extends RootRangeClientImplT
 
   @Override
   protected void verifyRequestFailure(RootRangeClient rootRangeClient) throws Exception {
-    CompletableFuture<Boolean> deleteFuture = rootRangeClient.deleteCollection(colName);
+    CompletableFuture<Boolean> deleteFuture = rootRangeClient.deleteNamespace(colName);
     try {
       deleteFuture.get();
       fail("Should fail on rpc failure");
     } catch (ExecutionException ee) {
       assertNotNull(ee.getCause());
-      assertTrue(ee.getCause() instanceof CollectionNotFoundException);
+      assertTrue(ee.getCause() instanceof NamespaceNotFoundException);
     }
   }
 
@@ -100,8 +100,8 @@ public class TestRootRangeClientDeleteCollectionRpc extends RootRangeClientImplT
   protected RootRangeServiceImplBase createRootRangeServiceForRpcFailure() {
     return new RootRangeServiceImplBase() {
       @Override
-      public void deleteCollection(DeleteCollectionRequest request,
-                                   StreamObserver<DeleteCollectionResponse> responseObserver) {
+      public void deleteNamespace(DeleteNamespaceRequest request,
+                                   StreamObserver<DeleteNamespaceResponse> responseObserver) {
         responseObserver.onError(new StatusRuntimeException(Status.INTERNAL));
       }
     };
@@ -109,7 +109,7 @@ public class TestRootRangeClientDeleteCollectionRpc extends RootRangeClientImplT
 
   @Override
   protected void verifyRpcFailure(RootRangeClient rootRangeClient) throws Exception {
-    CompletableFuture<Boolean> deleteFuture = rootRangeClient.deleteCollection(colName);
+    CompletableFuture<Boolean> deleteFuture = rootRangeClient.deleteNamespace(colName);
     try {
       deleteFuture.get();
       fail("Should fail on rpc failure");
@@ -124,7 +124,7 @@ public class TestRootRangeClientDeleteCollectionRpc extends RootRangeClientImplT
   @Override
   protected void verifyChannelFailure(IOException expectedException,
                                       RootRangeClient rootRangeClient) throws Exception {
-    CompletableFuture<Boolean> deleteFuture = rootRangeClient.deleteCollection(colName);
+    CompletableFuture<Boolean> deleteFuture = rootRangeClient.deleteNamespace(colName);
     try {
       deleteFuture.get();
       fail("Should fail on rpc operation");

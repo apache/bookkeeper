@@ -50,7 +50,7 @@ enum StatusCode {
 
     // ROOT and META RANGE related
 
-    // 20xx: Collection Related
+    // 20xx: Namespace Related
     INVALID_COLLECTION_NAME     = 2000;
     COLLECTION_EXISTS           = 2001;
     COLLECTION_NOT_FOUND        = 2002;
@@ -109,31 +109,31 @@ service MetaRangeService {
 // Root Range Services
 //
 
-message CreateCollectionRequest {
+message CreateNamespaceRequest {
     string name                                 = 1;
-    stream.CollectionConfiguration col_conf     = 2;
+    stream.NamespaceConfiguration col_conf     = 2;
 }
 
-message CreateCollectionResponse {
+message CreateNamespaceResponse {
     StatusCode code                             = 1;
-    stream.CollectionProperties col_props       = 2;
+    stream.NamespaceProperties col_props       = 2;
 }
 
-message DeleteCollectionRequest {
+message DeleteNamespaceRequest {
     string name = 1;
 }
 
-message DeleteCollectionResponse {
+message DeleteNamespaceResponse {
     StatusCode code = 1;
 }
 
-message GetCollectionRequest {
+message GetNamespaceRequest {
     string name = 1;
 }
 
-message GetCollectionResponse {
+message GetNamespaceResponse {
     StatusCode code = 1;
-    stream.CollectionProperties col_props = 2;
+    stream.NamespaceProperties col_props = 2;
 }
 
 message CreateStreamRequest {
@@ -171,11 +171,11 @@ message GetStreamResponse {
 // public service for metadata services
 service RootRangeService {
     //
-    // Collection Methods
+    // Namespace Methods
     //
-    rpc CreateCollection(CreateCollectionRequest) returns (CreateCollectionResponse);
-    rpc DeleteCollection(DeleteCollectionRequest) returns (DeleteCollectionResponse);
-    rpc GetCollection(GetCollectionRequest) returns (GetCollectionResponse);
+    rpc CreateNamespace(CreateNamespaceRequest) returns (CreateNamespaceResponse);
+    rpc DeleteNamespace(DeleteNamespaceRequest) returns (DeleteNamespaceResponse);
+    rpc GetNamespace(GetNamespaceRequest) returns (GetNamespaceResponse);
 
     //
     // Stream Methods

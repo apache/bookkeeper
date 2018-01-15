@@ -26,18 +26,18 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 
 /**
- * Test Case of {@link CollectionNotFoundException}.
+ * Test Case of {@link InvalidNamespaceNameException}.
  */
-public class CollectionNotFoundExceptionTest {
+public class InvalidNamespaceNameExceptionTest {
 
   @Rule
   public TestName name = new TestName();
 
   @Test
   public void testGetMessage() {
-    CollectionNotFoundException cnfe = new CollectionNotFoundException(name.getMethodName());
-    assertEquals("Collection '" + name.getMethodName() + "' is not found", cnfe.getMessage());
-    assertNull(cnfe.getCause());
+    InvalidNamespaceNameException icne = new InvalidNamespaceNameException(name.getMethodName());
+    assertEquals("Invalid namespace name : " + name.getMethodName(), icne.getMessage());
+    assertNull(icne.getCause());
   }
 
 }

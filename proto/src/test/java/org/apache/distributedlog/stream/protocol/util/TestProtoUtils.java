@@ -19,26 +19,26 @@
 package org.apache.distributedlog.stream.protocol.util;
 
 import static org.apache.distributedlog.stream.protocol.ProtocolConstants.DEFAULT_STREAM_CONF;
-import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createCreateCollectionRequest;
-import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createDeleteCollectionRequest;
-import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createGetCollectionRequest;
+import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createCreateNamespaceRequest;
+import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createDeleteNamespaceRequest;
+import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createGetNamespaceRequest;
 import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.isStreamCreated;
 import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.isStreamWritable;
 import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.keyRangeOverlaps;
-import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.validateCollectionName;
+import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.validateNamespaceName;
 import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.validateStreamName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.distributedlog.stream.proto.CollectionConfiguration;
+import org.apache.distributedlog.stream.proto.NamespaceConfiguration;
 import org.apache.distributedlog.stream.proto.RangeProperties;
 import org.apache.distributedlog.stream.proto.StreamMetadata.LifecycleState;
 import org.apache.distributedlog.stream.proto.StreamMetadata.ServingState;
-import org.apache.distributedlog.stream.proto.storage.CreateCollectionRequest;
-import org.apache.distributedlog.stream.proto.storage.DeleteCollectionRequest;
-import org.apache.distributedlog.stream.proto.storage.GetCollectionRequest;
+import org.apache.distributedlog.stream.proto.storage.CreateNamespaceRequest;
+import org.apache.distributedlog.stream.proto.storage.DeleteNamespaceRequest;
+import org.apache.distributedlog.stream.proto.storage.GetNamespaceRequest;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -52,12 +52,12 @@ public class TestProtoUtils {
   public final TestName name = new TestName();
 
   @Test
-  public void testValidateCollectionName() {
-    assertTrue(validateCollectionName("collection_name"));
-    assertTrue(validateCollectionName("CollectionName"));
-    assertTrue(validateCollectionName("9CollectionName"));
-    assertFalse(validateCollectionName("collection-name"));
-    assertFalse(validateCollectionName("!collection_name"));
+  public void testValidateNamespaceName() {
+    assertTrue(validateNamespaceName("namespace_name"));
+    assertTrue(validateNamespaceName("NamespaceName"));
+    assertTrue(validateNamespaceName("9NamespaceName"));
+    assertFalse(validateNamespaceName("namespace-name"));
+    assertFalse(validateNamespaceName("!namespace_name"));
   }
 
   @Test
@@ -179,15 +179,15 @@ public class TestProtoUtils {
   }
 
   //
-  // Collection API
+  // Namespace API
   //
 
   @Test
-  public void testCreateCreateCollectionRequest() {
-    CollectionConfiguration colConf = CollectionConfiguration.newBuilder()
+  public void testCreateCreateNamespaceRequest() {
+    NamespaceConfiguration colConf = NamespaceConfiguration.newBuilder()
       .setDefaultStreamConf(DEFAULT_STREAM_CONF)
       .build();
-    CreateCollectionRequest request = createCreateCollectionRequest(
+    CreateNamespaceRequest request = createCreateNamespaceRequest(
       name.getMethodName(),
       colConf);
     assertEquals(name.getMethodName(), request.getName());
@@ -195,15 +195,15 @@ public class TestProtoUtils {
   }
 
   @Test
-  public void testCreateDeleteCollectionRequest() {
-    DeleteCollectionRequest request = createDeleteCollectionRequest(
+  public void testCreateDeleteNamespaceRequest() {
+    DeleteNamespaceRequest request = createDeleteNamespaceRequest(
       name.getMethodName());
     assertEquals(name.getMethodName(), request.getName());
   }
 
   @Test
-  public void testCreateGetCollectionRequest() {
-    GetCollectionRequest request = createGetCollectionRequest(
+  public void testCreateGetNamespaceRequest() {
+    GetNamespaceRequest request = createGetNamespaceRequest(
       name.getMethodName());
     assertEquals(name.getMethodName(), request.getName());
   }

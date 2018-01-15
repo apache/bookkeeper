@@ -26,19 +26,19 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Set;
-import org.apache.distributedlog.stream.proto.CollectionMetadata;
-import org.apache.distributedlog.stream.proto.CollectionProperties;
+import org.apache.distributedlog.stream.proto.NamespaceMetadata;
+import org.apache.distributedlog.stream.proto.NamespaceProperties;
 import org.apache.distributedlog.stream.proto.StreamConfiguration;
 import org.apache.distributedlog.stream.proto.StreamProperties;
-import org.apache.distributedlog.stream.storage.api.metadata.Collection;
+import org.apache.distributedlog.stream.storage.api.metadata.Namespace;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 
 /**
- * Unit test for {@link CollectionImpl}.
+ * Unit test for {@link NamespaceImpl}.
  */
-public class TestCollectionImpl {
+public class TestNamespaceImpl {
 
   @Rule
   public TestName name = new TestName();
@@ -54,31 +54,31 @@ public class TestCollectionImpl {
   }
 
   @Test
-  public void testCollectionId() {
-    long collectionId = System.currentTimeMillis();
-    Collection col = CollectionImpl.of(collectionId, name.getMethodName());
-    assertEquals(collectionId, col.getId());
+  public void testNamespaceId() {
+    long namespaceId = System.currentTimeMillis();
+    Namespace col = NamespaceImpl.of(namespaceId, name.getMethodName());
+    assertEquals(namespaceId, col.getId());
   }
 
   @Test
-  public void testCollectionName() {
-    long collectionId = System.currentTimeMillis();
-    Collection col = CollectionImpl.of(collectionId, name.getMethodName());
+  public void testNamespaceName() {
+    long namespaceId = System.currentTimeMillis();
+    Namespace col = NamespaceImpl.of(namespaceId, name.getMethodName());
     assertEquals(name.getMethodName(), col.getName());
   }
 
   @Test
-  public void testCollectionMetadata() {
-    long collectionId = System.currentTimeMillis();
-    Collection col = CollectionImpl.of(collectionId, name.getMethodName());
+  public void testNamespaceMetadata() {
+    long namespaceId = System.currentTimeMillis();
+    Namespace col = NamespaceImpl.of(namespaceId, name.getMethodName());
     assertEquals(
-      CollectionMetadata.getDefaultInstance(),
+      NamespaceMetadata.getDefaultInstance(),
       col.getMetadata());
-    CollectionMetadata metadata = CollectionMetadata.newBuilder()
+    NamespaceMetadata metadata = NamespaceMetadata.newBuilder()
       .setProps(
-        CollectionProperties.newBuilder()
-          .setCollectionName(name.getMethodName())
-          .setCollectionId(collectionId)
+        NamespaceProperties.newBuilder()
+          .setNamespaceName(name.getMethodName())
+          .setNamespaceId(namespaceId)
           .setDefaultStreamConf(
             StreamConfiguration.newBuilder()
               .build())
@@ -89,9 +89,9 @@ public class TestCollectionImpl {
   }
 
   @Test
-  public void testCollectionStreams() {
-    long collectionId = System.currentTimeMillis();
-    Collection col = CollectionImpl.of(collectionId, name.getMethodName());
+  public void testNamespaceStreams() {
+    long namespaceId = System.currentTimeMillis();
+    Namespace col = NamespaceImpl.of(namespaceId, name.getMethodName());
     Set<String> streams = col.getStreams();
     assertTrue(streams.isEmpty());
     String name1 = "stream-1";

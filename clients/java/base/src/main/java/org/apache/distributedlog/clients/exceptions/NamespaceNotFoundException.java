@@ -19,13 +19,13 @@
 package org.apache.distributedlog.clients.exceptions;
 
 /**
- * Exception is thrown when the collection name is invalid.
+ * Exception thrown when a namespace is not found.
  */
-public class InvalidCollectionNameException extends ClientException {
+public class NamespaceNotFoundException extends ClientException {
 
-  private static final long serialVersionUID = -7753743605040374222L;
+  private static final long serialVersionUID = -3125238097662039645L;
 
-  public InvalidCollectionNameException(String colName) {
-    super("Invalid collection name : " + colName);
+  public NamespaceNotFoundException(String colName) {
+    super("Namespace '" + colName + "' is not found");
   }
 }

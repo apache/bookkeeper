@@ -31,24 +31,24 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import org.apache.distributedlog.clients.exceptions.ClientException;
-import org.apache.distributedlog.clients.exceptions.CollectionNotFoundException;
+import org.apache.distributedlog.clients.exceptions.NamespaceNotFoundException;
 import org.apache.distributedlog.clients.impl.internal.api.RootRangeClient;
-import org.apache.distributedlog.stream.proto.CollectionConfiguration;
-import org.apache.distributedlog.stream.proto.CollectionProperties;
-import org.apache.distributedlog.stream.proto.storage.GetCollectionRequest;
-import org.apache.distributedlog.stream.proto.storage.GetCollectionResponse;
+import org.apache.distributedlog.stream.proto.NamespaceConfiguration;
+import org.apache.distributedlog.stream.proto.NamespaceProperties;
+import org.apache.distributedlog.stream.proto.storage.GetNamespaceRequest;
+import org.apache.distributedlog.stream.proto.storage.GetNamespaceResponse;
 import org.apache.distributedlog.stream.proto.storage.RootRangeServiceGrpc.RootRangeServiceImplBase;
 import org.apache.distributedlog.stream.proto.storage.StatusCode;
 
 /**
- * Test Case for {@link RootRangeClientImpl}: CreateCollection.
+ * Test Case for {@link RootRangeClientImpl}: CreateNamespace.
  */
-public class TestRootRangeClientGetCollectionRpc extends RootRangeClientImplTestBase {
+public class TestRootRangeClientGetNamespaceRpc extends RootRangeClientImplTestBase {
 
   private long colId;
   private String colName;
-  private CollectionProperties colProps;
-  private static final CollectionConfiguration colConf = CollectionConfiguration.newBuilder()
+  private NamespaceProperties colProps;
+  private static final NamespaceConfiguration colConf = NamespaceConfiguration.newBuilder()
     .setDefaultStreamConf(DEFAULT_STREAM_CONF)
     .build();
 
@@ -58,9 +58,9 @@ public class TestRootRangeClientGetCollectionRpc extends RootRangeClientImplTest
 
     this.colId = System.currentTimeMillis();
     this.colName = testName.getMethodName();
-    this.colProps = CollectionProperties.newBuilder()
-      .setCollectionId(colId)
-      .setCollectionName(colName)
+    this.colProps = NamespaceProperties.newBuilder()
+      .setNamespaceId(colId)
+      .setNamespaceName(colName)
       .setDefaultStreamConf(DEFAULT_STREAM_CONF)
       .build();
   }
@@ -70,7 +70,7 @@ public class TestRootRangeClientGetCollectionRpc extends RootRangeClientImplTest
   //
 
   //
-  // Collection API
+  // Namespace API
   //
 
 
@@ -78,9 +78,9 @@ public class TestRootRangeClientGetCollectionRpc extends RootRangeClientImplTest
   protected RootRangeServiceImplBase createRootRangeServiceForSuccess() {
     return new RootRangeServiceImplBase() {
       @Override
-      public void getCollection(GetCollectionRequest request,
-                                StreamObserver<GetCollectionResponse> responseObserver) {
-        responseObserver.onNext(GetCollectionResponse.newBuilder()
+      public void getNamespace(GetNamespaceRequest request,
+                                StreamObserver<GetNamespaceResponse> responseObserver) {
+        responseObserver.onNext(GetNamespaceResponse.newBuilder()
           .setCode(StatusCode.SUCCESS)
           .setColProps(colProps)
           .build());
@@ -91,7 +91,7 @@ public class TestRootRangeClientGetCollectionRpc extends RootRangeClientImplTest
 
   @Override
   protected void verifySuccess(RootRangeClient rootRangeClient) throws Exception {
-    CompletableFuture<CollectionProperties> getFuture = rootRangeClient.getCollection(colName);
+    CompletableFuture<NamespaceProperties> getFuture = rootRangeClient.getNamespace(colName);
     assertTrue(colProps == getFuture.get());
   }
 
@@ -100,9 +100,9 @@ public class TestRootRangeClientGetCollectionRpc extends RootRangeClientImplTest
   protected RootRangeServiceImplBase createRootRangeServiceForRequestFailure() {
     return new RootRangeServiceImplBase() {
       @Override
-      public void getCollection(GetCollectionRequest request,
-                                StreamObserver<GetCollectionResponse> responseObserver) {
-        responseObserver.onNext(GetCollectionResponse.newBuilder()
+      public void getNamespace(GetNamespaceRequest request,
+                                StreamObserver<GetNamespaceResponse> responseObserver) {
+        responseObserver.onNext(GetNamespaceResponse.newBuilder()
           .setCode(StatusCode.COLLECTION_NOT_FOUND)
           .build());
         responseObserver.onCompleted();
@@ -112,13 +112,13 @@ public class TestRootRangeClientGetCollectionRpc extends RootRangeClientImplTest
 
   @Override
   protected void verifyRequestFailure(RootRangeClient rootRangeClient) throws Exception {
-    CompletableFuture<CollectionProperties> getFuture = rootRangeClient.getCollection(colName);
+    CompletableFuture<NamespaceProperties> getFuture = rootRangeClient.getNamespace(colName);
     try {
       getFuture.get();
       fail("Should fail on rpc failure");
     } catch (ExecutionException ee) {
       assertNotNull(ee.getCause());
-      assertTrue(ee.getCause() instanceof CollectionNotFoundException);
+      assertTrue(ee.getCause() instanceof NamespaceNotFoundException);
     }
   }
 
@@ -126,8 +126,8 @@ public class TestRootRangeClientGetCollectionRpc extends RootRangeClientImplTest
   protected RootRangeServiceImplBase createRootRangeServiceForRpcFailure() {
     return new RootRangeServiceImplBase() {
       @Override
-      public void getCollection(GetCollectionRequest request,
-                                StreamObserver<GetCollectionResponse> responseObserver) {
+      public void getNamespace(GetNamespaceRequest request,
+                                StreamObserver<GetNamespaceResponse> responseObserver) {
         responseObserver.onError(new StatusRuntimeException(Status.INTERNAL));
       }
     };
@@ -135,7 +135,7 @@ public class TestRootRangeClientGetCollectionRpc extends RootRangeClientImplTest
 
   @Override
   protected void verifyRpcFailure(RootRangeClient rootRangeClient) throws Exception {
-    CompletableFuture<CollectionProperties> getFuture = rootRangeClient.getCollection(colName);
+    CompletableFuture<NamespaceProperties> getFuture = rootRangeClient.getNamespace(colName);
     try {
       getFuture.get();
       fail("Should fail on rpc failure");
@@ -149,7 +149,7 @@ public class TestRootRangeClientGetCollectionRpc extends RootRangeClientImplTest
 
   @Override
   protected void verifyChannelFailure(IOException expectedException, RootRangeClient rootRangeClient) throws Exception {
-    CompletableFuture<CollectionProperties> createFuture = rootRangeClient.createCollection(colName, colConf);
+    CompletableFuture<NamespaceProperties> createFuture = rootRangeClient.createNamespace(colName, colConf);
     try {
       createFuture.get();
       fail("Should fail on creating stream");

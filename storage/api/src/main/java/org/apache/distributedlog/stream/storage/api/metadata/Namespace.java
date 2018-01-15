@@ -20,58 +20,58 @@ package org.apache.distributedlog.stream.storage.api.metadata;
 
 import java.util.List;
 import java.util.Set;
-import org.apache.distributedlog.stream.proto.CollectionMetadata;
+import org.apache.distributedlog.stream.proto.NamespaceMetadata;
 import org.apache.distributedlog.stream.proto.StreamProperties;
 
 /**
- * A handle to operate on a {@code Collection}.
+ * A handle to operate on a {@code Namespace}.
  */
-public interface Collection {
+public interface Namespace {
 
   /**
-   * Get the id of the collection.
+   * Get the id of the namespace.
    *
-   * @return collection id.
+   * @return namespace id.
    */
   long getId();
 
   /**
-   * Get the name of the collection.
+   * Get the name of the namespace.
    *
-   * @return collection name.
+   * @return namespace name.
    */
   String getName();
 
   /**
-   * Get the metadata of this collection.
+   * Get the metadata of this namespace.
    *
-   * @return collection metadata.
+   * @return namespace metadata.
    */
-  CollectionMetadata getMetadata();
+  NamespaceMetadata getMetadata();
 
   /**
-   * Set the metadata of this collection.
+   * Set the metadata of this namespace.
    *
-   * @param metadata the new metadata of this collection.
+   * @param metadata the new metadata of this namespace.
    */
-  void setMetadata(CollectionMetadata metadata);
+  void setMetadata(NamespaceMetadata metadata);
 
   /**
-   * Get the existing streams in this collections.
+   * Get the existing streams in this namespaces.
    *
    * @return list of the existing streams.
    */
   Set<String> getStreams();
 
   /**
-   * Get the existing streams properties in this collections.
+   * Get the existing streams properties in this namespaces.
    *
    * @return list of the existing streams.
    */
   List<StreamProperties> getStreamsProperties();
 
     /**
-     * Add the given <i>streamName</i> to this collection.
+     * Add the given <i>streamName</i> to this namespace.
      *
      * @param streamName stream name.
      * @param streamProps stream properties
@@ -80,7 +80,7 @@ public interface Collection {
   boolean addStream(String streamName, StreamProperties streamProps);
 
   /**
-   * Remove the given <i>streamName</i> from this collection.
+   * Remove the given <i>streamName</i> from this namespace.
    *
    * @param streamName stream name.
    * @return true on success. false on failure.
@@ -88,7 +88,7 @@ public interface Collection {
   StreamProperties removeStream(String streamName);
 
   /**
-   * Get the given <i>streamName</i> from this collection.
+   * Get the given <i>streamName</i> from this namespace.
    *
    * @param streamName stream name.
    * @return true on success. false on failure.
@@ -96,7 +96,7 @@ public interface Collection {
   StreamProperties getStream(String streamName);
 
   /**
-   * Remove the given <i>streamId</i> from this collection.
+   * Remove the given <i>streamId</i> from this namespace.
    *
    * @param streamId stream id.
    * @return true on success. false on failure.
@@ -104,7 +104,7 @@ public interface Collection {
   StreamProperties removeStream(long streamId);
 
   /**
-   * Get the given <i>streamId</i> from this collection.
+   * Get the given <i>streamId</i> from this namespace.
    *
    * @param streamId stream id.
    * @return true on success. false on failure.

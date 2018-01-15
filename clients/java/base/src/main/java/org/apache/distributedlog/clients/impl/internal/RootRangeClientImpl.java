@@ -20,11 +20,11 @@ package org.apache.distributedlog.clients.impl.internal;
 
 import static org.apache.distributedlog.clients.impl.internal.ProtocolInternalUtils.createRootRangeException;
 import static org.apache.distributedlog.stream.protocol.ProtocolConstants.ROOT_STORAGE_CONTAINER_ID;
-import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createCreateCollectionRequest;
+import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createCreateNamespaceRequest;
 import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createCreateStreamRequest;
-import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createDeleteCollectionRequest;
+import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createDeleteNamespaceRequest;
 import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createDeleteStreamRequest;
-import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createGetCollectionRequest;
+import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createGetNamespaceRequest;
 import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createGetStreamRequest;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -41,15 +41,15 @@ import org.apache.distributedlog.clients.utils.RpcUtils;
 import org.apache.distributedlog.clients.utils.RpcUtils.CreateRequestFunc;
 import org.apache.distributedlog.clients.utils.RpcUtils.ProcessRequestFunc;
 import org.apache.distributedlog.clients.utils.RpcUtils.ProcessResponseFunc;
-import org.apache.distributedlog.stream.proto.CollectionConfiguration;
-import org.apache.distributedlog.stream.proto.CollectionProperties;
+import org.apache.distributedlog.stream.proto.NamespaceConfiguration;
+import org.apache.distributedlog.stream.proto.NamespaceProperties;
 import org.apache.distributedlog.stream.proto.StreamConfiguration;
 import org.apache.distributedlog.stream.proto.StreamProperties;
-import org.apache.distributedlog.stream.proto.storage.CreateCollectionResponse;
+import org.apache.distributedlog.stream.proto.storage.CreateNamespaceResponse;
 import org.apache.distributedlog.stream.proto.storage.CreateStreamResponse;
-import org.apache.distributedlog.stream.proto.storage.DeleteCollectionResponse;
+import org.apache.distributedlog.stream.proto.storage.DeleteNamespaceResponse;
 import org.apache.distributedlog.stream.proto.storage.DeleteStreamResponse;
-import org.apache.distributedlog.stream.proto.storage.GetCollectionResponse;
+import org.apache.distributedlog.stream.proto.storage.GetNamespaceResponse;
 import org.apache.distributedlog.stream.proto.storage.GetStreamResponse;
 import org.apache.distributedlog.stream.proto.storage.RootRangeServiceGrpc.RootRangeServiceFutureStub;
 import org.apache.distributedlog.stream.proto.storage.StatusCode;
@@ -97,65 +97,65 @@ class RootRangeClientImpl implements RootRangeClient {
   }
 
   //
-  // Collection API
+  // Namespace API
   //
 
   @Override
-  public CompletableFuture<CollectionProperties> createCollection(String collection,
-                                                                  CollectionConfiguration colConf) {
+  public CompletableFuture<NamespaceProperties> createNamespace(String namespace,
+                                                                  NamespaceConfiguration colConf) {
     return processRootRangeRpc(
-      () -> createCreateCollectionRequest(collection, colConf),
-      (rootRangeService, request) -> rootRangeService.createCollection(request),
-      (resp, resultFuture) -> processCreateCollectionResponse(collection, resp, resultFuture));
+      () -> createCreateNamespaceRequest(namespace, colConf),
+      (rootRangeService, request) -> rootRangeService.createNamespace(request),
+      (resp, resultFuture) -> processCreateNamespaceResponse(namespace, resp, resultFuture));
   }
 
-  private void processCreateCollectionResponse(String collection,
-                                               CreateCollectionResponse response,
-                                               CompletableFuture<CollectionProperties> createCollectionFuture) {
+  private void processCreateNamespaceResponse(String namespace,
+                                               CreateNamespaceResponse response,
+                                               CompletableFuture<NamespaceProperties> createNamespaceFuture) {
     StatusCode code = response.getCode();
     if (StatusCode.SUCCESS == code) {
-      createCollectionFuture.complete(response.getColProps());
+      createNamespaceFuture.complete(response.getColProps());
       return;
     }
-    createCollectionFuture.completeExceptionally(createRootRangeException(collection, code));
+    createNamespaceFuture.completeExceptionally(createRootRangeException(namespace, code));
   }
 
   @Override
-  public CompletableFuture<Boolean> deleteCollection(String collection) {
+  public CompletableFuture<Boolean> deleteNamespace(String namespace) {
     return processRootRangeRpc(
-      () -> createDeleteCollectionRequest(collection),
-      (rootRangeService, request) -> rootRangeService.deleteCollection(request),
-      (resp, resultFuture) -> processDeleteCollectionResponse(collection, resp, resultFuture));
+      () -> createDeleteNamespaceRequest(namespace),
+      (rootRangeService, request) -> rootRangeService.deleteNamespace(request),
+      (resp, resultFuture) -> processDeleteNamespaceResponse(namespace, resp, resultFuture));
   }
 
-  private void processDeleteCollectionResponse(String collection,
-                                               DeleteCollectionResponse response,
+  private void processDeleteNamespaceResponse(String namespace,
+                                               DeleteNamespaceResponse response,
                                                CompletableFuture<Boolean> deleteFuture) {
     StatusCode code = response.getCode();
     if (StatusCode.SUCCESS == code) {
       deleteFuture.complete(true);
       return;
     }
-    deleteFuture.completeExceptionally(createRootRangeException(collection, code));
+    deleteFuture.completeExceptionally(createRootRangeException(namespace, code));
   }
 
   @Override
-  public CompletableFuture<CollectionProperties> getCollection(String collection) {
+  public CompletableFuture<NamespaceProperties> getNamespace(String namespace) {
     return processRootRangeRpc(
-      () -> createGetCollectionRequest(collection),
-      (rootRangeService, request) -> rootRangeService.getCollection(request),
-      (resp, resultFuture) -> processGetCollectionResponse(collection, resp, resultFuture));
+      () -> createGetNamespaceRequest(namespace),
+      (rootRangeService, request) -> rootRangeService.getNamespace(request),
+      (resp, resultFuture) -> processGetNamespaceResponse(namespace, resp, resultFuture));
   }
 
-  private void processGetCollectionResponse(String collection,
-                                            GetCollectionResponse response,
-                                            CompletableFuture<CollectionProperties> getFuture) {
+  private void processGetNamespaceResponse(String namespace,
+                                            GetNamespaceResponse response,
+                                            CompletableFuture<NamespaceProperties> getFuture) {
     StatusCode code = response.getCode();
     if (StatusCode.SUCCESS == code) {
       getFuture.complete(response.getColProps());
       return;
     }
-    getFuture.completeExceptionally(createRootRangeException(collection, code));
+    getFuture.completeExceptionally(createRootRangeException(namespace, code));
   }
 
 

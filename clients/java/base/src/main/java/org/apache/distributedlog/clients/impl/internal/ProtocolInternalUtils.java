@@ -24,11 +24,11 @@ import java.util.List;
 import java.util.TreeMap;
 import org.apache.bookkeeper.common.util.ExceptionalFunction;
 import org.apache.distributedlog.clients.exceptions.ClientException;
-import org.apache.distributedlog.clients.exceptions.CollectionExistsException;
-import org.apache.distributedlog.clients.exceptions.CollectionNotFoundException;
 import org.apache.distributedlog.clients.exceptions.InternalServerException;
-import org.apache.distributedlog.clients.exceptions.InvalidCollectionNameException;
+import org.apache.distributedlog.clients.exceptions.InvalidNamespaceNameException;
 import org.apache.distributedlog.clients.exceptions.InvalidStreamNameException;
+import org.apache.distributedlog.clients.exceptions.NamespaceExistsException;
+import org.apache.distributedlog.clients.exceptions.NamespaceNotFoundException;
 import org.apache.distributedlog.clients.exceptions.StorageContainerException;
 import org.apache.distributedlog.clients.exceptions.StreamExistsException;
 import org.apache.distributedlog.clients.exceptions.StreamNotFoundException;
@@ -89,11 +89,11 @@ public final class ProtocolInternalUtils {
   public static Throwable createRootRangeException(String streamName, StatusCode statusCode) {
     switch (statusCode) {
       case INVALID_COLLECTION_NAME:
-        return new InvalidCollectionNameException(streamName);
+        return new InvalidNamespaceNameException(streamName);
       case COLLECTION_EXISTS:
-        return new CollectionExistsException(streamName);
+        return new NamespaceExistsException(streamName);
       case COLLECTION_NOT_FOUND:
-        return new CollectionNotFoundException(streamName);
+        return new NamespaceNotFoundException(streamName);
       case INVALID_STREAM_NAME:
         return new InvalidStreamNameException(streamName);
       case STREAM_EXISTS:

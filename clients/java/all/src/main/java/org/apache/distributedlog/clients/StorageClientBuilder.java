@@ -19,7 +19,7 @@ package org.apache.distributedlog.clients;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.validateCollectionName;
+import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.validateNamespaceName;
 
 import java.util.function.Supplier;
 import org.apache.distributedlog.api.StorageClient;
@@ -32,7 +32,7 @@ import org.apache.distributedlog.clients.utils.ClientResources;
 public class StorageClientBuilder implements Supplier<StorageClient> {
 
   private StorageClientSettings settings = null;
-  private String collectionName = null;
+  private String namespaceName = null;
 
   /**
    * Create a builder to build {@link StorageClient} clients.
@@ -57,17 +57,17 @@ public class StorageClientBuilder implements Supplier<StorageClient> {
   }
 
   /**
-   * Configure the collection that the client will interact with.
+   * Configure the namespace that the client will interact with.
    *
-   * <p>The collection name will be used for building the stream client for interacting with streams
-   * within the collection.
+   * <p>The namespace name will be used for building the stream client for interacting with streams
+   * within the namespace.
    *
    * @param colName colletion name
    * @return stream client builder.
    * @see #build()
    */
-  public StorageClientBuilder withCollection(String colName) {
-    this.collectionName = colName;
+  public StorageClientBuilder withNamespace(String colName) {
+    this.namespaceName = colName;
     return this;
   }
 
@@ -78,10 +78,10 @@ public class StorageClientBuilder implements Supplier<StorageClient> {
    */
   public StorageClient build() {
     checkNotNull(settings, "Stream settings is null");
-    checkArgument(validateCollectionName(collectionName), "Collection name is invalid");
+    checkArgument(validateNamespaceName(namespaceName), "Namespace name is invalid");
 
     return new StorageClientImpl(
-      collectionName,
+      namespaceName,
       settings,
       ClientResources.create());
   }

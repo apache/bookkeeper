@@ -15,41 +15,41 @@
 package org.apache.distributedlog.stream.storage.impl.metadata;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.distributedlog.stream.proto.storage.CreateCollectionRequest;
-import org.apache.distributedlog.stream.proto.storage.CreateCollectionResponse;
+import org.apache.distributedlog.stream.proto.storage.CreateNamespaceRequest;
+import org.apache.distributedlog.stream.proto.storage.CreateNamespaceResponse;
 import org.apache.distributedlog.stream.proto.storage.StatusCode;
 import org.apache.distributedlog.stream.storage.impl.AsyncOperationProcessor;
 
 /**
- * The operation process for creating collection.
+ * The operation process for creating namespace.
  */
-class CreateCollectionProcessor
-    extends AsyncOperationProcessor<CreateCollectionRequest, CreateCollectionResponse, RootRangeStoreImpl> {
+class CreateNamespaceProcessor
+    extends AsyncOperationProcessor<CreateNamespaceRequest, CreateNamespaceResponse, RootRangeStoreImpl> {
 
-  public static CreateCollectionProcessor of() {
+  public static CreateNamespaceProcessor of() {
     return INSTANCE;
   }
 
-  private static final CreateCollectionProcessor INSTANCE = new CreateCollectionProcessor();
+  private static final CreateNamespaceProcessor INSTANCE = new CreateNamespaceProcessor();
 
-  private CreateCollectionProcessor() {}
+  private CreateNamespaceProcessor() {}
 
   @Override
   protected StatusCode verifyRequest(RootRangeStoreImpl state,
-                                     CreateCollectionRequest request) {
-    return state.verifyCreateCollectionRequest(request);
+                                     CreateNamespaceRequest request) {
+    return state.verifyCreateNamespaceRequest(request);
   }
 
   @Override
-  protected CreateCollectionResponse failRequest(StatusCode code) {
-    return CreateCollectionResponse.newBuilder()
+  protected CreateNamespaceResponse failRequest(StatusCode code) {
+    return CreateNamespaceResponse.newBuilder()
       .setCode(code)
       .build();
   }
 
   @Override
-  protected CompletableFuture<CreateCollectionResponse> doProcessRequest(RootRangeStoreImpl state,
-                                                                           CreateCollectionRequest request) {
-    return state.doProcessCreateCollectionRequest(request);
+  protected CompletableFuture<CreateNamespaceResponse> doProcessRequest(RootRangeStoreImpl state,
+                                                                           CreateNamespaceRequest request) {
+    return state.doProcessCreateNamespaceRequest(request);
   }
 }

@@ -51,7 +51,7 @@ public final class ProtocolConstants {
   // Stream Related Constants
   //
 
-  // invalid collection id
+  // invalid namespace id
   public static final long INVALID_COLLECTION_ID = -1L;
   // invalid stream id
   public static final long INVALID_STREAM_ID = -1L;

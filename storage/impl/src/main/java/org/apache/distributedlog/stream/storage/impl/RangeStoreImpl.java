@@ -27,16 +27,16 @@ import org.apache.bookkeeper.common.util.SharedResourceManager;
 import org.apache.bookkeeper.common.util.SharedResourceManager.Resource;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
-import org.apache.distributedlog.stream.proto.storage.CreateCollectionRequest;
-import org.apache.distributedlog.stream.proto.storage.CreateCollectionResponse;
+import org.apache.distributedlog.stream.proto.storage.CreateNamespaceRequest;
+import org.apache.distributedlog.stream.proto.storage.CreateNamespaceResponse;
 import org.apache.distributedlog.stream.proto.storage.CreateStreamRequest;
 import org.apache.distributedlog.stream.proto.storage.CreateStreamResponse;
-import org.apache.distributedlog.stream.proto.storage.DeleteCollectionRequest;
-import org.apache.distributedlog.stream.proto.storage.DeleteCollectionResponse;
+import org.apache.distributedlog.stream.proto.storage.DeleteNamespaceRequest;
+import org.apache.distributedlog.stream.proto.storage.DeleteNamespaceResponse;
 import org.apache.distributedlog.stream.proto.storage.DeleteStreamRequest;
 import org.apache.distributedlog.stream.proto.storage.DeleteStreamResponse;
-import org.apache.distributedlog.stream.proto.storage.GetCollectionRequest;
-import org.apache.distributedlog.stream.proto.storage.GetCollectionResponse;
+import org.apache.distributedlog.stream.proto.storage.GetNamespaceRequest;
+import org.apache.distributedlog.stream.proto.storage.GetNamespaceResponse;
 import org.apache.distributedlog.stream.proto.storage.GetStreamRequest;
 import org.apache.distributedlog.stream.proto.storage.GetStreamResponse;
 import org.apache.distributedlog.stream.proto.storage.StorageContainerRequest;
@@ -151,18 +151,18 @@ public class RangeStoreImpl
   //
 
   @Override
-  public CompletableFuture<CreateCollectionResponse> createCollection(CreateCollectionRequest request) {
-    return getStorageContainer(ROOT_STORAGE_CONTAINER_ID).createCollection(request);
+  public CompletableFuture<CreateNamespaceResponse> createNamespace(CreateNamespaceRequest request) {
+    return getStorageContainer(ROOT_STORAGE_CONTAINER_ID).createNamespace(request);
   }
 
   @Override
-  public CompletableFuture<DeleteCollectionResponse> deleteCollection(DeleteCollectionRequest request) {
-    return getStorageContainer(ROOT_STORAGE_CONTAINER_ID).deleteCollection(request);
+  public CompletableFuture<DeleteNamespaceResponse> deleteNamespace(DeleteNamespaceRequest request) {
+    return getStorageContainer(ROOT_STORAGE_CONTAINER_ID).deleteNamespace(request);
   }
 
   @Override
-  public CompletableFuture<GetCollectionResponse> getCollection(GetCollectionRequest request) {
-    return getStorageContainer(ROOT_STORAGE_CONTAINER_ID).getCollection(request);
+  public CompletableFuture<GetNamespaceResponse> getNamespace(GetNamespaceRequest request) {
+    return getStorageContainer(ROOT_STORAGE_CONTAINER_ID).getNamespace(request);
   }
 
   @Override

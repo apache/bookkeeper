@@ -38,7 +38,7 @@ import org.apache.distributedlog.stream.proto.storage.RootRangeServiceGrpc.RootR
 import org.apache.distributedlog.stream.proto.storage.StatusCode;
 
 /**
- * Test Case for {@link RootRangeClientImpl}: DeleteCollection.
+ * Test Case for {@link RootRangeClientImpl}: DeleteNamespace.
  */
 public class TestRootRangeClientDeleteStreamRpc extends RootRangeClientImplTestBase {
 

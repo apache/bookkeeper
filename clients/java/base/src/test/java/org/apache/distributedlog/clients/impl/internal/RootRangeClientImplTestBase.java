@@ -30,9 +30,9 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.distributedlog.clients.exceptions.ClientException;
-import org.apache.distributedlog.clients.exceptions.CollectionExistsException;
-import org.apache.distributedlog.clients.exceptions.CollectionNotFoundException;
-import org.apache.distributedlog.clients.exceptions.InvalidCollectionNameException;
+import org.apache.distributedlog.clients.exceptions.InvalidNamespaceNameException;
+import org.apache.distributedlog.clients.exceptions.NamespaceExistsException;
+import org.apache.distributedlog.clients.exceptions.NamespaceNotFoundException;
 import org.apache.distributedlog.clients.exceptions.StreamExistsException;
 import org.apache.distributedlog.clients.exceptions.StreamNotFoundException;
 import org.apache.distributedlog.clients.grpc.GrpcClientTestBase;
@@ -200,14 +200,14 @@ public abstract class RootRangeClientImplTestBase extends GrpcClientTestBase {
     // unexpected
     Throwable cause4 = createRootRangeException(name, StatusCode.BAD_VERSION);
     assertTrue(cause4 instanceof ClientException);
-    // collection exists exception
+    // namespace exists exception
     Throwable cause5 = createRootRangeException(name, StatusCode.COLLECTION_EXISTS);
-    assertTrue(cause5 instanceof CollectionExistsException);
-    // collection not-found exception
+    assertTrue(cause5 instanceof NamespaceExistsException);
+    // namespace not-found exception
     Throwable cause6 = createRootRangeException(name, StatusCode.COLLECTION_NOT_FOUND);
-    assertTrue(cause6 instanceof CollectionNotFoundException);
-    // invalid collection name
+    assertTrue(cause6 instanceof NamespaceNotFoundException);
+    // invalid namespace name
     Throwable cause7 = createRootRangeException(name, StatusCode.INVALID_COLLECTION_NAME);
-    assertTrue(cause7 instanceof InvalidCollectionNameException);
+    assertTrue(cause7 instanceof InvalidNamespaceNameException);
   }
 }

@@ -181,22 +181,22 @@ message StreamMetadata {
 }
 
 //
-// Collection
+// Namespace
 //
 
 // user requested 
-message CollectionConfiguration {
+message NamespaceConfiguration {
     StreamConfiguration default_stream_conf     = 1;
 }
 
-// public metadata for a collection
-message CollectionProperties {
-    int64 collection_id                         = 1;
-    string collection_name                      = 2;
+// public metadata for a namespace
+message NamespaceProperties {
+    int64 namespace_id                         = 1;
+    string namespace_name                      = 2;
     StreamConfiguration default_stream_conf     = 3;
 }
 
-// the whole metadata for a collection (including both public and private)
-message CollectionMetadata {
-    CollectionProperties props  = 1;
+// the whole metadata for a namespace (including both public and private)
+message NamespaceMetadata {
+    NamespaceProperties props  = 1;
 }

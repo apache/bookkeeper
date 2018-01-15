@@ -31,8 +31,8 @@ import org.apache.distributedlog.clients.impl.internal.StorageServerClientManage
 import org.apache.distributedlog.clients.impl.internal.api.RootRangeClient;
 import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.distributedlog.clients.utils.ClientResources;
-import org.apache.distributedlog.stream.proto.CollectionConfiguration;
-import org.apache.distributedlog.stream.proto.CollectionProperties;
+import org.apache.distributedlog.stream.proto.NamespaceConfiguration;
+import org.apache.distributedlog.stream.proto.NamespaceProperties;
 import org.apache.distributedlog.stream.proto.StreamConfiguration;
 import org.apache.distributedlog.stream.proto.StreamProperties;
 
@@ -74,33 +74,33 @@ public class StorageAdminClientImpl extends AbstractAutoAsyncCloseable {
     this.rootRangeClient = this.clientManager.getRootRangeClient();
   }
 
-  public CompletableFuture<CollectionProperties> createCollection(String collection,
-                                                                  CollectionConfiguration colConf) {
-    return rootRangeClient.createCollection(collection, colConf);
+  public CompletableFuture<NamespaceProperties> createNamespace(String namespace,
+                                                                  NamespaceConfiguration colConf) {
+    return rootRangeClient.createNamespace(namespace, colConf);
   }
 
-  public CompletableFuture<Boolean> deleteCollection(String collection) {
-    return rootRangeClient.deleteCollection(collection);
+  public CompletableFuture<Boolean> deleteNamespace(String namespace) {
+    return rootRangeClient.deleteNamespace(namespace);
   }
 
-  public CompletableFuture<CollectionProperties> getCollection(String collection) {
-    return rootRangeClient.getCollection(collection);
+  public CompletableFuture<NamespaceProperties> getNamespace(String namespace) {
+    return rootRangeClient.getNamespace(namespace);
   }
 
-  public CompletableFuture<StreamProperties> createStream(String collection,
+  public CompletableFuture<StreamProperties> createStream(String namespace,
                                                           String streamName,
                                                           StreamConfiguration streamConf) {
-    return rootRangeClient.createStream(collection, streamName, streamConf);
+    return rootRangeClient.createStream(namespace, streamName, streamConf);
   }
 
-  public CompletableFuture<Boolean> deleteStream(String collection,
+  public CompletableFuture<Boolean> deleteStream(String namespace,
                                                  String streamName) {
-    return rootRangeClient.deleteStream(collection, streamName);
+    return rootRangeClient.deleteStream(namespace, streamName);
   }
 
-  public CompletableFuture<StreamProperties> getStream(String collection,
+  public CompletableFuture<StreamProperties> getStream(String namespace,
                                                        String streamName) {
-    return rootRangeClient.getStream(collection, streamName);
+    return rootRangeClient.getStream(namespace, streamName);
   }
 
   //

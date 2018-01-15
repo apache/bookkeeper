@@ -15,41 +15,41 @@
 package org.apache.distributedlog.stream.storage.impl.metadata;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.distributedlog.stream.proto.storage.DeleteCollectionRequest;
-import org.apache.distributedlog.stream.proto.storage.DeleteCollectionResponse;
+import org.apache.distributedlog.stream.proto.storage.DeleteNamespaceRequest;
+import org.apache.distributedlog.stream.proto.storage.DeleteNamespaceResponse;
 import org.apache.distributedlog.stream.proto.storage.StatusCode;
 import org.apache.distributedlog.stream.storage.impl.AsyncOperationProcessor;
 
 /**
- * The operation process for creating collection.
+ * The operation process for creating namespace.
  */
-class DeleteCollectionProcessor
-    extends AsyncOperationProcessor<DeleteCollectionRequest, DeleteCollectionResponse, RootRangeStoreImpl> {
+class DeleteNamespaceProcessor
+    extends AsyncOperationProcessor<DeleteNamespaceRequest, DeleteNamespaceResponse, RootRangeStoreImpl> {
 
-  public static DeleteCollectionProcessor of() {
+  public static DeleteNamespaceProcessor of() {
     return INSTANCE;
   }
 
-  private static final DeleteCollectionProcessor INSTANCE = new DeleteCollectionProcessor();
+  private static final DeleteNamespaceProcessor INSTANCE = new DeleteNamespaceProcessor();
 
-  private DeleteCollectionProcessor() {}
+  private DeleteNamespaceProcessor() {}
 
   @Override
   protected StatusCode verifyRequest(RootRangeStoreImpl state,
-                                     DeleteCollectionRequest request) {
-    return state.verifyDeleteCollectionRequest(request);
+                                     DeleteNamespaceRequest request) {
+    return state.verifyDeleteNamespaceRequest(request);
   }
 
   @Override
-  protected DeleteCollectionResponse failRequest(StatusCode code) {
-    return DeleteCollectionResponse.newBuilder()
+  protected DeleteNamespaceResponse failRequest(StatusCode code) {
+    return DeleteNamespaceResponse.newBuilder()
       .setCode(code)
       .build();
   }
 
   @Override
-  protected CompletableFuture<DeleteCollectionResponse> doProcessRequest(RootRangeStoreImpl state,
-                                                                         DeleteCollectionRequest request) {
-    return state.doProcessDeleteCollectionRequest(request);
+  protected CompletableFuture<DeleteNamespaceResponse> doProcessRequest(RootRangeStoreImpl state,
+                                                                         DeleteNamespaceRequest request) {
+    return state.doProcessDeleteNamespaceRequest(request);
   }
 }

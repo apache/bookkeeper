@@ -18,14 +18,26 @@
 
 package org.apache.distributedlog.clients.exceptions;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestName;
+
 /**
- * Exception thrown when a collection is found to be existed already.
+ * Test Case of {@link NamespaceNotFoundException}.
  */
-public class CollectionExistsException extends ClientException {
+public class NamespaceNotFoundExceptionTest {
 
-  private static final long serialVersionUID = -1607186521948277966L;
+  @Rule
+  public TestName name = new TestName();
 
-  public CollectionExistsException(String colName) {
-    super("Collection '" + colName + "' already exists");
+  @Test
+  public void testGetMessage() {
+    NamespaceNotFoundException cnfe = new NamespaceNotFoundException(name.getMethodName());
+    assertEquals("Namespace '" + name.getMethodName() + "' is not found", cnfe.getMessage());
+    assertNull(cnfe.getCause());
   }
+
 }

@@ -34,10 +34,10 @@ import java.util.List;
 import java.util.TreeMap;
 import org.apache.bookkeeper.common.util.Revisioned;
 import org.apache.distributedlog.clients.exceptions.ClientException;
-import org.apache.distributedlog.clients.exceptions.CollectionExistsException;
-import org.apache.distributedlog.clients.exceptions.CollectionNotFoundException;
-import org.apache.distributedlog.clients.exceptions.InvalidCollectionNameException;
+import org.apache.distributedlog.clients.exceptions.InvalidNamespaceNameException;
 import org.apache.distributedlog.clients.exceptions.InvalidStreamNameException;
+import org.apache.distributedlog.clients.exceptions.NamespaceExistsException;
+import org.apache.distributedlog.clients.exceptions.NamespaceNotFoundException;
 import org.apache.distributedlog.clients.exceptions.StreamExistsException;
 import org.apache.distributedlog.clients.exceptions.StreamNotFoundException;
 import org.apache.distributedlog.clients.impl.internal.api.HashStreamRanges;
@@ -222,15 +222,15 @@ public class TestProtocolInternalUtils {
     ClientException se = (ClientException) cause3;
     assertEquals("fail to access its root range : code = " + StatusCode.FAILURE,
       se.getMessage());
-    // collection exists exception
+    // namespace exists exception
     Throwable cause5 = createRootRangeException(name, StatusCode.COLLECTION_EXISTS);
-    assertTrue(cause5 instanceof CollectionExistsException);
-    // collection not-found exception
+    assertTrue(cause5 instanceof NamespaceExistsException);
+    // namespace not-found exception
     Throwable cause6 = createRootRangeException(name, StatusCode.COLLECTION_NOT_FOUND);
-    assertTrue(cause6 instanceof CollectionNotFoundException);
-    // invalid collection name
+    assertTrue(cause6 instanceof NamespaceNotFoundException);
+    // invalid namespace name
     Throwable cause7 = createRootRangeException(name, StatusCode.INVALID_COLLECTION_NAME);
-    assertTrue(cause7 instanceof InvalidCollectionNameException);
+    assertTrue(cause7 instanceof InvalidNamespaceNameException);
   }
 
   @Test

@@ -16,12 +16,12 @@ package org.apache.distributedlog.stream.storage.impl;
 
 import static org.apache.distributedlog.stream.protocol.ProtocolConstants.DEFAULT_STREAM_CONF;
 import static org.apache.distributedlog.stream.protocol.ProtocolConstants.ROOT_STORAGE_CONTAINER_ID;
-import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createCreateCollectionRequest;
+import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createCreateNamespaceRequest;
 import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createCreateStreamRequest;
-import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createDeleteCollectionRequest;
+import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createDeleteNamespaceRequest;
 import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createDeleteStreamRequest;
 import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createGetActiveRangesRequest;
-import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createGetCollectionRequest;
+import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createGetNamespaceRequest;
 import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createGetStreamRequest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -39,20 +39,20 @@ import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.distributedlog.clients.utils.NetUtils;
-import org.apache.distributedlog.stream.proto.CollectionConfiguration;
+import org.apache.distributedlog.stream.proto.NamespaceConfiguration;
 import org.apache.distributedlog.stream.proto.StreamName;
 import org.apache.distributedlog.stream.proto.StreamProperties;
 import org.apache.distributedlog.stream.proto.common.Endpoint;
-import org.apache.distributedlog.stream.proto.storage.CreateCollectionRequest;
-import org.apache.distributedlog.stream.proto.storage.CreateCollectionResponse;
+import org.apache.distributedlog.stream.proto.storage.CreateNamespaceRequest;
+import org.apache.distributedlog.stream.proto.storage.CreateNamespaceResponse;
 import org.apache.distributedlog.stream.proto.storage.CreateStreamRequest;
 import org.apache.distributedlog.stream.proto.storage.CreateStreamResponse;
-import org.apache.distributedlog.stream.proto.storage.DeleteCollectionRequest;
-import org.apache.distributedlog.stream.proto.storage.DeleteCollectionResponse;
+import org.apache.distributedlog.stream.proto.storage.DeleteNamespaceRequest;
+import org.apache.distributedlog.stream.proto.storage.DeleteNamespaceResponse;
 import org.apache.distributedlog.stream.proto.storage.DeleteStreamRequest;
 import org.apache.distributedlog.stream.proto.storage.DeleteStreamResponse;
-import org.apache.distributedlog.stream.proto.storage.GetCollectionRequest;
-import org.apache.distributedlog.stream.proto.storage.GetCollectionResponse;
+import org.apache.distributedlog.stream.proto.storage.GetNamespaceRequest;
+import org.apache.distributedlog.stream.proto.storage.GetNamespaceResponse;
 import org.apache.distributedlog.stream.proto.storage.GetStreamRequest;
 import org.apache.distributedlog.stream.proto.storage.GetStreamResponse;
 import org.apache.distributedlog.stream.proto.storage.StatusCode;
@@ -91,8 +91,8 @@ public class TestRangeStoreImpl {
     new CompositeConfiguration();
   private final StorageConfiguration storageConf =
     new StorageConfiguration(compConf);
-  private final CollectionConfiguration collectionConf =
-    CollectionConfiguration.newBuilder()
+  private final NamespaceConfiguration namespaceConf =
+    NamespaceConfiguration.newBuilder()
       .setDefaultStreamConf(DEFAULT_STREAM_CONF)
       .build();
   private StorageResources storageResources;
@@ -137,99 +137,99 @@ public class TestRangeStoreImpl {
   }
 
   //
-  // Collection API
+  // Namespace API
   //
 
   @Test
-  public void testCreateCollectionNoRootStorageContainerStore() throws Exception {
+  public void testCreateNamespaceNoRootStorageContainerStore() throws Exception {
     rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
 
-    String colName = "test-create-collection-no-root-storage-container-store";
+    String colName = "test-create-namespace-no-root-storage-container-store";
     verifyNotFoundException(
-      rangeStore.createCollection(createCreateCollectionRequest(colName, collectionConf)),
+      rangeStore.createNamespace(createCreateNamespaceRequest(colName, namespaceConf)),
       Status.NOT_FOUND);
   }
 
   @Test
-  public void testDeleteCollectionNoRootStorageContainerStore() throws Exception {
+  public void testDeleteNamespaceNoRootStorageContainerStore() throws Exception {
     rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
 
-    String colName = "test-delete-collection-no-root-storage-container-store";
+    String colName = "test-delete-namespace-no-root-storage-container-store";
     verifyNotFoundException(
-      rangeStore.deleteCollection(createDeleteCollectionRequest(colName)),
+      rangeStore.deleteNamespace(createDeleteNamespaceRequest(colName)),
       Status.NOT_FOUND);
   }
 
   @Test
-  public void testGetCollectionNoRootStorageContainerStore() throws Exception {
+  public void testGetNamespaceNoRootStorageContainerStore() throws Exception {
     rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
 
-    String colName = "test-get-collection-no-root-storage-container-store";
+    String colName = "test-get-namespace-no-root-storage-container-store";
     verifyNotFoundException(
-      rangeStore.getCollection(createGetCollectionRequest(colName)),
+      rangeStore.getNamespace(createGetNamespaceRequest(colName)),
       Status.NOT_FOUND);
   }
 
   @Test
-  public void testCreateCollectionMockRootStorageContainerStore() throws Exception {
-    String colName = "test-create-collection-mock-root-storage-container-store";
+  public void testCreateNamespaceMockRootStorageContainerStore() throws Exception {
+    String colName = "test-create-namespace-mock-root-storage-container-store";
 
     StorageContainer scStore = mock(StorageContainer.class);
     when(scStore.stop()).thenReturn(FutureUtils.value(null));
     rangeStore.getRegistry().setStorageContainer(ROOT_STORAGE_CONTAINER_ID, scStore);
-    CreateCollectionResponse createResp = CreateCollectionResponse.newBuilder()
+    CreateNamespaceResponse createResp = CreateNamespaceResponse.newBuilder()
       .setCode(StatusCode.COLLECTION_EXISTS)
       .build();
-    CreateCollectionRequest request = createCreateCollectionRequest(colName, collectionConf);
+    CreateNamespaceRequest request = createCreateNamespaceRequest(colName, namespaceConf);
 
-    when(scStore.createCollection(request))
+    when(scStore.createNamespace(request))
       .thenReturn(CompletableFuture.completedFuture(createResp));
 
-    CompletableFuture<CreateCollectionResponse> createRespFuture =
-      rangeStore.createCollection(request);
-    verify(scStore, times(1)).createCollection(request);
+    CompletableFuture<CreateNamespaceResponse> createRespFuture =
+      rangeStore.createNamespace(request);
+    verify(scStore, times(1)).createNamespace(request);
     assertTrue(createResp == createRespFuture.get());
   }
 
   @Test
-  public void testDeleteCollectionMockRootStorageContainerStore() throws Exception {
-    String colName = "test-delete-collection-no-root-storage-container-store";
+  public void testDeleteNamespaceMockRootStorageContainerStore() throws Exception {
+    String colName = "test-delete-namespace-no-root-storage-container-store";
 
     StorageContainer scStore = mock(StorageContainer.class);
     when(scStore.stop()).thenReturn(FutureUtils.value(null));
     rangeStore.getRegistry().setStorageContainer(ROOT_STORAGE_CONTAINER_ID, scStore);
-    DeleteCollectionResponse deleteResp = DeleteCollectionResponse.newBuilder()
+    DeleteNamespaceResponse deleteResp = DeleteNamespaceResponse.newBuilder()
       .setCode(StatusCode.COLLECTION_NOT_FOUND)
       .build();
-    DeleteCollectionRequest request = createDeleteCollectionRequest(colName);
+    DeleteNamespaceRequest request = createDeleteNamespaceRequest(colName);
 
-    when(scStore.deleteCollection(request))
+    when(scStore.deleteNamespace(request))
       .thenReturn(CompletableFuture.completedFuture(deleteResp));
 
-    CompletableFuture<DeleteCollectionResponse> deleteRespFuture =
-      rangeStore.deleteCollection(request);
-    verify(scStore, times(1)).deleteCollection(request);
+    CompletableFuture<DeleteNamespaceResponse> deleteRespFuture =
+      rangeStore.deleteNamespace(request);
+    verify(scStore, times(1)).deleteNamespace(request);
     assertTrue(deleteResp == deleteRespFuture.get());
   }
 
   @Test
-  public void testGetCollectionMockRootStorageContainerStore() throws Exception {
-    String colName = "test-get-collection-no-root-storage-container-store";
+  public void testGetNamespaceMockRootStorageContainerStore() throws Exception {
+    String colName = "test-get-namespace-no-root-storage-container-store";
 
     StorageContainer scStore = mock(StorageContainer.class);
     when(scStore.stop()).thenReturn(FutureUtils.value(null));
     rangeStore.getRegistry().setStorageContainer(ROOT_STORAGE_CONTAINER_ID, scStore);
-    GetCollectionResponse getResp = GetCollectionResponse.newBuilder()
+    GetNamespaceResponse getResp = GetNamespaceResponse.newBuilder()
       .setCode(StatusCode.COLLECTION_NOT_FOUND)
       .build();
-    GetCollectionRequest request = createGetCollectionRequest(colName);
+    GetNamespaceRequest request = createGetNamespaceRequest(colName);
 
-    when(scStore.getCollection(request)).thenReturn(
+    when(scStore.getNamespace(request)).thenReturn(
       CompletableFuture.completedFuture(getResp));
 
-    CompletableFuture<GetCollectionResponse> getRespFuture =
-      rangeStore.getCollection(request);
-    verify(scStore, times(1)).getCollection(request);
+    CompletableFuture<GetNamespaceResponse> getRespFuture =
+      rangeStore.getNamespace(request);
+    verify(scStore, times(1)).getNamespace(request);
     assertTrue(getResp == getRespFuture.get());
   }
 
@@ -241,7 +241,7 @@ public class TestRangeStoreImpl {
   public void testCreateStreamNoRootStorageContainerStore() throws Exception {
     rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
 
-    String colName = "test-create-collection-no-root-storage-container-store";
+    String colName = "test-create-namespace-no-root-storage-container-store";
     String streamName = colName;
     verifyNotFoundException(
       rangeStore.createStream(createCreateStreamRequest(colName, streamName, DEFAULT_STREAM_CONF)),
@@ -252,7 +252,7 @@ public class TestRangeStoreImpl {
   public void testDeleteStreamNoRootStorageContainerStore() throws Exception {
     rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
 
-    String colName = "test-delete-collection-no-root-storage-container-store";
+    String colName = "test-delete-namespace-no-root-storage-container-store";
     String streamName = colName;
     verifyNotFoundException(
       rangeStore.deleteStream(createDeleteStreamRequest(colName, streamName)),
@@ -263,7 +263,7 @@ public class TestRangeStoreImpl {
   public void testGetStreamNoRootStorageContainerStore() throws Exception {
     rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
 
-    String colName = "test-get-collection-no-root-storage-container-store";
+    String colName = "test-get-namespace-no-root-storage-container-store";
     String streamName = colName;
     verifyNotFoundException(
       rangeStore.getStream(createGetStreamRequest(colName, streamName)),
@@ -272,7 +272,7 @@ public class TestRangeStoreImpl {
 
   @Test
   public void testCreateStreamMockRootStorageContainerStore() throws Exception {
-    String colName = "test-create-collection-mock-root-storage-container-store";
+    String colName = "test-create-namespace-mock-root-storage-container-store";
     String streamName = colName;
 
     StorageContainer scStore = mock(StorageContainer.class);
@@ -293,7 +293,7 @@ public class TestRangeStoreImpl {
 
   @Test
   public void testDeleteStreamMockRootStorageContainerStore() throws Exception {
-    String colName = "test-delete-collection-no-root-storage-container-store";
+    String colName = "test-delete-namespace-no-root-storage-container-store";
     String streamName = colName;
 
     StorageContainer scStore = mock(StorageContainer.class);
@@ -314,7 +314,7 @@ public class TestRangeStoreImpl {
 
   @Test
   public void testGetStreamMockRootStorageContainerStore() throws Exception {
-    String colName = "test-get-collection-no-root-storage-container-store";
+    String colName = "test-get-namespace-no-root-storage-container-store";
     String streamName = colName;
 
     StorageContainer scStore = mock(StorageContainer.class);

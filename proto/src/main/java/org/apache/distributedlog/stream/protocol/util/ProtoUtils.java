@@ -24,18 +24,18 @@ import java.util.List;
 import org.apache.bookkeeper.common.util.Revisioned;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.distributedlog.stream.proto.CollectionConfiguration;
+import org.apache.distributedlog.stream.proto.NamespaceConfiguration;
 import org.apache.distributedlog.stream.proto.RangeProperties;
 import org.apache.distributedlog.stream.proto.StreamConfiguration;
 import org.apache.distributedlog.stream.proto.StreamMetadata.LifecycleState;
 import org.apache.distributedlog.stream.proto.StreamMetadata.ServingState;
 import org.apache.distributedlog.stream.proto.StreamName;
-import org.apache.distributedlog.stream.proto.storage.CreateCollectionRequest;
+import org.apache.distributedlog.stream.proto.storage.CreateNamespaceRequest;
 import org.apache.distributedlog.stream.proto.storage.CreateStreamRequest;
-import org.apache.distributedlog.stream.proto.storage.DeleteCollectionRequest;
+import org.apache.distributedlog.stream.proto.storage.DeleteNamespaceRequest;
 import org.apache.distributedlog.stream.proto.storage.DeleteStreamRequest;
 import org.apache.distributedlog.stream.proto.storage.GetActiveRangesRequest;
-import org.apache.distributedlog.stream.proto.storage.GetCollectionRequest;
+import org.apache.distributedlog.stream.proto.storage.GetNamespaceRequest;
 import org.apache.distributedlog.stream.proto.storage.GetStorageContainerEndpointRequest;
 import org.apache.distributedlog.stream.proto.storage.GetStorageContainerEndpointResponse;
 import org.apache.distributedlog.stream.proto.storage.GetStreamRequest;
@@ -90,11 +90,11 @@ public class ProtoUtils {
   }
 
   /**
-   * Validate collection characters are [a-zA-Z_0-9].
+   * Validate namespace characters are [a-zA-Z_0-9].
    *
-   * @return true if it is a valid collection name. otherwise false.
+   * @return true if it is a valid namespace name. otherwise false.
    */
-  public static boolean validateCollectionName(String name) {
+  public static boolean validateNamespaceName(String name) {
     if (StringUtils.isBlank(name)) {
       return false;
     }
@@ -108,9 +108,9 @@ public class ProtoUtils {
   }
 
   /**
-   * Validate collection characters are [a-zA-Z_0-9].
+   * Validate namespace characters are [a-zA-Z_0-9].
    *
-   * @return true if it is a valid collection name. otherwise false.
+   * @return true if it is a valid namespace name. otherwise false.
    */
   public static boolean validateStreamName(String name) {
     if (StringUtils.isBlank(name)) {
@@ -238,44 +238,44 @@ public class ProtoUtils {
   }
 
   //
-  // Collection API
+  // Namespace API
   //
 
   /**
-   * Create a {@link CreateCollectionRequest}.
+   * Create a {@link CreateNamespaceRequest}.
    *
-   * @param colName collection name
-   * @param colConf collection conf
-   * @return a create collection request.
+   * @param colName namespace name
+   * @param colConf namespace conf
+   * @return a create namespace request.
    */
-  public static CreateCollectionRequest createCreateCollectionRequest(String colName,
-                                                                      CollectionConfiguration colConf) {
-    return CreateCollectionRequest.newBuilder()
+  public static CreateNamespaceRequest createCreateNamespaceRequest(String colName,
+                                                                    NamespaceConfiguration colConf) {
+    return CreateNamespaceRequest.newBuilder()
       .setName(colName)
       .setColConf(colConf)
       .build();
   }
 
   /**
-   * Create a {@link DeleteCollectionRequest}.
+   * Create a {@link DeleteNamespaceRequest}.
    *
-   * @param colName collection name
-   * @return a delete collection request.
+   * @param colName namespace name
+   * @return a delete namespace request.
    */
-  public static DeleteCollectionRequest createDeleteCollectionRequest(String colName) {
-    return DeleteCollectionRequest.newBuilder()
+  public static DeleteNamespaceRequest createDeleteNamespaceRequest(String colName) {
+    return DeleteNamespaceRequest.newBuilder()
       .setName(colName)
       .build();
   }
 
   /**
-   * Create a {@link GetCollectionRequest}.
+   * Create a {@link GetNamespaceRequest}.
    *
-   * @param colName collection name
-   * @return a get collection request.
+   * @param colName namespace name
+   * @return a get namespace request.
    */
-  public static GetCollectionRequest createGetCollectionRequest(String colName) {
-    return GetCollectionRequest.newBuilder()
+  public static GetNamespaceRequest createGetNamespaceRequest(String colName) {
+    return GetNamespaceRequest.newBuilder()
       .setName(colName)
       .build();
   }
@@ -287,7 +287,7 @@ public class ProtoUtils {
   /**
    * Create a {@link CreateStreamRequest}.
    *
-   * @param colName collection name
+   * @param colName namespace name
    * @param streamName stream name
    * @param streamConf stream configuration
    * @return a create stream request.
@@ -305,7 +305,7 @@ public class ProtoUtils {
   /**
    * Create a {@link GetStreamRequest}.
    *
-   * @param colName collection name
+   * @param colName namespace name
    * @param streamName stream name
    * @return a create stream request.
    */
@@ -332,7 +332,7 @@ public class ProtoUtils {
   /**
    * Create a {@link DeleteStreamRequest}.
    *
-   * @param colName collection name
+   * @param colName namespace name
    * @param streamName stream name
    * @return a create stream request.
    */
