@@ -103,7 +103,7 @@ public class TestRootRangeClientGetNamespaceRpc extends RootRangeClientImplTestB
       public void getNamespace(GetNamespaceRequest request,
                                 StreamObserver<GetNamespaceResponse> responseObserver) {
         responseObserver.onNext(GetNamespaceResponse.newBuilder()
-          .setCode(StatusCode.COLLECTION_NOT_FOUND)
+          .setCode(StatusCode.NAMESPACE_NOT_FOUND)
           .build());
         responseObserver.onCompleted();
       }

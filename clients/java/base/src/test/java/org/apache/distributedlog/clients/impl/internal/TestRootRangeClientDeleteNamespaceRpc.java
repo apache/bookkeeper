@@ -77,7 +77,7 @@ public class TestRootRangeClientDeleteNamespaceRpc extends RootRangeClientImplTe
       public void deleteNamespace(DeleteNamespaceRequest request,
                                    StreamObserver<DeleteNamespaceResponse> responseObserver) {
         responseObserver.onNext(DeleteNamespaceResponse.newBuilder()
-          .setCode(StatusCode.COLLECTION_NOT_FOUND)
+          .setCode(StatusCode.NAMESPACE_NOT_FOUND)
           .build());
         responseObserver.onCompleted();
       }

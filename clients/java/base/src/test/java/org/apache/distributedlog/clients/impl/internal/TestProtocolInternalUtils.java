@@ -223,13 +223,13 @@ public class TestProtocolInternalUtils {
     assertEquals("fail to access its root range : code = " + StatusCode.FAILURE,
       se.getMessage());
     // namespace exists exception
-    Throwable cause5 = createRootRangeException(name, StatusCode.COLLECTION_EXISTS);
+    Throwable cause5 = createRootRangeException(name, StatusCode.NAMESPACE_EXISTS);
     assertTrue(cause5 instanceof NamespaceExistsException);
     // namespace not-found exception
-    Throwable cause6 = createRootRangeException(name, StatusCode.COLLECTION_NOT_FOUND);
+    Throwable cause6 = createRootRangeException(name, StatusCode.NAMESPACE_NOT_FOUND);
     assertTrue(cause6 instanceof NamespaceNotFoundException);
     // invalid namespace name
-    Throwable cause7 = createRootRangeException(name, StatusCode.INVALID_COLLECTION_NAME);
+    Throwable cause7 = createRootRangeException(name, StatusCode.INVALID_NAMESPACE_NAME);
     assertTrue(cause7 instanceof InvalidNamespaceNameException);
   }
 

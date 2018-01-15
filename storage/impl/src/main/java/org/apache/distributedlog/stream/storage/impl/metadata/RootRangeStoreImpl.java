@@ -18,7 +18,7 @@
 
 package org.apache.distributedlog.stream.storage.impl.metadata;
 
-import static org.apache.distributedlog.stream.protocol.ProtocolConstants.INVALID_COLLECTION_ID;
+import static org.apache.distributedlog.stream.protocol.ProtocolConstants.INVALID_NAMESPACE_ID;
 import static org.apache.distributedlog.stream.protocol.ProtocolConstants.MIN_DATA_STREAM_ID;
 import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.validateNamespaceName;
 import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.validateStreamName;
@@ -65,7 +65,7 @@ public class RootRangeStoreImpl
 
   // Namespaces
   @OrderedBy(key = "ROOT_STORAGE_CONTAINER_ID")
-  private long nextNamespaceId = INVALID_COLLECTION_ID;
+  private long nextNamespaceId = INVALID_NAMESPACE_ID;
   @OrderedBy(key = "ROOT_STORAGE_CONTAINER_ID")
   private final Map<String, NamespaceImpl> namespaceNames = Maps.newHashMap();
   @OrderedBy(key = "ROOT_STORAGE_CONTAINER_ID")
@@ -126,10 +126,10 @@ public class RootRangeStoreImpl
     StatusCode code = StatusCode.SUCCESS;
     if (!validateNamespaceName(colName)) {
       log.error("Failed to create namespace due to invalid namespace name {}", colName);
-      code = StatusCode.INVALID_COLLECTION_NAME;
+      code = StatusCode.INVALID_NAMESPACE_NAME;
     } else if (namespaceNames.containsKey(colName)) {
       log.error("Failed to create namespace due to namespace {} already exists", colName);
-      code = StatusCode.COLLECTION_EXISTS;
+      code = StatusCode.NAMESPACE_EXISTS;
     }
     return code;
   }
@@ -150,7 +150,7 @@ public class RootRangeStoreImpl
         respBuilder.setCode(StatusCode.SUCCESS);
         respBuilder.setColProps(metadata.getProps());
       } else {
-        respBuilder.setCode(StatusCode.COLLECTION_EXISTS);
+        respBuilder.setCode(StatusCode.NAMESPACE_EXISTS);
       }
       future.complete(respBuilder.build());
     });
@@ -183,10 +183,10 @@ public class RootRangeStoreImpl
     StatusCode code = StatusCode.SUCCESS;
     if (!validateNamespaceName(colName)) {
       log.error("Failed to delete namespace due to invalid namespace name {}", colName);
-      code = StatusCode.INVALID_COLLECTION_NAME;
+      code = StatusCode.INVALID_NAMESPACE_NAME;
     } else if (!namespaceNames.containsKey(colName)) {
       log.error("Failed to delete namespace due to namespace {} is not found", colName);
-      code = StatusCode.COLLECTION_NOT_FOUND;
+      code = StatusCode.NAMESPACE_NOT_FOUND;
     }
     return code;
   }
@@ -205,7 +205,7 @@ public class RootRangeStoreImpl
   StatusCode processDeleteNamespaceCommand(DeleteNamespaceRequest request) {
     NamespaceImpl namespace = namespaceNames.get(request.getName());
     if (null == namespace) {
-      return StatusCode.COLLECTION_NOT_FOUND;
+      return StatusCode.NAMESPACE_NOT_FOUND;
     } else {
       String colName = namespace.getName();
       namespaceNames.remove(colName, namespace);
@@ -227,11 +227,11 @@ public class RootRangeStoreImpl
     StatusCode code;
     if (!validateNamespaceName(colName)) {
       log.error("Failed to get namespace due to invalid namespace name {}", colName);
-      code = StatusCode.INVALID_COLLECTION_NAME;
+      code = StatusCode.INVALID_NAMESPACE_NAME;
     } else {
       NamespaceImpl namespace = namespaceNames.get(colName);
       if (null == namespace) {
-        code = StatusCode.COLLECTION_NOT_FOUND;
+        code = StatusCode.NAMESPACE_NOT_FOUND;
       } else {
         code = StatusCode.SUCCESS;
         respBuilder.setColProps(namespace.getMetadata().getProps());
@@ -310,7 +310,7 @@ public class RootRangeStoreImpl
     } else {
       NamespaceImpl namespace = namespaceNames.get(colName);
       if (null == namespace) {
-        code = StatusCode.COLLECTION_NOT_FOUND;
+        code = StatusCode.NAMESPACE_NOT_FOUND;
       } else {
         StreamProperties streamProps = namespace.getStream(streamName);
         if (null == streamProps) {

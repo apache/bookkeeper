@@ -51,9 +51,9 @@ enum StatusCode {
     // ROOT and META RANGE related
 
     // 20xx: Namespace Related
-    INVALID_COLLECTION_NAME     = 2000;
-    COLLECTION_EXISTS           = 2001;
-    COLLECTION_NOT_FOUND        = 2002;
+    INVALID_NAMESPACE_NAME     = 2000;
+    NAMESPACE_EXISTS           = 2001;
+    NAMESPACE_NOT_FOUND        = 2002;
 
     // 21xx: Stream Related
     INVALID_STREAM_NAME         = 2100;

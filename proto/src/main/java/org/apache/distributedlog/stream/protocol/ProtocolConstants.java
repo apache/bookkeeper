@@ -52,7 +52,7 @@ public final class ProtocolConstants {
   //
 
   // invalid namespace id
-  public static final long INVALID_COLLECTION_ID = -1L;
+  public static final long INVALID_NAMESPACE_ID = -1L;
   // invalid stream id
   public static final long INVALID_STREAM_ID = -1L;
   // invalid metadata range id

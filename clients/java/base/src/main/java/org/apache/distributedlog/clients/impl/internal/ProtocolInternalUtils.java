@@ -88,11 +88,11 @@ public final class ProtocolInternalUtils {
 
   public static Throwable createRootRangeException(String streamName, StatusCode statusCode) {
     switch (statusCode) {
-      case INVALID_COLLECTION_NAME:
+      case INVALID_NAMESPACE_NAME:
         return new InvalidNamespaceNameException(streamName);
-      case COLLECTION_EXISTS:
+      case NAMESPACE_EXISTS:
         return new NamespaceExistsException(streamName);
-      case COLLECTION_NOT_FOUND:
+      case NAMESPACE_NOT_FOUND:
         return new NamespaceNotFoundException(streamName);
       case INVALID_STREAM_NAME:
         return new InvalidStreamNameException(streamName);

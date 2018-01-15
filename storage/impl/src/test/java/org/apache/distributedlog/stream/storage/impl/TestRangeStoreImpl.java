@@ -178,7 +178,7 @@ public class TestRangeStoreImpl {
     when(scStore.stop()).thenReturn(FutureUtils.value(null));
     rangeStore.getRegistry().setStorageContainer(ROOT_STORAGE_CONTAINER_ID, scStore);
     CreateNamespaceResponse createResp = CreateNamespaceResponse.newBuilder()
-      .setCode(StatusCode.COLLECTION_EXISTS)
+      .setCode(StatusCode.NAMESPACE_EXISTS)
       .build();
     CreateNamespaceRequest request = createCreateNamespaceRequest(colName, namespaceConf);
 
@@ -199,7 +199,7 @@ public class TestRangeStoreImpl {
     when(scStore.stop()).thenReturn(FutureUtils.value(null));
     rangeStore.getRegistry().setStorageContainer(ROOT_STORAGE_CONTAINER_ID, scStore);
     DeleteNamespaceResponse deleteResp = DeleteNamespaceResponse.newBuilder()
-      .setCode(StatusCode.COLLECTION_NOT_FOUND)
+      .setCode(StatusCode.NAMESPACE_NOT_FOUND)
       .build();
     DeleteNamespaceRequest request = createDeleteNamespaceRequest(colName);
 
@@ -220,7 +220,7 @@ public class TestRangeStoreImpl {
     when(scStore.stop()).thenReturn(FutureUtils.value(null));
     rangeStore.getRegistry().setStorageContainer(ROOT_STORAGE_CONTAINER_ID, scStore);
     GetNamespaceResponse getResp = GetNamespaceResponse.newBuilder()
-      .setCode(StatusCode.COLLECTION_NOT_FOUND)
+      .setCode(StatusCode.NAMESPACE_NOT_FOUND)
       .build();
     GetNamespaceRequest request = createGetNamespaceRequest(colName);
 
