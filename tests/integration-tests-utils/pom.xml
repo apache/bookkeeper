@@ -100,6 +100,9 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
+          <!-- forkCount=0 forces tests to run in isolated classloaders
+               which is required if want to test maven classloader without
+               test deps interfering //-->
           <forkCount>0</forkCount>
         </configuration>
       </plugin>

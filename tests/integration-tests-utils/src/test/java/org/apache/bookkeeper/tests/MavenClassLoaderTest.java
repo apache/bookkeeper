@@ -29,4 +29,14 @@ public class MavenClassLoaderTest {
         MavenClassLoader.forBookKeeperVersion("4.0.0")
             .newInstance("org.apache.log4j.Logger");
     }
+
+    @Test
+    public void testNoZooKeeperInterference() throws Exception {
+        // Use KeeperException, because ZooKeeper needs a watcher which would be a pain to construct
+        Object o = MavenClassLoader.forBookKeeperVersion("4.0.0")
+            .newInstance("org.apache.zookeeper.KeeperException$NoNodeException");
+        Assert.assertFalse(o.getClass().equals(
+                                   org.apache.zookeeper.KeeperException.NoNodeException.class));
+    }
+
 }
