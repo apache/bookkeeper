@@ -13,6 +13,7 @@
  */
 package org.apache.distributedlog.stream.storage.conf;
 
+import java.io.File;
 import org.apache.bookkeeper.common.conf.ComponentConfiguration;
 import org.apache.commons.configuration.CompositeConfiguration;
 
@@ -23,8 +24,29 @@ public class StorageConfiguration extends ComponentConfiguration {
 
   private static final String COMPONENT_PREFIX = "storage" + DELIMITER;
 
+  private static final String RANGE_STORE_DIRS = "range_store_dirs";
+
   public StorageConfiguration(CompositeConfiguration conf) {
     super(conf, COMPONENT_PREFIX);
+  }
+
+  private String[] getRangeStoreDirNames() {
+    String[] rangeStoreDirs = getStringArray(getKeyName(RANGE_STORE_DIRS));
+    if (null == rangeStoreDirs || 0 == rangeStoreDirs.length) {
+      return new String[] { "data/bookkeeper/ranges" };
+    } else {
+      return rangeStoreDirs;
+    }
+  }
+
+  public File[] getRangeStoreDirs() {
+    String[] rangeStoreDirNames = getRangeStoreDirNames();
+
+    File[] rangeStoreDirs = new File[rangeStoreDirNames.length];
+    for (int i = 0; i < rangeStoreDirNames.length; i++) {
+      rangeStoreDirs[i] = new File(rangeStoreDirNames[i]);
+    }
+    return rangeStoreDirs;
   }
 
 }

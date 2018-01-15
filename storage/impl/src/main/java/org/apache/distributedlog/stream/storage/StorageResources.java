@@ -30,75 +30,64 @@ package org.apache.distributedlog.stream.storage;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.util.HashedWheelTimer;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.common.util.SharedResourceManager.Resource;
 
 /**
  * Define a set of resources used for storage.
  */
+@Accessors(fluent = true)
+@Getter
 public class StorageResources {
 
   public static StorageResources create() {
-    return new StorageResources();
+    return create(StorageResourcesSpec.builder().build());
+  }
+
+  public static StorageResources create(StorageResourcesSpec spec) {
+    return new StorageResources(spec);
+  }
+
+  private static Resource<OrderedScheduler> createSchedulerResource(String name, int numThreads) {
+      return new Resource<OrderedScheduler>() {
+          @Override
+          public OrderedScheduler create() {
+              return OrderedScheduler.newSchedulerBuilder()
+                  .numThreads(numThreads)
+                  .name(name)
+                  .build();
+          }
+
+          @Override
+          public void close(OrderedScheduler scheduler) {
+                scheduler.shutdown();
+          }
+
+          @Override
+          public String toString() {
+              return name;
+          }
+      };
   }
 
   private final Resource<OrderedScheduler> scheduler;
-  private final Resource<ScheduledExecutorService> snapshotScheduler;
+  private final Resource<OrderedScheduler> ioWriteScheduler;
+  private final Resource<OrderedScheduler> ioReadScheduler;
+  private final Resource<OrderedScheduler> checkpointScheduler;
   private final Resource<HashedWheelTimer> timer;
 
-  private StorageResources() {
-    this.scheduler =
-      new Resource<OrderedScheduler>() {
-
-        private static final String name = "storage-scheduler";
-
-        @Override
-        public OrderedScheduler create() {
-          return OrderedScheduler.newSchedulerBuilder()
-            .numThreads(Runtime.getRuntime().availableProcessors() * 2)
-            .name(name)
-            .build();
-        }
-
-        @Override
-        public void close(OrderedScheduler instance) {
-          instance.shutdown();
-        }
-
-        @Override
-        public String toString() {
-          return name;
-        }
-      };
-
-    this.snapshotScheduler =
-      new Resource<ScheduledExecutorService>() {
-
-        private static final String name = "storage-snapshot-scheduler";
-
-        @Override
-        public ScheduledExecutorService create() {
-          return Executors.newScheduledThreadPool(
-            Runtime.getRuntime().availableProcessors() * 2,
-            new ThreadFactoryBuilder()
-              .setNameFormat(name + "-%d")
-              .setDaemon(true)
-              .build());
-        }
-
-        @Override
-        public void close(ScheduledExecutorService instance) {
-          instance.shutdown();
-        }
-
-        @Override
-        public String toString() {
-          return name;
-        }
-      };
+  private StorageResources(StorageResourcesSpec spec) {
+    this.scheduler = createSchedulerResource(
+        "storage-scheduler", spec.numSchedulerThreads());
+    this.ioWriteScheduler = createSchedulerResource(
+        "io-write-scheduler", spec.numIOWriteThreads());
+    this.ioReadScheduler = createSchedulerResource(
+        "io-read-scheduler", spec.numIOReadThreads());
+    this.checkpointScheduler = createSchedulerResource(
+        "io-checkpoint-scheduler", spec.numCheckpointThreads());
 
     this.timer =
       new Resource<HashedWheelTimer>() {
@@ -129,18 +118,6 @@ public class StorageResources {
           return name;
         }
       };
-  }
-
-  public Resource<OrderedScheduler> scheduler() {
-    return scheduler;
-  }
-
-  public Resource<ScheduledExecutorService> snapshotScheduler() {
-    return snapshotScheduler;
-  }
-
-  public Resource<HashedWheelTimer> timer() {
-    return timer;
   }
 
 }

@@ -28,11 +28,15 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.coder.ByteArrayCoder;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.exceptions.ObjectClosedException;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
+import org.apache.bookkeeper.common.util.SharedResourceManager;
 import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.statelib.StateStores;
 import org.apache.distributedlog.statelib.api.StateStoreSpec;
@@ -40,18 +44,25 @@ import org.apache.distributedlog.statelib.api.checkpoint.CheckpointStore;
 import org.apache.distributedlog.statelib.api.mvcc.MVCCAsyncStore;
 import org.apache.distributedlog.statelib.impl.rocksdb.checkpoint.fs.FSCheckpointManager;
 import org.apache.distributedlog.stream.protocol.RangeId;
+import org.apache.distributedlog.stream.storage.StorageResources;
 
 /**
  * A default implementation of {@link RangeStoreFactory}.
  */
+@Accessors(fluent = true)
 @Slf4j
 public class RangeStoreFactoryImpl implements RangeStoreFactory {
 
     // store supplier
     private final Supplier<MVCCAsyncStore<byte[], byte[]>> storeSupplier;
+    // storage resources
+    private final StorageResources storageResources;
     // scheduler
+    @Getter(value = AccessLevel.PACKAGE)
     private final OrderedScheduler writeIOScheduler;
+    @Getter(value = AccessLevel.PACKAGE)
     private final OrderedScheduler readIOScheduler;
+    @Getter(value = AccessLevel.PACKAGE)
     private final OrderedScheduler checkpointScheduler;
     // dirs
     private final File[] localStateDirs;
@@ -63,13 +74,15 @@ public class RangeStoreFactoryImpl implements RangeStoreFactory {
 
     public RangeStoreFactoryImpl(Namespace namespace,
                                  File[] localStoreDirs,
-                                 OrderedScheduler writeIOScheduler,
-                                 OrderedScheduler readIOScheduler,
-                                 OrderedScheduler checkpointScheduler) {
+                                 StorageResources storageResources) {
         this.storeSupplier = StateStores.mvccKvBytesStoreSupplier(() -> namespace);
-        this.writeIOScheduler = writeIOScheduler;
-        this.readIOScheduler = readIOScheduler;
-        this.checkpointScheduler = checkpointScheduler;
+        this.storageResources = storageResources;
+        this.writeIOScheduler =
+            SharedResourceManager.shared().get(storageResources.ioWriteScheduler());
+        this.readIOScheduler =
+            SharedResourceManager.shared().get(storageResources.ioReadScheduler());
+        this.checkpointScheduler =
+            SharedResourceManager.shared().get(storageResources.checkpointScheduler());
         this.localStateDirs = localStoreDirs;
         // TODO: change this cto dlog based checkpoint manager
         this.checkpointStore = new FSCheckpointManager(new File(localStoreDirs[0], "checkpoints"));
@@ -230,5 +243,12 @@ public class RangeStoreFactoryImpl implements RangeStoreFactory {
             log.info("Encountered issue on closing all the range stores opened by this range factory");
         }
         checkpointStore.close();
+
+        SharedResourceManager.shared().release(
+            storageResources.ioWriteScheduler(), writeIOScheduler);
+        SharedResourceManager.shared().release(
+            storageResources.ioReadScheduler(), readIOScheduler);
+        SharedResourceManager.shared().release(
+            storageResources.checkpointScheduler(), checkpointScheduler);
     }
 }

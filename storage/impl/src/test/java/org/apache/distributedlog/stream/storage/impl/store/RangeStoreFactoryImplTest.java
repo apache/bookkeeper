@@ -35,7 +35,6 @@ import java.time.Duration;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.coder.ByteArrayCoder;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
-import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.LogRecord;
 import org.apache.distributedlog.LogRecordWithDLSN;
@@ -45,7 +44,8 @@ import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.statelib.api.mvcc.MVCCAsyncStore;
 import org.apache.distributedlog.statelib.impl.rocksdb.checkpoint.fs.FSCheckpointManager;
-import org.junit.After;
+import org.apache.distributedlog.stream.storage.StorageResources;
+import org.apache.distributedlog.stream.storage.StorageResourcesSpec;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -62,9 +62,7 @@ public class RangeStoreFactoryImplTest {
 
     private Namespace namespace;
     private File[] storeDirs;
-    private OrderedScheduler writeIOScheduler;
-    private OrderedScheduler readIOScheduler;
-    private OrderedScheduler checkpointScheduler;
+    private StorageResources resources;
     private RangeStoreFactoryImpl factory;
 
     @Before
@@ -92,32 +90,17 @@ public class RangeStoreFactoryImplTest {
         for (int i = 0; i < numDirs; i++) {
             storeDirs[i] = testDir.newFolder("test-" + i);
         }
-        this.writeIOScheduler = OrderedScheduler.newSchedulerBuilder()
-            .name("test-io")
-            .numThreads(3)
-            .build();
-        this.readIOScheduler = OrderedScheduler.newSchedulerBuilder()
-            .name("test-io")
-            .numThreads(3)
-            .build();
-        this.checkpointScheduler = OrderedScheduler.newSchedulerBuilder()
-            .name("checkpoint-io")
-            .numThreads(3)
-            .build();
 
+        this.resources = StorageResources.create(
+            StorageResourcesSpec.builder()
+                .numCheckpointThreads(3)
+                .numIOReadThreads(3)
+                .numIOWriteThreads(3)
+                .build());
         this.factory = new RangeStoreFactoryImpl(
             namespace,
             storeDirs,
-            writeIOScheduler,
-            readIOScheduler,
-            checkpointScheduler);
-    }
-
-    @After
-    public void teardown() throws IOException {
-        this.writeIOScheduler.shutdown();
-        this.readIOScheduler.shutdown();
-        this.checkpointScheduler.shutdown();
+            resources);
     }
 
     @Test
@@ -154,13 +137,13 @@ public class RangeStoreFactoryImplTest {
             assertTrue(store.spec().getKeyCoder() instanceof ByteArrayCoder);
             assertTrue(store.spec().getValCoder() instanceof ByteArrayCoder);
             assertSame(
-                writeIOScheduler.chooseThread(streamId % 3),
+                factory.writeIOScheduler().chooseThread(streamId % 3),
                 store.spec().getWriteIOScheduler());
             assertSame(
-                readIOScheduler.chooseThread(streamId % 3),
+                factory.readIOScheduler().chooseThread(streamId % 3),
                 store.spec().getReadIOScheduler());
             assertSame(
-                checkpointScheduler.chooseThread(streamId % 3),
+                factory.checkpointScheduler().chooseThread(streamId % 3),
                 store.spec().getCheckpointIOScheduler());
             assertTrue(store.spec().getCheckpointStore() instanceof FSCheckpointManager);
             assertEquals(Duration.ofMinutes(15), store.spec().getCheckpointDuration());
