@@ -35,13 +35,14 @@
 
   <properties>
     <arquillian-cube.version>1.12.1-SNAPSHOT</arquillian-cube.version>
+    <commons-compress.version>1.15</commons-compress.version>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-compress</artifactId>
-      <version>1.15</version>
+      <version>${commons-compress.version}</version>
     </dependency>
 
     <dependency>
