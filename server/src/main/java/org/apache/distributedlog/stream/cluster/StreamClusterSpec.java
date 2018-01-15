@@ -14,82 +14,77 @@
 
 package org.apache.distributedlog.stream.cluster;
 
+import java.io.File;
+import lombok.Builder;
+import lombok.Builder.Default;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.inferred.freebuilder.FreeBuilder;
 
 /**
  * Spec to build {@link StreamCluster}.
  */
-@FreeBuilder
-public interface StreamClusterSpec {
+@Builder
+@Accessors(fluent = true)
+@Getter
+@Setter
+public class StreamClusterSpec {
 
   /**
    * Returns the number of servers to run in this cluster.
    *
    * @return the number of servers to run in this cluster.
    */
-  int numServers();
+  @Default int numServers = 3;
 
   /**
    * Returns the configuration used by the servers across the cluster.
    *
    * @return the configuration used by the servers across the cluster.
    */
-  CompositeConfiguration baseConf();
+  CompositeConfiguration baseConf;
 
   /**
    * Returns the zookeeper servers used in this cluster.
    *
    * @return the zookeeper servers used in this cluster.
    */
-  String zkServers();
+  @Default String zkServers = "127.0.0.1";
 
   /**
    * Returns if should start zookeeper.
    *
    * @return true if should start zookeeper, otherwise false.
    */
-  boolean shouldStartZooKeeper();
+  @Default boolean shouldStartZooKeeper = true;
 
   /**
    * Returns the zookeeper server port used in this cluster.
    *
    * @return the zookeeper server port used in this cluster.
    */
-  int zkPort();
+  @Default int zkPort = 2181;
 
   /**
    * Returns the bookie server port used in this cluster.
    *
    * @return the bookie server port used in this cluster.
    */
-  int initialBookiePort();
+  @Default int initialBookiePort = 3181;
 
   /**
    * Returns the gRPC server port used in this cluster.
    *
    * @return the gRPC server port used in this cluster.
    */
-  int initialGrpcPort();
+  @Default int initialGrpcPort = 4181;
 
   /**
-   * Builder to build stream cluster spec.
+   * The root dir used by the stream storage to store data.
+   *
+   * @return the root dir used by the stream storage to store data.
    */
-  class Builder extends StreamClusterSpec_Builder {
-
-    Builder() {
-      numServers(3);
-      zkServers("127.0.0.1");
-      zkPort(2181);
-      shouldStartZooKeeper(true);
-      initialBookiePort(3181);
-      initialGrpcPort(4181);
-    }
-
-  }
-
-  static Builder newBuilder() {
-    return new Builder();
-  }
+  @Default File storageRootDir = new File("data/bookkeeper");
 
 }

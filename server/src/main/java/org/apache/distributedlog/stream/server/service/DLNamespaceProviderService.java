@@ -42,14 +42,20 @@ public class DLNamespaceProviderService
     BKDLConfig dlConfig = new BKDLConfig(
         bkServerConf.getZkServers(), bkServerConf.getZkLedgersRootPath());
     DLMetadata dlMetadata = DLMetadata.create(dlConfig);
-    URI dlogUri = URI.create(String.format("distributedlog://%s/stream", bkServerConf));
+    URI dlogUri = URI.create(String.format("distributedlog://%s/stream/storage", bkServerConf.getZkServers()));
 
     try {
+        log.info("Initializing dlog namespace at {}", dlogUri);
         dlMetadata.create(dlogUri);
+        log.info("Initialized dlog namespace at {}", dlogUri);
     } catch (ZKException e) {
         if (e.getKeeperExceptionCode() == Code.NODEEXISTS) {
+            if (log.isDebugEnabled()) {
+              log.debug("Dlog uri is already bound at {}", dlogUri);
+            }
             return dlogUri;
         }
+        log.error("Failed to initialize dlog namespace at {}", dlogUri, e);
         throw e;
     }
     return dlogUri;
@@ -96,7 +102,7 @@ public class DLNamespaceProviderService
         .conf(dlConf)
         .uri(uri)
         .build();
-    } catch (IOException e) {
+    } catch (Throwable e) {
       throw new RuntimeException("Failed to build the distributedlog namespace at " + bkServerConf.getZkServers(), e);
     }
     log.info("Provided distributedlog namespace at {}.", uri);

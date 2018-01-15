@@ -72,10 +72,10 @@ public class RangeStoreFactoryImpl implements RangeStoreFactory {
     private final Map<Long, Map<RangeId, MVCCAsyncStore<byte[], byte[]>>> stores;
     private boolean closed = false;
 
-    public RangeStoreFactoryImpl(Namespace namespace,
+    public RangeStoreFactoryImpl(Supplier<Namespace> namespaceSupplier,
                                  File[] localStoreDirs,
                                  StorageResources storageResources) {
-        this.storeSupplier = StateStores.mvccKvBytesStoreSupplier(() -> namespace);
+        this.storeSupplier = StateStores.mvccKvBytesStoreSupplier(namespaceSupplier);
         this.storageResources = storageResources;
         this.writeIOScheduler =
             SharedResourceManager.shared().get(storageResources.ioWriteScheduler());
@@ -113,8 +113,9 @@ public class RangeStoreFactoryImpl implements RangeStoreFactory {
     static String streamName(long scId,
                              long streamId,
                              long rangeId) {
+        // TODO: change to filesystem path
         return String.format(
-            "%s/%018d/%018d/%018d",
+            "%s_%018d_%018d_%018d",
             "streams",
             scId,
             streamId,

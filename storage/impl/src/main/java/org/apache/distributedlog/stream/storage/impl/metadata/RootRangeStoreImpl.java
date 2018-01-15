@@ -190,6 +190,10 @@ public class RootRangeStoreImpl
 
   @Override
   public CompletableFuture<CreateNamespaceResponse> createNamespace(CreateNamespaceRequest request) {
+    if (log.isTraceEnabled()) {
+      log.trace("Received CreateNamespace request : {}", request);
+    }
+
     return CreateNamespaceProcessor.of().process(
       this,
       request,

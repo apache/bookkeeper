@@ -123,14 +123,12 @@ public class StorageServer {
     }
 
     int grpcPort = arguments.port;
-    int minNumBookies = 3;
 
     LifecycleComponent storageServer;
     try {
       storageServer = startStorageServer(
         conf,
         grpcPort,
-        minNumBookies,
         1024,
         Optional.empty());
     } catch (ConfigurationException e) {
@@ -153,7 +151,6 @@ public class StorageServer {
 
   public static LifecycleComponent startStorageServer(CompositeConfiguration conf,
                                                       int grpcPort,
-                                                      int minNumBookies,
                                                       int numStorageContainers,
                                                       Optional<String> instanceName)
       throws ConfigurationException, UnknownHostException {
@@ -209,7 +206,7 @@ public class StorageServer {
       // with the inter storage container client manager
       .withRangeStoreFactory(
         new RangeStoreFactoryImpl(
-            dlNamespaceProvider.get(),
+            dlNamespaceProvider,
             storageConf.getRangeStoreDirs(),
             storageResources));
     StorageService storageService = new StorageService(
@@ -217,7 +214,7 @@ public class StorageServer {
 
     // Create gRPC server
     StatsLogger rpcStatsLogger = rootStatsLogger.scope("grpc");
-    GrpcServerSpec serverSpec = GrpcServerSpec.newBuilder()
+    GrpcServerSpec serverSpec = GrpcServerSpec.builder()
       .storeSupplier(storageService)
       .storeServerConf(serverConf)
       .endpoint(myEndpoint)

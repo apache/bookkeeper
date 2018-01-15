@@ -15,68 +15,64 @@
 package org.apache.distributedlog.stream.server.grpc;
 
 import io.grpc.HandlerRegistry;
-import java.util.Optional;
 import java.util.function.Supplier;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.distributedlog.stream.proto.common.Endpoint;
 import org.apache.distributedlog.stream.server.conf.StorageServerConfiguration;
 import org.apache.distributedlog.stream.storage.api.RangeStore;
-import org.inferred.freebuilder.FreeBuilder;
 
 /**
  * Spec for building a grpc server.
  */
-@FreeBuilder
-public interface GrpcServerSpec {
+@Setter
+@Getter
+@Builder
+@Accessors(fluent = true)
+public class GrpcServerSpec {
 
   /**
    * Get the store supplier for building grpc server.
    *
    * @return store supplier for building grpc server.
    */
-  Supplier<RangeStore> storeSupplier();
+  Supplier<RangeStore> storeSupplier;
 
   /**
    * Get the storage server configuration.
    *
    * @return storage server configuration.
    */
-  StorageServerConfiguration storeServerConf();
+  StorageServerConfiguration storeServerConf;
 
   /**
    * Get the grpc endpoint.
    * @return grpc endpoint.
    */
-  Optional<Endpoint> endpoint();
+  Endpoint endpoint;
 
   /**
    * Get the stats logger.
    *
    * @return stats logger.
    */
-  StatsLogger statsLogger();
+  StatsLogger statsLogger;
 
   /**
    * Get the local server name.
    *
    * @return local server name.
    */
-  Optional<String> localServerName();
+  String localServerName;
 
   /**
    * Get the local handler registry.
    *
    * @return local handler registry.
    */
-  Optional<HandlerRegistry> localHandlerRegistry();
-
-  /**
-   * Builder to build grpc server spec.
-   */
-  class Builder extends GrpcServerSpec_Builder {}
-
-  static Builder newBuilder() {
-    return new Builder();
-  }
+  HandlerRegistry localHandlerRegistry;
 
 }

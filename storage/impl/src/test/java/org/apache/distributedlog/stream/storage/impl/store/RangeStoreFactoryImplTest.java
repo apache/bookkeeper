@@ -98,7 +98,7 @@ public class RangeStoreFactoryImplTest {
                 .numIOWriteThreads(3)
                 .build());
         this.factory = new RangeStoreFactoryImpl(
-            namespace,
+            () -> namespace,
             storeDirs,
             resources);
     }

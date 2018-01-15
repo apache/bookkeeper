@@ -23,6 +23,8 @@ import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.validate
 
 import java.util.function.Supplier;
 import org.apache.distributedlog.api.StorageClient;
+import org.apache.distributedlog.clients.admin.StorageAdminClient;
+import org.apache.distributedlog.clients.admin.StorageAdminClientImpl;
 import org.apache.distributedlog.clients.config.StorageClientSettings;
 import org.apache.distributedlog.clients.utils.ClientResources;
 
@@ -84,6 +86,17 @@ public class StorageClientBuilder implements Supplier<StorageClient> {
       namespaceName,
       settings,
       ClientResources.create());
+  }
+
+  /**
+   * Build a {@link StorageAdminClient} client.
+   *
+   * @return a {@link StorageAdminClient} client.
+   */
+  public StorageAdminClient buildAdmin() {
+    checkNotNull(settings, "Storage client settings is null");
+
+    return new StorageAdminClientImpl(settings);
   }
 
   @Override

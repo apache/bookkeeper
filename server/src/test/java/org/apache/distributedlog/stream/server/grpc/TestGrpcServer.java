@@ -19,7 +19,6 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import io.grpc.util.MutableHandlerRegistry;
-import java.util.Optional;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.distributedlog.stream.server.StorageServer;
@@ -44,9 +43,9 @@ public class TestGrpcServer {
     GrpcServer server = new GrpcServer(
       mock(RangeStoreImpl.class),
       StorageServerConfiguration.of(compConf),
-      Optional.empty(),
-      Optional.of(name.getMethodName()),
-      Optional.of(new MutableHandlerRegistry()),
+      null,
+      name.getMethodName(),
+      new MutableHandlerRegistry(),
       NullStatsLogger.INSTANCE);
     server.start();
     assertEquals(-1, server.getGrpcServer().getPort());
@@ -58,9 +57,9 @@ public class TestGrpcServer {
     GrpcServer server = new GrpcServer(
       mock(RangeStoreImpl.class),
       StorageServerConfiguration.of(compConf),
-      Optional.of(StorageServer.createLocalEndpoint(0, false)),
-      Optional.empty(),
-      Optional.empty(),
+      StorageServer.createLocalEndpoint(0, false),
+      null,
+      null,
       NullStatsLogger.INSTANCE);
     server.start();
     assertTrue(server.getGrpcServer().getPort() > 0);

@@ -20,7 +20,6 @@ import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import java.io.IOException;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -52,28 +51,24 @@ public class GrpcServer extends AbstractLifecycleComponent<StorageServerConfigur
                     StorageServerConfiguration conf,
                     Endpoint myEndpoint,
                     StatsLogger statsLogger) {
-    this(rangeStore, conf, Optional.of(myEndpoint), Optional.empty(), Optional.empty(), statsLogger);
+    this(rangeStore, conf, myEndpoint, null, null, statsLogger);
   }
 
   @VisibleForTesting
   public GrpcServer(RangeStore rangeStore,
                     StorageServerConfiguration conf,
-                    Optional<Endpoint> myEndpoint,
-                    Optional<String> localServerName,
-                    Optional<HandlerRegistry> localHandlerRegistry,
+                    Endpoint myEndpoint,
+                    String localServerName,
+                    HandlerRegistry localHandlerRegistry,
                     StatsLogger statsLogger) {
     super("range-grpc-server", conf, statsLogger);
-    if (myEndpoint.isPresent()) {
-      this.myEndpoint = myEndpoint.get();
-    } else {
-      this.myEndpoint = null;
-    }
-    if (localServerName.isPresent()) {
+    this.myEndpoint = myEndpoint;
+    if (null != localServerName) {
       InProcessServerBuilder serverBuilder = InProcessServerBuilder
-        .forName(localServerName.get())
+        .forName(localServerName)
         .directExecutor();
-      if (localHandlerRegistry.isPresent()) {
-        serverBuilder = serverBuilder.fallbackHandlerRegistry(localHandlerRegistry.get());
+      if (null != localHandlerRegistry) {
+        serverBuilder = serverBuilder.fallbackHandlerRegistry(localHandlerRegistry);
       }
       this.grpcServer = serverBuilder.build();
     } else {

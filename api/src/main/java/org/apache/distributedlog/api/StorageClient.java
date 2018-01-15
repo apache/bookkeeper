@@ -21,6 +21,7 @@ package org.apache.distributedlog.api;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
+import org.apache.bookkeeper.common.util.AutoAsyncCloseable;
 import org.apache.distributedlog.api.kv.Table;
 
 /**
@@ -28,7 +29,7 @@ import org.apache.distributedlog.api.kv.Table;
  */
 @Public
 @Evolving
-public interface StorageClient {
+public interface StorageClient extends AutoAsyncCloseable {
 
     CompletableFuture<Table> openTable(String table);
 

@@ -40,7 +40,7 @@ import org.apache.distributedlog.stream.proto.StreamProperties;
  * A storage admin client.
  */
 @Slf4j
-public class StorageAdminClientImpl extends AbstractAutoAsyncCloseable {
+public class StorageAdminClientImpl extends AbstractAutoAsyncCloseable implements StorageAdminClient {
 
   // clients
   private final StorageServerClientManager clientManager;
@@ -74,30 +74,36 @@ public class StorageAdminClientImpl extends AbstractAutoAsyncCloseable {
     this.rootRangeClient = this.clientManager.getRootRangeClient();
   }
 
+  @Override
   public CompletableFuture<NamespaceProperties> createNamespace(String namespace,
                                                                   NamespaceConfiguration colConf) {
     return rootRangeClient.createNamespace(namespace, colConf);
   }
 
+  @Override
   public CompletableFuture<Boolean> deleteNamespace(String namespace) {
     return rootRangeClient.deleteNamespace(namespace);
   }
 
+  @Override
   public CompletableFuture<NamespaceProperties> getNamespace(String namespace) {
     return rootRangeClient.getNamespace(namespace);
   }
 
+  @Override
   public CompletableFuture<StreamProperties> createStream(String namespace,
                                                           String streamName,
                                                           StreamConfiguration streamConf) {
     return rootRangeClient.createStream(namespace, streamName, streamConf);
   }
 
+  @Override
   public CompletableFuture<Boolean> deleteStream(String namespace,
                                                  String streamName) {
     return rootRangeClient.deleteStream(namespace, streamName);
   }
 
+  @Override
   public CompletableFuture<StreamProperties> getStream(String namespace,
                                                        String streamName) {
     return rootRangeClient.getStream(namespace, streamName);

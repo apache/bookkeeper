@@ -18,7 +18,6 @@ import com.google.common.collect.Lists;
 import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
-import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -31,15 +30,11 @@ import org.apache.bookkeeper.common.component.LifecycleComponent;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.shims.zk.ZooKeeperServerShim;
 import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.zookeeper.ZooKeeperClient;
 import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.LocalDLMEmulator;
-import org.apache.distributedlog.impl.metadata.BKDLConfig;
-import org.apache.distributedlog.metadata.DLMetadata;
 import org.apache.distributedlog.stream.proto.common.Endpoint;
 import org.apache.distributedlog.stream.server.StorageServer;
 import org.apache.distributedlog.stream.storage.api.controller.StorageController;
@@ -77,10 +72,9 @@ public class StreamCluster
   private static final String NAMESPACE = "/stream/storage";
 
   private final StreamClusterSpec spec;
-  private final List<File> tmpDirs;
   private final List<Endpoint> rpcEndpoints;
-  private URI uri;
   private CompositeConfiguration baseConf;
+  private String zkEnsemble;
   private int zkPort;
   private ZooKeeperServerShim zks;
   private List<LifecycleComponent> servers;
@@ -93,7 +87,6 @@ public class StreamCluster
       new StorageConfiguration(spec.baseConf()),
       NullStatsLogger.INSTANCE);
     this.spec = spec;
-    this.tmpDirs = Lists.newArrayList();
     this.servers = Lists.newArrayListWithExpectedSize(spec.numServers());
     this.rpcEndpoints = Lists.newArrayListWithExpectedSize(spec.numServers());
     this.nextBookiePort = spec.initialBookiePort();
@@ -104,25 +97,20 @@ public class StreamCluster
     return rpcEndpoints;
   }
 
-  private void cleanupTempDirs() throws IOException {
-    for (File dir : tmpDirs) {
-      FileUtils.forceDeleteOnExit(dir);
-    }
-  }
-
   private void startZooKeeper() throws Exception {
     if (!spec.shouldStartZooKeeper()) {
       zkPort = spec.zkPort();
+      zkEnsemble = spec.zkServers() + ":" + zkPort;
       return;
     }
 
-    File zkDir = IOUtils.createTempDir("zookeeper", "stream");
-    this.tmpDirs.add(zkDir);
+    File zkDir = new File(spec.storageRootDir, "zookeeper");
     Pair<ZooKeeperServerShim, Integer> zkServerAndPort =
-      LocalDLMEmulator.runZookeeperOnAnyPort(zkDir);
+        LocalDLMEmulator.runZookeeperOnAnyPort(zkDir);
     zks = zkServerAndPort.getLeft();
     zkPort = zkServerAndPort.getRight();
     log.info("Started zookeeper at port {}.", zkPort);
+    zkEnsemble = "127.0.0.1:" + zkPort;
   }
 
   private void stopZooKeeper() {
@@ -135,7 +123,6 @@ public class StreamCluster
   private void initializeCluster() throws Exception {
     log.info("Initializing the stream cluster.");
     ZooKeeper zkc = null;
-    String zkEnsemble = spec.zkServers() + ":" + zkPort;
     try (StorageController controller = new HelixStorageController(zkEnsemble)) {
       // initialize the configuration
       ServerConfiguration serverConf = new ServerConfiguration();
@@ -155,14 +142,6 @@ public class StreamCluster
       zkc.create(LEDGERS_PATH, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
       zkc.create(LEDGERS_AVAILABLE_PATH, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
       log.info("Initialize the bookkeeper metadata.");
-
-      // bind a namespace
-      this.uri = URI.create("distributedlog://" + zkEnsemble + NAMESPACE);
-      DLMetadata.create(new BKDLConfig(
-        zkEnsemble,
-        LEDGERS_PATH
-      )).create(uri);
-      log.info("Created the distributedlog namespace {}.", uri);
 
       // initialize the storage
       controller.createCluster("stream/helix", spec.numServers() * 2, 1);
@@ -190,20 +169,23 @@ public class StreamCluster
         ServerConfiguration serverConf = new ServerConfiguration();
         serverConf.loadConf(baseConf);
         serverConf.setBookiePort(bookiePort);
-        File tmpDir = IOUtils.createTempDir("bookie", "stream");
-        tmpDirs.add(tmpDir);
-        serverConf.setJournalDirName(tmpDir.getPath());
-        serverConf.setLedgerDirNames(new String[] { tmpDir.getPath() });
+        File bkDir = new File(spec.storageRootDir(), "bookie_" + bookiePort);
+        serverConf.setJournalDirName(bkDir.getPath());
+        serverConf.setLedgerDirNames(new String[] { bkDir.getPath() });
 
         DistributedLogConfiguration dlConf = new DistributedLogConfiguration();
         dlConf.loadConf(serverConf);
 
-        log.info("Attempting to start storage server at (bookie port = {}, grpc port = {})",
-          bookiePort, grpcPort);
+        File rangesStoreDir = new File(spec.storageRootDir(), "ranges_" + grpcPort);
+        StorageConfiguration storageConf = new StorageConfiguration(serverConf);
+        storageConf.setRangeStoreDirNames(new String[] { rangesStoreDir.getPath() });
+
+        log.info("Attempting to start storage server at (bookie port = {}, grpc port = {})"
+                + " : bkDir = {}, rangesStoreDir = {}",
+                bookiePort, grpcPort, bkDir, rangesStoreDir);
         server = StorageServer.startStorageServer(
           serverConf,
           grpcPort,
-          dlConf.getWriteQuorumSize(),
           spec.numServers() * 2,
           Optional.empty());
         server.start();
@@ -221,6 +203,8 @@ public class StreamCluster
           if (retries > MAX_RETRIES) {
             throw (BindException) e.getCause();
           }
+        } else {
+          throw e;
         }
       }
     }
@@ -277,7 +261,5 @@ public class StreamCluster
     stopServers();
     // stop zookeeper
     stopZooKeeper();
-    // delete the temp files
-    cleanupTempDirs();
   }
 }

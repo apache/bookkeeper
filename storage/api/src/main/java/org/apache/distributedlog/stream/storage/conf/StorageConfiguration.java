@@ -30,8 +30,13 @@ public class StorageConfiguration extends ComponentConfiguration {
     super(conf, COMPONENT_PREFIX);
   }
 
+  public StorageConfiguration setRangeStoreDirNames(String[] dirNames) {
+    this.setProperty(RANGE_STORE_DIRS, dirNames);
+    return this;
+  }
+
   private String[] getRangeStoreDirNames() {
-    String[] rangeStoreDirs = getStringArray(getKeyName(RANGE_STORE_DIRS));
+    String[] rangeStoreDirs = getStringArray(RANGE_STORE_DIRS);
     if (null == rangeStoreDirs || 0 == rangeStoreDirs.length) {
       return new String[] { "data/bookkeeper/ranges" };
     } else {
