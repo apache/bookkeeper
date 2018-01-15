@@ -130,7 +130,8 @@ public class LocationClientImpl implements LocationClient {
       () -> fromListenableFuture(
         locationService.getStorageContainerEndpoint(request),
         GetStorageContainerEndpointsFunction),
-      scheduler);
+      scheduler,
+      request);
   }
 
   @Override
