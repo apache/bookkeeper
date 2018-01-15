@@ -63,6 +63,8 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
+          <!-- only run tests when -DintegrationTests is specified //-->
+          <skipTests>true</skipTests>
           <systemPropertyVariables>
             <currentVersion>${project.version}</currentVersion>
             <maven.buildDirectory>${project.build.directory}</maven.buildDirectory>
@@ -72,4 +74,25 @@
     </plugins>
   </build>
 
+  <profiles>
+    <profile>
+      <id>integrationTests</id>
+      <activation>
+        <property>
+          <name>integrationTests</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <skipTests>false</skipTests>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
