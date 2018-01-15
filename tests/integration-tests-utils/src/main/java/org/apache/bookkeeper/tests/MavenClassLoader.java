@@ -20,14 +20,25 @@
  */
 package org.apache.bookkeeper.tests;
 
+import com.google.common.collect.Lists;
+
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 
 import org.jboss.shrinkwrap.resolver.api.maven.Maven;
+import org.jboss.shrinkwrap.resolver.api.maven.ScopeType;
+import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenDependencies;
+import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenDependency;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MavenClassLoader implements AutoCloseable {
+    private static final Logger LOG = LoggerFactory.getLogger(MavenClassLoader.class);
 
     private MavenClassLoader(URLClassLoader cl) {
         this.classloader = cl;
@@ -36,8 +47,25 @@ public class MavenClassLoader implements AutoCloseable {
     private final URLClassLoader classloader;
 
     public static MavenClassLoader forArtifact(String mainArtifact) throws Exception {
-        File[] files = Maven.resolver().resolve(mainArtifact)
-            .withTransitivity().asFile();
+        Optional<String> slf4jVersion = Arrays.stream(Maven.resolver().resolve(mainArtifact)
+                                                      .withTransitivity().asResolvedArtifact())
+            .filter((a) -> a.getCoordinate().getGroupId().equals("org.slf4j")
+                    && a.getCoordinate().getArtifactId().equals("slf4j-log4j12"))
+            .map((a) -> a.getCoordinate().getVersion())
+            .findFirst();
+
+        List<MavenDependency> deps = Lists.newArrayList(
+                MavenDependencies.createDependency(
+                        mainArtifact, ScopeType.COMPILE, false,
+                        MavenDependencies.createExclusion("org.slf4j:slf4j-log4j12"),
+                        MavenDependencies.createExclusion("log4j:log4j")));
+        if (slf4jVersion.isPresent()) {
+            deps.add(MavenDependencies.createDependency("org.slf4j:slf4j-simple:" + slf4jVersion.get(),
+                                                        ScopeType.COMPILE, false));
+        }
+
+        File[] files = Maven.resolver().addDependencies(deps.toArray(new MavenDependency[0]))
+            .resolve().withTransitivity().asFile();
         URLClassLoader cl = new URLClassLoader(Arrays.stream(files)
                                                .map((f) -> {
                                                        try {
@@ -46,7 +74,8 @@ public class MavenClassLoader implements AutoCloseable {
                                                            throw new RuntimeException(t);
                                                        }
                                                    })
-                                               .toArray(URL[]::new));
+                                               .toArray(URL[]::new),
+                                               ClassLoader.getSystemClassLoader());
         return new MavenClassLoader(cl);
     }
 
