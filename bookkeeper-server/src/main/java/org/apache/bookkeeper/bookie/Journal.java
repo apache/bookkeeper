@@ -285,9 +285,13 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         long enqueueTime;
 
         OpStatsLogger journalAddEntryStats;
+        Counter journalCbQueueSize;
 
-        static QueueEntry create(ByteBuf entry, long ledgerId, long entryId, WriteCallback cb, Object ctx,
-                long enqueueTime, OpStatsLogger journalAddEntryStats) {
+        static QueueEntry create(
+                ByteBuf entry, long ledgerId, long entryId, WriteCallback cb, Object ctx,
+                long enqueueTime,
+                OpStatsLogger journalAddEntryStats,
+                Counter journalCbQueueSize) {
             QueueEntry qe = RECYCLER.get();
             qe.entry = entry;
             qe.cb = cb;
@@ -296,6 +300,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             qe.entryId = entryId;
             qe.enqueueTime = enqueueTime;
             qe.journalAddEntryStats = journalAddEntryStats;
+            qe.journalCbQueueSize = journalCbQueueSize;
             return qe;
         }
 
@@ -304,6 +309,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Acknowledge Ledger: {}, Entry: {}", ledgerId, entryId);
             }
+            journalCbQueueSize.dec();
             journalAddEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueTime), TimeUnit.NANOSECONDS);
             cb.writeComplete(0, ledgerId, entryId, null, ctx);
             recycle();
@@ -351,6 +357,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
                 // Notify the waiters that the force write succeeded
                 for (int i = 0; i < forceWriteWaiters.size(); i++) {
                     cbThreadPool.execute(forceWriteWaiters.get(i));
+                    journalCbQueueSize.inc();
                 }
 
                 return forceWriteWaiters.size();
@@ -583,6 +590,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
     private final OpStatsLogger forceWriteBatchBytesStats;
     private final Counter journalQueueSize;
     private final Counter forceWriteQueueSize;
+    private final Counter journalCbQueueSize;
     private final Counter flushMaxWaitCounter;
     private final Counter flushMaxOutstandingBytesCounter;
     private final Counter flushEmptyQueueCounter;
@@ -635,6 +643,7 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
         forceWriteBatchBytesStats = statsLogger.getOpStatsLogger(BookKeeperServerStats.JOURNAL_FORCE_WRITE_BATCH_BYTES);
         journalQueueSize = statsLogger.getCounter(BookKeeperServerStats.JOURNAL_QUEUE_SIZE);
         forceWriteQueueSize = statsLogger.getCounter(BookKeeperServerStats.JOURNAL_FORCE_WRITE_QUEUE_SIZE);
+        journalCbQueueSize = statsLogger.getCounter(BookKeeperServerStats.JOURNAL_CB_QUEUE_SIZE);
         flushMaxWaitCounter = statsLogger.getCounter(BookKeeperServerStats.JOURNAL_NUM_FLUSH_MAX_WAIT);
         flushMaxOutstandingBytesCounter =
                 statsLogger.getCounter(BookKeeperServerStats.JOURNAL_NUM_FLUSH_MAX_OUTSTANDING_BYTES);
@@ -824,7 +833,9 @@ public class Journal extends BookieCriticalThread implements CheckpointSource {
 
         //Retain entry until it gets written to journal
         entry.retain();
-        queue.add(QueueEntry.create(entry, ledgerId, entryId, cb, ctx, MathUtils.nowInNano(), journalAddEntryStats));
+        queue.add(QueueEntry.create(
+                entry, ledgerId, entryId, cb, ctx, MathUtils.nowInNano(),
+                journalAddEntryStats, journalQueueSize));
     }
 
     /**

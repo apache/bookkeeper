@@ -21,6 +21,11 @@
 
 package org.apache.bookkeeper.test;
 
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_CB_QUEUE_SIZE;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_FORCE_WRITE_QUEUE_SIZE;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_QUEUE_SIZE;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_SCOPE;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.SERVER_SCOPE;
 import static org.junit.Assert.assertTrue;
 
@@ -71,6 +76,19 @@ public class OpStatTest extends BookKeeperClusterTestCase {
         }
     }
 
+    private void validateNonMonotonicCounterGauge(TestStatsProvider stats, String path, BiConsumer<Long, Long> f) {
+        assertTrue(stats != null);
+        TestStatsProvider.TestCounter counter = stats.getCounter(path);
+        assertTrue(counter != null);
+        f.accept(counter.get(), counter.getMax());
+    }
+
+    private void validateNonMonotonicCounterGauges(TestStatsProvider stats, String paths[], BiConsumer<Long, Long> f) {
+        for (String path : paths) {
+            validateNonMonotonicCounterGauge(stats, path, f);
+        }
+    }
+
     @Test
     public void testTopLevelBookieWriteCounters() throws Exception {
         long startNanos = MathUtils.nowInNano();
@@ -94,6 +112,13 @@ public class OpStatTest extends BookKeeperClusterTestCase {
             assertTrue(count > 0);
             assertTrue(average > 0);
             assertTrue(average <= elapsed);
+        });
+        validateNonMonotonicCounterGauges(stats, new String[]{
+                BOOKIE_SCOPE + "." + JOURNAL_SCOPE + "_0." + JOURNAL_CB_QUEUE_SIZE,
+                BOOKIE_SCOPE + "." + JOURNAL_SCOPE + "_0." + JOURNAL_FORCE_WRITE_QUEUE_SIZE,
+                BOOKIE_SCOPE + "." + JOURNAL_SCOPE + "_0." + JOURNAL_QUEUE_SIZE
+        }, (value, max) -> {
+            assertTrue(max > 0);
         });
     }
 
