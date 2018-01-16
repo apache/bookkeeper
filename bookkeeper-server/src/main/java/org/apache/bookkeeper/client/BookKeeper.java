@@ -782,7 +782,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
                                ackQuorumSize, digestType, passwd, cb, ctx,
-                               customMetadata, EnumSet.noneOf(WriteFlag.class))
+                               customMetadata, EnumSet.noneOf(WriteFlag.class), getStatsLogger())
                 .initiate();
         } finally {
             closeLock.readLock().unlock();
@@ -986,7 +986,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
                                ackQuorumSize, digestType, passwd, cb, ctx,
-                               customMetadata, EnumSet.noneOf(WriteFlag.class))
+                               customMetadata, EnumSet.noneOf(WriteFlag.class), getStatsLogger())
                                        .initiateAdv(-1L);
         } finally {
             closeLock.readLock().unlock();
@@ -1097,7 +1097,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             }
             new LedgerCreateOp(BookKeeper.this, ensSize, writeQuorumSize,
                                ackQuorumSize, digestType, passwd, cb, ctx,
-                               customMetadata, EnumSet.noneOf(WriteFlag.class))
+                               customMetadata, EnumSet.noneOf(WriteFlag.class), getStatsLogger())
                     .initiateAdv(ledgerId);
         } finally {
             closeLock.readLock().unlock();

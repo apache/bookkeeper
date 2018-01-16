@@ -25,6 +25,7 @@ import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -44,6 +45,7 @@ import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,6 +71,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
     final OpStatsLogger createOpLogger;
     boolean adv = false;
     boolean generateLedgerId = true;
+    private final StatsLogger statsLogger;
 
     /**
      * Constructor.
@@ -93,9 +96,11 @@ class LedgerCreateOp implements GenericCallback<Void> {
      *       A map of user specified custom metadata about the ledger to be persisted; will not try to
      *       preserve the order(e.g. sortedMap) upon later retireval.
      */
-    LedgerCreateOp(BookKeeper bk, int ensembleSize, int writeQuorumSize, int ackQuorumSize, DigestType digestType,
+    LedgerCreateOp(
+            BookKeeper bk, int ensembleSize, int writeQuorumSize, int ackQuorumSize, DigestType digestType,
             byte[] passwd, CreateCallback cb, Object ctx, final Map<String, byte[]> customMetadata,
-            EnumSet<WriteFlag> writeFlags) {
+            EnumSet<WriteFlag> writeFlags,
+            StatsLogger statsLogger) {
         this.bk = bk;
         this.metadata = new LedgerMetadata(
             ensembleSize,
@@ -112,6 +117,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
         this.ctx = ctx;
         this.startTime = MathUtils.nowInNano();
         this.createOpLogger = bk.getCreateOpLogger();
+        this.statsLogger = statsLogger;
     }
 
     /**
@@ -209,6 +215,15 @@ class LedgerCreateOp implements GenericCallback<Void> {
             createComplete(BKException.Code.IncorrectParameterException, null);
             return;
         }
+
+        List<BookieSocketAddress> curEns = lh.getLedgerMetadata().getEnsemble(0L);
+        LOG.info("Ensemble: {} for ledger: {}", curEns, lh.getId());
+
+        for (BookieSocketAddress bsa : curEns) {
+            String ensSpread = BookKeeperClientStats.LEDGER_ENSEMBLE_BOOKIE_DISTRIBUTION + "-" + bsa;
+            statsLogger.getCounter(ensSpread).inc();
+        }
+
         // return the ledger handle back
         createComplete(BKException.Code.OK, lh);
     }
@@ -341,7 +356,7 @@ class LedgerCreateOp implements GenericCallback<Void> {
             }
             LedgerCreateOp op = new LedgerCreateOp(bk, builderEnsembleSize,
                 builderWriteQuorumSize, builderAckQuorumSize, DigestType.fromApiDigestType(builderDigestType),
-                builderPassword, cb, null, builderCustomMetadata, builderWriteFlags);
+                builderPassword, cb, null, builderCustomMetadata, builderWriteFlags, bk.getStatsLogger());
             ReentrantReadWriteLock closeLock = bk.getCloseLock();
             closeLock.readLock().lock();
             try {
@@ -400,7 +415,8 @@ class LedgerCreateOp implements GenericCallback<Void> {
                     parent.builderWriteQuorumSize, parent.builderAckQuorumSize,
                     DigestType.fromApiDigestType(parent.builderDigestType),
                     parent.builderPassword, cb, null, parent.builderCustomMetadata,
-                    parent.builderWriteFlags);
+                    parent.builderWriteFlags,
+                    parent.bk.getStatsLogger());
             ReentrantReadWriteLock closeLock = parent.bk.getCloseLock();
             closeLock.readLock().lock();
             try {
