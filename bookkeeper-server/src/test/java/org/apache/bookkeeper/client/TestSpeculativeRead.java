@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.apache.bookkeeper.client.BookKeeperClientStats.CLIENT_SCOPE;
+import static org.apache.bookkeeper.client.BookKeeperClientStats.SPECULATIVE_READ_COUNT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -38,6 +40,7 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.test.TestStatsProvider;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,14 +72,14 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
     }
 
     @SuppressWarnings("deprecation")
-    BookKeeper createClient(int specTimeout) throws Exception {
+    BookKeeperTestClient createClient(int specTimeout) throws Exception {
         ClientConfiguration conf = new ClientConfiguration()
             .setSpeculativeReadTimeout(specTimeout)
             .setReadTimeout(30000)
             .setReorderReadSequenceEnabled(true)
             .setEnsemblePlacementPolicySlowBookies(true);
         conf.setZkServers(zkUtil.getZooKeeperConnectString());
-        return new BookKeeper(conf);
+        return new BookKeeperTestClient(conf, new TestStatsProvider());
     }
 
     class LatchCallback implements ReadCallback {
@@ -127,8 +130,8 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
     @Test
     public void testSpeculativeRead() throws Exception {
         long id = getLedgerToRead(3, 2);
-        BookKeeper bknospec = createClient(0); // disabled
-        BookKeeper bkspec = createClient(2000);
+        BookKeeperTestClient bknospec = createClient(0); // disabled
+        BookKeeperTestClient bkspec = createClient(2000);
 
         LedgerHandle lnospec = bknospec.openLedger(id, digestType, passwd);
         LedgerHandle lspec = bkspec.openLedger(id, digestType, passwd);
@@ -158,7 +161,16 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
             // Check that the second bookie is registered as slow at entryId 1
             RackawareEnsemblePlacementPolicy rep = (RackawareEnsemblePlacementPolicy) lspec.bk.placementPolicy;
             assertTrue(rep.slowBookies.asMap().size() == 1);
-            assertTrue(rep.slowBookies.asMap().get(second) == 1L);
+
+            assertTrue(
+                    "Stats should not reflect speculative reads if disabled",
+                    bknospec.getTestStatsProvider()
+                            .getCounter(CLIENT_SCOPE + "." + SPECULATIVE_READ_COUNT).get() == 0);
+            assertTrue(
+                    "Stats should reflect speculative reads",
+                    bkspec.getTestStatsProvider()
+                            .getCounter(CLIENT_SCOPE + "." + SPECULATIVE_READ_COUNT).get() > 0);
+
         } finally {
             sleepLatch.countDown();
             lspec.close();
