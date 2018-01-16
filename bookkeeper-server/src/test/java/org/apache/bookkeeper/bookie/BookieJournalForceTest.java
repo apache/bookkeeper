@@ -23,13 +23,13 @@ package org.apache.bookkeeper.bookie;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.whenNew;
 
 import io.netty.buffer.ByteBuf;
@@ -39,18 +39,15 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.Journal.ForceWriteRequest;
 import org.apache.bookkeeper.bookie.Journal.LastLogMark;
-
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.Counter;
-
+import org.apache.bookkeeper.test.TestStatsProvider;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -75,7 +72,6 @@ public class BookieJournalForceTest {
     public TemporaryFolder tempDir = new TemporaryFolder();
 
     @Test
-    @SuppressWarnings("unchecked")
     public void testAckAfterSync() throws Exception {
         File journalDir = tempDir.newFolder();
         Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
@@ -90,33 +86,14 @@ public class BookieJournalForceTest {
         LedgerDirsManager ledgerDirsManager = mock(LedgerDirsManager.class);
         Journal journal = new Journal(journalDir, conf, ledgerDirsManager);
 
-        CountDownLatch forceWriteThreadSuspendedIsWaiting = new CountDownLatch(1);
-        LinkedBlockingQueue<ForceWriteRequest> supportQueue = new LinkedBlockingQueue<>();
-        BlockingQueue<ForceWriteRequest> forceWriteRequests = mock(BlockingQueue.class);
-        AtomicBoolean forceWriteThreadSuspended = new AtomicBoolean(true);
+        // machinery to suspend ForceWriteThread
+        CountDownLatch forceWriteThreadSuspendedLatch = new CountDownLatch(1);
+        LinkedBlockingQueue<ForceWriteRequest> supportQueue =
+                enableForceWriteThreadSuspension(forceWriteThreadSuspendedLatch, journal);
 
-        doAnswer((Answer) (InvocationOnMock iom) -> {
-            supportQueue.put(iom.getArgument(0));
-            return null;
-        }).when(forceWriteRequests).put(any(ForceWriteRequest.class));
-
-        when(forceWriteRequests.take()).thenAnswer((InvocationOnMock iom) -> {
-            forceWriteThreadSuspendedIsWaiting.countDown();
-            while (forceWriteThreadSuspended.get()) {
-                Thread.sleep(100);
-            }
-            ForceWriteRequest res = supportQueue.take();
-            while (forceWriteThreadSuspended.get()) {
-                Thread.sleep(100);
-            }
-            return res;
-        });
-        Whitebox.setInternalState(journal, "forceWriteRequests", forceWriteRequests);
         journal.start();
-        assertTrue(forceWriteThreadSuspendedIsWaiting.await(10, TimeUnit.SECONDS));
 
-        LastLogMark lastLogMarkBeforeWrite = journal.getLastLogMark();
-
+        LogMark lastLogMarkBeforeWrite = journal.getLastLogMark().markLog().getCurMark();
         CountDownLatch latch = new CountDownLatch(1);
         long ledgerId = 1;
         long entryId = 0;
@@ -126,34 +103,37 @@ public class BookieJournalForceTest {
                 latch.countDown();
             }
         }, null);
+
         // logAddEntry should not complete even if ForceWriteThread is suspended
+        // wait that an entry is written to the ForceWriteThread queue
         while (supportQueue.isEmpty()) {
             Thread.sleep(100);
         }
         assertEquals(1, latch.getCount());
         assertEquals(1, supportQueue.size());
 
-        // in constructor of JournalChannel we are calling forceWrite(true) but it is not tracked but PowerMock
+        // in constructor of JournalChannel we are calling forceWrite(true) but it is not tracked by PowerMock
         // because the 'spy' is applied only on return from the constructor
         verify(jc, times(0)).forceWrite(true);
 
         // let ForceWriteThread work
-        forceWriteThreadSuspended.set(false);
+        forceWriteThreadSuspendedLatch.countDown();
 
-        // callback should complete
+        // callback should complete now
         assertTrue(latch.await(20, TimeUnit.SECONDS));
 
         verify(jc, atLeast(1)).forceWrite(false);
 
+        assertEquals(0, supportQueue.size());
+
         // verify that log marker advanced
         LastLogMark lastLogMarkAfterForceWrite = journal.getLastLogMark();
-        assertTrue(lastLogMarkAfterForceWrite.getCurMark().compare(lastLogMarkBeforeWrite.getCurMark()) > 0);
+        assertTrue(lastLogMarkAfterForceWrite.getCurMark().compare(lastLogMarkBeforeWrite) > 0);
 
         journal.shutdown();
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void testAckBeforeSync() throws Exception {
         File journalDir = tempDir.newFolder();
         Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
@@ -168,23 +148,12 @@ public class BookieJournalForceTest {
         LedgerDirsManager ledgerDirsManager = mock(LedgerDirsManager.class);
         Journal journal = new Journal(journalDir, conf, ledgerDirsManager);
 
+        // machinery to suspend ForceWriteThread
         CountDownLatch forceWriteThreadSuspendedLatch = new CountDownLatch(1);
-        LinkedBlockingQueue<ForceWriteRequest> supportQueue = new LinkedBlockingQueue<>();
-        BlockingQueue<ForceWriteRequest> forceWriteRequests = mock(BlockingQueue.class);
-        doAnswer((Answer) (InvocationOnMock iom) -> {
-            supportQueue.put(iom.getArgument(0));
-            return null;
-        }).when(forceWriteRequests).put(any(ForceWriteRequest.class));
-        when(forceWriteRequests.take()).thenAnswer(i -> {
-            // suspend the force write thread
-            forceWriteThreadSuspendedLatch.await();
-            return supportQueue.take();
-        });
-
-        Whitebox.setInternalState(journal, "forceWriteRequests", forceWriteRequests);
+        enableForceWriteThreadSuspension(forceWriteThreadSuspendedLatch, journal);
         journal.start();
 
-        LastLogMark lastLogMarkBeforeWrite = journal.getLastLogMark();
+        LogMark lastLogMarkBeforeWrite = journal.getLastLogMark().markLog().getCurMark();
         CountDownLatch latch = new CountDownLatch(1);
         long ledgerId = 1;
         long entryId = 0;
@@ -195,18 +164,18 @@ public class BookieJournalForceTest {
             }
         }, null);
         // logAddEntry should complete even if ForceWriteThread is suspended
-        assertTrue(latch.await(20, TimeUnit.SECONDS));
+        latch.await(20, TimeUnit.SECONDS);
 
-        // in constructor of JournalChannel we are calling forceWrite(true) but it is not tracked but PowerMock
+        // in constructor of JournalChannel we are calling forceWrite(true) but it is not tracked by PowerMock
         // because the 'spy' is applied only on return from the constructor
         verify(jc, times(0)).forceWrite(true);
 
-        // anyway we are never calling forceWrite
+        // we are never calling forceWrite
         verify(jc, times(0)).forceWrite(false);
 
         // verify that log marker did not advance
         LastLogMark lastLogMarkAfterForceWrite = journal.getLastLogMark();
-        assertEquals(0, lastLogMarkAfterForceWrite.getCurMark().compare(lastLogMarkBeforeWrite.getCurMark()));
+        assertEquals(0, lastLogMarkAfterForceWrite.getCurMark().compare(lastLogMarkBeforeWrite));
 
         // let the forceWriteThread exit
         forceWriteThreadSuspendedLatch.countDown();
@@ -215,7 +184,6 @@ public class BookieJournalForceTest {
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     public void testAckBeforeSyncWithJournalBufferedEntriesThreshold() throws Exception {
         File journalDir = tempDir.newFolder();
         Bookie.checkDirectoryStructure(Bookie.getCurrentDirectory(journalDir));
@@ -235,27 +203,18 @@ public class BookieJournalForceTest {
         LedgerDirsManager ledgerDirsManager = mock(LedgerDirsManager.class);
         Journal journal = new Journal(journalDir, conf, ledgerDirsManager);
 
+        // machinery to suspend ForceWriteThread
         CountDownLatch forceWriteThreadSuspendedLatch = new CountDownLatch(1);
-        LinkedBlockingQueue<ForceWriteRequest> supportQueue = new LinkedBlockingQueue<>();
-        BlockingQueue<ForceWriteRequest> forceWriteRequests = mock(BlockingQueue.class);
-        doAnswer((Answer) (InvocationOnMock iom) -> {
-            supportQueue.put(iom.getArgument(0));
-            return null;
-        }).when(forceWriteRequests).put(any(ForceWriteRequest.class));
-        when(forceWriteRequests.take()).thenAnswer(i -> {
-            // suspend the force write thread
-            forceWriteThreadSuspendedLatch.await();
-            return supportQueue.take();
-        });
+        enableForceWriteThreadSuspension(forceWriteThreadSuspendedLatch, journal);
 
-        Whitebox.setInternalState(journal, "forceWriteRequests", forceWriteRequests);
-
-        Counter flushMaxOutstandingBytesCounter = new CounterImpl();
+        TestStatsProvider testStatsProvider = new TestStatsProvider();
+        Counter flushMaxOutstandingBytesCounter = testStatsProvider.getStatsLogger("test")
+                                                        .getCounter("flushMaxOutstandingBytesCounter");
         Whitebox.setInternalState(journal, "flushMaxOutstandingBytesCounter", flushMaxOutstandingBytesCounter);
 
         journal.start();
 
-        LastLogMark lastLogMarkBeforeWrite = journal.getLastLogMark();
+        LogMark lastLogMarkBeforeWrite = journal.getLastLogMark().markLog().getCurMark();
         CountDownLatch latch = new CountDownLatch(numEntries);
         long ledgerId = 1;
         for (long entryId = 0; entryId < numEntries; entryId++) {
@@ -268,9 +227,9 @@ public class BookieJournalForceTest {
         }
 
         // logAddEntry should complete even if ForceWriteThread is suspended
-        assertTrue(latch.await(20, TimeUnit.SECONDS));
+        latch.await(20, TimeUnit.SECONDS);
 
-        // in constructor of JournalChannel we are calling forceWrite(true) but it is not tracked but PowerMock
+        // in constructor of JournalChannel we are calling forceWrite(true) but it is not tracked by PowerMock
         // because the 'spy' is applied only on return from the constructor
         verify(jc, times(0)).forceWrite(true);
 
@@ -279,7 +238,7 @@ public class BookieJournalForceTest {
 
         // verify that log marker did not advance
         LastLogMark lastLogMarkAfterForceWrite = journal.getLastLogMark();
-        assertEquals(0, lastLogMarkAfterForceWrite.getCurMark().compare(lastLogMarkBeforeWrite.getCurMark()));
+        assertEquals(0, lastLogMarkAfterForceWrite.getCurMark().compare(lastLogMarkBeforeWrite));
 
         // let the forceWriteThread exit
         forceWriteThreadSuspendedLatch.countDown();
@@ -327,7 +286,7 @@ public class BookieJournalForceTest {
         assertTrue(latchAckBeforeSynch.await(20, TimeUnit.SECONDS));
         assertTrue(latchAckAfterSynch.await(20, TimeUnit.SECONDS));
 
-        // in constructor of JournalChannel we are calling forceWrite(true) but it is not tracked but PowerMock
+        // in constructor of JournalChannel we are calling forceWrite(true) but it is not tracked by PowerMock
         // because the 'spy' is applied only on return from the constructor
         verify(jc, times(0)).forceWrite(true);
 
@@ -336,34 +295,23 @@ public class BookieJournalForceTest {
         journal.shutdown();
     }
 
-    private static class CounterImpl implements Counter {
-
-        AtomicLong counter = new AtomicLong();
-
-        @Override
-        public void clear() {
-            counter.set(0);
-        }
-
-        @Override
-        public void inc() {
-            counter.incrementAndGet();
-        }
-
-        @Override
-        public void dec() {
-            counter.decrementAndGet();
-        }
-
-        @Override
-        public void add(long delta) {
-            counter.addAndGet(delta);
-        }
-
-        @Override
-        public Long get() {
-            return counter.get();
-        }
+    @SuppressWarnings("unchecked")
+    private LinkedBlockingQueue<ForceWriteRequest> enableForceWriteThreadSuspension(
+        CountDownLatch forceWriteThreadSuspendedLatch,
+        Journal journal) throws InterruptedException {
+        LinkedBlockingQueue<ForceWriteRequest> supportQueue = new LinkedBlockingQueue<>();
+        BlockingQueue<ForceWriteRequest> forceWriteRequests = mock(BlockingQueue.class);
+        doAnswer((Answer) (InvocationOnMock iom) -> {
+            supportQueue.put(iom.getArgument(0));
+            return null;
+        }).when(forceWriteRequests).put(any(ForceWriteRequest.class));
+        when(forceWriteRequests.take()).thenAnswer(i -> {
+            // suspend the force write thread
+            forceWriteThreadSuspendedLatch.await();
+            return supportQueue.take();
+        });
+        Whitebox.setInternalState(journal, "forceWriteRequests", forceWriteRequests);
+        return supportQueue;
     }
 
 }

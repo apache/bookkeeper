@@ -22,7 +22,6 @@ package org.apache.bookkeeper.bookie;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doAnswer;
@@ -40,6 +39,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -77,7 +77,7 @@ public class BookieWriteToJournalTest {
         BookieSocketAddress bookieAddress = Bookie.getBookieAddress(conf);
         CountDownLatch journalJoinLatch = new CountDownLatch(1);
         Journal journal = mock(Journal.class);
-        Boolean[] effectiveAckBeforeSync = new Boolean[1];
+        MutableBoolean effectiveAckBeforeSync = new MutableBoolean(false);
         doAnswer((Answer) (InvocationOnMock iom) -> {
             ByteBuf entry = iom.getArgument(0);
             long ledgerId = entry.getLong(entry.readerIndex() + 0);
@@ -86,7 +86,7 @@ public class BookieWriteToJournalTest {
             WriteCallback callback = iom.getArgument(2);
             Object ctx = iom.getArgument(3);
 
-            effectiveAckBeforeSync[0] = ackBeforeSync;
+            effectiveAckBeforeSync.setValue(ackBeforeSync);
             callback.writeComplete(BKException.Code.OK, ledgerId, entryId, bookieAddress, ctx);
             return null;
         }).when(journal).logAddEntry(any(ByteBuf.class), anyBoolean(), any(WriteCallback.class), any());
@@ -119,8 +119,8 @@ public class BookieWriteToJournalTest {
                 assertEquals(expectedEntryId, entryId1);
                 latch.countDown();
             }, expectedCtx, masterKey);
-            assertTrue(latch.await(30, TimeUnit.SECONDS));
-            assertEquals(ackBeforeSync, effectiveAckBeforeSync[0]);
+            latch.await(30, TimeUnit.SECONDS);
+            assertEquals(ackBeforeSync, effectiveAckBeforeSync.booleanValue());
             entryId++;
         }
         // let bookie exit main thread
