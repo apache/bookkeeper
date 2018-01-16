@@ -77,6 +77,7 @@ public class GrpcServer extends AbstractLifecycleComponent<StorageServerConfigur
         .addService(new GrpcRootRangeService(rangeStore))
         .addService(new GrpcStorageContainerService(rangeStore))
         .addService(new GrpcMetaRangeService(rangeStore))
+        .addService(new GrpcTableService(rangeStore))
         .build();
     }
   }

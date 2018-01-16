@@ -174,4 +174,22 @@ public class RangeStoreImpl
     return getStorageContainer(request.getScId()).getActiveRanges(request);
   }
 
+  //
+  // Table Service
+  //
+
+  @Override
+  public CompletableFuture<StorageContainerResponse> range(StorageContainerRequest request) {
+    return getStorageContainer(ROOT_STORAGE_CONTAINER_ID).range(request);
+  }
+
+  @Override
+  public CompletableFuture<StorageContainerResponse> put(StorageContainerRequest request) {
+    return getStorageContainer(ROOT_STORAGE_CONTAINER_ID).put(request);
+  }
+
+  @Override
+  public CompletableFuture<StorageContainerResponse> delete(StorageContainerRequest request) {
+    return getStorageContainer(ROOT_STORAGE_CONTAINER_ID).delete(request);
+  }
 }

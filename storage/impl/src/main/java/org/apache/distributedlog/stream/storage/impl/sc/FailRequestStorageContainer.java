@@ -132,4 +132,23 @@ public final class FailRequestStorageContainer implements StorageContainer {
     return failWrongGroupRequest(request.getScId());
   }
 
+  //
+  // Table API
+  //
+
+
+  @Override
+  public CompletableFuture<StorageContainerResponse> range(StorageContainerRequest request) {
+    return failWrongGroupRequest(request.getScId());
+  }
+
+  @Override
+  public CompletableFuture<StorageContainerResponse> put(StorageContainerRequest request) {
+    return failWrongGroupRequest(request.getScId());
+  }
+
+  @Override
+  public CompletableFuture<StorageContainerResponse> delete(StorageContainerRequest request) {
+    return failWrongGroupRequest(request.getScId());
+  }
 }

@@ -13,10 +13,13 @@
  */
 package org.apache.distributedlog.stream.storage.api.metadata;
 
+import org.apache.distributedlog.stream.storage.api.kv.TableStore;
+
 /**
  * The umbrella interface for accessing ranges (both metadata and data).
  */
 public interface RangeStoreService
     extends MetaRangeStore,
-            RootRangeStore {
+            RootRangeStore,
+            TableStore {
 }

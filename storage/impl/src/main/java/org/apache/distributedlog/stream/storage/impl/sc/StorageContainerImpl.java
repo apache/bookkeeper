@@ -211,4 +211,23 @@ public class StorageContainerImpl
     return mgStore.getActiveRanges(request);
   }
 
+  //
+  // Table API
+  //
+
+
+  @Override
+  public CompletableFuture<StorageContainerResponse> range(StorageContainerRequest request) {
+      throw new UnsupportedOperationException("unimplemented");
+  }
+
+  @Override
+  public CompletableFuture<StorageContainerResponse> put(StorageContainerRequest request) {
+    throw new UnsupportedOperationException("unimplemented");
+  }
+
+  @Override
+  public CompletableFuture<StorageContainerResponse> delete(StorageContainerRequest request) {
+    throw new UnsupportedOperationException("unimplemented");
+  }
 }

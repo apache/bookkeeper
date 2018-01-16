@@ -26,11 +26,13 @@ import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.createGe
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import java.util.concurrent.CompletableFuture;
@@ -43,6 +45,14 @@ import org.apache.distributedlog.stream.proto.NamespaceConfiguration;
 import org.apache.distributedlog.stream.proto.StreamName;
 import org.apache.distributedlog.stream.proto.StreamProperties;
 import org.apache.distributedlog.stream.proto.common.Endpoint;
+import org.apache.distributedlog.stream.proto.kv.rpc.DeleteRangeRequest;
+import org.apache.distributedlog.stream.proto.kv.rpc.DeleteRangeResponse;
+import org.apache.distributedlog.stream.proto.kv.rpc.PutRequest;
+import org.apache.distributedlog.stream.proto.kv.rpc.PutResponse;
+import org.apache.distributedlog.stream.proto.kv.rpc.RangeRequest;
+import org.apache.distributedlog.stream.proto.kv.rpc.RangeResponse;
+import org.apache.distributedlog.stream.proto.kv.rpc.ResponseHeader;
+import org.apache.distributedlog.stream.proto.kv.rpc.RoutingHeader;
 import org.apache.distributedlog.stream.proto.storage.CreateNamespaceRequest;
 import org.apache.distributedlog.stream.proto.storage.CreateNamespaceResponse;
 import org.apache.distributedlog.stream.proto.storage.CreateStreamRequest;
@@ -57,6 +67,7 @@ import org.apache.distributedlog.stream.proto.storage.GetStreamRequest;
 import org.apache.distributedlog.stream.proto.storage.GetStreamResponse;
 import org.apache.distributedlog.stream.proto.storage.StatusCode;
 import org.apache.distributedlog.stream.proto.storage.StorageContainerRequest;
+import org.apache.distributedlog.stream.proto.storage.StorageContainerRequest.Type;
 import org.apache.distributedlog.stream.proto.storage.StorageContainerResponse;
 import org.apache.distributedlog.stream.storage.RangeStoreBuilder;
 import org.apache.distributedlog.stream.storage.StorageResources;
@@ -106,6 +117,84 @@ public class TestRangeStoreImpl {
       .build();
   private StorageResources storageResources;
   private RangeStoreImpl rangeStore;
+
+  //
+  // Utils for table api
+  //
+  private static final ByteString TEST_ROUTING_KEY = ByteString.copyFromUtf8("test-routing-key");
+  private static final ByteString TEST_KEY = ByteString.copyFromUtf8("test-key");
+  private static final ByteString TEST_VAL = ByteString.copyFromUtf8("test-val");
+  private static final RoutingHeader TEST_ROUTING_HEADER = RoutingHeader.newBuilder()
+      .setRKey(TEST_ROUTING_KEY)
+      .setStreamId(1234L)
+      .setRangeId(1256L)
+      .build();
+  private static final ResponseHeader TEST_RESP_HEADER = ResponseHeader.newBuilder()
+      .setRoutingHeader(TEST_ROUTING_HEADER)
+      .build();
+
+  private static StorageContainerRequest createPutRequest(long scId) {
+    return StorageContainerRequest.newBuilder()
+        .setType(Type.KV_PUT)
+        .setScId(scId)
+        .setKvPutReq(PutRequest.newBuilder()
+            .setHeader(TEST_ROUTING_HEADER)
+            .setKey(TEST_KEY)
+            .setValue(TEST_VAL)
+            .build())
+        .build();
+  }
+
+  private static StorageContainerResponse createPutResponse(StatusCode code) {
+    return StorageContainerResponse.newBuilder()
+        .setCode(code)
+        .setKvPutResp(PutResponse.newBuilder()
+            .setHeader(TEST_RESP_HEADER)
+            .build())
+        .build();
+  }
+
+  private static StorageContainerRequest createRangeRequest(long scId) {
+    return StorageContainerRequest.newBuilder()
+        .setType(Type.KV_RANGE)
+        .setScId(scId)
+        .setKvRangeReq(RangeRequest.newBuilder()
+            .setHeader(TEST_ROUTING_HEADER)
+            .setKey(TEST_KEY)
+            .build())
+        .build();
+  }
+
+  private static StorageContainerResponse createRangeResponse(StatusCode code) {
+    return StorageContainerResponse.newBuilder()
+        .setCode(code)
+        .setKvRangeResp(RangeResponse.newBuilder()
+            .setHeader(TEST_RESP_HEADER)
+            .setCount(0)
+            .build())
+        .build();
+  }
+
+  private static StorageContainerRequest createDeleteRequest(long scId) {
+    return StorageContainerRequest.newBuilder()
+        .setType(Type.KV_DELETE)
+        .setScId(scId)
+        .setKvDeleteReq(DeleteRangeRequest.newBuilder()
+            .setHeader(TEST_ROUTING_HEADER)
+            .setKey(TEST_KEY)
+            .build())
+        .build();
+  }
+
+  private static StorageContainerResponse createDeleteResponse(StatusCode code) {
+    return StorageContainerResponse.newBuilder()
+        .setCode(code)
+        .setKvDeleteResp(DeleteRangeResponse.newBuilder()
+            .setHeader(TEST_RESP_HEADER)
+            .setDeleted(0)
+            .build())
+        .build();
+  }
 
   @Before
   public void setUp() throws Exception {
@@ -378,6 +467,89 @@ public class TestRangeStoreImpl {
       rangeStore.getActiveRanges(request);
     verify(scStore, times(1)).getActiveRanges(request);
     assertTrue(resp == future.get());
+  }
+
+
+  //
+  // Table API
+  //
+
+  @Test
+  public void testPutNoStorageContainer() throws Exception {
+    rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
+
+    verifyNotFoundException(
+      rangeStore.put(createPutRequest(ROOT_STORAGE_CONTAINER_ID)),
+      Status.NOT_FOUND);
+  }
+
+  @Test
+  public void testDeleteNoStorageContainer() throws Exception {
+    rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
+
+    verifyNotFoundException(
+      rangeStore.delete(createDeleteRequest(ROOT_STORAGE_CONTAINER_ID)),
+      Status.NOT_FOUND);
+  }
+
+  @Test
+  public void testRangeNoStorageContainer() throws Exception {
+    rangeStore.getRegistry().stopStorageContainer(ROOT_STORAGE_CONTAINER_ID).join();
+
+    verifyNotFoundException(
+      rangeStore.range(createRangeRequest(ROOT_STORAGE_CONTAINER_ID)),
+      Status.NOT_FOUND);
+  }
+
+  @Test
+  public void testRangeMockStorageContainer() throws Exception {
+    StorageContainer scStore = mock(StorageContainer.class);
+    when(scStore.stop()).thenReturn(FutureUtils.value(null));
+    rangeStore.getRegistry().setStorageContainer(ROOT_STORAGE_CONTAINER_ID, scStore);
+    StorageContainerResponse response = createRangeResponse(StatusCode.SUCCESS);
+    StorageContainerRequest request = createRangeRequest(ROOT_STORAGE_CONTAINER_ID);
+
+    when(scStore.range(request))
+      .thenReturn(CompletableFuture.completedFuture(response));
+
+    CompletableFuture<StorageContainerResponse> future =
+      rangeStore.range(request);
+    verify(scStore, times(1)).range(eq(request));
+    assertTrue(response == future.get());
+  }
+
+  @Test
+  public void testDeleteMockStorageContainer() throws Exception {
+    StorageContainer scStore = mock(StorageContainer.class);
+    when(scStore.stop()).thenReturn(FutureUtils.value(null));
+    rangeStore.getRegistry().setStorageContainer(ROOT_STORAGE_CONTAINER_ID, scStore);
+    StorageContainerResponse response = createDeleteResponse(StatusCode.SUCCESS);
+    StorageContainerRequest request = createDeleteRequest(ROOT_STORAGE_CONTAINER_ID);
+
+    when(scStore.delete(request))
+      .thenReturn(CompletableFuture.completedFuture(response));
+
+    CompletableFuture<StorageContainerResponse> future =
+      rangeStore.delete(request);
+    verify(scStore, times(1)).delete(eq(request));
+    assertTrue(response == future.get());
+  }
+
+  @Test
+  public void testPutMockStorageContainer() throws Exception {
+    StorageContainer scStore = mock(StorageContainer.class);
+    when(scStore.stop()).thenReturn(FutureUtils.value(null));
+    rangeStore.getRegistry().setStorageContainer(ROOT_STORAGE_CONTAINER_ID, scStore);
+    StorageContainerResponse response = createPutResponse(StatusCode.SUCCESS);
+    StorageContainerRequest request = createPutRequest(ROOT_STORAGE_CONTAINER_ID);
+
+    when(scStore.put(request))
+      .thenReturn(CompletableFuture.completedFuture(response));
+
+    CompletableFuture<StorageContainerResponse> future =
+      rangeStore.put(request);
+    verify(scStore, times(1)).put(eq(request));
+    assertTrue(response == future.get());
   }
 
 }
