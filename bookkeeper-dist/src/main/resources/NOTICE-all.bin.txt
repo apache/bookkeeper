@@ -68,18 +68,6 @@ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 License for the specific language governing permissions and limitations
 under the License.
 
-lib/io.netty-netty-all-4.1.12.Final.jar contains a modified portion of 'Apache Harmony', an open source
-Java SE, which can be obtained at http://archive.apache.org/dist/harmony/
-
-Portions of Apache Harmony were originally developed by
-Intel Corporation and are licensed to the Apache Software
-Foundation under the "Software Grant and Corporate Contribution
-License Agreement" and for which the following copyright notices
-apply
-  (C) Copyright 2005 Intel Corporation
-  (C) Copyright 2005-2006 Intel Corporation
-  (C) Copyright 2006 Intel Corporation
-                           
 ------------------------------------------------------------------------------------
 - lib/io.prometheus-simpleclient-0.0.21.jar
 - lib/io.prometheus-simpleclient_common-0.0.21.jar
