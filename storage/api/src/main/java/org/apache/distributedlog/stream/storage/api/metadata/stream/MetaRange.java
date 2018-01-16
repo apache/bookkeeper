@@ -46,11 +46,19 @@ public interface MetaRange {
   CompletableFuture<Boolean> create(StreamProperties streamProps);
 
   /**
+   * Load the stream metadata.
+   *
+   * @param streamId stream id to load metadata.
+   * @return a future represents an initialized metadata range instance.
+   */
+  CompletableFuture<MetaRange> load(long streamId);
+
+  /**
    * Delete a stream.
    *
    * @return a future represents the deletion result.
    */
-  CompletableFuture<Boolean> delete();
+  CompletableFuture<Boolean> delete(long streamId);
 
   /**
    * Get the stream configuration.

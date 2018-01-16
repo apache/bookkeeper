@@ -20,6 +20,7 @@ package org.apache.distributedlog.stream.storage.impl.metadata.stream;
 
 import static org.apache.distributedlog.stream.protocol.ProtocolConstants.DEFAULT_STREAM_CONF;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -28,58 +29,43 @@ import java.util.List;
 import java.util.NavigableMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.LongStream;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.stream.proto.RangeMetadata;
 import org.apache.distributedlog.stream.proto.RangeState;
-import org.apache.distributedlog.stream.proto.StreamMetadata;
 import org.apache.distributedlog.stream.proto.StreamMetadata.LifecycleState;
 import org.apache.distributedlog.stream.proto.StreamMetadata.ServingState;
 import org.apache.distributedlog.stream.proto.StreamProperties;
 import org.apache.distributedlog.stream.storage.impl.sc.StorageContainerPlacementPolicyImpl;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Rule;
+import org.apache.distributedlog.stream.storage.impl.store.MVCCAsyncStoreTestBase;
 import org.junit.Test;
-import org.junit.rules.TestName;
-import org.junit.rules.Timeout;
 
 /**
  * Unit test of {@link MetaRangeImpl}.
  */
-public class TestMetaRangeImpl {
-
-  @Rule
-  public final TestName runtime = new TestName();
-  @Rule
-  public final Timeout globalTimeout = Timeout.seconds(10);
+@Slf4j
+public class TestMetaRangeImpl extends MVCCAsyncStoreTestBase {
 
   private StreamProperties streamProps;
   private MetaRangeImpl metaRange;
-  private ScheduledExecutorService executor;
 
-  @Before
-  public void setUp() {
+  @Override
+  protected void doSetup() {
     this.streamProps = StreamProperties.newBuilder()
       .setStorageContainerId(1234L)
       .setStreamConf(DEFAULT_STREAM_CONF)
-      .setStreamName(runtime.getMethodName() + "_stream")
+      .setStreamName(name.getMethodName() + "_stream")
       .setStreamId(System.currentTimeMillis())
       .build();
-    this.executor = Executors.newSingleThreadScheduledExecutor();
     this.metaRange = new MetaRangeImpl(
-      this.executor,
+      this.store,
+      this.scheduler.chooseThread(),
       StorageContainerPlacementPolicyImpl.of(1024));
   }
 
-  @After
-  public void tearDown() {
-    if (null != this.executor) {
-      this.executor.shutdown();
-    }
+  @Override
+  protected void doTeardown() throws Exception {
   }
 
   private <T> void assertIllegalStateException(CompletableFuture<T> future) throws Exception {
@@ -93,52 +79,53 @@ public class TestMetaRangeImpl {
   }
 
   @Test
-  @Ignore
-  public void testOperationsBeforeCreated() throws Exception {
-    try {
-      this.metaRange.getName();
-      fail("Should fail on illegal state");
-    } catch (IllegalStateException ise) {
-      // expected.
-      assertTrue(true);
-    }
-
-    assertIllegalStateException(metaRange.getServingState());
-    assertIllegalStateException(metaRange.updateServingState(StreamMetadata.ServingState.READONLY));
-    assertIllegalStateException(metaRange.getConfiguration());
-    assertIllegalStateException(metaRange.getActiveRanges());
-  }
-
-  @Test
   public void testCreate() throws Exception {
     assertTrue(FutureUtils.result(this.metaRange.create(streamProps)));
 
+    verifyStreamMetadata(metaRange, streamProps);
+  }
+
+  @Test
+  public void testLoad() throws Exception {
+    assertTrue(FutureUtils.result(this.metaRange.create(streamProps)));
+
+    MetaRangeImpl newMetaRange = new MetaRangeImpl(
+        store,
+        scheduler.chooseThread(),
+        StorageContainerPlacementPolicyImpl.of(1024));
+    assertNotNull(FutureUtils.result(newMetaRange.load(streamProps.getStreamId())));
+    verifyStreamMetadata(newMetaRange, streamProps);
+  }
+
+  private void verifyStreamMetadata(MetaRangeImpl metaRange,
+                                    StreamProperties streamProps)
+        throws Exception {
     // verify the stream properties
     assertEquals(
       LifecycleState.CREATED,
-      this.metaRange.unsafeGetLifecycleState());
+      metaRange.unsafeGetLifecycleState());
     assertEquals(
-      runtime.getMethodName() + "_stream",
+      name.getMethodName() + "_stream",
       this.metaRange.getName());
-    long cTime = this.metaRange.unsafeGetCreationTime();
-    assertTrue(this.metaRange.unsafeGetCreationTime() == this.metaRange.unsafeGetModificationTime());
-    assertEquals(streamProps, this.metaRange.unsafeGetStreamProperties());
-    assertEquals(streamProps.getStreamId(), this.metaRange.unsafeGetStreamId());
-    assertEquals(ServingState.WRITABLE, FutureUtils.result(this.metaRange.getServingState()));
+    long cTime = metaRange.unsafeGetCreationTime();
+    assertTrue(metaRange.unsafeGetCreationTime() == this.metaRange.unsafeGetModificationTime());
+    assertEquals(streamProps, metaRange.unsafeGetStreamProperties());
+    assertEquals(streamProps.getStreamId(), metaRange.unsafeGetStreamId());
+    assertEquals(ServingState.WRITABLE, FutureUtils.result(metaRange.getServingState()));
     assertEquals(
       streamProps.getStreamConf(),
-      FutureUtils.result(this.metaRange.getConfiguration()));
+      FutureUtils.result(metaRange.getConfiguration()));
 
     // verify the stream ranges
     List<Long> activeRanges = Lists.transform(
-      FutureUtils.result(this.metaRange.getActiveRanges()),
+      FutureUtils.result(metaRange.getActiveRanges()),
       (metadata) -> metadata.getProps().getRangeId()
     );
     assertEquals(streamProps.getStreamConf().getInitialNumRanges(), activeRanges.size());
     assertEquals(
       Lists.newArrayList(LongStream.range(1024L, 1024L + activeRanges.size()).iterator()),
       activeRanges);
-    NavigableMap<Long, RangeMetadata> ranges = this.metaRange.unsafeGetRanges();
+    NavigableMap<Long, RangeMetadata> ranges = metaRange.unsafeGetRanges();
     long startKey = Long.MIN_VALUE;
     long rangeSize = Long.MAX_VALUE / (activeRanges.size() / 2);
     for (int idx = 0; idx < activeRanges.size(); ++idx) {
@@ -148,15 +135,62 @@ public class TestMetaRangeImpl {
       if (idx == activeRanges.size() - 1) {
         endKey = Long.MAX_VALUE;
       }
-      assertEquals(startKey, rangeMetadata.getProps().getStartHashKey());
-      assertEquals(endKey, rangeMetadata.getProps().getEndHashKey());
-      assertEquals(rid, rangeMetadata.getProps().getRangeId());
-      assertEquals(cTime, rangeMetadata.getCreateTime());
-      assertEquals(Long.MAX_VALUE, rangeMetadata.getFenceTime());
-      assertEquals(RangeState.RANGE_ACTIVE, rangeMetadata.getState());
+
+      verifyRangeMetadata(rangeMetadata,
+          startKey,
+          endKey,
+          rid,
+          cTime,
+          Long.MAX_VALUE,
+          RangeState.RANGE_ACTIVE);
+
+      readRangeMetadataAndVerify(streamProps.getStreamId(), rid,
+          startKey,
+          endKey,
+          rid,
+          cTime,
+          Long.MAX_VALUE,
+          RangeState.RANGE_ACTIVE);
 
       startKey = endKey;
     }
+  }
+
+  private void readRangeMetadataAndVerify(long streamId,
+                                          long rangeId,
+                                          long expectedStartKey,
+                                          long expectedEndKey,
+                                          long expectedRid,
+                                          long expectedCTime,
+                                          long expectedFenceTime,
+                                          RangeState expectedRangeState) throws Exception {
+    byte[] rangeKey = MetaRangeImpl.getStreamRangeKey(streamId, rangeId);
+    byte[] rangeMetadataBytes = FutureUtils.result(store.get(rangeKey));
+    RangeMetadata rangeMetadata = RangeMetadata.parseFrom(rangeMetadataBytes);
+
+    verifyRangeMetadata(
+        rangeMetadata,
+        expectedStartKey,
+        expectedEndKey,
+        expectedRid,
+        expectedCTime,
+        expectedFenceTime,
+        expectedRangeState);
+  }
+
+  private void verifyRangeMetadata(RangeMetadata metadata,
+                                   long expectedStartKey,
+                                   long expectedEndKey,
+                                   long expectedRid,
+                                   long expectedCTime,
+                                   long expectedFenceTime,
+                                   RangeState expectedRangeState) {
+    assertEquals(expectedStartKey, metadata.getProps().getStartHashKey());
+    assertEquals(expectedEndKey, metadata.getProps().getEndHashKey());
+    assertEquals(expectedRid, metadata.getProps().getRangeId());
+    assertEquals(expectedCTime, metadata.getCreateTime());
+    assertEquals(expectedFenceTime, metadata.getFenceTime());
+    assertEquals(expectedRangeState, metadata.getState());
   }
 
   @Test
@@ -183,6 +217,31 @@ public class TestMetaRangeImpl {
       FutureUtils.result(this.metaRange.updateServingState(ServingState.READONLY)));
     newTime = this.metaRange.unsafeGetModificationTime();
     assertTrue(newTime >= mTime);
+  }
+
+  @Test
+  public void testUpdateServingStateConcurrently() throws Exception {
+    assertTrue(FutureUtils.result(this.metaRange.create(streamProps)));
+
+    long mTime = this.metaRange.unsafeGetModificationTime();
+
+    CompletableFuture<ServingState> updateFuture1 = metaRange.updateServingState(ServingState.WRITABLE);
+    CompletableFuture<ServingState> updateFuture2 = metaRange.updateServingState(ServingState.READONLY);
+
+    try {
+      updateFuture1.get();
+    } catch (Exception e) {
+      assertEquals(ServingState.READONLY, updateFuture2.get());
+      assertTrue(metaRange.unsafeGetModificationTime() >= mTime);
+      assertEquals(ServingState.READONLY, FutureUtils.result(this.metaRange.getServingState()));
+    }
+    try {
+      updateFuture2.get();
+    } catch (Exception e) {
+      assertEquals(ServingState.WRITABLE, updateFuture1.get());
+      assertTrue(metaRange.unsafeGetModificationTime() >= mTime);
+      assertEquals(ServingState.WRITABLE, FutureUtils.result(this.metaRange.getServingState()));
+    }
   }
 
 }

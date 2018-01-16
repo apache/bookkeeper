@@ -28,22 +28,6 @@ import org.apache.distributedlog.stream.proto.storage.StorageContainerResponse;
 public interface MetaRangeStore {
 
   /**
-   * Add a stream to the storage container.
-   *
-   * @param request request to add read group to the storage container.
-   * @return the response represents the add result.
-   */
-  CompletableFuture<StorageContainerResponse> addStreamMetaRange(StorageContainerRequest request);
-
-  /**
-   * Remove a stream to the storage container.
-   *
-   * @param request request to remove read group from the storage container.
-   * @return the response represents the remove result.
-   */
-  CompletableFuture<StorageContainerResponse> removeStreamMetaRange(StorageContainerRequest request);
-
-  /**
    * Get the current active ranges.
    *
    * @param request the request

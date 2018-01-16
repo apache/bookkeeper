@@ -124,20 +124,6 @@ public final class FailRequestStorageContainer implements StorageContainer {
   }
 
   //
-  // Storage Container API
-  //
-
-  @Override
-  public CompletableFuture<StorageContainerResponse> addStreamMetaRange(StorageContainerRequest request) {
-    return failWrongGroupRequest(request.getScId());
-  }
-
-  @Override
-  public CompletableFuture<StorageContainerResponse> removeStreamMetaRange(StorageContainerRequest request) {
-    return failWrongGroupRequest(request.getScId());
-  }
-
-  //
   // Stream Meta Range API.
   //
 

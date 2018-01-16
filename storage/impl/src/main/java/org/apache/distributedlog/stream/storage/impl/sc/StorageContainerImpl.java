@@ -124,8 +124,6 @@ public class StorageContainerImpl
         CONTAINER_META_RANGE_ID
     ).thenApply(store -> {
       mgStore = new MetaRangeStoreImpl(
-          storageConf,
-          scId,
           store,
           placementPolicy,
           scExecutor);
@@ -165,16 +163,6 @@ public class StorageContainerImpl
   //
   // Storage Container API
   //
-
-  @Override
-  public CompletableFuture<StorageContainerResponse> addStreamMetaRange(StorageContainerRequest request) {
-    return mgStore.addStreamMetaRange(request);
-  }
-
-  @Override
-  public CompletableFuture<StorageContainerResponse> removeStreamMetaRange(StorageContainerRequest request) {
-    return mgStore.removeStreamMetaRange(request);
-  }
 
   //
   // Namespace API

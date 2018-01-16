@@ -82,6 +82,8 @@ enum StatusCode {
 
 message GetActiveRangesRequest {
     int64 stream_id     = 1;
+    // create stream if not exists
+    stream.StreamProperties stream_props = 2;
 }
 
 message GetActiveRangesResponse {
@@ -226,38 +228,16 @@ message GetStorageContainerEndpointResponse {
     repeated OneStorageContainerEndpointResponse responses = 2;
 }
 
-message AddStreamRequest {
-    stream.StreamProperties props       = 1;
-}
-
-message RemoveStreamRequest {
-    stream.StreamProperties props       = 1;
-}
-
-message AddStreamResponse {
-}
-
-message RemoveStreamResponse {
-}
-
 // A general range server service
 service StorageContainerService {
     // Get the storage container endpoints
     rpc GetStorageContainerEndpoint(GetStorageContainerEndpointRequest) returns (GetStorageContainerEndpointResponse);
-    // Add Stream Properties
-    rpc AddStream(StorageContainerRequest)                              returns (StorageContainerResponse);
-    // Remove Stream Properties
-    rpc RemoveStream(StorageContainerRequest)                           returns (StorageContainerResponse);
 }
 
 message StorageContainerRequest {
 
     enum Type {
         NONE                    = 0;
-
-        // group operations
-        ADD_STREAM              = 10;
-        REMOVE_STREAM           = 11;
 
         // namespace operations
 
@@ -274,10 +254,6 @@ message StorageContainerRequest {
     Type type                   = 2;
 
     oneof request {
-        // group operations
-        AddStreamRequest add_stream_req                         = 10;
-        RemoveStreamRequest remove_stream_req                   = 11;
-
         // stream metadata operations
         GetActiveRangesRequest get_active_ranges_req            = 200;
 
@@ -293,10 +269,6 @@ message StorageContainerResponse {
     StatusCode code             = 1;
 
     oneof response {
-        // group operations
-        AddStreamResponse add_stream_resp                       = 10;
-        RemoveStreamResponse remove_stream_resp                 = 11;
-
         // stream metadata operations
         GetActiveRangesResponse get_active_ranges_resp          = 200;
 

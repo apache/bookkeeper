@@ -24,7 +24,7 @@ import static org.apache.distributedlog.statelib.impl.Constants.NULL_START_KEY;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.PeekingIterator;
-import com.google.common.primitives.SignedBytes;
+import com.google.common.primitives.UnsignedBytes;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.Collections;
@@ -84,7 +84,7 @@ import org.rocksdb.WriteBatch;
 @Slf4j
 class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V> {
 
-    private static final Comparator<byte[]> COMPARATOR = SignedBytes.lexicographicalComparator();
+    private static final Comparator<byte[]> COMPARATOR = UnsignedBytes.lexicographicalComparator();
 
     private final ResultFactory<K, V> resultFactory;
     private final KVRecordFactory<K, V> recordFactory;

@@ -175,9 +175,15 @@ message StreamMetadata {
     LifecycleState lifecycle_state      = 2;
     // stream serving state
     ServingState serving_state          = 3;
+    // time
+    uint64 c_time                       = 4;
+    uint64 m_time                       = 5;
 
     // ranges
-    int64 next_range_id         = 100;
+    uint64 next_range_id                = 100;
+
+    // current active ranges
+    repeated uint64 current_ranges      = 101;
 }
 
 //

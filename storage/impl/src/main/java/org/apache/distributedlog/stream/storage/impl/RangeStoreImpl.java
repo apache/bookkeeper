@@ -132,20 +132,6 @@ public class RangeStoreImpl
   }
 
   //
-  // Storage Container Service
-  //
-
-  @Override
-  public CompletableFuture<StorageContainerResponse> addStreamMetaRange(StorageContainerRequest request) {
-    return getStorageContainer(request.getScId()).addStreamMetaRange(request);
-  }
-
-  @Override
-  public CompletableFuture<StorageContainerResponse> removeStreamMetaRange(StorageContainerRequest request) {
-    return getStorageContainer(request.getScId()).removeStreamMetaRange(request);
-  }
-
-  //
   // Root Range Service
   //
 

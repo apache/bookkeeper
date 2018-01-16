@@ -32,8 +32,6 @@ import org.apache.bookkeeper.common.util.Bytes;
 import org.apache.distributedlog.statelib.api.mvcc.KVRecord;
 import org.apache.distributedlog.statelib.api.mvcc.MVCCAsyncStore;
 import org.apache.distributedlog.statelib.api.mvcc.op.CompareResult;
-import org.apache.distributedlog.statelib.api.mvcc.op.DeleteOp;
-import org.apache.distributedlog.statelib.api.mvcc.op.PutOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.RangeOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.TxnOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.TxnOpBuilder;
@@ -165,29 +163,6 @@ public class RootRangeStoreImpl
     });
   }
 
-  PutOp<byte[], byte[]> newPut(byte[] key, byte[] value) {
-    return store.getOpFactory().buildPutOp()
-        .key(key)
-        .value(value)
-        .prevKV(false)
-        .build();
-  }
-
-  DeleteOp<byte[], byte[]> newDelete(byte[] key) {
-    return store.getOpFactory().buildDeleteOp()
-        .key(key)
-        .isRangeOp(false)
-        .build();
-  }
-
-  DeleteOp<byte[], byte[]> newDeleteRange(byte[] key, byte[] endKey) {
-    return store.getOpFactory().buildDeleteOp()
-        .key(key)
-        .endKey(endKey)
-        .isRangeOp(true)
-        .build();
-  }
-
   @Override
   public CompletableFuture<CreateNamespaceResponse> createNamespace(CreateNamespaceRequest request) {
     if (log.isTraceEnabled()) {
@@ -246,37 +221,41 @@ public class RootRangeStoreImpl
     byte[] nsIdKey = getNamespaceIdKey(namespaceId);
     byte[] nsIdVal = metadata.toByteArray();
 
-    TxnOpBuilder<byte[], byte[]> txnBuilder = store.getOpFactory().buildTxnOp()
+    TxnOpBuilder<byte[], byte[]> txnBuilder = store.newTxn()
         .addCompareOps(
-            store.getOpFactory().compareValue(CompareResult.EQUAL, nsNameKey, null))
+            store.newCompareValue(CompareResult.EQUAL, nsNameKey, null))
         .addSuccessOps(
-            newPut(nsNameKey, nsNameVal))
+            store.newPut(nsNameKey, nsNameVal))
         .addSuccessOps(
-            newPut(nsIdKey, nsIdVal))
+            store.newPut(nsIdKey, nsIdVal))
         .addSuccessOps(
-            newPut(NS_ID_KEY, Bytes.toBytes(namespaceId)));
+            store.newPut(NS_ID_KEY, Bytes.toBytes(namespaceId)));
 
     if (currentNsIdRev < 0) {
       txnBuilder = txnBuilder.addCompareOps(
-          store.getOpFactory().compareValue(CompareResult.EQUAL, NS_ID_KEY, null));
+          store.newCompareValue(CompareResult.EQUAL, NS_ID_KEY, null));
     } else {
       txnBuilder = txnBuilder.addCompareOps(
-          store.getOpFactory().compareModRevision(CompareResult.EQUAL, NS_ID_KEY, currentNsIdRev));
+          store.newCompareModRevision(CompareResult.EQUAL, NS_ID_KEY, currentNsIdRev));
     }
 
     TxnOp<byte[], byte[]> txn = txnBuilder.build();
 
     return store.txn(txn)
         .thenApply(txnResult -> {
-          CreateNamespaceResponse.Builder respBuilder = CreateNamespaceResponse.newBuilder();
-          if (txnResult.isSuccess()) {
-            respBuilder.setCode(StatusCode.SUCCESS);
-            respBuilder.setColProps(metadata.getProps());
-          } else {
-            // TODO: differentiate the error code
-            respBuilder.setCode(StatusCode.INTERNAL_SERVER_ERROR);
+          try {
+            CreateNamespaceResponse.Builder respBuilder = CreateNamespaceResponse.newBuilder();
+            if (txnResult.isSuccess()) {
+              respBuilder.setCode(StatusCode.SUCCESS);
+              respBuilder.setColProps(metadata.getProps());
+            } else {
+              // TODO: differentiate the error code
+              respBuilder.setCode(StatusCode.INTERNAL_SERVER_ERROR);
+            }
+            return respBuilder.build();
+          } finally {
+            txnResult.recycle();
           }
-          return respBuilder.build();
         });
   }
 
@@ -319,26 +298,30 @@ public class RootRangeStoreImpl
     byte[] nsIdEndKey = getNamespaceIdEndKey(nsMetadata.getProps().getNamespaceId());
 
 
-    TxnOp<byte[], byte[]> txnOp = store.getOpFactory().buildTxnOp()
+    TxnOp<byte[], byte[]> txnOp = store.newTxn()
         .addCompareOps(
-            store.getOpFactory().compareValue(CompareResult.NOT_EQUAL, nsNameKey, null))
+            store.newCompareValue(CompareResult.NOT_EQUAL, nsNameKey, null))
         .addCompareOps(
-            store.getOpFactory().compareValue(CompareResult.NOT_EQUAL, nsIdKey, null))
+            store.newCompareValue(CompareResult.NOT_EQUAL, nsIdKey, null))
         .addSuccessOps(
-            newDelete(nsNameKey))
+            store.newDelete(nsNameKey))
         .addSuccessOps(
-            newDeleteRange(nsIdKey, nsIdEndKey))
+            store.newDeleteRange(nsIdKey, nsIdEndKey))
         .build();
 
     return store.txn(txnOp).thenApply(txnResult -> {
-      DeleteNamespaceResponse.Builder respBuilder = DeleteNamespaceResponse.newBuilder();
-      if (txnResult.isSuccess()) {
-        respBuilder.setCode(StatusCode.SUCCESS);
-      } else {
-        // TODO: differentiate the error code
-        respBuilder.setCode(StatusCode.INTERNAL_SERVER_ERROR);
+      try {
+        DeleteNamespaceResponse.Builder respBuilder = DeleteNamespaceResponse.newBuilder();
+        if (txnResult.isSuccess()) {
+          respBuilder.setCode(StatusCode.SUCCESS);
+        } else {
+          // TODO: differentiate the error code
+          respBuilder.setCode(StatusCode.INTERNAL_SERVER_ERROR);
+        }
+        return respBuilder.build();
+      } finally {
+        txnResult.recycle();
       }
-      return respBuilder.build();
     });
   }
 
@@ -485,40 +468,43 @@ public class RootRangeStoreImpl
     byte[] streamIdKey = getStreamIdKey(nsId, streamId);
     byte[] streamIdVal = streamProps.toByteArray();
 
-    TxnOpBuilder<byte[], byte[]> txnBuilder = store.getOpFactory().buildTxnOp()
+    TxnOpBuilder<byte[], byte[]> txnBuilder = store.newTxn()
         .addCompareOps(
-            store.getOpFactory().compareValue(CompareResult.NOT_EQUAL, nsIdKey, null))
+            store.newCompareValue(CompareResult.NOT_EQUAL, nsIdKey, null))
         .addCompareOps(
-            store.getOpFactory().compareValue(CompareResult.EQUAL, streamNameKey, null))
+            store.newCompareValue(CompareResult.EQUAL, streamNameKey, null))
         .addSuccessOps(
-            newPut(streamNameKey, streamNameVal))
+            store.newPut(streamNameKey, streamNameVal))
         .addSuccessOps(
-            newPut(streamIdKey, streamIdVal))
+            store.newPut(streamIdKey, streamIdVal))
         .addSuccessOps(
-            newPut(STREAM_ID_KEY, Bytes.toBytes(streamId)));
+            store.newPut(STREAM_ID_KEY, Bytes.toBytes(streamId)));
 
     if (currentStreamIdRev < 0) {
       txnBuilder = txnBuilder.addCompareOps(
-          store.getOpFactory().compareValue(CompareResult.EQUAL, STREAM_ID_KEY, null));
+          store.newCompareValue(CompareResult.EQUAL, STREAM_ID_KEY, null));
     } else {
       txnBuilder = txnBuilder.addCompareOps(
-          store.getOpFactory().compareModRevision(CompareResult.EQUAL, STREAM_ID_KEY, currentStreamIdRev));
+          store.newCompareModRevision(CompareResult.EQUAL, STREAM_ID_KEY, currentStreamIdRev));
     }
 
     TxnOp<byte[], byte[]> txn = txnBuilder.build();
 
     return store.txn(txn)
         .thenApply(txnResult -> {
-
-          CreateStreamResponse.Builder respBuilder = CreateStreamResponse.newBuilder();
-          if (txnResult.isSuccess()) {
-            respBuilder.setCode(StatusCode.SUCCESS);
-            respBuilder.setStreamProps(streamProps);
-          } else {
-            // TODO: differentiate the error codes
-            respBuilder.setCode(StatusCode.INTERNAL_SERVER_ERROR);
+          try {
+            CreateStreamResponse.Builder respBuilder = CreateStreamResponse.newBuilder();
+            if (txnResult.isSuccess()) {
+              respBuilder.setCode(StatusCode.SUCCESS);
+              respBuilder.setStreamProps(streamProps);
+            } else {
+              // TODO: differentiate the error codes
+              respBuilder.setCode(StatusCode.INTERNAL_SERVER_ERROR);
+            }
+            return respBuilder.build();
+          } finally {
+            txnResult.recycle();
           }
-          return respBuilder.build();
         })
         .exceptionally(cause ->
             CreateStreamResponse.newBuilder().setCode(StatusCode.INTERNAL_SERVER_ERROR).build());
@@ -576,27 +562,31 @@ public class RootRangeStoreImpl
     byte[] streamNameKey = getStreamNameKey(nsId, streamName);
     byte[] streamIdKey = getStreamIdKey(nsId, streamId);
 
-    TxnOp<byte[], byte[]> txnOp = store.getOpFactory().buildTxnOp()
+    TxnOp<byte[], byte[]> txnOp = store.newTxn()
         .addCompareOps(
-            store.getOpFactory().compareValue(CompareResult.NOT_EQUAL, nsIdKey, null))
+            store.newCompareValue(CompareResult.NOT_EQUAL, nsIdKey, null))
         .addCompareOps(
-            store.getOpFactory().compareValue(CompareResult.NOT_EQUAL, streamNameKey, null))
+            store.newCompareValue(CompareResult.NOT_EQUAL, streamNameKey, null))
         .addCompareOps(
-            store.getOpFactory().compareValue(CompareResult.NOT_EQUAL, streamIdKey, null))
+            store.newCompareValue(CompareResult.NOT_EQUAL, streamIdKey, null))
         .addSuccessOps(
-            newDelete(streamIdKey))
+            store.newDelete(streamIdKey))
         .addSuccessOps(
-            newDelete(streamNameKey))
+            store.newDelete(streamNameKey))
         .build();
 
     return store.txn(txnOp).thenApply(txnResult -> {
-      DeleteStreamResponse.Builder respBuilder = DeleteStreamResponse.newBuilder();
-      if (txnResult.isSuccess()) {
-        respBuilder.setCode(StatusCode.SUCCESS);
-      } else {
-        respBuilder.setCode(StatusCode.INTERNAL_SERVER_ERROR);
-      }
-      return respBuilder.build();
+        try {
+          DeleteStreamResponse.Builder respBuilder = DeleteStreamResponse.newBuilder();
+          if (txnResult.isSuccess()) {
+            respBuilder.setCode(StatusCode.SUCCESS);
+          } else {
+            respBuilder.setCode(StatusCode.INTERNAL_SERVER_ERROR);
+          }
+          return respBuilder.build();
+        } finally {
+          txnResult.recycle();
+        }
     });
   }
 

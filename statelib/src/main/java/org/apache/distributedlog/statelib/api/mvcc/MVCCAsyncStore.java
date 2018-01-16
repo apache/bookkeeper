@@ -25,12 +25,14 @@ import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.statelib.api.AsyncStateStore;
 import org.apache.distributedlog.statelib.api.exceptions.MVCCStoreException;
+import org.apache.distributedlog.statelib.api.mvcc.op.CompareOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.CompareResult;
 import org.apache.distributedlog.statelib.api.mvcc.op.DeleteOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.OpFactory;
 import org.apache.distributedlog.statelib.api.mvcc.op.PutOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.RangeOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.TxnOp;
+import org.apache.distributedlog.statelib.api.mvcc.op.TxnOpBuilder;
 import org.apache.distributedlog.statelib.api.mvcc.result.Code;
 import org.apache.distributedlog.statelib.api.mvcc.result.DeleteResult;
 import org.apache.distributedlog.statelib.api.mvcc.result.RangeResult;
@@ -59,6 +61,49 @@ public interface MVCCAsyncStore<K, V>
      * @return operator factory.
      */
     OpFactory<K, V> getOpFactory();
+
+    default CompareOp<K, V> newCompareCreateRevision(CompareResult result, K key, long revision) {
+        return getOpFactory().compareCreateRevision(result, key, revision);
+    }
+
+    default CompareOp<K, V> newCompareModRevision(CompareResult result, K key, long revision) {
+        return getOpFactory().compareModRevision(result, key, revision);
+    }
+
+    default CompareOp<K, V> newCompareVersion(CompareResult result, K key, long version) {
+        return getOpFactory().compareVersion(result, key, version);
+    }
+
+    default CompareOp<K, V> newCompareValue(CompareResult result, K key, V value) {
+        return getOpFactory().compareValue(result, key, value);
+    }
+
+    default TxnOpBuilder<K, V> newTxn() {
+        return getOpFactory().buildTxnOp();
+    }
+
+    default PutOp<K, V> newPut(K key, V value) {
+        return getOpFactory().buildPutOp()
+            .key(key)
+            .value(value)
+            .prevKV(false)
+            .build();
+    }
+
+    default DeleteOp<K, V> newDelete(K key) {
+        return getOpFactory().buildDeleteOp()
+            .key(key)
+            .isRangeOp(false)
+            .build();
+    }
+
+    default DeleteOp<K, V> newDeleteRange(K key, K endKey) {
+        return getOpFactory().buildDeleteOp()
+            .key(key)
+            .endKey(endKey)
+            .isRangeOp(true)
+            .build();
+    }
 
     @Override
     default CompletableFuture<V> get(K key) {
