@@ -76,8 +76,8 @@ public class BookKeeperClusterUtils {
     }
 
     private static boolean waitBookieState(DockerClient docker, String containerId,
-                                          int timeout, TimeUnit timeoutUnit,
-                                          boolean upOrDown) {
+                                           int timeout, TimeUnit timeoutUnit,
+                                           boolean upOrDown) {
         long timeoutMillis = timeoutUnit.toMillis(timeout);
         long pollMillis = 1000;
         String bookieId = DockerUtils.getContainerIP(docker, containerId) + ":3181";
@@ -94,6 +94,9 @@ public class BookKeeperClusterUtils {
             LOG.error("Exception checking for bookie state", e);
             return false;
         }
+        LOG.warn("Bookie {} didn't go {} after {} seconds",
+                 containerId, upOrDown ? "up" : "down",
+                 timeoutUnit.toSeconds(timeout));
         return false;
     }
 
