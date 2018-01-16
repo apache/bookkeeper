@@ -102,5 +102,11 @@ for L in $BUNDLEDLICENSES; do
     fi
 done
 
+if [ $EXIT != 0 ]; then
+    echo
+    echo It looks like there are issues with the LICENSE/NOTICE.
+    echo See http://bookkeeper.apache.org/community/licensing for details on how to fix.
+fi
+
 exit $EXIT
 
