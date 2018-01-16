@@ -29,6 +29,7 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -58,7 +59,7 @@ public class DockerUtils {
     public static void dumpContainerLogToTarget(DockerClient docker, String containerId) {
         File output = new File(getTargetDirectory(containerId), "docker.log");
         try (FileOutputStream os = new FileOutputStream(output)) {
-            CompletableFuture<Void> future = new CompletableFuture<>();
+            CompletableFuture<Boolean> future = new CompletableFuture<>();
             docker.logContainerCmd(containerId).withStdOut(true)
                 .withStdErr(true).withTimestamps(true).exec(new ResultCallback<Frame>() {
                         @Override
@@ -83,20 +84,23 @@ public class DockerUtils {
 
                         @Override
                         public void onComplete() {
-                            future.complete(null);
+                            future.complete(true);
                         }
                     });
             future.get();
-        } catch (Exception e) {
+        } catch (ExecutionException|IOException e) {
             LOG.error("Error dumping log for {}", containerId, e);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            LOG.info("Interrupted dumping log from container {}", containerId, ie);
         }
     }
 
     public static void dumpContainerLogDirToTarget(DockerClient docker, String containerId, String path) {
         final int READ_BLOCK_SIZE = 10000;
 
-        try (InputStream dockerStream = docker.copyArchiveFromContainerCmd(containerId, path).exec()) {
-            TarArchiveInputStream stream = new TarArchiveInputStream(dockerStream);
+        try (InputStream dockerStream = docker.copyArchiveFromContainerCmd(containerId, path).exec();
+             TarArchiveInputStream stream = new TarArchiveInputStream(dockerStream)) {
             TarArchiveEntry entry = stream.getNextTarEntry();
             while (entry != null) {
                 if (entry.isFile()) {
@@ -112,7 +116,7 @@ public class DockerUtils {
                 }
                 entry = stream.getNextTarEntry();
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             LOG.error("Error reading bk logs from container {}", containerId, e);
         }
     }
@@ -126,7 +130,7 @@ public class DockerUtils {
     }
 
     public static void runCommand(DockerClient docker, String containerId, String... cmd) throws Exception {
-        CompletableFuture<Void> future = new CompletableFuture<>();
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
         String execid = docker.execCreateCmd(containerId).withCmd(cmd).exec().getId();
         docker.execStartCmd(execid).withDetach(false).exec(new ResultCallback<Frame>() {
                 @Override
@@ -148,7 +152,7 @@ public class DockerUtils {
 
                 @Override
                 public void onComplete() {
-                    future.complete(null);
+                    future.complete(true);
                 }
             });
         future.get();
