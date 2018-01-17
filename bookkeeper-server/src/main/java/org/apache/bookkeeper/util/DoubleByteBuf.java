@@ -17,6 +17,18 @@
 */
 package org.apache.bookkeeper.util;
 
+import com.google.common.collect.ObjectArrays;
+import io.netty.buffer.AbstractReferenceCountedByteBuf;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.Unpooled;
+import io.netty.util.Recycler;
+import io.netty.util.Recycler.Handle;
+import io.netty.util.ResourceLeakDetector;
+import io.netty.util.ResourceLeakDetectorFactory;
+import io.netty.util.ResourceLeakTracker;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -29,17 +41,6 @@ import java.nio.channels.ScatteringByteChannel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import io.netty.buffer.AbstractReferenceCountedByteBuf;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.buffer.Unpooled;
-import io.netty.util.Recycler;
-import io.netty.util.Recycler.Handle;
-import io.netty.util.ResourceLeakDetector;
-import io.netty.util.ResourceLeakDetectorFactory;
-import io.netty.util.ResourceLeakTracker;
 
 /**
  * ByteBuf that holds 2 buffers. Similar to {@see CompositeByteBuf} but doesn't allocate list to hold them.
@@ -366,7 +367,7 @@ public final class DoubleByteBuf extends AbstractReferenceCountedByteBuf {
 
     @Override
     public ByteBuffer nioBuffer(int index, int length) {
-        ByteBuffer dst = ByteBuffer.allocate(length);
+        ByteBuffer dst = isDirect() ? ByteBuffer.allocateDirect(length) : ByteBuffer.allocate(length);
         ByteBuf b = Unpooled.wrappedBuffer(dst);
         b.writerIndex(0);
         getBytes(index, b, length);
@@ -392,7 +393,10 @@ public final class DoubleByteBuf extends AbstractReferenceCountedByteBuf {
 
     @Override
     public ByteBuffer[] nioBuffers() {
-        return nioBuffers(readerIndex(), readableBytes());
+        if (b1.nioBufferCount() == 1 && b2.nioBufferCount() == 1) {
+            return new ByteBuffer[] { b1.nioBuffer(), b2.nioBuffer() };
+        }
+        return ObjectArrays.concat(b1.nioBuffers(), b2.nioBuffers(), ByteBuffer.class);
     }
 
     @Override
