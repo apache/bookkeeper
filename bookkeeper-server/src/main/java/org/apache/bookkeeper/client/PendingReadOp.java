@@ -42,6 +42,7 @@ import org.apache.bookkeeper.common.util.SafeRunnable;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallbackCtx;
+import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
@@ -69,6 +70,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
     long endEntryId;
     long requestTimeNanos;
     OpStatsLogger readOpLogger;
+    private final Counter speculativeReadCounter;
 
     final int maxMissedReadsAllowed;
     final boolean isRecoveryRead;
@@ -362,6 +364,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
             // only send another read, if we have had no response at all (even for other entries)
             // from any of the other bookies we have sent the request to
             if (sentTo.cardinality() == 0) {
+                speculativeReadCounter.inc();
                 return sendNextRead();
             } else {
                 return null;
@@ -470,6 +473,7 @@ class PendingReadOp implements ReadEntryCallback, SafeRunnable {
         heardFromHostsBitSet = new BitSet(getLedgerMetadata().getEnsembleSize());
 
         readOpLogger = lh.bk.getReadOpLogger();
+        speculativeReadCounter = lh.bk.getSpeculativeReadCounter();
     }
 
     CompletableFuture<LedgerEntries> future() {
