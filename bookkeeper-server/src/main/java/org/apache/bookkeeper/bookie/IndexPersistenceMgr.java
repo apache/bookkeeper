@@ -220,7 +220,21 @@ public class IndexPersistenceMgr {
                 } else {
                     fi = readFileInfoCache.get(ledger, loader);
                 }
-            } while (!fi.tryRetain());
+                if (!fi.tryRetain()) {
+                    // defensively ensure that dead fileinfo objects don't exist in the
+                    // cache. They shouldn't if refcounting is correct, but if someone
+                    // does a double release, the fileinfo will be cleaned up, while
+                    // remaining in the cache, which could cause a tight loop in this method.
+                    boolean inWriteMap = writeFileInfoCache.asMap().remove(ledger, fi);
+                    boolean inReadMap = readFileInfoCache.asMap().remove(ledger, fi);
+                    if (inWriteMap || inReadMap) {
+                        LOG.error("Dead fileinfo({}) forced out of cache (write:{}, read:{}). "
+                                  + "It must have been double-released somewhere.",
+                                  fi, inWriteMap, inReadMap);
+                    }
+                    fi = null;
+                }
+            } while (fi == null);
 
             return fi;
         } catch (ExecutionException | UncheckedExecutionException ee) {
