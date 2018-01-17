@@ -17,6 +17,7 @@
 */
 package org.apache.bookkeeper.util;
 
+import com.google.common.collect.ObjectArrays;
 import io.netty.buffer.AbstractReferenceCountedByteBuf;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -361,7 +362,7 @@ public final class DoubleByteBuf extends AbstractReferenceCountedByteBuf {
 
     @Override
     public ByteBuffer nioBuffer(int index, int length) {
-        ByteBuffer dst = ByteBuffer.allocate(length);
+        ByteBuffer dst = isDirect() ? ByteBuffer.allocateDirect(length) : ByteBuffer.allocate(length);
         ByteBuf b = Unpooled.wrappedBuffer(dst);
         b.writerIndex(0);
         getBytes(index, b, length);
@@ -387,7 +388,10 @@ public final class DoubleByteBuf extends AbstractReferenceCountedByteBuf {
 
     @Override
     public ByteBuffer[] nioBuffers() {
-        return nioBuffers(readerIndex(), readableBytes());
+        if (b1.nioBufferCount() == 1 && b2.nioBufferCount() == 1) {
+            return new ByteBuffer[] { b1.nioBuffer(), b2.nioBuffer() };
+        }
+        return ObjectArrays.concat(b1.nioBuffers(), b2.nioBuffers(), ByteBuffer.class);
     }
 
     @Override
