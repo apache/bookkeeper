@@ -18,8 +18,11 @@
  */
 package org.apache.bookkeeper.tests;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.github.dockerjava.api.DockerClient;
 
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -58,11 +61,12 @@ public class BookKeeperClusterUtils {
         String ip = DockerUtils.getContainerIP(docker, containerId);
         try (Socket socket = new Socket(ip, 2181)) {
             socket.setSoTimeout(1000);
-            socket.getOutputStream().write("ruok".getBytes());
+            socket.getOutputStream().write("ruok".getBytes(UTF_8));
             byte[] resp = new byte[4];
-            socket.getInputStream().read(resp);
-            return new String(resp).equals("imok");
-        } catch (Exception e) {
+            if (socket.getInputStream().read(resp) == 4) {
+                return new String(resp, UTF_8).equals("imok");
+            }
+        } catch (IOException e) {
             // ignore, we'll return fallthrough to return false
         }
         return false;
@@ -76,8 +80,8 @@ public class BookKeeperClusterUtils {
     }
 
     private static boolean waitBookieState(DockerClient docker, String containerId,
-                                          int timeout, TimeUnit timeoutUnit,
-                                          boolean upOrDown) {
+                                           int timeout, TimeUnit timeoutUnit,
+                                           boolean upOrDown) {
         long timeoutMillis = timeoutUnit.toMillis(timeout);
         long pollMillis = 1000;
         String bookieId = DockerUtils.getContainerIP(docker, containerId) + ":3181";
@@ -94,6 +98,9 @@ public class BookKeeperClusterUtils {
             LOG.error("Exception checking for bookie state", e);
             return false;
         }
+        LOG.warn("Bookie {} didn't go {} after {} seconds",
+                 containerId, upOrDown ? "up" : "down",
+                 timeoutUnit.toSeconds(timeout));
         return false;
     }
 
@@ -117,11 +124,15 @@ public class BookKeeperClusterUtils {
         return waitBookieUp(docker, containerId, 10, TimeUnit.SECONDS);
     }
 
+    private static boolean allTrue(boolean accumulator, boolean result) {
+        return accumulator && result;
+    }
+
     public static boolean startAllBookiesWithVersion(DockerClient docker, String version)
             throws Exception {
         return DockerUtils.cubeIdsMatching("bookkeeper").stream()
             .map((b) -> startBookieWithVersion(docker, b, version))
-            .reduce(true, (accumulator, result) -> Boolean.valueOf(accumulator) && Boolean.valueOf(result));
+            .reduce(true, BookKeeperClusterUtils::allTrue);
     }
 
     public static boolean stopBookie(DockerClient docker, String containerId) {
@@ -137,6 +148,6 @@ public class BookKeeperClusterUtils {
     public static boolean stopAllBookies(DockerClient docker) {
         return DockerUtils.cubeIdsMatching("bookkeeper").stream()
             .map((b) -> stopBookie(docker, b))
-            .reduce(true, (accumulator, result) -> Boolean.valueOf(accumulator) && Boolean.valueOf(result));
+            .reduce(true, BookKeeperClusterUtils::allTrue);
     }
 }

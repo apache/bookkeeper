@@ -26,6 +26,14 @@ public class LogToTargetDirStopAction implements BeforeStopAction {
     private DockerClientExecutor dockerClientExecutor;
     private CubeId containerID;
 
+    public void setDockerClientExecutor(DockerClientExecutor executor) {
+        this.dockerClientExecutor = executor;
+    }
+
+    public void setContainerID(CubeId containerID) {
+        this.containerID = containerID;
+    }
+
     @Override
     public void doBeforeStop() {
         DockerUtils.dumpContainerLogToTarget(dockerClientExecutor.getDockerClient(), containerID.getId());
