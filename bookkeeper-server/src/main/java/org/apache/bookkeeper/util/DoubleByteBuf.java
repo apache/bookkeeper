@@ -388,10 +388,7 @@ public final class DoubleByteBuf extends AbstractReferenceCountedByteBuf {
 
     @Override
     public ByteBuffer[] nioBuffers() {
-        if (b1.nioBufferCount() == 1 && b2.nioBufferCount() == 1) {
-            return new ByteBuffer[] { b1.nioBuffer(), b2.nioBuffer() };
-        }
-        return ObjectArrays.concat(b1.nioBuffers(), b2.nioBuffers(), ByteBuffer.class);
+        return nioBuffers(readerIndex(), readableBytes());
     }
 
     @Override
