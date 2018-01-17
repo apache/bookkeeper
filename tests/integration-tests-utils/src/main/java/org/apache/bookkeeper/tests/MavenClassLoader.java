@@ -25,6 +25,8 @@ import com.google.common.collect.Lists;
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -66,16 +68,22 @@ public class MavenClassLoader implements AutoCloseable {
 
         File[] files = Maven.resolver().addDependencies(deps.toArray(new MavenDependency[0]))
             .resolve().withTransitivity().asFile();
-        URLClassLoader cl = new URLClassLoader(Arrays.stream(files)
-                                               .map((f) -> {
-                                                       try {
-                                                           return f.toURI().toURL();
-                                                       } catch (Throwable t) {
-                                                           throw new RuntimeException(t);
-                                                       }
-                                                   })
-                                               .toArray(URL[]::new),
-                                               ClassLoader.getSystemClassLoader());
+        URLClassLoader cl = AccessController.doPrivileged(
+                new PrivilegedAction<URLClassLoader>() {
+                    @Override
+                    public URLClassLoader run() {
+                        return new URLClassLoader(Arrays.stream(files)
+                                                  .map((f) -> {
+                                                          try {
+                                                              return f.toURI().toURL();
+                                                          } catch (Throwable t) {
+                                                              throw new RuntimeException(t);
+                                                          }
+                                                      })
+                                                  .toArray(URL[]::new),
+                                                  ClassLoader.getSystemClassLoader());
+                    }
+                });
         return new MavenClassLoader(cl);
     }
 
