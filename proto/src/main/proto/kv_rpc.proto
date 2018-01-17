@@ -318,7 +318,7 @@ message TxnRequest {
   repeated RequestOp failure = 3;
 
   // header
-  ResponseHeader header = 99;
+  RoutingHeader header = 99;
 }
 
 message TxnResponse {

@@ -248,6 +248,7 @@ message StorageContainerRequest {
         KV_RANGE                = 400;
         KV_PUT                  = 401;
         KV_DELETE               = 402;
+        KV_TXN                  = 403;
     }
 
     int64 sc_id                 = 1;
@@ -261,7 +262,9 @@ message StorageContainerRequest {
         kv.rpc.RangeRequest kv_range_req                        = 400;
         kv.rpc.PutRequest kv_put_req                            = 401;
         kv.rpc.DeleteRangeRequest kv_delete_req                 = 402;
+        kv.rpc.TxnRequest kv_txn_req                            = 403;
         kv.rpc.WatchRequest kv_watch_req                        = 410;
+
     }
 }
 
@@ -276,6 +279,7 @@ message StorageContainerResponse {
         kv.rpc.RangeResponse kv_range_resp                      = 400;
         kv.rpc.PutResponse kv_put_resp                          = 401;
         kv.rpc.DeleteRangeResponse kv_delete_resp               = 402;
+        kv.rpc.TxnResponse kv_txn_resp                          = 403;
         kv.rpc.WatchResponse kv_watch_resp                      = 410;
     }
 }

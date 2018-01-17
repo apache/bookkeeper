@@ -180,16 +180,21 @@ public class RangeStoreImpl
 
   @Override
   public CompletableFuture<StorageContainerResponse> range(StorageContainerRequest request) {
-    return getStorageContainer(ROOT_STORAGE_CONTAINER_ID).range(request);
+    return getStorageContainer(request.getScId()).range(request);
   }
 
   @Override
   public CompletableFuture<StorageContainerResponse> put(StorageContainerRequest request) {
-    return getStorageContainer(ROOT_STORAGE_CONTAINER_ID).put(request);
+    return getStorageContainer(request.getScId()).put(request);
   }
 
   @Override
   public CompletableFuture<StorageContainerResponse> delete(StorageContainerRequest request) {
-    return getStorageContainer(ROOT_STORAGE_CONTAINER_ID).delete(request);
+    return getStorageContainer(request.getScId()).delete(request);
+  }
+
+  @Override
+  public CompletableFuture<StorageContainerResponse> txn(StorageContainerRequest request) {
+    return getStorageContainer(request.getScId()).txn(request);
   }
 }

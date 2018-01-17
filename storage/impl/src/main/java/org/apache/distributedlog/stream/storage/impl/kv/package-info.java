@@ -15,23 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.distributedlog.stream.storage.api.kv;
-
-import java.util.concurrent.CompletableFuture;
-import org.apache.distributedlog.stream.proto.storage.StorageContainerRequest;
-import org.apache.distributedlog.stream.proto.storage.StorageContainerResponse;
 
 /**
- * The table store that stores and serves tables.
+ * Table Storage implementation.
  */
-public interface TableStore {
-
-    CompletableFuture<StorageContainerResponse> range(StorageContainerRequest request);
-
-    CompletableFuture<StorageContainerResponse> put(StorageContainerRequest request);
-
-    CompletableFuture<StorageContainerResponse> delete(StorageContainerRequest request);
-
-    CompletableFuture<StorageContainerResponse> txn(StorageContainerRequest request);
-
-}
+package org.apache.distributedlog.stream.storage.impl.kv;

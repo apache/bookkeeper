@@ -230,4 +230,9 @@ public class StorageContainerImpl
   public CompletableFuture<StorageContainerResponse> delete(StorageContainerRequest request) {
     throw new UnsupportedOperationException("unimplemented");
   }
+
+  @Override
+  public CompletableFuture<StorageContainerResponse> txn(StorageContainerRequest request) {
+    throw new UnsupportedOperationException("unimplemented");
+  }
 }
