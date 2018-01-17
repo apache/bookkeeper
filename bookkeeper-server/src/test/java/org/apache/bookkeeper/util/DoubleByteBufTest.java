@@ -19,6 +19,8 @@ package org.apache.bookkeeper.util;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -121,6 +123,54 @@ public class DoubleByteBufTest {
         ByteBuf b = DoubleByteBuf.get(b1, b2);
 
         assertEquals(ByteBuffer.wrap(new byte[] { 1, 2, 3, 4 }), b.nioBuffer());
+    }
+
+    @Test
+    public void testNonDirectNioBuffer() {
+        ByteBuf b1 = Unpooled.wrappedBuffer(new byte[] { 1, 2 });
+        ByteBuf b2 = Unpooled.wrappedBuffer(new byte[] { 3, 4 });
+        ByteBuf b = DoubleByteBuf.get(b1, b2);
+        assertFalse(b1.isDirect());
+        assertFalse(b2.isDirect());
+        assertFalse(b.isDirect());
+        ByteBuffer nioBuffer = b.nioBuffer();
+        assertFalse(nioBuffer.isDirect());
+    }
+
+    @Test
+    public void testNonDirectPlusDirectNioBuffer() {
+        ByteBuf b1 = Unpooled.wrappedBuffer(new byte[] { 1, 2 });
+        ByteBuf b2 = Unpooled.directBuffer(2);
+        ByteBuf b = DoubleByteBuf.get(b1, b2);
+        assertFalse(b1.isDirect());
+        assertTrue(b2.isDirect());
+        assertFalse(b.isDirect());
+        ByteBuffer nioBuffer = b.nioBuffer();
+        assertFalse(nioBuffer.isDirect());
+    }
+
+    @Test
+    public void testDirectPlusNonDirectNioBuffer() {
+        ByteBuf b1 = Unpooled.directBuffer(2);
+        ByteBuf b2 = Unpooled.wrappedBuffer(new byte[] { 1, 2 });
+        ByteBuf b = DoubleByteBuf.get(b1, b2);
+        assertTrue(b1.isDirect());
+        assertFalse(b2.isDirect());
+        assertFalse(b.isDirect());
+        ByteBuffer nioBuffer = b.nioBuffer();
+        assertFalse(nioBuffer.isDirect());
+    }
+
+    @Test
+    public void testDirectNioBuffer() {
+        ByteBuf b1 = Unpooled.directBuffer(2);
+        ByteBuf b2 = Unpooled.directBuffer(2);
+        ByteBuf b = DoubleByteBuf.get(b1, b2);
+        assertTrue(b1.isDirect());
+        assertTrue(b2.isDirect());
+        assertTrue(b.isDirect());
+        ByteBuffer nioBuffer = b.nioBuffer();
+        assertTrue(nioBuffer.isDirect());
     }
 
     /**
