@@ -263,4 +263,20 @@ public abstract class LedgerManagerFactory implements AutoCloseable {
         // Create new layout information again.
         createNewLMFactory(conf, lm, factoryClass);
     }
+
+    /**
+     * This method makes sure there are no unexpected znodes under ledgersRootPath
+     * and then it proceeds with ledger metadata formatting and nuking the cluster
+     * ZK state info.
+     *
+     * @param conf
+     *          Configuration instance
+     * @param lm
+     *          Layout manager
+     * @throws IOException
+     * @throws KeeperException
+     * @throws InterruptedException
+     */
+    public abstract boolean validateAndNukeExistingCluster(AbstractConfiguration<?> conf, LayoutManager lm)
+            throws InterruptedException, KeeperException, IOException;
 }

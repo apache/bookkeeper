@@ -36,6 +36,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerMetadata;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
@@ -57,21 +58,23 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.replication.ReplicationException;
+import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.ZKUtil;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 /**
  * MetaStore Based Ledger Manager Factory.
  */
+@Slf4j
 public class MSLedgerManagerFactory extends LedgerManagerFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(MSLedgerManagerFactory.class);
@@ -616,6 +619,25 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
         public LedgerRangeIterator getLedgerRanges() {
             return new MSLedgerRangeIterator();
         }
+
+        /**
+         * Whether the znode a special znode.
+         *
+         * @param znode
+         *          Znode Name
+         * @return true  if the znode is a special znode otherwise false
+         */
+         public static boolean isSpecialZnode(String znode) {
+            if (BookKeeperConstants.AVAILABLE_NODE.equals(znode)
+                    || BookKeeperConstants.COOKIE_NODE.equals(znode)
+                    || BookKeeperConstants.LAYOUT_ZNODE.equals(znode)
+                    || BookKeeperConstants.INSTANCEID.equals(znode)
+                    || BookKeeperConstants.UNDER_REPLICATION_NODE.equals(znode)
+                    || MsLedgerManager.IDGEN_ZNODE.equals(znode)) {
+                return true;
+            }
+            return false;
+        }
     }
 
     @Override
@@ -720,4 +742,46 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
         super.format(conf, layoutManager);
     }
 
+    @Override
+    public boolean validateAndNukeExistingCluster(AbstractConfiguration<?> conf, LayoutManager layoutManager)
+            throws InterruptedException, KeeperException, IOException {
+        String zkLedgersRootPath = conf.getZkLedgersRootPath();
+        String zkServers = conf.getZkServers();
+        MsLedgerManager msLedgerManager = (MsLedgerManager) newLedgerManager();
+
+        /*
+         * before proceeding with nuking existing cluster, make sure there
+         * are no unexpected znodes under ledgersRootPath
+         */
+        List<String> ledgersRootPathChildrenList = zk.getChildren(zkLedgersRootPath, false);
+        for (String ledgersRootPathChildren : ledgersRootPathChildrenList) {
+            if ((!MsLedgerManager.isSpecialZnode(ledgersRootPathChildren))) {
+                log.error("Found unexpected znode : {} under ledgersRootPath : {} so exiting nuke operation",
+                        ledgersRootPathChildren, zkLedgersRootPath);
+                return false;
+            }
+        }
+
+        // formatting ledgermanager deletes ledger znodes
+        format(conf, layoutManager);
+
+        // now delete all the special nodes recursively
+        ledgersRootPathChildrenList = zk.getChildren(zkLedgersRootPath, false);
+        for (String ledgersRootPathChildren : ledgersRootPathChildrenList) {
+            if (MsLedgerManager.isSpecialZnode(ledgersRootPathChildren)) {
+                ZKUtil.deleteRecursive(zk, zkLedgersRootPath + "/" + ledgersRootPathChildren);
+            } else {
+                log.error("Found unexpected znode : {} under ledgersRootPath : {} so exiting nuke operation",
+                        ledgersRootPathChildren, zkLedgersRootPath);
+                return false;
+            }
+        }
+
+        // finally deleting the ledgers rootpath
+        zk.delete(zkLedgersRootPath, -1);
+
+        log.info("Successfully nuked existing cluster, ZKServers: {} ledger root path: {}",
+                zkServers, zkLedgersRootPath);
+        return true;
+    }
 }

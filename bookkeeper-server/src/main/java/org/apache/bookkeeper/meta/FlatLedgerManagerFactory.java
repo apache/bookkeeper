@@ -21,24 +21,22 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.io.IOException;
 import java.util.List;
+
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZKUtil;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 
 /**
  * Flat Ledger Manager Factory.
  */
-public class FlatLedgerManagerFactory extends LedgerManagerFactory {
+public class FlatLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
 
     public static final String NAME = "flat";
     public static final int CUR_VERSION = 1;
 
     AbstractConfiguration conf;
-    ZooKeeper zk;
 
     @Override
     public int getCurrentVersion() {
@@ -83,21 +81,5 @@ public class FlatLedgerManagerFactory extends LedgerManagerFactory {
     public LedgerUnderreplicationManager newLedgerUnderreplicationManager()
             throws KeeperException, InterruptedException, ReplicationException.CompatibilityException {
         return new ZkLedgerUnderreplicationManager(conf, zk);
-    }
-
-    @Override
-    public void format(AbstractConfiguration conf, LayoutManager layoutManager)
-            throws InterruptedException, KeeperException, IOException {
-        try (FlatLedgerManager ledgerManager = (FlatLedgerManager) newLedgerManager()) {
-            String ledgersRootPath = conf.getZkLedgersRootPath();
-            List<String> children = zk.getChildren(ledgersRootPath, false);
-            for (String child : children) {
-                if (!ledgerManager.isSpecialZnode(child) && ledgerManager.isLedgerParentNode(child)) {
-                    ZKUtil.deleteRecursive(zk, ledgersRootPath + "/" + child);
-                }
-            }
-        }
-        // Delete and recreate the LAYOUT information.
-        super.format(conf, layoutManager);
     }
 }

@@ -46,7 +46,6 @@ import org.apache.bookkeeper.bookie.BookieException.MetadataStoreException;
 import org.apache.bookkeeper.client.BookieWatcher;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.meta.AbstractZkLedgerManager;
 import org.apache.bookkeeper.meta.LayoutManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.ZkLayoutManager;
@@ -74,9 +73,6 @@ import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
-
-
-
 
 /**
  * ZooKeeper Based {@link RegistrationManager}.
@@ -491,7 +487,6 @@ public class ZKRegistrationManager implements RegistrationManager {
         return true;
     }
 
-
     @Override
     public boolean nukeExistingCluster() throws Exception {
         String zkLedgersRootPath = conf.getZkLedgersRootPath();
@@ -530,45 +525,8 @@ public class ZKRegistrationManager implements RegistrationManager {
             }
         }
 
-        // Format all ledger metadata layout
         LedgerManagerFactory ledgerManagerFactory = LedgerManagerFactory.newLedgerManagerFactory(conf, layoutManager);
-        AbstractZkLedgerManager zkLedgerManager = (AbstractZkLedgerManager) ledgerManagerFactory.newLedgerManager();
-
-        /*
-         * before proceeding with nuking existing cluster, make sure there
-         * are no unexpected znodes under ledgersRootPath
-         */
-        List<String> ledgersRootPathChildrenList = zk.getChildren(zkLedgersRootPath, false);
-        for (String ledgersRootPathChildren : ledgersRootPathChildrenList) {
-            if ((!zkLedgerManager.isSpecialZnode(ledgersRootPathChildren))
-                    && (!zkLedgerManager.isLedgerParentNode(ledgersRootPathChildren))) {
-                log.error("Found unexpected znode : {} under ledgersRootPath : {} so exiting nuke operation",
-                        ledgersRootPathChildren, zkLedgersRootPath);
-                return false;
-            }
-        }
-
-        // formatting ledgermanager deletes ledger znodes
-        ledgerManagerFactory.format(conf, layoutManager);
-
-        // now delete all the special nodes recursively
-        ledgersRootPathChildrenList = zk.getChildren(zkLedgersRootPath, false);
-        for (String ledgersRootPathChildren : ledgersRootPathChildrenList) {
-            if (zkLedgerManager.isSpecialZnode(ledgersRootPathChildren)) {
-                ZKUtil.deleteRecursive(zk, zkLedgersRootPath + "/" + ledgersRootPathChildren);
-            } else {
-                log.error("Found unexpected znode : {} under ledgersRootPath : {} so exiting nuke operation",
-                        ledgersRootPathChildren, zkLedgersRootPath);
-                return false;
-            }
-        }
-
-        // finally deleting the ledgers rootpath
-        zk.delete(zkLedgersRootPath, -1);
-
-        log.info("Successfully nuked existing cluster, ZKServers: {} ledger root path: {}",
-                zkServers, zkLedgersRootPath);
-        return true;
+        return ledgerManagerFactory.validateAndNukeExistingCluster(conf, layoutManager);
     }
 
     @Override

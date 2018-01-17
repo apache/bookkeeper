@@ -243,6 +243,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         bkAdmin.close();
     }
 
+    @Test
     public void testBookieInit() throws Exception {
         int bookieindex = 0;
         ServerConfiguration confOfExistingBookie = bsConfs.get(bookieindex);
@@ -283,7 +284,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
                 BookKeeperAdmin.initBookie(confOfExistingBookie));
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testInitNewCluster() throws Exception {
         ServerConfiguration newConfig = new ServerConfiguration(baseConf);
         String ledgersRootPath = "/testledgers";
@@ -325,7 +326,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         bk.close();
     }
 
-    @Test(timeout = 120000)
+    @Test
     public void testNukeExistingClusterWithForceOption() throws Exception {
         String ledgersRootPath = "/testledgers";
         ServerConfiguration newConfig = new ServerConfiguration(baseConf);
@@ -347,7 +348,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
                 (zkc.exists(ledgersRootPath, false) == null));
     }
 
-    @Test(timeout = 120000)
+    @Test
     public void testNukeExistingClusterWithInstanceId() throws Exception {
         String ledgersRootPath = "/testledgers";
         ServerConfiguration newConfig = new ServerConfiguration(baseConf);
@@ -372,7 +373,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
                 (zkc.exists(ledgersRootPath, false) == null));
     }
 
-    @Test(timeout = 120000)
+    @Test
     public void tryNukingExistingClustersWithInvalidParams() throws Exception {
         String ledgersRootPath = "/testledgers";
         ServerConfiguration newConfig = new ServerConfiguration(baseConf);
@@ -395,7 +396,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         String readInstanceId = new String(data, UTF_8);
 
         /*
-         * registrate a RO bookie
+         * register a RO bookie
          */
         String ipString = InetAddresses.fromInteger((new Random()).nextInt()).getHostAddress();
         String roBookieRegPath = newConfig.getZkAvailableBookiesPath() + "/" + BookKeeperConstants.READONLY + "/"

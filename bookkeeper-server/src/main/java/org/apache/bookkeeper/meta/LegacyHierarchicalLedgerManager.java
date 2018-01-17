@@ -125,7 +125,7 @@ class LegacyHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager 
         asyncProcessLevelNodes(ledgerRootPath, new Processor<String>() {
             @Override
             public void process(final String l1Node, final AsyncCallback.VoidCallback cb1) {
-                if (isSpecialZnode(l1Node)) {
+                if (!isLedgerParentNode(l1Node)) {
                     cb1.processResult(successRc, null, context);
                     return;
                 }
@@ -148,24 +148,19 @@ class LegacyHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager 
     }
 
     @Override
-    public boolean isSpecialZnode(String znode) {
-        return IDGEN_ZNODE.equals(znode) || super.isSpecialZnode(znode);
-    }
-
-    @Override
     protected String getLedgerParentNodeRegex() {
         return StringUtils.LEGACYHIERARCHICAL_LEDGER_PARENT_NODE_REGEX;
     }
 
     @Override
     public LedgerRangeIterator getLedgerRanges() {
-        return new HierarchicalLedgerRangeIterator();
+        return new LegacyHierarchicalLedgerRangeIterator();
     }
 
     /**
      * Iterator through each metadata bucket with hierarchical mode.
      */
-    private class HierarchicalLedgerRangeIterator implements LedgerRangeIterator {
+    private class LegacyHierarchicalLedgerRangeIterator implements LedgerRangeIterator {
         private Iterator<String> l1NodesIter = null;
         private Iterator<String> l2NodesIter = null;
         private String curL1Nodes = "";
@@ -187,7 +182,7 @@ class LegacyHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager 
                     return false;
                 }
                 // Top level nodes are always exactly 2 digits long. (Don't pick up long hierarchical top level nodes)
-                if (isSpecialZnode(curL1Nodes) || curL1Nodes.length() > 2) {
+                if (!isLedgerParentNode(curL1Nodes)) {
                     continue;
                 }
                 List<String> l2Nodes = zk.getChildren(ledgerRootPath + "/" + curL1Nodes, null);

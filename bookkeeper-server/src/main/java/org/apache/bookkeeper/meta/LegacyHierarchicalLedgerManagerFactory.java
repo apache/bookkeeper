@@ -26,20 +26,17 @@ import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.ZKUtil;
-import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 
 /**
  * Hierarchical Ledger Manager Factory.
  */
-public class LegacyHierarchicalLedgerManagerFactory extends LedgerManagerFactory {
+public class LegacyHierarchicalLedgerManagerFactory extends AbstractZkLedgerManagerFactory {
 
     public static final String NAME = "legacyhierarchical";
     public static final int CUR_VERSION = 1;
 
     AbstractConfiguration conf;
-    ZooKeeper zk;
 
     @Override
     public int getCurrentVersion() {
@@ -87,21 +84,4 @@ public class LegacyHierarchicalLedgerManagerFactory extends LedgerManagerFactory
             throws KeeperException, InterruptedException, ReplicationException.CompatibilityException{
         return new ZkLedgerUnderreplicationManager(conf, zk);
     }
-
-    @Override
-    public void format(AbstractConfiguration conf, LayoutManager layoutManager)
-            throws InterruptedException, KeeperException, IOException {
-        try (AbstractHierarchicalLedgerManager ledgerManager = (AbstractHierarchicalLedgerManager) newLedgerManager()) {
-            String ledgersRootPath = conf.getZkLedgersRootPath();
-            List<String> children = zk.getChildren(ledgersRootPath, false);
-            for (String child : children) {
-                if (!ledgerManager.isSpecialZnode(child) && ledgerManager.isLedgerParentNode(child)) {
-                    ZKUtil.deleteRecursive(zk, ledgersRootPath + "/" + child);
-                }
-            }
-        }
-        // Delete and recreate the LAYOUT information.
-        super.format(conf, layoutManager);
-    }
-
 }

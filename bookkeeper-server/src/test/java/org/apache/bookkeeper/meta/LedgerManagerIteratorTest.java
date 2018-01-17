@@ -439,7 +439,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
         }
     }
 
-    @Test(timeout = 30000)
+    @Test
     public void testLedgerParentNode() throws Throwable {
         /*
          * this testcase applies only ZK based ledgermanager so it doesnt work
@@ -463,7 +463,7 @@ public class LedgerManagerIteratorTest extends LedgerManagerTestCase {
         }
     }
 
-    @Test(timeout = 30000)
+    @Test
     public void testLedgerManagerFormat() throws Throwable {
         /*
          * this testcase applies only ZK based ledgermanager so it doesnt work

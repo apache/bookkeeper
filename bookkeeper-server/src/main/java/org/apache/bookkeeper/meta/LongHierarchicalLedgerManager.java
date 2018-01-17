@@ -102,12 +102,6 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
                 successRc, failureRc);
     }
 
-    @Override
-    public boolean isSpecialZnode(String znode) {
-        return LegacyHierarchicalLedgerManager.IDGEN_ZNODE.equals(znode)
-                || LongHierarchicalLedgerManager.IDGEN_ZNODE.equals(znode) || super.isSpecialZnode(znode);
-    }
-
     private class RecursiveProcessor implements Processor<String> {
         private final int level;
         private final String path;
@@ -129,7 +123,7 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
         @Override
         public void process(String lNode, VoidCallback cb) {
             String nodePath = path + "/" + lNode;
-            if ((level == 0) && isSpecialZnode(lNode)) {
+            if ((level == 0) && !isLedgerParentNode(lNode)) {
                 cb.processResult(successRc, null, context);
                 return;
             } else if (level < 3) {
@@ -261,7 +255,7 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
             void advance() throws IOException {
                 while (thisLevelIterator.hasNext()) {
                     String node = thisLevelIterator.next();
-                    if (level == 0 && isSpecialZnode(node)) {
+                    if (level == 0 && !isLedgerParentNode(node)) {
                         continue;
                     }
                     LedgerRangeIterator nextIterator = level < 3

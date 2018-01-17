@@ -89,12 +89,6 @@ class FlatLedgerManager extends AbstractZkLedgerManager {
     }
 
     @Override
-    public boolean isSpecialZnode(String znode) {
-        return znode.startsWith(ZkLedgerIdGenerator.LEDGER_ID_GEN_PREFIX)
-            || super.isSpecialZnode(znode);
-    }
-
-    @Override
     public LedgerRangeIterator getLedgerRanges() {
         return new LedgerRangeIterator() {
             // single iterator, can visit only one time
