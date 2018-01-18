@@ -43,7 +43,7 @@ import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.distributedlog.stream.storage.api.sc.StorageContainer;
 import org.apache.distributedlog.stream.storage.conf.StorageConfiguration;
-import org.apache.distributedlog.stream.storage.impl.store.RangeStoreFactory;
+import org.apache.distributedlog.stream.storage.impl.store.MVCCStoreFactory;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -56,7 +56,7 @@ public class TestDefaultStorageContainerFactory {
   public void testCreate() throws Exception {
     OrderedScheduler scheduler = mock(OrderedScheduler.class);
     OrderedScheduler snapshotScheduler = mock(OrderedScheduler.class);
-    RangeStoreFactory storeFactory = mock(RangeStoreFactory.class);
+    MVCCStoreFactory storeFactory = mock(MVCCStoreFactory.class);
     ListeningScheduledExecutorService snapshotExecutor = mock(ListeningScheduledExecutorService.class);
     when(snapshotScheduler.chooseThread(anyLong())).thenReturn(snapshotExecutor);
     Mockito.doReturn(mock(ListenableScheduledFuture.class))

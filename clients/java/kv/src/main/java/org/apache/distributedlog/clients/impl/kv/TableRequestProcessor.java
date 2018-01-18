@@ -67,6 +67,8 @@ public class TableRequestProcessor<RespT>
         return rsChannel.getTableService().put(request);
       case KV_DELETE:
         return rsChannel.getTableService().delete(request);
+      case KV_TXN:
+        return rsChannel.getTableService().txn(request);
       default:
         SettableFuture<StorageContainerResponse> respFuture = SettableFuture.create();
         respFuture.setException(new Exception("Unknown request " + request));

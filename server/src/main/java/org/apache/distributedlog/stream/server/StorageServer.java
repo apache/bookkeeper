@@ -44,7 +44,7 @@ import org.apache.distributedlog.stream.storage.RangeStoreBuilder;
 import org.apache.distributedlog.stream.storage.StorageResources;
 import org.apache.distributedlog.stream.storage.conf.StorageConfiguration;
 import org.apache.distributedlog.stream.storage.impl.sc.helix.HelixStorageContainerManager;
-import org.apache.distributedlog.stream.storage.impl.store.RangeStoreFactoryImpl;
+import org.apache.distributedlog.stream.storage.impl.store.MVCCStoreFactoryImpl;
 
 /**
  * A storage server is a server that run storage service and serving rpc requests.
@@ -205,7 +205,7 @@ public class StorageServer {
           rootStatsLogger.scope("helix")))
       // with the inter storage container client manager
       .withRangeStoreFactory(
-        new RangeStoreFactoryImpl(
+        new MVCCStoreFactoryImpl(
             dlNamespaceProvider,
             storageConf.getRangeStoreDirs(),
             storageResources));

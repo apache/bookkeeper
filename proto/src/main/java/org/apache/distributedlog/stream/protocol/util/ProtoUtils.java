@@ -30,6 +30,7 @@ import org.apache.distributedlog.stream.proto.StreamConfiguration;
 import org.apache.distributedlog.stream.proto.StreamMetadata.LifecycleState;
 import org.apache.distributedlog.stream.proto.StreamMetadata.ServingState;
 import org.apache.distributedlog.stream.proto.StreamName;
+import org.apache.distributedlog.stream.proto.StreamProperties;
 import org.apache.distributedlog.stream.proto.storage.CreateNamespaceRequest;
 import org.apache.distributedlog.stream.proto.storage.CreateStreamRequest;
 import org.apache.distributedlog.stream.proto.storage.DeleteNamespaceRequest;
@@ -234,6 +235,15 @@ public class ProtoUtils {
     return newScRequestBuilder(scId, Type.GET_ACTIVE_RANGES)
       .setGetActiveRangesReq(GetActiveRangesRequest.newBuilder()
         .setStreamId(streamId))
+      .build();
+  }
+
+  public static StorageContainerRequest createGetActiveRangesRequest(long scId,
+                                                                     StreamProperties streamProps) {
+    return newScRequestBuilder(scId, Type.GET_ACTIVE_RANGES)
+      .setGetActiveRangesReq(GetActiveRangesRequest.newBuilder()
+        .setStreamId(streamProps.getStreamId())
+        .setStreamProps(streamProps))
       .build();
   }
 

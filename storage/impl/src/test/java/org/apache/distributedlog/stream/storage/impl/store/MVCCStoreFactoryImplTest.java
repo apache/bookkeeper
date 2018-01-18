@@ -18,7 +18,7 @@
 package org.apache.distributedlog.stream.storage.impl.store;
 
 import static org.apache.distributedlog.statelib.impl.mvcc.MVCCUtils.NOP_CMD;
-import static org.apache.distributedlog.stream.storage.impl.store.RangeStoreFactoryImpl.normalizedName;
+import static org.apache.distributedlog.stream.storage.impl.store.MVCCStoreFactoryImpl.normalizedName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -52,10 +52,10 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 /**
- * Unit test of {@link RangeStoreFactoryImpl}.
+ * Unit test of {@link MVCCStoreFactoryImpl}.
  */
 @Slf4j
-public class RangeStoreFactoryImplTest {
+public class MVCCStoreFactoryImplTest {
 
     @Rule
     public final TemporaryFolder testDir = new TemporaryFolder();
@@ -63,7 +63,7 @@ public class RangeStoreFactoryImplTest {
     private Namespace namespace;
     private File[] storeDirs;
     private StorageResources resources;
-    private RangeStoreFactoryImpl factory;
+    private MVCCStoreFactoryImpl factory;
 
     @Before
     public void setup() throws IOException {
@@ -97,7 +97,7 @@ public class RangeStoreFactoryImplTest {
                 .numIOReadThreads(3)
                 .numIOWriteThreads(3)
                 .build());
-        this.factory = new RangeStoreFactoryImpl(
+        this.factory = new MVCCStoreFactoryImpl(
             () -> namespace,
             storeDirs,
             resources);
@@ -131,7 +131,7 @@ public class RangeStoreFactoryImplTest {
             ).toFile();
             assertEquals(localStoreDir, store.spec().getLocalStateStoreDir());
 
-            String streamName = RangeStoreFactoryImpl.streamName(scId, streamId, rangeId);
+            String streamName = MVCCStoreFactoryImpl.streamName(scId, streamId, rangeId);
             assertEquals(streamName, store.spec().getStream());
 
             assertTrue(store.spec().getKeyCoder() instanceof ByteArrayCoder);

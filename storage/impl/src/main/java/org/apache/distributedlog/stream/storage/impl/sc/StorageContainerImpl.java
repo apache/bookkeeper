@@ -18,6 +18,7 @@
 
 package org.apache.distributedlog.stream.storage.impl.sc;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.distributedlog.stream.protocol.ProtocolConstants.CONTAINER_META_RANGE_ID;
 import static org.apache.distributedlog.stream.protocol.ProtocolConstants.CONTAINER_META_STREAM_ID;
 import static org.apache.distributedlog.stream.protocol.ProtocolConstants.ROOT_RANGE_ID;
@@ -27,10 +28,16 @@ import static org.apache.distributedlog.stream.protocol.ProtocolConstants.ROOT_S
 import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ScheduledExecutorService;
+import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
+import org.apache.distributedlog.stream.proto.kv.rpc.DeleteRangeRequest;
+import org.apache.distributedlog.stream.proto.kv.rpc.PutRequest;
+import org.apache.distributedlog.stream.proto.kv.rpc.RangeRequest;
+import org.apache.distributedlog.stream.proto.kv.rpc.RoutingHeader;
+import org.apache.distributedlog.stream.proto.kv.rpc.TxnRequest;
 import org.apache.distributedlog.stream.proto.storage.CreateNamespaceRequest;
 import org.apache.distributedlog.stream.proto.storage.CreateNamespaceResponse;
 import org.apache.distributedlog.stream.proto.storage.CreateStreamRequest;
@@ -44,15 +51,23 @@ import org.apache.distributedlog.stream.proto.storage.GetNamespaceResponse;
 import org.apache.distributedlog.stream.proto.storage.GetStreamRequest;
 import org.apache.distributedlog.stream.proto.storage.GetStreamResponse;
 import org.apache.distributedlog.stream.proto.storage.StorageContainerRequest;
+import org.apache.distributedlog.stream.proto.storage.StorageContainerRequest.Type;
 import org.apache.distributedlog.stream.proto.storage.StorageContainerResponse;
+import org.apache.distributedlog.stream.protocol.RangeId;
 import org.apache.distributedlog.stream.protocol.util.StorageContainerPlacementPolicy;
+import org.apache.distributedlog.stream.storage.api.kv.TableStore;
 import org.apache.distributedlog.stream.storage.api.metadata.MetaRangeStore;
 import org.apache.distributedlog.stream.storage.api.metadata.RootRangeStore;
 import org.apache.distributedlog.stream.storage.api.sc.StorageContainer;
 import org.apache.distributedlog.stream.storage.conf.StorageConfiguration;
+import org.apache.distributedlog.stream.storage.impl.kv.TableStoreCache;
+import org.apache.distributedlog.stream.storage.impl.kv.TableStoreFactory;
+import org.apache.distributedlog.stream.storage.impl.kv.TableStoreImpl;
+import org.apache.distributedlog.stream.storage.impl.metadata.MetaRangeStoreFactory;
 import org.apache.distributedlog.stream.storage.impl.metadata.MetaRangeStoreImpl;
+import org.apache.distributedlog.stream.storage.impl.metadata.RootRangeStoreFactory;
 import org.apache.distributedlog.stream.storage.impl.metadata.RootRangeStoreImpl;
-import org.apache.distributedlog.stream.storage.impl.store.RangeStoreFactory;
+import org.apache.distributedlog.stream.storage.impl.store.MVCCStoreFactory;
 
 /**
  * The default implementation of {@link StorageContainer}.
@@ -62,33 +77,56 @@ public class StorageContainerImpl
     implements StorageContainer {
 
   private final long scId;
-  private final ScheduledExecutorService scExecutor;
-  private final StorageConfiguration storageConf;
 
-  // storage container placement policy
-  private final StorageContainerPlacementPolicy placementPolicy;
   // store container that used for fail requests.
   private final StorageContainer failRequestStorageContainer;
   // store factory
-  private final RangeStoreFactory storeFactory;
+  private final MVCCStoreFactory storeFactory;
   // storage container
+  @Getter(value = AccessLevel.PACKAGE)
   private MetaRangeStore mgStore;
+  @Getter(value = AccessLevel.PACKAGE)
+  private final MetaRangeStoreFactory mrStoreFactory;
   // root range
+  @Getter(value = AccessLevel.PACKAGE)
   private RootRangeStore rootRange;
+  @Getter(value = AccessLevel.PACKAGE)
+  private final RootRangeStoreFactory rrStoreFactory;
+  // table range stores
+  @Getter(value = AccessLevel.PACKAGE)
+  private final TableStoreCache tableStoreCache;
+  @Getter(value = AccessLevel.PACKAGE)
+  private final TableStoreFactory tableStoreFactory;
 
   public StorageContainerImpl(StorageConfiguration storageConf,
                               long scId,
                               StorageContainerPlacementPolicy rangePlacementPolicy,
                               OrderedScheduler scheduler,
-                              RangeStoreFactory storeFactory) {
+                              MVCCStoreFactory storeFactory) {
+      this(
+          scId,
+          scheduler,
+          storeFactory,
+          store -> new RootRangeStoreImpl(store, rangePlacementPolicy, scheduler.chooseThread(scId)),
+          store -> new MetaRangeStoreImpl(store, rangePlacementPolicy, scheduler.chooseThread(scId)),
+          store -> new TableStoreImpl(store));
+  }
+
+  public StorageContainerImpl(long scId,
+                              OrderedScheduler scheduler,
+                              MVCCStoreFactory storeFactory,
+                              RootRangeStoreFactory rrStoreFactory,
+                              MetaRangeStoreFactory mrStoreFactory,
+                              TableStoreFactory tableStoreFactory) {
     this.scId = scId;
-    this.scExecutor = scheduler.chooseThread(scId);
-    this.storageConf = storageConf;
     this.failRequestStorageContainer = FailRequestStorageContainer.of(scheduler);
-    this.storeFactory = storeFactory;
     this.rootRange = failRequestStorageContainer;
     this.mgStore = failRequestStorageContainer;
-    this.placementPolicy = rangePlacementPolicy;
+    this.storeFactory = storeFactory;
+    this.rrStoreFactory = rrStoreFactory;
+    this.mrStoreFactory = mrStoreFactory;
+    this.tableStoreFactory = tableStoreFactory;
+    this.tableStoreCache = new TableStoreCache(storeFactory, tableStoreFactory);
   }
 
   //
@@ -109,10 +147,7 @@ public class StorageContainerImpl
         ROOT_STREAM_ID,
         ROOT_RANGE_ID
     ).thenApply(store -> {
-      rootRange = new RootRangeStoreImpl(
-          store,
-          placementPolicy,
-          scExecutor);
+      rootRange = rrStoreFactory.createStore(store);
       return null;
     });
   }
@@ -123,10 +158,7 @@ public class StorageContainerImpl
         CONTAINER_META_STREAM_ID,
         CONTAINER_META_RANGE_ID
     ).thenApply(store -> {
-      mgStore = new MetaRangeStoreImpl(
-          store,
-          placementPolicy,
-          scExecutor);
+      mgStore = mrStoreFactory.createStore(store);
       return null;
     });
   }
@@ -218,17 +250,74 @@ public class StorageContainerImpl
 
   @Override
   public CompletableFuture<StorageContainerResponse> range(StorageContainerRequest request) {
-      throw new UnsupportedOperationException("unimplemented");
+    checkArgument(Type.KV_RANGE == request.getType());
+
+    long scId = request.getScId();
+    RangeRequest rr = request.getKvRangeReq();
+    RoutingHeader header = rr.getHeader();
+
+    RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
+    TableStore store = tableStoreCache.getTableStore(rid);
+    if (null != store) {
+      return store.range(request);
+    } else {
+      return tableStoreCache.openTableStore(scId, rid)
+          .thenCompose(s -> s.range(request));
+    }
   }
 
   @Override
   public CompletableFuture<StorageContainerResponse> put(StorageContainerRequest request) {
-    throw new UnsupportedOperationException("unimplemented");
+    checkArgument(Type.KV_PUT == request.getType());
+
+    long scId = request.getScId();
+    PutRequest rr = request.getKvPutReq();
+    RoutingHeader header = rr.getHeader();
+
+    RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
+    TableStore store = tableStoreCache.getTableStore(rid);
+    if (null != store) {
+      return store.put(request);
+    } else {
+      return tableStoreCache.openTableStore(scId, rid)
+          .thenCompose(s -> s.put(request));
+    }
   }
 
   @Override
   public CompletableFuture<StorageContainerResponse> delete(StorageContainerRequest request) {
-    throw new UnsupportedOperationException("unimplemented");
+    checkArgument(Type.KV_DELETE == request.getType());
+
+    long scId = request.getScId();
+    DeleteRangeRequest rr = request.getKvDeleteReq();
+    RoutingHeader header = rr.getHeader();
+
+    RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
+    TableStore store = tableStoreCache.getTableStore(rid);
+    if (null != store) {
+      return store.delete(request);
+    } else {
+      return tableStoreCache.openTableStore(scId, rid)
+          .thenCompose(s -> s.delete(request));
+    }
+  }
+
+  @Override
+  public CompletableFuture<StorageContainerResponse> txn(StorageContainerRequest request) {
+    checkArgument(Type.KV_TXN == request.getType());
+
+    long scId = request.getScId();
+    TxnRequest rr = request.getKvTxnReq();
+    RoutingHeader header = rr.getHeader();
+
+    RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
+    TableStore store = tableStoreCache.getTableStore(rid);
+    if (null != store) {
+      return store.txn(request);
+    } else {
+      return tableStoreCache.openTableStore(scId, rid)
+          .thenCompose(s -> s.txn(request));
+    }
   }
 
   @Override

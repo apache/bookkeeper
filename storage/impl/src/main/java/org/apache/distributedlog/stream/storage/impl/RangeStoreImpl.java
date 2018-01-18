@@ -49,7 +49,7 @@ import org.apache.distributedlog.stream.storage.conf.StorageConfiguration;
 import org.apache.distributedlog.stream.storage.impl.sc.DefaultStorageContainerFactory;
 import org.apache.distributedlog.stream.storage.impl.sc.StorageContainerPlacementPolicyImpl;
 import org.apache.distributedlog.stream.storage.impl.sc.StorageContainerRegistryImpl;
-import org.apache.distributedlog.stream.storage.impl.store.RangeStoreFactory;
+import org.apache.distributedlog.stream.storage.impl.store.MVCCStoreFactory;
 
 /**
  * KeyRange Service.
@@ -63,12 +63,12 @@ public class RangeStoreImpl
   private final StorageContainerManagerFactory scmFactory;
   private final StorageContainerRegistryImpl scRegistry;
   private final StorageContainerManager scManager;
-  private final RangeStoreFactory storeFactory;
+  private final MVCCStoreFactory storeFactory;
 
   public RangeStoreImpl(StorageConfiguration conf,
                         Resource<OrderedScheduler> schedulerResource,
                         StorageContainerManagerFactory factory,
-                        RangeStoreFactory rangeStoreFactory,
+                        MVCCStoreFactory mvccStoreFactory,
                         int numStorageContainers,
                         StatsLogger statsLogger) {
     super("range-service", conf, statsLogger);
@@ -77,7 +77,7 @@ public class RangeStoreImpl
     this.scmFactory = factory;
     StorageContainerPlacementPolicy placementPolicy =
       StorageContainerPlacementPolicyImpl.of(numStorageContainers);
-    this.storeFactory = rangeStoreFactory;
+    this.storeFactory = mvccStoreFactory;
     this.scRegistry = new StorageContainerRegistryImpl(
       new DefaultStorageContainerFactory(
         conf,

@@ -74,7 +74,7 @@ import org.apache.distributedlog.stream.storage.StorageResources;
 import org.apache.distributedlog.stream.storage.api.sc.StorageContainer;
 import org.apache.distributedlog.stream.storage.conf.StorageConfiguration;
 import org.apache.distributedlog.stream.storage.impl.sc.LocalStorageContainerManager;
-import org.apache.distributedlog.stream.storage.impl.store.RangeStoreFactory;
+import org.apache.distributedlog.stream.storage.impl.store.MVCCStoreFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -203,7 +203,7 @@ public class TestRangeStoreImpl {
     Endpoint endpoint = createEndpoint("127.0.0.1", 0);
 
     // create the client manager
-    RangeStoreFactory storeFactory = mock(RangeStoreFactory.class);
+    MVCCStoreFactory storeFactory = mock(MVCCStoreFactory.class);
     MVCCAsyncStore<byte[], byte[]> store = mock(MVCCAsyncStore.class);
     when(storeFactory.openStore(anyLong(), anyLong(), anyLong()))
         .thenReturn(FutureUtils.value(store));

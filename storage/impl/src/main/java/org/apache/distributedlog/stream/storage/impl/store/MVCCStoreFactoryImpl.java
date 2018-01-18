@@ -47,11 +47,11 @@ import org.apache.distributedlog.stream.protocol.RangeId;
 import org.apache.distributedlog.stream.storage.StorageResources;
 
 /**
- * A default implementation of {@link RangeStoreFactory}.
+ * A default implementation of {@link MVCCStoreFactory}.
  */
 @Accessors(fluent = true)
 @Slf4j
-public class RangeStoreFactoryImpl implements RangeStoreFactory {
+public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
 
     // store supplier
     private final Supplier<MVCCAsyncStore<byte[], byte[]>> storeSupplier;
@@ -72,9 +72,9 @@ public class RangeStoreFactoryImpl implements RangeStoreFactory {
     private final Map<Long, Map<RangeId, MVCCAsyncStore<byte[], byte[]>>> stores;
     private boolean closed = false;
 
-    public RangeStoreFactoryImpl(Supplier<Namespace> namespaceSupplier,
-                                 File[] localStoreDirs,
-                                 StorageResources storageResources) {
+    public MVCCStoreFactoryImpl(Supplier<Namespace> namespaceSupplier,
+                                File[] localStoreDirs,
+                                StorageResources storageResources) {
         this.storeSupplier = StateStores.mvccKvBytesStoreSupplier(namespaceSupplier);
         this.storageResources = storageResources;
         this.writeIOScheduler =
@@ -162,7 +162,7 @@ public class RangeStoreFactoryImpl implements RangeStoreFactory {
     CompletableFuture<MVCCAsyncStore<byte[], byte[]>> newStore(long scId, long streamId, long rangeId) {
         synchronized (this) {
             if (closed) {
-                return FutureUtils.exception(new ObjectClosedException("RangeStoreFactory"));
+                return FutureUtils.exception(new ObjectClosedException("MVCCStoreFactory"));
             }
         }
 

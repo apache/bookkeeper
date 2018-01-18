@@ -21,7 +21,7 @@ import org.apache.distributedlog.stream.storage.api.RangeStore;
 import org.apache.distributedlog.stream.storage.api.sc.StorageContainerManagerFactory;
 import org.apache.distributedlog.stream.storage.conf.StorageConfiguration;
 import org.apache.distributedlog.stream.storage.impl.RangeStoreImpl;
-import org.apache.distributedlog.stream.storage.impl.store.RangeStoreFactory;
+import org.apache.distributedlog.stream.storage.impl.store.MVCCStoreFactory;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -30,11 +30,11 @@ import org.junit.Test;
  */
 public class TestRangeStoreBuilder {
 
-  private RangeStoreFactory storeFactory;
+  private MVCCStoreFactory storeFactory;
 
   @Before
   public void setup() {
-    this.storeFactory = mock(RangeStoreFactory.class);
+    this.storeFactory = mock(MVCCStoreFactory.class);
   }
 
   @Test(expected = NullPointerException.class)

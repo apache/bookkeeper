@@ -15,34 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.distributedlog.stream.storage.impl.store;
+package org.apache.distributedlog.stream.storage.impl.metadata;
 
-import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.statelib.api.mvcc.MVCCAsyncStore;
+import org.apache.distributedlog.stream.storage.api.metadata.MetaRangeStore;
 
 /**
- * The factory that creates store for each range to store its states.
+ * Factory to create meta range store.
  */
-public interface RangeStoreFactory extends AutoCloseable {
+@FunctionalInterface
+public interface MetaRangeStoreFactory {
 
     /**
-     * Open the state store for storing range <tt>scId</tt>/<tt>streamId</tt>/<tt>rangeId</tt>.
+     * Create a meta range store from the provided local <tt>store</tt>.
      *
-     * @param scId storage container id
-     * @param streamId stream id
-     * @param rangeId range id
-     * @return an state store instance
+     * @param store local store for storing meta range metadata.
+     * @return meta range store.
      */
-    CompletableFuture<MVCCAsyncStore<byte[], byte[]>> openStore(long scId, long streamId, long rangeId);
-
-    /**
-     * Close the provided store and remove it from cache.
-     *
-     * @param scId storage container id
-     * @return future to represent the close result.
-     */
-    CompletableFuture<Void> closeStores(long scId);
-
-    @Override
-    void close();
+    MetaRangeStore createStore(MVCCAsyncStore<byte[], byte[]> store);
 }

@@ -195,7 +195,7 @@ service TableService {
     rpc Range(StorageContainerRequest) returns (StorageContainerResponse) {}
     rpc Put(StorageContainerRequest) returns (StorageContainerResponse) {}
     rpc Delete(StorageContainerRequest) returns (StorageContainerResponse) {}
-    rpc Watch(StorageContainerRequest) returns (StorageContainerResponse) {}
+    rpc Txn(StorageContainerRequest) returns (StorageContainerResponse) {}
 }
 
 //
