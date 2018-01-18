@@ -42,6 +42,12 @@
     </dependency>
 
     <dependency>
+      <groupId>org.apache.bookkeeper.tests</groupId>
+      <artifactId>integration-tests-topologies</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
       <groupId>org.jboss.arquillian.junit</groupId>
       <artifactId>arquillian-junit-standalone</artifactId>
       <version>1.1.14.Final</version>
