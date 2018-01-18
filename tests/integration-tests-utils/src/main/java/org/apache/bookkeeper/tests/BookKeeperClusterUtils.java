@@ -23,6 +23,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.github.dockerjava.api.DockerClient;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -76,6 +77,38 @@ public class BookKeeperClusterUtils {
         try (ZooKeeper zk = BookKeeperClusterUtils.zookeeperClient(docker)) {
             zk.create("/ledgers", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
             zk.create("/ledgers/available", new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        }
+    }
+
+    public static void updateBookieConf(DockerClient docker, String containerId,
+                                        String version, String key, String value) throws Exception {
+        String confFile = "/opt/bookkeeper/" + version + "/conf/bk_server.conf";
+        String sedProgram = String.format(
+                "/[[:blank:]]*%s[[:blank:]]*=/ { h; s!=.*!=%s!; }; ${x;/^$/ { s//%s=%s/;H; }; x}",
+                key, value, key, value);
+        DockerUtils.runCommand(docker, containerId, "sed", "-i", "-e", sedProgram, confFile);
+    }
+
+    public static void updateAllBookieConf(DockerClient docker, String version, String key, String value)
+            throws Exception {
+        for (String b : DockerUtils.cubeIdsMatching("bookkeeper")) {
+            updateBookieConf(docker, b, version, key, value);
+        }
+    }
+
+    public static boolean runOnAnyBookie(DockerClient docker, String... cmds) throws Exception {
+        Optional<String> bookie = DockerUtils.cubeIdsMatching("bookkeeper").stream().findAny();
+        if (bookie.isPresent()) {
+            DockerUtils.runCommand(docker, bookie.get(), cmds);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static void runOnAllBookies(DockerClient docker, String... cmds) throws Exception {
+        for (String b : DockerUtils.cubeIdsMatching("bookkeeper")) {
+            DockerUtils.runCommand(docker, b, cmds);
         }
     }
 
@@ -148,6 +181,12 @@ public class BookKeeperClusterUtils {
     public static boolean stopAllBookies(DockerClient docker) {
         return DockerUtils.cubeIdsMatching("bookkeeper").stream()
             .map((b) -> stopBookie(docker, b))
+            .reduce(true, BookKeeperClusterUtils::allTrue);
+    }
+
+    public static boolean waitAllBookieUp(DockerClient docker) {
+        return DockerUtils.cubeIdsMatching("bookkeeper").stream()
+            .map((b) -> waitBookieUp(docker, b, 10, TimeUnit.SECONDS))
             .reduce(true, BookKeeperClusterUtils::allTrue);
     }
 }
