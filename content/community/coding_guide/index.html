@@ -250,6 +250,8 @@ Please refer to our <a href="https://github.com/apache/bookkeeper/blob/master/bu
 
 <p>Please use these libraries whenever possible rather than introducing more dependencies.</p>
 
+<p>Dependencies are bundled with our binary distributions, so we need to attach the relevant licenses. See <a href="/community/licensing">Third party dependencies and licensing</a> for a guide on how to do this correctly.</p>
+
 <h4 id="future">Future</h4>
 
 <p>We prefer Java-8 Future over Guava’s Listenable Future. Please use Java-8 Future whenever possible.</p>
@@ -269,7 +271,7 @@ Please refer to our <a href="https://github.com/apache/bookkeeper/blob/master/bu
 <h4 id="logging-levels">Logging levels</h4>
 
 <ul>
-  <li><em>INFO</em> is the level you should assume the software will be run in. INFo messages are things which are not bad but which the user will definitely want to know about every time they occur.</li>
+  <li><em>INFO</em> is the level you should assume the software will be run in. INFO messages are things which are not bad but which the user will definitely want to know about every time they occur.</li>
   <li><em>TRACE</em> and <em>DEBUG</em> are both things you turn on when something is wrong and you want to figure out what is going on. <em>DEBUG</em> should not be so fine grained that it will seriously affect performance of the program. <em>TRACE</em> can be anything. Both <em>DEBUG</em> and <em>TRACE</em> statements should be considered to be wrapped in an <em>if (logger.isDebugEnabled)</em> or <em>if (logger.isTraceEnabled)</em> check to avoid performance degradation.</li>
   <li><em>WARN</em> and <em>ERROR</em> indicate something that is <strong>BAD</strong>. Use <em>WARN</em> if you aren’t totally sure it is bad, and <em>ERROR</em> if you are.</li>
 </ul>
