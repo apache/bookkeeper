@@ -17,7 +17,6 @@
 */
 package org.apache.bookkeeper.util;
 
-import com.google.common.collect.ObjectArrays;
 import io.netty.buffer.AbstractReferenceCountedByteBuf;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
