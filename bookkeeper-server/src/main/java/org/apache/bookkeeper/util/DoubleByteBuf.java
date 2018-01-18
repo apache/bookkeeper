@@ -122,11 +122,6 @@ public final class DoubleByteBuf extends AbstractReferenceCountedByteBuf {
     }
 
     @Override
-    public int readableBytes() {
-        return b1.readableBytes() + b2.readableBytes();
-    }
-
-    @Override
     public int writableBytes() {
         return 0;
     }
@@ -419,23 +414,23 @@ public final class DoubleByteBuf extends AbstractReferenceCountedByteBuf {
     private static final Constructor<ByteBuf> advancedLeakAwareByteBufConstructor;
 
     static {
-        Constructor<ByteBuf> _simpleLeakAwareByteBufConstructor = null;
-        Constructor<ByteBuf> _advancedLeakAwareByteBufConstructor = null;
+        Constructor<ByteBuf> tmpSimpleLeakAwareByteBufConstructor = null;
+        Constructor<ByteBuf> tmpAdvancedLeakAwareByteBufConstructor = null;
         try {
             Class<?> simpleLeakAwareByteBufClass = Class.forName("io.netty.buffer.SimpleLeakAwareByteBuf");
-            _simpleLeakAwareByteBufConstructor = (Constructor<ByteBuf>) simpleLeakAwareByteBufClass
+            tmpSimpleLeakAwareByteBufConstructor = (Constructor<ByteBuf>) simpleLeakAwareByteBufClass
                     .getDeclaredConstructor(ByteBuf.class, ResourceLeakTracker.class);
-            _simpleLeakAwareByteBufConstructor.setAccessible(true);
+            tmpSimpleLeakAwareByteBufConstructor.setAccessible(true);
 
             Class<?> advancedLeakAwareByteBufClass = Class.forName("io.netty.buffer.AdvancedLeakAwareByteBuf");
-            _advancedLeakAwareByteBufConstructor = (Constructor<ByteBuf>) advancedLeakAwareByteBufClass
+            tmpAdvancedLeakAwareByteBufConstructor = (Constructor<ByteBuf>) advancedLeakAwareByteBufClass
                     .getDeclaredConstructor(ByteBuf.class, ResourceLeakTracker.class);
-            _advancedLeakAwareByteBufConstructor.setAccessible(true);
+            tmpAdvancedLeakAwareByteBufConstructor.setAccessible(true);
         } catch (Throwable t) {
             log.error("Failed to use reflection to enable leak detection", t);
         } finally {
-            simpleLeakAwareByteBufConstructor = _simpleLeakAwareByteBufConstructor;
-            advancedLeakAwareByteBufConstructor = _advancedLeakAwareByteBufConstructor;
+            simpleLeakAwareByteBufConstructor = tmpSimpleLeakAwareByteBufConstructor;
+            advancedLeakAwareByteBufConstructor = tmpAdvancedLeakAwareByteBufConstructor;
         }
     }
 
