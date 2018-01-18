@@ -150,4 +150,10 @@ public class BookKeeperClusterUtils {
             .map((b) -> stopBookie(docker, b))
             .reduce(true, BookKeeperClusterUtils::allTrue);
     }
+
+    public static boolean waitAllBookieUp(DockerClient docker) {
+        return DockerUtils.cubeIdsMatching("bookkeeper").stream()
+            .map((b) -> waitBookieUp(docker, b, 10, TimeUnit.SECONDS))
+            .reduce(true, BookKeeperClusterUtils::allTrue);
+    }
 }
