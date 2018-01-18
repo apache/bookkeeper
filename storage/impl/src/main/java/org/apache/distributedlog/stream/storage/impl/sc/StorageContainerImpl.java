@@ -320,8 +320,4 @@ public class StorageContainerImpl
     }
   }
 
-  @Override
-  public CompletableFuture<StorageContainerResponse> txn(StorageContainerRequest request) {
-    throw new UnsupportedOperationException("unimplemented");
-  }
 }
