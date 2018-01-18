@@ -41,6 +41,13 @@
           <groupId>org.apache.bookkeeper</groupId>
           <artifactId>bookkeeper-proto</artifactId>
         </exclusion>
+        <exclusion>
+          <!-- actually on branch 4.6 the dependency tree is different from 4.7, in which we have bookkeeper-proto module
+               in order to make tests pass on 4.6 we have to exclude this dependency manually
+               it is only important that the main artifact bookkeeper-server:shaded:jar contains the relocated version of protobuf -->
+          <groupId>com.google.protobuf</groupId>
+          <artifactId>protobuf-java</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
   </dependencies>
