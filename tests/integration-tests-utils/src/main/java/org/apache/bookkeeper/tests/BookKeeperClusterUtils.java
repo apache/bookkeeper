@@ -79,6 +79,22 @@ public class BookKeeperClusterUtils {
         }
     }
 
+    public static void updateBookieConf(DockerClient docker, String containerId,
+                                        String version, String key, String value) throws Exception {
+        String confFile = "/opt/bookkeeper/" + version + "/conf/bk_server.conf";
+        String sedProgram = String.format(
+                "/[[:blank:]]*%s[[:blank:]]*=/ { h; s!=.*!=%s!; }; ${x;/^$/ { s//%s=%s/;H; }; x}",
+                key, value, key, value);
+        DockerUtils.runCommand(docker, containerId, "sed", "-i", "-e", sedProgram, confFile);
+    }
+
+    public static void updateAllBookieConf(DockerClient docker, String version, String key, String value)
+            throws Exception {
+        for (String b : DockerUtils.cubeIdsMatching("bookkeeper")) {
+            updateBookieConf(docker, b, version, key, value);
+        }
+    }
+
     private static boolean waitBookieState(DockerClient docker, String containerId,
                                            int timeout, TimeUnit timeoutUnit,
                                            boolean upOrDown) {
