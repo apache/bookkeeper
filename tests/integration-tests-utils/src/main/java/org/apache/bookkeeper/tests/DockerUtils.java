@@ -88,7 +88,7 @@ public class DockerUtils {
                         }
                     });
             future.get();
-        } catch (ExecutionException|IOException e) {
+        } catch (RuntimeException|ExecutionException|IOException e) {
             LOG.error("Error dumping log for {}", containerId, e);
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
@@ -116,7 +116,7 @@ public class DockerUtils {
                 }
                 entry = stream.getNextTarEntry();
             }
-        } catch (IOException e) {
+        } catch (RuntimeException|IOException e) {
             LOG.error("Error reading bk logs from container {}", containerId, e);
         }
     }
