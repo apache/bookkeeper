@@ -318,6 +318,7 @@
             <exclude>**/*.iml</exclude>
             <exclude>site/**</exclude>
             <exclude>.repository/**</exclude>
+            <exclude>**/src/main/resources/deps/**</exclude>
             <exclude>**/META-INF/**</exclude>
           </excludes>
           <consoleOutput>true</consoleOutput>
