@@ -25,14 +25,12 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Network Utilities.
  */
-@Slf4j
 public class NetUtils {
     private static final Logger logger = LoggerFactory.getLogger(NetUtils.class);
 
@@ -74,7 +72,6 @@ public class NetUtils {
         // resolve network addresses
         List<String> rNames = dnsResolver.resolve(bookieSocketAddresses);
         checkNotNull(rNames, "DNS Resolver should not return null response.");
-        rNames.forEach(name -> log.error("++++++++ rNames: " + name));
 
         checkState(rNames.size() == 1, "Expected exactly one element");
 
