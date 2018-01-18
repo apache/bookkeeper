@@ -35,6 +35,7 @@ public interface BookKeeperClientStats {
     String RECOVER_OP = "LEDGER_RECOVER";
     String LEDGER_RECOVER_READ_ENTRIES = "LEDGER_RECOVER_READ_ENTRIES";
     String LEDGER_RECOVER_ADD_ENTRIES = "LEDGER_RECOVER_ADD_ENTRIES";
+    String LEDGER_ENSEMBLE_BOOKIE_DISTRIBUTION = "LEDGER_ENSEMBLE_BOOKIE_DISTRIBUTION";
 
     // Data Operations
 
@@ -49,6 +50,7 @@ public interface BookKeeperClientStats {
     String LAC_UPDATE_HITS = "LAC_UPDATE_HITS";
     String LAC_UPDATE_MISSES = "LAC_UPDATE_MISSES";
     String GET_BOOKIE_INFO_OP = "GET_BOOKIE_INFO";
+    String SPECULATIVE_READ_COUNT = "SPECULATIVE_READ_COUNT";
 
     // per channel stats
     String CHANNEL_SCOPE = "per_channel_bookie_client";

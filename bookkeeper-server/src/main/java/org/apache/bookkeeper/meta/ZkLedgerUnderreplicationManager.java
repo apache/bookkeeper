@@ -672,6 +672,8 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         Watcher w = new Watcher() {
             public void process(WatchedEvent e) {
                 if (e.getType() == Watcher.Event.EventType.NodeDeleted) {
+                    LOG.info("LedgerReplication is enabled externally through Zookeeper, "
+                            + "since DISABLE_NODE ZNode is deleted");
                     cb.operationComplete(0, null);
                 }
             }
@@ -679,6 +681,8 @@ public class ZkLedgerUnderreplicationManager implements LedgerUnderreplicationMa
         try {
             if (null == zkc.exists(basePath + '/'
                     + BookKeeperConstants.DISABLE_NODE, w)) {
+                LOG.info("LedgerReplication is enabled externally through Zookeeper, "
+                        + "since DISABLE_NODE ZNode is deleted");
                 cb.operationComplete(0, null);
                 return;
             }
