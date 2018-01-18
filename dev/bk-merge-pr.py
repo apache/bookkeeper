@@ -57,6 +57,8 @@ DEV_BRANCH_NAME = os.environ.get("DEV_BRANCH_NAME", "master")
 JIRA_USERNAME = os.environ.get("JIRA_USERNAME", "")
 # ASF JIRA password
 JIRA_PASSWORD = os.environ.get("JIRA_PASSWORD", "")
+# Github API page size
+GITHUB_PAGE_SIZE = os.environ.get("GH_PAGE_SIZE", "100")
 # OAuth key used for issuing requests against the GitHub API. If this is not defined, then requests
 # will be unauthenticated. You should only need to configure this if you find yourself regularly
 # exceeding your IP's unauthenticated request rate limit. You can create an OAuth key at
@@ -144,7 +146,7 @@ def get_milestones():
     return get_json("https://api.github.com/repos/%s/%s/milestones?state=open&sort=due_on&direction=asc" % (GITHUB_USER, PROJECT_NAME))
 
 def get_all_labels():
-    result = get_json("https://api.github.com/repos/%s/%s/labels" % (GITHUB_USER, PROJECT_NAME))
+    result = get_json("https://api.github.com/repos/%s/%s/labels?per_page=%s" % (GITHUB_USER, PROJECT_NAME, GITHUB_PAGE_SIZE))
     return map(lambda x: x['name'], result)
 
 # merge the requested PR and return the merge hash
