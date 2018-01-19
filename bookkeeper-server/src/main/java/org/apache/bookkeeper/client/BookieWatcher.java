@@ -53,7 +53,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
  *
  */
 @Slf4j
-public class BookieWatcher {
+class BookieWatcher {
 
     private static final Function<Throwable, BKException> EXCEPTION_FUNC = cause -> {
         if (cause instanceof BKException) {
@@ -103,7 +103,7 @@ public class BookieWatcher {
         this.replaceBookieTimer = statsLogger.getOpStatsLogger(REPLACE_BOOKIE_TIME);
     }
 
-    public static Set<BookieSocketAddress> getBookies(RegistrationClient registrationClient) throws BKException {
+    public Set<BookieSocketAddress> getBookies() throws BKException {
         try {
             return FutureUtils.result(registrationClient.getWritableBookies(), EXCEPTION_FUNC).getValue();
         } catch (BKInterruptedException ie) {
@@ -112,11 +112,7 @@ public class BookieWatcher {
         }
     }
 
-    public Set<BookieSocketAddress> getBookies() throws BKException {
-        return getBookies(this.registrationClient);
-    }
-
-    public static Set<BookieSocketAddress> getReadOnlyBookies(RegistrationClient registrationClient)
+    public Set<BookieSocketAddress> getReadOnlyBookies()
             throws BKException {
         try {
             return FutureUtils.result(registrationClient.getReadOnlyBookies(), EXCEPTION_FUNC).getValue();
@@ -124,10 +120,6 @@ public class BookieWatcher {
             Thread.currentThread().interrupt();
             throw ie;
         }
-    }
-
-    public Set<BookieSocketAddress> getReadOnlyBookies() throws BKException {
-        return getReadOnlyBookies(this.registrationClient);
     }
 
     // this callback is already not executed in zookeeper thread

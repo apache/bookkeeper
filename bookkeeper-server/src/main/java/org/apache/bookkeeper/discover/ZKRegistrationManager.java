@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -43,7 +44,10 @@ import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieException.BookieIllegalOpException;
 import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.bookie.BookieException.MetadataStoreException;
-import org.apache.bookkeeper.client.BookieWatcher;
+import org.apache.bookkeeper.client.BKException;
+import org.apache.bookkeeper.client.BKException.BKInterruptedException;
+import org.apache.bookkeeper.client.BKException.MetaStoreException;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LayoutManager;
@@ -79,6 +83,18 @@ import org.apache.zookeeper.data.Stat;
  */
 @Slf4j
 public class ZKRegistrationManager implements RegistrationManager {
+
+    private static final Function<Throwable, BKException> EXCEPTION_FUNC = cause -> {
+        if (cause instanceof BKException) {
+            log.error("Failed to get bookie list : ", cause);
+            return (BKException) cause;
+        } else if (cause instanceof InterruptedException) {
+            log.error("Interrupted reading bookie list : ", cause);
+            return new BKInterruptedException();
+        } else {
+            return new MetaStoreException();
+        }
+    };
 
     private ServerConfiguration conf;
     private ZooKeeper zk;
@@ -506,16 +522,19 @@ public class ZKRegistrationManager implements RegistrationManager {
         try (RegistrationClient regClient = new ZKRegistrationClient()) {
             regClient.initialize(new ClientConfiguration(conf), null, NullStatsLogger.INSTANCE, Optional.empty());
             if (availableNodeExists) {
-                Collection<BookieSocketAddress> rwBookies = BookieWatcher.getBookies(regClient);
+                Collection<BookieSocketAddress> rwBookies = FutureUtils
+                        .result(regClient.getWritableBookies(), EXCEPTION_FUNC).getValue();
                 if (rwBookies != null && !rwBookies.isEmpty()) {
                     log.error("Bookies are still up and connected to this cluster, "
                             + "stop all bookies before nuking the cluster");
                     return false;
                 }
+
                 String readOnlyBookieRegPath = availableBookiesPath + "/" + BookKeeperConstants.READONLY;
                 boolean readonlyNodeExists = null != zk.exists(readOnlyBookieRegPath, false);
                 if (readonlyNodeExists) {
-                    Collection<BookieSocketAddress> roBookies = BookieWatcher.getReadOnlyBookies(regClient);
+                    Collection<BookieSocketAddress> roBookies = FutureUtils
+                            .result(regClient.getReadOnlyBookies(), EXCEPTION_FUNC).getValue();
                     if (roBookies != null && !roBookies.isEmpty()) {
                         log.error("Readonly Bookies are still up and connected to this cluster, "
                                 + "stop all bookies before nuking the cluster");

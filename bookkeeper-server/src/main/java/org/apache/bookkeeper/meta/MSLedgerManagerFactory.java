@@ -747,7 +747,6 @@ public class MSLedgerManagerFactory extends LedgerManagerFactory {
             throws InterruptedException, KeeperException, IOException {
         String zkLedgersRootPath = conf.getZkLedgersRootPath();
         String zkServers = conf.getZkServers();
-        MsLedgerManager msLedgerManager = (MsLedgerManager) newLedgerManager();
 
         /*
          * before proceeding with nuking existing cluster, make sure there
