@@ -45,6 +45,7 @@
     <module>backward-compat-hierarchical-ledger-manager</module>
     <module>backward-compat-hostname-bookieid</module>
     <module>backward-compat-recovery-no-password</module>
+    <module>backward-compat-old-cookie-new-cluster</module>
   </modules>
   <build>
     <plugins>
