@@ -32,10 +32,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncAddCallback;
 import org.apache.bookkeeper.client.api.WriteAdvHandle;
 import org.apache.bookkeeper.client.api.WriteFlag;
+import org.apache.bookkeeper.proto.checksum.DigestType;
 import org.apache.bookkeeper.util.SafeRunnable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +56,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
     }
 
     LedgerHandleAdv(BookKeeper bk, long ledgerId, LedgerMetadata metadata,
-            DigestType digestType, byte[] password, EnumSet<WriteFlag> writeFlags)
+                    DigestType digestType, byte[] password, EnumSet<WriteFlag> writeFlags)
             throws GeneralSecurityException, NumberFormatException {
         super(bk, ledgerId, metadata, digestType, password, writeFlags);
         pendingAddOps = new PriorityBlockingQueue<PendingAddOp>(10, new PendingOpsComparator());

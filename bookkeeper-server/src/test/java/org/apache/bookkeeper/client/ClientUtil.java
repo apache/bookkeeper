@@ -17,8 +17,11 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.apache.bookkeeper.proto.checksum.DigestType.CRC32;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import java.security.GeneralSecurityException;
+import org.apache.bookkeeper.proto.checksum.DigestManager;
 
 /**
  * Client utilities.
@@ -31,7 +34,13 @@ public class ClientUtil {
 
     public static ByteBuf generatePacket(long ledgerId, long entryId, long lastAddConfirmed,
                                                long length, byte[] data, int offset, int len) {
-        CRC32DigestManager dm = new CRC32DigestManager(ledgerId);
+        DigestManager dm = null;
+        try {
+            // CRC32 need not password, and is support definitely currently.
+            dm = DigestManager.instantiate(ledgerId, new byte[2], CRC32);
+        } catch (GeneralSecurityException gse) {
+
+        }
         return dm.computeDigestAndPackageForSending(entryId, lastAddConfirmed, length,
                                                     Unpooled.wrappedBuffer(data, offset, len));
     }

@@ -56,7 +56,6 @@ import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
 import org.apache.bookkeeper.client.BKException.BKIncorrectParameterException;
 import org.apache.bookkeeper.client.BKException.BKReadException;
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.SyncCallbackUtils.FutureReadLastConfirmed;
 import org.apache.bookkeeper.client.SyncCallbackUtils.FutureReadLastConfirmedAndEntry;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncAddCallback;
@@ -78,6 +77,9 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.TimedGenericCallback;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.State;
 import org.apache.bookkeeper.proto.PerChannelBookieClientPool;
+import org.apache.bookkeeper.proto.checksum.DigestManager;
+import org.apache.bookkeeper.proto.checksum.DigestType;
+import org.apache.bookkeeper.proto.checksum.MacDigestManager;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallback;
@@ -1079,8 +1081,8 @@ public class LedgerHandle implements WriteHandle {
                 @Override
                 public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {
                     if (rc == BKException.Code.OK) {
-                        updateLastConfirmed(data.lastAddConfirmed, data.length);
-                        cb.readLastConfirmedComplete(rc, data.lastAddConfirmed, ctx);
+                        updateLastConfirmed(data.getLastAddConfirmed(), data.getLength());
+                        cb.readLastConfirmedComplete(rc, data.getLastAddConfirmed(), ctx);
                     } else {
                         cb.readLastConfirmedComplete(rc, INVALID_ENTRY_ID, ctx);
                     }
@@ -1120,9 +1122,9 @@ public class LedgerHandle implements WriteHandle {
             @Override
             public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {
                 if (rc == BKException.Code.OK) {
-                    updateLastConfirmed(data.lastAddConfirmed, data.length);
+                    updateLastConfirmed(data.getLastAddConfirmed(), data.getLength());
                     if (completed.compareAndSet(false, true)) {
-                        cb.readLastConfirmedComplete(rc, data.lastAddConfirmed, ctx);
+                        cb.readLastConfirmedComplete(rc, data.getLastAddConfirmed(), ctx);
                     }
                 } else {
                     if (completed.compareAndSet(false, true)) {

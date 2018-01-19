@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.netty.buffer.ByteBufAllocator;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.util.DoubleByteBuf;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;

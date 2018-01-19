@@ -39,7 +39,7 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
-import org.apache.bookkeeper.client.MacDigestManager;
+import org.apache.bookkeeper.proto.checksum.MacDigestManager;
 import org.apache.bookkeeper.proto.BookieProtocol.PacketHeader;
 import org.apache.bookkeeper.util.DoubleByteBuf;
 import org.slf4j.Logger;
