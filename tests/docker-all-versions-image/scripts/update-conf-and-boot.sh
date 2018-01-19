@@ -24,4 +24,14 @@ sed -i "s|journalDirectory=.*|journalDirectory=$BK_JOURNALDIR|" /opt/bookkeeper/
 sed -i "s|ledgerDirectories=.*|ledgerDirectories=$BK_LEDGERDIR|" /opt/bookkeeper/*/conf/bk_server.conf
 sed -i "s|zkServers=.*|zkServers=$BK_ZKCONNECTSTRING|" /opt/bookkeeper/*/conf/bk_server.conf
 
+# 4.3.1 & 4.3.2 shipped with a broken confs
+sed -i "s|\(# \)\?logSizeLimit=.*|logSizeLimit=1073741824|" /opt/bookkeeper/4.3.1/conf/bk_server.conf
+sed -i "s|\(# \)\?logSizeLimit=.*|logSizeLimit=1073741824|" /opt/bookkeeper/4.3.2/conf/bk_server.conf
+
+# 4.5.1 shipped with a broken conf
+sed -i "s|\(# \)\?statsProviderClass=.*|# disabled stats |" /opt/bookkeeper/4.5.1/conf/bk_server.conf
+
+# 4.6.0 breaks supervisor
+echo "stopasgroup=true" >> /etc/supervisord/conf.d/bookkeeper-4.6.0.conf
+
 exec /usr/bin/supervisord -c /etc/supervisord.conf
