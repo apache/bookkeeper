@@ -23,6 +23,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.github.dockerjava.api.DockerClient;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -92,6 +93,22 @@ public class BookKeeperClusterUtils {
             throws Exception {
         for (String b : DockerUtils.cubeIdsMatching("bookkeeper")) {
             updateBookieConf(docker, b, version, key, value);
+        }
+    }
+
+    public static boolean runOnAnyBookie(DockerClient docker, String... cmds) throws Exception {
+        Optional<String> bookie = DockerUtils.cubeIdsMatching("bookkeeper").stream().findAny();
+        if (bookie.isPresent()) {
+            DockerUtils.runCommand(docker, bookie.get(), cmds);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static void runOnAllBookies(DockerClient docker, String... cmds) throws Exception {
+        for (String b : DockerUtils.cubeIdsMatching("bookkeeper")) {
+            DockerUtils.runCommand(docker, b, cmds);
         }
     }
 
