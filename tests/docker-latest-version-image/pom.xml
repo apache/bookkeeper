@@ -24,8 +24,8 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.bookkeeper.tests</groupId>
-  <artifactId>docker-all-versions-image</artifactId>
-  <name>Apache BookKeeper :: Tests :: Docker All Versions Image</name>
+  <artifactId>docker-latest-version-image</artifactId>
+  <name>Apache BookKeeper :: Tests :: Docker Latest Version Image</name>
   <packaging>pom</packaging>
   <dependencies>
     <dependency>
@@ -64,13 +64,13 @@
                   <goal>tag</goal>
                 </goals>
                 <configuration>
-                  <repository>apachebookkeeper/bookkeeper-all-versions</repository>
+                  <repository>apachebookkeeper/bookkeeper-latest-version</repository>
                   <tag>latest</tag>
                 </configuration>
               </execution>
             </executions>
             <configuration>
-              <repository>apachebookkeeper/bookkeeper-all-versions</repository>
+              <repository>apachebookkeeper/bookkeeper-latest-version</repository>
               <tag>${project.version}</tag>
               <buildArgs>
                 <BK_TARBALL>target/bookkeeper-dist-server-${project.version}-bin.tar.gz</BK_TARBALL>
