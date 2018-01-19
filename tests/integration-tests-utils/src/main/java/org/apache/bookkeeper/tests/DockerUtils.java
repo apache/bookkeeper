@@ -141,12 +141,12 @@ public class DockerUtils {
 
                 @Override
                 public void onStart(Closeable closeable) {
-                    LOG.info("DOCKER.exec({}): Executing...", cmdString);
+                    LOG.info("DOCKER.exec({}:{}): Executing...", containerId, cmdString);
                 }
 
                 @Override
                 public void onNext(Frame object) {
-                    LOG.info("DOCKER.exec({}): {}", cmdString, object);
+                    LOG.info("DOCKER.exec({}:{}): {}", containerId, cmdString, object);
                 }
 
                 @Override
@@ -156,7 +156,7 @@ public class DockerUtils {
 
                 @Override
                 public void onComplete() {
-                    LOG.info("DOCKER.exec({}): Done", cmdString);
+                    LOG.info("DOCKER.exec({}:{}): Done", containerId, cmdString);
                     future.complete(true);
                 }
             });
