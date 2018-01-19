@@ -22,7 +22,7 @@ networks:
     driver: bridge
 
 zookeeper*:
-  image: jplock/zookeeper
+  image: zookeeper:3.4.11
   await:
     strategy: org.apache.bookkeeper.tests.ZooKeeperAwaitStrategy
   aliases:
