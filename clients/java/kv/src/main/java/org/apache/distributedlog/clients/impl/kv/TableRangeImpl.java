@@ -18,6 +18,7 @@ import com.google.protobuf.UnsafeByteOperations;
 import io.netty.buffer.ByteBuf;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.distributedlog.api.kv.Table;
 import org.apache.distributedlog.api.kv.options.DeleteOption;
 import org.apache.distributedlog.api.kv.options.GetOption;
@@ -32,6 +33,7 @@ import org.apache.distributedlog.stream.proto.kv.rpc.RoutingHeader;
 /**
  * A range of a table.
  */
+@Slf4j
 class TableRangeImpl implements Table {
 
   private final long streamId;
@@ -89,6 +91,7 @@ class TableRangeImpl implements Table {
                                           PutOption option) {
     pKey.retain();
     lKey.retain();
+    value.retain();
     return TableRequestProcessor.of(
       KvUtils.newKvPutRequest(
         scChannel.getStorageContainerId(),
@@ -100,6 +103,7 @@ class TableRangeImpl implements Table {
     ).process().whenComplete((ignored, cause) -> {
       pKey.release();
       lKey.release();
+      value.release();
     });
   }
 

@@ -32,6 +32,6 @@ public class ByteBufHashRouter extends AbstractHashRouter<ByteBuf> {
 
     @Override
     ByteBuf getRoutingKeyData(ByteBuf key) {
-        return key;
+        return key.retain();
     }
 }

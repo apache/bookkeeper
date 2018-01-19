@@ -80,7 +80,7 @@ public class StorageClientBuilder implements Supplier<StorageClient> {
    */
   public StorageClient build() {
     checkNotNull(settings, "Stream settings is null");
-    checkArgument(validateNamespaceName(namespaceName), "Namespace name is invalid");
+    checkArgument(validateNamespaceName(namespaceName), "Namespace name '" + namespaceName + "'is invalid");
 
     return new StorageClientImpl(
       namespaceName,
