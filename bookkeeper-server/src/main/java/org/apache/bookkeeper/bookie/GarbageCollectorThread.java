@@ -432,9 +432,17 @@ public class GarbageCollectorThread extends SafeRunnable {
         logsToCompact.addAll(entryLogMetaMap.values());
         logsToCompact.sort(Comparator.comparing(EntryLogMetadata::getUsage));
 
+        final int numBuckets = 10;
+        int entryLogUsageBuckets[] = new int[numBuckets];
+
         for (EntryLogMetadata meta : logsToCompact) {
+            int bucketIndex = Math.min(
+                    numBuckets - 1,
+                    (int) Math.ceil(meta.getUsage() * numBuckets));
+            entryLogUsageBuckets[bucketIndex]++;
+
             if (meta.getUsage() >= threshold) {
-                break;
+                continue;
             }
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Compacting entry log {} below threshold {}", meta.getEntryLogId(), threshold);
@@ -448,6 +456,9 @@ public class GarbageCollectorThread extends SafeRunnable {
                 return;
             }
         }
+        LOG.info(
+                "Compaction: entry log usage buckets[10% 20% 30% 40% 50% 60% 70% 80% 90% 100%] = {}",
+                entryLogUsageBuckets);
     }
 
     /**
