@@ -175,7 +175,7 @@ public class BookKeeperClusterUtils {
             LOG.error("Exception stopping bookie", e);
             return false;
         }
-        return waitBookieDown(docker, containerId, 10, TimeUnit.SECONDS);
+        return waitBookieDown(docker, containerId, 5, TimeUnit.SECONDS);
     }
 
     public static boolean stopAllBookies(DockerClient docker) {
