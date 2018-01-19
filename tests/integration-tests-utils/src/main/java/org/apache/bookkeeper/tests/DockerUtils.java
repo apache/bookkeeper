@@ -20,6 +20,7 @@ package org.apache.bookkeeper.tests;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
+import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.api.model.ContainerNetwork;
 
@@ -28,10 +29,11 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -88,7 +90,7 @@ public class DockerUtils {
                         }
                     });
             future.get();
-        } catch (ExecutionException|IOException e) {
+        } catch (RuntimeException|ExecutionException|IOException e) {
             LOG.error("Error dumping log for {}", containerId, e);
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
@@ -116,7 +118,7 @@ public class DockerUtils {
                 }
                 entry = stream.getNextTarEntry();
             }
-        } catch (IOException e) {
+        } catch (RuntimeException|IOException e) {
             LOG.error("Error reading bk logs from container {}", containerId, e);
         }
     }
@@ -132,17 +134,19 @@ public class DockerUtils {
     public static void runCommand(DockerClient docker, String containerId, String... cmd) throws Exception {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         String execid = docker.execCreateCmd(containerId).withCmd(cmd).exec().getId();
+        String cmdString = Arrays.stream(cmd).collect(Collectors.joining(" "));
         docker.execStartCmd(execid).withDetach(false).exec(new ResultCallback<Frame>() {
                 @Override
                 public void close() {}
 
                 @Override
                 public void onStart(Closeable closeable) {
+                    LOG.info("DOCKER.exec({}:{}): Executing...", containerId, cmdString);
                 }
 
                 @Override
                 public void onNext(Frame object) {
-                    LOG.info("DOCKER.exec({}): {}", cmd, object);
+                    LOG.info("DOCKER.exec({}:{}): {}", containerId, cmdString, object);
                 }
 
                 @Override
@@ -152,10 +156,23 @@ public class DockerUtils {
 
                 @Override
                 public void onComplete() {
+                    LOG.info("DOCKER.exec({}:{}): Done", containerId, cmdString);
                     future.complete(true);
                 }
             });
         future.get();
+
+        InspectExecResponse resp = docker.inspectExecCmd(execid).exec();
+        while (resp.isRunning()) {
+            Thread.sleep(200);
+            resp = docker.inspectExecCmd(execid).exec();
+        }
+        int retCode = resp.getExitCode();
+        if (retCode != 0) {
+            throw new Exception(
+                    String.format("cmd(%s) failed on %s with exitcode %d",
+                                  cmdString, containerId, retCode));
+        }
     }
 
     public static Set<String> cubeIdsMatching(String needle) {
