@@ -116,12 +116,12 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
                     entryId, ledgerId, e);
             status = StatusCode.EIO;
         } catch (BookieException.LedgerFencedException e) {
-            logger.debug("Ledger fenced while writing entry:{} to ledger:{}",
-                         entryId, ledgerId);
+            logger.error("Ledger fenced while writing entry:{} to ledger:{}",
+                    entryId, ledgerId, e);
             status = StatusCode.EFENCED;
         } catch (BookieException e) {
             logger.error("Unauthorized access to ledger:{} while writing entry:{}",
-                         ledgerId, entryId);
+                    ledgerId, entryId, e);
             status = StatusCode.EUA;
         } catch (Throwable t) {
             logger.error("Unexpected exception while writing {}@{} : ",

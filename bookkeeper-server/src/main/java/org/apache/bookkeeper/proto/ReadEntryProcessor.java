@@ -93,17 +93,17 @@ class ReadEntryProcessor extends PacketProcessorBase {
                         errorCode = BookieProtocol.EOK;
                     }
                 } catch (InterruptedException ie) {
-                    LOG.error("Interrupting fence read entry " + read, ie);
+                    LOG.error("Interrupting fence read entry {}", read, ie);
                     errorCode = BookieProtocol.EIO;
                     data.release();
                     data = null;
                 } catch (ExecutionException ee) {
-                    LOG.error("Failed to fence read entry " + read, ee);
+                    LOG.error("Failed to fence read entry {}", read, ee);
                     errorCode = BookieProtocol.EIO;
                     data.release();
                     data = null;
                 } catch (TimeoutException te) {
-                    LOG.error("Timeout to fence read entry " + read, te);
+                    LOG.error("Timeout to fence read entry {}", read, te);
                     errorCode = BookieProtocol.EIO;
                     data.release();
                     data = null;
@@ -112,22 +112,20 @@ class ReadEntryProcessor extends PacketProcessorBase {
                 errorCode = BookieProtocol.EOK;
             }
         } catch (Bookie.NoLedgerException e) {
-            if (LOG.isTraceEnabled()) {
-                LOG.error("Error reading " + read, e);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Error reading {}", read, e);
             }
             errorCode = BookieProtocol.ENOLEDGER;
         } catch (Bookie.NoEntryException e) {
-            if (LOG.isTraceEnabled()) {
-                LOG.error("Error reading " + read, e);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Error reading {}", read, e);
             }
             errorCode = BookieProtocol.ENOENTRY;
         } catch (IOException e) {
-            if (LOG.isTraceEnabled()) {
-                LOG.error("Error reading " + read, e);
-            }
+            LOG.error("Error reading {}", read, e);
             errorCode = BookieProtocol.EIO;
         } catch (BookieException e) {
-            LOG.error("Unauthorized access to ledger " + read.getLedgerId(), e);
+            LOG.error("Unauthorized access to ledger {}", read.getLedgerId(), e);
             errorCode = BookieProtocol.EUA;
         } catch (Throwable t) {
             LOG.error("Unexpected exception reading at {}:{} : {}", read.getLedgerId(), read.getEntryId(),
@@ -136,7 +134,7 @@ class ReadEntryProcessor extends PacketProcessorBase {
         }
 
         if (LOG.isTraceEnabled()) {
-            LOG.trace("Read entry rc = {} for {}", new Object[] { errorCode, read });
+            LOG.trace("Read entry rc = {} for {}", errorCode, read);
         }
         if (errorCode == BookieProtocol.EOK) {
             requestProcessor.readEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos),
