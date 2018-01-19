@@ -18,10 +18,7 @@ package org.apache.bookkeeper.proto.checksum;
 * limitations under the License.
 */
 
-
 import io.netty.buffer.ByteBuf;
-import org.apache.bookkeeper.proto.checksum.DigestManager;
-
 import java.util.zip.CRC32;
 
 class CRC32DigestManager extends DigestManager {

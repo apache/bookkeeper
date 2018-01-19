@@ -71,7 +71,6 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.bookkeeper.proto.checksum.DigestType;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -647,6 +646,32 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     @VisibleForTesting
     public RegistrationClient getRegClient() {
         return regClient;
+    }
+
+    /**
+     * There are 2 digest types that can be used for verification. The CRC32 is
+     * cheap to compute but does not protect against byzantine bookies (i.e., a
+     * bookie might report fake bytes and a matching CRC32). The MAC code is more
+     * expensive to compute, but is protected by a password, i.e., a bookie can't
+     * report fake bytes with a mathching MAC unless it knows the password.
+     * legacy DigestType for back compatible,
+     * new added DigestType should add it in both here and proto.checksum.DigestType.
+     */
+    public enum DigestType {
+        MAC, CRC32, CRC32C;
+
+        public static DigestType fromApiDigestType(org.apache.bookkeeper.client.api.DigestType digestType) {
+            switch (digestType) {
+                case MAC:
+                    return DigestType.MAC;
+                case CRC32:
+                    return DigestType.CRC32;
+                case CRC32C:
+                    return DigestType.CRC32C;
+                default:
+                    throw new IllegalArgumentException("Unable to convert digest type " + digestType);
+            }
+        }
     }
 
     ZooKeeper getZkHandle() {

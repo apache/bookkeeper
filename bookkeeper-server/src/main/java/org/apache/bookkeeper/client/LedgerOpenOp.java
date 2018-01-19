@@ -21,7 +21,7 @@
 
 package org.apache.bookkeeper.client;
 
-import static org.apache.bookkeeper.proto.checksum.DigestType.fromApiDigestType;
+import static org.apache.bookkeeper.client.BookKeeper.DigestType.fromApiDigestType;
 
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
@@ -31,11 +31,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.ReadLastConfirmedCallback;
+import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncOpenCallback;
 import org.apache.bookkeeper.client.api.OpenBuilder;
 import org.apache.bookkeeper.client.api.ReadHandle;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.apache.bookkeeper.proto.checksum.DigestType;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.MathUtils;
 import org.apache.bookkeeper.util.OrderedSafeExecutor.OrderedSafeGenericCallback;

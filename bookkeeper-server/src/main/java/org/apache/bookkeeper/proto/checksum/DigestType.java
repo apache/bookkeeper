@@ -33,7 +33,7 @@ package org.apache.bookkeeper.proto.checksum;
 public enum DigestType {
     MAC, CRC32, CRC32C;
 
-    public static DigestType fromApiDigestType(org.apache.bookkeeper.client.api.DigestType digestType) {
+    public static DigestType fromBookKeeperDigestType(org.apache.bookkeeper.client.BookKeeper.DigestType digestType) {
         switch (digestType) {
             case MAC:
                 return DigestType.MAC;
