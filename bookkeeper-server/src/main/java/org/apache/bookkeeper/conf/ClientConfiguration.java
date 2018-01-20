@@ -51,6 +51,43 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     // Passwd
     protected static final String PASSWD = "passwd";
 
+    // Client TLS (@deprecated since 4.7.0)
+    /**
+     * @deprecated Use {@link #TLS_KEYSTORE_TYPE}
+     */
+    @Deprecated
+    protected static final String CLIENT_TLS_KEYSTORE_TYPE = "clientKeyStoreType";
+
+    /**
+     * @deprecated Use {@link #TLS_KEYSTORE}
+     */
+    @Deprecated
+    protected static final String CLIENT_TLS_KEYSTORE = "clientKeyStore";
+
+    /**
+     * @deprecated Use {@link #TLS_KEYSTORE_PASSWORD_PATH}
+     */
+    @Deprecated
+    protected static final String CLIENT_TLS_KEYSTORE_PASSWORD_PATH = "clientKeyStorePasswordPath";
+
+    /**
+     * @deprecated Use {@link #TLS_TRUSTSTORE_TYPE}
+     */
+    @Deprecated
+    protected static final String CLIENT_TLS_TRUSTSTORE_TYPE = "clientTrustStoreType";
+
+    /**
+     * @deprecated Use {@link #TLS_TRUSTSTORE}
+     */
+    @Deprecated
+    protected static final String CLIENT_TLS_TRUSTSTORE = "clientTrustStore";
+
+    /**
+     * @deprecated Use {@link #TLS_TRUSTSTORE_PASSWORD_PATH}
+     */
+    @Deprecated
+    protected static final String CLIENT_TLS_TRUSTSTORE_PASSWORD_PATH = "clientTrustStorePasswordPath";
+
     // NIO Parameters
     protected static final String CLIENT_TCP_NODELAY = "clientTcpNoDelay";
     protected static final String CLIENT_SOCK_KEEPALIVE = "clientSockKeepalive";
@@ -1411,7 +1448,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * @return
      */
     public String getTLSKeyStoreType() {
-        return getString(TLS_KEYSTORE_TYPE, "JKS");
+        return getString(CLIENT_TLS_KEYSTORE_TYPE, getString(TLS_KEYSTORE_TYPE, "JKS"));
     }
 
 
@@ -1431,7 +1468,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * @return
      */
     public String getTLSKeyStore() {
-        return getString(TLS_KEYSTORE, null);
+        return getString(CLIENT_TLS_KEYSTORE, getString(TLS_KEYSTORE, null));
     }
 
     /**
@@ -1450,7 +1487,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * @return
      */
     public String getTLSKeyStorePasswordPath() {
-        return getString(TLS_KEYSTORE_PASSWORD_PATH, null);
+        return getString(CLIENT_TLS_KEYSTORE_PASSWORD_PATH, getString(TLS_KEYSTORE_PASSWORD_PATH, null));
     }
 
     /**
@@ -1469,7 +1506,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * @return
      */
     public String getTLSTrustStoreType() {
-        return getString(TLS_TRUSTSTORE_TYPE, "JKS");
+        return getString(CLIENT_TLS_TRUSTSTORE_TYPE, getString(TLS_TRUSTSTORE_TYPE, "JKS"));
     }
 
     /**
@@ -1488,7 +1525,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * @return
      */
     public String getTLSTrustStore() {
-        return getString(TLS_TRUSTSTORE, null);
+        return getString(CLIENT_TLS_TRUSTSTORE, getString(TLS_TRUSTSTORE, null));
     }
 
     /**
@@ -1508,7 +1545,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
      * @return
      */
     public String getTLSTrustStorePasswordPath() {
-        return getString(TLS_TRUSTSTORE_PASSWORD_PATH, null);
+        return getString(CLIENT_TLS_TRUSTSTORE_PASSWORD_PATH, getString(TLS_TRUSTSTORE_PASSWORD_PATH, null));
     }
 
     /**
