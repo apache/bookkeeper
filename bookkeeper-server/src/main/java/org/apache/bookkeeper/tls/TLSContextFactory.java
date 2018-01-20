@@ -249,7 +249,7 @@ public class TLSContextFactory implements SecurityHandlerFactory {
 
     private void createServerContext(AbstractConfiguration conf) throws SecurityException, KeyStoreException,
             NoSuchAlgorithmException, CertificateException, IOException, UnrecoverableKeyException,
-            InvalidKeySpecException, NoSuchProviderException {
+            InvalidKeySpecException, IllegalArgumentException {
         final SslContextBuilder sslContextBuilder;
         final ServerConfiguration serverConf;
         final SslProvider provider;
@@ -375,6 +375,8 @@ public class TLSContextFactory implements SecurityHandlerFactory {
             throw new SecurityException("Unable to load key manager, possibly bad password", e);
         } catch (InvalidKeySpecException e) {
             throw new SecurityException("Unable to load key manager", e);
+        } catch (IllegalArgumentException e) {
+            throw new SecurityException("Invalid TLS configuration", e);
         } catch (NoSuchProviderException e) {
             throw new SecurityException("No such provider", e);
         }
