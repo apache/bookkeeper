@@ -50,8 +50,8 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
+import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
-import org.apache.bookkeeper.proto.checksum.DigestType;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.junit.After;
@@ -340,6 +340,7 @@ public abstract class MockBookKeeperTestCase {
                 try {
                     macManager = DigestManager.instantiate(ledgerId, new byte[2], DigestType.CRC32);
                 } catch (GeneralSecurityException gse){
+                    LOG.error("Initialize macManager fail", gse);
                 }
                 fencedLedgers.add(ledgerId);
                 MockEntry mockEntry = getMockLedgerEntry(ledgerId, bookieSocketAddress, entryId);
@@ -374,6 +375,7 @@ public abstract class MockBookKeeperTestCase {
                 try {
                     macManager = DigestManager.instantiate(ledgerId, new byte[2], DigestType.CRC32);
                 } catch (GeneralSecurityException gse){
+                    LOG.error("Initialize macManager fail", gse);
                 }
                 MockEntry mockEntry = getMockLedgerEntry(ledgerId, bookieSocketAddress, entryId);
                 if (mockEntry != null) {
@@ -402,6 +404,7 @@ public abstract class MockBookKeeperTestCase {
         try {
             macManager = DigestManager.instantiate(ledgerId, new byte[2], DigestType.CRC32);
         } catch (GeneralSecurityException gse){
+            LOG.error("Initialize macManager fail", gse);
         }
         ByteBuf content = macManager.verifyDigestAndReturnData(entryId, toSendCopy);
         byte[] entry = new byte[content.readableBytes()];

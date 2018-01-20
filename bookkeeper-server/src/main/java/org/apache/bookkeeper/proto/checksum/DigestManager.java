@@ -26,6 +26,7 @@ import java.security.GeneralSecurityException;
 
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.LedgerHandle;
+import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
 import org.apache.bookkeeper.util.DoubleByteBuf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,7 @@ import org.slf4j.LoggerFactory;
  * This class takes an entry, attaches a digest to it and packages it with relevant
  * data so that it can be shipped to the bookie. On the return side, it also
  * gets a packet, checks that the digest matches, and extracts the original entry
- * for the packet. Currently 2 types of digests are supported: MAC (based on SHA-1) and CRC32
+ * for the packet. Currently 3 types of digests are supported: MAC (based on SHA-1) and CRC32 and CRC32C.
  */
 
 public abstract class DigestManager {
@@ -65,7 +66,7 @@ public abstract class DigestManager {
     public static DigestManager instantiate(long ledgerId, byte[] passwd, DigestType digestType)
             throws GeneralSecurityException {
         switch(digestType) {
-        case MAC:
+        case HMAC:
             return new MacDigestManager(ledgerId, passwd);
         case CRC32:
             return new CRC32DigestManager(ledgerId);
@@ -220,9 +221,9 @@ public abstract class DigestManager {
     /**
      * A representation of RecoveryData.
      */
-    public static class RecoveryData {
-        long lastAddConfirmed;
-        long length;
+    public static final class RecoveryData {
+        final long lastAddConfirmed;
+        final long length;
 
         public RecoveryData(long lastAddConfirmed, long length) {
             this.lastAddConfirmed = lastAddConfirmed;

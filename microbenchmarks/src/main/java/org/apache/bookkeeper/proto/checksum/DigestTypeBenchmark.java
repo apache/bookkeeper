@@ -26,6 +26,7 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
 import org.apache.bookkeeper.util.DoubleByteBuf;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -111,7 +112,7 @@ public class DigestTypeBenchmark {
                     password, DigestType.CRC32C);
 
             mac = DigestManager.instantiate(ThreadLocalRandom.current().nextLong(0, Long.MAX_VALUE),
-                    password, DigestType.MAC);
+                    password, DigestType.HMAC);
 
             digestBuf = Unpooled.buffer(getDigestManager(digest).getMacCodeLength());
 
