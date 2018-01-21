@@ -19,11 +19,11 @@
 package org.apache.bookkeeper.bookie;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static org.apache.bookkeeper.tools.cli.helpers.CommandHelpers.getBookieSocketAddrStringRepresentation;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.net.InetAddresses;
 import com.google.common.util.concurrent.AbstractFuture;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
@@ -2606,27 +2606,6 @@ public class BookieShell implements Tool {
         String[] newArgs = new String[args.length - 1];
         System.arraycopy(args, 1, newArgs, 0, newArgs.length);
         return cmd.runCmd(newArgs);
-    }
-
-    /*
-     * The string returned is of the form:
-     * 'hostname'('otherformofhostname'):'port number'
-     *
-     * where hostname and otherformofhostname are ipaddress and
-     * canonicalhostname or viceversa
-     */
-    private static String getBookieSocketAddrStringRepresentation(BookieSocketAddress bookieId) {
-        String hostname = bookieId.getHostName();
-        boolean isHostNameIpAddress = InetAddresses.isInetAddress(hostname);
-        String otherFormOfHostname = null;
-        if (isHostNameIpAddress) {
-            otherFormOfHostname = bookieId.getSocketAddress().getAddress().getCanonicalHostName();
-        } else {
-            otherFormOfHostname = bookieId.getSocketAddress().getAddress().getHostAddress();
-        }
-        String bookieSocketAddrStringRepresentation = hostname + "(" + otherFormOfHostname + ")" + ":"
-                + bookieId.getSocketAddress().getPort();
-        return bookieSocketAddrStringRepresentation;
     }
 
     /**
