@@ -30,8 +30,8 @@ rm ./server-key.pem \
     ./client-key.p12 \
     ./client-key.jks \
     ./client-cert.pem \
-    ./KeyStoreServerPassword.txt \
-    ./KeyStoreClientPassword.txt
+    ./keyStoreServerPassword.txt \
+    ./keyStoreClientPassword.txt
 
 
 # One line command to create server keys and self signed certificates.
@@ -49,7 +49,7 @@ openssl req \
 openssl pkcs12 -export -in server-cert.pem -inkey server-key.pem -out server-key.p12 -passout pass:server
 
 # store password in a file
-echo "server" > KeyStoreServerPassword.txt
+echo "server" > keyStoreServerPassword.txt
 
 # Convert crt/key to JKS format.
 keytool -importkeystore -srckeystore server-key.p12 -srcstoretype pkcs12 -srcstorepass server -destkeystore server-key.jks -deststoretype jks -deststorepass server
@@ -69,7 +69,7 @@ openssl req \
 openssl pkcs12 -export -in client-cert.pem -inkey client-key.pem -out client-key.p12 -passout pass:client
 
 # store password in a file.
-echo "client" > KeyStoreClientPassword.txt
+echo "client" > keyStoreClientPassword.txt
 
 # Convert crt/key to JKS format.
 keytool -importkeystore -srckeystore client-key.p12 -srcstoretype pkcs12 -srcstorepass client -destkeystore client-key.jks -deststoretype jks -deststorepass client
