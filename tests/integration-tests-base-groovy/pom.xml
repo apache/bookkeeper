@@ -36,8 +36,8 @@
 
   <properties>
     <groovy.version>2.4.13</groovy.version>
-    <groovy-eclipse-compiler.version>2.9.2-01</groovy-eclipse-compiler.version>
-    <groovy-eclipse-batch.version>2.4.3-01</groovy-eclipse-batch.version>
+    <groovy-eclipse-compiler.version>2.9.2-04</groovy-eclipse-compiler.version>
+    <groovy-eclipse-batch.version>2.4.13-02</groovy-eclipse-batch.version>
   </properties>
 
   <build>
@@ -105,4 +105,14 @@
       <version>${groovy.version}</version>
     </dependency>
   </dependencies>
+  <pluginRepositories>
+    <pluginRepository>
+      <id>bintray</id>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <name>groovy-bintray-plugins</name>
+      <url>https://dl.bintray.com/groovy/maven</url>
+    </pluginRepository>
+  </pluginRepositories>
 </project>
