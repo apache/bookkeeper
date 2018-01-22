@@ -1168,41 +1168,27 @@ public class BookKeeperAdmin implements AutoCloseable {
      * @throws Exception
      */
     public static boolean initBookie(ServerConfiguration conf) throws Exception {
+        /*
+         * make sure that journalDirs, ledgerDirs and indexDirs are empty
+         */
+        File[] journalDirs = conf.getJournalDirs();
+        if (!validateDirectoriesAreEmpty(journalDirs, "JournalDir")) {
+            return false;
+        }
+
+        File[] ledgerDirs = conf.getLedgerDirs();
+        if (!validateDirectoriesAreEmpty(ledgerDirs, "LedgerDir")) {
+            return false;
+        }
+
+        File[] indexDirs = conf.getIndexDirs();
+        if (indexDirs != null) {
+            if (!validateDirectoriesAreEmpty(indexDirs, "IndexDir")) {
+                return false;
+            }
+        }
+
         try (RegistrationManager rm = RegistrationManager.instantiateRegistrationManager(conf)) {
-            /*
-             * make sure that journalDir, ledgerDirs and indexDirs are empty
-             */
-            File[] journalDirs = conf.getJournalDirs();
-            for (File journalDir : journalDirs) {
-                File[] journalDirFiles = journalDir.listFiles();
-                if ((journalDirFiles != null) && journalDirFiles.length != 0) {
-                    LOG.error("JournalDir: {} is existing and its not empty, try formatting the bookie", journalDir);
-                    return false;
-                }
-            }
-
-            File[] ledgerDirs = conf.getLedgerDirs();
-            for (File ledgerDir : ledgerDirs) {
-                File[] ledgerDirFiles = ledgerDir.listFiles();
-                if ((ledgerDirFiles != null) && ledgerDirFiles.length != 0) {
-                    LOG.error("Atleast one LedgerDir: {} is existing and its not empty, try formatting the bookie",
-                            ledgerDir);
-                    return false;
-                }
-            }
-
-            File[] indexDirs = conf.getIndexDirs();
-            if (indexDirs != null) {
-                for (File indexDir : indexDirs) {
-                    File[] indexDirFiles = indexDir.listFiles();
-                    if ((indexDirFiles != null) && indexDirFiles.length != 0) {
-                        LOG.error("Atleast one IndexDir: {} is existing and its not empty, try formatting the bookie",
-                                indexDir);
-                        return false;
-                    }
-                }
-            }
-
             /*
              * make sure that there is no bookie registered with the same
              * bookieid and the cookie for the same bookieid is not existing.
@@ -1224,6 +1210,17 @@ public class BookKeeperAdmin implements AutoCloseable {
             }
             return true;
         }
+    }
+
+    private static boolean validateDirectoriesAreEmpty(File[] dirs, String typeOfDir) {
+        for (File dir : dirs) {
+            File[] dirFiles = dir.listFiles();
+            if ((dirFiles != null) && dirFiles.length != 0) {
+                LOG.error("{}: {} is existing and its not empty, try formatting the bookie", typeOfDir, dir);
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
