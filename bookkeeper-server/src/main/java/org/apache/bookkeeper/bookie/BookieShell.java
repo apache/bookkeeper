@@ -276,7 +276,14 @@ public class BookieShell implements Tool {
     }
 
     /**
-     * Intializes new cluster by creating required znodes for the cluster.
+     * Intializes new cluster by creating required znodes for the cluster. If
+     * ledgersrootpath is already existing then it will error out. If for any
+     * reason it errors out while creating znodes for the cluster, then before
+     * running initnewcluster again, try nuking existing cluster by running
+     * nukeexistingcluster. This is required because ledgersrootpath znode would
+     * be created after verifying that it doesn't exist, hence during next retry
+     * of initnewcluster it would complain saying that ledgersrootpath is
+     * already existing.
      */
     class InitNewCluster extends MyCommand {
         Options opts = new Options();
@@ -292,7 +299,8 @@ public class BookieShell implements Tool {
 
         @Override
         String getDescription() {
-            return "Initialize a new bookkeeper cluster";
+            return "Initializes a new bookkeeper cluster. If initnewcluster fails then try nuking "
+                    + "existing cluster by running nukeexistingcluster before running initnewcluster again";
         }
 
         @Override
