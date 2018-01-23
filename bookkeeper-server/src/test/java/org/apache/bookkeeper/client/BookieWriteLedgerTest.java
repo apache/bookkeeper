@@ -28,7 +28,6 @@ import io.netty.buffer.Unpooled;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -45,6 +44,7 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.meta.LongHierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -355,7 +355,7 @@ public class BookieWriteLedgerTest extends
      *
      * @throws Exception
      */
-    @Test(timeout = 60000)
+    @Test
     public void testLedgerHandleAdvFunctionality() throws Exception {
         // Create a ledger
         long ledgerId = 0xABCDEF;
@@ -395,9 +395,9 @@ public class BookieWriteLedgerTest extends
         try {
             lh.addEntry(2, entry.array(), -3, 9);
             fail("AddEntry is called with negative offset and incorrect length,"
-                    + "so it is expected to throw IndexOutOfBoundsException");
+                    + "so it is expected to throw RuntimeException/IndexOutOfBoundsException");
         } catch (RuntimeException exception) {
-            // expected IndexOutOfBoundsException
+            // expected RuntimeException/IndexOutOfBoundsException
         }
 
         // here addEntry is called with corrected offset and length and it is
@@ -489,7 +489,7 @@ public class BookieWriteLedgerTest extends
      *
      * @throws Exception
      */
-    @Test(timeout = 180000)
+    @Test
     public void testLedgerCreateAdvWithLedgerIdInLoop2() throws Exception {
 
         assertTrue("Here we are expecting Bookies are configured to use SortedLedgerStorage",
@@ -966,14 +966,15 @@ public class BookieWriteLedgerTest extends
         while (ls.hasMoreElements()) {
             byte[] originalData = entries.get(index++);
             byte[] receivedData = ls.nextElement().getEntry();
-            LOG.debug("Length of originalData: " + originalData.length);
-            LOG.debug("Length of receivedData: " + receivedData.length);
-            assertTrue(
+            LOG.debug("Length of originalData: {}", originalData.length);
+            LOG.debug("Length of receivedData: {}", receivedData.length);
+            assertEquals(
                     String.format("LedgerID: %d EntryID: %d OriginalDataLength: %d ReceivedDataLength: %d", lh.getId(),
                             (index - 1), originalData.length, receivedData.length),
-                    originalData.length == receivedData.length);
-            assertTrue(String.format("Checking LedgerID: %d EntryID: %d  for equality", lh.getId(), (index - 1)),
-                    Arrays.equals(originalData, receivedData));
+                    originalData.length, receivedData.length);
+            Assert.assertArrayEquals(
+                    String.format("Checking LedgerID: %d EntryID: %d  for equality", lh.getId(), (index - 1)),
+                    originalData, receivedData);
         }
     }
 
