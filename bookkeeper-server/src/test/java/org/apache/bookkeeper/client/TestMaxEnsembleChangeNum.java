@@ -43,7 +43,7 @@ public class TestMaxEnsembleChangeNum extends MockBookKeeperTestCase {
         long lId;
         int numEntries = 5;
         int changeNum = 5;
-        setBookkeeperConfig(new ClientConfiguration().setDelayEnsembleChange(false).setMaxNumEnsembleChanges(5));
+        setBookkeeperConfig(new ClientConfiguration().setDelayEnsembleChange(false).setMaxAllowedEnsembleChanges(5));
         try (WriteHandle writer = result(newCreateLedgerOp()
                 .withAckQuorumSize(3)
                 .withWriteQuorumSize(3)

@@ -79,7 +79,7 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     protected static final String REORDER_READ_SEQUENCE_ENABLED = "reorderReadSequenceEnabled";
     // Add Parameters
     protected static final String DELAY_ENSEMBLE_CHANGE = "delayEnsembleChange";
-    protected static final String MAX_NUM_ENSEMBLE_CHANGES = "maxNumEnsembleChanges";
+    protected static final String MAX_ALLOWED_ENSEMBLE_CHANGES = "maxNumEnsembleChanges";
     // Timeout Setting
     protected static final String ADD_ENTRY_TIMEOUT_SEC = "addEntryTimeoutSec";
     protected static final String ADD_ENTRY_QUORUM_TIMEOUT_SEC = "addEntryQuorumTimeoutSec";
@@ -1620,23 +1620,23 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     }
 
     /**
-     * Get the MaxNum for ensemble change.
+     * Get the max allowed ensemble change number.
      *
-     * @return value of MaxNumEnsembleChanges, default MAX_VALUE, indicating feature is disable.
+     * @return value of MaxAllowedEnsembleChanges, default MAX_VALUE, indicating feature is disable.
      */
-    public int getMaxNumEnsembleChanges() {
-        return getInt(MAX_NUM_ENSEMBLE_CHANGES, Integer.MAX_VALUE);
+    public int getMaxAllowedEnsembleChanges() {
+        return getInt(MAX_ALLOWED_ENSEMBLE_CHANGES, Integer.MAX_VALUE);
     }
 
     /**
-     * Set the MaxNum for ensemble change.
+     * Set the max allowed ensemble change number.
      *
      * @param num
-     *          value of MaxNumEnsembleChanges
+     *          value of MaxAllowedEnsembleChanges
      * @return client configuration.
      */
-    public ClientConfiguration setMaxNumEnsembleChanges(int num) {
-        setProperty(MAX_NUM_ENSEMBLE_CHANGES, num);
+    public ClientConfiguration setMaxAllowedEnsembleChanges(int num) {
+        setProperty(MAX_ALLOWED_ENSEMBLE_CHANGES, num);
         return this;
     }
 

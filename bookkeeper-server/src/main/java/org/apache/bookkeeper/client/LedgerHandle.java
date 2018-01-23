@@ -121,7 +121,7 @@ public class LedgerHandle implements WriteHandle {
 
     final AtomicInteger blockAddCompletions = new AtomicInteger(0);
     final AtomicInteger numEnsembleChanges = new AtomicInteger(0);
-    final int maxNumEnsembleChanges;
+    final int maxAllowedEnsembleChanges;
     Queue<PendingAddOp> pendingAddOps;
     ExplicitLacFlushPolicy explicitLacFlushPolicy;
 
@@ -193,7 +193,7 @@ public class LedgerHandle implements WriteHandle {
             }
         };
 
-        maxNumEnsembleChanges = bk.getConf().getMaxNumEnsembleChanges();
+        maxAllowedEnsembleChanges = bk.getConf().getMaxAllowedEnsembleChanges();
         ensembleChangeCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.ENSEMBLE_CHANGES);
         lacUpdateHitsCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.LAC_UPDATE_HITS);
         lacUpdateMissesCounter = bk.getStatsLogger().getCounter(BookKeeperClientStats.LAC_UPDATE_MISSES);
@@ -1568,9 +1568,9 @@ public class LedgerHandle implements WriteHandle {
         int curNumEnsembleChanges = numEnsembleChanges.incrementAndGet();
 
         // when the ensemble changes are too frequent, close handle
-        if (curNumEnsembleChanges > maxNumEnsembleChanges){
+        if (curNumEnsembleChanges > maxAllowedEnsembleChanges){
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Ledger {} reaches max num ensemble changes {}", ledgerId, maxNumEnsembleChanges);
+                LOG.debug("Ledger {} reaches max allowed ensemble change number {}", ledgerId, maxAllowedEnsembleChanges);
             }
             handleUnrecoverableErrorDuringAdd(WriteException);
             return;
