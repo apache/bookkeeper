@@ -14,35 +14,11 @@
 
 package org.apache.distributedlog.api.kv.options;
 
-import org.inferred.freebuilder.FreeBuilder;
-
 /**
  * Put option.
  */
-@FreeBuilder
-public interface PutOption {
+public interface PutOption<K> extends Option<K> {
 
   boolean prevKv();
-
-  long leaseId();
-
-  long expectedVersion();
-
-  /**
-   * Builder to build put option.
-   */
-  class Builder extends PutOption_Builder {
-
-    Builder() {
-      prevKv(false);
-      leaseId(0L);
-      expectedVersion(-1);
-    }
-
-  }
-
-  static Builder newBuilder() {
-    return new Builder();
-  }
 
 }

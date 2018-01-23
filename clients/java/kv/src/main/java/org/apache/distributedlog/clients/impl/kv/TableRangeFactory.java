@@ -15,7 +15,9 @@
 package org.apache.distributedlog.clients.impl.kv;
 
 import java.util.concurrent.ScheduledExecutorService;
-import org.apache.distributedlog.api.kv.Table;
+import org.apache.distributedlog.api.kv.PTable;
+import org.apache.distributedlog.api.kv.op.OpFactory;
+import org.apache.distributedlog.clients.impl.kv.result.ResultFactory;
 import org.apache.distributedlog.stream.proto.RangeProperties;
 import org.apache.distributedlog.stream.proto.StreamProperties;
 
@@ -23,10 +25,13 @@ import org.apache.distributedlog.stream.proto.StreamProperties;
  * Factory to open a range for a table.
  */
 @FunctionalInterface
-public interface TableRangeFactory {
+public interface TableRangeFactory<K, V> {
 
-  Table openTableRange(StreamProperties streamProps,
-                       RangeProperties rangeProps,
-                       ScheduledExecutorService executor);
+  PTable<K, V> openTableRange(StreamProperties streamProps,
+                              RangeProperties rangeProps,
+                              ScheduledExecutorService executor,
+                              OpFactory<K, V> opFactory,
+                              ResultFactory<K, V> resultFactory,
+                              KeyValueFactory<K, V> kvFactory);
 
 }

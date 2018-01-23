@@ -19,14 +19,17 @@ import io.netty.buffer.ByteBuf;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.distributedlog.api.kv.Table;
+import org.apache.distributedlog.api.kv.PTable;
+import org.apache.distributedlog.api.kv.Txn;
+import org.apache.distributedlog.api.kv.op.OpFactory;
 import org.apache.distributedlog.api.kv.options.DeleteOption;
-import org.apache.distributedlog.api.kv.options.GetOption;
 import org.apache.distributedlog.api.kv.options.PutOption;
+import org.apache.distributedlog.api.kv.options.RangeOption;
 import org.apache.distributedlog.api.kv.result.DeleteResult;
-import org.apache.distributedlog.api.kv.result.GetResult;
 import org.apache.distributedlog.api.kv.result.PutResult;
+import org.apache.distributedlog.api.kv.result.RangeResult;
 import org.apache.distributedlog.clients.impl.container.StorageContainerChannel;
+import org.apache.distributedlog.clients.impl.kv.result.ResultFactory;
 import org.apache.distributedlog.stream.proto.RangeProperties;
 import org.apache.distributedlog.stream.proto.kv.rpc.RoutingHeader;
 
@@ -34,21 +37,30 @@ import org.apache.distributedlog.stream.proto.kv.rpc.RoutingHeader;
  * A range of a table.
  */
 @Slf4j
-class TableRangeImpl implements Table {
+class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
 
   private final long streamId;
   private final RangeProperties rangeProps;
   private final StorageContainerChannel scChannel;
   private final ScheduledExecutorService executor;
+  private final OpFactory<ByteBuf, ByteBuf> opFactory;
+  private final ResultFactory<ByteBuf, ByteBuf> resultFactory;
+  private final KeyValueFactory<ByteBuf, ByteBuf> kvFactory;
 
-  TableRangeImpl(long streamId,
-                 RangeProperties rangeProps,
-                 StorageContainerChannel scChannel,
-                 ScheduledExecutorService executor) {
+  PByteBufTableRangeImpl(long streamId,
+                         RangeProperties rangeProps,
+                         StorageContainerChannel scChannel,
+                         ScheduledExecutorService executor,
+                         OpFactory<ByteBuf, ByteBuf> opFactory,
+                         ResultFactory<ByteBuf, ByteBuf> resultFactory,
+                         KeyValueFactory<ByteBuf, ByteBuf> kvFactory) {
     this.streamId = streamId;
     this.rangeProps = rangeProps;
     this.scChannel = scChannel;
     this.executor = executor;
+    this.opFactory = opFactory;
+    this.resultFactory = resultFactory;
+    this.kvFactory = kvFactory;
   }
 
   private RoutingHeader.Builder newRoutingHeader(ByteBuf pKey) {
@@ -59,36 +71,35 @@ class TableRangeImpl implements Table {
   }
 
   @Override
-  public CompletableFuture<GetResult> get(ByteBuf pKey,
-                                          ByteBuf lKey,
-                                          GetOption option) {
+  public CompletableFuture<RangeResult<ByteBuf, ByteBuf>> get(
+      ByteBuf pKey, ByteBuf lKey, RangeOption<ByteBuf> option) {
     pKey.retain();
     lKey.retain();
-    if (option.endKey().isPresent()) {
-      option.endKey().get().retain();
+    if (null != option.endKey()) {
+      option.endKey().retain();
     }
     return TableRequestProcessor.of(
       KvUtils.newKvRangeRequest(
         scChannel.getStorageContainerId(),
         KvUtils.newRangeRequest(lKey, option)
           .setHeader(newRoutingHeader(pKey))),
-      response -> KvUtils.newGetResult(response.getKvRangeResp()),
+      response -> KvUtils.newRangeResult(response.getKvRangeResp(), resultFactory, kvFactory),
       scChannel,
       executor
     ).process().whenComplete((value, cause) -> {
       pKey.release();
       lKey.release();
-      if (option.endKey().isPresent()) {
-        option.endKey().get().release();
+      if (null != option.endKey()) {
+        option.endKey().release();
       }
     });
   }
 
   @Override
-  public CompletableFuture<PutResult> put(ByteBuf pKey,
-                                          ByteBuf lKey,
-                                          ByteBuf value,
-                                          PutOption option) {
+  public CompletableFuture<PutResult<ByteBuf, ByteBuf>> put(ByteBuf pKey,
+                                                            ByteBuf lKey,
+                                                            ByteBuf value,
+                                                            PutOption option) {
     pKey.retain();
     lKey.retain();
     value.retain();
@@ -97,7 +108,7 @@ class TableRangeImpl implements Table {
         scChannel.getStorageContainerId(),
         KvUtils.newPutRequest(lKey, value, option)
           .setHeader(newRoutingHeader(pKey))),
-      response -> KvUtils.newPutResult(response.getKvPutResp()),
+      response -> KvUtils.newPutResult(response.getKvPutResp(), resultFactory, kvFactory),
       scChannel,
       executor
     ).process().whenComplete((ignored, cause) -> {
@@ -108,33 +119,44 @@ class TableRangeImpl implements Table {
   }
 
   @Override
-  public CompletableFuture<DeleteResult> delete(ByteBuf pKey,
-                                                ByteBuf lKey,
-                                                DeleteOption option) {
+  public CompletableFuture<DeleteResult<ByteBuf, ByteBuf>> delete(ByteBuf pKey,
+                                                                  ByteBuf lKey,
+                                                                  DeleteOption<ByteBuf> option) {
     pKey.retain();
     lKey.retain();
-    if (option.endKey().isPresent()) {
-      option.endKey().get().retain();
+    if (null != option.endKey()) {
+      option.endKey().retain();
     }
     return TableRequestProcessor.of(
       KvUtils.newKvDeleteRequest(
         scChannel.getStorageContainerId(),
         KvUtils.newDeleteRequest(lKey, option)
           .setHeader(newRoutingHeader(pKey))),
-      response -> KvUtils.newDeleteResult(response.getKvDeleteResp()),
+      response -> KvUtils.newDeleteResult(response.getKvDeleteResp(), resultFactory, kvFactory),
       scChannel,
       executor
     ).process().whenComplete((ignored, cause) -> {
       pKey.release();
       lKey.release();
-      if (option.endKey().isPresent()) {
-        option.endKey().get().release();
+      if (null != option.endKey()) {
+        option.endKey().release();
       }
     });
   }
 
   @Override
+  public Txn<ByteBuf, ByteBuf> txn(ByteBuf pKey) {
+      // TODO:
+    return null;
+  }
+
+  @Override
   public void close() {
     // no-op
+  }
+
+  @Override
+  public OpFactory<ByteBuf, ByteBuf> opFactory() {
+    return opFactory;
   }
 }

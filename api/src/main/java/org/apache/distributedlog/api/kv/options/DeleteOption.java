@@ -14,33 +14,13 @@
 
 package org.apache.distributedlog.api.kv.options;
 
-import io.netty.buffer.ByteBuf;
-import java.util.Optional;
-import org.inferred.freebuilder.FreeBuilder;
-
 /**
  * Delete Option.
  */
-@FreeBuilder
-public interface DeleteOption {
+public interface DeleteOption<K> extends Option<K> {
 
-  Optional<ByteBuf> endKey();
+  K endKey();
 
   boolean prevKv();
-
-  /**
-   * Builder to build delete option.
-   */
-  class Builder extends DeleteOption_Builder {
-
-    private Builder() {
-      prevKv(false);
-    }
-
-  }
-
-  static Builder newBuilder() {
-    return new Builder();
-  }
 
 }

@@ -13,19 +13,16 @@
  */
 package org.apache.distributedlog.api.kv.result;
 
-import io.netty.buffer.ByteBuf;
-import java.util.Optional;
-import lombok.Data;
-import org.apache.bookkeeper.common.kv.KV;
-
 /**
  * Put response.
  */
-@Data
-public class PutResult {
+public interface PutResult<K, V> extends Result<K, V> {
 
-  private final Header header;
-  private final ByteBuf pKey;
-  private final Optional<KV<ByteBuf, ByteBuf>> prevKv;
+  /**
+   * Return the previous kv pair of previous value.
+   *
+   * @return the previous kv pair of previous value.
+   */
+  KeyValue<K, V> prevKv();
 
 }

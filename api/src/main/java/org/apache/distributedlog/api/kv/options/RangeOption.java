@@ -13,15 +13,10 @@
  */
 package org.apache.distributedlog.api.kv.options;
 
-import io.netty.buffer.ByteBuf;
-import java.util.Optional;
-import org.inferred.freebuilder.FreeBuilder;
-
 /**
  * Get Option.
  */
-@FreeBuilder
-public interface GetOption {
+public interface RangeOption<K> extends Option<K> {
 
   long limit();
 
@@ -31,24 +26,6 @@ public interface GetOption {
 
   boolean countOnly();
 
-  Optional<ByteBuf> endKey();
-
-  /**
-   * Builder to build get option.
-   */
-  class Builder extends GetOption_Builder {
-
-    private Builder() {
-      limit(0L);
-      revision(0L);
-      keysOnly(false);
-      countOnly(false);
-    }
-
-  }
-
-  static Builder newBuilder() {
-    return new Builder();
-  }
+  K endKey();
 
 }

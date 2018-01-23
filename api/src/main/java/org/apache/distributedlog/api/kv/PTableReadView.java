@@ -14,21 +14,20 @@
 
 package org.apache.distributedlog.api.kv;
 
-import io.netty.buffer.ByteBuf;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience;
 import org.apache.bookkeeper.common.annotation.InterfaceStability;
-import org.apache.distributedlog.api.kv.options.GetOption;
-import org.apache.distributedlog.api.kv.result.GetResult;
+import org.apache.distributedlog.api.kv.options.RangeOption;
+import org.apache.distributedlog.api.kv.result.RangeResult;
 
 /**
  * A review view of a key/value space.
  */
 @InterfaceAudience.Public
 @InterfaceStability.Evolving
-public interface ReadView extends AutoCloseable {
+public interface PTableReadView<K, V> extends AutoCloseable {
 
-  CompletableFuture<GetResult> get(ByteBuf pKey, ByteBuf lKey, GetOption option);
+  CompletableFuture<RangeResult<K, V>> get(K pKey, K lKey, RangeOption<K> option);
 
   void close();
 

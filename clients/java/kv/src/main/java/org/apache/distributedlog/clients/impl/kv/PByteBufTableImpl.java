@@ -29,128 +29,162 @@ import java.util.concurrent.ScheduledExecutorService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.router.ByteBufHashRouter;
-import org.apache.distributedlog.api.kv.Table;
+import org.apache.distributedlog.api.kv.PTable;
+import org.apache.distributedlog.api.kv.Txn;
+import org.apache.distributedlog.api.kv.op.OpFactory;
 import org.apache.distributedlog.api.kv.options.DeleteOption;
-import org.apache.distributedlog.api.kv.options.GetOption;
 import org.apache.distributedlog.api.kv.options.PutOption;
+import org.apache.distributedlog.api.kv.options.RangeOption;
 import org.apache.distributedlog.api.kv.result.DeleteResult;
-import org.apache.distributedlog.api.kv.result.GetResult;
 import org.apache.distributedlog.api.kv.result.PutResult;
+import org.apache.distributedlog.api.kv.result.RangeResult;
 import org.apache.distributedlog.clients.impl.internal.api.HashStreamRanges;
 import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
+import org.apache.distributedlog.clients.impl.kv.op.OpFactoryImpl;
+import org.apache.distributedlog.clients.impl.kv.result.ResultFactory;
 import org.apache.distributedlog.clients.impl.routing.RangeRouter;
 import org.apache.distributedlog.stream.proto.StreamProperties;
 
 /**
- * The default implemenation of {@link Table}.
+ * The default implemenation of {@link PTable}.
  */
 @Slf4j
-public class TableImpl implements Table {
+public class PByteBufTableImpl implements PTable<ByteBuf, ByteBuf> {
 
-  private static class FailRequestKeyValueSpace implements Table {
 
-    static final FailRequestKeyValueSpace INSTANCE =
-      new FailRequestKeyValueSpace();
+
+  private static class FailRequestKeyValueSpace implements PTable<ByteBuf, ByteBuf> {
 
     private static final IllegalStateException CAUSE =
       new IllegalStateException("No range found for a given routing key");
 
-    private FailRequestKeyValueSpace() {}
+    private final OpFactory<ByteBuf, ByteBuf> opFactory;
+
+    private FailRequestKeyValueSpace(OpFactory<ByteBuf, ByteBuf> opFactory) {
+      this.opFactory = opFactory;
+    }
 
     @Override
-    public CompletableFuture<GetResult> get(ByteBuf pKey,
-                                            ByteBuf lKey,
-                                            GetOption option) {
+    public CompletableFuture<RangeResult<ByteBuf, ByteBuf>> get(ByteBuf pKey,
+                                                                ByteBuf lKey,
+                                                                RangeOption<ByteBuf> option) {
       return FutureUtils.exception(CAUSE);
     }
 
     @Override
-    public CompletableFuture<PutResult> put(ByteBuf pKey,
-                                            ByteBuf lKey,
-                                            ByteBuf value,
-                                            PutOption option) {
+    public CompletableFuture<PutResult<ByteBuf, ByteBuf>> put(ByteBuf pKey,
+                                                              ByteBuf lKey,
+                                                              ByteBuf value,
+                                                              PutOption option) {
       return FutureUtils.exception(CAUSE);
     }
 
     @Override
-    public CompletableFuture<DeleteResult> delete(ByteBuf pKey,
-                                                  ByteBuf lKey,
-                                                  DeleteOption option) {
+    public CompletableFuture<DeleteResult<ByteBuf, ByteBuf>> delete(ByteBuf pKey,
+                                                                    ByteBuf lKey,
+                                                                    DeleteOption<ByteBuf> option) {
       return FutureUtils.exception(CAUSE);
+    }
+
+    @Override
+    public Txn<ByteBuf, ByteBuf> txn(ByteBuf pKey) {
+        // ToDO:
+      return null;
     }
 
     @Override
     public void close() {
       // no-op
     }
+
+    @Override
+    public OpFactory<ByteBuf, ByteBuf> opFactory() {
+      return opFactory;
+    }
   }
 
+  private final OpFactory<ByteBuf, ByteBuf> opFactory;
+  private final ResultFactory<ByteBuf, ByteBuf> resultFactory;
+  private final KeyValueFactory<ByteBuf, ByteBuf> kvFactory;
   private final String streamName;
   private final StreamProperties props;
   private final StorageServerClientManager clientManager;
   private final ScheduledExecutorService executor;
   private final TableRangeFactory trFactory;
+  private final PTable<ByteBuf, ByteBuf> failRequestTable;
 
   // States
   private final RangeRouter<ByteBuf> rangeRouter;
-  private final ConcurrentMap<Long, Table> tableRanges;
+  private final ConcurrentMap<Long, PTable> tableRanges;
 
 
-  public TableImpl(String streamName,
-                   StreamProperties props,
-                   StorageServerClientManager clientManager,
-                   ScheduledExecutorService executor) {
+  public PByteBufTableImpl(String streamName,
+                           StreamProperties props,
+                           StorageServerClientManager clientManager,
+                           ScheduledExecutorService executor) {
     this(
       streamName,
       props,
       clientManager,
       executor,
-      (streamProps, rangeProps, scheduler) -> new TableRangeImpl(
+      (streamProps, rangeProps, scheduler, opFactory, resultFactory, kvFactory) -> new PByteBufTableRangeImpl(
         streamProps.getStreamId(),
         rangeProps,
         clientManager.getStorageContainerChannel(streamProps.getStorageContainerId()),
-        executor),
+        executor,
+        opFactory,
+        resultFactory,
+        kvFactory),
       Optional.empty());
   }
 
-  public TableImpl(String streamName,
-                   StreamProperties props,
-                   StorageServerClientManager clientManager,
-                   ScheduledExecutorService executor,
-                   TableRangeFactory factory,
-                   Optional<RangeRouter<ByteBuf>> rangeRouterOverride) {
+  public PByteBufTableImpl(String streamName,
+                           StreamProperties props,
+                           StorageServerClientManager clientManager,
+                           ScheduledExecutorService executor,
+                           TableRangeFactory factory,
+                           Optional<RangeRouter<ByteBuf>> rangeRouterOverride) {
     this.streamName = streamName;
     this.props = props;
     this.clientManager = clientManager;
     this.executor = executor;
     this.trFactory = factory;
     this.rangeRouter =
-      rangeRouterOverride.orElse(new RangeRouter<ByteBuf>(ByteBufHashRouter.of()));
+      rangeRouterOverride.orElse(new RangeRouter<>(ByteBufHashRouter.of()));
     this.tableRanges = new ConcurrentHashMap<>();
+    this.opFactory = new OpFactoryImpl<>();
+    this.resultFactory = new ResultFactory<>();
+    this.kvFactory = new KeyValueFactory<>();
+    this.failRequestTable = new FailRequestKeyValueSpace(opFactory);
+  }
+
+  @Override
+  public OpFactory<ByteBuf, ByteBuf> opFactory() {
+    return opFactory;
   }
 
   @VisibleForTesting
-  ConcurrentMap<Long, Table> getTableRanges() {
+  ConcurrentMap<Long, PTable> getTableRanges() {
     return tableRanges;
   }
 
-  private Table getTableRange(Long range) {
-    Table tRange = tableRanges.get(range);
+  private PTable getTableRange(Long range) {
+    PTable tRange = tableRanges.get(range);
     // TODO: we need logic to handle scale/repartitioning
     if (null == tRange) {
-      return FailRequestKeyValueSpace.INSTANCE;
+      return failRequestTable;
     }
     return tRange;
   }
 
-  public CompletableFuture<Table> initialize() {
+  public CompletableFuture<PTable> initialize() {
     return this.clientManager
       .openMetaRangeClient(props)
       .getActiveDataRanges()
       .thenComposeAsync((ranges) -> refreshRangeSpaces(ranges), executor);
   }
 
-  CompletableFuture<Table> refreshRangeSpaces(HashStreamRanges newRanges) {
+  CompletableFuture<PTable> refreshRangeSpaces(HashStreamRanges newRanges) {
     // compare the ranges to see if it requires an update
     HashStreamRanges oldRanges = rangeRouter.getRanges();
     if (null != oldRanges && oldRanges.getMaxRangeId() >= newRanges.getMaxRangeId()) {
@@ -168,54 +202,60 @@ public class TableImpl implements Table {
       if (tableRanges.containsKey(range.getRangeId())) {
         return;
       }
-      Table tableRange = trFactory.openTableRange(props, range, executor);
+      PTable tableRange = trFactory.openTableRange(props, range, executor, opFactory, resultFactory, kvFactory);
       if (log.isInfoEnabled()) {
         log.info("Create table range client for range {}", range.getRangeId());
       }
       this.tableRanges.put(range.getRangeId(), tableRange);
     });
     // remove old ranges
-    Iterator<Entry<Long, Table>> rsIter = tableRanges.entrySet().iterator();
+    Iterator<Entry<Long, PTable>> rsIter = tableRanges.entrySet().iterator();
     while (rsIter.hasNext()) {
-      Map.Entry<Long, Table> entry = rsIter.next();
+      Map.Entry<Long, PTable> entry = rsIter.next();
       Long rid = entry.getKey();
       if (activeRanges.contains(rid)) {
         continue;
       }
       rsIter.remove();
-      Table oldRangeSpace = entry.getValue();
+      PTable oldRangeSpace = entry.getValue();
       oldRangeSpace.close();
     }
     return FutureUtils.value(this);
   }
 
   @Override
-  public CompletableFuture<GetResult> get(ByteBuf pKey,
-                                          ByteBuf lKey,
-                                          GetOption option) {
+  public CompletableFuture<RangeResult<ByteBuf, ByteBuf>> get(ByteBuf pKey,
+                                                              ByteBuf lKey,
+                                                              RangeOption<ByteBuf> option) {
     Long range = rangeRouter.getRange(pKey);
     return getTableRange(range).get(pKey, lKey, option);
   }
 
   @Override
-  public CompletableFuture<PutResult> put(ByteBuf pKey,
-                                          ByteBuf lKey,
-                                          ByteBuf value,
-                                          PutOption option) {
+  public CompletableFuture<PutResult<ByteBuf, ByteBuf>> put(ByteBuf pKey,
+                                                            ByteBuf lKey,
+                                                            ByteBuf value,
+                                                            PutOption option) {
     Long range = rangeRouter.getRange(pKey);
     return getTableRange(range).put(pKey, lKey, value, option);
   }
 
   @Override
-  public CompletableFuture<DeleteResult> delete(ByteBuf pKey,
-                                                ByteBuf lKey,
-                                                DeleteOption option) {
+  public CompletableFuture<DeleteResult<ByteBuf, ByteBuf>> delete(ByteBuf pKey,
+                                                                  ByteBuf lKey,
+                                                                  DeleteOption<ByteBuf> option) {
     Long range = rangeRouter.getRange(pKey);
     return getTableRange(range).delete(pKey, lKey, option);
   }
 
   @Override
+  public Txn<ByteBuf, ByteBuf> txn(ByteBuf pKey) {
+    // TODO:
+    return null;
+  }
+
+  @Override
   public void close() {
-    tableRanges.values().forEach(Table::close);
+    tableRanges.values().forEach(PTable::close);
   }
 }

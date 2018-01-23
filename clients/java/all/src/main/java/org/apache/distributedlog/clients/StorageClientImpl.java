@@ -27,11 +27,11 @@ import org.apache.bookkeeper.common.util.ExceptionUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.common.util.SharedResourceManager;
 import org.apache.distributedlog.api.StorageClient;
-import org.apache.distributedlog.api.kv.Table;
+import org.apache.distributedlog.api.kv.PTable;
 import org.apache.distributedlog.clients.config.StorageClientSettings;
 import org.apache.distributedlog.clients.impl.internal.StorageServerClientManagerImpl;
 import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
-import org.apache.distributedlog.clients.impl.kv.TableImpl;
+import org.apache.distributedlog.clients.impl.kv.PByteBufTableImpl;
 import org.apache.distributedlog.clients.utils.ClientResources;
 import org.apache.distributedlog.stream.proto.StreamProperties;
 
@@ -71,7 +71,7 @@ class StorageClientImpl extends AbstractAutoAsyncCloseable implements StorageCli
   //
 
   @Override
-  public CompletableFuture<Table> openTable(String streamName) {
+  public CompletableFuture<PTable> openPTable(String streamName) {
     return ExceptionUtils.callAndHandleClosedAsync(
       COMPONENT_NAME,
       isClosed(),
@@ -79,13 +79,13 @@ class StorageClientImpl extends AbstractAutoAsyncCloseable implements StorageCli
   }
 
   private void openStreamAsTableImpl(String streamName,
-                                     CompletableFuture<Table> future) {
+                                     CompletableFuture<PTable> future) {
     FutureUtils.proxyTo(
       getStreamProperties(streamName).thenComposeAsync(props -> {
         if (log.isInfoEnabled()) {
           log.info("Retrieved stream properties for stream {} : {}", streamName, props);
         }
-        return new TableImpl(
+        return new PByteBufTableImpl(
           streamName,
           props,
           serverManager,

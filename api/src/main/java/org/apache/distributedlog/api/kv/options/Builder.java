@@ -15,38 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.apache.distributedlog.clients.impl.kv;
-
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
-import org.apache.bookkeeper.common.kv.KV;
+package org.apache.distributedlog.api.kv.options;
 
 /**
- * A Key/Value pair.
- *
- * @param <K> key type
- * @param <V> value type
+ * Builder interface.
  */
-@AllArgsConstructor(access = AccessLevel.PUBLIC)
-@ToString
-@EqualsAndHashCode
-@Getter
-public class KVImpl<K, V> implements KV<K, V> {
+public interface Builder<T> extends AutoCloseable {
 
-    private final K key;
-    private final V value;
+    T build();
 
     @Override
-    public K key() {
-        return key;
-    }
+    void close();
 
-    @Override
-    public V value() {
-        return value;
-    }
 }

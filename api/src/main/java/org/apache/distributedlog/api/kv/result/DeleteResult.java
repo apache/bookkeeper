@@ -13,20 +13,26 @@
  */
 package org.apache.distributedlog.api.kv.result;
 
-import io.netty.buffer.ByteBuf;
 import java.util.List;
-import lombok.Data;
-import org.apache.bookkeeper.common.kv.KV;
 
 /**
  * Delete result.
  */
-@Data
-public class DeleteResult {
+public interface DeleteResult<K, V> extends Result<K, V> {
 
-  private final Header header;
-  private final long numDeleted;
-  private final ByteBuf pKey;
-  private final List<KV<ByteBuf, ByteBuf>> prevKvs;
+    /**
+     * Returns the number of kv pairs deleted.
+     *
+     * @return the number of kv pairs deleted.
+     */
+    long numDeleted();
+
+    /**
+     * Returns the list of previous kv pairs of the keys
+     * deleted in ths op.
+     *
+     * @return the list of previous kv pairs.
+     */
+    List<KeyValue<K, V>> prevKvs();
 
 }

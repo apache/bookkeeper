@@ -39,14 +39,16 @@ import org.apache.bookkeeper.common.router.HashRouter;
 import org.apache.bookkeeper.common.util.ByteBufUtils;
 import org.apache.bookkeeper.common.util.Bytes;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
-import org.apache.distributedlog.api.kv.Table;
+import org.apache.distributedlog.api.kv.PTable;
 import org.apache.distributedlog.api.kv.options.DeleteOption;
-import org.apache.distributedlog.api.kv.options.GetOption;
+import org.apache.distributedlog.api.kv.options.OptionFactory;
 import org.apache.distributedlog.api.kv.options.PutOption;
+import org.apache.distributedlog.api.kv.options.RangeOption;
 import org.apache.distributedlog.clients.exceptions.ClientException;
 import org.apache.distributedlog.clients.impl.internal.api.HashStreamRanges;
 import org.apache.distributedlog.clients.impl.internal.api.MetaRangeClient;
 import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
+import org.apache.distributedlog.clients.impl.kv.option.OptionFactoryImpl;
 import org.apache.distributedlog.clients.impl.routing.RangeRouter;
 import org.apache.distributedlog.stream.proto.RangeKeyType;
 import org.apache.distributedlog.stream.proto.RangeProperties;
@@ -58,9 +60,9 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 
 /**
- * Unit test for {@link TableImpl}.
+ * Unit test for {@link PByteBufTableImpl}.
  */
-public class TestTableImpl {
+public class TestPByteBufTableImpl {
 
   private static final long streamId = 12345L;
 
@@ -95,6 +97,7 @@ public class TestTableImpl {
     .build();
   private final MetaRangeClient mockMetaRangeClient = mock(MetaRangeClient.class);
   private final StorageServerClientManager mockClientManager = mock(StorageServerClientManager.class);
+  private final OptionFactory<ByteBuf> optionFactory = new OptionFactoryImpl<>();
 
   private OrderedScheduler scheduler;
 
@@ -125,7 +128,7 @@ public class TestTableImpl {
     when(mockMetaRangeClient.getActiveDataRanges())
       .thenReturn(FutureUtils.exception(cause));
 
-    TableImpl table = new TableImpl(
+    PByteBufTableImpl table = new PByteBufTableImpl(
       runtime.getMethodName(),
       streamProps,
       mockClientManager,
@@ -143,9 +146,9 @@ public class TestTableImpl {
     when(mockMetaRangeClient.getActiveDataRanges())
       .thenReturn(FutureUtils.value(streamRanges1));
 
-    ConcurrentMap<Long, Table> tableRanges = Maps.newConcurrentMap();
+    ConcurrentMap<Long, PTable> tableRanges = Maps.newConcurrentMap();
     for (RangeProperties rangeProps : streamRanges1.getRanges().values()) {
-      tableRanges.put(rangeProps.getRangeId(), mock(Table.class));
+      tableRanges.put(rangeProps.getRangeId(), mock(PTable.class));
     }
 
     RangeRouter<ByteBuf> mockRouter = mock(RangeRouter.class);
@@ -156,8 +159,10 @@ public class TestTableImpl {
         return Bytes.toLong(keyData, 0);
       });
 
-    TableRangeFactory trFactory = (streamProps1, rangeProps, executor) -> tableRanges.get(rangeProps.getRangeId());
-    TableImpl table = new TableImpl(
+    TableRangeFactory trFactory =
+        (streamProps1, rangeProps, executor, opFactory, resultFactory, kvFactory)
+            -> tableRanges.get(rangeProps.getRangeId());
+    PByteBufTableImpl table = new PByteBufTableImpl(
       runtime.getMethodName(),
       streamProps,
       mockClientManager,
@@ -178,11 +183,11 @@ public class TestTableImpl {
         Unpooled.wrappedBuffer(Bytes.toBytes(rangeProps.getRangeId()));
       ByteBuf lkey =
         Unpooled.wrappedBuffer(Bytes.toBytes(rangeProps.getRangeId()));
-      GetOption option =
-        GetOption.newBuilder().build();
-      table.get(pkey, lkey, option);
-      verify(tableRanges.get(rangeProps.getRangeId()), times(1))
-        .get(eq(pkey), eq(lkey), eq(option));
+      try (RangeOption option = optionFactory.newRangeOption().build()) {
+        table.get(pkey, lkey, option);
+        verify(tableRanges.get(rangeProps.getRangeId()), times(1))
+            .get(eq(pkey), eq(lkey), eq(option));
+      }
     }
 
     // test put
@@ -193,11 +198,11 @@ public class TestTableImpl {
         Unpooled.wrappedBuffer(Bytes.toBytes(rangeProps.getRangeId()));
       ByteBuf value =
         Unpooled.wrappedBuffer(Bytes.toBytes(rangeProps.getRangeId()));
-      PutOption option =
-        PutOption.newBuilder().build();
-      table.put(pkey, lkey, value, option);
-      verify(tableRanges.get(rangeProps.getRangeId()), times(1))
-        .put(eq(pkey), eq(lkey), eq(value), eq(option));
+      try (PutOption option = optionFactory.newPutOption().build()) {
+        table.put(pkey, lkey, value, option);
+        verify(tableRanges.get(rangeProps.getRangeId()), times(1))
+            .put(eq(pkey), eq(lkey), eq(value), eq(option));
+      }
     }
 
     // test delete
@@ -206,11 +211,11 @@ public class TestTableImpl {
         Unpooled.wrappedBuffer(Bytes.toBytes(rangeProps.getRangeId()));
       ByteBuf lkey =
         Unpooled.wrappedBuffer(Bytes.toBytes(rangeProps.getRangeId()));
-      DeleteOption option =
-        DeleteOption.newBuilder().build();
-      table.delete(pkey, lkey, option);
-      verify(tableRanges.get(rangeProps.getRangeId()), times(1))
-        .delete(eq(pkey), eq(lkey), eq(option));
+      try (DeleteOption option = optionFactory.newDeleteOption().build()) {
+        table.delete(pkey, lkey, option);
+        verify(tableRanges.get(rangeProps.getRangeId()), times(1))
+            .delete(eq(pkey), eq(lkey), eq(option));
+      }
     }
   }
 }

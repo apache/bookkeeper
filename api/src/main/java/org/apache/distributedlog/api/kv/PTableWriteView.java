@@ -14,13 +14,27 @@
 
 package org.apache.distributedlog.api.kv;
 
+import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience;
 import org.apache.bookkeeper.common.annotation.InterfaceStability;
+import org.apache.distributedlog.api.kv.options.DeleteOption;
+import org.apache.distributedlog.api.kv.options.PutOption;
+import org.apache.distributedlog.api.kv.result.DeleteResult;
+import org.apache.distributedlog.api.kv.result.PutResult;
 
 /**
- * Interface of kv client talking to kv spaces.
+ * Write view of a given key space.
  */
 @InterfaceAudience.Public
 @InterfaceStability.Evolving
-public interface Table extends ReadView, WriteView {
+public interface PTableWriteView<K, V> extends AutoCloseable {
+
+  CompletableFuture<PutResult<K, V>> put(K pKey, K lKey, V value, PutOption option);
+
+  CompletableFuture<DeleteResult<K, V>> delete(K pKey, K lKey, DeleteOption<K> option);
+
+  Txn<K, V> txn(K pKey);
+
+  void close();
+
 }

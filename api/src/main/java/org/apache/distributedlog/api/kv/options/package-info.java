@@ -13,6 +13,6 @@
  */
 
 /**
- * Table Operation Options.
+ * PTable Operation Options.
  */
 package org.apache.distributedlog.api.kv.options;

@@ -13,21 +13,32 @@
  */
 package org.apache.distributedlog.api.kv.result;
 
-import io.netty.buffer.ByteBuf;
 import java.util.List;
-import lombok.Data;
-import org.apache.bookkeeper.common.kv.KV;
 
 /**
  * Get result.
  */
-@Data
-public class GetResult {
+public interface RangeResult<K, V> extends Result<K, V> {
 
-  private final Header header;
-  private final ByteBuf pKey;
-  private final List<KV<ByteBuf, ByteBuf>> kvs;
-  private final boolean more;
-  private final long count;
+    /**
+     * Returns the number of kv pairs deleted.
+     *
+     * @return the number of kv pairs deleted.
+     */
+    long count();
+
+    /**
+     * Returns whether there is more kv pairs to fetch.
+     *
+     * @return whether there is more kv pairs to fetch.
+     */
+    boolean more();
+
+    /**
+     * Returns the list of kv pairs.
+     *
+     * @return the list of kv pairs.
+     */
+    List<KeyValue<K, V>> kvs();
 
 }

@@ -22,7 +22,7 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.bookkeeper.common.util.AutoAsyncCloseable;
-import org.apache.distributedlog.api.kv.Table;
+import org.apache.distributedlog.api.kv.PTable;
 
 /**
  * The stream storage client.
@@ -31,6 +31,6 @@ import org.apache.distributedlog.api.kv.Table;
 @Evolving
 public interface StorageClient extends AutoAsyncCloseable {
 
-    CompletableFuture<Table> openTable(String table);
+    CompletableFuture<PTable> openPTable(String table);
 
 }

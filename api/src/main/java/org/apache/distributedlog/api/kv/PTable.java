@@ -14,26 +14,17 @@
 
 package org.apache.distributedlog.api.kv;
 
-import io.netty.buffer.ByteBuf;
-import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience;
 import org.apache.bookkeeper.common.annotation.InterfaceStability;
-import org.apache.distributedlog.api.kv.options.DeleteOption;
-import org.apache.distributedlog.api.kv.options.PutOption;
-import org.apache.distributedlog.api.kv.result.DeleteResult;
-import org.apache.distributedlog.api.kv.result.PutResult;
+import org.apache.distributedlog.api.kv.op.OpFactory;
 
 /**
- * Write view of a given key space.
+ * Interface of kv client talking to partitioned table.
  */
 @InterfaceAudience.Public
 @InterfaceStability.Evolving
-public interface WriteView extends AutoCloseable {
+public interface PTable<K, V> extends PTableReadView<K, V>, PTableWriteView<K, V> {
 
-  CompletableFuture<PutResult> put(ByteBuf pKey, ByteBuf lKey, ByteBuf value, PutOption option);
-
-  CompletableFuture<DeleteResult> delete(ByteBuf pKey, ByteBuf lKey, DeleteOption option);
-
-  void close();
+    OpFactory<K, V> opFactory();
 
 }

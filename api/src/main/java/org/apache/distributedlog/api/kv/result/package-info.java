@@ -13,6 +13,6 @@
  */
 
 /**
- * Table Operation Results.
+ * PTable Operation Results.
  */
 package org.apache.distributedlog.api.kv.result;
