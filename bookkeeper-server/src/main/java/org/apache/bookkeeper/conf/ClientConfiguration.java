@@ -1622,10 +1622,10 @@ public class ClientConfiguration extends AbstractConfiguration<ClientConfigurati
     /**
      * Get the MaxNum for ensemble change.
      *
-     * @return value of MaxNumEnsembleChanges, default 100.
+     * @return value of MaxNumEnsembleChanges, default MAX_VALUE, indicating feature is disable.
      */
     public int getMaxNumEnsembleChanges() {
-        return getInt(MAX_NUM_ENSEMBLE_CHANGES, 100);
+        return getInt(MAX_NUM_ENSEMBLE_CHANGES, Integer.MAX_VALUE);
     }
 
     /**
