@@ -33,7 +33,7 @@ import java.util.function.Consumer;
 import org.apache.bookkeeper.bookie.SortedLedgerStorage;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
-import org.apache.bookkeeper.test.BaseTestCase;
+import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,8 +43,8 @@ import org.slf4j.LoggerFactory;
 /**
  * Test the bookkeeper client with errors from Bookies.
  */
-public class BookKeeperClientTestsWithBookieErrors extends BaseTestCase {
-    private static final Logger LOG = LoggerFactory.getLogger(BookKeeperTest.class);
+public class BookKeeperClientTestsWithBookieErrors extends BookKeeperClusterTestCase {
+    private static final Logger LOG = LoggerFactory.getLogger(BookKeeperClientTestsWithBookieErrors.class);
     private static final int NUM_BOOKIES = 3;
     // The amount of sleeptime to sleep in injectSleepWhileRead fault injection
     private final long sleepTime;
@@ -71,11 +71,8 @@ public class BookKeeperClientTestsWithBookieErrors extends BaseTestCase {
     // Lock object for synchronizing injectCorruptData and faultInjections
     private static final Object lock = new Object();
 
-    private DigestType digestType;
-
-    public BookKeeperClientTestsWithBookieErrors(DigestType digestType) {
+    public BookKeeperClientTestsWithBookieErrors() {
         super(NUM_BOOKIES);
-        this.digestType = digestType;
         baseConf.setLedgerStorageClass(MockSortedLedgerStorage.class.getName());
 
         // this fault injection will corrupt the entry data by modifying the last byte of the entry
@@ -131,7 +128,6 @@ public class BookKeeperClientTestsWithBookieErrors extends BaseTestCase {
         ClientConfiguration conf = new ClientConfiguration().setZkServers(zkUtil.getZooKeeperConnectString());
         BookKeeper bkc = new BookKeeper(conf);
 
-        DigestType digestCorrect = digestType;
         byte[] passwd = "AAAAAAA".getBytes();
 
         // all the bookies need to return corrupt data
@@ -139,14 +135,14 @@ public class BookKeeperClientTestsWithBookieErrors extends BaseTestCase {
         faultInjections.add(injectCorruptData);
         faultInjections.add(injectCorruptData);
 
-        LedgerHandle wlh = bkc.createLedger(3, 3, 2, digestCorrect, passwd);
+        LedgerHandle wlh = bkc.createLedger(3, 3, 2, DigestType.CRC32, passwd);
         long id = wlh.getId();
         for (int i = 0; i < 10; i++) {
             wlh.addEntry("foobarfoo".getBytes());
         }
         wlh.close();
 
-        LedgerHandle rlh = bkc.openLedger(id, digestCorrect, passwd);
+        LedgerHandle rlh = bkc.openLedger(id, DigestType.CRC32, passwd);
         try {
             rlh.readEntries(4, 4);
             fail("It is expected to fail with BKDigestMatchException");
@@ -163,21 +159,20 @@ public class BookKeeperClientTestsWithBookieErrors extends BaseTestCase {
         ClientConfiguration conf = new ClientConfiguration().setZkServers(zkUtil.getZooKeeperConnectString());
         BookKeeper bkc = new BookKeeper(conf);
 
-        DigestType digestCorrect = digestType;
         byte[] passwd = "AAAAAAA".getBytes();
 
         faultInjections.add(injectSleepWhileRead);
         faultInjections.add(injectSleepWhileRead);
         faultInjections.add(injectCorruptData);
 
-        LedgerHandle wlh = bkc.createLedger(3, 3, 2, digestCorrect, passwd);
+        LedgerHandle wlh = bkc.createLedger(3, 3, 2, DigestType.CRC32, passwd);
         long id = wlh.getId();
         for (int i = 0; i < 10; i++) {
             wlh.addEntry("foobarfoo".getBytes());
         }
         wlh.close();
 
-        LedgerHandle rlh = bkc.openLedger(id, digestCorrect, passwd);
+        LedgerHandle rlh = bkc.openLedger(id, DigestType.CRC32, passwd);
         try {
             rlh.readEntries(4, 4);
             fail("It is expected to fail with BKDigestMatchException");
@@ -194,21 +189,20 @@ public class BookKeeperClientTestsWithBookieErrors extends BaseTestCase {
         ClientConfiguration conf = new ClientConfiguration().setZkServers(zkUtil.getZooKeeperConnectString());
         BookKeeper bkc = new BookKeeper(conf);
 
-        DigestType digestCorrect = digestType;
         byte[] passwd = "AAAAAAA".getBytes();
 
         faultInjections.add(injectCorruptData);
         faultInjections.add(injectSleepWhileRead);
         faultInjections.add(injectSleepWhileRead);
 
-        LedgerHandle wlh = bkc.createLedger(3, 3, 2, digestCorrect, passwd);
+        LedgerHandle wlh = bkc.createLedger(3, 3, 2, DigestType.CRC32, passwd);
         long id = wlh.getId();
         for (int i = 0; i < 10; i++) {
             wlh.addEntry("foobarfoo".getBytes());
         }
         wlh.close();
 
-        LedgerHandle rlh = bkc.openLedger(id, digestCorrect, passwd);
+        LedgerHandle rlh = bkc.openLedger(id, DigestType.CRC32, passwd);
         try {
             rlh.readEntries(4, 4);
             fail("It is expected to fail with BKDigestMatchException");
@@ -225,12 +219,11 @@ public class BookKeeperClientTestsWithBookieErrors extends BaseTestCase {
         ClientConfiguration conf = new ClientConfiguration().setZkServers(zkUtil.getZooKeeperConnectString());
         BookKeeper bkc = new BookKeeper(conf);
 
-        DigestType digestCorrect = digestType;
         byte[] passwd = "AAAAAAA".getBytes();
 
         faultInjections.add(injectCorruptData);
 
-        LedgerHandle wlh = bkc.createLedger(3, 3, 2, digestCorrect, passwd);
+        LedgerHandle wlh = bkc.createLedger(3, 3, 2, DigestType.CRC32, passwd);
         long id = wlh.getId();
         wlh.addEntry("foobarfoo".getBytes());
         wlh.close();
@@ -240,7 +233,7 @@ public class BookKeeperClientTestsWithBookieErrors extends BaseTestCase {
 
         Thread.sleep(500);
 
-        LedgerHandle rlh = bkc.openLedger(id, digestCorrect, passwd);
+        LedgerHandle rlh = bkc.openLedger(id, DigestType.CRC32, passwd);
         try {
             rlh.readEntries(0, 0);
             fail("It is expected to fail with BKDigestMatchException");
@@ -256,21 +249,20 @@ public class BookKeeperClientTestsWithBookieErrors extends BaseTestCase {
         ClientConfiguration conf = new ClientConfiguration().setZkServers(zkUtil.getZooKeeperConnectString());
         BookKeeper bkc = new BookKeeper(conf);
 
-        DigestType digestCorrect = digestType;
         byte[] passwd = "AAAAAAA".getBytes();
 
         faultInjections.add(injectSleepWhileRead);
         faultInjections.add(injectSleepWhileRead);
         faultInjections.add(injectSleepWhileRead);
 
-        LedgerHandle wlh = bkc.createLedger(3, 3, 2, digestCorrect, passwd);
+        LedgerHandle wlh = bkc.createLedger(3, 3, 2, DigestType.CRC32, passwd);
         long id = wlh.getId();
         for (int i = 0; i < 10; i++) {
             wlh.addEntry("foobarfoo".getBytes());
         }
         wlh.close();
 
-        LedgerHandle rlh = bkc.openLedger(id, digestCorrect, passwd);
+        LedgerHandle rlh = bkc.openLedger(id, DigestType.CRC32, passwd);
         try {
             rlh.readEntries(4, 4);
             fail("It is expected to fail with BKTimeoutException");
@@ -287,7 +279,6 @@ public class BookKeeperClientTestsWithBookieErrors extends BaseTestCase {
         ClientConfiguration conf = new ClientConfiguration().setZkServers(zkUtil.getZooKeeperConnectString());
         BookKeeper bkc = new BookKeeper(conf);
 
-        DigestType digestCorrect = digestType;
         byte[] passwd = "AAAAAAA".getBytes();
 
         faultInjections.add(injectSleepWhileRead);
@@ -295,14 +286,14 @@ public class BookKeeperClientTestsWithBookieErrors extends BaseTestCase {
         faultInjections.add((byteBuf) -> {
         });
 
-        LedgerHandle wlh = bkc.createLedger(3, 3, 2, digestCorrect, passwd);
+        LedgerHandle wlh = bkc.createLedger(3, 3, 2, DigestType.CRC32, passwd);
         long id = wlh.getId();
         for (int i = 0; i < 10; i++) {
             wlh.addEntry("foobarfoo".getBytes());
         }
         wlh.close();
 
-        LedgerHandle rlh = bkc.openLedger(id, digestCorrect, passwd);
+        LedgerHandle rlh = bkc.openLedger(id, DigestType.CRC32, passwd);
         LedgerEntry entry = rlh.readEntries(4, 4).nextElement();
         Assert.assertTrue("The read Entry should match with what have been written",
                 (new String(entry.getEntry())).equals("foobarfoo"));
@@ -317,7 +308,6 @@ public class BookKeeperClientTestsWithBookieErrors extends BaseTestCase {
         ClientConfiguration conf = new ClientConfiguration().setZkServers(zkUtil.getZooKeeperConnectString());
         BookKeeper bkc = new BookKeeper(conf);
 
-        DigestType digestCorrect = digestType;
         byte[] passwd = "AAAAAAA".getBytes();
 
         faultInjections.add(injectCorruptData);
@@ -325,14 +315,14 @@ public class BookKeeperClientTestsWithBookieErrors extends BaseTestCase {
         faultInjections.add((byteBuf) -> {
         });
 
-        LedgerHandle wlh = bkc.createLedger(3, 3, 2, digestCorrect, passwd);
+        LedgerHandle wlh = bkc.createLedger(3, 3, 2, DigestType.CRC32, passwd);
         long id = wlh.getId();
         for (int i = 0; i < 10; i++) {
             wlh.addEntry("foobarfoo".getBytes());
         }
         wlh.close();
 
-        LedgerHandle rlh = bkc.openLedger(id, digestCorrect, passwd);
+        LedgerHandle rlh = bkc.openLedger(id, DigestType.CRC32, passwd);
         LedgerEntry entry = rlh.readEntries(4, 4).nextElement();
         Assert.assertTrue("The read Entry should match with what have been written",
                 (new String(entry.getEntry())).equals("foobarfoo"));
