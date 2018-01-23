@@ -1523,7 +1523,7 @@ public class LedgerHandle implements WriteHandle {
                     continue;
                 }
                 try {
-                    BookieSocketAddress newBookie = bk.bookieWatcher.replaceBookie(
+                    BookieSocketAddress newBookie = bk.getBookieWatcher().replaceBookie(
                         metadata.getEnsembleSize(),
                         metadata.getWriteQuorumSize(),
                         metadata.getAckQuorumSize(),
@@ -1555,7 +1555,7 @@ public class LedgerHandle implements WriteHandle {
 
     void handleBookieFailure(final Map<Integer, BookieSocketAddress> failedBookies) {
         int curBlockAddCompletions = blockAddCompletions.incrementAndGet();
-        if (bk.disableEnsembleChangeFeature.isAvailable()) {
+        if (bk.getDisableEnsembleChangeFeature().isAvailable()) {
             blockAddCompletions.decrementAndGet();
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Ensemble change is disabled. Retry sending to failed bookies {} for ledger {}.",

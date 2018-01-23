@@ -709,6 +709,15 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     }
 
     /**
+     * Get the disableEnsembleChangeFeature.
+     *
+     * @return disableEnsembleChangeFeature for the BookKeeper instance.
+     */
+    Feature getDisableEnsembleChangeFeature() {
+        return disableEnsembleChangeFeature;
+    }
+
+    /**
      * Get the BookieClient, currently used for doing bookie recovery.
      *
      * @return BookieClient for the BookKeeper instance.

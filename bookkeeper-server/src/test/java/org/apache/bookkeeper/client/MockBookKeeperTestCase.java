@@ -66,7 +66,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import org.powermock.reflect.Whitebox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -138,8 +137,6 @@ public abstract class MockBookKeeperTestCase {
         ledgerIdGenerator = mock(LedgerIdGenerator.class);
 
         bk = mock(BookKeeper.class);
-        Whitebox.setInternalState(bk, "bookieWatcher", bookieWatcher);
-        Whitebox.setInternalState(bk, "disableEnsembleChangeFeature", mock(Feature.class));
 
         NullStatsLogger nullStatsLogger = setupLoggers();
 
@@ -149,6 +146,7 @@ public abstract class MockBookKeeperTestCase {
         when(bk.getCloseLock()).thenReturn(new ReentrantReadWriteLock());
         when(bk.isClosed()).thenReturn(false);
         when(bk.getBookieWatcher()).thenReturn(bookieWatcher);
+        when(bk.getDisableEnsembleChangeFeature()).thenReturn(mock(Feature.class));
         when(bk.getExplicitLacInterval()).thenReturn(0);
         when(bk.getMainWorkerPool()).thenReturn(executor);
         when(bk.getBookieClient()).thenReturn(bookieClient);
