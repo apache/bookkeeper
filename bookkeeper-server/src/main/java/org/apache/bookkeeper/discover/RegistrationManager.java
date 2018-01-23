@@ -99,6 +99,17 @@ public interface RegistrationManager extends AutoCloseable {
     void unregisterBookie(String bookieId, boolean readOnly) throws BookieException;
 
     /**
+     * Checks if Bookie with the given BookieId is registered as readwrite or
+     * readonly bookie.
+     *
+     * @param bookieId bookie id
+     * @return returns true if a bookie with bookieid is currently registered as
+     *          readwrite or readonly bookie.
+     * @throws BookieException
+     */
+    boolean isBookieRegistered(String bookieId) throws BookieException;
+
+    /**
      * Write the cookie data, which will be used for verifying the integrity of the bookie environment.
      *
      * @param bookieId bookie id

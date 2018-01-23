@@ -139,6 +139,7 @@ public class BookieShell implements Tool {
     static final String LEDGERID_FORMATTER_OPT = "ledgeridformat";
 
     static final String CMD_METAFORMAT = "metaformat";
+    static final String CMD_INITBOOKIE = "initbookie";
     static final String CMD_BOOKIEFORMAT = "bookieformat";
     static final String CMD_RECOVER = "recover";
     static final String CMD_LEDGER = "ledger";
@@ -323,6 +324,40 @@ public class BookieShell implements Tool {
                     rm.close();
                 }
             }
+            return (result) ? 0 : 1;
+        }
+    }
+
+    /**
+     * Initializes bookie, by making sure that the journalDir, ledgerDirs and
+     * indexDirs are empty and there is no registered Bookie with this BookieId.
+     */
+    class InitBookieCmd extends MyCommand {
+        Options opts = new Options();
+
+        public InitBookieCmd() {
+            super(CMD_INITBOOKIE);
+        }
+
+        @Override
+        Options getOptions() {
+            return opts;
+        }
+
+        @Override
+        String getDescription() {
+            return "Initialize new Bookie";
+        }
+
+        @Override
+        String getUsage() {
+            return CMD_INITBOOKIE;
+        }
+
+        @Override
+        int runCmd(CommandLine cmdLine) throws Exception {
+            ServerConfiguration conf = new ServerConfiguration(bkConf);
+            boolean result = BookKeeperAdmin.initBookie(conf);
             return (result) ? 0 : 1;
         }
     }
@@ -2526,6 +2561,7 @@ public class BookieShell implements Tool {
 
     {
         commands.put(CMD_METAFORMAT, new MetaFormatCmd());
+        commands.put(CMD_INITBOOKIE, new InitBookieCmd());
         commands.put(CMD_BOOKIEFORMAT, new BookieFormatCmd());
         commands.put(CMD_RECOVER, new RecoverCmd());
         commands.put(CMD_LEDGER, new LedgerCmd());
