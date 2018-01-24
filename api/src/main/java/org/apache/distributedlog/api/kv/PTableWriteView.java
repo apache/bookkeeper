@@ -42,6 +42,8 @@ public interface PTableWriteView<K, V> extends PTableBase<K, V> {
 
     CompletableFuture<DeleteResult<K, V>> delete(K pKey, K lKey, DeleteOption<K> option);
 
+    CompletableFuture<Void> increment(K pKey, K lKey, long amount);
+
     Txn<K, V> txn(K pKey);
 
     default CompletableFuture<Void> put(K pKey, K lKey, V value) {

@@ -36,6 +36,7 @@ import org.apache.distributedlog.api.kv.result.Code;
 import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.statestore.proto.Command;
 import org.apache.distributedlog.statestore.proto.DeleteRequest;
+import org.apache.distributedlog.statestore.proto.IncrementRequest;
 import org.apache.distributedlog.statestore.proto.PutRequest;
 import org.apache.distributedlog.stream.proto.RangeProperties;
 import org.apache.distributedlog.stream.proto.StreamProperties;
@@ -157,6 +158,36 @@ class PByteBufTableRangeWriterImpl implements PTableWriter<ByteBuf, ByteBuf> {
                 if (null != value) {
                     value.release();
                 }
+                storeKey.release();
+                recordBuf.release();
+            });
+    }
+
+    @Override
+    public CompletableFuture<Void> increment(long sequenceId, ByteBuf pKey, ByteBuf lKey, long amount) {
+        pKey.retain();
+        lKey.retain();
+        ByteBuf storeKey = newStoreKey(pKey.slice(), lKey.slice());
+        Command command = Command.newBuilder()
+            .setIncrReq(IncrementRequest.newBuilder()
+                .setKey(UnsafeByteOperations.unsafeWrap(storeKey.nioBuffer()))
+                .setAmount(amount))
+            .build();
+        ByteBuf recordBuf = PooledByteBufAllocator.DEFAULT.buffer(command.getSerializedSize());
+        try {
+            command.writeTo(new ByteBufOutputStream(recordBuf));
+        } catch (IOException ioe) {
+            pKey.release();
+            lKey.release();
+            storeKey.release();
+            recordBuf.release();
+
+            return FutureUtils.exception(new KvApiException(Code.UNEXPECTED, "Invalid command : " + command));
+        }
+        return writeCommandBuf(recordBuf)
+            .whenComplete((v, cause) -> {
+                pKey.release();
+                lKey.release();
                 storeKey.release();
                 recordBuf.release();
             });

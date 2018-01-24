@@ -59,6 +59,11 @@ public class PByteBufTableWriterImpl implements PTableWriter<ByteBuf, ByteBuf> {
         }
 
         @Override
+        public CompletableFuture<Void> increment(long sequenceId, ByteBuf pKey, ByteBuf lKey, long amount) {
+            return FutureUtils.exception(CAUSE);
+        }
+
+        @Override
         public void close() {
             // no-op
         }
@@ -167,6 +172,13 @@ public class PByteBufTableWriterImpl implements PTableWriter<ByteBuf, ByteBuf> {
         Long range = rangeRouter.getRange(pKey);
         return getTableRangeWriter(range)
             .write(sequenceId, pKey, lKey, value);
+    }
+
+    @Override
+    public CompletableFuture<Void> increment(long sequenceId, ByteBuf pKey, ByteBuf lKey, long amount) {
+        Long range = rangeRouter.getRange(pKey);
+        return getTableRangeWriter(range)
+            .increment(sequenceId, pKey, lKey, amount);
     }
 
     @Override

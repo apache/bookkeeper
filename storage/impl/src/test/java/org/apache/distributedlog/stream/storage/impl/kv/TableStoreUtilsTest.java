@@ -152,16 +152,13 @@ public class TableStoreUtilsTest {
         when(kv.modifiedRevision()).thenReturn(modRev);
         when(kv.version()).thenReturn(version);
 
-        KeyValue keyValue = newKeyValue(
-            rid, ByteString.copyFrom(rKey), kv);
+        KeyValue keyValue = newKeyValue(ByteString.copyFrom(rKey), kv);
 
         assertEquals(ByteString.copyFrom(lKey), keyValue.getKey());
         assertEquals(ByteString.copyFrom(value), keyValue.getValue());
         assertEquals(createRev, keyValue.getCreateRevision());
         assertEquals(modRev, keyValue.getModRevision());
         assertEquals(version, keyValue.getVersion());
-        assertEquals(rid, keyValue.getRangeId());
-        assertEquals(-1L, keyValue.getLease());
     }
 
     //

@@ -18,6 +18,7 @@
 package org.apache.distributedlog.stream.tests.integration;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.apache.distributedlog.stream.protocol.ProtocolConstants.DEFAULT_STREAM_CONF;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -28,7 +29,6 @@ import io.netty.buffer.Unpooled;
 import java.net.URI;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.distributedlog.api.StorageClient;
 import org.apache.distributedlog.api.kv.PTable;
@@ -117,7 +117,7 @@ public class TableWriterTest extends StorageServerTestBase {
         NamespaceConfiguration nsConf = NamespaceConfiguration.newBuilder()
             .setDefaultStreamConf(DEFAULT_STREAM_CONF)
             .build();
-        NamespaceProperties nsProps = FutureUtils.result(adminClient.createNamespace(namespace, nsConf));
+        NamespaceProperties nsProps = result(adminClient.createNamespace(namespace, nsConf));
         assertEquals(namespace, nsProps.getNamespaceName());
         assertEquals(nsConf.getDefaultStreamConf(), nsProps.getDefaultStreamConf());
 
@@ -126,7 +126,7 @@ public class TableWriterTest extends StorageServerTestBase {
         StreamConfiguration streamConf = StreamConfiguration.newBuilder(DEFAULT_STREAM_CONF)
             .setIsReadonly(true)
             .build();
-        StreamProperties streamProps = FutureUtils.result(
+        StreamProperties streamProps = result(
             adminClient.createStream(namespace, streamName, streamConf));
         assertEquals(streamName, streamProps.getStreamName());
         assertEquals(
@@ -136,8 +136,8 @@ public class TableWriterTest extends StorageServerTestBase {
             streamProps.getStreamConf());
 
         // Open the table writer
-        PTableWriter<ByteBuf, ByteBuf> tableWriter = FutureUtils.result(storageClient.openPTableWriter(streamName));
-        PTable<ByteBuf, ByteBuf> table = FutureUtils.result(storageClient.openPTable(streamName));
+        PTableWriter<ByteBuf, ByteBuf> tableWriter = result(storageClient.openPTableWriter(streamName));
+        PTable<ByteBuf, ByteBuf> table = result(storageClient.openPTable(streamName));
 
         byte[] pKey = "test-pkey".getBytes(UTF_8);
         ByteBuf pKeyBuf = Unpooled.wrappedBuffer(pKey);
@@ -148,12 +148,12 @@ public class TableWriterTest extends StorageServerTestBase {
             ByteBuf lKeyBuf = getLKey(i);
             ByteBuf valBuf = getValue(i);
 
-            FutureUtils.result(tableWriter.write(i, pKeyBuf, lKeyBuf, valBuf));
+            result(tableWriter.write(i, pKeyBuf, lKeyBuf, valBuf));
         }
 
         ByteBuf lastLKeyBuf = getLKey(numKvs - 1);
         ByteBuf valBuf;
-        while ((valBuf = FutureUtils.result(table.get(pKeyBuf, lastLKeyBuf))) == null) {
+        while ((valBuf = result(table.get(pKeyBuf, lastLKeyBuf))) == null) {
             log.info("Key({}, {}) doesn't exist",
                 new String(ByteBufUtil.getBytes(pKeyBuf), UTF_8),
                 new String(ByteBufUtil.getBytes(lastLKeyBuf), UTF_8));
@@ -166,7 +166,7 @@ public class TableWriterTest extends StorageServerTestBase {
         // read the kvs
         ByteBuf lStartKey = getLKey(0);
         ByteBuf lEndKey = getLKey(numKvs - 1);
-        List<KeyValue<ByteBuf, ByteBuf>> kvs = FutureUtils.result(
+        List<KeyValue<ByteBuf, ByteBuf>> kvs = result(
             table.range(pKeyBuf, lStartKey, lEndKey));
         assertEquals(numKvs, kvs.size());
         int i = 0;
@@ -182,17 +182,29 @@ public class TableWriterTest extends StorageServerTestBase {
         for (i = 0; i < numKvs; i++) {
             ByteBuf lKeyBuf = getLKey(i);
 
-            FutureUtils.result(tableWriter.write(i, pKeyBuf, lKeyBuf, null));
+            result(tableWriter.write(i, pKeyBuf, lKeyBuf, null));
         }
 
         lastLKeyBuf = getLKey(numKvs - 1);
-        while ((valBuf = FutureUtils.result(table.get(pKeyBuf, lastLKeyBuf))) != null) {
+        while ((valBuf = result(table.get(pKeyBuf, lastLKeyBuf))) != null) {
             valBuf.release();
             Thread.sleep(100);
         }
 
         // get the ranges again
-        kvs = FutureUtils.result(table.range(pKeyBuf, lStartKey, lEndKey));
+        kvs = result(table.range(pKeyBuf, lStartKey, lEndKey));
         assertTrue(kvs.isEmpty());
+
+        byte[] lIncrKey = "test-incr-lkey".getBytes(UTF_8);
+        ByteBuf lIncrKeyBuf = Unpooled.wrappedBuffer(lIncrKey);
+
+        for (int j = 0; j < 5; j++) {
+            result(tableWriter.increment(j, pKeyBuf, lIncrKeyBuf, 100L));
+            Long number = result(table.getNumber(pKeyBuf, lIncrKeyBuf));
+            while (number == null || number.longValue() != 100L * (j + 1)) {
+                Thread.sleep(100);
+            }
+            assertEquals(100L * (j + 1), number.longValue());
+        }
     }
 }

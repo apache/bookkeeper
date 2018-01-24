@@ -195,6 +195,7 @@ service TableService {
     rpc Range(StorageContainerRequest) returns (StorageContainerResponse) {}
     rpc Put(StorageContainerRequest) returns (StorageContainerResponse) {}
     rpc Delete(StorageContainerRequest) returns (StorageContainerResponse) {}
+    rpc Increment(StorageContainerRequest) returns (StorageContainerResponse) {}
     rpc Txn(StorageContainerRequest) returns (StorageContainerResponse) {}
 }
 
@@ -249,6 +250,7 @@ message StorageContainerRequest {
         KV_PUT                  = 401;
         KV_DELETE               = 402;
         KV_TXN                  = 403;
+        KV_INCREMENT            = 404;
     }
 
     int64 sc_id                 = 1;
@@ -263,8 +265,7 @@ message StorageContainerRequest {
         kv.rpc.PutRequest kv_put_req                            = 401;
         kv.rpc.DeleteRangeRequest kv_delete_req                 = 402;
         kv.rpc.TxnRequest kv_txn_req                            = 403;
-        kv.rpc.WatchRequest kv_watch_req                        = 410;
-
+        kv.rpc.IncrementRequest kv_incr_req                     = 404;
     }
 }
 
@@ -280,6 +281,6 @@ message StorageContainerResponse {
         kv.rpc.PutResponse kv_put_resp                          = 401;
         kv.rpc.DeleteRangeResponse kv_delete_resp               = 402;
         kv.rpc.TxnResponse kv_txn_resp                          = 403;
-        kv.rpc.WatchResponse kv_watch_resp                      = 410;
+        kv.rpc.IncrementResponse kv_incr_resp                   = 404;
     }
 }

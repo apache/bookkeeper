@@ -15,28 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.distributedlog.api.kv.result;
+
+package org.apache.distributedlog.api.kv.op;
+
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 
 /**
- * Key/Value pair.
+ * A put operator that update a value associated with a given key.
+ *
+ * @param <K> key type
+ * @param <V> value type
  */
-public interface KeyValue<K, V> extends AutoCloseable {
+@Public
+@Evolving
+public interface IncrementOp<K, V> extends Op<K, V> {
 
     K key();
 
-    V value();
-
-    long createRevision();
-
-    long modifiedRevision();
-
-    long version();
-
-    boolean isNumber();
-
-    long numberValue();
-
-    @Override
-    void close();
+    long amount();
 
 }

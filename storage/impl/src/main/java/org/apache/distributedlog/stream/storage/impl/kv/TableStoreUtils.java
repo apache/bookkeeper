@@ -34,6 +34,7 @@ import org.apache.distributedlog.statelib.api.mvcc.op.CompareResult;
 import org.apache.distributedlog.statelib.api.mvcc.op.OpFactory;
 import org.apache.distributedlog.statelib.api.mvcc.result.Code;
 import org.apache.distributedlog.statelib.api.mvcc.result.DeleteResult;
+import org.apache.distributedlog.statelib.api.mvcc.result.IncrementResult;
 import org.apache.distributedlog.statelib.api.mvcc.result.PutResult;
 import org.apache.distributedlog.statelib.api.mvcc.result.RangeResult;
 import org.apache.distributedlog.statelib.api.mvcc.result.Result;
@@ -41,6 +42,7 @@ import org.apache.distributedlog.statelib.api.mvcc.result.TxnResult;
 import org.apache.distributedlog.stream.proto.kv.KeyValue;
 import org.apache.distributedlog.stream.proto.kv.rpc.Compare;
 import org.apache.distributedlog.stream.proto.kv.rpc.DeleteRangeResponse;
+import org.apache.distributedlog.stream.proto.kv.rpc.IncrementResponse;
 import org.apache.distributedlog.stream.proto.kv.rpc.PutResponse;
 import org.apache.distributedlog.stream.proto.kv.rpc.RangeResponse;
 import org.apache.distributedlog.stream.proto.kv.rpc.ResponseHeader;
@@ -136,7 +138,7 @@ final class TableStoreUtils {
         }
     }
 
-    static KeyValue newKeyValue(long rid, ByteString rKey, KVRecord<byte[], byte[]> kv) {
+    static KeyValue newKeyValue(ByteString rKey, KVRecord<byte[], byte[]> kv) {
         if (null == kv) {
             return null;
         }
@@ -146,8 +148,8 @@ final class TableStoreUtils {
             .setCreateRevision(kv.createRevision())
             .setModRevision(kv.modifiedRevision())
             .setVersion(kv.version())
-            .setRangeId(rid)
-            .setLease(-1)
+            .setIsNumber(kv.isNumber())
+            .setNumberValue(kv.number())
             .build();
     }
 
@@ -159,9 +161,17 @@ final class TableStoreUtils {
                 .setRoutingHeader(routingHeader)
                 .build());
         if (null != result.prevKV()) {
-            putRespBuilder = putRespBuilder.setPrevKv(newKeyValue(
-                routingHeader.getRangeId(), rKey, result.prevKV()));
+            putRespBuilder = putRespBuilder.setPrevKv(newKeyValue(rKey, result.prevKV()));
         }
+        return putRespBuilder.build();
+    }
+
+    static IncrementResponse processIncrementResult(RoutingHeader routingHeader,
+                                                    IncrementResult<byte[], byte[]> result) {
+        IncrementResponse.Builder putRespBuilder = IncrementResponse.newBuilder()
+            .setHeader(ResponseHeader.newBuilder()
+                .setRoutingHeader(routingHeader)
+                .build());
         return putRespBuilder.build();
     }
 
@@ -173,8 +183,7 @@ final class TableStoreUtils {
             .setHeader(ResponseHeader.newBuilder()
                 .setRoutingHeader(routingHeader)
                 .build())
-            .addAllKvs(Lists.transform(result.kvs(), kv -> newKeyValue(
-                routingHeader.getRangeId(), rKey, kv)))
+            .addAllKvs(Lists.transform(result.kvs(), kv -> newKeyValue(rKey, kv)))
             .setMore(result.hasMore())
             .build();
     }
@@ -187,8 +196,7 @@ final class TableStoreUtils {
                 .setRoutingHeader(routingHeader)
                 .build())
             .setDeleted(result.numDeleted())
-            .addAllPrevKvs(Lists.transform(result.prevKvs(), kv -> newKeyValue(
-                routingHeader.getRangeId(), rKey, kv)))
+            .addAllPrevKvs(Lists.transform(result.prevKvs(), kv -> newKeyValue(rKey, kv)))
             .build();
     }
 

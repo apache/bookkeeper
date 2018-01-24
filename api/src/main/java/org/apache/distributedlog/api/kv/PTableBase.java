@@ -20,6 +20,7 @@ package org.apache.distributedlog.api.kv;
 import org.apache.distributedlog.api.kv.op.CompareOp;
 import org.apache.distributedlog.api.kv.op.CompareResult;
 import org.apache.distributedlog.api.kv.op.DeleteOp;
+import org.apache.distributedlog.api.kv.op.IncrementOp;
 import org.apache.distributedlog.api.kv.op.OpFactory;
 import org.apache.distributedlog.api.kv.op.PutOp;
 import org.apache.distributedlog.api.kv.op.RangeOp;
@@ -53,6 +54,10 @@ public interface PTableBase<K, V> extends AutoCloseable {
 
     default DeleteOp<K, V> newDelete(K key) {
         return opFactory().newDelete(key, opFactory().optionFactory().newDeleteOption().prevKv(false).build());
+    }
+
+    default IncrementOp<K, V> newIncrement(K key, long amount) {
+        return opFactory().newIncrement(key, amount);
     }
 
     default RangeOp<K, V> newGet(K key) {

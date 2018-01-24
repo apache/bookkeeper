@@ -25,6 +25,7 @@ import org.apache.distributedlog.api.kv.op.CompareOp;
 import org.apache.distributedlog.api.kv.op.CompareResult;
 import org.apache.distributedlog.api.kv.op.CompareTarget;
 import org.apache.distributedlog.api.kv.op.DeleteOp;
+import org.apache.distributedlog.api.kv.op.IncrementOp;
 import org.apache.distributedlog.api.kv.op.OpFactory;
 import org.apache.distributedlog.api.kv.op.PutOp;
 import org.apache.distributedlog.api.kv.op.RangeOp;
@@ -71,12 +72,26 @@ public class OpFactoryImpl<K, V> implements OpFactory<K, V> {
         }
     };
 
+    private final Recycler<IncrementOpImpl<K, V>> incrementOpRecycler = new Recycler<IncrementOpImpl<K, V>>() {
+        @Override
+        protected IncrementOpImpl<K, V> newObject(Handle<IncrementOpImpl<K, V>> handle) {
+            return new IncrementOpImpl<>(handle);
+        }
+    };
+
     @Override
     public PutOp<K, V> newPut(K key, V value, PutOption<K> option) {
         return putOpRecycler.get()
             .key(key)
             .value(value)
             .option(option);
+    }
+
+    @Override
+    public IncrementOp<K, V> newIncrement(K key, long amount) {
+        return incrementOpRecycler.get()
+            .key(key)
+            .amount(amount);
     }
 
     @Override

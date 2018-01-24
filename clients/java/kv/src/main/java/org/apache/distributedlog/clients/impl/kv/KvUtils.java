@@ -15,6 +15,7 @@
 package org.apache.distributedlog.clients.impl.kv;
 
 import static org.apache.distributedlog.stream.proto.storage.StorageContainerRequest.Type.KV_DELETE;
+import static org.apache.distributedlog.stream.proto.storage.StorageContainerRequest.Type.KV_INCREMENT;
 import static org.apache.distributedlog.stream.proto.storage.StorageContainerRequest.Type.KV_PUT;
 import static org.apache.distributedlog.stream.proto.storage.StorageContainerRequest.Type.KV_RANGE;
 import static org.apache.distributedlog.stream.proto.storage.StorageContainerRequest.Type.KV_TXN;
@@ -34,9 +35,11 @@ import org.apache.distributedlog.api.kv.options.DeleteOption;
 import org.apache.distributedlog.api.kv.options.PutOption;
 import org.apache.distributedlog.api.kv.options.RangeOption;
 import org.apache.distributedlog.api.kv.result.DeleteResult;
+import org.apache.distributedlog.api.kv.result.IncrementResult;
 import org.apache.distributedlog.api.kv.result.PutResult;
 import org.apache.distributedlog.api.kv.result.RangeResult;
 import org.apache.distributedlog.api.kv.result.TxnResult;
+import org.apache.distributedlog.clients.impl.kv.result.IncrementResultImpl;
 import org.apache.distributedlog.clients.impl.kv.result.PutResultImpl;
 import org.apache.distributedlog.clients.impl.kv.result.ResultFactory;
 import org.apache.distributedlog.clients.impl.kv.result.TxnResultImpl;
@@ -46,6 +49,8 @@ import org.apache.distributedlog.stream.proto.kv.rpc.Compare.CompareResult;
 import org.apache.distributedlog.stream.proto.kv.rpc.Compare.CompareTarget;
 import org.apache.distributedlog.stream.proto.kv.rpc.DeleteRangeRequest;
 import org.apache.distributedlog.stream.proto.kv.rpc.DeleteRangeResponse;
+import org.apache.distributedlog.stream.proto.kv.rpc.IncrementRequest;
+import org.apache.distributedlog.stream.proto.kv.rpc.IncrementResponse;
 import org.apache.distributedlog.stream.proto.kv.rpc.PutRequest;
 import org.apache.distributedlog.stream.proto.kv.rpc.PutResponse;
 import org.apache.distributedlog.stream.proto.kv.rpc.RangeRequest;
@@ -72,6 +77,8 @@ public final class KvUtils {
     return kvFactory.newKv()
         .key(Unpooled.wrappedBuffer(kv.getKey().asReadOnlyByteBuffer()))
         .value(Unpooled.wrappedBuffer(kv.getValue().asReadOnlyByteBuffer()))
+        .isNumber(kv.getIsNumber())
+        .numberValue(kv.getNumberValue())
         .createRevision(kv.getCreateRevision())
         .modifiedRevision(kv.getModRevision())
         .version(kv.getVersion());
@@ -142,6 +149,31 @@ public final class KvUtils {
       if (response.hasPrevKv()) {
           result.prevKv(fromProtoKeyValue(response.getPrevKv(), kvFactory));
       }
+      return result;
+  }
+
+  public static StorageContainerRequest newKvIncrementRequest(
+      long scId,
+      IncrementRequest.Builder putReq) {
+    return StorageContainerRequest.newBuilder()
+      .setScId(scId)
+      .setType(KV_INCREMENT)
+      .setKvIncrReq(putReq)
+      .build();
+  }
+
+  public static IncrementRequest.Builder newIncrementRequest(ByteBuf key,
+                                                             long amount) {
+    return IncrementRequest.newBuilder()
+      .setKey(UnsafeByteOperations.unsafeWrap(key.nioBuffer()))
+      .setAmount(amount);
+  }
+
+  public static IncrementResult<ByteBuf, ByteBuf> newIncrementResult(
+          IncrementResponse response,
+          ResultFactory<ByteBuf, ByteBuf> resultFactory,
+          KeyValueFactory<ByteBuf, ByteBuf> kvFactory) {
+      IncrementResultImpl<ByteBuf, ByteBuf> result = resultFactory.newIncrementResult();
       return result;
   }
 

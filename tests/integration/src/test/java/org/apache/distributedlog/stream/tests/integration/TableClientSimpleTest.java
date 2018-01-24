@@ -18,6 +18,7 @@
 package org.apache.distributedlog.stream.tests.integration;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.apache.distributedlog.stream.protocol.ProtocolConstants.DEFAULT_STREAM_CONF;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -33,7 +34,6 @@ import io.netty.buffer.Unpooled;
 import java.net.URI;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.distributedlog.api.StorageClient;
 import org.apache.distributedlog.api.kv.PTable;
@@ -115,7 +115,7 @@ public class TableClientSimpleTest extends StorageServerTestBase {
         NamespaceConfiguration nsConf = NamespaceConfiguration.newBuilder()
             .setDefaultStreamConf(DEFAULT_STREAM_CONF)
             .build();
-        NamespaceProperties nsProps = FutureUtils.result(adminClient.createNamespace(namespace, nsConf));
+        NamespaceProperties nsProps = result(adminClient.createNamespace(namespace, nsConf));
         assertEquals(namespace, nsProps.getNamespaceName());
         assertEquals(nsConf.getDefaultStreamConf(), nsProps.getDefaultStreamConf());
 
@@ -123,7 +123,7 @@ public class TableClientSimpleTest extends StorageServerTestBase {
         String streamName = testName.getMethodName() + "_stream";
         StreamConfiguration streamConf = StreamConfiguration.newBuilder(DEFAULT_STREAM_CONF)
             .build();
-        StreamProperties streamProps = FutureUtils.result(
+        StreamProperties streamProps = result(
             adminClient.createStream(namespace, streamName, streamConf));
         assertEquals(streamName, streamProps.getStreamName());
         assertEquals(
@@ -133,7 +133,7 @@ public class TableClientSimpleTest extends StorageServerTestBase {
             streamProps.getStreamConf());
 
         // Open the table
-        PTable<ByteBuf, ByteBuf> table = FutureUtils.result(storageClient.openPTable(streamName));
+        PTable<ByteBuf, ByteBuf> table = result(storageClient.openPTable(streamName));
         byte[] rKey = "routing-key".getBytes(UTF_8);
         byte[] lKey = "testing-key".getBytes(UTF_8);
         byte[] value1 = "testing-value-1".getBytes(UTF_8);
@@ -146,38 +146,38 @@ public class TableClientSimpleTest extends StorageServerTestBase {
         ByteBuf valBuf2 = Unpooled.wrappedBuffer(value2);
 
         // normal put
-        assertNull(FutureUtils.result(
+        assertNull(result(
             table.put(rKeyBuf, lKeyBuf, valBuf1)));
 
         // putIfAbsent failure
         assertArrayEquals(
             value1,
-            ByteBufUtil.getBytes(FutureUtils.result(table.putIfAbsent(rKeyBuf, lKeyBuf, valBuf2))));
+            ByteBufUtil.getBytes(result(table.putIfAbsent(rKeyBuf, lKeyBuf, valBuf2))));
 
         // delete failure
         assertFalse(
-            FutureUtils.result(table.delete(rKeyBuf, lKeyBuf, valBuf2)));
+            result(table.delete(rKeyBuf, lKeyBuf, valBuf2)));
 
         // delete success
         assertTrue(
-            FutureUtils.result(table.delete(rKeyBuf, lKeyBuf, valBuf1)));
+            result(table.delete(rKeyBuf, lKeyBuf, valBuf1)));
 
         // get
         assertNull(
-            FutureUtils.result(table.get(rKeyBuf, lKeyBuf)));
+            result(table.get(rKeyBuf, lKeyBuf)));
 
         // putIfAbsent success
         assertNull(
-            FutureUtils.result(table.putIfAbsent(rKeyBuf, lKeyBuf, valBuf2)));
+            result(table.putIfAbsent(rKeyBuf, lKeyBuf, valBuf2)));
 
         // get returns val2
         assertArrayEquals(
             value2,
-            ByteBufUtil.getBytes(FutureUtils.result(table.get(rKeyBuf, lKeyBuf))));
+            ByteBufUtil.getBytes(result(table.get(rKeyBuf, lKeyBuf))));
 
         // vPut failure
         try {
-            FutureUtils.result(
+            result(
                 table.vPut(rKeyBuf, lKeyBuf, valBuf1, 9999L));
             fail("Should fail vPut if the version doesn't match");
         } catch (KvApiException e) {
@@ -187,12 +187,12 @@ public class TableClientSimpleTest extends StorageServerTestBase {
         // vPut success
         assertEquals(
             1L,
-            FutureUtils.result(
+            result(
                 table.vPut(rKeyBuf, lKeyBuf, valBuf1, 0L)).longValue());
 
         // vDelete failure
         try {
-            FutureUtils.result(
+            result(
                 table.vDelete(rKeyBuf, lKeyBuf, 9999L));
             fail("Should fail vDelete if the version doesn't match");
         } catch (KvApiException e) {
@@ -200,7 +200,7 @@ public class TableClientSimpleTest extends StorageServerTestBase {
         }
 
         // vDelete success
-        try (KeyValue<ByteBuf, ByteBuf> prevKv = FutureUtils.result(
+        try (KeyValue<ByteBuf, ByteBuf> prevKv = result(
             table.vDelete(rKeyBuf, lKeyBuf, 1L))) {
             assertNotNull(prevKv);
             assertEquals(1L, prevKv.version());
@@ -215,13 +215,13 @@ public class TableClientSimpleTest extends StorageServerTestBase {
         for (int i = 0; i < numKvs; i++) {
             lKeyBuf = getLKey(i);
             valBuf1 = getValue(i);
-            FutureUtils.result(table.put(rKeyBuf, lKeyBuf, valBuf1));
+            result(table.put(rKeyBuf, lKeyBuf, valBuf1));
         }
 
         // get ranges
         ByteBuf lStartKey = getLKey(20);
         ByteBuf lEndKey = getLKey(50);
-        List<KeyValue<ByteBuf, ByteBuf>> kvs = FutureUtils.result(
+        List<KeyValue<ByteBuf, ByteBuf>> kvs = result(
             table.range(rKeyBuf, lStartKey, lEndKey));
         assertEquals(31, kvs.size());
         int i = 20;
@@ -234,7 +234,7 @@ public class TableClientSimpleTest extends StorageServerTestBase {
         assertEquals(51, i);
 
         // delete range
-        kvs = FutureUtils.result(
+        kvs = result(
             table.deleteRange(rKeyBuf, lStartKey, lEndKey));
         assertEquals(31, kvs.size());
         i = 20;
@@ -247,7 +247,16 @@ public class TableClientSimpleTest extends StorageServerTestBase {
         assertEquals(51, i);
 
         // get ranges again
-        kvs = FutureUtils.result(table.range(rKeyBuf, lStartKey, lEndKey));
+        kvs = result(table.range(rKeyBuf, lStartKey, lEndKey));
         assertTrue(kvs.isEmpty());
+
+        byte[] lIncrKey = "test-incr-lkey".getBytes(UTF_8);
+        ByteBuf lIncrKeyBuf = Unpooled.wrappedBuffer(lIncrKey);
+
+        for (int j = 0; j < 5; j++) {
+            result(table.increment(rKeyBuf, lIncrKeyBuf, 100L));
+            long number = result(table.getNumber(rKeyBuf, lIncrKeyBuf));
+            assertEquals(100L * (j + 1), number);
+        }
     }
 }

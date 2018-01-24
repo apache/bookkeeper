@@ -113,6 +113,11 @@ public class PByteBufTableImpl implements PTable<ByteBuf, ByteBuf> {
     }
 
     @Override
+    public CompletableFuture<Void> increment(ByteBuf pKey, ByteBuf lKey, long amount) {
+      return FutureUtils.exception(CAUSE);
+    }
+
+    @Override
     public Txn<ByteBuf, ByteBuf> txn(ByteBuf pKey) {
       return txn;
     }
@@ -271,6 +276,12 @@ public class PByteBufTableImpl implements PTable<ByteBuf, ByteBuf> {
                                                                   DeleteOption<ByteBuf> option) {
     Long range = rangeRouter.getRange(pKey);
     return getTableRange(range).delete(pKey, lKey, option);
+  }
+
+  @Override
+  public CompletableFuture<Void> increment(ByteBuf pKey, ByteBuf lKey, long amount) {
+    Long range = rangeRouter.getRange(pKey);
+    return getTableRange(range).increment(pKey, lKey, amount);
   }
 
   @Override

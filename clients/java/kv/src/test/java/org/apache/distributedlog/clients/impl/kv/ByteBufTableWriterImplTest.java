@@ -59,4 +59,15 @@ public class ByteBufTableWriterImplTest {
             .write(eq(sequenceId), same(key), same(key), same(value));
     }
 
+    @Test
+    public void testIncrement() {
+        long sequenceId = System.currentTimeMillis();
+        tableWriter.increment(
+            sequenceId,
+            key,
+            100L);
+        verify(pTableWriter, times(1))
+            .increment(eq(sequenceId), same(key), same(key), eq(100L));
+    }
+
 }

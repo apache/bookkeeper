@@ -16,70 +16,52 @@
  * limitations under the License.
  */
 
-package org.apache.distributedlog.clients.impl.kv;
+package org.apache.distributedlog.clients.impl.kv.op;
 
 import static io.netty.util.ReferenceCountUtil.release;
 import static io.netty.util.ReferenceCountUtil.retain;
 
 import io.netty.util.Recycler.Handle;
-import lombok.EqualsAndHashCode;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
 import lombok.experimental.Accessors;
-import org.apache.distributedlog.api.kv.result.KeyValue;
+import org.apache.distributedlog.api.kv.op.IncrementOp;
+import org.apache.distributedlog.api.kv.op.OpType;
 
-/**
- * The implementation of {@link KeyValue}.
- */
 @Accessors(fluent = true, chain = true)
-@Setter
 @Getter
-@ToString
-@EqualsAndHashCode
-class KeyValueImpl<K, V> implements KeyValue<K, V> {
+@Setter(AccessLevel.PACKAGE)
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
+class IncrementOpImpl<K, V> implements IncrementOp<K, V> {
 
-    private final Handle<KeyValueImpl<K, V>> handle;
+    private final Handle<IncrementOpImpl<K, V>> handle;
 
-    private K key = null;
-    private V value = null;
-    private long createRevision = -1L;
-    private long modifiedRevision = -1L;
-    private long version = -1L;
-    private boolean isNumber = false;
-    private long numberValue = -1L;
+    private K key;
+    private long amount;
 
-    KeyValueImpl(Handle<KeyValueImpl<K, V>> handle) {
-        this.handle = handle;
+    @Override
+    public OpType type() {
+        return OpType.INCREMENT;
     }
 
-    public KeyValueImpl<K, V> key(K key) {
+    IncrementOpImpl<K, V> key(K key) {
         release(this.key);
         this.key = retain(key);
         return this;
     }
 
-    public KeyValueImpl<K, V> value(V value) {
-        release(this.value);
-        this.value = retain(value);
+    IncrementOpImpl<K, V> amount(long amount) {
+        this.amount = amount;
         return this;
     }
 
-    private void reset() {
-        release(key);
-        key = null;
-        release(value);
-        value = null;
-        createRevision = -1L;
-        modifiedRevision = -1L;
-        version = -1L;
-        isNumber = false;
-        numberValue = -1L;
-    }
-
     @Override
-    public void close() {
-        reset();
+    public void close() throws Exception {
+        release(key);
+        this.key = null;
+        this.amount = 0L;
 
         handle.recycle(this);
     }

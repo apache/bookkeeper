@@ -35,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.distributedlog.stream.proto.kv.rpc.DeleteRangeRequest;
+import org.apache.distributedlog.stream.proto.kv.rpc.IncrementRequest;
 import org.apache.distributedlog.stream.proto.kv.rpc.PutRequest;
 import org.apache.distributedlog.stream.proto.kv.rpc.RangeRequest;
 import org.apache.distributedlog.stream.proto.kv.rpc.RoutingHeader;
@@ -322,4 +323,21 @@ public class StorageContainerImpl
     }
   }
 
+  @Override
+  public CompletableFuture<StorageContainerResponse> incr(StorageContainerRequest request) {
+    checkArgument(Type.KV_INCREMENT == request.getType());
+
+    long scId = request.getScId();
+    IncrementRequest ir = request.getKvIncrReq();
+    RoutingHeader header = ir.getHeader();
+
+    RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
+    TableStore store = tableStoreCache.getTableStore(rid);
+    if (null != store) {
+      return store.incr(request);
+    } else {
+      return tableStoreCache.openTableStore(scId, rid)
+          .thenCompose(s -> s.incr(request));
+    }
+  }
 }

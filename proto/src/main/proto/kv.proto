@@ -35,13 +35,8 @@ message KeyValue {
   int64 version = 4;
   // value is the value held by the key, in bytes.
   bytes value = 5;
-  // lease is the ID of the lease that attached to key.
-  // When the attached lease expires, the key will be deleted.
-  // If lease is 0, then no lease is attached to the key.
-  int64 lease = 6;
-
-  // The range id that stores this key.
-  int64 range_id = 100;
+  bool is_number = 6;
+  int64 number_value = 7;
 }
 
 message Event {

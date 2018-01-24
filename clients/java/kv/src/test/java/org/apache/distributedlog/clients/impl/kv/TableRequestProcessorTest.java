@@ -35,6 +35,7 @@ import org.apache.distributedlog.clients.grpc.GrpcClientTestBase;
 import org.apache.distributedlog.clients.impl.channel.StorageServerChannel;
 import org.apache.distributedlog.clients.impl.container.StorageContainerChannel;
 import org.apache.distributedlog.stream.proto.kv.rpc.DeleteRangeResponse;
+import org.apache.distributedlog.stream.proto.kv.rpc.IncrementResponse;
 import org.apache.distributedlog.stream.proto.kv.rpc.PutResponse;
 import org.apache.distributedlog.stream.proto.kv.rpc.RangeResponse;
 import org.apache.distributedlog.stream.proto.kv.rpc.TxnResponse;
@@ -74,6 +75,11 @@ public class TableRequestProcessorTest extends GrpcClientTestBase {
     }
 
     @Test
+    public void testProcessIncrementRequest() throws Exception {
+        testProcess(Type.KV_INCREMENT);
+    }
+
+    @Test
     public void testProcessTxnRequest() throws Exception {
         testProcess(Type.KV_TXN);
     }
@@ -98,6 +104,9 @@ public class TableRequestProcessorTest extends GrpcClientTestBase {
                 break;
             case KV_RANGE:
                 respBuilder.setKvRangeResp(RangeResponse.newBuilder().build());
+                break;
+            case KV_INCREMENT:
+                respBuilder.setKvIncrResp(IncrementResponse.newBuilder().build());
                 break;
             case KV_TXN:
                 respBuilder.setKvTxnResp(TxnResponse.newBuilder().build());
@@ -139,6 +148,14 @@ public class TableRequestProcessorTest extends GrpcClientTestBase {
                             StreamObserver<StorageContainerResponse> responseObserver) {
                 receivedRequest.set(request);
                 receivedRequestType.set(Type.KV_TXN);
+                complete(responseObserver);
+            }
+
+            @Override
+            public void increment(StorageContainerRequest request,
+                                  StreamObserver<StorageContainerResponse> responseObserver) {
+                receivedRequest.set(request);
+                receivedRequestType.set(Type.KV_INCREMENT);
                 complete(responseObserver);
             }
 

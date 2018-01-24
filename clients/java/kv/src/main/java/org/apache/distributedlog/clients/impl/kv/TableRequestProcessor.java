@@ -67,6 +67,8 @@ public class TableRequestProcessor<RespT>
         return rsChannel.getTableService().put(request);
       case KV_DELETE:
         return rsChannel.getTableService().delete(request);
+      case KV_INCREMENT:
+        return rsChannel.getTableService().increment(request);
       case KV_TXN:
         return rsChannel.getTableService().txn(request);
       default:

@@ -18,6 +18,7 @@
 package org.apache.distributedlog.clients.impl.kv;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -88,6 +89,12 @@ public class ByteBufTableImplTest {
                     .delete(same(key), same(key), same(option));
             }
         }
+    }
+
+    @Test
+    public void testIncrement() {
+        table.increment(key, 100L);
+        verify(pTable, times(1)).increment(same(key), same(key), eq(100L));
     }
 
     @Test

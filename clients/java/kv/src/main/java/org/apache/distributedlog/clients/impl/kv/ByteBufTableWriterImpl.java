@@ -41,4 +41,13 @@ public class ByteBufTableWriterImpl implements TableWriter<ByteBuf, ByteBuf> {
             key,
             value);
     }
+
+    @Override
+    public CompletableFuture<Void> increment(long sequenceId, ByteBuf key, long amount) {
+        return underlying.increment(
+            sequenceId,
+            key,
+            key,
+            amount);
+    }
 }

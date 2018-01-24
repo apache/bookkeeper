@@ -57,6 +57,11 @@ public class ByteBufTableImpl implements Table<ByteBuf, ByteBuf> {
     }
 
     @Override
+    public CompletableFuture<Void> increment(ByteBuf key, long amount) {
+        return underlying.increment(key, key, amount);
+    }
+
+    @Override
     public Txn<ByteBuf, ByteBuf> txn(ByteBuf key) {
         return underlying.txn(key);
     }

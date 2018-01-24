@@ -37,7 +37,10 @@ import static io.netty.util.ReferenceCountUtil.retain;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience;
 import org.apache.bookkeeper.common.annotation.InterfaceStability;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.distributedlog.api.kv.exceptions.KvApiException;
 import org.apache.distributedlog.api.kv.options.RangeOption;
+import org.apache.distributedlog.api.kv.result.Code;
 import org.apache.distributedlog.api.kv.result.KeyValue;
 import org.apache.distributedlog.api.kv.result.RangeResult;
 
@@ -49,6 +52,29 @@ import org.apache.distributedlog.api.kv.result.RangeResult;
 public interface TableReadView<K, V> extends PTableBase<K, V> {
 
     CompletableFuture<RangeResult<K, V>> get(K key, RangeOption<K> option);
+
+    default CompletableFuture<Long> getNumber(K key) {
+        RangeOption<K> option = opFactory().optionFactory().newRangeOption().build();
+        return get(key, option)
+            .thenCompose(result -> {
+                try {
+                    if (result.count() == 0) {
+                        return FutureUtils.value(null);
+                    } else {
+                        KeyValue<K, V> kv = result.kvs().get(0);
+                        if (kv.isNumber()) {
+                            return FutureUtils.value(kv.numberValue());
+                        } else {
+                            return FutureUtils.exception(new KvApiException(
+                                Code.ILLEGAL_OP, "Key (" + key + ") doesn't have any number value"));
+                        }
+                    }
+                } finally {
+                    result.close();
+                }
+            })
+            .whenComplete((value, cause) -> option.close());
+    }
 
     default CompletableFuture<V> get(K key) {
         RangeOption<K> option = opFactory().optionFactory().newRangeOption().build();

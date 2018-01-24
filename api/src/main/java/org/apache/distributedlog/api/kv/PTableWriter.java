@@ -34,6 +34,14 @@ public interface PTableWriter<K, V> extends AutoCloseable {
                                   K lKey,
                                   V value);
 
+    /**
+     * Append an increment operation to the stream.
+     */
+    CompletableFuture<Void> increment(long sequenceId,
+                                      K pKey,
+                                      K lKey,
+                                      long amount);
+
     @Override
     void close();
 

@@ -32,4 +32,10 @@ public interface TableWriter<K, V> {
     CompletableFuture<Void> write(long sequenceId,
                                   K key, V value);
 
+    /**
+     * Append an increment operation to the stream.
+     */
+    CompletableFuture<Void> increment(long sequenceId,
+                                      K key,
+                                      long amount);
 }

@@ -206,6 +206,18 @@ public class TestPByteBufTableImpl {
       }
     }
 
+    // test increment
+    for (RangeProperties rangeProps : streamRanges1.getRanges().values()) {
+      ByteBuf pkey =
+        Unpooled.wrappedBuffer(Bytes.toBytes(rangeProps.getRangeId()));
+      ByteBuf lkey =
+        Unpooled.wrappedBuffer(Bytes.toBytes(rangeProps.getRangeId()));
+      long amount = 100L;
+      table.increment(pkey, lkey, amount);
+      verify(tableRanges.get(rangeProps.getRangeId()), times(1))
+          .increment(eq(pkey), eq(lkey), eq(amount));
+    }
+
     // test delete
     for (RangeProperties rangeProps : streamRanges1.getRanges().values()) {
       ByteBuf pkey =

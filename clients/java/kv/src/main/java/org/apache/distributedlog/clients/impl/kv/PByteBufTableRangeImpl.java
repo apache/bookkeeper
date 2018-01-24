@@ -154,6 +154,30 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
   }
 
   @Override
+  public CompletableFuture<Void> increment(ByteBuf pKey, ByteBuf lKey, long amount) {
+    pKey.retain();
+    lKey.retain();
+    return TableRequestProcessor.of(
+        KvUtils.newKvIncrementRequest(
+            scChannel.getStorageContainerId(),
+            KvUtils.newIncrementRequest(lKey, amount)
+              .setHeader(newRoutingHeader(pKey))),
+        response -> KvUtils.newIncrementResult(response.getKvIncrResp(), resultFactory, kvFactory),
+        scChannel,
+        executor
+    )
+    .process()
+    .thenApply(result -> {
+      result.close();
+      return (Void) null;
+    })
+    .whenComplete((ignored, cause) -> {
+        pKey.release();
+        lKey.release();
+    });
+  }
+
+  @Override
   public Txn<ByteBuf, ByteBuf> txn(ByteBuf pKey) {
     return new TxnImpl(pKey);
   }

@@ -15,28 +15,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.distributedlog.api.kv.result;
+
+package org.apache.distributedlog.clients.impl.kv.result;
+
+import io.netty.util.Recycler.Handle;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+import org.apache.distributedlog.api.kv.op.OpType;
+import org.apache.distributedlog.api.kv.result.IncrementResult;
+import org.apache.distributedlog.api.kv.result.PutResult;
 
 /**
- * Key/Value pair.
+ * An implementation of {@link PutResult}.
  */
-public interface KeyValue<K, V> extends AutoCloseable {
+@Accessors(fluent = true, chain = true)
+@Getter
+@Setter
+public class IncrementResultImpl<K, V>
+        extends ResultImpl<K, V, IncrementResultImpl<K, V>>
+        implements IncrementResult<K, V> {
 
-    K key();
-
-    V value();
-
-    long createRevision();
-
-    long modifiedRevision();
-
-    long version();
-
-    boolean isNumber();
-
-    long numberValue();
+    IncrementResultImpl(Handle<IncrementResultImpl<K, V>> handle) {
+        super(OpType.PUT, handle);
+    }
 
     @Override
-    void close();
+    IncrementResultImpl<K, V> asResult() {
+        return this;
+    }
 
 }

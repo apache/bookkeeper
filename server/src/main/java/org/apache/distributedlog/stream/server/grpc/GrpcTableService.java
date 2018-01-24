@@ -64,4 +64,10 @@ public class GrpcTableService extends TableServiceImplBase {
         rangeStore.txn(request).whenComplete(
             StorageContainerResponseHandler.of(responseObserver));
     }
+
+    @Override
+    public void increment(StorageContainerRequest request, StreamObserver<StorageContainerResponse> responseObserver) {
+        rangeStore.incr(request).whenComplete(
+            StorageContainerResponseHandler.of(responseObserver));
+    }
 }

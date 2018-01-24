@@ -29,6 +29,7 @@ public class ResultFactory<K, V> {
     private final Recycler<DeleteResultImpl<K, V>> deleteResultRecycler;
     private final Recycler<RangeResultImpl<K, V>> rangeResultRecycler;
     private final Recycler<TxnResultImpl<K, V>> txnResultRecycler;
+    private final Recycler<IncrementResultImpl<K, V>> incrementResultRecycler;
 
     public ResultFactory() {
         this.putResultRecycler = new Recycler<PutResultImpl<K, V>>() {
@@ -55,6 +56,12 @@ public class ResultFactory<K, V> {
                 return new TxnResultImpl<>(handle);
             }
         };
+        this.incrementResultRecycler = new Recycler<IncrementResultImpl<K, V>>() {
+            @Override
+            protected IncrementResultImpl<K, V> newObject(Handle<IncrementResultImpl<K, V>> handle) {
+                return new IncrementResultImpl<>(handle);
+            }
+        };
     }
 
     public PutResultImpl<K, V> newPutResult() {
@@ -74,6 +81,11 @@ public class ResultFactory<K, V> {
 
     public TxnResultImpl<K, V> newTxnResult() {
         TxnResultImpl<K, V> result = this.txnResultRecycler.get();
+        return result;
+    }
+
+    public IncrementResultImpl<K, V> newIncrementResult() {
+        IncrementResultImpl<K, V> result = this.incrementResultRecycler.get();
         return result;
     }
 

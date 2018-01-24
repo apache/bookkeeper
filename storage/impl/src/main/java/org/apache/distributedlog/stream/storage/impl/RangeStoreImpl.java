@@ -200,4 +200,9 @@ public class RangeStoreImpl
   public CompletableFuture<StorageContainerResponse> txn(StorageContainerRequest request) {
     return getStorageContainer(request.getScId()).txn(request);
   }
+
+  @Override
+  public CompletableFuture<StorageContainerResponse> incr(StorageContainerRequest request) {
+    return getStorageContainer(request.getScId()).incr(request);
+  }
 }

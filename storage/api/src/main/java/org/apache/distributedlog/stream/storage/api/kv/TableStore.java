@@ -34,4 +34,6 @@ public interface TableStore {
 
     CompletableFuture<StorageContainerResponse> txn(StorageContainerRequest request);
 
+    CompletableFuture<StorageContainerResponse> incr(StorageContainerRequest request);
+
 }

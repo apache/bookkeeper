@@ -156,4 +156,9 @@ public final class FailRequestStorageContainer implements StorageContainer {
   public CompletableFuture<StorageContainerResponse> txn(StorageContainerRequest request) {
     return failWrongGroupRequest(request.getScId());
   }
+
+  @Override
+  public CompletableFuture<StorageContainerResponse> incr(StorageContainerRequest request) {
+    return failWrongGroupRequest(request.getScId());
+  }
 }

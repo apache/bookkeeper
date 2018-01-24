@@ -22,6 +22,7 @@ import static org.apache.distributedlog.stream.storage.impl.kv.TableStoreUtils.h
 import static org.apache.distributedlog.stream.storage.impl.kv.TableStoreUtils.mvccCodeToStatusCode;
 import static org.apache.distributedlog.stream.storage.impl.kv.TableStoreUtils.newStoreKey;
 import static org.apache.distributedlog.stream.storage.impl.kv.TableStoreUtils.processDeleteResult;
+import static org.apache.distributedlog.stream.storage.impl.kv.TableStoreUtils.processIncrementResult;
 import static org.apache.distributedlog.stream.storage.impl.kv.TableStoreUtils.processPutResult;
 import static org.apache.distributedlog.stream.storage.impl.kv.TableStoreUtils.processRangeResult;
 import static org.apache.distributedlog.stream.storage.impl.kv.TableStoreUtils.processTxnResult;
@@ -31,6 +32,7 @@ import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.distributedlog.statelib.api.mvcc.MVCCAsyncStore;
 import org.apache.distributedlog.statelib.api.mvcc.op.DeleteOp;
+import org.apache.distributedlog.statelib.api.mvcc.op.IncrementOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.Op;
 import org.apache.distributedlog.statelib.api.mvcc.op.PutOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.RangeOp;
@@ -38,11 +40,13 @@ import org.apache.distributedlog.statelib.api.mvcc.op.RangeOpBuilder;
 import org.apache.distributedlog.statelib.api.mvcc.op.TxnOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.TxnOpBuilder;
 import org.apache.distributedlog.statelib.api.mvcc.result.DeleteResult;
+import org.apache.distributedlog.statelib.api.mvcc.result.IncrementResult;
 import org.apache.distributedlog.statelib.api.mvcc.result.PutResult;
 import org.apache.distributedlog.statelib.api.mvcc.result.RangeResult;
 import org.apache.distributedlog.statelib.api.mvcc.result.TxnResult;
 import org.apache.distributedlog.stream.proto.kv.rpc.Compare;
 import org.apache.distributedlog.stream.proto.kv.rpc.DeleteRangeRequest;
+import org.apache.distributedlog.stream.proto.kv.rpc.IncrementRequest;
 import org.apache.distributedlog.stream.proto.kv.rpc.PutRequest;
 import org.apache.distributedlog.stream.proto.kv.rpc.RangeRequest;
 import org.apache.distributedlog.stream.proto.kv.rpc.RangeResponse;
@@ -173,6 +177,47 @@ public class TableStoreImpl implements TableStore {
             .key(storeKey)
             .value(request.getValue().toByteArray())
             .prevKV(request.getPrevKv())
+            .build();
+    }
+
+    @Override
+    public CompletableFuture<StorageContainerResponse> incr(StorageContainerRequest request) {
+        IncrementRequest incrementReq = request.getKvIncrReq();
+
+        return increment(incrementReq)
+            .thenApply(result -> {
+                try {
+                    return processIncrementResult(
+                        incrementReq.getHeader(),
+                        result);
+                } finally {
+                    result.recycle();
+                }
+            })
+            .thenApply(incrementResp -> StorageContainerResponse.newBuilder()
+                .setCode(StatusCode.SUCCESS)
+                .setKvIncrResp(incrementResp)
+                .build())
+            .exceptionally(cause -> {
+                log.error("Failed to process increment request {}", incrementReq, cause);
+                return StorageContainerResponse.newBuilder()
+                    .setCode(handleCause(cause))
+                    .build();
+            });
+    }
+
+    private CompletableFuture<IncrementResult<byte[], byte[]>> increment(IncrementRequest request) {
+        IncrementOp<byte[], byte[]> op = buildIncrementOp(request.getHeader(), request);
+        return store.increment(op);
+    }
+
+    private IncrementOp<byte[], byte[]> buildIncrementOp(RoutingHeader header, IncrementRequest request) {
+        ByteString rKey = header.getRKey();
+        ByteString lKey = request.getKey();
+        byte[] storeKey = newStoreKey(rKey, lKey);
+        return store.getOpFactory().buildIncrementOp()
+            .key(storeKey)
+            .amount(request.getAmount())
             .build();
     }
 

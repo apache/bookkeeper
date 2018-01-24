@@ -43,6 +43,8 @@ public interface OpFactory<K, V> {
 
     RangeOp<K, V> newRange(K key, RangeOption<K> option);
 
+    IncrementOp<K, V> newIncrement(K key, long amount);
+
     CompareOp<K, V> compareVersion(CompareResult result, K key, long version);
 
     CompareOp<K, V> compareModRevision(CompareResult result, K key, long revision);

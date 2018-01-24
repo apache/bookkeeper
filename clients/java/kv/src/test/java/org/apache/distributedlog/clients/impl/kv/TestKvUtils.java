@@ -16,12 +16,15 @@ package org.apache.distributedlog.clients.impl.kv;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static org.apache.distributedlog.clients.impl.kv.KvUtils.newDeleteRequest;
+import static org.apache.distributedlog.clients.impl.kv.KvUtils.newIncrementRequest;
 import static org.apache.distributedlog.clients.impl.kv.KvUtils.newKvDeleteRequest;
+import static org.apache.distributedlog.clients.impl.kv.KvUtils.newKvIncrementRequest;
 import static org.apache.distributedlog.clients.impl.kv.KvUtils.newKvPutRequest;
 import static org.apache.distributedlog.clients.impl.kv.KvUtils.newKvRangeRequest;
 import static org.apache.distributedlog.clients.impl.kv.KvUtils.newPutRequest;
 import static org.apache.distributedlog.clients.impl.kv.KvUtils.newRangeRequest;
 import static org.apache.distributedlog.stream.proto.storage.StorageContainerRequest.Type.KV_DELETE;
+import static org.apache.distributedlog.stream.proto.storage.StorageContainerRequest.Type.KV_INCREMENT;
 import static org.apache.distributedlog.stream.proto.storage.StorageContainerRequest.Type.KV_PUT;
 import static org.apache.distributedlog.stream.proto.storage.StorageContainerRequest.Type.KV_RANGE;
 import static org.junit.Assert.assertEquals;
@@ -40,6 +43,7 @@ import org.apache.distributedlog.api.kv.options.RangeOption;
 import org.apache.distributedlog.api.kv.options.RangeOptionBuilder;
 import org.apache.distributedlog.clients.impl.kv.option.OptionFactoryImpl;
 import org.apache.distributedlog.stream.proto.kv.rpc.DeleteRangeRequest;
+import org.apache.distributedlog.stream.proto.kv.rpc.IncrementRequest;
 import org.apache.distributedlog.stream.proto.kv.rpc.PutRequest;
 import org.apache.distributedlog.stream.proto.kv.rpc.RangeRequest;
 import org.apache.distributedlog.stream.proto.storage.StorageContainerRequest;
@@ -122,6 +126,23 @@ public class TestKvUtils {
         assertEquals(putBuilder.build(), request.getKvPutReq());
       }
     }
+  }
+
+  @Test
+  public void testNewIncrementRequest() {
+    IncrementRequest rr = newIncrementRequest(key, 100L).build();
+    assertEquals(keyBs, rr.getKey());
+    assertEquals(100L, rr.getAmount());
+    assertFalse(rr.hasHeader());
+  }
+
+  @Test
+  public void testNewKvIncrementRequest() {
+    IncrementRequest.Builder incrBuilder = newIncrementRequest(key, 100L);
+    StorageContainerRequest request = newKvIncrementRequest(scId, incrBuilder);
+    assertEquals(scId, request.getScId());
+    assertEquals(KV_INCREMENT, request.getType());
+    assertEquals(incrBuilder.build(), request.getKvIncrReq());
   }
 
   @Test
