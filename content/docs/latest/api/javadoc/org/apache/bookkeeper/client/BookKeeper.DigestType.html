@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":9,"i1":9,"i2":9};
+var methods = {"i0":9,"i1":9,"i2":9,"i3":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -124,11 +124,14 @@ var activeTableTab = "activeTableTab";
 <br>
 <pre>public static enum <span class="typeNameLabel">BookKeeper.DigestType</span>
 extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Enum.html?is-external=true" title="class or interface in java.lang">Enum</a>&lt;<a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&gt;</pre>
-<div class="block">There are 2 digest types that can be used for verification. The CRC32 is
+<div class="block">There are 3 digest types that can be used for verification. The CRC32 is
  cheap to compute but does not protect against byzantine bookies (i.e., a
  bookie might report fake bytes and a matching CRC32). The MAC code is more
  expensive to compute, but is protected by a password, i.e., a bookie can't
- report fake bytes with a mathching MAC unless it knows the password</div>
+ report fake bytes with a mathching MAC unless it knows the password.
+ The CRC32C, which use SSE processor instruction, has better performance than CRC32.
+ Legacy DigestType for backward compatibility. If we want to add new DigestType,
+ we should add it in here, client.api.DigestType and DigestType in DataFormats.proto.</div>
 </li>
 </ul>
 </div>
@@ -175,12 +178,16 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Enum.html?is
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html#fromApiDigestType-org.apache.bookkeeper.client.api.DigestType-">fromApiDigestType</a></span>(<a href="../../../../org/apache/bookkeeper/client/api/DigestType.html" title="enum in org.apache.bookkeeper.client.api">DigestType</a>&nbsp;digestType)</code>&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
+<td class="colFirst"><code>static org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html#toProtoDigestType-org.apache.bookkeeper.client.BookKeeper.DigestType-">toProtoDigestType</a></span>(<a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType)</code>&nbsp;</td>
+</tr>
+<tr id="i2" class="altColor">
 <td class="colFirst"><code>static <a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html#valueOf-java.lang.String-">valueOf</a></span>(<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</code>
 <div class="block">Returns the enum constant of this type with the specified name.</div>
 </td>
 </tr>
-<tr id="i2" class="altColor">
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html#values--">values</a></span>()</code>
 <div class="block">Returns an array containing the constants of this enum type, in
@@ -296,10 +303,19 @@ not permitted.)</div>
 <a name="fromApiDigestType-org.apache.bookkeeper.client.api.DigestType-">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>fromApiDigestType</h4>
 <pre>public static&nbsp;<a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;fromApiDigestType(<a href="../../../../org/apache/bookkeeper/client/api/DigestType.html" title="enum in org.apache.bookkeeper.client.api">DigestType</a>&nbsp;digestType)</pre>
+</li>
+</ul>
+<a name="toProtoDigestType-org.apache.bookkeeper.client.BookKeeper.DigestType-">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>toProtoDigestType</h4>
+<pre>public static&nbsp;org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType&nbsp;toProtoDigestType(<a href="../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType)</pre>
 </li>
 </ul>
 </li>

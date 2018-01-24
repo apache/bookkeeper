@@ -297,12 +297,6 @@ the order they are declared.</div>
 </td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>(package private) static <a href="../../../../../org/apache/bookkeeper/client/DigestManager.html" title="class in org.apache.bookkeeper.client">DigestManager</a></code></td>
-<td class="colLast"><span class="typeNameLabel">DigestManager.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/DigestManager.html#instantiate-long-byte:A-org.apache.bookkeeper.client.BookKeeper.DigestType-">instantiate</a></span>(long&nbsp;ledgerId,
-           byte[]&nbsp;passwd,
-           <a href="../../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType)</code>&nbsp;</td>
-</tr>
-<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></code></td>
 <td class="colLast"><span class="typeNameLabel">BookKeeper.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeper.html#openLedger-long-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-">openLedger</a></span>(long&nbsp;lId,
           <a href="../../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
@@ -310,13 +304,17 @@ the order they are declared.</div>
 <div class="block">Synchronous open ledger call.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/bookkeeper/client/LedgerHandle.html" title="class in org.apache.bookkeeper.client">LedgerHandle</a></code></td>
 <td class="colLast"><span class="typeNameLabel">BookKeeper.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeper.html#openLedgerNoRecovery-long-org.apache.bookkeeper.client.BookKeeper.DigestType-byte:A-">openLedgerNoRecovery</a></span>(long&nbsp;lId,
                     <a href="../../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType,
                     byte[]&nbsp;passwd)</code>
 <div class="block">Synchronous, unsafe open ledger call.</div>
 </td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType</code></td>
+<td class="colLast"><span class="typeNameLabel">BookKeeper.DigestType.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html#toProtoDigestType-org.apache.bookkeeper.client.BookKeeper.DigestType-">toProtoDigestType</a></span>(<a href="../../../../../org/apache/bookkeeper/client/BookKeeper.DigestType.html" title="enum in org.apache.bookkeeper.client">BookKeeper.DigestType</a>&nbsp;digestType)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
