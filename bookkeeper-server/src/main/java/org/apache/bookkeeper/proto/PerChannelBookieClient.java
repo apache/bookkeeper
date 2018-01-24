@@ -876,7 +876,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         try {
             final long startTime = MathUtils.nowInNano();
-            ChannelFuture future = channel.writeAndFlush(request, channel.voidPromise());
+            ChannelFuture future = channel.writeAndFlush(request);
             future.addListener(new ChannelFutureListener() {
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
