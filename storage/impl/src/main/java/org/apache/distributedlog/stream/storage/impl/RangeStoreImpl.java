@@ -18,6 +18,7 @@ import static org.apache.distributedlog.stream.protocol.ProtocolConstants.ROOT_S
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
+import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
@@ -69,6 +70,7 @@ public class RangeStoreImpl
                         Resource<OrderedScheduler> schedulerResource,
                         StorageContainerManagerFactory factory,
                         MVCCStoreFactory mvccStoreFactory,
+                        URI defaultBackendUri,
                         int numStorageContainers,
                         StatsLogger statsLogger) {
     super("range-service", conf, statsLogger);
@@ -83,7 +85,8 @@ public class RangeStoreImpl
         conf,
         placementPolicy,
         scheduler,
-        storeFactory),
+        storeFactory,
+        defaultBackendUri),
       scheduler);
     this.scManager = scmFactory.create(numStorageContainers, conf, scRegistry);
   }

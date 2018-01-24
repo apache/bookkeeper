@@ -35,6 +35,7 @@ import static org.mockito.Mockito.when;
 import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
@@ -216,6 +217,7 @@ public class TestRangeStoreImpl {
       .withStorageContainerManagerFactory((numScs, storeConf, rgRegistry)
         -> new LocalStorageContainerManager(endpoint, storeConf, rgRegistry, 2))
       .withRangeStoreFactory(storeFactory)
+      .withDefaultBackendUri(URI.create("distributedlog://127.0.0.1/stream/storage"))
       .build();
     rangeStore.start();
   }

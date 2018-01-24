@@ -139,7 +139,7 @@ message StreamConfiguration {
     SplitPolicy split_policy            = 4;
     SegmentRollingPolicy rolling_policy = 5;
     RetentionPolicy retention_policy    = 6;
-    string backend_id                   = 7;
+    string backend_service_url          = 7;
 }
 
 message StreamProperties {

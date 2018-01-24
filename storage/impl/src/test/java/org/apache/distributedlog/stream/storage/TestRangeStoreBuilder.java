@@ -17,6 +17,7 @@ package org.apache.distributedlog.stream.storage;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
+import java.net.URI;
 import org.apache.distributedlog.stream.storage.api.RangeStore;
 import org.apache.distributedlog.stream.storage.api.sc.StorageContainerManagerFactory;
 import org.apache.distributedlog.stream.storage.conf.StorageConfiguration;
@@ -31,6 +32,7 @@ import org.junit.Test;
 public class TestRangeStoreBuilder {
 
   private MVCCStoreFactory storeFactory;
+  private final URI uri = URI.create("distributedlog://127.0.0.1/stream/storage");
 
   @Before
   public void setup() {
@@ -44,6 +46,7 @@ public class TestRangeStoreBuilder {
       .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
       .withStorageResources(StorageResources.create())
       .withRangeStoreFactory(storeFactory)
+      .withDefaultBackendUri(uri)
       .build();
   }
 
@@ -54,6 +57,7 @@ public class TestRangeStoreBuilder {
       .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
       .withStorageResources(null)
       .withRangeStoreFactory(storeFactory)
+      .withDefaultBackendUri(uri)
       .build();
   }
 
@@ -64,6 +68,7 @@ public class TestRangeStoreBuilder {
       .withStorageContainerManagerFactory(null)
       .withStorageResources(StorageResources.create())
       .withRangeStoreFactory(storeFactory)
+      .withDefaultBackendUri(uri)
       .build();
   }
 
@@ -74,6 +79,18 @@ public class TestRangeStoreBuilder {
       .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
       .withStorageResources(StorageResources.create())
       .withRangeStoreFactory(null)
+      .withDefaultBackendUri(uri)
+      .build();
+  }
+
+  @Test(expected = NullPointerException.class)
+  public void testBuildNullDefaultBackendUri() {
+    RangeStoreBuilder.newBuilder()
+      .withStorageConfiguration(mock(StorageConfiguration.class))
+      .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
+      .withStorageResources(StorageResources.create())
+      .withRangeStoreFactory(storeFactory)
+      .withDefaultBackendUri(null)
       .build();
   }
 
@@ -84,6 +101,7 @@ public class TestRangeStoreBuilder {
       .withStorageContainerManagerFactory(mock(StorageContainerManagerFactory.class))
       .withStorageResources(StorageResources.create())
       .withRangeStoreFactory(storeFactory)
+      .withDefaultBackendUri(uri)
       .build();
     assertTrue(rangeStore instanceof RangeStoreImpl);
   }

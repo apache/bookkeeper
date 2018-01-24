@@ -97,6 +97,10 @@ public class StreamCluster
     return rpcEndpoints;
   }
 
+  public String getZkServers() {
+    return zkEnsemble;
+  }
+
   private void startZooKeeper() throws Exception {
     if (!spec.shouldStartZooKeeper()) {
       zkPort = spec.zkPort();

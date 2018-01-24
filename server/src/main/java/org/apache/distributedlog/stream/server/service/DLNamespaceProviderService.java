@@ -16,6 +16,7 @@ package org.apache.distributedlog.stream.server.service;
 import java.io.IOException;
 import java.net.URI;
 import java.util.function.Supplier;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -38,11 +39,11 @@ public class DLNamespaceProviderService
     extends AbstractLifecycleComponent<DLConfiguration>
     implements Supplier<Namespace> {
 
-  private static URI initializeNamespace(ServerConfiguration bkServerConf) throws IOException {
+  private static URI initializeNamespace(ServerConfiguration bkServerConf,
+                                         URI dlogUri) throws IOException {
     BKDLConfig dlConfig = new BKDLConfig(
         bkServerConf.getZkServers(), bkServerConf.getZkLedgersRootPath());
     DLMetadata dlMetadata = DLMetadata.create(dlConfig);
-    URI dlogUri = URI.create(String.format("distributedlog://%s/stream/storage", bkServerConf.getZkServers()));
 
     try {
         log.info("Initializing dlog namespace at {}", dlogUri);
@@ -63,6 +64,8 @@ public class DLNamespaceProviderService
 
   private final ServerConfiguration bkServerConf;
   private final DistributedLogConfiguration dlConf;
+  @Getter
+  private final URI dlogUri;
   private Namespace namespace;
 
   public DLNamespaceProviderService(ServerConfiguration bkServerConf,
@@ -70,6 +73,7 @@ public class DLNamespaceProviderService
                                     StatsLogger statsLogger) {
     super("namespace-provider", conf, statsLogger);
 
+    this.dlogUri = URI.create(String.format("distributedlog://%s/stream/storage", bkServerConf.getZkServers()));
     this.bkServerConf = bkServerConf;
     this.dlConf = new DistributedLogConfiguration();
     ConfUtils.loadConfiguration(this.dlConf, conf, conf.getComponentPrefix());
@@ -95,7 +99,7 @@ public class DLNamespaceProviderService
   protected void doStart() {
     URI uri;
     try {
-      uri = initializeNamespace(bkServerConf);
+      uri = initializeNamespace(bkServerConf, dlogUri);
       namespace = NamespaceBuilder.newBuilder()
         .statsLogger(getStatsLogger())
         .clientId("storage-server")

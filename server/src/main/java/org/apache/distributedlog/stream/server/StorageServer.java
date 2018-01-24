@@ -193,6 +193,8 @@ public class StorageServer {
       .withStorageResources(storageResources)
       // the number of storage containers
       .withNumStorageContainers(numStorageContainers)
+      // the default log backend uri
+      .withDefaultBackendUri(dlNamespaceProvider.getDlogUri())
       // with the storage container manager (currently it is helix)
       .withStorageContainerManagerFactory((ignored, storeConf, registry) ->
         new HelixStorageContainerManager(

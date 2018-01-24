@@ -19,11 +19,13 @@
 package org.apache.distributedlog.stream.storage.impl.metadata;
 
 import static com.google.common.base.Charsets.UTF_8;
+import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.distributedlog.stream.protocol.ProtocolConstants.MIN_DATA_STREAM_ID;
 import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.validateNamespaceName;
 import static org.apache.distributedlog.stream.protocol.util.ProtoUtils.validateStreamName;
 
 import com.google.protobuf.InvalidProtocolBufferException;
+import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import lombok.extern.slf4j.Slf4j;
@@ -132,13 +134,16 @@ public class RootRangeStoreImpl
     return streamIdBytes;
   }
 
+  private final URI defaultServiceUri;
   private final MVCCAsyncStore<byte[], byte[]> store;
   private final StorageContainerPlacementPolicy placementPolicy;
   private final ScheduledExecutorService executor;
 
-  public RootRangeStoreImpl(MVCCAsyncStore<byte[], byte[]> store,
+  public RootRangeStoreImpl(URI defaultServiceUri,
+                            MVCCAsyncStore<byte[], byte[]> store,
                             StorageContainerPlacementPolicy placementPolicy,
                             ScheduledExecutorService executor) {
+    this.defaultServiceUri = defaultServiceUri;
     this.store = store;
     this.placementPolicy = placementPolicy;
     this.executor = executor;
@@ -455,11 +460,20 @@ public class RootRangeStoreImpl
 
     long scId = placementPolicy.placeStreamRange(streamId, 0L);
 
+
+    StreamConfiguration newStreamConf = streamConf;
+    // no backend service url is provided, use the default service url
+    if (isBlank(streamConf.getBackendServiceUrl())) {
+      newStreamConf = StreamConfiguration.newBuilder(streamConf)
+          .setBackendServiceUrl(defaultServiceUri.toString())
+          .build();
+    }
+
     StreamProperties streamProps = StreamProperties.newBuilder()
         .setStreamId(streamId)
         .setStreamName(streamName)
         .setStorageContainerId(scId)
-        .setStreamConf(streamConf)
+        .setStreamConf(newStreamConf)
         .build();
 
     byte[] nsIdKey = getNamespaceIdKey(nsId);

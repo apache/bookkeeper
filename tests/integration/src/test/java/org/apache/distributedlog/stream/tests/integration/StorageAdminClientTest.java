@@ -23,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.net.URI;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.distributedlog.clients.StorageClientBuilder;
@@ -53,6 +54,7 @@ public class StorageAdminClientTest extends StorageServerTestBase {
 
   private OrderedScheduler scheduler;
   private StorageAdminClient adminClient;
+  private URI defaultBackendUri;
 
   @Override
   protected void doSetup() throws Exception {
@@ -67,6 +69,7 @@ public class StorageAdminClientTest extends StorageServerTestBase {
     adminClient = StorageClientBuilder.newBuilder()
       .withSettings(settings)
       .buildAdmin();
+    defaultBackendUri = URI.create("distributedlog://" + cluster.getZkServers() + "/stream/storage");
   }
 
   @Override
@@ -152,7 +155,11 @@ public class StorageAdminClientTest extends StorageServerTestBase {
       .build();
     StreamProperties streamProps  = FutureUtils.result(adminClient.createStream(nsName, streamName, streamConf));
     assertEquals(streamName, streamProps.getStreamName());
-    assertEquals(streamConf, streamProps.getStreamConf());
+    assertEquals(
+        StreamConfiguration.newBuilder(streamConf)
+          .setBackendServiceUrl(defaultBackendUri.toString())
+          .build(),
+        streamProps.getStreamConf());
 
     // create a duplicated stream
     try {

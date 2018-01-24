@@ -26,6 +26,7 @@ import static org.apache.distributedlog.stream.protocol.ProtocolConstants.ROOT_S
 import static org.apache.distributedlog.stream.protocol.ProtocolConstants.ROOT_STREAM_ID;
 
 import com.google.common.collect.Lists;
+import java.net.URI;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import lombok.AccessLevel;
@@ -102,12 +103,13 @@ public class StorageContainerImpl
                               long scId,
                               StorageContainerPlacementPolicy rangePlacementPolicy,
                               OrderedScheduler scheduler,
-                              MVCCStoreFactory storeFactory) {
+                              MVCCStoreFactory storeFactory,
+                              URI defaultBackendUri) {
       this(
           scId,
           scheduler,
           storeFactory,
-          store -> new RootRangeStoreImpl(store, rangePlacementPolicy, scheduler.chooseThread(scId)),
+          store -> new RootRangeStoreImpl(defaultBackendUri, store, rangePlacementPolicy, scheduler.chooseThread(scId)),
           store -> new MetaRangeStoreImpl(store, rangePlacementPolicy, scheduler.chooseThread(scId)),
           store -> new TableStoreImpl(store));
   }

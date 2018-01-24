@@ -14,6 +14,7 @@
 
 package org.apache.distributedlog.stream.storage.impl.sc;
 
+import java.net.URI;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.distributedlog.stream.protocol.util.StorageContainerPlacementPolicy;
 import org.apache.distributedlog.stream.storage.api.sc.StorageContainer;
@@ -30,15 +31,18 @@ public class DefaultStorageContainerFactory implements StorageContainerFactory {
   private final StorageContainerPlacementPolicy rangePlacementPolicy;
   private final OrderedScheduler scheduler;
   private final MVCCStoreFactory storeFactory;
+  private final URI defaultBackendUri;
 
   public DefaultStorageContainerFactory(StorageConfiguration storageConf,
                                         StorageContainerPlacementPolicy rangePlacementPolicy,
                                         OrderedScheduler scheduler,
-                                        MVCCStoreFactory storeFactory) {
+                                        MVCCStoreFactory storeFactory,
+                                        URI defaultBackendUri) {
     this.storageConf = storageConf;
     this.rangePlacementPolicy = rangePlacementPolicy;
     this.scheduler = scheduler;
     this.storeFactory = storeFactory;
+    this.defaultBackendUri = defaultBackendUri;
   }
 
   @Override
@@ -48,6 +52,7 @@ public class DefaultStorageContainerFactory implements StorageContainerFactory {
       scId,
       rangePlacementPolicy,
       scheduler,
-      storeFactory);
+      storeFactory,
+      defaultBackendUri);
   }
 }

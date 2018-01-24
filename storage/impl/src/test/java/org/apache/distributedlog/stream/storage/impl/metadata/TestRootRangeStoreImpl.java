@@ -33,6 +33,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -56,6 +57,8 @@ import org.junit.Test;
 @Slf4j
 public class TestRootRangeStoreImpl extends MVCCAsyncStoreTestBase {
 
+  private static final String DEFAULT_SERVICE_URI = "distributedlog://127.0.0.1/stream/storage";
+
   private final NamespaceConfiguration namespaceConf =
     NamespaceConfiguration.newBuilder()
       .setDefaultStreamConf(DEFAULT_STREAM_CONF)
@@ -63,7 +66,7 @@ public class TestRootRangeStoreImpl extends MVCCAsyncStoreTestBase {
 
   private final StreamConfiguration streamConf =
     StreamConfiguration.newBuilder(DEFAULT_STREAM_CONF)
-      .setBackendId("default-backend")
+      .setBackendServiceUrl(DEFAULT_SERVICE_URI)
       .build();
 
 
@@ -72,6 +75,7 @@ public class TestRootRangeStoreImpl extends MVCCAsyncStoreTestBase {
   @Override
   protected void doSetup() throws Exception {
     rootRangeStore = new RootRangeStoreImpl(
+        URI.create(DEFAULT_SERVICE_URI),
         store,
         StorageContainerPlacementPolicyImpl.of(1024),
         scheduler.chooseThread());

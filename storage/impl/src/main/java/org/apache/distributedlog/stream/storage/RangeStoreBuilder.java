@@ -16,6 +16,7 @@ package org.apache.distributedlog.stream.storage;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.net.URI;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.distributedlog.stream.storage.api.RangeStore;
@@ -39,6 +40,7 @@ public final class RangeStoreBuilder {
   private StorageContainerManagerFactory scmFactory = null;
   private MVCCStoreFactory mvccStoreFactory = null;
   private int numStorageContainers = 1024;
+  private URI defaultBackendUri = null;
 
   private RangeStoreBuilder() {}
 
@@ -111,16 +113,29 @@ public final class RangeStoreBuilder {
     return this;
   }
 
+  /**
+   * Backend uri for storing table ranges.
+   *
+   * @param uri uri for storing table ranges.
+   * @return range store builder.
+   */
+  public RangeStoreBuilder withDefaultBackendUri(URI uri) {
+    this.defaultBackendUri = uri;
+    return this;
+  }
+
   public RangeStore build() {
     checkNotNull(scmFactory, "StorageContainerManagerFactory is not provided");
     checkNotNull(storeConf, "StorageConfiguration is not provided");
     checkNotNull(mvccStoreFactory, "MVCCStoreFactory is not provided");
+    checkNotNull(defaultBackendUri, "Default backend uri is not provided");
 
     return new RangeStoreImpl(
       storeConf,
       storeResources.scheduler(),
       scmFactory,
       mvccStoreFactory,
+      defaultBackendUri,
       numStorageContainers,
       statsLogger);
   }

@@ -19,6 +19,7 @@ import static org.apache.distributedlog.stream.protocol.ProtocolConstants.DEFAUL
 import static org.apache.distributedlog.stream.protocol.ProtocolConstants.DEFAULT_SPLIT_POLICY;
 import static org.junit.Assert.assertEquals;
 
+import java.net.URI;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.api.StorageClient;
@@ -58,9 +59,11 @@ public class StorageClientTest extends StorageServerTestBase {
   private final NamespaceConfiguration colConf = NamespaceConfiguration.newBuilder()
     .setDefaultStreamConf(streamConf)
     .build();
+  private URI defaultBackendUri;
 
   @Override
   protected void doSetup() throws Exception {
+    defaultBackendUri = URI.create("distributedlog://" + cluster.getZkServers() + "/stream/storage");
     StorageClientSettings settings = StorageClientSettings.newBuilder()
       .addEndpoints(cluster.getRpcEndpoints().toArray(new Endpoint[cluster.getRpcEndpoints().size()]))
       .usePlaintext(true)
@@ -101,7 +104,11 @@ public class StorageClientTest extends StorageServerTestBase {
   public void testAdmin() throws Exception {
     StreamProperties properties =
       FutureUtils.result(adminClient.getStream(nsName, streamName));
-    assertEquals(streamConf, properties.getStreamConf());
+    assertEquals(
+        StreamConfiguration.newBuilder(streamConf)
+          .setBackendServiceUrl(defaultBackendUri.toString())
+          .build()
+        , properties.getStreamConf());
   }
 
 }

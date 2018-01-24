@@ -30,6 +30,7 @@ import static org.junit.Assert.fail;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
+import java.net.URI;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -37,13 +38,11 @@ import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.distributedlog.api.StorageClient;
 import org.apache.distributedlog.api.kv.PTable;
 import org.apache.distributedlog.api.kv.exceptions.KvApiException;
-import org.apache.distributedlog.api.kv.options.OptionFactory;
 import org.apache.distributedlog.api.kv.result.Code;
 import org.apache.distributedlog.api.kv.result.KeyValue;
 import org.apache.distributedlog.clients.StorageClientBuilder;
 import org.apache.distributedlog.clients.admin.StorageAdminClient;
 import org.apache.distributedlog.clients.config.StorageClientSettings;
-import org.apache.distributedlog.clients.impl.kv.option.OptionFactoryImpl;
 import org.apache.distributedlog.stream.proto.NamespaceConfiguration;
 import org.apache.distributedlog.stream.proto.NamespaceProperties;
 import org.apache.distributedlog.stream.proto.StreamConfiguration;
@@ -66,10 +65,11 @@ public class TableClientSimpleTest extends StorageServerTestBase {
     private OrderedScheduler scheduler;
     private StorageAdminClient adminClient;
     private StorageClient storageClient;
-    private final OptionFactory<ByteBuf> optionFactory = new OptionFactoryImpl<>();
+    private URI defaultBackendUri;
 
     @Override
     protected void doSetup() throws Exception {
+        defaultBackendUri = URI.create("distributedlog://" + cluster.getZkServers() + "/stream/storage");
         scheduler = OrderedScheduler.newSchedulerBuilder()
             .name("table-client-test")
             .numThreads(1)
@@ -126,7 +126,11 @@ public class TableClientSimpleTest extends StorageServerTestBase {
         StreamProperties streamProps = FutureUtils.result(
             adminClient.createStream(namespace, streamName, streamConf));
         assertEquals(streamName, streamProps.getStreamName());
-        assertEquals(streamConf, streamProps.getStreamConf());
+        assertEquals(
+            StreamConfiguration.newBuilder(streamConf)
+                .setBackendServiceUrl(defaultBackendUri.toString())
+                .build(),
+            streamProps.getStreamConf());
 
         // Open the table
         PTable<ByteBuf, ByteBuf> table = FutureUtils.result(storageClient.openPTable(streamName));

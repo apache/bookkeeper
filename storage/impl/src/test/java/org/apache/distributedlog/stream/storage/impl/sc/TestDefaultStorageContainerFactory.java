@@ -38,6 +38,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.util.concurrent.ListenableScheduledFuture;
 import com.google.common.util.concurrent.ListeningScheduledExecutorService;
+import java.net.URI;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.commons.configuration.CompositeConfiguration;
@@ -68,7 +69,8 @@ public class TestDefaultStorageContainerFactory {
       new StorageConfiguration(new CompositeConfiguration()),
       (streamId, rangeId) -> streamId,
       scheduler,
-      storeFactory);
+      storeFactory,
+      URI.create("distributedlog://127.0.0.1/stream/storage"));
     StorageContainer sc = factory.createStorageContainer(1234L);
     assertTrue(sc instanceof StorageContainerImpl);
     assertEquals(1234L, sc.getId());
