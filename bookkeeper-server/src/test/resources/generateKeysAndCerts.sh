@@ -38,7 +38,7 @@ rm ./server-key.pem \
 openssl req \
         -new \
         -newkey rsa:4096 \
-        -days 3650 \
+        -days 365000 \
         -nodes \
         -x509 \
         -subj "/C=US/ST=CA/L=San Francisco/O=Dummy/CN=apache.bookkeeper.org" \
@@ -58,7 +58,7 @@ keytool -importkeystore -srckeystore server-key.p12 -srcstoretype pkcs12 -srcsto
 openssl req \
         -new \
         -newkey rsa:4096 \
-        -days 3650 \
+        -days 365000 \
         -nodes \
         -x509 \
         -subj "/C=US/ST=CA/L=San Francisco/O=Dummy/CN=apache.bookkeeper.org" \
