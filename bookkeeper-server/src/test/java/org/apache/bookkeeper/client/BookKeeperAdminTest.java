@@ -20,16 +20,22 @@
  */
 package org.apache.bookkeeper.client;
 
+import static com.google.common.base.Charsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.google.common.net.InetAddresses;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Random;
 
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.BKException.BKIllegalOpException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
@@ -37,6 +43,8 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.annotations.FlakyTest;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.commons.io.FileUtils;
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.ZooDefs.Ids;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -235,7 +243,7 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
         bkAdmin.close();
     }
 
-    @Test(timeout = 6000000)
+    @Test
     public void testBookieInit() throws Exception {
         int bookieindex = 0;
         ServerConfiguration confOfExistingBookie = bsConfs.get(bookieindex);
@@ -274,5 +282,201 @@ public class BookKeeperAdminTest extends BookKeeperClusterTestCase {
 
         Assert.assertTrue("initBookie shouldn't succeeded",
                 BookKeeperAdmin.initBookie(confOfExistingBookie));
+    }
+
+    @Test
+    public void testInitNewCluster() throws Exception {
+        ServerConfiguration newConfig = new ServerConfiguration(baseConf);
+        String ledgersRootPath = "/testledgers";
+        newConfig.setZkLedgersRootPath(ledgersRootPath);
+        newConfig.setZkServers(zkUtil.getZooKeeperConnectString());
+        Assert.assertTrue("New cluster should be initialized successfully", BookKeeperAdmin.initNewCluster(newConfig));
+
+        Assert.assertTrue("Cluster rootpath should have been created successfully " + ledgersRootPath,
+                (zkc.exists(ledgersRootPath, false) != null));
+        String availableBookiesPath = newConfig.getZkAvailableBookiesPath();
+        Assert.assertTrue("AvailableBookiesPath should have been created successfully " + availableBookiesPath,
+                (zkc.exists(availableBookiesPath, false) != null));
+        String instanceIdPath = newConfig.getZkLedgersRootPath() + "/" + BookKeeperConstants.INSTANCEID;
+        Assert.assertTrue("InstanceId node should have been created successfully" + instanceIdPath,
+                (zkc.exists(instanceIdPath, false) != null));
+
+        String ledgersLayout = ledgersRootPath + "/" + BookKeeperConstants.LAYOUT_ZNODE;
+        Assert.assertTrue("Layout node should have been created successfully" + ledgersLayout,
+                (zkc.exists(ledgersLayout, false) != null));
+
+        /**
+         * create znodes simulating existence of Bookies in the cluster
+         */
+        int numOfBookies = 3;
+        Random rand = new Random();
+        for (int i = 0; i < numOfBookies; i++) {
+            String ipString = InetAddresses.fromInteger(rand.nextInt()).getHostAddress();
+            String regPath = newConfig.getZkAvailableBookiesPath() + "/" + ipString + ":3181";
+            zkc.create(regPath, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+        }
+
+        /*
+         * now it should be possible to create ledger and delete the same
+         */
+        BookKeeper bk = new BookKeeper(new ClientConfiguration(newConfig));
+        LedgerHandle lh = bk.createLedger(numOfBookies, numOfBookies, numOfBookies, BookKeeper.DigestType.MAC,
+                new byte[0]);
+        bk.deleteLedger(lh.ledgerId);
+        bk.close();
+    }
+
+    @Test
+    public void testNukeExistingClusterWithForceOption() throws Exception {
+        String ledgersRootPath = "/testledgers";
+        ServerConfiguration newConfig = new ServerConfiguration(baseConf);
+        newConfig.setZkLedgersRootPath(ledgersRootPath);
+        List<String> bookiesRegPaths = new ArrayList<String>();
+        initiateNewClusterAndCreateLedgers(newConfig, bookiesRegPaths);
+
+        /*
+         * before nuking existing cluster, bookies shouldn't be registered
+         * anymore
+         */
+        for (int i = 0; i < bookiesRegPaths.size(); i++) {
+            zkc.delete(bookiesRegPaths.get(i), -1);
+        }
+
+        Assert.assertTrue("New cluster should be nuked successfully",
+                BookKeeperAdmin.nukeExistingCluster(newConfig, ledgersRootPath, null, true));
+        Assert.assertTrue("Cluster rootpath should have been deleted successfully " + ledgersRootPath,
+                (zkc.exists(ledgersRootPath, false) == null));
+    }
+
+    @Test
+    public void testNukeExistingClusterWithInstanceId() throws Exception {
+        String ledgersRootPath = "/testledgers";
+        ServerConfiguration newConfig = new ServerConfiguration(baseConf);
+        newConfig.setZkLedgersRootPath(ledgersRootPath);
+        List<String> bookiesRegPaths = new ArrayList<String>();
+        initiateNewClusterAndCreateLedgers(newConfig, bookiesRegPaths);
+
+        /*
+         * before nuking existing cluster, bookies shouldn't be registered
+         * anymore
+         */
+        for (int i = 0; i < bookiesRegPaths.size(); i++) {
+            zkc.delete(bookiesRegPaths.get(i), -1);
+        }
+
+        byte[] data = zkc.getData(newConfig.getZkLedgersRootPath() + "/" + BookKeeperConstants.INSTANCEID, false, null);
+        String readInstanceId = new String(data, UTF_8);
+
+        Assert.assertTrue("New cluster should be nuked successfully",
+                BookKeeperAdmin.nukeExistingCluster(newConfig, ledgersRootPath, readInstanceId, false));
+        Assert.assertTrue("Cluster rootpath should have been deleted successfully " + ledgersRootPath,
+                (zkc.exists(ledgersRootPath, false) == null));
+    }
+
+    @Test
+    public void tryNukingExistingClustersWithInvalidParams() throws Exception {
+        String ledgersRootPath = "/testledgers";
+        ServerConfiguration newConfig = new ServerConfiguration(baseConf);
+        newConfig.setZkLedgersRootPath(ledgersRootPath);
+        List<String> bookiesRegPaths = new ArrayList<String>();
+        initiateNewClusterAndCreateLedgers(newConfig, bookiesRegPaths);
+
+        /*
+         * create ledger with a specific ledgerid
+         */
+        BookKeeper bk = new BookKeeper(new ClientConfiguration(newConfig));
+        long ledgerId = 23456789L;
+        LedgerHandle lh = bk.createLedgerAdv(ledgerId, 1, 1, 1, BookKeeper.DigestType.MAC, new byte[0], null);
+        lh.close();
+
+        /*
+         * read instanceId
+         */
+        byte[] data = zkc.getData(newConfig.getZkLedgersRootPath() + "/" + BookKeeperConstants.INSTANCEID, false, null);
+        String readInstanceId = new String(data, UTF_8);
+
+        /*
+         * register a RO bookie
+         */
+        String ipString = InetAddresses.fromInteger((new Random()).nextInt()).getHostAddress();
+        String roBookieRegPath = newConfig.getZkAvailableBookiesPath() + "/" + BookKeeperConstants.READONLY + "/"
+                + ipString + ":3181";
+        zkc.create(roBookieRegPath, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+
+        Assert.assertFalse("Cluster should'nt be nuked since instanceid is not provided and force option is not set",
+                BookKeeperAdmin.nukeExistingCluster(newConfig, ledgersRootPath, null, false));
+        Assert.assertFalse("Cluster should'nt be nuked since incorrect instanceid is provided",
+                BookKeeperAdmin.nukeExistingCluster(newConfig, ledgersRootPath, "incorrectinstanceid", false));
+        Assert.assertFalse("Cluster should'nt be nuked since bookies are still registered",
+                BookKeeperAdmin.nukeExistingCluster(newConfig, ledgersRootPath, readInstanceId, false));
+        /*
+         * delete all rw bookies registration
+         */
+        for (int i = 0; i < bookiesRegPaths.size(); i++) {
+            zkc.delete(bookiesRegPaths.get(i), -1);
+        }
+        Assert.assertFalse("Cluster should'nt be nuked since ro bookie is still registered",
+                BookKeeperAdmin.nukeExistingCluster(newConfig, ledgersRootPath, readInstanceId, false));
+
+        /*
+         * make sure no node is deleted
+         */
+        Assert.assertTrue("Cluster rootpath should be existing " + ledgersRootPath,
+                (zkc.exists(ledgersRootPath, false) != null));
+        String availableBookiesPath = newConfig.getZkAvailableBookiesPath();
+        Assert.assertTrue("AvailableBookiesPath should be existing " + availableBookiesPath,
+                (zkc.exists(availableBookiesPath, false) != null));
+        String instanceIdPath = newConfig.getZkLedgersRootPath() + "/" + BookKeeperConstants.INSTANCEID;
+        Assert.assertTrue("InstanceId node should be existing" + instanceIdPath,
+                (zkc.exists(instanceIdPath, false) != null));
+        String ledgersLayout = ledgersRootPath + "/" + BookKeeperConstants.LAYOUT_ZNODE;
+        Assert.assertTrue("Layout node should be existing" + ledgersLayout, (zkc.exists(ledgersLayout, false) != null));
+
+        /*
+         * ledger should not be deleted.
+         */
+        lh = bk.openLedgerNoRecovery(ledgerId, BookKeeper.DigestType.MAC, new byte[0]);
+        lh.close();
+        bk.close();
+
+        /*
+         * delete ro bookie reg znode
+         */
+        zkc.delete(roBookieRegPath, -1);
+
+        Assert.assertTrue("Cluster should be nuked since no bookie is registered",
+                BookKeeperAdmin.nukeExistingCluster(newConfig, ledgersRootPath, readInstanceId, false));
+        Assert.assertTrue("Cluster rootpath should have been deleted successfully " + ledgersRootPath,
+                (zkc.exists(ledgersRootPath, false) == null));
+    }
+
+    void initiateNewClusterAndCreateLedgers(ServerConfiguration newConfig, List<String> bookiesRegPaths)
+            throws Exception {
+        newConfig.setZkServers(zkUtil.getZooKeeperConnectString());
+        Assert.assertTrue("New cluster should be initialized successfully", BookKeeperAdmin.initNewCluster(newConfig));
+
+        /**
+         * create znodes simulating existence of Bookies in the cluster
+         */
+        int numberOfBookies = 3;
+        Random rand = new Random();
+        for (int i = 0; i < numberOfBookies; i++) {
+            String ipString = InetAddresses.fromInteger(rand.nextInt()).getHostAddress();
+            bookiesRegPaths.add(newConfig.getZkAvailableBookiesPath() + "/" + ipString + ":3181");
+            zkc.create(bookiesRegPaths.get(i), new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL);
+        }
+
+        /*
+         * now it should be possible to create ledger and delete the same
+         */
+        BookKeeper bk = new BookKeeper(new ClientConfiguration(newConfig));
+        LedgerHandle lh;
+        int numOfLedgers = 5;
+        for (int i = 0; i < numOfLedgers; i++) {
+            lh = bk.createLedger(numberOfBookies, numberOfBookies, numberOfBookies, BookKeeper.DigestType.MAC,
+                    new byte[0]);
+            lh.close();
+        }
+        bk.close();
     }
 }

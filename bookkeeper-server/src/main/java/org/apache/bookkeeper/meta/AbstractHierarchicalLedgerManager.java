@@ -213,5 +213,4 @@ public abstract class AbstractHierarchicalLedgerManager extends AbstractZkLedger
         }
         return zkActiveLedgers;
     }
-
 }
