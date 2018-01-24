@@ -21,9 +21,9 @@ import io.netty.buffer.ByteBuf;
 import io.netty.util.ReferenceCountUtil;
 
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
-import org.apache.bookkeeper.client.DigestManager.RecoveryData;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
+import org.apache.bookkeeper.proto.checksum.DigestManager.RecoveryData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,7 +88,7 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
         if (rc == BKException.Code.OK) {
             try {
                 RecoveryData recoveryData = lh.macManager.verifyDigestAndReturnLastConfirmed(buffer);
-                if (recoveryData.lastAddConfirmed > maxRecoveredData.lastAddConfirmed) {
+                if (recoveryData.getLastAddConfirmed() > maxRecoveredData.getLastAddConfirmed()) {
                     maxRecoveredData = recoveryData;
                 }
                 heardValidResponse = true;

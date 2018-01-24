@@ -27,6 +27,7 @@ import static org.mockito.Mockito.when;
 import com.google.common.base.Optional;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,6 +50,8 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
+import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
+import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.junit.After;
@@ -333,7 +336,12 @@ public abstract class MockBookKeeperTestCase {
             long entryId = (Long) args[3];
 
             executor.submitOrdered(ledgerId, () -> {
-                DigestManager macManager = new CRC32DigestManager(ledgerId);
+                DigestManager macManager = null;
+                try {
+                    macManager = DigestManager.instantiate(ledgerId, new byte[2], DigestType.CRC32);
+                } catch (GeneralSecurityException gse){
+                    LOG.error("Initialize macManager fail", gse);
+                }
                 fencedLedgers.add(ledgerId);
                 MockEntry mockEntry = getMockLedgerEntry(ledgerId, bookieSocketAddress, entryId);
                 if (mockEntry != null) {
@@ -363,7 +371,12 @@ public abstract class MockBookKeeperTestCase {
                 (BookkeeperInternalCallbacks.ReadEntryCallback) args[3];
 
             executor.submitOrdered(ledgerId, () -> {
-                DigestManager macManager = new CRC32DigestManager(ledgerId);
+                DigestManager macManager = null;
+                try {
+                    macManager = DigestManager.instantiate(ledgerId, new byte[2], DigestType.CRC32);
+                } catch (GeneralSecurityException gse){
+                    LOG.error("Initialize macManager fail", gse);
+                }
                 MockEntry mockEntry = getMockLedgerEntry(ledgerId, bookieSocketAddress, entryId);
                 if (mockEntry != null) {
                     LOG.info("readEntry - found mock entry {}@{} at {}", entryId, ledgerId, bookieSocketAddress);
@@ -387,7 +400,12 @@ public abstract class MockBookKeeperTestCase {
             throws BKException.BKDigestMatchException {
         ByteBuf toSendCopy = Unpooled.copiedBuffer(toSend);
         toSendCopy.resetReaderIndex();
-        DigestManager macManager = new CRC32DigestManager(ledgerId);
+        DigestManager macManager = null;
+        try {
+            macManager = DigestManager.instantiate(ledgerId, new byte[2], DigestType.CRC32);
+        } catch (GeneralSecurityException gse){
+            LOG.error("Initialize macManager fail", gse);
+        }
         ByteBuf content = macManager.verifyDigestAndReturnData(entryId, toSendCopy);
         byte[] entry = new byte[content.readableBytes()];
         content.readBytes(entry);

@@ -20,8 +20,8 @@ package org.apache.bookkeeper.client;
 import io.netty.buffer.ByteBuf;
 
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
-import org.apache.bookkeeper.client.DigestManager.RecoveryData;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadLacCallback;
+import org.apache.bookkeeper.proto.checksum.DigestManager.RecoveryData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,8 +102,9 @@ class PendingReadLacOp implements ReadLacCallback {
 
                 // Extract lac from last entry on the disk
                 RecoveryData recoveryData = lh.macManager.verifyDigestAndReturnLastConfirmed(lastEntryBuffer);
-                if (recoveryData.lastAddConfirmed > maxLac) {
-                    maxLac = recoveryData.lastAddConfirmed;
+                long recoveredLac = recoveryData.getLastAddConfirmed();
+                if (recoveredLac > maxLac) {
+                    maxLac = recoveredLac;
                 }
                 heardValidResponse = true;
             } catch (BKDigestMatchException e) {

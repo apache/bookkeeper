@@ -17,21 +17,24 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType.CRC32;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import java.security.GeneralSecurityException;
+import org.apache.bookkeeper.proto.checksum.DigestManager;
 
 /**
  * Client utilities.
  */
 public class ClientUtil {
     public static ByteBuf generatePacket(long ledgerId, long entryId, long lastAddConfirmed,
-                                               long length, byte[] data) {
+                                               long length, byte[] data) throws GeneralSecurityException {
         return generatePacket(ledgerId, entryId, lastAddConfirmed, length, data, 0, data.length);
     }
 
-    public static ByteBuf generatePacket(long ledgerId, long entryId, long lastAddConfirmed,
-                                               long length, byte[] data, int offset, int len) {
-        CRC32DigestManager dm = new CRC32DigestManager(ledgerId);
+    public static ByteBuf generatePacket(long ledgerId, long entryId, long lastAddConfirmed, long length,
+                                         byte[] data, int offset, int len) throws GeneralSecurityException {
+        DigestManager dm = DigestManager.instantiate(ledgerId, new byte[2], CRC32);
         return dm.computeDigestAndPackageForSending(entryId, lastAddConfirmed, length,
                                                     Unpooled.wrappedBuffer(data, offset, len));
     }
