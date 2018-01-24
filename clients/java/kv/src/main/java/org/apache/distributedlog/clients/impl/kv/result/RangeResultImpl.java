@@ -54,6 +54,13 @@ public class RangeResultImpl<K, V>
     }
 
     @Override
+    public List<KeyValue<K, V>> getKvsAndClear() {
+        List<KeyValue<K, V>> kvsToReturn = kvs;
+        kvs = Collections.emptyList();
+        return kvsToReturn;
+    }
+
+    @Override
     protected void reset() {
         count = 0L;
         more = false;

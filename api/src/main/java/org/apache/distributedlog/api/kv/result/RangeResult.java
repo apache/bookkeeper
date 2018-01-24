@@ -41,4 +41,11 @@ public interface RangeResult<K, V> extends Result<K, V> {
      */
     List<KeyValue<K, V>> kvs();
 
+    /**
+     * Get the list of kv pairs and clear the kv pairs from the result.
+     *
+     * @return the list of kv pairs cleared from the result.
+     */
+    List<KeyValue<K, V>> getKvsAndClear();
+
 }

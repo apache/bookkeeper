@@ -14,10 +14,14 @@
 
 package org.apache.distributedlog.api.kv;
 
+import static io.netty.util.ReferenceCountUtil.retain;
+
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience;
 import org.apache.bookkeeper.common.annotation.InterfaceStability;
 import org.apache.distributedlog.api.kv.options.RangeOption;
+import org.apache.distributedlog.api.kv.result.KeyValue;
 import org.apache.distributedlog.api.kv.result.RangeResult;
 
 /**
@@ -25,10 +29,66 @@ import org.apache.distributedlog.api.kv.result.RangeResult;
  */
 @InterfaceAudience.Public
 @InterfaceStability.Evolving
-public interface PTableReadView<K, V> extends AutoCloseable {
+public interface PTableReadView<K, V> extends PTableBase<K, V> {
 
-  CompletableFuture<RangeResult<K, V>> get(K pKey, K lKey, RangeOption<K> option);
+    CompletableFuture<RangeResult<K, V>> get(K pKey, K lKey, RangeOption<K> option);
 
-  void close();
+    default CompletableFuture<V> get(K pKey, K lKey) {
+        RangeOption<K> option = opFactory().optionFactory().newRangeOption().build();
+        return get(pKey, lKey, option)
+            .thenApply(result -> {
+                try {
+                    if (result.count() == 0) {
+                        return null;
+                    } else {
+                        return retain(result.kvs().get(0).value());
+                    }
+                } finally {
+                    result.close();
+                }
+            })
+            .whenComplete((value, cause) -> option.close());
+
+    }
+
+    default CompletableFuture<KeyValue<K, V>> getKv(K pKey, K lKey) {
+        RangeOption<K> option = opFactory().optionFactory().newRangeOption()
+            .limit(1)
+            .endKey(null)
+            .build();
+        return get(pKey, lKey, option)
+            .thenApply(result -> {
+                try {
+                    if (result.count() == 0) {
+                        return null;
+                    } else {
+                        return result.getKvsAndClear().get(0);
+                    }
+                } finally {
+                    result.close();
+                }
+            })
+            .whenComplete((value, cause) -> option.close());
+    }
+
+    default CompletableFuture<List<KeyValue<K, V>>> range(K pKey, K lStartKey, K lEndKey) {
+        RangeOption<K> option = opFactory().optionFactory().newRangeOption()
+            .countOnly(false)
+            .keysOnly(false)
+            .limit(Long.MAX_VALUE)
+            .endKey(lEndKey)
+            .build();
+        return get(pKey, lStartKey, option)
+            .thenApply(result -> {
+                try {
+                    return result.getKvsAndClear();
+                } finally {
+                    result.close();
+                }
+            })
+            .whenComplete((value, cause) -> option.close());
+    }
+
+
 
 }

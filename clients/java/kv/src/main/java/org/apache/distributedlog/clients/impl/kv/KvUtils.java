@@ -220,7 +220,11 @@ public final class KvUtils {
         builder.setCreateRevision(cmp.revision());
         break;
       case VALUE:
-        builder.setValue(toProtoKey(cmp.value()));
+        ByteBuf value = cmp.value();
+        if (null == value) {
+          value = Unpooled.wrappedBuffer(new byte[0]);
+        }
+        builder.setValue(toProtoKey(value));
         break;
       default:
         break;

@@ -35,4 +35,11 @@ public interface DeleteResult<K, V> extends Result<K, V> {
      */
     List<KeyValue<K, V>> prevKvs();
 
+    /**
+     * Get the list of previous kv pairs and clear them from the result.
+     *
+     * @return the list of previous kv pairs.
+     */
+    List<KeyValue<K, V>> getPrevKvsAndClear();
+
 }

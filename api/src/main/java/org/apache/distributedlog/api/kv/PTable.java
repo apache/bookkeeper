@@ -16,7 +16,6 @@ package org.apache.distributedlog.api.kv;
 
 import org.apache.bookkeeper.common.annotation.InterfaceAudience;
 import org.apache.bookkeeper.common.annotation.InterfaceStability;
-import org.apache.distributedlog.api.kv.op.OpFactory;
 
 /**
  * Interface of kv client talking to partitioned table.
@@ -24,7 +23,4 @@ import org.apache.distributedlog.api.kv.op.OpFactory;
 @InterfaceAudience.Public
 @InterfaceStability.Evolving
 public interface PTable<K, V> extends PTableReadView<K, V>, PTableWriteView<K, V> {
-
-    OpFactory<K, V> opFactory();
-
 }
