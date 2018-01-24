@@ -18,11 +18,13 @@
  */
 package org.apache.distributedlog.api;
 
+import io.netty.buffer.ByteBuf;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.bookkeeper.common.util.AutoAsyncCloseable;
 import org.apache.distributedlog.api.kv.PTable;
+import org.apache.distributedlog.api.kv.Table;
 
 /**
  * The stream storage client.
@@ -31,6 +33,8 @@ import org.apache.distributedlog.api.kv.PTable;
 @Evolving
 public interface StorageClient extends AutoAsyncCloseable {
 
-    CompletableFuture<PTable> openPTable(String table);
+    CompletableFuture<PTable<ByteBuf, ByteBuf>> openPTable(String table);
+
+    CompletableFuture<Table<ByteBuf, ByteBuf>> openTable(String table);
 
 }

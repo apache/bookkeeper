@@ -18,6 +18,7 @@
 
 package org.apache.distributedlog.clients;
 
+import io.netty.buffer.ByteBuf;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
@@ -28,9 +29,11 @@ import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.common.util.SharedResourceManager;
 import org.apache.distributedlog.api.StorageClient;
 import org.apache.distributedlog.api.kv.PTable;
+import org.apache.distributedlog.api.kv.Table;
 import org.apache.distributedlog.clients.config.StorageClientSettings;
 import org.apache.distributedlog.clients.impl.internal.StorageServerClientManagerImpl;
 import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
+import org.apache.distributedlog.clients.impl.kv.ByteBufTableImpl;
 import org.apache.distributedlog.clients.impl.kv.PByteBufTableImpl;
 import org.apache.distributedlog.clients.utils.ClientResources;
 import org.apache.distributedlog.stream.proto.StreamProperties;
@@ -71,15 +74,21 @@ class StorageClientImpl extends AbstractAutoAsyncCloseable implements StorageCli
   //
 
   @Override
-  public CompletableFuture<PTable> openPTable(String streamName) {
+  public CompletableFuture<PTable<ByteBuf, ByteBuf>> openPTable(String streamName) {
     return ExceptionUtils.callAndHandleClosedAsync(
       COMPONENT_NAME,
       isClosed(),
       (future) -> openStreamAsTableImpl(streamName, future));
   }
 
+  @Override
+  public CompletableFuture<Table<ByteBuf, ByteBuf>> openTable(String table) {
+    return openPTable(table)
+        .thenApply(pTable -> new ByteBufTableImpl(pTable));
+  }
+
   private void openStreamAsTableImpl(String streamName,
-                                     CompletableFuture<PTable> future) {
+                                     CompletableFuture<PTable<ByteBuf, ByteBuf>> future) {
     FutureUtils.proxyTo(
       getStreamProperties(streamName).thenComposeAsync(props -> {
         if (log.isInfoEnabled()) {

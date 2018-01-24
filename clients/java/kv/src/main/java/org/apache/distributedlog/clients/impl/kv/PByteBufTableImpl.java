@@ -140,7 +140,7 @@ public class PByteBufTableImpl implements PTable<ByteBuf, ByteBuf> {
 
   // States
   private final RangeRouter<ByteBuf> rangeRouter;
-  private final ConcurrentMap<Long, PTable> tableRanges;
+  private final ConcurrentMap<Long, PTable<ByteBuf, ByteBuf>> tableRanges;
 
 
   public PByteBufTableImpl(String streamName,
@@ -189,7 +189,7 @@ public class PByteBufTableImpl implements PTable<ByteBuf, ByteBuf> {
   }
 
   @VisibleForTesting
-  ConcurrentMap<Long, PTable> getTableRanges() {
+  ConcurrentMap<Long, PTable<ByteBuf, ByteBuf>> getTableRanges() {
     return tableRanges;
   }
 
@@ -202,14 +202,14 @@ public class PByteBufTableImpl implements PTable<ByteBuf, ByteBuf> {
     return tRange;
   }
 
-  public CompletableFuture<PTable> initialize() {
+  public CompletableFuture<PTable<ByteBuf, ByteBuf>> initialize() {
     return this.clientManager
       .openMetaRangeClient(props)
       .getActiveDataRanges()
       .thenComposeAsync((ranges) -> refreshRangeSpaces(ranges), executor);
   }
 
-  CompletableFuture<PTable> refreshRangeSpaces(HashStreamRanges newRanges) {
+  CompletableFuture<PTable<ByteBuf, ByteBuf>> refreshRangeSpaces(HashStreamRanges newRanges) {
     // compare the ranges to see if it requires an update
     HashStreamRanges oldRanges = rangeRouter.getRanges();
     if (null != oldRanges && oldRanges.getMaxRangeId() >= newRanges.getMaxRangeId()) {
@@ -234,9 +234,9 @@ public class PByteBufTableImpl implements PTable<ByteBuf, ByteBuf> {
       this.tableRanges.put(range.getRangeId(), tableRange);
     });
     // remove old ranges
-    Iterator<Entry<Long, PTable>> rsIter = tableRanges.entrySet().iterator();
+    Iterator<Entry<Long, PTable<ByteBuf, ByteBuf>>> rsIter = tableRanges.entrySet().iterator();
     while (rsIter.hasNext()) {
-      Map.Entry<Long, PTable> entry = rsIter.next();
+      Map.Entry<Long, PTable<ByteBuf, ByteBuf>> entry = rsIter.next();
       Long rid = entry.getKey();
       if (activeRanges.contains(rid)) {
         continue;
