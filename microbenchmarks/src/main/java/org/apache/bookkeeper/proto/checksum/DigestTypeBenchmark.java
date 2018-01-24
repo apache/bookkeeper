@@ -19,13 +19,14 @@
  *
  */
 
-package org.apache.bookkeeper.client;
+package org.apache.bookkeeper.proto.checksum;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.Unpooled;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-
-import io.netty.buffer.ByteBufAllocator;
-import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
 import org.apache.bookkeeper.util.DoubleByteBuf;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -42,28 +43,30 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-
 /**
  * Microbenchmarks for different digest type
  * getting started:
  * 1. http://tutorials.jenkov.com/java-performance/jmh.html
  * 2. http://hg.openjdk.java.net/code-tools/jmh/file/tip/jmh-samples/src/main/java/org/openjdk/jmh/samples/
  * 3. google
- *
  * To run:
  * build project from command line.
  * execute ./run.sh
  */
 public class DigestTypeBenchmark {
 
+    /**
+     * BufferType.
+     */
     public enum BufferType {
         ARRAY_BACKED,
         NOT_ARRAY_BACKED,
         BYTE_BUF_DEFAULT_ALLOC
     }
 
+    /**
+     * Digest.
+     */
     public enum Digest {
         MAC,
         CRC32,
@@ -76,6 +79,9 @@ public class DigestTypeBenchmark {
         return b;
     }
 
+    /**
+     * MyState.
+     */
     @State(Scope.Thread)
     public static class MyState {
 
@@ -106,7 +112,7 @@ public class DigestTypeBenchmark {
                     password, DigestType.CRC32C);
 
             mac = DigestManager.instantiate(ThreadLocalRandom.current().nextLong(0, Long.MAX_VALUE),
-                    password, DigestType.MAC);
+                    password, DigestType.HMAC);
 
             digestBuf = Unpooled.buffer(getDigestManager(digest).getMacCodeLength());
 

@@ -26,6 +26,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.AbstractFuture;
+
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -48,6 +50,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
+
+import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
 import org.apache.bookkeeper.client.AsyncCallback.RecoverCallback;
 import org.apache.bookkeeper.client.LedgerFragmentReplicator.SingleFragmentCallback;
@@ -1122,7 +1127,7 @@ public class BookKeeperAdmin implements AutoCloseable {
             boolean isInteractive, boolean force) throws Exception {
 
         try (RegistrationManager rm = RegistrationManager.instantiateRegistrationManager(conf)) {
-            boolean ledgerRootExists = rm.prepareFormat(conf);
+            boolean ledgerRootExists = rm.prepareFormat();
 
             // If old data was there then confirm with admin.
             boolean doFormat = true;
@@ -1150,8 +1155,121 @@ public class BookKeeperAdmin implements AutoCloseable {
             BookKeeper bkc = new BookKeeper(new ClientConfiguration(conf));
             bkc.ledgerManagerFactory.format(conf, bkc.regClient.getLayoutManager());
 
-            return rm.format(conf);
+            return rm.format();
         }
+    }
+
+    /**
+     * Intializes new cluster by creating required znodes for the cluster. If
+     * ledgersrootpath is already existing then it will error out.
+     *
+     * @param conf
+     * @return
+     * @throws Exception
+     */
+    public static boolean initNewCluster(ServerConfiguration conf) throws Exception {
+        try (RegistrationManager rm = RegistrationManager.instantiateRegistrationManager(conf)) {
+            return rm.initNewCluster();
+        }
+    }
+
+    /**
+     * Nukes existing cluster metadata. But it does only if the provided
+     * ledgersRootPath matches with configuration's zkLedgersRootPath and
+     * provided instanceid matches with the cluster metadata. If force is
+     * mentioned then instanceid will not be validated.
+     *
+     * @param conf
+     * @param ledgersRootPath
+     * @param instanceId
+     * @param force
+     * @return
+     * @throws Exception
+     */
+    public static boolean nukeExistingCluster(ServerConfiguration conf, String ledgersRootPath, String instanceId,
+            boolean force) throws Exception {
+        String confLedgersRootPath = conf.getZkLedgersRootPath();
+        if (!confLedgersRootPath.equals(ledgersRootPath)) {
+            LOG.error("Provided ledgerRootPath : {} is not matching with config's ledgerRootPath: {}, "
+                    + "so exiting nuke operation", ledgersRootPath, confLedgersRootPath);
+            return false;
+        }
+
+        try (RegistrationManager rm = RegistrationManager.instantiateRegistrationManager(conf)) {
+            if (!force) {
+                String readInstanceId = rm.getClusterInstanceId();
+                if ((instanceId == null) || !instanceId.equals(readInstanceId)) {
+                    LOG.error("Provided InstanceId : {} is not matching with cluster InstanceId in ZK: {}", instanceId,
+                            readInstanceId);
+                    return false;
+                }
+            }
+            return rm.nukeExistingCluster();
+        }
+    }
+
+    /**
+     * Initializes bookie, by making sure that the journalDir, ledgerDirs and
+     * indexDirs are empty and there is no registered Bookie with this BookieId.
+     *
+     * @param conf
+     * @return
+     * @throws Exception
+     */
+    public static boolean initBookie(ServerConfiguration conf) throws Exception {
+        /*
+         * make sure that journalDirs, ledgerDirs and indexDirs are empty
+         */
+        File[] journalDirs = conf.getJournalDirs();
+        if (!validateDirectoriesAreEmpty(journalDirs, "JournalDir")) {
+            return false;
+        }
+
+        File[] ledgerDirs = conf.getLedgerDirs();
+        if (!validateDirectoriesAreEmpty(ledgerDirs, "LedgerDir")) {
+            return false;
+        }
+
+        File[] indexDirs = conf.getIndexDirs();
+        if (indexDirs != null) {
+            if (!validateDirectoriesAreEmpty(indexDirs, "IndexDir")) {
+                return false;
+            }
+        }
+
+        try (RegistrationManager rm = RegistrationManager.instantiateRegistrationManager(conf)) {
+            /*
+             * make sure that there is no bookie registered with the same
+             * bookieid and the cookie for the same bookieid is not existing.
+             */
+            String bookieId = Bookie.getBookieAddress(conf).toString();
+            if (rm.isBookieRegistered(bookieId)) {
+                LOG.error("Bookie with bookieId: {} is still registered, "
+                        + "If this node is running bookie process, try stopping it first.", bookieId);
+                return false;
+            }
+
+            try {
+                rm.readCookie(bookieId);
+                LOG.error("Cookie still exists in the ZK for this bookie: {}, try formatting the bookie", bookieId);
+                return false;
+            } catch (BookieException.CookieNotFoundException nfe) {
+                // it is expected for readCookie to fail with
+                // BookieException.CookieNotFoundException
+            }
+            return true;
+        }
+    }
+
+    private static boolean validateDirectoriesAreEmpty(File[] dirs, String typeOfDir) {
+        for (File dir : dirs) {
+            File[] dirFiles = dir.listFiles();
+            if ((dirFiles != null) && dirFiles.length != 0) {
+                LOG.error("{}: {} is existing and its not empty, try formatting the bookie", typeOfDir, dir);
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

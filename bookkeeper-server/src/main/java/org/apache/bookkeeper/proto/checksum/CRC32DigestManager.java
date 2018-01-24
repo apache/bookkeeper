@@ -1,4 +1,4 @@
-package org.apache.bookkeeper.client;
+package org.apache.bookkeeper.proto.checksum;
 
 /*
 * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,9 +18,7 @@ package org.apache.bookkeeper.client;
 * limitations under the License.
 */
 
-
 import io.netty.buffer.ByteBuf;
-
 import java.util.zip.CRC32;
 
 class CRC32DigestManager extends DigestManager {

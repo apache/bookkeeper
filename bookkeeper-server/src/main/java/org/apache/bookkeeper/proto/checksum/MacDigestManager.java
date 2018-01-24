@@ -16,7 +16,7 @@
 * limitations under the License.
 */
 
-package org.apache.bookkeeper.client;
+package org.apache.bookkeeper.proto.checksum;
 
 import static com.google.common.base.Charsets.UTF_8;
 

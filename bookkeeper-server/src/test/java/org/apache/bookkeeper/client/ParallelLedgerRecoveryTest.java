@@ -52,6 +52,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.LedgerMetadataListener;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
+import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.zookeeper.AsyncCallback.VoidCallback;
@@ -605,7 +606,7 @@ public class ParallelLedgerRecoveryTest extends BookKeeperClusterTestCase {
             @Override
             public void readLastConfirmedDataComplete(int rc, DigestManager.RecoveryData data) {
                 rcHolder.set(rc);
-                lacHolder.set(data.lastAddConfirmed);
+                lacHolder.set(data.getLastAddConfirmed());
                 doneLatch.countDown();
             }
         }).initiate();

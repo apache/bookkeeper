@@ -27,6 +27,9 @@
     <Class name="~org\.apache\.bookkeeper\.proto\.DataFormats.*" />
   </Match>
   <Match>
+    <Class name="~org\.apache\.bookkeeper\.proto\.checksum\.generated.*" />
+  </Match>
+  <Match>
     <!-- generated code, we can't be held responsible for findbugs in it //-->
     <Class name="~org\.apache\.bookkeeper\.proto\.BookkeeperProtocol.*" />
   </Match>

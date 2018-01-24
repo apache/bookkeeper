@@ -71,6 +71,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
+import org.apache.bookkeeper.proto.DataFormats;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -649,11 +650,14 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     }
 
     /**
-     * There are 2 digest types that can be used for verification. The CRC32 is
+     * There are 3 digest types that can be used for verification. The CRC32 is
      * cheap to compute but does not protect against byzantine bookies (i.e., a
      * bookie might report fake bytes and a matching CRC32). The MAC code is more
      * expensive to compute, but is protected by a password, i.e., a bookie can't
-     * report fake bytes with a mathching MAC unless it knows the password
+     * report fake bytes with a mathching MAC unless it knows the password.
+     * The CRC32C, which use SSE processor instruction, has better performance than CRC32.
+     * Legacy DigestType for backward compatibility. If we want to add new DigestType,
+     * we should add it in here, client.api.DigestType and DigestType in DataFormats.proto.
      */
     public enum DigestType {
         MAC, CRC32, CRC32C;
@@ -666,6 +670,18 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                     return DigestType.CRC32;
                 case CRC32C:
                     return DigestType.CRC32C;
+                default:
+                    throw new IllegalArgumentException("Unable to convert digest type " + digestType);
+            }
+        }
+        public static DataFormats.LedgerMetadataFormat.DigestType toProtoDigestType(DigestType digestType) {
+            switch (digestType) {
+                case MAC:
+                    return DataFormats.LedgerMetadataFormat.DigestType.HMAC;
+                case CRC32:
+                    return DataFormats.LedgerMetadataFormat.DigestType.CRC32;
+                case CRC32C:
+                    return DataFormats.LedgerMetadataFormat.DigestType.CRC32C;
                 default:
                     throw new IllegalArgumentException("Unable to convert digest type " + digestType);
             }

@@ -102,13 +102,6 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
                 successRc, failureRc);
     }
 
-    protected static boolean isSpecialZnode(String znode) {
-        // Check nextnode length. All paths in long hierarchical format (3-4-4-4-4)
-        // are at least 3 characters long. This prevents picking up any old-style
-        // hierarchical paths (2-4-4)
-        return LegacyHierarchicalLedgerManager.isSpecialZnode(znode) || znode.length() < 3;
-    }
-
     private class RecursiveProcessor implements Processor<String> {
         private final int level;
         private final String path;
@@ -130,7 +123,7 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
         @Override
         public void process(String lNode, VoidCallback cb) {
             String nodePath = path + "/" + lNode;
-            if ((level == 0) && isSpecialZnode(lNode)) {
+            if ((level == 0) && !isLedgerParentNode(lNode)) {
                 cb.processResult(successRc, null, context);
                 return;
             } else if (level < 3) {
@@ -262,7 +255,7 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
             void advance() throws IOException {
                 while (thisLevelIterator.hasNext()) {
                     String node = thisLevelIterator.next();
-                    if (level == 0 && isSpecialZnode(node)) {
+                    if (level == 0 && !isLedgerParentNode(node)) {
                         continue;
                     }
                     LedgerRangeIterator nextIterator = level < 3
@@ -310,5 +303,10 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
             bootstrap();
             return rootIterator.next();
         }
+    }
+
+    @Override
+    protected String getLedgerParentNodeRegex() {
+        return StringUtils.LONGHIERARCHICAL_LEDGER_PARENT_NODE_REGEX;
     }
 }

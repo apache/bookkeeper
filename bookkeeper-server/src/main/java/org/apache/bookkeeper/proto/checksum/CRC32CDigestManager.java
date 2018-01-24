@@ -1,4 +1,4 @@
-package org.apache.bookkeeper.client;
+package org.apache.bookkeeper.proto.checksum;
 
 /*
 * Licensed to the Apache Software Foundation (ASF) under one

@@ -23,9 +23,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.AsyncCallback.CloseCallback;
-import org.apache.bookkeeper.client.DigestManager.RecoveryData;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener;
+import org.apache.bookkeeper.proto.checksum.DigestManager.RecoveryData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -110,8 +110,8 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
                     public void readLastConfirmedDataComplete(int rc, RecoveryData data) {
                         if (rc == BKException.Code.OK) {
                             synchronized (lh) {
-                                lh.lastAddPushed = lh.lastAddConfirmed = data.lastAddConfirmed;
-                                lh.length = data.length;
+                                lh.lastAddPushed = lh.lastAddConfirmed = data.getLastAddConfirmed();
+                                lh.length = data.getLength();
                                 startEntryToRead = endEntryToRead = lh.lastAddConfirmed;
                             }
                             // keep a copy of ledger metadata before proceeding
