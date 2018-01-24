@@ -20,17 +20,23 @@ package org.apache.distributedlog.stream.tests.integration;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.distributedlog.stream.protocol.ProtocolConstants.DEFAULT_STREAM_CONF;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
+import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.distributedlog.api.StorageClient;
 import org.apache.distributedlog.api.kv.PTable;
+import org.apache.distributedlog.api.kv.Txn;
+import org.apache.distributedlog.api.kv.op.CompareResult;
+import org.apache.distributedlog.api.kv.op.OpType;
 import org.apache.distributedlog.api.kv.options.DeleteOption;
 import org.apache.distributedlog.api.kv.options.DeleteOptionBuilder;
 import org.apache.distributedlog.api.kv.options.OptionFactory;
@@ -42,6 +48,8 @@ import org.apache.distributedlog.api.kv.result.DeleteResult;
 import org.apache.distributedlog.api.kv.result.KeyValue;
 import org.apache.distributedlog.api.kv.result.PutResult;
 import org.apache.distributedlog.api.kv.result.RangeResult;
+import org.apache.distributedlog.api.kv.result.Result;
+import org.apache.distributedlog.api.kv.result.TxnResult;
 import org.apache.distributedlog.clients.StorageClientBuilder;
 import org.apache.distributedlog.clients.admin.StorageAdminClient;
 import org.apache.distributedlog.clients.config.StorageClientSettings;
@@ -264,5 +272,60 @@ public class TableClientTest extends StorageServerTestBase {
                 }
             }
         }
+
+        // test txn
+        byte[] lTxnKey = "txn-key".getBytes(UTF_8);
+        ByteBuf lTxnKeyBuf = Unpooled.wrappedBuffer(lTxnKey);
+        byte[] txnValue = "txn-value".getBytes(UTF_8);
+        ByteBuf txnValueBuf = Unpooled.wrappedBuffer(txnValue);
+        Txn<ByteBuf, ByteBuf> txn = table.txn(lTxnKeyBuf);
+
+        CompletableFuture<TxnResult<ByteBuf, ByteBuf>> commitFuture = txn
+            .If(
+                table.opFactory().compareValue(CompareResult.EQUAL, lTxnKeyBuf, Unpooled.wrappedBuffer(new byte[0]))
+            )
+            .Then(
+                table.opFactory().newPut(
+                    lTxnKeyBuf, txnValueBuf, table.opFactory().optionFactory().newPutOption().build()))
+            .commit();
+        try (TxnResult<ByteBuf, ByteBuf> txnResult = FutureUtils.result(commitFuture)) {
+            assertTrue(txnResult.isSuccess());
+            assertEquals(1, txnResult.results().size());
+            Result<ByteBuf, ByteBuf> opResult = txnResult.results().get(0);
+            assertEquals(OpType.PUT, opResult.type());
+        }
+
+        // get key
+        try (RangeOptionBuilder<ByteBuf> optionBuilder = optionFactory.newRangeOption()) {
+            try (RangeOption<ByteBuf> option = optionBuilder.build()) {
+                try (RangeResult<ByteBuf, ByteBuf> getResult = FutureUtils.result(table.get(
+                    lTxnKeyBuf,
+                    lTxnKeyBuf,
+                    option
+                ))) {
+                    assertEquals(1, getResult.count());
+                    assertEquals(1, getResult.kvs().size());
+                    KeyValue<ByteBuf, ByteBuf> kv = getResult.kvs().get(0);
+                    assertEquals("txn-key", new String(ByteBufUtil.getBytes(kv.key()), UTF_8));
+                    assertEquals("txn-value", new String(ByteBufUtil.getBytes(kv.value()), UTF_8));
+                }
+            }
+        }
+
+        txn = table.txn(lTxnKeyBuf);
+        // txn failure
+        commitFuture = txn
+            .If(
+                table.opFactory().compareValue(CompareResult.EQUAL, lTxnKeyBuf, Unpooled.wrappedBuffer(new byte[0]))
+            )
+            .Then(
+                table.opFactory().newPut(
+                    lTxnKeyBuf, valBuf, table.opFactory().optionFactory().newPutOption().build()))
+            .commit();
+        try (TxnResult<ByteBuf, ByteBuf> txnResult = FutureUtils.result(commitFuture)) {
+            assertFalse(txnResult.isSuccess());
+            assertEquals(0, txnResult.results().size());
+        }
+
     }
 }

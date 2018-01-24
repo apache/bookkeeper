@@ -22,7 +22,7 @@ import java.util.List;
 /**
  * Txn result.
  */
-public interface TxnResult<K, V> {
+public interface TxnResult<K, V> extends Result<K, V> {
 
     boolean isSuccess();
 

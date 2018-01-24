@@ -59,4 +59,9 @@ public class GrpcTableService extends TableServiceImplBase {
             StorageContainerResponseHandler.of(responseObserver));
     }
 
+    @Override
+    public void txn(StorageContainerRequest request, StreamObserver<StorageContainerResponse> responseObserver) {
+        rangeStore.txn(request).whenComplete(
+            StorageContainerResponseHandler.of(responseObserver));
+    }
 }

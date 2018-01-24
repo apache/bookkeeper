@@ -14,13 +14,20 @@
 
 package org.apache.distributedlog.clients.impl.kv;
 
+import static org.apache.distributedlog.clients.impl.kv.KvUtils.toProtoCompare;
+import static org.apache.distributedlog.clients.impl.kv.KvUtils.toProtoRequest;
+
+import com.google.common.collect.Lists;
 import com.google.protobuf.UnsafeByteOperations;
 import io.netty.buffer.ByteBuf;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.distributedlog.api.kv.PTable;
 import org.apache.distributedlog.api.kv.Txn;
+import org.apache.distributedlog.api.kv.op.CompareOp;
+import org.apache.distributedlog.api.kv.op.Op;
 import org.apache.distributedlog.api.kv.op.OpFactory;
 import org.apache.distributedlog.api.kv.options.DeleteOption;
 import org.apache.distributedlog.api.kv.options.PutOption;
@@ -28,10 +35,12 @@ import org.apache.distributedlog.api.kv.options.RangeOption;
 import org.apache.distributedlog.api.kv.result.DeleteResult;
 import org.apache.distributedlog.api.kv.result.PutResult;
 import org.apache.distributedlog.api.kv.result.RangeResult;
+import org.apache.distributedlog.api.kv.result.TxnResult;
 import org.apache.distributedlog.clients.impl.container.StorageContainerChannel;
 import org.apache.distributedlog.clients.impl.kv.result.ResultFactory;
 import org.apache.distributedlog.stream.proto.RangeProperties;
 import org.apache.distributedlog.stream.proto.kv.rpc.RoutingHeader;
+import org.apache.distributedlog.stream.proto.kv.rpc.TxnRequest;
 
 /**
  * A range of a table.
@@ -65,9 +74,9 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
 
   private RoutingHeader.Builder newRoutingHeader(ByteBuf pKey) {
     return RoutingHeader.newBuilder()
-      .setStreamId(streamId)
-      .setRangeId(rangeProps.getRangeId())
-      .setRKey(UnsafeByteOperations.unsafeWrap(pKey.nioBuffer()));
+        .setStreamId(streamId)
+        .setRangeId(rangeProps.getRangeId())
+        .setRKey(UnsafeByteOperations.unsafeWrap(pKey.nioBuffer()));
   }
 
   @Override
@@ -79,13 +88,13 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
       option.endKey().retain();
     }
     return TableRequestProcessor.of(
-      KvUtils.newKvRangeRequest(
-        scChannel.getStorageContainerId(),
-        KvUtils.newRangeRequest(lKey, option)
-          .setHeader(newRoutingHeader(pKey))),
-      response -> KvUtils.newRangeResult(response.getKvRangeResp(), resultFactory, kvFactory),
-      scChannel,
-      executor
+        KvUtils.newKvRangeRequest(
+            scChannel.getStorageContainerId(),
+            KvUtils.newRangeRequest(lKey, option)
+                .setHeader(newRoutingHeader(pKey))),
+        response -> KvUtils.newRangeResult(response.getKvRangeResp(), resultFactory, kvFactory),
+        scChannel,
+        executor
     ).process().whenComplete((value, cause) -> {
       pKey.release();
       lKey.release();
@@ -104,13 +113,13 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
     lKey.retain();
     value.retain();
     return TableRequestProcessor.of(
-      KvUtils.newKvPutRequest(
-        scChannel.getStorageContainerId(),
-        KvUtils.newPutRequest(lKey, value, option)
-          .setHeader(newRoutingHeader(pKey))),
-      response -> KvUtils.newPutResult(response.getKvPutResp(), resultFactory, kvFactory),
-      scChannel,
-      executor
+        KvUtils.newKvPutRequest(
+            scChannel.getStorageContainerId(),
+            KvUtils.newPutRequest(lKey, value, option)
+                .setHeader(newRoutingHeader(pKey))),
+        response -> KvUtils.newPutResult(response.getKvPutResp(), resultFactory, kvFactory),
+        scChannel,
+        executor
     ).process().whenComplete((ignored, cause) -> {
       pKey.release();
       lKey.release();
@@ -128,13 +137,13 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
       option.endKey().retain();
     }
     return TableRequestProcessor.of(
-      KvUtils.newKvDeleteRequest(
-        scChannel.getStorageContainerId(),
-        KvUtils.newDeleteRequest(lKey, option)
-          .setHeader(newRoutingHeader(pKey))),
-      response -> KvUtils.newDeleteResult(response.getKvDeleteResp(), resultFactory, kvFactory),
-      scChannel,
-      executor
+        KvUtils.newKvDeleteRequest(
+            scChannel.getStorageContainerId(),
+            KvUtils.newDeleteRequest(lKey, option)
+                .setHeader(newRoutingHeader(pKey))),
+        response -> KvUtils.newDeleteResult(response.getKvDeleteResp(), resultFactory, kvFactory),
+        scChannel,
+        executor
     ).process().whenComplete((ignored, cause) -> {
       pKey.release();
       lKey.release();
@@ -146,8 +155,7 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
 
   @Override
   public Txn<ByteBuf, ByteBuf> txn(ByteBuf pKey) {
-      // TODO:
-    return null;
+    return new TxnImpl(pKey);
   }
 
   @Override
@@ -158,5 +166,74 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
   @Override
   public OpFactory<ByteBuf, ByteBuf> opFactory() {
     return opFactory;
+  }
+
+  //
+  // Txn Implementation
+  //
+
+  class TxnImpl implements Txn<ByteBuf, ByteBuf> {
+
+    private final ByteBuf pKey;
+    private final TxnRequest.Builder txnBuilder;
+    private final List<AutoCloseable> resourcesToRelease;
+
+    TxnImpl(ByteBuf pKey) {
+      this.pKey = pKey.retain();
+      this.txnBuilder = TxnRequest.newBuilder();
+      this.resourcesToRelease = Lists.newArrayList();
+    }
+
+    @Override
+    public Txn<ByteBuf, ByteBuf> If(CompareOp<ByteBuf, ByteBuf>... cmps) {
+      for (CompareOp<ByteBuf, ByteBuf> cmp : cmps) {
+        txnBuilder.addCompare(toProtoCompare(cmp));
+        resourcesToRelease.add(cmp);
+      }
+      return this;
+    }
+
+    @Override
+    public Txn<ByteBuf, ByteBuf> Then(Op<ByteBuf, ByteBuf>... ops) {
+      for (Op<ByteBuf, ByteBuf> op : ops) {
+        txnBuilder.addSuccess(toProtoRequest(op));
+        resourcesToRelease.add(op);
+      }
+      return this;
+    }
+
+    @Override
+    public Txn<ByteBuf, ByteBuf> Else(Op<ByteBuf, ByteBuf>... ops) {
+      for (Op<ByteBuf, ByteBuf> op : ops) {
+        txnBuilder.addFailure(toProtoRequest(op));
+        resourcesToRelease.add(op);
+      }
+      return this;
+    }
+
+    @Override
+    public CompletableFuture<TxnResult<ByteBuf, ByteBuf>> commit() {
+      return TableRequestProcessor.of(
+          KvUtils.newKvTxnRequest(
+              scChannel.getStorageContainerId(),
+              txnBuilder.setHeader(newRoutingHeader(pKey))),
+          response -> KvUtils.newKvTxnResult(response.getKvTxnResp(), resultFactory, kvFactory),
+          scChannel,
+          executor
+      ).process().whenComplete((ignored, cause) -> {
+        pKey.release();
+        for (AutoCloseable resource : resourcesToRelease) {
+            closeResource(resource);
+        }
+      });
+    }
+
+    private void closeResource(AutoCloseable resource) {
+      try {
+        resource.close();
+      } catch (Exception e) {
+        log.warn("Fail to close resource {}", resource, e);
+      }
+    }
   }
 }

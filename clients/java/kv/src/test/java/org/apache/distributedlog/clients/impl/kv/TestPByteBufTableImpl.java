@@ -40,6 +40,7 @@ import org.apache.bookkeeper.common.util.ByteBufUtils;
 import org.apache.bookkeeper.common.util.Bytes;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.distributedlog.api.kv.PTable;
+import org.apache.distributedlog.api.kv.Txn;
 import org.apache.distributedlog.api.kv.options.DeleteOption;
 import org.apache.distributedlog.api.kv.options.OptionFactory;
 import org.apache.distributedlog.api.kv.options.PutOption;
@@ -216,6 +217,14 @@ public class TestPByteBufTableImpl {
         verify(tableRanges.get(rangeProps.getRangeId()), times(1))
             .delete(eq(pkey), eq(lkey), eq(option));
       }
+    }
+
+    // test txn
+    for (RangeProperties rangeProps : streamRanges1.getRanges().values()) {
+      ByteBuf pkey = Unpooled.wrappedBuffer(Bytes.toBytes(rangeProps.getRangeId()));
+      Txn<ByteBuf, ByteBuf> txn = table.txn(pkey);
+      verify(tableRanges.get(rangeProps.getRangeId()), times(1))
+          .txn(eq(pkey));
     }
   }
 }

@@ -31,6 +31,8 @@ import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.router.ByteBufHashRouter;
 import org.apache.distributedlog.api.kv.PTable;
 import org.apache.distributedlog.api.kv.Txn;
+import org.apache.distributedlog.api.kv.op.CompareOp;
+import org.apache.distributedlog.api.kv.op.Op;
 import org.apache.distributedlog.api.kv.op.OpFactory;
 import org.apache.distributedlog.api.kv.options.DeleteOption;
 import org.apache.distributedlog.api.kv.options.PutOption;
@@ -38,6 +40,7 @@ import org.apache.distributedlog.api.kv.options.RangeOption;
 import org.apache.distributedlog.api.kv.result.DeleteResult;
 import org.apache.distributedlog.api.kv.result.PutResult;
 import org.apache.distributedlog.api.kv.result.RangeResult;
+import org.apache.distributedlog.api.kv.result.TxnResult;
 import org.apache.distributedlog.clients.impl.internal.api.HashStreamRanges;
 import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.distributedlog.clients.impl.kv.op.OpFactoryImpl;
@@ -51,17 +54,40 @@ import org.apache.distributedlog.stream.proto.StreamProperties;
 @Slf4j
 public class PByteBufTableImpl implements PTable<ByteBuf, ByteBuf> {
 
-
-
-  private static class FailRequestKeyValueSpace implements PTable<ByteBuf, ByteBuf> {
-
-    private static final IllegalStateException CAUSE =
+  static final IllegalStateException CAUSE =
       new IllegalStateException("No range found for a given routing key");
 
+  private static class FailRequestTxn implements Txn<ByteBuf, ByteBuf> {
+
+    @Override
+    public Txn<ByteBuf, ByteBuf> If(CompareOp<ByteBuf, ByteBuf>... cmps) {
+      return this;
+    }
+
+    @Override
+    public Txn<ByteBuf, ByteBuf> Then(Op<ByteBuf, ByteBuf>... ops) {
+      return this;
+    }
+
+    @Override
+    public Txn<ByteBuf, ByteBuf> Else(Op<ByteBuf, ByteBuf>... ops) {
+      return this;
+    }
+
+    @Override
+    public CompletableFuture<TxnResult<ByteBuf, ByteBuf>> commit() {
+      return FutureUtils.exception(CAUSE);
+    }
+  }
+
+  static class FailRequestKeyValueSpace implements PTable<ByteBuf, ByteBuf> {
+
     private final OpFactory<ByteBuf, ByteBuf> opFactory;
+    private final FailRequestTxn txn;
 
     private FailRequestKeyValueSpace(OpFactory<ByteBuf, ByteBuf> opFactory) {
       this.opFactory = opFactory;
+      this.txn = new FailRequestTxn();
     }
 
     @Override
@@ -88,8 +114,7 @@ public class PByteBufTableImpl implements PTable<ByteBuf, ByteBuf> {
 
     @Override
     public Txn<ByteBuf, ByteBuf> txn(ByteBuf pKey) {
-        // ToDO:
-      return null;
+      return txn;
     }
 
     @Override
@@ -250,8 +275,8 @@ public class PByteBufTableImpl implements PTable<ByteBuf, ByteBuf> {
 
   @Override
   public Txn<ByteBuf, ByteBuf> txn(ByteBuf pKey) {
-    // TODO:
-    return null;
+    Long range = rangeRouter.getRange(pKey);
+    return getTableRange(range).txn(pKey);
   }
 
   @Override
