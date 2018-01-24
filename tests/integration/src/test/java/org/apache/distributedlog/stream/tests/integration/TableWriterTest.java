@@ -200,9 +200,10 @@ public class TableWriterTest extends StorageServerTestBase {
 
         for (int j = 0; j < 5; j++) {
             result(tableWriter.increment(j, pKeyBuf, lIncrKeyBuf, 100L));
-            Long number = result(table.getNumber(pKeyBuf, lIncrKeyBuf));
+            Long number = null;
             while (number == null || number.longValue() != 100L * (j + 1)) {
                 Thread.sleep(100);
+                number = result(table.getNumber(pKeyBuf, lIncrKeyBuf));
             }
             assertEquals(100L * (j + 1), number.longValue());
         }
