@@ -87,4 +87,6 @@ public class StreamClusterSpec {
    */
   @Default File storageRootDir = new File("data/bookkeeper");
 
+  @Default boolean serveReadOnlyTable = false;
+
 }

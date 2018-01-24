@@ -21,14 +21,19 @@ package org.apache.distributedlog.statelib.impl.mvcc;
 import io.netty.buffer.ByteBuf;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.distributedlog.statelib.api.exceptions.MVCCStoreException;
+import org.apache.distributedlog.statelib.api.mvcc.op.DeleteOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.PutOp;
 import org.apache.distributedlog.statelib.api.mvcc.result.Code;
+import org.apache.distributedlog.statelib.api.mvcc.result.DeleteResult;
 import org.apache.distributedlog.statelib.api.mvcc.result.PutResult;
 import org.apache.distributedlog.statelib.impl.journal.CommandProcessor;
+import org.apache.distributedlog.statelib.impl.mvcc.op.proto.ProtoDeleteOpImpl;
 import org.apache.distributedlog.statelib.impl.mvcc.op.proto.ProtoPutOpImpl;
 import org.apache.distributedlog.statestore.proto.Command;
 
+@Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 class MVCCCommandProcessor implements CommandProcessor<MVCCStoreImpl<byte[], byte[]>> {
 
@@ -63,11 +68,36 @@ class MVCCCommandProcessor implements CommandProcessor<MVCCStoreImpl<byte[], byt
         }
     }
 
-    private void applyDeleteCommand(long revision, Command command) {
-        throw new UnsupportedOperationException();
+    private void applyDeleteCommand(long revision, Command command,
+                                    MVCCStoreImpl<byte[], byte[]> store) {
+        ProtoDeleteOpImpl op = ProtoDeleteOpImpl.newDeleteOp(revision, command.getDeleteReq());
+        try {
+            applyDeleteOp(revision, op, true, store);
+        } finally {
+            op.recycle();
+        }
     }
 
-    private void applyTxnCommand(long revision, Command command) {
+    private void applyDeleteOp(long revision,
+                               DeleteOp<byte[], byte[]> op,
+                               boolean ignoreSmallerRevision,
+                               MVCCStoreImpl<byte[], byte[]> localStore) {
+        DeleteResult<byte[], byte[]> result = localStore.delete(revision, op);
+        try {
+            if (Code.OK == result.code()
+                || (ignoreSmallerRevision && Code.SMALLER_REVISION == result.code())) {
+                return;
+            }
+            throw new MVCCStoreException(result.code(),
+                "Failed to apply command " + op + " at revision "
+                    + revision + " to the state store " + localStore.name());
+        } finally {
+            result.recycle();
+        }
+    }
+
+    private void applyTxnCommand(long revision, Command command,
+                                 MVCCStoreImpl<byte[], byte[]> store) {
         throw new UnsupportedOperationException();
     }
 
@@ -81,10 +111,10 @@ class MVCCCommandProcessor implements CommandProcessor<MVCCStoreImpl<byte[], byt
                 applyPutCommand(txid, command, store);
                 return;
             case DELETE_REQ:
-                applyDeleteCommand(txid, command);
+                applyDeleteCommand(txid, command, store);
                 return;
             case TXN_REQ:
-                applyTxnCommand(txid, command);
+                applyTxnCommand(txid, command, store);
                 return;
             default:
                 return;

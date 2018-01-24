@@ -35,6 +35,7 @@ import org.apache.distributedlog.api.kv.exceptions.KvApiException;
 import org.apache.distributedlog.api.kv.result.Code;
 import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.statestore.proto.Command;
+import org.apache.distributedlog.statestore.proto.DeleteRequest;
 import org.apache.distributedlog.statestore.proto.PutRequest;
 import org.apache.distributedlog.stream.proto.RangeProperties;
 import org.apache.distributedlog.stream.proto.StreamProperties;
@@ -104,6 +105,9 @@ class PByteBufTableRangeWriterImpl implements PTableWriter<ByteBuf, ByteBuf> {
             .thenApply(writer -> {
                 synchronized (PByteBufTableRangeWriterImpl.this) {
                     nextRevision = writer.getLastTxId();
+                    if (nextRevision < 0L) {
+                        nextRevision = 0L;
+                    }
                 }
                 return writer;
             });
@@ -113,20 +117,33 @@ class PByteBufTableRangeWriterImpl implements PTableWriter<ByteBuf, ByteBuf> {
     public CompletableFuture<Void> write(long sequenceId, ByteBuf pKey, ByteBuf lKey, ByteBuf value) {
         pKey.retain();
         lKey.retain();
-        value.retain();
+        if (null != value) {
+            value.retain();
+        }
         ByteBuf storeKey = newStoreKey(pKey.slice(), lKey.slice());
-        Command command = Command.newBuilder()
-            .setPutReq(PutRequest.newBuilder()
-                .setKey(UnsafeByteOperations.unsafeWrap(storeKey.nioBuffer()))
-                .setValue(UnsafeByteOperations.unsafeWrap(value.nioBuffer())))
-            .build();
+        Command command;
+        if (null != value) {
+            command = Command.newBuilder()
+                .setPutReq(PutRequest.newBuilder()
+                    .setKey(UnsafeByteOperations.unsafeWrap(storeKey.nioBuffer()))
+                    .setValue(UnsafeByteOperations.unsafeWrap(value.nioBuffer())))
+                .build();
+        } else {
+            command = Command.newBuilder()
+                .setDeleteReq(DeleteRequest.newBuilder()
+                    .setKey(UnsafeByteOperations.unsafeWrap(storeKey.nioBuffer()))
+                    .build())
+                .build();
+        }
         ByteBuf recordBuf = PooledByteBufAllocator.DEFAULT.buffer(command.getSerializedSize());
         try {
             command.writeTo(new ByteBufOutputStream(recordBuf));
         } catch (IOException ioe) {
             pKey.release();
             lKey.release();
-            value.release();
+            if (null != value) {
+                value.release();
+            }
             storeKey.release();
             recordBuf.release();
 
@@ -137,7 +154,9 @@ class PByteBufTableRangeWriterImpl implements PTableWriter<ByteBuf, ByteBuf> {
             .whenComplete((v, cause) -> {
                 pKey.release();
                 lKey.release();
-                value.release();
+                if (null != value) {
+                    value.release();
+                }
                 storeKey.release();
                 recordBuf.release();
             });
@@ -148,8 +167,8 @@ class PByteBufTableRangeWriterImpl implements PTableWriter<ByteBuf, ByteBuf> {
             long txId;
             synchronized (PByteBufTableRangeWriterImpl.this) {
                 txId = ++nextRevision;
+                return writer.write(new LogRecord(txId, recordBuf.nioBuffer()));
             }
-            return writer.write(new LogRecord(txId, recordBuf.nioBuffer()));
         }).thenApply(dlsn -> null);
     }
 

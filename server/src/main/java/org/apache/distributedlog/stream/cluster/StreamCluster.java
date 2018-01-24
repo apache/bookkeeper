@@ -183,10 +183,11 @@ public class StreamCluster
         File rangesStoreDir = new File(spec.storageRootDir(), "ranges_" + grpcPort);
         StorageConfiguration storageConf = new StorageConfiguration(serverConf);
         storageConf.setRangeStoreDirNames(new String[] { rangesStoreDir.getPath() });
+        storageConf.setServeReadOnlyTables(spec.serveReadOnlyTable);
 
         log.info("Attempting to start storage server at (bookie port = {}, grpc port = {})"
-                + " : bkDir = {}, rangesStoreDir = {}",
-                bookiePort, grpcPort, bkDir, rangesStoreDir);
+                + " : bkDir = {}, rangesStoreDir = {}, serveReadOnlyTables = {}",
+                bookiePort, grpcPort, bkDir, rangesStoreDir, spec.serveReadOnlyTable);
         server = StorageServer.startStorageServer(
           serverConf,
           grpcPort,

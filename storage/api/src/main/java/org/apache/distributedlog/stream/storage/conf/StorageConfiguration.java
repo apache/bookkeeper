@@ -26,6 +26,8 @@ public class StorageConfiguration extends ComponentConfiguration {
 
   private static final String RANGE_STORE_DIRS = "range_store_dirs";
 
+  private static final String SERVE_READONLY_TABLES = "serve.readonly.tables";
+
   public StorageConfiguration(CompositeConfiguration conf) {
     super(conf, COMPONENT_PREFIX);
   }
@@ -52,6 +54,15 @@ public class StorageConfiguration extends ComponentConfiguration {
       rangeStoreDirs[i] = new File(rangeStoreDirNames[i]);
     }
     return rangeStoreDirs;
+  }
+
+  public StorageConfiguration setServeReadOnlyTables(boolean serveReadOnlyTables) {
+    this.setProperty(SERVE_READONLY_TABLES, serveReadOnlyTables);
+    return this;
+  }
+
+  public boolean getServeReadOnlyTables() {
+    return getBoolean(SERVE_READONLY_TABLES, false);
   }
 
 }

@@ -100,7 +100,8 @@ public class MVCCStoreFactoryImplTest {
         this.factory = new MVCCStoreFactoryImpl(
             () -> namespace,
             storeDirs,
-            resources);
+            resources,
+            false);
     }
 
     @Test

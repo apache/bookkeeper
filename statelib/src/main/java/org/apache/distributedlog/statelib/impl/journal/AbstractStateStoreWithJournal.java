@@ -43,6 +43,8 @@ import org.apache.distributedlog.api.AsyncLogReader;
 import org.apache.distributedlog.api.AsyncLogWriter;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.namespace.Namespace;
+import org.apache.distributedlog.exceptions.LogEmptyException;
+import org.apache.distributedlog.exceptions.LogNotFoundException;
 import org.apache.distributedlog.statelib.api.AsyncStateStore;
 import org.apache.distributedlog.statelib.api.StateStore;
 import org.apache.distributedlog.statelib.api.StateStoreSpec;
@@ -111,18 +113,21 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
             "No log stream is specified for state store %s", spec.getName());
     }
 
-    private synchronized void markInitialized() {
+    private synchronized void markInitialized(AsyncLogReader reader) {
         isInitialized = true;
         // schedule periodical checkpoint
         if (null != checkpointInterval) {
             long checkpointIntervalMs = checkpointInterval.toMillis();
-            log.info("Schedule checkpoint task for state store {} every {} ms",
-                name, checkpointIntervalMs);
             checkpointTask =  writeIOScheduler.scheduleAtFixedRate(
                 () -> localStore.checkpoint(),
                 checkpointIntervalMs,
                 checkpointIntervalMs,
                 TimeUnit.MILLISECONDS);
+        }
+        if (spec.isReadonly()) {
+            replayLoop(reader);
+        } else {
+            reader.asyncClose();
         }
     }
 
@@ -177,12 +182,18 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
             this.checkpointInterval = null;
         }
 
-        return initializeLocalStore(spec)
-            .thenComposeAsync(ignored -> initializeJournalWriter(spec), writeIOScheduler)
-            .thenComposeAsync(endDLSN -> {
-                log.info("Successfully write a barrier record for mvcc store {} at {}", name, endDLSN);
-                return replayJournal(endDLSN);
-            }, writeIOScheduler);
+        if (spec.isReadonly()) {
+            return initializeLocalStore(spec)
+                .thenComposeAsync(ignored -> getLastDLSN(spec), writeIOScheduler)
+                .thenComposeAsync(endDLSN -> replayJournal(endDLSN), writeIOScheduler);
+        } else {
+            return initializeLocalStore(spec)
+                .thenComposeAsync(ignored -> initializeJournalWriter(spec), writeIOScheduler)
+                .thenComposeAsync(endDLSN -> {
+                    log.info("Successfully write a barrier record for mvcc store {} at {}", name, endDLSN);
+                    return replayJournal(endDLSN);
+                }, writeIOScheduler);
+        }
     }
 
     private CompletableFuture<Void> initializeLocalStore(StateStoreSpec spec) {
@@ -221,14 +232,76 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
         }, writeIOScheduler);
     }
 
+    private CompletableFuture<DLSN> writeCatchUpMarker() {
+        return logManager.openAsyncLogWriter().thenComposeAsync(w -> {
+            synchronized (this) {
+                writer = w;
+                nextRevision = writer.getLastTxId();
+                if (nextRevision < 0) {
+                    nextRevision = 0L;
+                }
+                log.info("Initialized the journal writer for writing catchup marker to mvcc store {} :"
+                    + " last revision = {}", name(), nextRevision);
+            }
+            return writeCommandBuf(newCatchupMarker());
+        }).thenCompose(dlsn -> {
+            AsyncLogWriter w;
+            synchronized (this) {
+                w = writer;
+            }
+            if (null == w) {
+                return FutureUtils.value(dlsn);
+            } else {
+                return w.asyncClose().thenApply(ignored -> dlsn);
+            }
+        });
+    }
+
+    private CompletableFuture<DLSN> getLastDLSN(StateStoreSpec spec) {
+        synchronized (this) {
+            if (null != closeFuture) {
+                return FutureUtils.exception(new StateStoreClosedException(name()));
+            }
+        }
+
+        try {
+            logManager = logNamespace.openLog(spec.getStream());
+        } catch (IOException e) {
+            return FutureUtils.exception(e);
+        }
+        CompletableFuture<DLSN> future = FutureUtils.createFuture();
+        logManager.getLastDLSNAsync().whenCompleteAsync(new FutureEventListener<DLSN>() {
+            @Override
+            public void onSuccess(DLSN dlsn) {
+                future.complete(dlsn);
+            }
+
+            @Override
+            public void onFailure(Throwable throwable) {
+                if (throwable instanceof LogEmptyException || throwable instanceof LogNotFoundException) {
+                    FutureUtils.proxyTo(
+                        writeCatchUpMarker(),
+                        future);
+                } else {
+                    future.completeExceptionally(throwable);
+                }
+            }
+        });
+        return future;
+    }
+
     private CompletableFuture<Void> replayJournal(DLSN endDLSN) {
         long lastRevision = localStore.getLastRevision();
         return logManager.openAsyncLogReader(lastRevision)
             .thenComposeAsync(r -> {
                 CompletableFuture<Void> replayFuture = FutureUtils.createFuture();
-                FutureUtils.ensure(replayFuture, () -> r.asyncClose());
+                replayFuture.exceptionally(
+                    cause -> {
+                        r.asyncClose();
+                        return null;
+                    });
 
-                log.info("Successfully open the journal reader for mvcc store {}", name());
+                log.info("Successfully open the journal reader for mvcc store {} : end dlsn = {}", name(), endDLSN);
                 replayJournal(r, endDLSN, replayFuture);
                 return replayFuture;
             }, writeIOScheduler);
@@ -248,18 +321,19 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
             @Override
             public void onSuccess(LogRecordWithDLSN record) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Received command record {} to replay at mvcc store {}",
-                        record, name());
+                    log.debug("Received command record {} @ {} to replay at mvcc store {}",
+                        record, record.getDlsn(), name());
                 }
-                if (record.getDlsn().compareTo(endDLSN) >= 0) {
-                    log.info("Finished replaying journal for state store {}", name());
-                    markInitialized();
-                    FutureUtils.complete(future, null);
-                    return;
-                }
-
                 try {
                     commandProcessor.applyCommand(record.getTransactionId(), record.getPayloadBuf(), localStore);
+
+                    if (record.getDlsn().compareTo(endDLSN) >= 0) {
+                        log.info("Finished replaying journal for state store {}", name());
+                        markInitialized(reader);
+                        FutureUtils.complete(future, null);
+                        return;
+                    }
+
                     // read next record
                     replayJournal(reader, endDLSN, future);
                 } catch (StateStoreRuntimeException e) {
@@ -270,6 +344,38 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
             @Override
             public void onFailure(Throwable cause) {
                 FutureUtils.completeExceptionally(future, cause);
+            }
+        });
+    }
+
+    private void replayLoop(AsyncLogReader reader) {
+        synchronized (this) {
+            if (null != closeFuture) {
+                reader.asyncClose();
+                return;
+            }
+        }
+
+        reader.readNext().whenComplete(new FutureEventListener<LogRecordWithDLSN>() {
+            @Override
+            public void onSuccess(LogRecordWithDLSN record) {
+                if (log.isDebugEnabled()) {
+                    log.debug("Received command record {} @ {} to replay at mvcc store {}",
+                        record, record.getDlsn(), name());
+                }
+                try {
+                    commandProcessor.applyCommand(record.getTransactionId(), record.getPayloadBuf(), localStore);
+                    // read next record
+                    replayLoop(reader);
+                } catch (StateStoreRuntimeException e) {
+                    log.error("Fail to reply command record {}", record, e);
+                    // TODO: handle state store exception
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable throwable) {
+                // TODO: handle read failure
             }
         });
     }

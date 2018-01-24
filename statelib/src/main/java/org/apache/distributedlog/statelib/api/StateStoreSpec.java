@@ -41,6 +41,7 @@ public class StateStoreSpec {
     private Coder<?> valCoder;
     private File localStateStoreDir;
     private String stream;
+    private boolean isReadonly;
     private ScheduledExecutorService writeIOScheduler;
     private ScheduledExecutorService readIOScheduler;
     private ScheduledExecutorService checkpointIOScheduler;

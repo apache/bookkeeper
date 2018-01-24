@@ -155,7 +155,7 @@ public class PByteBufTableImpl implements PTable<ByteBuf, ByteBuf> {
       (streamProps, rangeProps, scheduler, opFactory, resultFactory, kvFactory) -> new PByteBufTableRangeImpl(
         streamProps.getStreamId(),
         rangeProps,
-        clientManager.getStorageContainerChannel(streamProps.getStorageContainerId()),
+        clientManager.getStorageContainerChannel(rangeProps.getStorageContainerId()),
         executor,
         opFactory,
         resultFactory,

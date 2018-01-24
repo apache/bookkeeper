@@ -113,6 +113,8 @@ public abstract class MVCCAsyncStoreTestBase {
     public void tearDown() throws Exception {
         doTeardown();
 
+        store.close();
+
         if (null != scheduler) {
             scheduler.shutdown();
         }

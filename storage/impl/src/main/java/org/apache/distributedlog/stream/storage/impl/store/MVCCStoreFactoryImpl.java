@@ -70,11 +70,13 @@ public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
     private final CheckpointStore checkpointStore;
     // stores
     private final Map<Long, Map<RangeId, MVCCAsyncStore<byte[], byte[]>>> stores;
+    private final boolean serveReadOnlyTable;
     private boolean closed = false;
 
     public MVCCStoreFactoryImpl(Supplier<Namespace> namespaceSupplier,
                                 File[] localStoreDirs,
-                                StorageResources storageResources) {
+                                StorageResources storageResources,
+                                boolean serveReadOnlyTable) {
         this.storeSupplier = StateStores.mvccKvBytesStoreSupplier(namespaceSupplier);
         this.storageResources = storageResources;
         this.writeIOScheduler =
@@ -87,6 +89,7 @@ public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
         // TODO: change this cto dlog based checkpoint manager
         this.checkpointStore = new FSCheckpointManager(new File(localStoreDirs[0], "checkpoints"));
         this.stores = Maps.newHashMap();
+        this.serveReadOnlyTable = serveReadOnlyTable;
     }
 
     private ScheduledExecutorService chooseWriteIOExecutor(long streamId) {
@@ -194,6 +197,7 @@ public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
             .checkpointStore(checkpointStore)
             .checkpointDuration(Duration.ofMinutes(15))
             .checkpointIOScheduler(chooseCheckpointIOExecutor(streamId))
+            .isReadonly(serveReadOnlyTable)
             .build();
 
         return store.init(spec).thenApply(ignored -> {

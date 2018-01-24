@@ -210,7 +210,8 @@ public class StorageServer {
         new MVCCStoreFactoryImpl(
             dlNamespaceProvider,
             storageConf.getRangeStoreDirs(),
-            storageResources));
+            storageResources,
+            storageConf.getServeReadOnlyTables()));
     StorageService storageService = new StorageService(
       storageConf, rangeStoreBuilder, rootStatsLogger.scope("storage"));
 
