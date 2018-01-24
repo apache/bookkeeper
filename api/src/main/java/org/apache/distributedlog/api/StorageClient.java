@@ -24,7 +24,9 @@ import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.bookkeeper.common.util.AutoAsyncCloseable;
 import org.apache.distributedlog.api.kv.PTable;
+import org.apache.distributedlog.api.kv.PTableWriter;
 import org.apache.distributedlog.api.kv.Table;
+import org.apache.distributedlog.api.kv.TableWriter;
 
 /**
  * The stream storage client.
@@ -36,5 +38,9 @@ public interface StorageClient extends AutoAsyncCloseable {
     CompletableFuture<PTable<ByteBuf, ByteBuf>> openPTable(String table);
 
     CompletableFuture<Table<ByteBuf, ByteBuf>> openTable(String table);
+
+    CompletableFuture<PTableWriter<ByteBuf, ByteBuf>> openPTableWriter(String table);
+
+    CompletableFuture<TableWriter<ByteBuf, ByteBuf>> openTableWriter(String table);
 
 }

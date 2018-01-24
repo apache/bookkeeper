@@ -29,12 +29,16 @@ import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.common.util.SharedResourceManager;
 import org.apache.distributedlog.api.StorageClient;
 import org.apache.distributedlog.api.kv.PTable;
+import org.apache.distributedlog.api.kv.PTableWriter;
 import org.apache.distributedlog.api.kv.Table;
+import org.apache.distributedlog.api.kv.TableWriter;
 import org.apache.distributedlog.clients.config.StorageClientSettings;
 import org.apache.distributedlog.clients.impl.internal.StorageServerClientManagerImpl;
 import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.distributedlog.clients.impl.kv.ByteBufTableImpl;
+import org.apache.distributedlog.clients.impl.kv.ByteBufTableWriterImpl;
 import org.apache.distributedlog.clients.impl.kv.PByteBufTableImpl;
+import org.apache.distributedlog.clients.impl.kv.PByteBufTableWriterImpl;
 import org.apache.distributedlog.clients.utils.ClientResources;
 import org.apache.distributedlog.stream.proto.StreamProperties;
 
@@ -102,6 +106,36 @@ class StorageClientImpl extends AbstractAutoAsyncCloseable implements StorageCli
         ).initialize();
       }),
       future
+    );
+  }
+
+  @Override
+  public CompletableFuture<PTableWriter<ByteBuf, ByteBuf>> openPTableWriter(String table) {
+    return ExceptionUtils.callAndHandleClosedAsync(
+        COMPONENT_NAME,
+        isClosed(),
+        (future) -> openTableWriterImpl(table, future));
+  }
+
+  @Override
+  public CompletableFuture<TableWriter<ByteBuf, ByteBuf>> openTableWriter(String table) {
+    return openPTableWriter(table)
+        .thenApply(pTableWriter -> new ByteBufTableWriterImpl(pTableWriter));
+  }
+
+  private void openTableWriterImpl(String streamName,
+                                   CompletableFuture<PTableWriter<ByteBuf, ByteBuf>> future) {
+    FutureUtils.proxyTo(
+        getStreamProperties(streamName).thenComposeAsync(props -> {
+            log.info("Retrieved stream properties for stream {} : {}", streamName, props);
+            return new PByteBufTableWriterImpl(
+                streamName,
+                props,
+                serverManager,
+                scheduler.chooseThread(props.getStreamId())
+            ).initialize();
+        }),
+        future
     );
   }
 
