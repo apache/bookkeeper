@@ -44,6 +44,7 @@
     <module>backward-compat-upgrade-direct</module>
     <module>backward-compat-hierarchical-ledger-manager</module>
     <module>backward-compat-hostname-bookieid</module>
+    <module>backward-compat-recovery-no-password</module>
   </modules>
   <build>
     <plugins>

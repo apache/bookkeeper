@@ -513,4 +513,20 @@ public class ZKRegistrationManager implements RegistrationManager {
             return true;
         }
     }
+
+    @Override
+    public boolean isBookieRegistered(String bookieId) throws BookieException {
+        String regPath = bookieRegistrationPath + "/" + bookieId;
+        String readonlyRegPath = bookieReadonlyRegistrationPath + "/" + bookieId;
+        try {
+            return ((null != zk.exists(regPath, false)) || (null != zk.exists(readonlyRegPath, false)));
+        } catch (KeeperException e) {
+            log.error("ZK exception while checking registration ephemeral znodes for BookieId: {}", bookieId, e);
+            throw new MetadataStoreException(e);
+        } catch (InterruptedException e) {
+            log.error("InterruptedException while checking registration ephemeral znodes for BookieId: {}", bookieId,
+                    e);
+            throw new MetadataStoreException(e);
+        }
+    }
 }
