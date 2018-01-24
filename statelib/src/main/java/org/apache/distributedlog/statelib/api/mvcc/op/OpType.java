@@ -31,7 +31,8 @@ public enum OpType {
     PUT(0),
     DELETE(1),
     RANGE(2),
-    TXN(3);
+    TXN(3),
+    INCREMENT(4);
 
     private final int code;
 

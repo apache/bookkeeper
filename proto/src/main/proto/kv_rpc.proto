@@ -215,6 +215,20 @@ message PutResponse {
   kv.KeyValue prev_kv = 2;
 }
 
+message IncrementRequest {
+  // key is the key, in bytes, to increment the value
+  bytes key = 1;
+  // amount is a long number to increment
+  int64 amount = 2;
+
+  // header
+  RoutingHeader header = 99;
+}
+
+message IncrementResponse {
+  ResponseHeader header = 1;
+}
+
 message DeleteRangeRequest {
   // key is the first key to delete in the range.
   bytes key = 1;

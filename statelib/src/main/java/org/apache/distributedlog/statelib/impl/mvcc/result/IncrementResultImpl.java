@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,46 +15,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-syntax = "proto3";
+package org.apache.distributedlog.statelib.impl.mvcc.result;
 
-package distributedlog.proto.statestore.kv;
+import io.netty.util.Recycler.Handle;
+import lombok.Setter;
+import org.apache.distributedlog.statelib.api.mvcc.op.OpType;
+import org.apache.distributedlog.statelib.api.mvcc.result.IncrementResult;
 
-option java_multiple_files = true;
-option java_package = "org.apache.distributedlog.proto.statestore.kv";
+/**
+ * An implementation of {@link IncrementResult}.
+ */
+@Setter
+public class IncrementResultImpl<K, V>
+    extends ResultImpl<K, V, IncrementResultImpl<K, V>> implements IncrementResult<K, V> {
 
-enum ValueType {
-    BYTES   = 0;
-    NUMBER  = 1; // this is to support increment
-}
-
-message NopRequest {
-}
-
-message PutRequest {
-    bytes key       = 1;
-    bytes value     = 2;
-}
-
-message PutIfAbsentRequest {
-    bytes key       = 1;
-    bytes value     = 2;
-}
-
-message DeleteRequest {
-    bytes key   = 1;
-}
-
-message IncrementRequest {
-    bytes key       = 1;
-    int64 amount    = 2;
-}
-
-message Command {
-    oneof req {
-        NopRequest nop_req = 11;
-        PutRequest put_req = 12;
-        PutIfAbsentRequest put_if_absent_req = 13;
-        DeleteRequest del_req = 14;
-        IncrementRequest incr_req = 15;
+    IncrementResultImpl(Handle<IncrementResultImpl<K, V>> handle) {
+        super(OpType.INCREMENT, handle);
     }
+
+    @Override
+    IncrementResultImpl<K, V> asResult() {
+        return this;
+    }
+
 }

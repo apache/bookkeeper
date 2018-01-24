@@ -22,6 +22,11 @@ package distributedlog.proto.statestore.mvcc;
 option java_multiple_files = true;
 option java_package = "org.apache.distributedlog.statestore.proto";
 
+enum ValueType {
+    BYTES   = 0;
+    NUMBER  = 1; // this is to support increment
+}
+
 // KeyRecord holds mvcc metadata for a given key
 message KeyMeta {
 
@@ -31,6 +36,8 @@ message KeyMeta {
     int64 mod_revision          = 2;
     // version is the version of the most recent value
     int64 version               = 3;
+    // value type
+    ValueType value_type        = 4;
 
 }
 
@@ -57,6 +64,13 @@ message ChangeEventMeta {
 }
 
 message NopRequest {}
+
+message IncrementRequest {
+    // key is the key, in bytes, to put into the key-value store.
+    bytes key = 1;
+    // the amount to increment
+    int64 amount = 2;
+}
 
 message PutRequest {
     // key is the key, in bytes, to put into the key-value store.
@@ -178,6 +192,7 @@ message Command {
         PutRequest put_req = 2;
         DeleteRequest delete_req = 3;
         TxnRequest txn_req = 4;
+        IncrementRequest incr_req = 5;
     }
 }
 

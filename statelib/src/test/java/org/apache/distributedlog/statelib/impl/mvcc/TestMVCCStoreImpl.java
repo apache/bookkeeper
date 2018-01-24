@@ -20,6 +20,7 @@ package org.apache.distributedlog.statelib.impl.mvcc;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -449,6 +450,31 @@ public class TestMVCCStoreImpl {
         result.recycle();
 
         assertEquals(null, store.get(getKey(11)));
+    }
+
+    @Test
+    public void testIncrement() throws Exception {
+        store.init(spec);
+
+        for (int i = 0; i < 5; i++) {
+            store.increment("key", 100L, 99L + i);
+            Long number = store.getNumber("key");
+            assertNotNull(number);
+            assertEquals(100L * (i + 1), number.longValue());
+        }
+    }
+
+    @Test
+    public void testIncrementFailure() throws Exception {
+        store.init(spec);
+
+        store.put("key", "value", 1L);
+        try {
+            store.increment("key", 100, 2L);
+            fail("Should fail to increment a non-number key");
+        } catch (MVCCStoreException e) {
+            assertEquals(Code.ILLEGAL_OP, e.getCode());
+        }
     }
 
 }

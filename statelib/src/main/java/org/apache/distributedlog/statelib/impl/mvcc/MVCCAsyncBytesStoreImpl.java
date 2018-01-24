@@ -28,11 +28,13 @@ import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.statelib.api.exceptions.InvalidStateStoreException;
 import org.apache.distributedlog.statelib.api.mvcc.MVCCAsyncStore;
 import org.apache.distributedlog.statelib.api.mvcc.op.DeleteOp;
+import org.apache.distributedlog.statelib.api.mvcc.op.IncrementOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.OpFactory;
 import org.apache.distributedlog.statelib.api.mvcc.op.PutOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.RangeOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.TxnOp;
 import org.apache.distributedlog.statelib.api.mvcc.result.DeleteResult;
+import org.apache.distributedlog.statelib.api.mvcc.result.IncrementResult;
 import org.apache.distributedlog.statelib.api.mvcc.result.PutResult;
 import org.apache.distributedlog.statelib.api.mvcc.result.RangeResult;
 import org.apache.distributedlog.statelib.api.mvcc.result.TxnResult;
@@ -134,5 +136,17 @@ class MVCCAsyncBytesStoreImpl
         Command command = MVCCUtils.toCommand(op);
         return writeCommandReturnTxId(command)
             .thenApplyAsync(revision -> localStore.txn(revision, op), writeIOScheduler);
+    }
+
+    @Override
+    public CompletableFuture<IncrementResult<byte[], byte[]>> increment(IncrementOp<byte[], byte[]> op) {
+        synchronized (this) {
+            if (!isInitialized) {
+                return FutureUtils.exception(new InvalidStateStoreException("State store is not initialized yet."));
+            }
+        }
+        Command command = MVCCUtils.toCommand(op);
+        return writeCommandReturnTxId(command)
+            .thenApplyAsync(revision -> localStore.increment(revision, op), writeIOScheduler);
     }
 }

@@ -342,6 +342,34 @@ public class TestMVCCAsyncBytesStoreImpl extends TestDistributedLogBase {
             kv.recycle();
             deletedKv.recycle();
         }
+
+        // increment failure
+        {
+            int ki = 3;
+            byte[] key = getKey(ki);
+            result(store.put(key, getValue(ki)));
+            try {
+                result(store.increment(key, 100L));
+                fail("Can't increment a non-number key");
+            } catch (MVCCStoreException e) {
+                assertEquals(Code.ILLEGAL_OP, e.getCode());
+            }
+        }
+
+        // increment success
+        {
+            int ki = 4;
+            byte[] key = getKey(ki);
+            for (int i = 0; i < 5; i++) {
+                result(store.increment(key, 100L));
+                KVRecord<byte[], byte[]> kv = result(store.getDetail(key));
+                try {
+                    assertEquals(100L * (i + 1), kv.number());
+                } finally {
+                    kv.recycle();
+                }
+            }
+        }
     }
 
     @Test

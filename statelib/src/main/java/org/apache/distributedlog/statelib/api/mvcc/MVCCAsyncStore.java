@@ -28,6 +28,7 @@ import org.apache.distributedlog.statelib.api.exceptions.MVCCStoreException;
 import org.apache.distributedlog.statelib.api.mvcc.op.CompareOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.CompareResult;
 import org.apache.distributedlog.statelib.api.mvcc.op.DeleteOp;
+import org.apache.distributedlog.statelib.api.mvcc.op.IncrementOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.OpFactory;
 import org.apache.distributedlog.statelib.api.mvcc.op.PutOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.RangeOp;
@@ -446,6 +447,27 @@ public interface MVCCAsyncStore<K, V>
                 } else {
                     return failWithCode(code,
                         "Failed to delete (" + k + ", " + v + ") to store " + name());
+                }
+            } finally {
+                result.recycle();
+            }
+        });
+    }
+
+    @Override
+    default CompletableFuture<Void> increment(K k, long amount) {
+        IncrementOp<K, V> op = getOpFactory().buildIncrementOp()
+            .key(k)
+            .amount(amount)
+            .build();
+        return increment(op).thenCompose(result -> {
+            try {
+                Code code = result.code();
+                if (Code.OK == code) {
+                    return FutureUtils.Void();
+                } else {
+                    return failWithCode(code,
+                        "Failed to increment(" + k + ", " + amount + ") to store " + name());
                 }
             } finally {
                 result.recycle();

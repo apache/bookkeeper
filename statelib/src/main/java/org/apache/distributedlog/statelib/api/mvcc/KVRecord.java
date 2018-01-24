@@ -33,10 +33,14 @@ public interface KVRecord<K, V> extends Recycled {
 
     V value();
 
+    long number();
+
     long createRevision();
 
     long modifiedRevision();
 
     long version();
+
+    boolean isNumber();
 
 }

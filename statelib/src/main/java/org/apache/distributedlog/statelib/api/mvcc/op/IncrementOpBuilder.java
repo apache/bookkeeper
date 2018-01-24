@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,46 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-syntax = "proto3";
+package org.apache.distributedlog.statelib.api.mvcc.op;
 
-package distributedlog.proto.statestore.kv;
+import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
+import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 
-option java_multiple_files = true;
-option java_package = "org.apache.distributedlog.proto.statestore.kv";
+/**
+ * Builder to build an increment operator.
+ */
+@Public
+@Evolving
+public interface IncrementOpBuilder<K, V> extends OpBuilder<K, V, IncrementOp<K, V>, IncrementOpBuilder<K, V>> {
 
-enum ValueType {
-    BYTES   = 0;
-    NUMBER  = 1; // this is to support increment
-}
+    IncrementOpBuilder<K, V> key(K key);
 
-message NopRequest {
-}
+    IncrementOpBuilder<K, V> amount(long amount);
 
-message PutRequest {
-    bytes key       = 1;
-    bytes value     = 2;
-}
-
-message PutIfAbsentRequest {
-    bytes key       = 1;
-    bytes value     = 2;
-}
-
-message DeleteRequest {
-    bytes key   = 1;
-}
-
-message IncrementRequest {
-    bytes key       = 1;
-    int64 amount    = 2;
-}
-
-message Command {
-    oneof req {
-        NopRequest nop_req = 11;
-        PutRequest put_req = 12;
-        PutIfAbsentRequest put_if_absent_req = 13;
-        DeleteRequest del_req = 14;
-        IncrementRequest incr_req = 15;
-    }
 }

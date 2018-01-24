@@ -48,6 +48,7 @@ final class MVCCRecordCoder implements Coder<MVCCRecord> {
             .setCreateRevision(record.getCreateRev())
             .setModRevision(record.getModRev())
             .setVersion(record.getVersion())
+            .setValueType(record.getValueType())
             .build();
         int metaLen = meta.getSerializedSize();
         int valLen = record.getValue().readableBytes();
@@ -89,6 +90,7 @@ final class MVCCRecordCoder implements Coder<MVCCRecord> {
             .setCreateRevision(record.getCreateRev())
             .setModRevision(record.getModRev())
             .setVersion(record.getVersion())
+            .setValueType(record.getValueType())
             .build();
         int metaLen = meta.getSerializedSize();
         int valLen = record.getValue().readableBytes();
@@ -116,10 +118,10 @@ final class MVCCRecordCoder implements Coder<MVCCRecord> {
         ByteBuf valBuf = copy.retainedSlice(copy.readerIndex(), valLen);
 
         MVCCRecord record = MVCCRecord.newRecord();
-        record.setValue(valBuf);
         record.setCreateRev(meta.getCreateRevision());
         record.setModRev(meta.getModRevision());
         record.setVersion(meta.getVersion());
+        record.setValue(valBuf, meta.getValueType());
         return record;
     }
 

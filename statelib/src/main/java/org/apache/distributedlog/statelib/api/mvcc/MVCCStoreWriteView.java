@@ -19,9 +19,11 @@
 package org.apache.distributedlog.statelib.api.mvcc;
 
 import org.apache.distributedlog.statelib.api.mvcc.op.DeleteOp;
+import org.apache.distributedlog.statelib.api.mvcc.op.IncrementOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.PutOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.TxnOp;
 import org.apache.distributedlog.statelib.api.mvcc.result.DeleteResult;
+import org.apache.distributedlog.statelib.api.mvcc.result.IncrementResult;
 import org.apache.distributedlog.statelib.api.mvcc.result.PutResult;
 import org.apache.distributedlog.statelib.api.mvcc.result.TxnResult;
 
@@ -38,6 +40,8 @@ public interface MVCCStoreWriteView<K, V> {
     DeleteResult<K, V> delete(DeleteOp<K, V> op);
 
     TxnResult<K, V> txn(TxnOp<K, V> op);
+
+    IncrementResult<K, V> increment(IncrementOp<K, V> op);
 
 
 }

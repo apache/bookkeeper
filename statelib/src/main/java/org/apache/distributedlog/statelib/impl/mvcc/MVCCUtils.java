@@ -37,6 +37,7 @@ import org.apache.distributedlog.statelib.api.mvcc.op.CompareOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.CompareResult;
 import org.apache.distributedlog.statelib.api.mvcc.op.CompareTarget;
 import org.apache.distributedlog.statelib.api.mvcc.op.DeleteOp;
+import org.apache.distributedlog.statelib.api.mvcc.op.IncrementOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.Op;
 import org.apache.distributedlog.statelib.api.mvcc.op.PutOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.RangeOp;
@@ -46,6 +47,7 @@ import org.apache.distributedlog.statelib.impl.Constants;
 import org.apache.distributedlog.statestore.proto.Command;
 import org.apache.distributedlog.statestore.proto.Compare;
 import org.apache.distributedlog.statestore.proto.DeleteRequest;
+import org.apache.distributedlog.statestore.proto.IncrementRequest;
 import org.apache.distributedlog.statestore.proto.NopRequest;
 import org.apache.distributedlog.statestore.proto.PutRequest;
 import org.apache.distributedlog.statestore.proto.RangeRequest;
@@ -192,6 +194,13 @@ public final class MVCCUtils {
             .build();
     }
 
+    static IncrementRequest toIncrementRequest(IncrementOp<byte[], byte[]> op) {
+        return IncrementRequest.newBuilder()
+            .setKey(UnsafeByteOperations.unsafeWrap(op.key()))
+            .setAmount(op.amount())
+            .build();
+    }
+
     static Command toCommand(Op<byte[], byte[]> op) {
         Command.Builder cmdBuilder = Command.newBuilder();
         switch (op.type()) {
@@ -203,6 +212,9 @@ public final class MVCCUtils {
                 break;
             case TXN:
                 cmdBuilder.setTxnReq(toTxnRequest((TxnOp<byte[], byte[]>) op));
+                break;
+            case INCREMENT:
+                cmdBuilder.setIncrReq(toIncrementRequest((IncrementOp<byte[], byte[]>) op));
                 break;
             default:
                 throw new IllegalArgumentException("Unknown command type " + op.type());

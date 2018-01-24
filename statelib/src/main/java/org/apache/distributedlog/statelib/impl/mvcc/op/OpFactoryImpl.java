@@ -23,6 +23,7 @@ import org.apache.distributedlog.statelib.api.mvcc.op.CompareOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.CompareResult;
 import org.apache.distributedlog.statelib.api.mvcc.op.CompareTarget;
 import org.apache.distributedlog.statelib.api.mvcc.op.DeleteOpBuilder;
+import org.apache.distributedlog.statelib.api.mvcc.op.IncrementOpBuilder;
 import org.apache.distributedlog.statelib.api.mvcc.op.OpFactory;
 import org.apache.distributedlog.statelib.api.mvcc.op.PutOpBuilder;
 import org.apache.distributedlog.statelib.api.mvcc.op.RangeOpBuilder;
@@ -51,6 +52,11 @@ public class OpFactoryImpl<K, V> implements OpFactory<K, V> {
     @Override
     public TxnOpBuilder<K, V> buildTxnOp() {
         return TxnOpImpl.newBuilder();
+    }
+
+    @Override
+    public IncrementOpBuilder<K, V> buildIncrementOp() {
+        return IncrementOpImpl.newBuilder();
     }
 
     @Override

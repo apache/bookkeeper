@@ -25,6 +25,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.bookkeeper.common.coder.Coder;
 import org.apache.bookkeeper.common.util.Recycled;
+import org.apache.distributedlog.statestore.proto.ValueType;
 
 /**
  * An object represents the mvcc metdata and value for a given key.
@@ -46,10 +47,12 @@ public class MVCCRecord implements Recycled {
     };
 
     private ByteBuf value;
+    private long number;
     private final Recycler.Handle<MVCCRecord> handle;
     private long createRev;
     private long modRev;
     private long version;
+    private ValueType valueType = ValueType.BYTES;
 
     private MVCCRecord(Recycler.Handle<MVCCRecord> handle) {
         this.handle = handle;
@@ -60,7 +63,9 @@ public class MVCCRecord implements Recycled {
         record.createRev = createRev;
         record.modRev = modRev;
         record.version = version;
+        record.valueType = valueType;
         record.value = value.retainedSlice();
+        record.number = number;
         return record;
     }
 
@@ -76,11 +81,15 @@ public class MVCCRecord implements Recycled {
         return Long.compare(this.version, version);
     }
 
-    public void setValue(ByteBuf buf) {
+    public void setValue(ByteBuf buf, ValueType valueType) {
         if (null != value) {
             value.release();
         }
         this.value = buf;
+        this.valueType = valueType;
+        if (ValueType.NUMBER == valueType) {
+            this.number = buf.getLong(0);
+        }
     }
 
     private void reset() {
@@ -91,6 +100,8 @@ public class MVCCRecord implements Recycled {
         modRev = -1L;
         createRev = -1L;
         version = -1L;
+        number = -1L;
+        valueType = ValueType.BYTES;
     }
 
     @Override
@@ -108,6 +119,8 @@ public class MVCCRecord implements Recycled {
         kv.setCreateRevision(createRev);
         kv.setModRevision(modRev);
         kv.setVersion(version);
+        kv.setNumber(ValueType.NUMBER == valueType);
+        kv.setValueNumber(number);
         return kv;
     }
 }

@@ -26,6 +26,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.PeekingIterator;
 import com.google.common.primitives.UnsignedBytes;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import java.util.Collections;
 import java.util.Comparator;
@@ -50,6 +51,7 @@ import org.apache.distributedlog.statelib.api.mvcc.op.CompareOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.CompareResult;
 import org.apache.distributedlog.statelib.api.mvcc.op.CompareTarget;
 import org.apache.distributedlog.statelib.api.mvcc.op.DeleteOp;
+import org.apache.distributedlog.statelib.api.mvcc.op.IncrementOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.Op;
 import org.apache.distributedlog.statelib.api.mvcc.op.OpFactory;
 import org.apache.distributedlog.statelib.api.mvcc.op.PutOp;
@@ -57,6 +59,7 @@ import org.apache.distributedlog.statelib.api.mvcc.op.RangeOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.TxnOp;
 import org.apache.distributedlog.statelib.api.mvcc.result.Code;
 import org.apache.distributedlog.statelib.api.mvcc.result.DeleteResult;
+import org.apache.distributedlog.statelib.api.mvcc.result.IncrementResult;
 import org.apache.distributedlog.statelib.api.mvcc.result.PutResult;
 import org.apache.distributedlog.statelib.api.mvcc.result.RangeResult;
 import org.apache.distributedlog.statelib.api.mvcc.result.Result;
@@ -66,11 +69,13 @@ import org.apache.distributedlog.statelib.impl.kv.RocksdbKVStore;
 import org.apache.distributedlog.statelib.impl.mvcc.op.OpFactoryImpl;
 import org.apache.distributedlog.statelib.impl.mvcc.op.RangeOpImpl;
 import org.apache.distributedlog.statelib.impl.mvcc.result.DeleteResultImpl;
+import org.apache.distributedlog.statelib.impl.mvcc.result.IncrementResultImpl;
 import org.apache.distributedlog.statelib.impl.mvcc.result.PutResultImpl;
 import org.apache.distributedlog.statelib.impl.mvcc.result.RangeResultImpl;
 import org.apache.distributedlog.statelib.impl.mvcc.result.ResultFactory;
 import org.apache.distributedlog.statelib.impl.mvcc.result.TxnResultImpl;
 import org.apache.distributedlog.statelib.impl.rocksdb.RocksUtils;
+import org.apache.distributedlog.statestore.proto.ValueType;
 import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
 import org.rocksdb.WriteBatch;
@@ -120,6 +125,26 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
     @Override
     public synchronized V delete(K key) {
         throw new UnsupportedOperationException("Please use #delete(DeleteOp op) instead");
+    }
+
+    void increment(K key, long amount, long revision) {
+        IncrementOp<K, V> op = opFactory.buildIncrementOp()
+            .key(key)
+            .amount(amount)
+            .revision(revision)
+            .build();
+        IncrementResult<K, V> result = null;
+        try {
+            result = increment(op);
+            if (Code.OK != result.code()) {
+                throw new MVCCStoreException(result.code(),
+                    "Failed to increment (" + key + ", " + amount + ") to state store " + name);
+            }
+        } finally {
+            if (null != result) {
+                result.recycle();
+            }
+        }
     }
 
     void put(K key, V value, long revision) {
@@ -185,6 +210,30 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
             }
         }
 
+    }
+
+    Long getNumber(K key) {
+        RangeOp<K, V> op = opFactory.buildRangeOp()
+            .nullableKey(key)
+            .limit(1)
+            .build();
+        RangeResult<K, V> result = null;
+        try {
+            result = range(op);
+            if (Code.OK != result.code()) {
+                throw new MVCCStoreException(result.code(),
+                    "Failed to retrieve key from store " + name + " : code = " + result.code());
+            }
+            if (result.count() <= 0) {
+                return null;
+            } else {
+                return result.kvs().get(0).number();
+            }
+        } finally {
+            if (null != result) {
+                result.recycle();
+            }
+        }
     }
 
     @Override
@@ -326,6 +375,105 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
         }
     }
 
+    /**
+     * TODO: the increment operation can be optimized using rocksdb merge operator.
+     */
+    @Override
+    public IncrementResult<K, V> increment(IncrementOp<K, V> op) {
+        return increment(op.revision(), op);
+    }
+
+    IncrementResult<K, V> increment(long revision, IncrementOp<K, V> op) {
+        try {
+            return processIncrement(revision, op);
+        } catch (MVCCStoreException e) {
+            IncrementResultImpl<K, V> result = resultFactory.newIncrementResult(revision);
+            result.setCode(e.getCode());
+            return result;
+        } catch (StateStoreRuntimeException e) {
+            IncrementResultImpl<K, V> result = resultFactory.newIncrementResult(revision);
+            result.setCode(Code.INTERNAL_ERROR);
+            return result;
+        }
+    }
+
+    synchronized IncrementResult<K, V> processIncrement(long revision, IncrementOp<K, V> op) {
+        checkStoreOpen();
+
+        WriteBatch batch = new WriteBatch();
+        IncrementResult<K, V> result = null;
+        try {
+            result = increment(revision, batch, op);
+            executeBatch(batch);
+            return result;
+        } catch (StateStoreRuntimeException e) {
+            if (null != result) {
+                result.recycle();
+            }
+            throw e;
+        } finally {
+            RocksUtils.close(batch);
+        }
+    }
+
+    private IncrementResult<K, V> increment(long revision, WriteBatch batch, IncrementOp<K, V> op) {
+        // parameters
+        final K key = op.key();
+        final long amount = op.amount();
+
+        // raw key
+        final byte[] rawKey = keyCoder.encode(key);
+
+        MVCCRecord record;
+        try {
+            record = getKeyRecord(key, rawKey);
+        } catch (StateStoreRuntimeException e) {
+            throw e;
+        }
+
+        // result
+        final IncrementResultImpl<K, V> result = resultFactory.newIncrementResult(revision);
+        try {
+            long oldAmount = 0L;
+            if (null != record) {
+                // validate the update revision before applying the update to the record
+                if (record.compareModRev(revision) >= 0) {
+                    result.setCode(Code.SMALLER_REVISION);
+                    return result;
+                }
+                if (ValueType.NUMBER != record.getValueType()) {
+                    result.setCode(Code.ILLEGAL_OP);
+                    return result;
+                }
+                record.setVersion(record.getVersion() + 1);
+                oldAmount = record.getValue().getLong(0);
+            } else {
+                record = MVCCRecord.newRecord();
+                record.setCreateRev(revision);
+                record.setVersion(0L);
+                record.setValue(PooledByteBufAllocator.DEFAULT.buffer(Long.BYTES), ValueType.NUMBER);
+            }
+            long newAmount = oldAmount + amount;
+            record.getValue().writerIndex(0);
+            record.getValue().writeLong(newAmount);
+            record.setModRev(revision);
+
+            // write the mvcc record back
+            batch.put(dataCfHandle, rawKey, recordCoder.encode(record));
+
+            // finalize the result
+            result.setCode(Code.OK);
+            return result;
+        } catch (StateStoreRuntimeException e) {
+            result.recycle();
+            throw e;
+        } finally {
+            if (null != record) {
+                record.recycle();
+            }
+        }
+    }
+
     @Override
     public PutResult<K, V> put(PutOp<K, V> op) {
         return put(op.revision(), op);
@@ -392,6 +540,11 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
                     return result;
                 }
 
+                if (ValueType.BYTES != record.getValueType()) {
+                    result.setCode(Code.ILLEGAL_OP);
+                    return result;
+                }
+
                 if (op.prevKV()) {
                     // make a copy before modification
                     oldRecord = record.duplicate();
@@ -402,7 +555,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
                 record.setCreateRev(revision);
                 record.setVersion(0);
             }
-            record.setValue(rawValBuf);
+            record.setValue(rawValBuf, ValueType.BYTES);
             record.setModRev(revision);
 
             // write the mvcc record back

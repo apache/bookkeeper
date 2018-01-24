@@ -38,9 +38,11 @@ class KVRecordImpl<K, V> implements KVRecord<K, V> {
 
     private K key = null;
     private V value = null;
+    private long valueNumber = -1L;
     private long createRevision = -1L;
     private long modRevision = -1L;
     private long version = -1L;
+    private boolean isNumber = false;
 
     KVRecordImpl(Handle<KVRecordImpl<K, V>> handle) {
         this.handle = handle;
@@ -54,6 +56,11 @@ class KVRecordImpl<K, V> implements KVRecord<K, V> {
     @Override
     public V value() {
         return value;
+    }
+
+    @Override
+    public long number() {
+        return valueNumber;
     }
 
     @Override
@@ -71,12 +78,19 @@ class KVRecordImpl<K, V> implements KVRecord<K, V> {
         return version;
     }
 
+    @Override
+    public boolean isNumber() {
+        return isNumber;
+    }
+
     private void reset() {
         key = null;
         value = null;
         createRevision = -1L;
         modRevision = -1L;
         version = -1L;
+        valueNumber = -1L;
+        isNumber = false;
     }
 
     @Override

@@ -39,6 +39,8 @@ public interface OpFactory<K, V> {
 
     TxnOpBuilder<K, V> buildTxnOp();
 
+    IncrementOpBuilder<K, V> buildIncrementOp();
+
     CompareOp<K, V> compareVersion(CompareResult result, K key, long version);
 
     CompareOp<K, V> compareModRevision(CompareResult result, K key, long revision);

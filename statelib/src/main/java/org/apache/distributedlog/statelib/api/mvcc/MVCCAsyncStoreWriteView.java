@@ -23,9 +23,11 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.distributedlog.statelib.api.mvcc.op.DeleteOp;
+import org.apache.distributedlog.statelib.api.mvcc.op.IncrementOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.PutOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.TxnOp;
 import org.apache.distributedlog.statelib.api.mvcc.result.DeleteResult;
+import org.apache.distributedlog.statelib.api.mvcc.result.IncrementResult;
 import org.apache.distributedlog.statelib.api.mvcc.result.PutResult;
 import org.apache.distributedlog.statelib.api.mvcc.result.TxnResult;
 
@@ -63,5 +65,8 @@ public interface MVCCAsyncStoreWriteView<K, V> {
 
     CompletableFuture<TxnResult<K, V>> txn(TxnOp<K, V> op);
 
+    CompletableFuture<IncrementResult<K, V>> increment(IncrementOp<K, V> op);
+
+    CompletableFuture<Void> increment(K k, long amount);
 
 }

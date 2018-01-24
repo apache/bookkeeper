@@ -24,12 +24,15 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.distributedlog.statelib.api.exceptions.MVCCStoreException;
 import org.apache.distributedlog.statelib.api.mvcc.op.DeleteOp;
+import org.apache.distributedlog.statelib.api.mvcc.op.IncrementOp;
 import org.apache.distributedlog.statelib.api.mvcc.op.PutOp;
 import org.apache.distributedlog.statelib.api.mvcc.result.Code;
 import org.apache.distributedlog.statelib.api.mvcc.result.DeleteResult;
+import org.apache.distributedlog.statelib.api.mvcc.result.IncrementResult;
 import org.apache.distributedlog.statelib.api.mvcc.result.PutResult;
 import org.apache.distributedlog.statelib.impl.journal.CommandProcessor;
 import org.apache.distributedlog.statelib.impl.mvcc.op.proto.ProtoDeleteOpImpl;
+import org.apache.distributedlog.statelib.impl.mvcc.op.proto.ProtoIncrementOpImpl;
 import org.apache.distributedlog.statelib.impl.mvcc.op.proto.ProtoPutOpImpl;
 import org.apache.distributedlog.statestore.proto.Command;
 
@@ -101,6 +104,34 @@ class MVCCCommandProcessor implements CommandProcessor<MVCCStoreImpl<byte[], byt
         throw new UnsupportedOperationException();
     }
 
+    private void applyIncrCommand(long revision, Command command,
+                                  MVCCStoreImpl<byte[], byte[]> store) {
+        ProtoIncrementOpImpl op = ProtoIncrementOpImpl.newIncrementOp(revision, command);
+        try {
+            applyIncrOp(revision, op, true, store);
+        } finally {
+            op.recycle();
+        }
+    }
+
+    private void applyIncrOp(long revision,
+                             IncrementOp<byte[], byte[]> op,
+                             boolean ignoreSmallerRevision,
+                             MVCCStoreImpl<byte[], byte[]> localStore) {
+        IncrementResult<byte[], byte[]> result = localStore.increment(revision, op);
+        try {
+            if (Code.OK == result.code()
+                || (ignoreSmallerRevision && Code.SMALLER_REVISION == result.code())) {
+                return;
+            }
+            throw new MVCCStoreException(result.code(),
+                "Failed to apply command " + op + " at revision "
+                    + revision + " to the state store " + localStore.name());
+        } finally {
+            result.recycle();
+        }
+    }
+
     @Override
     public void applyCommand(long txid, ByteBuf cmdBuf, MVCCStoreImpl<byte[], byte[]> store) {
         Command command = MVCCUtils.newCommand(cmdBuf);
@@ -115,6 +146,9 @@ class MVCCCommandProcessor implements CommandProcessor<MVCCStoreImpl<byte[], byt
                 return;
             case TXN_REQ:
                 applyTxnCommand(txid, command, store);
+                return;
+            case INCR_REQ:
+                applyIncrCommand(txid, command, store);
                 return;
             default:
                 return;
