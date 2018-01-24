@@ -32,7 +32,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 @RunWith(Arquillian.class)
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 class TestCompatUpgradeDirect {
     private static final Logger LOG = LoggerFactory.getLogger(TestCompatUpgradeDirect.class)
     private static byte[] PASSWD = "foobar".getBytes()
@@ -91,7 +90,7 @@ class TestCompatUpgradeDirect {
     }
 
     @Test
-    public void test1_v410ClientCantFenceLedgerFromCurrent() throws Exception {
+    public void test9_v410ClientCantFenceLedgerFromCurrent() throws Exception {
         String currentVersion = System.getProperty("currentVersion")
         String zookeeper = BookKeeperClusterUtils.zookeeperConnectString(docker)
 

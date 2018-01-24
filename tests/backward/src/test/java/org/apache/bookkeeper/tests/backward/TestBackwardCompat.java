@@ -20,7 +20,6 @@
  */
 package org.apache.bookkeeper.tests.backward;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -438,105 +437,4 @@ public class TestBackwardCompat {
         }
     }
 
-    /**
-     * Test compatability between old versions and the current version.
-     * - old server restarts with useHostNameAsBookieID=true.
-     * - Read ledgers with old and new clients
-     */
-    @Test
-    public void testCompatReads() throws Exception {
-        File journalDir = createTempDir("bookie", "journal");
-        File ledgerDir = createTempDir("bookie", "ledger");
-
-        int port = PortManager.nextFreePort();
-        // start server, upgrade
-        Server410 s410 = new Server410(journalDir, ledgerDir, port);
-        s410.start();
-
-        Ledger410 l410 = Ledger410.newLedger();
-        l410.write100();
-        long oldLedgerId = l410.getId();
-        l410.close();
-
-        // Check that 420 client can to write to 410 server
-        Ledger420 l420 = Ledger420.newLedger();
-        l420.write100();
-        long lid420 = l420.getId();
-        l420.close();
-
-        s410.stop();
-
-        // Start the current server, will not require a filesystem upgrade
-        ServerCurrent scur = new ServerCurrent(journalDir, ledgerDir, port,
-                false);
-        scur.start();
-
-        // check that old client can read its old ledgers on new server
-        l410 = Ledger410.openLedger(oldLedgerId);
-        assertEquals(100, l410.readAll());
-        l410.close();
-
-        // Check that 420 client can read old ledgers on new server
-        l420 = Ledger420.openLedger(lid420);
-        assertEquals("Failed to read entries!", 100, l420.readAll());
-        l420.close();
-
-        // Check that current client can read old ledgers on new server
-        final LedgerCurrent curledger = LedgerCurrent.openLedger(lid420);
-        assertEquals("Failed to read entries!", 100, curledger.readAll());
-        curledger.close();
-    }
-
-    /**
-     * Test compatability between version old version and the current version.
-     * - 4.1.0 server restarts with useHostNameAsBookieID=true.
-     * - Write ledgers with old and new clients
-     * - Read ledgers written by old clients.
-     */
-    @Test
-    public void testCompatWrites() throws Exception {
-        File journalDir = createTempDir("bookie", "journal");
-        File ledgerDir = createTempDir("bookie", "ledger");
-
-        int port = PortManager.nextFreePort();
-        // start server, upgrade
-        Server410 s410 = new Server410(journalDir, ledgerDir, port);
-        s410.start();
-        s410.stop();
-
-        // Start the current server, will not require a filesystem upgrade
-        ServerCurrent scur = new ServerCurrent(journalDir, ledgerDir, port,
-                false);
-        scur.start();
-
-        // Check that current client can to write to server
-        LedgerCurrent lcur = LedgerCurrent.newLedger();
-        lcur.write100();
-        lcur.close();
-        final LedgerCurrent curledger = LedgerCurrent.openLedger(lcur.getId());
-        assertEquals("Failed to read entries!", 100, curledger.readAll());
-
-        // Check that 410 client can write to server
-        Ledger410 l410 = Ledger410.newLedger();
-        l410.write100();
-        long oldLedgerId = l410.getId();
-        l410.close();
-
-        // Check that 420 client can write to server
-        Ledger410 l420 = Ledger410.newLedger();
-        l420.write100();
-        long lid420 = l420.getId();
-        l420.close();
-
-        // check that new client can read old ledgers on new server
-        LedgerCurrent oldledger = LedgerCurrent.openLedger(oldLedgerId);
-        assertEquals("Failed to read entries!", 100, oldledger.readAll());
-        oldledger.close();
-
-        // check that new client can read old ledgers on new server
-        oldledger = LedgerCurrent.openLedger(lid420);
-        assertEquals("Failed to read entries!", 100, oldledger.readAll());
-        oldledger.close();
-        scur.stop();
-    }
 }
