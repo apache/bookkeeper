@@ -374,9 +374,11 @@ public class EntryLogger {
 
     static class ReferenceCountedFileChannel extends AbstractReferenceCounted {
         private final FileChannel fc;
+        AtomicBoolean dead;
 
         public ReferenceCountedFileChannel(FileChannel fileChannel) {
             this.fc = fileChannel;
+            dead = new AtomicBoolean(false);
         }
 
         @VisibleForTesting
@@ -392,6 +394,7 @@ public class EntryLogger {
         // when the refCnt decreased to 0 or force deallocate
         @Override
         protected void deallocate() {
+            dead.compareAndSet(false, true);
             try {
                 fc.close();
             } catch (IOException e) {
@@ -1172,10 +1175,14 @@ public class EntryLogger {
         ReferenceCountedFileChannel oldFc =
                 logid2FileChannel.putIfAbsent(entryLogId, new ReferenceCountedFileChannel(newFc));
         if (null != oldFc) {
-            newFc.close();
-            newFc = oldFc.fc;
             // increment the refCnt
-            oldFc.retain();
+            // double check to ensure the fileChannel is not closed due to refCnt down to 0.
+            if (oldFc.refCnt() > 0 && !oldFc.dead.get()) {
+                oldFc.retain();
+                newFc.close();
+                newFc = oldFc.fc;
+            }
+            // otherwise the fileChannel is being closed, use newFc
         }
 
         // We set the position of the write buffer of this buffered channel to Long.MAX_VALUE
