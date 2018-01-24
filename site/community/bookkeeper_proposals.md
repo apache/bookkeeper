@@ -85,7 +85,7 @@ using Google Doc.
 
 This section lists all the _bookkeeper proposals_ made to BookKeeper.
 
-*Next Proposal Number: 26*
+*Next Proposal Number: 27*
 
 ### Inprogress
 

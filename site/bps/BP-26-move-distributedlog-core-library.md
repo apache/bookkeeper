@@ -38,7 +38,9 @@ This proposal will *ONLY* move following library-only modules from distributedlo
 
 This proposal will *NOT* move other service components like "distributedlog-proxy".
 
-- those modules will be moved under `stream/distributedlog` directory at apache bookkeeper repo.
+The steps to make this change are described as following:
+
+- the proposed modules (`distributedlog-core` and `distributedlog-io/dlfs`) will be moved under `stream/distributedlog` directory at apache bookkeeper repo.
 - a new "stream" profile will be added to the root `pom.xml` file. The distributedlog module will only be build when "-Pstream" is specified
   in the maven build command. This allows users who only use ledger api skip building distributedlog module.
 - the distributedlog api, javadoc api and some tutorials will be integrated with current bookkeeper website to provide integrated experiences
