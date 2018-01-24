@@ -1127,7 +1127,7 @@ public class BookKeeperAdmin implements AutoCloseable {
             boolean isInteractive, boolean force) throws Exception {
 
         try (RegistrationManager rm = RegistrationManager.instantiateRegistrationManager(conf)) {
-            boolean ledgerRootExists = rm.prepareFormat(conf);
+            boolean ledgerRootExists = rm.prepareFormat();
 
             // If old data was there then confirm with admin.
             boolean doFormat = true;
@@ -1155,7 +1155,56 @@ public class BookKeeperAdmin implements AutoCloseable {
             BookKeeper bkc = new BookKeeper(new ClientConfiguration(conf));
             bkc.ledgerManagerFactory.format(conf, bkc.regClient.getLayoutManager());
 
-            return rm.format(conf);
+            return rm.format();
+        }
+    }
+
+    /**
+     * Intializes new cluster by creating required znodes for the cluster. If
+     * ledgersrootpath is already existing then it will error out.
+     *
+     * @param conf
+     * @return
+     * @throws Exception
+     */
+    public static boolean initNewCluster(ServerConfiguration conf) throws Exception {
+        try (RegistrationManager rm = RegistrationManager.instantiateRegistrationManager(conf)) {
+            return rm.initNewCluster();
+        }
+    }
+
+    /**
+     * Nukes existing cluster metadata. But it does only if the provided
+     * ledgersRootPath matches with configuration's zkLedgersRootPath and
+     * provided instanceid matches with the cluster metadata. If force is
+     * mentioned then instanceid will not be validated.
+     *
+     * @param conf
+     * @param ledgersRootPath
+     * @param instanceId
+     * @param force
+     * @return
+     * @throws Exception
+     */
+    public static boolean nukeExistingCluster(ServerConfiguration conf, String ledgersRootPath, String instanceId,
+            boolean force) throws Exception {
+        String confLedgersRootPath = conf.getZkLedgersRootPath();
+        if (!confLedgersRootPath.equals(ledgersRootPath)) {
+            LOG.error("Provided ledgerRootPath : {} is not matching with config's ledgerRootPath: {}, "
+                    + "so exiting nuke operation", ledgersRootPath, confLedgersRootPath);
+            return false;
+        }
+
+        try (RegistrationManager rm = RegistrationManager.instantiateRegistrationManager(conf)) {
+            if (!force) {
+                String readInstanceId = rm.getClusterInstanceId();
+                if ((instanceId == null) || !instanceId.equals(readInstanceId)) {
+                    LOG.error("Provided InstanceId : {} is not matching with cluster InstanceId in ZK: {}", instanceId,
+                            readInstanceId);
+                    return false;
+                }
+            }
+            return rm.nukeExistingCluster();
         }
     }
 
