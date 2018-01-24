@@ -140,6 +140,7 @@ message StreamConfiguration {
     SegmentRollingPolicy rolling_policy = 5;
     RetentionPolicy retention_policy    = 6;
     string backend_service_url          = 7;
+    bool is_readonly                    = 8;
 }
 
 message StreamProperties {

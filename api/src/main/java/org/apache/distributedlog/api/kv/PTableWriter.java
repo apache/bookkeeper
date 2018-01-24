@@ -18,7 +18,6 @@
 package org.apache.distributedlog.api.kv;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.distributedlog.api.stream.Position;
 
 /**
  * Mutate a {@link PTable} by appending updates to its stream.
@@ -30,10 +29,10 @@ public interface PTableWriter<K, V> extends AutoCloseable {
      *
      * <p>If <tt>value</tt> is null, it means deleting given <tt>key</tt> from the table.
      */
-    CompletableFuture<Position> write(long sequenceId,
-                                      K pKey,
-                                      K lKey,
-                                      V value);
+    CompletableFuture<Void> write(long sequenceId,
+                                  K pKey,
+                                  K lKey,
+                                  V value);
 
     @Override
     void close();

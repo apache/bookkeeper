@@ -18,7 +18,6 @@
 package org.apache.distributedlog.api.kv;
 
 import java.util.concurrent.CompletableFuture;
-import org.apache.distributedlog.api.stream.Position;
 
 /**
  * Mutate a table by appending updates to its stream.
@@ -30,8 +29,7 @@ public interface TableWriter<K, V> {
      *
      * <p>If <tt>value</tt> is null, it means deleting given <tt>key</tt> from the table.
      */
-    CompletableFuture<Position> write(long sequenceId,
-                                      K key,
-                                      V value);
+    CompletableFuture<Void> write(long sequenceId,
+                                  K key, V value);
 
 }

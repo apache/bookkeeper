@@ -19,6 +19,8 @@ package org.apache.distributedlog.clients.impl.kv;
 
 import com.google.common.collect.Sets;
 import io.netty.buffer.ByteBuf;
+import java.io.IOException;
+import java.net.URI;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -30,11 +32,14 @@ import java.util.concurrent.ScheduledExecutorService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.router.ByteBufHashRouter;
+import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.api.kv.PTableWriter;
-import org.apache.distributedlog.api.stream.Position;
+import org.apache.distributedlog.api.namespace.Namespace;
+import org.apache.distributedlog.api.namespace.NamespaceBuilder;
 import org.apache.distributedlog.clients.impl.internal.api.HashStreamRanges;
 import org.apache.distributedlog.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.distributedlog.clients.impl.routing.RangeRouter;
+import org.apache.distributedlog.stream.proto.RangeProperties;
 import org.apache.distributedlog.stream.proto.StreamProperties;
 
 /**
@@ -49,7 +54,7 @@ public class PByteBufTableWriterImpl implements PTableWriter<ByteBuf, ByteBuf> {
     static class FailRequestTableRangeWriter implements PTableWriter<ByteBuf, ByteBuf> {
 
         @Override
-        public CompletableFuture<Position> write(long sequenceId, ByteBuf pKey, ByteBuf lKey, ByteBuf value) {
+        public CompletableFuture<Void> write(long sequenceId, ByteBuf pKey, ByteBuf lKey, ByteBuf value) {
             return FutureUtils.exception(CAUSE);
         }
 
@@ -65,6 +70,7 @@ public class PByteBufTableWriterImpl implements PTableWriter<ByteBuf, ByteBuf> {
     private final StorageServerClientManager clientManager;
     private final ScheduledExecutorService executor;
     private final PTableWriter<ByteBuf, ByteBuf> failRequestWriter;
+    private final Namespace namespace;
 
     // States
     private final RangeRouter<ByteBuf> rangeRouter;
@@ -73,7 +79,7 @@ public class PByteBufTableWriterImpl implements PTableWriter<ByteBuf, ByteBuf> {
     public PByteBufTableWriterImpl(String streamName,
                                    StreamProperties props,
                                    StorageServerClientManager clientManager,
-                                   ScheduledExecutorService executor) {
+                                   ScheduledExecutorService executor) throws IOException {
         this.streamName = streamName;
         this.props = props;
         this.clientManager = clientManager;
@@ -81,6 +87,17 @@ public class PByteBufTableWriterImpl implements PTableWriter<ByteBuf, ByteBuf> {
         this.executor = executor;
         this.rangeRouter = new RangeRouter<>(ByteBufHashRouter.of());
         this.tableRanges = new ConcurrentHashMap<>();
+        this.namespace = NamespaceBuilder.newBuilder()
+            .uri(URI.create(props.getStreamConf().getBackendServiceUrl()))
+            .conf(new DistributedLogConfiguration()
+                .setWriteLockEnabled(false)
+                .setImmediateFlushEnabled(false)
+                .setOutputBufferSize(128 * 1024)
+                .setPeriodicFlushFrequencyMilliSeconds(2)
+                .setExplicitTruncationByApplication(true)
+                .setLogSegmentRollingConcurrency(1)
+                .setMaxLogSegmentBytes(256 * 1024 * 1024))
+            .build();
     }
 
     private PTableWriter<ByteBuf, ByteBuf> getTableRangeWriter(Long range) {
@@ -111,36 +128,42 @@ public class PByteBufTableWriterImpl implements PTableWriter<ByteBuf, ByteBuf> {
         }
         rangeRouter.setRanges(newRanges);
         // add new ranges
-        Set<Long> activeRanges = Sets.newHashSetWithExpectedSize(newRanges.getRanges().size());
-        newRanges.getRanges().forEach((rk, range) -> {
-            activeRanges.add(range.getRangeId());
-            if (tableRanges.containsKey(range.getRangeId())) {
-                return;
+        try {
+            Set<Long> activeRanges = Sets.newHashSetWithExpectedSize(newRanges.getRanges().size());
+            for (Map.Entry<Long, RangeProperties> entry : newRanges.getRanges().entrySet()) {
+                long rk = entry.getKey();
+                RangeProperties range = entry.getValue();
+                activeRanges.add(range.getRangeId());
+                if (tableRanges.containsKey(range.getRangeId())) {
+                    continue;
+                }
+                PTableWriter<ByteBuf, ByteBuf> rangeWriter =
+                    new PByteBufTableRangeWriterImpl(props, range, namespace);
+                if (log.isInfoEnabled()) {
+                    log.info("Create table range client for range {}", range.getRangeId());
+                }
+                this.tableRanges.put(range.getRangeId(), rangeWriter);
             }
-            PTableWriter<ByteBuf, ByteBuf> rangeWriter =
-                new PByteBufTableRangeWriterImpl(props.getStreamId(), range);
-            if (log.isInfoEnabled()) {
-                log.info("Create table range client for range {}", range.getRangeId());
+            // remove old ranges
+            Iterator<Entry<Long, PTableWriter<ByteBuf, ByteBuf>>> rsIter = tableRanges.entrySet().iterator();
+            while (rsIter.hasNext()) {
+                Map.Entry<Long, PTableWriter<ByteBuf, ByteBuf>> entry = rsIter.next();
+                Long rid = entry.getKey();
+                if (activeRanges.contains(rid)) {
+                    continue;
+                }
+                rsIter.remove();
+                PTableWriter<ByteBuf, ByteBuf> oldRangeSpace = entry.getValue();
+                oldRangeSpace.close();
             }
-            this.tableRanges.put(range.getRangeId(), rangeWriter);
-        });
-        // remove old ranges
-        Iterator<Entry<Long, PTableWriter<ByteBuf, ByteBuf>>> rsIter = tableRanges.entrySet().iterator();
-        while (rsIter.hasNext()) {
-            Map.Entry<Long, PTableWriter<ByteBuf, ByteBuf>> entry = rsIter.next();
-            Long rid = entry.getKey();
-            if (activeRanges.contains(rid)) {
-                continue;
-            }
-            rsIter.remove();
-            PTableWriter<ByteBuf, ByteBuf> oldRangeSpace = entry.getValue();
-            oldRangeSpace.close();
+            return FutureUtils.value(this);
+        } catch (IOException ioe) {
+            return FutureUtils.exception(ioe);
         }
-        return FutureUtils.value(this);
     }
 
     @Override
-    public CompletableFuture<Position> write(long sequenceId, ByteBuf pKey, ByteBuf lKey, ByteBuf value) {
+    public CompletableFuture<Void> write(long sequenceId, ByteBuf pKey, ByteBuf lKey, ByteBuf value) {
         Long range = rangeRouter.getRange(pKey);
         return getTableRangeWriter(range)
             .write(sequenceId, pKey, lKey, value);
@@ -149,5 +172,6 @@ public class PByteBufTableWriterImpl implements PTableWriter<ByteBuf, ByteBuf> {
     @Override
     public void close() {
         tableRanges.values().forEach(PTableWriter::close);
+        namespace.close();
     }
 }

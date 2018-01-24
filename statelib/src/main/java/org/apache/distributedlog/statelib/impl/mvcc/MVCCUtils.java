@@ -210,7 +210,7 @@ public final class MVCCUtils {
         return cmdBuilder.build();
     }
 
-    static ByteBuf newLogRecordBuf(Command command) {
+    public static ByteBuf newLogRecordBuf(Command command) {
         ByteBuf buf = Unpooled.buffer(command.getSerializedSize());
         try {
             command.writeTo(new ByteBufOutputStream(buf));

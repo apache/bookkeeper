@@ -21,7 +21,6 @@ import io.netty.buffer.ByteBuf;
 import java.util.concurrent.CompletableFuture;
 import org.apache.distributedlog.api.kv.PTableWriter;
 import org.apache.distributedlog.api.kv.TableWriter;
-import org.apache.distributedlog.api.stream.Position;
 
 /**
  * The default implementation of {@link TableWriter}.
@@ -35,7 +34,7 @@ public class ByteBufTableWriterImpl implements TableWriter<ByteBuf, ByteBuf> {
     }
 
     @Override
-    public CompletableFuture<Position> write(long sequenceId, ByteBuf key, ByteBuf value) {
+    public CompletableFuture<Void> write(long sequenceId, ByteBuf key, ByteBuf value) {
         return underlying.write(
             sequenceId,
             key,

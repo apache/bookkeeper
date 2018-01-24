@@ -19,6 +19,7 @@
 package org.apache.distributedlog.clients;
 
 import io.netty.buffer.ByteBuf;
+import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
@@ -128,12 +129,16 @@ class StorageClientImpl extends AbstractAutoAsyncCloseable implements StorageCli
     FutureUtils.proxyTo(
         getStreamProperties(streamName).thenComposeAsync(props -> {
             log.info("Retrieved stream properties for stream {} : {}", streamName, props);
+          try {
             return new PByteBufTableWriterImpl(
                 streamName,
                 props,
                 serverManager,
                 scheduler.chooseThread(props.getStreamId())
             ).initialize();
+          } catch (IOException e) {
+            return FutureUtils.exception(e);
+          }
         }),
         future
     );
