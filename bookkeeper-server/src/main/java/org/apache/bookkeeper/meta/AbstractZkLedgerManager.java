@@ -466,7 +466,10 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
         ZkUtils.getChildrenInSingleNode(zk, path, new GenericCallback<List<String>>() {
             @Override
             public void operationComplete(int rc, List<String> ledgerNodes) {
-                if (Code.OK.intValue() != rc) {
+                if (Code.NONODE.intValue() == rc) {
+                    finalCb.processResult(successRc, null, ctx);
+                    return;
+                } else if (Code.OK.intValue() != rc) {
                     finalCb.processResult(failureRc, null, ctx);
                     return;
                 }
