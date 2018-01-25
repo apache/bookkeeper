@@ -21,14 +21,13 @@
 package org.apache.bookkeeper.bookie.storage.ldb;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
-
 import io.netty.buffer.ByteBuf;
 import io.netty.util.concurrent.DefaultThreadFactory;
-
 import java.io.IOException;
 import java.util.SortedMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -40,7 +39,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.Bookie.NoEntryException;
 import org.apache.bookkeeper.bookie.BookieException;
@@ -56,13 +54,16 @@ import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.StateManager;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorageDataFormats.LedgerData;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorage.Batch;
+import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigType;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.stats.Gauge;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -773,7 +774,6 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
 
         return numberOfEntries.get();
     }
-
     @Override
     public void registerLedgerDeletionListener(LedgerDeletionListener listener) {
         ledgerDeletionListeners.add(listener);
@@ -789,6 +789,51 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
 
     private void recordFailedEvent(OpStatsLogger logger, long startTimeNanos) {
         logger.registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
+    }
+
+    /**
+     * Reads ledger index entries to get list of entry-logger that contains given ledgerId.
+     *
+     * @param ledgerId
+     * @param serverConf
+     * @param processor
+     * @throws IOException
+     */
+    public static void readLedgerIndexEntries(long ledgerId, ServerConfiguration serverConf,
+            LedgerLoggerProcessor processor) throws IOException {
+
+        checkNotNull(serverConf, "ServerConfiguration can't be null");
+        checkNotNull(processor, "LedgerLoggger info processor can't null");
+
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(serverConf, serverConf.getLedgerDirs(),
+            new DiskChecker(serverConf.getDiskUsageThreshold(), serverConf.getDiskUsageWarnThreshold()));
+        String ledgerBasePath = ledgerDirsManager.getAllLedgerDirs().get(0).toString();
+
+        EntryLocationIndex entryLocationIndex = new EntryLocationIndex(serverConf,
+                (path, dbConfigType, conf1) -> new KeyValueStorageRocksDB(path, DbConfigType.Small, conf1, true),
+                ledgerBasePath, NullStatsLogger.INSTANCE);
+        try {
+            long lastEntryId = entryLocationIndex.getLastEntryInLedger(ledgerId);
+            for (long currentEntry = 0; currentEntry <= lastEntryId; currentEntry++) {
+                long offset = entryLocationIndex.getLocation(ledgerId, currentEntry);
+                if (offset <= 0) {
+                    // entry not found in this bookie
+                    continue;
+                }
+                long entryLogId = offset >> 32L;
+                long position = offset & 0xffffffffL;
+                processor.process(currentEntry, entryLogId, position);
+            }
+        } finally {
+            entryLocationIndex.close();
+        }
+    }
+
+    /**
+     * Interface which process ledger logger.
+     */
+    public interface LedgerLoggerProcessor {
+        void process(long entryId, long entryLogId, long position);
     }
 
     private static final Logger log = LoggerFactory.getLogger(DbLedgerStorage.class);
