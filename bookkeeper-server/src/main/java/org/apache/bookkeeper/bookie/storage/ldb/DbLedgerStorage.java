@@ -63,6 +63,7 @@ import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.MathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -791,7 +792,7 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
     }
 
     /**
-     * Reads ledger index entries to get list of entry-logger that contains given ledgerId
+     * Reads ledger index entries to get list of entry-logger that contains given ledgerId.
      *
      * @param ledgerId
      * @param serverConf
@@ -804,7 +805,8 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
         checkNotNull(serverConf, "ServerConfiguration can't be null");
         checkNotNull(processor, "LedgerLoggger info processor can't null");
 
-        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(serverConf, serverConf.getLedgerDirs());
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(serverConf, serverConf.getLedgerDirs(),
+            new DiskChecker(serverConf.getDiskUsageThreshold(), serverConf.getDiskUsageWarnThreshold()));
         String ledgerBasePath = ledgerDirsManager.getAllLedgerDirs().get(0).toString();
 
         EntryLocationIndex entryLocationIndex = new EntryLocationIndex(serverConf,
@@ -827,6 +829,9 @@ public class DbLedgerStorage implements CompactableLedgerStorage {
         }
     }
 
+    /**
+     * Interface which process ledger logger.
+     */
     public interface LedgerLoggerProcessor {
         void process(long entryId, long entryLogId, long position);
     }

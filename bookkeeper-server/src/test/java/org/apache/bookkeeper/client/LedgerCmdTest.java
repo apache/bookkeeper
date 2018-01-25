@@ -20,10 +20,11 @@
  */
 package org.apache.bookkeeper.client;
 
+import static junit.framework.TestCase.assertEquals;
+
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.bookkeeper.bookie.BookieShell;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
@@ -34,11 +35,12 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import junit.framework.Assert;
-
+/**
+ * A test for bookieshell ledger command.
+ */
 public class LedgerCmdTest extends BookKeeperClusterTestCase {
 
-    private final static Logger LOG = LoggerFactory.getLogger(LedgerCmdTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LedgerCmdTest.class);
     private DigestType digestType = DigestType.CRC32;
     private static final String PASSWORD = "testPasswd";
 
@@ -49,25 +51,25 @@ public class LedgerCmdTest extends BookKeeperClusterTestCase {
         baseConf.setFlushInterval(1);
     }
 
-    
+
     /**
-     * list of entry logger files that contains given ledgerId
+     * list of entry logger files that contains given ledgerId.
      */
     @Test
     public void testLedgerDbStorageCmd() throws Exception {
-        
+
         BookKeeper bk = new BookKeeper(baseClientConf, zkc);
         LOG.info("Create ledger and add entries to it");
         LedgerHandle lh1 = createLedgerWithEntries(bk, 10);
-        
+
         String[] argv = new String[] { "ledger", Long.toString(lh1.getId()) };
         final ServerConfiguration conf = bsConfs.get(0);
         conf.setUseHostNameAsBookieID(true);
 
         BookieShell bkShell = new BookieShell();
         bkShell.setConf(conf);
-        
-        Assert.assertEquals("Failed to return exit code!", 0, bkShell.run(argv));
+
+        assertEquals("Failed to return exit code!", 0, bkShell.run(argv));
 
     }
 
