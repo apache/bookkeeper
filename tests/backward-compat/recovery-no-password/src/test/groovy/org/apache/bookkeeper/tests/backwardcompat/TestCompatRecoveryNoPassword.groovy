@@ -15,7 +15,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-package org.apache.bookkeeper.tests
+package org.apache.bookkeeper.tests.backwardcompat
 
 import com.github.dockerjava.api.DockerClient
 
@@ -35,6 +35,9 @@ import org.apache.bookkeeper.client.LedgerMetadata
 import org.apache.bookkeeper.conf.ClientConfiguration
 import org.apache.bookkeeper.net.BookieSocketAddress
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback
+import org.apache.bookkeeper.tests.BookKeeperClusterUtils
+import org.apache.bookkeeper.tests.DockerUtils
+import org.apache.bookkeeper.tests.MavenClassLoader
 
 import org.jboss.arquillian.junit.Arquillian
 import org.jboss.arquillian.test.api.ArquillianResource
