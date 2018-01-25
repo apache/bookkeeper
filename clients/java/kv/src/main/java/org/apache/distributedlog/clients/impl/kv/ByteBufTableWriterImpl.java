@@ -50,4 +50,9 @@ public class ByteBufTableWriterImpl implements TableWriter<ByteBuf, ByteBuf> {
             key,
             amount);
     }
+
+    @Override
+    public void close() {
+        // no-op
+    }
 }

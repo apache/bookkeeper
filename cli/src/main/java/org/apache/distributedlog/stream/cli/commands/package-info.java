@@ -15,30 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.distributedlog.api.kv;
-
-import java.util.concurrent.CompletableFuture;
 
 /**
- * Mutate a table by appending updates to its stream.
+ * The package contains all the commands used by storage cli.
  */
-public interface TableWriter<K, V> extends AutoCloseable {
-
-    /**
-     * Append a key/value pair to the stream.
-     *
-     * <p>If <tt>value</tt> is null, it means deleting given <tt>key</tt> from the table.
-     */
-    CompletableFuture<Void> write(long sequenceId,
-                                  K key, V value);
-
-    /**
-     * Append an increment operation to the stream.
-     */
-    CompletableFuture<Void> increment(long sequenceId,
-                                      K key,
-                                      long amount);
-
-    @Override
-    void close();
-}
+package org.apache.distributedlog.stream.cli.commands;

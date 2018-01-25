@@ -15,30 +15,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.distributedlog.api.kv;
+package org.apache.distributedlog.stream.cli.commands;
 
-import java.util.concurrent.CompletableFuture;
+import org.apache.distributedlog.clients.config.StorageClientSettings;
 
 /**
- * Mutate a table by appending updates to its stream.
+ * A basic command interface provides a run method to execute it.
  */
-public interface TableWriter<K, V> extends AutoCloseable {
+public interface SubCommand {
 
     /**
-     * Append a key/value pair to the stream.
+     * SubCommand name.
      *
-     * <p>If <tt>value</tt> is null, it means deleting given <tt>key</tt> from the table.
+     * @return command name.
      */
-    CompletableFuture<Void> write(long sequenceId,
-                                  K key, V value);
+    String name();
 
     /**
-     * Append an increment operation to the stream.
+     * Run the command with provided configuration.
      */
-    CompletableFuture<Void> increment(long sequenceId,
-                                      K key,
-                                      long amount);
+    void run(String namespace, StorageClientSettings settings) throws Exception;
 
-    @Override
-    void close();
 }

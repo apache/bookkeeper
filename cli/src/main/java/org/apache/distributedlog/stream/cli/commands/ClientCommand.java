@@ -15,30 +15,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.distributedlog.api.kv;
+package org.apache.distributedlog.stream.cli.commands;
 
-import java.util.concurrent.CompletableFuture;
+import org.apache.distributedlog.api.StorageClient;
+import org.apache.distributedlog.clients.StorageClientBuilder;
+import org.apache.distributedlog.clients.config.StorageClientSettings;
 
 /**
- * Mutate a table by appending updates to its stream.
+ * An admin command interface provides a run method to execute admin commands.
  */
-public interface TableWriter<K, V> extends AutoCloseable {
-
-    /**
-     * Append a key/value pair to the stream.
-     *
-     * <p>If <tt>value</tt> is null, it means deleting given <tt>key</tt> from the table.
-     */
-    CompletableFuture<Void> write(long sequenceId,
-                                  K key, V value);
-
-    /**
-     * Append an increment operation to the stream.
-     */
-    CompletableFuture<Void> increment(long sequenceId,
-                                      K key,
-                                      long amount);
+public abstract class ClientCommand implements SubCommand {
 
     @Override
-    void close();
+    public void run(String namespace, StorageClientSettings settings) throws Exception {
+        try (StorageClient client = StorageClientBuilder.newBuilder()
+            .withSettings(settings)
+            .withNamespace(namespace)
+            .build()) {
+            run(client);
+        }
+    }
+
+    protected abstract void run(StorageClient client) throws Exception;
 }

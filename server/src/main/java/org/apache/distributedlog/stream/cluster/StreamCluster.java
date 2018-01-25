@@ -14,6 +14,9 @@
 
 package org.apache.distributedlog.stream.cluster;
 
+import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
+import static org.apache.distributedlog.stream.protocol.ProtocolConstants.DEFAULT_STREAM_CONF;
+
 import com.google.common.collect.Lists;
 import java.io.File;
 import java.io.IOException;
@@ -35,12 +38,21 @@ import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.LocalDLMEmulator;
+import org.apache.distributedlog.clients.StorageClientBuilder;
+import org.apache.distributedlog.clients.admin.StorageAdminClient;
+import org.apache.distributedlog.clients.config.StorageClientSettings;
+import org.apache.distributedlog.clients.exceptions.NamespaceExistsException;
+import org.apache.distributedlog.stream.proto.NamespaceConfiguration;
+import org.apache.distributedlog.stream.proto.NamespaceProperties;
 import org.apache.distributedlog.stream.proto.common.Endpoint;
 import org.apache.distributedlog.stream.server.StorageServer;
 import org.apache.distributedlog.stream.storage.api.controller.StorageController;
 import org.apache.distributedlog.stream.storage.conf.StorageConfiguration;
 import org.apache.distributedlog.stream.storage.impl.sc.helix.HelixStorageController;
 import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.KeeperException.Code;
+import org.apache.zookeeper.Transaction;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
 
@@ -142,9 +154,22 @@ public class StreamCluster
           .connectString(zkEnsemble)
           .sessionTimeoutMs(60000)
           .build();
-      zkc.create(ROOT_PATH, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-      zkc.create(LEDGERS_PATH, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-      zkc.create(LEDGERS_AVAILABLE_PATH, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+      Transaction txn = zkc.transaction();
+      txn.create(
+          ROOT_PATH, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+      txn.create(
+          LEDGERS_PATH, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+      txn.create(
+          LEDGERS_AVAILABLE_PATH, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+
+      try {
+        txn.commit();
+      } catch (KeeperException ke) {
+        if (Code.NODEEXISTS != ke.code()) {
+          throw ke;
+        }
+      }
+
       log.info("Initialize the bookkeeper metadata.");
 
       // initialize the storage
@@ -231,6 +256,33 @@ public class StreamCluster
     executor.shutdown();
   }
 
+  private void createDefaultNamespaces() throws Exception {
+    StorageClientSettings settings = StorageClientSettings.newBuilder()
+        .addEndpoints(getRpcEndpoints().toArray(new Endpoint[getRpcEndpoints().size()]))
+        .usePlaintext(true)
+        .build();
+    log.info("RpcEndpoints are : {}", settings.endpoints());
+    String namespaceName = "default";
+    try (StorageAdminClient admin = StorageClientBuilder.newBuilder()
+        .withSettings(settings)
+        .buildAdmin()) {
+
+      System.out.println("Creating namespace '" + namespaceName + "' ...");
+      try {
+        NamespaceProperties nsProps = result(
+            admin.createNamespace(
+                namespaceName,
+                NamespaceConfiguration.newBuilder()
+                    .setDefaultStreamConf(DEFAULT_STREAM_CONF)
+                    .build()));
+        System.out.println("Successfully created namespace '" + namespaceName + "':");
+        System.out.println(nsProps);
+      } catch (NamespaceExistsException nee) {
+        System.out.println("Namespace '" + namespaceName + "' already exists.");
+      }
+    }
+  }
+
   private void stopServers() {
     for (LifecycleComponent server : servers) {
       server.close();
@@ -248,6 +300,9 @@ public class StreamCluster
 
       // stop servers
       startServers();
+
+      // create default namespaces
+      createDefaultNamespaces();
 
       // wait for 10 seconds
       TimeUnit.SECONDS.sleep(10);

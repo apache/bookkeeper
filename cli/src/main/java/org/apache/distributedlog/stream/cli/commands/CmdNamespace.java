@@ -15,30 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.distributedlog.api.kv;
+package org.apache.distributedlog.stream.cli.commands;
 
-import java.util.concurrent.CompletableFuture;
+import com.beust.jcommander.Parameters;
+import org.apache.distributedlog.clients.config.StorageClientSettings;
+import org.apache.distributedlog.stream.cli.commands.namespace.CreateNamespaceCommand;
 
 /**
- * Mutate a table by appending updates to its stream.
+ * Commands that operates a single bookie.
  */
-public interface TableWriter<K, V> extends AutoCloseable {
-
-    /**
-     * Append a key/value pair to the stream.
-     *
-     * <p>If <tt>value</tt> is null, it means deleting given <tt>key</tt> from the table.
-     */
-    CompletableFuture<Void> write(long sequenceId,
-                                  K key, V value);
-
-    /**
-     * Append an increment operation to the stream.
-     */
-    CompletableFuture<Void> increment(long sequenceId,
-                                      K key,
-                                      long amount);
-
-    @Override
-    void close();
+@Parameters(commandDescription = "Commands on operating namespaces")
+public class CmdNamespace extends CmdBase {
+    public CmdNamespace(StorageClientSettings.Builder settingsBuilder) {
+        super("namespace", settingsBuilder);
+        addSubCommand(new CreateNamespaceCommand());
+    }
 }

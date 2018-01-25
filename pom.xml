@@ -62,6 +62,7 @@
     <module>clients</module>
     <module>storage</module>
     <module>server</module>
+    <module>cli</module>
     <module>tests</module>
   </modules>
 
