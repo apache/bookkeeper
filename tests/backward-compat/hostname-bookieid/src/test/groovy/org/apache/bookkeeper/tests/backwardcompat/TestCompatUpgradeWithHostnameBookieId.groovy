@@ -126,8 +126,15 @@ class TestCompatUpgradeWithHostnameBookieId {
             ledger1.close()
 
             oldBK.close()
+            oldCL.close()
         }
         currentBK.close()
+        v420BK.close()
+        v410BK.close()
+
+        currentCL.close()
+        v420CL.close()
+        v410CL.close()
     }
 
 

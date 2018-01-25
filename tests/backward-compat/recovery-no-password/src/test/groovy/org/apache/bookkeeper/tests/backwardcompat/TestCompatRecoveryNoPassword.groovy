@@ -247,5 +247,7 @@ class TestCompatRecoveryNoPassword {
         Assert.assertTrue("Should have recovered everything",
                           verifyFullyReplicated(bkCur, lh, numEntries))
         lh.close()
+
+        v410CL.close()
     }
 }

@@ -90,6 +90,9 @@ class TestCompatUpgradeDirect {
 
         v410BK.close()
         currentBK.close()
+
+        v410CL.close()
+        currentCL.close()
     }
 
     @Test
@@ -121,5 +124,8 @@ class TestCompatUpgradeDirect {
 
         currentBK.close()
         v410BK.close()
+
+        v410CL.close()
+        currentCL.close()
     }
 }

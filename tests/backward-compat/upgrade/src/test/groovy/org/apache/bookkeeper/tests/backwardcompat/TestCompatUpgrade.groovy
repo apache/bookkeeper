@@ -93,6 +93,9 @@ class TestCompatUpgrade {
 
         currentRunningBK.close()
         upgradedBK.close()
+
+        currentRunningCL.close()
+        upgradedCL.close()
     }
 
     @Test

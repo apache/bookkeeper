@@ -91,5 +91,8 @@ class TestCompatHierarchicalLedgerManager {
 
         v420BK.close()
         currentBK.close()
+
+        v420CL.close()
+        currentCL.close()
     }
 }

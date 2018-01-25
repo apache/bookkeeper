@@ -82,5 +82,7 @@ class TestCompatUpgradeOldServerInClusterWithCookies {
         } catch (Exception e) {
             // correct behaviour
         }
+
+        v410CL.close()
     }
 }
