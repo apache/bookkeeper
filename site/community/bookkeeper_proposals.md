@@ -115,6 +115,7 @@ Proposal | Release
 [BP-15 - New CreateLedger API](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-15+New+CreateLedger+API) | 4.6.0
 [BP-17 - Define BookKeeper public http endpoints](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-17%3A+Define+BookKeeper+public+http+endpoints) | 4.6.0
 [BP-20: Github workflow for bookkeeper proposals](../../bps/BP-20-github-workflow-for-bookkeeper-proposals) | 4.7.0
+[BP-25: Move checksum to proto](../../bps/BP-25-MovingChecksumToProto) | 4.7.0
 
 ### Discarded
 
