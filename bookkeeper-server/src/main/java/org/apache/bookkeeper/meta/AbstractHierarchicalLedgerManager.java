@@ -63,7 +63,11 @@ public abstract class AbstractHierarchicalLedgerManager extends AbstractZkLedger
         zk.sync(path, new AsyncCallback.VoidCallback() {
             @Override
             public void processResult(int rc, String path, Object ctx) {
-                if (rc != Code.OK.intValue()) {
+                if (rc == Code.NONODE.intValue()) {
+                    // Raced with node removal
+                    finalCb.processResult(successRc, null, context);
+                    return;
+                } else if (rc != Code.OK.intValue()) {
                     LOG.error("Error syncing path " + path + " when getting its chidren: ",
                               KeeperException.create(KeeperException.Code.get(rc), path));
                     finalCb.processResult(failureRc, null, context);
@@ -74,7 +78,11 @@ public abstract class AbstractHierarchicalLedgerManager extends AbstractZkLedger
                     @Override
                     public void processResult(int rc, String path, Object ctx,
                                               List<String> levelNodes) {
-                        if (rc != Code.OK.intValue()) {
+                        if (rc == Code.NONODE.intValue()) {
+                            // Raced with node removal
+                            finalCb.processResult(successRc, null, context);
+                            return;
+                        } else if (rc != Code.OK.intValue()) {
                             LOG.error("Error polling hash nodes of " + path,
                                       KeeperException.create(KeeperException.Code.get(rc), path));
                             finalCb.processResult(failureRc, null, context);
