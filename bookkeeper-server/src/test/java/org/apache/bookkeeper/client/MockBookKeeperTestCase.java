@@ -275,10 +275,7 @@ public abstract class MockBookKeeperTestCase {
     }
 
     protected void registerMockEntryForRead(long ledgerId, long entryId, BookieSocketAddress bookieSocketAddress,
-        byte[] entryData, long lastAddConfirmed) throws BKException{
-        if (failedBookies.contains(bookieSocketAddress)) {
-            throw  BKException.create(NoBookieAvailableException);
-        }
+        byte[] entryData, long lastAddConfirmed) {
         getMockLedgerContentsInBookie(ledgerId, bookieSocketAddress).put(entryId, new MockEntry(entryData,
                     lastAddConfirmed));
     }
@@ -511,20 +508,16 @@ public abstract class MockBookKeeperTestCase {
                     callback.writeComplete(BKException.Code.LedgerFencedException,
                         ledgerId, entryId, bookieSocketAddress, ctx);
                 } else {
+                    if (failedBookies.contains(bookieSocketAddress)) {
+                        callback.writeComplete(NoBookieAvailableException, ledgerId, entryId, bookieSocketAddress, ctx);
+                        return;
+                    }
                     if (getMockLedgerContentsInBookie(ledgerId, bookieSocketAddress).isEmpty()) {
-                        try {
                             registerMockEntryForRead(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, bookieSocketAddress,
                                     new byte[0], BookieProtocol.INVALID_ENTRY_ID);
-                        } catch (BKException bke) {
-                            callback.writeComplete(bke.getCode(), ledgerId, entryId, bookieSocketAddress, ctx);
-                        }
                     }
-                    try {
-                        registerMockEntryForRead(ledgerId, entryId, bookieSocketAddress, entry, ledgerId);
-                        callback.writeComplete(BKException.Code.OK, ledgerId, entryId, bookieSocketAddress, ctx);
-                    } catch (BKException bke) {
-                        callback.writeComplete(bke.getCode(), ledgerId, entryId, bookieSocketAddress, ctx);
-                    }
+                    registerMockEntryForRead(ledgerId, entryId, bookieSocketAddress, entry, ledgerId);
+                    callback.writeComplete(BKException.Code.OK, ledgerId, entryId, bookieSocketAddress, ctx);
                 }
             });
             return null;

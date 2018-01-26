@@ -337,12 +337,8 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
 
         ledgerMetadata.getEnsembles().values().forEach(bookieAddressList -> {
             bookieAddressList.forEach(bookieAddress -> {
-                try {
                     registerMockEntryForRead(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, bookieAddress, entryData, -1);
                     registerMockEntryForRead(ledgerId, 0, bookieAddress, entryData, -1);
-                } catch (BKException bke) {
-                    fail("Add entry fail for in testOpenLedgerNoRecovery");
-                }
             });
         });
 
@@ -362,12 +358,8 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
 
         ledgerMetadata.getEnsembles().values().forEach(bookieAddressList -> {
             bookieAddressList.forEach(bookieAddress -> {
-                try {
                 registerMockEntryForRead(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, bookieAddress, entryData, -1);
                 registerMockEntryForRead(ledgerId, 0, bookieAddress, entryData, -1);
-                } catch (BKException bke) {
-                    fail("Add entry fail for in testOpenLedgerRecovery");
-                }
             });
         });
         result(newOpenLedgerOp()
