@@ -1,8 +1,8 @@
 ---
 title: "BP-25: MovingChecksumToProto--Refactor the checksum part of bookkeeper"
 issue: https://github.com/apache/bookkeeper/issues/1007
-state: "Accepted"
-release: "N/A"
+state: "Adopted"
+release: "4.7.0"
 ---
 
 ### Motivation
