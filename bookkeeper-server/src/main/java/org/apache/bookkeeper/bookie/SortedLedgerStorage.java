@@ -32,6 +32,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.stats.StatsLogger;
+import org.apache.bookkeeper.util.OrderedSafeExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,6 +49,7 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
     EntryMemTable memTable;
     private ScheduledExecutorService scheduler;
     private StateManager stateManager;
+    OrderedSafeExecutor flushExecutor;
 
     public SortedLedgerStorage() {
         super();
@@ -72,7 +74,11 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
             checkpointSource,
             checkpointer,
             statsLogger);
-        this.memTable = new EntryMemTable(conf, checkpointSource, statsLogger);
+        if (conf.isEntryLogPerLedgerEnabled()) {
+            flushExecutor = OrderedSafeExecutor.newBuilder().numThreads(conf.getNumOfMemtableFlushThreads())
+                    .name("MemtableFlushThreads").build();
+        }
+        this.memTable = new EntryMemTable(conf, checkpointSource, flushExecutor, statsLogger);
         this.scheduler = Executors.newSingleThreadScheduledExecutor(
                 new ThreadFactoryBuilder()
                 .setNameFormat("SortedLedgerStorage-%d")
@@ -101,6 +107,9 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
         scheduler.shutdown();
         if (!scheduler.awaitTermination(3, TimeUnit.SECONDS)) {
             scheduler.shutdownNow();
+        }
+        if (flushExecutor != null) {
+            flushExecutor.shutdown();
         }
         super.shutdown();
     }
@@ -168,13 +177,6 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
     @Override
     public void checkpoint(final Checkpoint checkpoint) throws IOException {
         long numBytesFlushed = memTable.flush(this, checkpoint);
-        if (numBytesFlushed > 0) {
-            // if bytes are added between previous flush and this checkpoint,
-            // it means bytes might live at current active entry log, we need
-            // roll current entry log and then issue checkpoint to underlying
-            // interleaved ledger storage.
-            entryLogger.rollLog();
-        }
         super.checkpoint(checkpoint);
     }
 
@@ -209,16 +211,9 @@ public class SortedLedgerStorage extends InterleavedLedgerStorage
             public void run() {
                 try {
                     LOG.info("Started flushing mem table.");
-                    long logIdBeforeFlush = entryLogger.getCurrentLogId();
                     memTable.flush(SortedLedgerStorage.this);
-                    long logIdAfterFlush = entryLogger.getCurrentLogId();
                     // in any case that an entry log reaches the limit, we roll the log and start checkpointing.
-                    // if a memory table is flushed spanning over two entry log files, we also roll log. this is
-                    // for performance consideration: since we don't wanna checkpoint a new log file that ledger
-                    // storage is writing to.
-                    if (entryLogger.reachEntryLogLimit(0) || logIdAfterFlush != logIdBeforeFlush) {
-                        LOG.info("Rolling entry logger since it reached size limitation");
-                        entryLogger.rollLog();
+                    if (entryLogger.rollLogsIfEntryLogLimitReached()) {
                         checkpointer.startCheckpoint(cp);
                     }
                 } catch (IOException e) {

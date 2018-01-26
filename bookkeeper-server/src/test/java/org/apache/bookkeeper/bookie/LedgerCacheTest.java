@@ -489,7 +489,7 @@ public class LedgerCacheTest {
                 checkpointSource,
                 checkpointer,
                 statsLogger);
-            this.memTable = new EntryMemTable(conf, checkpointSource, statsLogger) {
+            this.memTable = new EntryMemTable(conf, checkpointSource, null, statsLogger) {
                 @Override
                 boolean isSizeLimitReached() {
                     return (injectMemTableSizeLimitReached.get() || super.isSizeLimitReached());

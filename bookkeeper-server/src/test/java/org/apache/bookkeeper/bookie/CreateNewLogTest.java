@@ -100,9 +100,9 @@ public class CreateNewLogTest {
         EntryLogger el = new EntryLogger(conf, ledgerDirsManager);
         // Calls createNewLog, and with the number of directories we
         // are using, if it picks one at random it will fail.
-        el.createNewLog();
-        LOG.info("This is the current log id: " + el.getCurrentLogId());
-        assertTrue("Wrong log id", el.getCurrentLogId() > 1);
+        el.createNewLog(0L);
+        LOG.info("This is the current log id: " + el.getPreviousAllocatedEntryLogId());
+        assertTrue("Wrong log id", el.getPreviousAllocatedEntryLogId() > 1);
     }
 
     @Test
@@ -131,9 +131,9 @@ public class CreateNewLogTest {
         EntryLogger el = new EntryLogger(conf, ledgerDirsManager);
         // Calls createNewLog, and with the number of directories we
         // are using, if it picks one at random it will fail.
-        el.createNewLog();
-        LOG.info("This is the current log id: " + el.getCurrentLogId());
-        assertTrue("Wrong log id", el.getCurrentLogId() > 1);
+        el.createNewLog(0L);
+        LOG.info("This is the current log id: " + el.getPreviousAllocatedEntryLogId());
+        assertTrue("Wrong log id", el.getPreviousAllocatedEntryLogId() > 1);
     }
 
 }

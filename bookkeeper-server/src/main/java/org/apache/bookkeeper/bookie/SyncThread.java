@@ -119,6 +119,12 @@ class SyncThread implements Checkpointer {
         });
     }
 
+    void start() {
+        executor.scheduleAtFixedRate(() -> {
+            startCheckpoint(checkpointSource.newCheckpoint());
+        }, flushInterval, flushInterval, TimeUnit.MILLISECONDS);
+    }
+
     private void flush() {
         Checkpoint checkpoint = checkpointSource.newCheckpoint();
         try {

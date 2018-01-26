@@ -41,20 +41,46 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
     // The buffer used to write operations.
     protected final ByteBuf writeBuffer;
     // The absolute position of the next write operation.
-    protected volatile long position;
+    protected final AtomicLong position;
+
+    /*
+     * if unpersistedBytesBound is non-zero value, then after writing to
+     * writeBuffer, it will check if the unpersistedBytes is greater than
+     * unpersistedBytesBound and then calls flush method if it is greater.
+     *
+     * It is a best-effort feature, since 'forceWrite' method is not
+     * synchronized and unpersistedBytes is reset in 'forceWrite' method before
+     * calling fileChannel.force
+     */
+    protected final long unpersistedBytesBound;
+
+    /*
+     * it tracks the number of bytes which are not persisted yet by force
+     * writing the FileChannel. The unpersisted bytes could be in writeBuffer or
+     * in fileChannel system cache.
+     */
+    protected final AtomicLong unpersistedBytes;
 
     // make constructor to be public for unit test
     public BufferedChannel(FileChannel fc, int capacity) throws IOException {
         // Use the same capacity for read and write buffers.
-        this(fc, capacity, capacity);
+        this(fc, capacity, 0L);
     }
 
-    public BufferedChannel(FileChannel fc, int writeCapacity, int readCapacity) throws IOException {
+    public BufferedChannel(FileChannel fc, int capacity, long unpersistedBytesBound) throws IOException {
+        // Use the same capacity for read and write buffers.
+        this(fc, capacity, capacity, unpersistedBytesBound);
+    }
+
+    public BufferedChannel(FileChannel fc, int writeCapacity, int readCapacity, long unpersistedBytesBound)
+            throws IOException {
         super(fc, readCapacity);
         this.writeCapacity = writeCapacity;
-        this.position = fc.position();
-        this.writeBufferStartPosition.set(position);
+        this.position = new AtomicLong(fc.position());
+        this.writeBufferStartPosition.set(position.get());
         this.writeBuffer = ByteBufAllocator.DEFAULT.directBuffer(writeCapacity);
+        this.unpersistedBytes = new AtomicLong(0);
+        this.unpersistedBytesBound = unpersistedBytesBound;
     }
 
     @Override
@@ -70,20 +96,34 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
      * @param src The source ByteBuffer which contains the data to be written.
      * @throws IOException if a write operation fails.
      */
-    public synchronized void write(ByteBuf src) throws IOException {
+    public void write(ByteBuf src) throws IOException {
         int copied = 0;
-        int len = src.readableBytes();
-        while (copied < len) {
-            int bytesToCopy = Math.min(src.readableBytes() - copied, writeBuffer.writableBytes());
-            writeBuffer.writeBytes(src, src.readerIndex() + copied, bytesToCopy);
-            copied += bytesToCopy;
+        boolean shouldForceWrite = false;
+        synchronized (this) {
+            int len = src.readableBytes();
+            while (copied < len) {
+                int bytesToCopy = Math.min(src.readableBytes() - copied, writeBuffer.writableBytes());
+                writeBuffer.writeBytes(src, src.readerIndex() + copied, bytesToCopy);
+                copied += bytesToCopy;
 
-            // if we have run out of buffer space, we should flush to the file
-            if (!writeBuffer.isWritable()) {
-                flushInternal();
+                // if we have run out of buffer space, we should flush to the
+                // file
+                if (!writeBuffer.isWritable()) {
+                    flushInternal();
+                }
+            }
+            position.addAndGet(copied);
+            unpersistedBytes.addAndGet(copied);
+            if (unpersistedBytesBound > 0) {
+                if (unpersistedBytes.get() > unpersistedBytesBound) {
+                    flushInternal();
+                    shouldForceWrite = true;
+                }
             }
         }
-        position += copied;
+        if (shouldForceWrite) {
+            forceWrite(false);
+        }
     }
 
     /**
@@ -91,7 +131,7 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
      * @return
      */
     public long position() {
-        return position;
+        return position.get();
     }
 
     /**
@@ -110,11 +150,15 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
      * @throws IOException if the write or sync operation fails.
      */
     public void flush(boolean shouldForceWrite) throws IOException {
+        flush(shouldForceWrite, false);
+    }
+
+    public void flush(boolean shouldForceWrite, boolean forceMetadata) throws IOException {
         synchronized (this) {
             flushInternal();
         }
         if (shouldForceWrite) {
-            forceWrite(false);
+            forceWrite(forceMetadata);
         }
     }
 
@@ -138,6 +182,20 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
         // the force write, any flush that happens after this may or may
         // not be flushed
         long positionForceWrite = writeBufferStartPosition.get();
+        /*
+         * since forceWrite method is not called in synchronized block, to make
+         * sure we are not undercounting unpersistedBytes, setting
+         * unpersistedBytes to the current number of bytes in writeBuffer.
+         *
+         * since we are calling fileChannel.force, bytes which are written to
+         * filechannel (system filecache) will be persisted to the disk. So we
+         * dont need to consider those bytes for setting value to
+         * unpersistedBytes.
+         *
+         */
+        synchronized (this) {
+            unpersistedBytes.set(writeBuffer.readableBytes());
+        }
         fileChannel.force(forceMetadata);
         return positionForceWrite;
     }
@@ -187,5 +245,13 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
     public synchronized void clear() {
         super.clear();
         writeBuffer.clear();
+    }
+
+    public synchronized int getNumOfBytesInWriteBuffer() {
+        return writeBuffer.readableBytes();
+    }
+
+    long getUnpersistedBytes() {
+        return unpersistedBytes.get();
     }
 }

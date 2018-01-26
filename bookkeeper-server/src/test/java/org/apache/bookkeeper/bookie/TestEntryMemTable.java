@@ -59,7 +59,7 @@ public class TestEntryMemTable implements CacheCallback, SkipListFlusher, Checkp
     @Before
     public void setUp() throws Exception {
         this.memTable = new EntryMemTable(TestBKConfiguration.newServerConfiguration(),
-                this, NullStatsLogger.INSTANCE);
+                this, null, NullStatsLogger.INSTANCE);
     }
 
     @Test

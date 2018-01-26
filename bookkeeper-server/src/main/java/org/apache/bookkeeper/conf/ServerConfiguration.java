@@ -177,6 +177,23 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     // Stats
     protected static final String ENABLE_TASK_EXECUTION_STATS = "enableTaskExecutionStats";
 
+    /*
+     * config specifying if the entrylog per ledger is enabled or not.
+     */
+    protected static final String ENTRY_LOG_PERLEDGER_ENABLED = "entryLogPerLedgerEnabled";
+
+    // In the case of multipleentrylogs, multiple threads can be used to flush the memtable parallelly.
+    protected static final String NUMBER_OF_MEMTABLE_FLUSH_THREADS = "numOfMemtableFlushThreads";
+
+    /*
+     * In the case of multiple entrylogs, memtableFlushTimeoutInSeconds specifies the amount of time main flushthread
+     * has to wait for the processor threads to complete the flush
+     */
+    protected static final String MEMTABLE_FLUSH_TIMEOUT_INSECONDS = "memtableFlushTimeoutInSeconds";
+
+
+    protected static final String ENTRYLOGMAP_ACCESS_EXPIRYTIME_INSECONDS = "entrylogMapAccessExpiryTimeInSeconds";
+
     /**
      * Construct a default configuration object.
      */
@@ -2584,6 +2601,81 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
 
     @Override
     protected ServerConfiguration getThis() {
+        return this;
+    }
+
+
+    /*
+     * specifies if entryLog per ledger is enabled. If it is enabled, then there
+     * would be a active entrylog for each ledger
+     */
+    public boolean isEntryLogPerLedgerEnabled() {
+        return this.getBoolean(ENTRY_LOG_PERLEDGER_ENABLED, false);
+    }
+
+    /*
+     * enables/disables entrylog per ledger feature.
+     *
+     */
+    public ServerConfiguration setEntryLogPerLedgerEnabled(boolean entryLogPerLedgerEnabled) {
+        this.setProperty(ENTRY_LOG_PERLEDGER_ENABLED, Boolean.toString(entryLogPerLedgerEnabled));
+        return this;
+    }
+
+    /*
+     * in entryLogPerLedger feature, this specifies the time, once this duration
+     * has elapsed after the entry's last access, that entry should be
+     * automatically removed from the cache
+     */
+    public int getEntrylogMapAccessExpiryTimeInSeconds() {
+        return this.getInt(ENTRYLOGMAP_ACCESS_EXPIRYTIME_INSECONDS, 5 * 60);
+    }
+
+    /*
+     * sets the time duration for entrylogMapAccessExpiryTimeInSeconds, which will be used for cache eviction
+     * policy, in entrylogperledger feature.
+     *
+     */
+    public ServerConfiguration setEntrylogMapAccessExpiryTimeInSeconds(int entrylogMapAccessExpiryTimeInSeconds) {
+        this.setProperty(ENTRYLOGMAP_ACCESS_EXPIRYTIME_INSECONDS,
+                Integer.toString(entrylogMapAccessExpiryTimeInSeconds));
+        return this;
+    }
+
+    /*
+     * In the case of multipleentrylogs, multiple threads can be used to flush the memtable.
+     *
+     * Gets the number of threads used to flush entrymemtable
+     */
+    public int getNumOfMemtableFlushThreads() {
+        return this.getInt(NUMBER_OF_MEMTABLE_FLUSH_THREADS, 4);
+    }
+
+    /*
+     * Sets the number of threads used to flush entrymemtable, in the case of multiple entrylogs
+     *
+     */
+    public ServerConfiguration setNumOfMemtableFlushThreads(int numOfMemtableFlushThreads) {
+        this.setProperty(NUMBER_OF_MEMTABLE_FLUSH_THREADS, Integer.toString(numOfMemtableFlushThreads));
+        return this;
+    }
+
+    /*
+     * In the case of multiple entrylogs, memtableFlushTimeoutInSeconds specifies the amount of time main flushthread.
+     * has to wait for the processor threads to complete the flush.
+     *
+     * Gets the amount of time to wait for the flush to be completed.
+     */
+    public int getMemtableFlushTimeoutInSeconds() {
+        return this.getInt(MEMTABLE_FLUSH_TIMEOUT_INSECONDS, 120);
+    }
+
+    /*
+     * Sets the amount of time to wait for the flush to be completed.
+     *
+     */
+    public ServerConfiguration setMemtableFlushTimeoutInSeconds(int memtableFlushTimeoutInSeconds) {
+        this.setProperty(MEMTABLE_FLUSH_TIMEOUT_INSECONDS, Integer.toString(memtableFlushTimeoutInSeconds));
         return this;
     }
 }

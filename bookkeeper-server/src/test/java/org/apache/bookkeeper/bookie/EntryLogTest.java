@@ -87,9 +87,9 @@ public class EntryLogTest {
         Bookie bookie = new Bookie(conf);
         // create some entries
         EntryLogger logger = ((InterleavedLedgerStorage) bookie.ledgerStorage).entryLogger;
-        logger.addEntry(1, generateEntry(1, 1).nioBuffer());
-        logger.addEntry(3, generateEntry(3, 1).nioBuffer());
-        logger.addEntry(2, generateEntry(2, 1).nioBuffer());
+        logger.addEntry(1L, generateEntry(1, 1).nioBuffer());
+        logger.addEntry(3L, generateEntry(3, 1).nioBuffer());
+        logger.addEntry(2L, generateEntry(2, 1).nioBuffer());
         logger.flush();
         // now lets truncate the file to corrupt the last entry, which simulates a partial write
         File f = new File(curDir, "0.log");
@@ -135,7 +135,7 @@ public class EntryLogTest {
             EntryLogger logger = new EntryLogger(conf,
                     bookie.getLedgerDirsManager());
             for (int j = 0; j < numEntries; j++) {
-                positions[i][j] = logger.addEntry(i, generateEntry(i, j).nioBuffer());
+                positions[i][j] = logger.addEntry((long) i, generateEntry(i, j).nioBuffer());
             }
             logger.flush();
         }
@@ -150,7 +150,7 @@ public class EntryLogTest {
             EntryLogger logger = new EntryLogger(conf,
                     bookie.getLedgerDirsManager());
             for (int j = 0; j < numEntries; j++) {
-                positions[i][j] = logger.addEntry(i, generateEntry(i, j).nioBuffer());
+                positions[i][j] = logger.addEntry((long) i, generateEntry(i, j).nioBuffer());
             }
             logger.flush();
         }
@@ -225,7 +225,8 @@ public class EntryLogTest {
         ledgerStorage.addEntry(generateEntry(1, 1));
         ledgerStorage.addEntry(generateEntry(2, 1));
         // Add entry with disk full failure simulation
-        bookie.getLedgerDirsManager().addToFilledDirs(entryLogger.currentDir);
+        bookie.getLedgerDirsManager().addToFilledDirs(entryLogger.entryLogManager
+                .getCurrentLogForLedger(EntryLogger.INVALID_LID).getLogFile().getParentFile());
         ledgerStorage.addEntry(generateEntry(3, 1));
         // Verify written entries
         Assert.assertTrue(0 == generateEntry(1, 1).compareTo(ledgerStorage.getEntry(1, 1)));
@@ -252,11 +253,11 @@ public class EntryLogTest {
 
         // create some entries
         EntryLogger logger = ((InterleavedLedgerStorage) bookie.ledgerStorage).entryLogger;
-        logger.addEntry(1, generateEntry(1, 1).nioBuffer());
-        logger.addEntry(3, generateEntry(3, 1).nioBuffer());
-        logger.addEntry(2, generateEntry(2, 1).nioBuffer());
-        logger.addEntry(1, generateEntry(1, 2).nioBuffer());
-        logger.rollLog();
+        logger.addEntry(1L, generateEntry(1, 1).nioBuffer());
+        logger.addEntry(3L, generateEntry(3, 1).nioBuffer());
+        logger.addEntry(2L, generateEntry(2, 1).nioBuffer());
+        logger.addEntry(1L, generateEntry(1, 2).nioBuffer());
+        logger.createNewLog(EntryLogger.INVALID_LID);
         logger.flushRotatedLogs();
 
         EntryLogMetadata meta = logger.extractEntryLogMetadataFromIndex(0L);
@@ -287,11 +288,11 @@ public class EntryLogTest {
 
         // create some entries
         EntryLogger logger = ((InterleavedLedgerStorage) bookie.ledgerStorage).entryLogger;
-        logger.addEntry(1, generateEntry(1, 1).nioBuffer());
-        logger.addEntry(3, generateEntry(3, 1).nioBuffer());
-        logger.addEntry(2, generateEntry(2, 1).nioBuffer());
-        logger.addEntry(1, generateEntry(1, 2).nioBuffer());
-        logger.rollLog();
+        logger.addEntry(1L, generateEntry(1, 1).nioBuffer());
+        logger.addEntry(3L, generateEntry(3, 1).nioBuffer());
+        logger.addEntry(2L, generateEntry(2, 1).nioBuffer());
+        logger.addEntry(1L, generateEntry(1, 2).nioBuffer());
+        logger.createNewLog(EntryLogger.INVALID_LID);
 
         // Rewrite the entry log header to be on V0 format
         File f = new File(curDir, "0.log");
@@ -341,7 +342,7 @@ public class EntryLogTest {
         EntryLogger logger = ((InterleavedLedgerStorage) bookie.ledgerStorage).entryLogger;
         assertNotNull(logger.getEntryLoggerAllocator().getPreallocationFuture());
 
-        logger.addEntry(1, generateEntry(1, 1).nioBuffer());
+        logger.addEntry(1L, generateEntry(1, 1).nioBuffer());
         // the Future<BufferedLogChannel> is not null all the time
         assertNotNull(logger.getEntryLoggerAllocator().getPreallocationFuture());
 
@@ -354,7 +355,7 @@ public class EntryLogTest {
         EntryLogger logger2 = ((InterleavedLedgerStorage) bookie2.ledgerStorage).entryLogger;
         assertNull(logger2.getEntryLoggerAllocator().getPreallocationFuture());
 
-        logger2.addEntry(2, generateEntry(1, 1).nioBuffer());
+        logger2.addEntry(2L, generateEntry(1, 1).nioBuffer());
 
         // the Future<BufferedLogChannel> is null all the time
         assertNull(logger2.getEntryLoggerAllocator().getPreallocationFuture());
@@ -381,12 +382,12 @@ public class EntryLogTest {
 
         assertEquals(Sets.newHashSet(0L, 1L), logger.getEntryLogsSet());
 
-        logger.rollLog();
+        logger.createNewLog(EntryLogger.INVALID_LID);
         logger.flushRotatedLogs();
 
         assertEquals(Sets.newHashSet(0L, 1L, 2L), logger.getEntryLogsSet());
 
-        logger.rollLog();
+        logger.createNewLog(EntryLogger.INVALID_LID);
         logger.flushRotatedLogs();
 
         assertEquals(Sets.newHashSet(0L, 1L, 2L, 3L), logger.getEntryLogsSet());
