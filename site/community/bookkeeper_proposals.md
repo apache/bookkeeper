@@ -85,7 +85,7 @@ using Google Doc.
 
 This section lists all the _bookkeeper proposals_ made to BookKeeper.
 
-*Next Proposal Number: 26*
+*Next Proposal Number: 27*
 
 ### Inprogress
 
@@ -97,6 +97,7 @@ Proposal | State
 [BP-14 Relax durability](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-14+Relax+durability) | Accepted
 [BP-16: Thin Client - Remove direct metadata storage access from clients](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-16%3A+Thin+Client+-+Remove+direct+metadata+storage+access+from+clients) | Draft
 [BP-18: LedgerType, Flags and StorageHints](https://cwiki.apache.org/confluence/display/BOOKKEEPER/BP-18%3A+LedgerType%2C+Flags+and+StorageHints) | Accepted
+[BP-26: Move distributedlog library as part of bookkeeper](../../bps/BP-26-move-distributedlog-core-library) | Accepted
 
 
 ### Adopted
