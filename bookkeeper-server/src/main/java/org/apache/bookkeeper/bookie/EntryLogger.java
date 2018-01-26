@@ -568,7 +568,8 @@ public class EntryLogger {
         } finally {
             serializedMap.release();
         }
-        //Flush the ledger's map out before we write the header.  Otherwise the header might point to something that is not fully written
+        // Flush the ledger's map out before we write the header.
+        // Otherwise the header might point to something that is not fully written
         entryLogChannel.flush(false);
 
         // Update the headers with the map offset and count of ledgers
