@@ -192,7 +192,8 @@ class RackawareEnsemblePlacementPolicyImpl extends TopologyAwareEnsemblePlacemen
     protected Cache<BookieSocketAddress, Long> slowBookies;
     protected BookieNode localNode;
     protected final ReentrantReadWriteLock rwLock;
-    protected ImmutableSet<BookieSocketAddress> readOnlyBookies = null;
+    // Initialize to empty set
+    protected ImmutableSet<BookieSocketAddress> readOnlyBookies = ImmutableSet.of();
     protected boolean reorderReadsRandom = false;
     protected boolean enforceDurability = false;
     protected int stabilizePeriodSeconds = 0;
