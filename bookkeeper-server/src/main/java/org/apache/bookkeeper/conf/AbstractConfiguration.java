@@ -100,6 +100,17 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     */
     protected static final String TLS_ENABLED_PROTOCOLS = "tlsEnabledProtocols";
 
+    /**
+     * TLS KeyStore, TrustStore, Password files and Certificate Paths.
+     */
+    protected static final String TLS_KEYSTORE_TYPE = "tlsKeyStoreType";
+    protected static final String TLS_KEYSTORE = "tlsKeyStore";
+    protected static final String TLS_KEYSTORE_PASSWORD_PATH = "tlsKeyStorePasswordPath";
+    protected static final String TLS_TRUSTSTORE_TYPE = "tlsTrustStoreType";
+    protected static final String TLS_TRUSTSTORE = "tlsTrustStore";
+    protected static final String TLS_TRUSTSTORE_PASSWORD_PATH = "tlsTrustStorePasswordPath";
+    protected static final String TLS_CERTIFICATE_PATH = "tlsCertificatePath";
+
     //Netty configuration
     protected static final String NETTY_MAX_FRAME_SIZE = "nettyMaxFrameSizeBytes";
     protected static final int DEFAULT_NETTY_MAX_FRAME_SIZE = 5 * 1024 * 1024; // 5MB
