@@ -55,12 +55,16 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Tests with TLS enabled.
  */
+@RunWith(Parameterized.class)
 public class TestTLS extends BookKeeperClusterTestCase {
 
     private static final Logger LOG = LoggerFactory.getLogger(TestPerChannelBookieClient.class);
@@ -71,9 +75,28 @@ public class TestTLS extends BookKeeperClusterTestCase {
     private static boolean secureBookieSideChannel = false;
     private static Collection<Object> secureBookieSideChannelPrincipals = null;
 
+    private TLSContextFactory.KeyStoreType clientKeyStoreFormat;
+    private TLSContextFactory.KeyStoreType clientTrustStoreFormat;
+    private TLSContextFactory.KeyStoreType serverKeyStoreFormat;
+    private TLSContextFactory.KeyStoreType serverTrustStoreFormat;
 
-    public TestTLS() {
+    @Parameters
+    public static Collection<Object[]> data() {
+        return Arrays.asList(new Object[][] {
+                { "JKS", "JKS" },
+                { "PEM", "PEM" },
+                { "PKCS12", "PKCS12" },
+                { "JKS", "PEM" },
+                { "PEM", "PKCS12" },
+                { "PKCS12", "JKS" }
+            });
+    }
+    public TestTLS(String keyStoreFormat, String trustStoreFormat) {
         super(3);
+        this.clientKeyStoreFormat = TLSContextFactory.KeyStoreType.valueOf(keyStoreFormat);
+        this.clientTrustStoreFormat = TLSContextFactory.KeyStoreType.valueOf(trustStoreFormat);
+        this.serverKeyStoreFormat = TLSContextFactory.KeyStoreType.valueOf(keyStoreFormat);
+        this.serverTrustStoreFormat = TLSContextFactory.KeyStoreType.valueOf(trustStoreFormat);
     }
 
     @Before
@@ -82,30 +105,113 @@ public class TestTLS extends BookKeeperClusterTestCase {
         /* client configuration */
         baseClientConf.setTLSProviderFactoryClass(TLSContextFactory.class.getName());
         baseClientConf.setTLSClientAuthentication(true);
-        baseClientConf.setTLSKeyStoreType("JKS");
-        baseClientConf.setTLSKeyStore(
-            this.getClass().getClassLoader().getResource("client.jks").toURI().getPath());
-        baseClientConf.setTLSKeyStorePasswordPath(
-            this.getClass().getClassLoader().getResource("keyStoreClientPassword.txt").toURI().getPath());
-        baseClientConf.setTLSTrustStoreType("JKS");
-        baseClientConf.setTLSTrustStore(
-            this.getClass().getClassLoader().getResource("cacerts").toURI().getPath());
-        baseClientConf.setTLSTrustStorePasswordPath(
-            this.getClass().getClassLoader().getResource("trustStorePassword.txt").toURI().getPath());
+
+        switch (clientKeyStoreFormat) {
+        case PEM:
+            baseClientConf.setTLSKeyStoreType("PEM");
+            baseClientConf.setTLSKeyStore(this.getClass().getClassLoader().getResource("client-key.pem").getPath());
+            baseClientConf.setTLSCertificatePath(
+                    this.getClass().getClassLoader().getResource("client-cert.pem").getPath());
+
+            break;
+        case JKS:
+            baseClientConf.setTLSKeyStoreType("JKS");
+            baseClientConf.setTLSKeyStore(this.getClass().getClassLoader().getResource("client-key.jks").getPath());
+            baseClientConf.setTLSKeyStorePasswordPath(
+                    this.getClass().getClassLoader().getResource("keyStoreClientPassword.txt").getPath());
+
+            break;
+        case PKCS12:
+            baseClientConf.setTLSKeyStoreType("PKCS12");
+            baseClientConf.setTLSKeyStore(this.getClass().getClassLoader().getResource("client-key.p12").getPath());
+            baseClientConf.setTLSKeyStorePasswordPath(
+                    this.getClass().getClassLoader().getResource("keyStoreClientPassword.txt").getPath());
+
+            break;
+        default:
+            throw new Exception("Invalid client keystore format" + clientKeyStoreFormat);
+        }
+
+        switch (clientTrustStoreFormat) {
+        case PEM:
+            baseClientConf.setTLSTrustStoreType("PEM");
+            baseClientConf
+                    .setTLSTrustStore(this.getClass().getClassLoader().getResource("server-cert.pem").getPath());
+
+            break;
+        case JKS:
+            baseClientConf.setTLSTrustStoreType("JKS");
+            baseClientConf
+                    .setTLSTrustStore(this.getClass().getClassLoader().getResource("server-key.jks").getPath());
+            baseClientConf.setTLSTrustStorePasswordPath(
+                    this.getClass().getClassLoader().getResource("keyStoreServerPassword.txt").getPath());
+
+            break;
+        case PKCS12:
+            baseClientConf.setTLSTrustStoreType("PKCS12");
+            baseClientConf
+                    .setTLSTrustStore(this.getClass().getClassLoader().getResource("server-key.p12").getPath());
+            baseClientConf.setTLSTrustStorePasswordPath(
+                    this.getClass().getClassLoader().getResource("keyStoreServerPassword.txt").getPath());
+
+            break;
+        default:
+            throw new Exception("Invalid client keystore format" + clientTrustStoreFormat);
+        }
 
         /* server configuration */
         baseConf.setTLSProviderFactoryClass(TLSContextFactory.class.getName());
         baseConf.setTLSClientAuthentication(true);
-        baseConf.setTLSKeyStoreType("JKS");
-        baseConf.setTLSKeyStore(
-            this.getClass().getClassLoader().getResource("server.jks").toURI().getPath());
-        baseConf.setTLSKeyStorePasswordPath(
-            this.getClass().getClassLoader().getResource("keyStoreServerPassword.txt").toURI().getPath());
-        baseConf.setTLSTrustStoreType("JKS");
-        baseConf.setTLSTrustStore(
-            this.getClass().getClassLoader().getResource("cacerts").toURI().getPath());
-        baseConf.setTLSTrustStorePasswordPath(
-            this.getClass().getClassLoader().getResource("trustStorePassword.txt").toURI().getPath());
+
+        switch (serverKeyStoreFormat) {
+        case PEM:
+            baseConf.setTLSKeyStoreType("PEM");
+            baseConf.setTLSKeyStore(this.getClass().getClassLoader().getResource("server-key.pem").getPath());
+            baseConf.setTLSCertificatePath(this.getClass().getClassLoader().getResource("server-cert.pem").getPath());
+
+            break;
+        case JKS:
+            baseConf.setTLSKeyStoreType("JKS");
+            baseConf.setTLSKeyStore(this.getClass().getClassLoader().getResource("server-key.jks").getPath());
+            baseConf.setTLSKeyStorePasswordPath(
+                    this.getClass().getClassLoader().getResource("keyStoreServerPassword.txt").getPath());
+
+            break;
+        case PKCS12:
+            baseConf.setTLSKeyStoreType("PKCS12");
+            baseConf.setTLSKeyStore(this.getClass().getClassLoader().getResource("server-key.p12").getPath());
+            baseConf.setTLSKeyStorePasswordPath(
+                    this.getClass().getClassLoader().getResource("keyStoreServerPassword.txt").getPath());
+
+            break;
+        default:
+            throw new Exception("Invalid server keystore format" + serverKeyStoreFormat);
+        }
+
+        switch (serverTrustStoreFormat) {
+        case PEM:
+            baseConf.setTLSTrustStoreType("PEM");
+            baseConf.setTLSTrustStore(this.getClass().getClassLoader().getResource("client-cert.pem").getPath());
+
+            break;
+        case JKS:
+            baseConf.setTLSTrustStoreType("JKS");
+            baseConf.setTLSTrustStore(this.getClass().getClassLoader().getResource("client-key.jks").getPath());
+            baseConf.setTLSTrustStorePasswordPath(
+                    this.getClass().getClassLoader().getResource("keyStoreClientPassword.txt").getPath());
+
+            break;
+
+        case PKCS12:
+            baseConf.setTLSTrustStoreType("PKCS12");
+            baseConf.setTLSTrustStore(this.getClass().getClassLoader().getResource("client-key.p12").getPath());
+            baseConf.setTLSTrustStorePasswordPath(
+                    this.getClass().getClassLoader().getResource("keyStoreClientPassword.txt").getPath());
+
+            break;
+        default:
+            throw new Exception("Invalid server keystore format" + serverTrustStoreFormat);
+        }
 
         super.setUp();
     }
@@ -119,7 +225,7 @@ public class TestTLS extends BookKeeperClusterTestCase {
     /**
      * Verify that a server will not start if tls is enabled but no cert is specified.
      */
-    @Test
+    @Test(timeout = 60000)
     public void testStartTLSServerNoKeyStore() throws Exception {
         ServerConfiguration bookieConf = newServerConfiguration().setTLSKeyStore(null);
 
