@@ -22,7 +22,6 @@ import static org.apache.bookkeeper.conf.ClientConfiguration.CLIENT_AUTH_PROVIDE
 import java.net.URL;
 import java.util.Iterator;
 import java.util.List;
-
 import javax.net.ssl.SSLEngine;
 
 import org.apache.bookkeeper.feature.Feature;
@@ -121,12 +120,29 @@ public abstract class AbstractConfiguration<T extends AbstractConfiguration>
     // Kluge for compatibility testing. Never set this outside tests.
     public static final String LEDGER_MANAGER_FACTORY_DISABLE_CLASS_CHECK = "ledgerManagerFactoryDisableClassCheck";
 
+    // Validate bookie process user
+    public static final String PERMITTED_STARTUP_USERS = "permittedStartupUsers";
+
     protected AbstractConfiguration() {
         super();
         if (READ_SYSTEM_PROPERTIES) {
             // add configuration for system properties
             addConfiguration(new SystemConfiguration());
         }
+    }
+
+    /**
+     * Limit who can start the application to prevent future permission errors.
+     */
+    public void setPermittedStartupUsers(String s) {
+        setProperty(PERMITTED_STARTUP_USERS, s);
+    }
+
+    /**
+     * Get array of users specified in this property.
+     */
+    public String[] getPermittedStartupUsers() {
+        return getStringArray(PERMITTED_STARTUP_USERS);
     }
 
     /**
