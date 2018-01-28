@@ -89,14 +89,14 @@
             <version>${puppycrawl.checkstyle.version}</version>
           </dependency>
           <dependency>
-            <groupId>org.apache.distributedlog</groupId>
-            <artifactId>distributedlog-build-tools</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.apache.bookkeeper</groupId>
+            <artifactId>buildtools</artifactId>
+            <version>${bookkeeper.version}</version>
           </dependency>
         </dependencies>
         <configuration>
-          <configLocation>distributedlog/checkstyle.xml</configLocation>
-          <suppressionsLocation>distributedlog/suppressions.xml</suppressionsLocation>
+          <configLocation>bookkeeper/checkstyle.xml</configLocation>
+          <suppressionsLocation>bookkeeper/suppressions.xml</suppressionsLocation>
           <consoleOutput>true</consoleOutput>
           <failOnViolation>true</failOnViolation>
           <includeResources>false</includeResources>

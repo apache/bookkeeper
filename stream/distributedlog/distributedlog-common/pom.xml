@@ -20,15 +20,15 @@
   <parent>
     <groupId>org.apache.distributedlog</groupId>
     <artifactId>distributedlog</artifactId>
-    <version>0.6.0-SNAPSHOT</version>
+    <version>4.7.0-SNAPSHOT</version>
   </parent>
   <artifactId>distributedlog-common</artifactId>
-  <name>Apache DistributedLog :: Common</name>
+  <name>Apache BookKeeper :: DistributedLog :: Common</name>
   <dependencies>
     <dependency>
       <groupId>org.apache.bookkeeper.stats</groupId>
       <artifactId>bookkeeper-stats-api</artifactId>
-      <version>${bookkeeper.version}</version>
+      <version>${project.parent.version}</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -146,13 +146,13 @@
             <version>${puppycrawl.checkstyle.version}</version>
           </dependency>
           <dependency>
-            <groupId>org.apache.distributedlog</groupId>
-            <artifactId>distributedlog-build-tools</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.apache.bookkeeper</groupId>
+            <artifactId>buildtools</artifactId>
+            <version>${project.parent.version}</version>
           </dependency>
         </dependencies>
         <configuration>
-          <configLocation>distributedlog/checkstyle.xml</configLocation>
+          <configLocation>bookkeeper/checkstyle.xml</configLocation>
           <suppressionsLocation>distributedlog/suppressions.xml</suppressionsLocation>
           <consoleOutput>true</consoleOutput>
           <failOnViolation>true</failOnViolation>
