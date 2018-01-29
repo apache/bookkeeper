@@ -276,6 +276,7 @@ public class TestFutureUtils {
         ensureLatch.await();
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testRescueSuccess() throws Exception {
         CompletableFuture<Long> underlyFuture = FutureUtils.createFuture();

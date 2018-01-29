@@ -19,18 +19,14 @@ package org.apache.distributedlog.config;
 
 import static org.apache.distributedlog.DistributedLogConfiguration.*;
 
-
-
 import org.apache.distributedlog.DistributedLogConfiguration;
-
 import org.apache.distributedlog.bk.QuorumConfig;
 import org.apache.distributedlog.common.config.ConcurrentBaseConfiguration;
-
-
 
 /**
  * Whitelist dynamic configuration by adding an accessor to this class.
  */
+@SuppressWarnings("unchecked")
 public class DynamicDistributedLogConfiguration extends ConcurrentBaseConfiguration {
 
     private final ConcurrentBaseConfiguration defaultConfig;

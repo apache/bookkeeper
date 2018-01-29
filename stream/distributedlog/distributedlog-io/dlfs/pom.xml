@@ -21,12 +21,12 @@
   <parent>
     <artifactId>distributedlog</artifactId>
     <groupId>org.apache.distributedlog</groupId>
-    <version>0.6.0-SNAPSHOT</version>
+    <version>4.7.0-SNAPSHOT</version>
     <relativePath>../..</relativePath>
   </parent>
   <groupId>org.apache.distributedlog</groupId>
   <artifactId>dlfs</artifactId>
-  <name>Apache DistributedLog :: IO :: FileSystem</name>
+  <name>Apache BookKeeper :: DistributedLog :: IO :: FileSystem</name>
   <url>http://maven.apache.org</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -92,12 +92,12 @@
           <dependency>
             <groupId>org.apache.bookkeeper</groupId>
             <artifactId>buildtools</artifactId>
-            <version>${bookkeeper.version}</version>
+            <version>${project.parent.version}</version>
           </dependency>
         </dependencies>
         <configuration>
           <configLocation>bookkeeper/checkstyle.xml</configLocation>
-          <suppressionsLocation>bookkeeper/suppressions.xml</suppressionsLocation>
+          <suppressionsLocation>distributedlog/suppressions.xml</suppressionsLocation>
           <consoleOutput>true</consoleOutput>
           <failOnViolation>true</failOnViolation>
           <includeResources>false</includeResources>
@@ -105,7 +105,7 @@
         </configuration>
         <executions>
           <execution>
-            <phase>test-compile</phase>
+            <phase>validate</phase>
             <goals>
               <goal>check</goal>
             </goals>

@@ -33,9 +33,6 @@ import org.apache.distributedlog.common.concurrent.FutureUtils;
 import org.apache.distributedlog.exceptions.BKTransmitException;
 import org.apache.distributedlog.logsegment.LogSegmentRandomAccessEntryReader;
 
-
-
-
 /**
  * BookKeeper ledger based random access entry reader.
  */
@@ -85,6 +82,7 @@ class BKLogSegmentRandomAccessEntryReader implements
                 .buildReader();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void readComplete(int rc, LedgerHandle lh, Enumeration<LedgerEntry> entries, Object ctx) {
         CompletableFuture<List<Entry.Reader>> promise = (CompletableFuture<List<Entry.Reader>>) ctx;

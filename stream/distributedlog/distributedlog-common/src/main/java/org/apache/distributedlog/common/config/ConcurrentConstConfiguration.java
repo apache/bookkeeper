@@ -24,6 +24,7 @@ import org.apache.commons.configuration.Configuration;
 /**
  * Invariant thread-safe view of some configuration.
  */
+@SuppressWarnings("unchecked")
 public class ConcurrentConstConfiguration extends ConcurrentBaseConfiguration {
     public ConcurrentConstConfiguration(Configuration conf) {
         checkNotNull(conf);

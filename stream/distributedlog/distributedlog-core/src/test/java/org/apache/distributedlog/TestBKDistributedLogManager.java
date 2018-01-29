@@ -43,7 +43,6 @@ import org.apache.distributedlog.api.AsyncLogWriter;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.LogReader;
 import org.apache.distributedlog.api.LogWriter;
-import org.apache.distributedlog.api.MetadataAccessor;
 import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.api.namespace.NamespaceBuilder;
 import org.apache.distributedlog.api.subscription.SubscriptionsStore;
@@ -492,10 +491,12 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         namespace.close();
     }
 
+    @SuppressWarnings("deprecation")
     @Test(timeout = 60000)
     public void testMetadataAccessor() throws Exception {
         String name = "distrlog-metadata-accessor";
-        MetadataAccessor metadata = DLMTestUtil.createNewMetadataAccessor(conf, name, createDLMURI("/" + name));
+        org.apache.distributedlog.api.MetadataAccessor metadata =
+            DLMTestUtil.createNewMetadataAccessor(conf, name, createDLMURI("/" + name));
         assertEquals(name, metadata.getStreamName());
         metadata.createOrUpdateMetadata(name.getBytes());
         assertEquals(name, new String(metadata.getMetadata()));

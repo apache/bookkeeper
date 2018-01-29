@@ -490,7 +490,7 @@
         </configuration>
         <executions>
           <execution>
-            <phase>test-compile</phase>
+            <phase>validate</phase>
             <goals>
               <goal>check</goal>
             </goals>

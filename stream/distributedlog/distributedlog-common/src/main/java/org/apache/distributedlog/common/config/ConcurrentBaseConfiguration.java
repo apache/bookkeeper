@@ -30,6 +30,7 @@ import org.apache.commons.configuration.AbstractConfiguration;
  * normally combines all properties with the same key into one list property automatically.
  * This class simply overwrites any existing mapping.
  */
+@SuppressWarnings("unchecked")
 public class ConcurrentBaseConfiguration extends AbstractConfiguration {
 
     private final ConcurrentHashMap<String, Object> map;

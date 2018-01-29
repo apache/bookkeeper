@@ -48,7 +48,6 @@ import org.apache.distributedlog.LogSegmentMetadata;
 import org.apache.distributedlog.TestZooKeeperClientBuilder;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.ZooKeeperClusterTestCase;
-import org.apache.distributedlog.api.MetadataAccessor;
 import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.api.namespace.NamespaceBuilder;
 import org.apache.distributedlog.common.concurrent.FutureUtils;
@@ -396,6 +395,7 @@ public class TestZKLogStreamMetadataStore extends ZooKeeperClusterTestCase {
         Utils.ioResult(getLog(uri, logName, logIdentifier, zkc, true, false));
     }
 
+    @SuppressWarnings("deprecation")
     @Test(timeout = 60000)
     public void testCreateLogMetadataWithCustomMetadata() throws Exception {
         String logName = testName.getMethodName();
@@ -409,7 +409,8 @@ public class TestZKLogStreamMetadataStore extends ZooKeeperClusterTestCase {
             .uri(uri)
             .build();
 
-        MetadataAccessor accessor = namespace.getNamespaceDriver().getMetadataAccessor(logName);
+        org.apache.distributedlog.api.MetadataAccessor accessor =
+            namespace.getNamespaceDriver().getMetadataAccessor(logName);
         accessor.createOrUpdateMetadata(logName.getBytes("UTF-8"));
         accessor.close();
 

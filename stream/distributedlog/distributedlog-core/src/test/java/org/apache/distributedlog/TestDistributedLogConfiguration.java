@@ -105,6 +105,7 @@ public class TestDistributedLogConfiguration {
         assertEquals(TestDNSResolver.class, conf3.getEnsemblePlacementDnsResolverClass());
     }
 
+    @SuppressWarnings("deprecation")
     @Test(timeout = 200000)
     public void validateConfiguration(){
         boolean exceptionThrown = false;

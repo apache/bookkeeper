@@ -20,10 +20,10 @@
   <parent>
     <groupId>org.apache.distributedlog</groupId>
     <artifactId>distributedlog</artifactId>
-    <version>0.6.0-SNAPSHOT</version>
+    <version>4.7.0-SNAPSHOT</version>
   </parent>
   <artifactId>distributedlog-protocol</artifactId>
-  <name>Apache DistributedLog :: Protocol</name>
+  <name>Apache BookKeeper :: DistributedLog :: Protocol</name>
   <dependencies>
     <dependency>
       <groupId>org.apache.distributedlog</groupId>
@@ -91,12 +91,12 @@
           <dependency>
             <groupId>org.apache.bookkeeper</groupId>
             <artifactId>buildtools</artifactId>
-            <version>${bookkeeper.version}</version>
+            <version>${project.parent.version}</version>
           </dependency>
         </dependencies>
         <configuration>
           <configLocation>bookkeeper/checkstyle.xml</configLocation>
-          <suppressionsLocation>bookkeeper/suppressions.xml</suppressionsLocation>
+          <suppressionsLocation>distributedlog/suppressions.xml</suppressionsLocation>
           <consoleOutput>true</consoleOutput>
           <failOnViolation>true</failOnViolation>
           <includeResources>false</includeResources>
